@@ -297,7 +297,7 @@ public class TestAutonomousAgent {
         @Test
         void status_reports_health_score() {
             AgentStatus status = agent.getStatus();
-            assertTrue(status.getHealthScore() >= 0.0 && status.getHealthScore() <= 1.0,
+            assertTrue(status.healthScore() >= 0.0 && status.healthScore() <= 1.0,
                     "Health score should be normalized");
         }
 

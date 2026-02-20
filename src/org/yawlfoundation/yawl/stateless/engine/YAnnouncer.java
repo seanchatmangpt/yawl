@@ -158,21 +158,21 @@ public class YAnnouncer {
     public void announceEvents(List<YEvent> eventSet) {
         for (YEvent event : eventSet) {
             event.setEngineNbr(_engineNbr);
-            if (event instanceof YWorkItemEvent) {
-                announceWorkItemEvent((YWorkItemEvent) event);
+            if (event instanceof YWorkItemEvent workItemEvent) {
+                announceWorkItemEvent(workItemEvent);
             }
-            else if (event instanceof YLogEvent) {
-                announceLogEvent((YLogEvent) event);
+            else if (event instanceof YLogEvent logEvent) {
+                announceLogEvent(logEvent);
             }
-            else if (event instanceof YCaseEvent) {
-                announceCaseEvent((YCaseEvent) event);
+            else if (event instanceof YCaseEvent caseEvent) {
+                announceCaseEvent(caseEvent);
             }
-            else if (event instanceof YTimerEvent) {
-                 announceTimerEvent((YTimerEvent) event);
-             }
-            else if (event instanceof YExceptionEvent) {
-                 announceExceptionEvent((YExceptionEvent) event);
-             }
+            else if (event instanceof YTimerEvent timerEvent) {
+                announceTimerEvent(timerEvent);
+            }
+            else if (event instanceof YExceptionEvent exceptionEvent) {
+                announceExceptionEvent(exceptionEvent);
+            }
         }
     }
 

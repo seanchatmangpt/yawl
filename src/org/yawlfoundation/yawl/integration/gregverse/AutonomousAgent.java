@@ -146,7 +146,7 @@ public final class AutonomousAgent {
      * @return true if peer accepted, false if all peers busy
      */
     public boolean requestSwarmHelp(WorkflowAutonomicsEngine.StuckCase stuckCase) {
-        LOGGER.warn("[{}] Requesting swarm help for stuck case: {}", agentID, stuckCase.getCaseID());
+        LOGGER.warn("[{}] Requesting swarm help for stuck case: {}", agentID, stuckCase.caseID());
         boolean accepted = swarm.broadcastHelpRequest(stuckCase);
 
         if (accepted) {
@@ -251,8 +251,8 @@ public final class AutonomousAgent {
             WorkflowAutonomicsEngine.HealthReport health = autonomics.getHealthReport();
 
             if (!health.isHealthy()) {
-                LOGGER.warn("[{}] Health degraded: {} stuck cases", agentID, health.getStuckCases());
-                brain.recordHealthEvent("degraded", health.getStuckCases());
+                LOGGER.warn("[{}] Health degraded: {} stuck cases", agentID, health.stuckCases());
+                brain.recordHealthEvent("degraded", health.stuckCases());
 
                 // Check dead letter queue
                 WorkflowAutonomicsEngine.DeadLetterQueue dlq = autonomics.getDeadLetterQueue();
@@ -276,11 +276,11 @@ public final class AutonomousAgent {
     }
 
     private void handleUnrecoverableCase(WorkflowAutonomicsEngine.StuckCase stuckCase) {
-        LOGGER.error("[{}] Unrecoverable case: {}", agentID, stuckCase.getCaseID());
+        LOGGER.error("[{}] Unrecoverable case: {}", agentID, stuckCase.caseID());
 
         // Try to get help from swarm
         boolean helpAccepted = requestSwarmHelp(stuckCase);
-        brain.recordEscalation(stuckCase.getCaseID(), helpAccepted ? "swarm" : "dlq");
+        brain.recordEscalation(stuckCase.caseID(), helpAccepted ? "swarm" : "dlq");
     }
 
     // ─── Internal: Agent Brain ────────────────────────────────────────

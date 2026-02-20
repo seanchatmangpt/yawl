@@ -121,17 +121,17 @@ public class YNetRunner {
     protected YNet _net;
     private YWorkItemRepository _workItemRepository;
     private Set<YTask> _netTasks;
-    private Set<YTask> _enabledTasks = new HashSet<YTask>();
-    private Set<YTask> _busyTasks = new HashSet<YTask>();
-    private final Set<YTask> _deadlockedTasks = new HashSet<YTask>();
+    private Set<YTask> _enabledTasks = new LinkedHashSet<YTask>();
+    private Set<YTask> _busyTasks = new LinkedHashSet<YTask>();
+    private final Set<YTask> _deadlockedTasks = new LinkedHashSet<YTask>();
     private YIdentifier _caseIDForNet;
     private YSpecificationID _specID;
     private YCompositeTask _containingCompositeTask;
     private YEngine _engine;
     private YAnnouncer _announcer;
     private boolean _cancelling;
-    private Set<String> _enabledTaskNames = new HashSet<String>();
-    private Set<String> _busyTaskNames = new HashSet<String>();
+    private Set<String> _enabledTaskNames = new LinkedHashSet<String>();
+    private Set<String> _busyTaskNames = new LinkedHashSet<String>();
     private String _caseID = null;
     private String _containingTaskID = null;
     private YNetData _netdata = null;
@@ -235,7 +235,7 @@ public class YNetRunner {
         _netdata = new YNetData(_caseID);
         _net = (YNet) netPrototype.clone();
         _net.initializeDataStore(pmgr, _netdata);
-        _netTasks = new HashSet<YTask>(_net.getNetTasks());
+        _netTasks = new LinkedHashSet<YTask>(_net.getNetTasks());
         _specID = _net.getSpecification().getSpecificationID();
         _startTime = System.currentTimeMillis();
         prepare(pmgr);
@@ -254,11 +254,11 @@ public class YNetRunner {
 
 
     public Set<YAnnouncement> refreshAnnouncements() {
-        Set<YAnnouncement> current = new HashSet<>();
+        Set<YAnnouncement> current = new LinkedHashSet<>();
         if (_announcements != null) {
             current.addAll(_announcements);
         }
-        _announcements = new HashSet<>();
+        _announcements = new LinkedHashSet<>();
         return current;
     }
 
@@ -292,7 +292,7 @@ public class YNetRunner {
         _net = net;
         _specID = net.getSpecification().getSpecificationID();
         _net.restoreData(_netdata);
-        _netTasks = new HashSet<YTask>(_net.getNetTasks());
+        _netTasks = new LinkedHashSet<YTask>(_net.getNetTasks());
     }
 
     public YNet getNet() {
@@ -1170,8 +1170,8 @@ public class YNetRunner {
                 ((YCondition) netElement).removeAll(pmgr);
             }
         }
-        _enabledTasks = new HashSet<>();
-        _busyTasks = new HashSet<>();
+        _enabledTasks = new LinkedHashSet<>();
+        _busyTasks = new LinkedHashSet<>();
 
         if (_containingCompositeTask == null) {
             _engine.getNetRunnerRepository().remove(_caseIDForNet);

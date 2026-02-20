@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.engine.time;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -110,7 +111,7 @@ public class YTimer extends Timer {
     
 
     public long schedule(YTimedObject timee, Duration duration) {
-        long durationAsMilliseconds = duration.getTimeInMillis(new Date());
+        long durationAsMilliseconds = duration.getTimeInMillis(Date.from(Instant.now()));
         return schedule(timee, durationAsMilliseconds);
     }
 
