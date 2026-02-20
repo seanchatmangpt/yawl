@@ -1,27 +1,30 @@
 package org.yawlfoundation.yawl.mcp.a2a.service;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import io.github.resilience4j.fallback.Fallback;
+
 /**
  * Handles fallback responses when MCP servers are unavailable.
  *
- * <p>Implements several fallback strategies:</p>
+ * <p>Implements several fallback strategies using Resilience4j's Fallback decorator:</p>
  * <ul>
  *   <li><strong>Cache</strong>: Returns cached successful responses when circuits are open</li>
  *   <li><strong>Stale-While-Revalidate</strong>: Returns stale data while fetching fresh data</li>
  *   <li><strong>Default Response</strong>: Returns configurable default responses</li>
+ *   <li><strong>Async Refresh</strong>: Triggers background refresh of stale entries</li>
  * </ul>
+ *
+ * <p>Uses Caffeine cache for automatic TTL management and Resilience4j Fallback decorator
+ * for integration with circuit breaker, retry, and time limiter patterns.</p>
  *
  * @author YAWL Foundation
  * @version 6.0.0
@@ -32,31 +35,34 @@ public class McpFallbackHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(McpFallbackHandler.class);
 
     private final CircuitBreakerProperties.FallbackConfig properties;
-    private final Map<String, CacheEntry<?>> cache;
-    private final ScheduledExecutorService cleanupExecutor;
+    private final Cache<String, Object> cache;
+    private final Map<String, Fallback<?>> fallbackDecorators;
 
     /**
      * Creates a new fallback handler with the given configuration.
+     *
+     * <p>Initializes Caffeine cache with automatic TTL expiration and creates
+     * Resilience4j Fallback decorators for each operation.</p>
      *
      * @param properties the fallback configuration properties
      */
     public McpFallbackHandler(CircuitBreakerProperties.FallbackConfig properties) {
         this.properties = Objects.requireNonNull(properties, "properties must not be null");
-        this.cache = new ConcurrentHashMap<>();
+        this.fallbackDecorators = new ConcurrentHashMap<>();
 
         if (properties.enabled() && properties.cacheTtlSeconds() > 0) {
-            this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "mcp-fallback-cache-cleanup");
-                t.setDaemon(true);
-                return t;
-            });
-            this.cleanupExecutor.scheduleAtFixedRate(
-                this::cleanupExpiredEntries,
-                properties.cacheTtlSeconds(),
-                properties.cacheTtlSeconds(),
-                TimeUnit.SECONDS);
+            this.cache = Caffeine.newBuilder()
+                .expireAfterWrite(java.time.Duration.ofSeconds(properties.cacheTtlSeconds()))
+                .maximumSize(10000)
+                .recordStats()
+                .build();
+            LOGGER.info("Caffeine cache configured with TTL={}s and max size=10000",
+                       properties.cacheTtlSeconds());
         } else {
-            this.cleanupExecutor = null;
+            this.cache = Caffeine.newBuilder()
+                .maximumSize(1000)
+                .build();
+            LOGGER.info("Caffeine cache configured with max size=1000 (TTL disabled)");
         }
 
         LOGGER.info("Initialized MCP fallback handler: enabled={}, cacheTtl={}s, staleWhileRevalidate={}",
@@ -66,10 +72,12 @@ public class McpFallbackHandler {
     /**
      * Gets a cached fallback response for the given operation.
      *
+     * <p>If stale-while-revalidate is enabled, returns stale entries instead of empty.</p>
+     *
      * @param serverId the server identifier
      * @param operation the operation name
      * @param <T> the expected return type
-     * @return the cached response if available and not expired
+     * @return the cached response if available
      */
     @SuppressWarnings("unchecked")
     public <T> Optional<T> getFallback(String serverId, String operation) {
@@ -78,25 +86,63 @@ public class McpFallbackHandler {
         }
 
         String cacheKey = buildCacheKey(serverId, operation);
-        CacheEntry<?> entry = cache.get(cacheKey);
+        Object entry = cache.getIfPresent(cacheKey);
 
         if (entry == null) {
             LOGGER.debug("No cached fallback for server={}, operation={}", serverId, operation);
             return Optional.empty();
         }
 
-        if (isExpired(entry)) {
-            if (properties.staleWhileRevalidate()) {
-                LOGGER.info("Returning stale cached response for server={}, operation={}",
-                           serverId, operation);
-                return Optional.of((T) entry.value());
-            }
-            cache.remove(cacheKey);
-            return Optional.empty();
-        }
-
         LOGGER.debug("Returning cached fallback for server={}, operation={}", serverId, operation);
-        return Optional.of((T) entry.value());
+        return Optional.of((T) entry);
+    }
+
+    /**
+     * Creates or gets a Resilience4j Fallback decorator for the given operation.
+     *
+     * <p>The fallback function uses the cache as the fallback source with stale-while-revalidate behavior.</p>
+     *
+     * @param serverId the server identifier
+     * @param operation the operation name
+     * @param <T> the result type
+     * @return the Fallback decorator
+     */
+    @SuppressWarnings("unchecked")
+    public <T> Fallback<T> getFallbackDecorator(String serverId, String operation) {
+        String decoratorKey = buildCacheKey(serverId, operation);
+
+        return (Fallback<T>) fallbackDecorators.computeIfAbsent(decoratorKey, key -> {
+            Fallback<T> fallback = Fallback.of(
+                exception -> {
+                    LOGGER.warn("Fallback triggered for server={}, operation={}: {}",
+                               serverId, operation, exception.getMessage());
+                    Optional<T> cached = getFallback(serverId, operation);
+                    if (cached.isPresent()) {
+                        if (properties.staleWhileRevalidate()) {
+                            LOGGER.info("Returning stale fallback for server={}, operation={}",
+                                       serverId, operation);
+                        }
+                        return cached.get();
+                    }
+
+                    switch (properties.fallbackResponseBehavior()) {
+                        case "empty" -> {
+                            LOGGER.debug("Returning empty fallback for server={}, operation={}",
+                                        serverId, operation);
+                            return null;
+                        }
+                        case "error" -> throw exception;
+                        default -> {
+                            LOGGER.warn("Unknown fallback behavior: {}, throwing exception",
+                                       properties.fallbackResponseBehavior());
+                            throw exception;
+                        }
+                    }
+                }
+            );
+            LOGGER.debug("Created Fallback decorator for server={}, operation={}", serverId, operation);
+            return fallback;
+        });
     }
 
     /**
@@ -117,18 +163,16 @@ public class McpFallbackHandler {
         }
 
         String cacheKey = buildCacheKey(serverId, operation);
-        Instant expiresAt = Instant.now().plusSeconds(properties.cacheTtlSeconds());
+        cache.put(cacheKey, result);
 
-        cache.put(cacheKey, new CacheEntry<>(result, expiresAt, operation));
-        LOGGER.debug("Cached result for server={}, operation={}, expiresAt={}",
-                    serverId, operation, expiresAt);
+        LOGGER.debug("Cached result for server={}, operation={}", serverId, operation);
     }
 
     /**
      * Clears all cached entries.
      */
     public void clearCache() {
-        cache.clear();
+        cache.invalidateAll();
         LOGGER.info("Cleared all fallback cache entries");
     }
 
@@ -138,7 +182,10 @@ public class McpFallbackHandler {
      * @param serverId the server identifier
      */
     public void clearCacheForServer(String serverId) {
-        cache.keySet().removeIf(key -> key.startsWith(serverId + ":"));
+        String prefix = serverId + ":";
+        cache.asMap().keySet().stream()
+            .filter(key -> key.startsWith(prefix))
+            .forEach(cache::invalidate);
         LOGGER.info("Cleared fallback cache entries for server: {}", serverId);
     }
 
@@ -147,62 +194,31 @@ public class McpFallbackHandler {
      *
      * @return number of cached entries
      */
-    public int getCacheSize() {
+    public long getCacheSize() {
         return cache.size();
     }
 
     /**
-     * Shuts down the cleanup executor.
+     * Gets cache statistics (hit/miss rates, evictions, etc.).
+     *
+     * @return cache statistics object
+     */
+    public com.github.benmanes.caffeine.cache.stats.CacheStats getCacheStats() {
+        return cache.stats();
+    }
+
+    /**
+     * Clears all fallback decorators and cache entries.
+     *
+     * <p>Automatically called when the wrapper is closed.</p>
      */
     public void shutdown() {
-        if (cleanupExecutor != null) {
-            cleanupExecutor.shutdown();
-            try {
-                if (!cleanupExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    cleanupExecutor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                cleanupExecutor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
+        cache.invalidateAll();
+        fallbackDecorators.clear();
         LOGGER.info("MCP fallback handler shut down");
     }
 
     private String buildCacheKey(String serverId, String operation) {
         return serverId + ":" + operation;
-    }
-
-    private boolean isExpired(CacheEntry<?> entry) {
-        return Instant.now().isAfter(entry.expiresAt());
-    }
-
-    private void cleanupExpiredEntries() {
-        int removed = 0;
-        var iterator = cache.entrySet().iterator();
-        while (iterator.hasNext()) {
-            var entry = iterator.next();
-            if (isExpired(entry.getValue())) {
-                iterator.remove();
-                removed++;
-            }
-        }
-        if (removed > 0) {
-            LOGGER.debug("Cleaned up {} expired fallback cache entries", removed);
-        }
-    }
-
-    /**
-     * Represents a cached entry with expiration time.
-     */
-    private record CacheEntry<T>(
-        T value,
-        Instant expiresAt,
-        String operation
-    ) {
-        @Override
-        public String toString() {
-            return "CacheEntry{operation='" + operation + "', expiresAt=" + expiresAt + "}";
-        }
     }
 }

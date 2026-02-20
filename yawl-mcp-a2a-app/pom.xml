@@ -220,6 +220,26 @@
             <artifactId>resilience4j-micrometer</artifactId>
             <version>2.3.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-fallback</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-timelimiter</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <!-- ============================================================== -->
+        <!-- CACHING - Caffeine                                             -->
+        <!-- ============================================================== -->
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+        </dependency>
 
         <!-- ============================================================== -->
         <!-- OBSERVABILITY - Micrometer                                     -->
