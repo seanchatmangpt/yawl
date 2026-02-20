@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.stateless.engine;
 
 import java.io.InputStream;
+import java.lang.ScopedValue;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -56,6 +57,19 @@ public class YEngine {
     private static final Logger logger = LogManager.getLogger(YEngine.class);
     // Engine execution statuses
     public enum Status { Dormant, Initialising, Running, Terminating }
+
+    /**
+     * Scoped value carrying the current workflow context for virtual thread propagation.
+     *
+     * <p>Replaces ad-hoc ThreadLocal usage. Bound per-case in {@link #launchCase} via
+     * {@code ScopedValue.callWhere()} so that every virtual thread spawned within the
+     * case launch call tree inherits the context automatically without explicit passing.
+     * The binding is released when the enclosing {@code ScopedValue.callWhere()} exits.</p>
+     *
+     * <p>Child virtual threads (e.g., StructuredTaskScope subtasks for parallel
+     * announcement delivery) inherit the bound value without any synchronisation.</p>
+     */
+    public static final ScopedValue<WorkflowContext> WORKFLOW_CONTEXT = ScopedValue.newInstance();
 
     private Logger _logger;
     private Status _engineStatus;

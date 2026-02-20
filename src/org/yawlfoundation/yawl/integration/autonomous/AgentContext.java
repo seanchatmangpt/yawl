@@ -19,90 +19,101 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
 /**
- * Context for an autonomous agent, providing identity and configuration.
+ * Context for an autonomous agent — Java 25 record edition.
  *
- * <p>Agent context contains all the information needed to identify an agent
- * and its operational parameters within the YAWL workflow system.</p>
+ * <p>Converted from a plain class to a Java 25 record:
+ * <ul>
+ *   <li>Immutable by construction (all components are final)</li>
+ *   <li>Auto-generated equals, hashCode, and toString</li>
+ *   <li>Eliminated 40+ lines of boilerplate getters and constructor</li>
+ *   <li>Canonical constructor validates all required fields</li>
+ * </ul>
+ *
+ * <p>The {@link #CURRENT} scoped value carries the active context across
+ * virtual threads without {@code ThreadLocal}. Bind it with
+ * {@code ScopedValue.callWhere(AgentContext.CURRENT, ctx, () -> ...)}
+ * and read it with {@code AgentContext.CURRENT.get()} from any
+ * forked virtual thread.
+ *
+ * @param agentId       unique identifier for this agent
+ * @param agentName     display name of this agent
+ * @param engineUrl     URL of the YAWL engine (e.g. http://localhost:8080/yawl)
+ * @param sessionHandle current session handle for engine communication
  *
  * @since YAWL 6.0
  */
-public class AgentContext {
-
-    private final String agentId;
-    private final String agentName;
-    private final String engineUrl;
-    private final String sessionHandle;
+public record AgentContext(
+        String agentId,
+        String agentName,
+        String engineUrl,
+        String sessionHandle) {
 
     /**
-     * Creates a new agent context.
+     * Scoped value for propagating agent context across virtual threads.
      *
-     * @param agentId the unique identifier for this agent
-     * @param agentName the display name of this agent
-     * @param engineUrl the URL of the YAWL engine
-     * @param sessionHandle the current session handle for engine communication
+     * <p>Use instead of {@code ThreadLocal}. Automatically inherited by all
+     * virtual threads forked inside a {@link java.util.concurrent.StructuredTaskScope}.
      */
-    public AgentContext(String agentId, String agentName, String engineUrl, String sessionHandle) {
-        this.agentId = agentId;
-        this.agentName = agentName;
-        this.engineUrl = engineUrl;
-        this.sessionHandle = sessionHandle;
+    public static final ScopedValue<AgentContext> CURRENT = ScopedValue.newInstance();
+
+    /**
+     * Canonical constructor with validation.
+     */
+    public AgentContext {
+        if (agentId == null || agentId.isBlank()) {
+            throw new IllegalArgumentException("AgentContext agentId is required");
+        }
+        if (agentName == null || agentName.isBlank()) {
+            throw new IllegalArgumentException("AgentContext agentName is required");
+        }
+        if (engineUrl == null || engineUrl.isBlank()) {
+            throw new IllegalArgumentException("AgentContext engineUrl is required");
+        }
+        if (sessionHandle == null) {
+            throw new IllegalArgumentException("AgentContext sessionHandle must not be null");
+        }
     }
 
     /**
-     * Creates an agent context from environment variables.
+     * Create an agent context from environment variables.
+     *
+     * <p>Variables read:
+     * <ul>
+     *   <li>{@code AGENT_ID} — defaults to {@code "agent-unknown"}</li>
+     *   <li>{@code AGENT_NAME} — defaults to {@code "Unknown Agent"}</li>
+     *   <li>{@code YAWL_ENGINE_URL} — defaults to {@code "http://localhost:8080/yawl"}</li>
+     *   <li>{@code YAWL_SESSION_HANDLE} — defaults to empty string</li>
+     * </ul>
      *
      * @return the agent context from environment
      */
     public static AgentContext fromEnvironment() {
         String agentId = System.getenv().getOrDefault("AGENT_ID", "agent-unknown");
         String agentName = System.getenv().getOrDefault("AGENT_NAME", "Unknown Agent");
-        String engineUrl = System.getenv().getOrDefault("YAWL_ENGINE_URL", "http://localhost:8080/yawl");
+        String engineUrl = System.getenv().getOrDefault(
+            "YAWL_ENGINE_URL", "http://localhost:8080/yawl");
         String sessionHandle = System.getenv().getOrDefault("YAWL_SESSION_HANDLE", "");
         return new AgentContext(agentId, agentName, engineUrl, sessionHandle);
     }
 
     /**
-     * Gets the unique identifier for this agent.
+     * Return a copy of this context with an updated session handle.
      *
-     * @return the agent ID
+     * <p>Records are immutable, so updates create a new instance.
+     *
+     * @param newSessionHandle the new session handle
+     * @return updated context record
      */
-    public String getAgentId() {
-        return agentId;
+    public AgentContext withSessionHandle(String newSessionHandle) {
+        return new AgentContext(agentId, agentName, engineUrl, newSessionHandle);
     }
 
     /**
-     * Gets the display name of this agent.
+     * Check whether this context has a valid (non-empty) session handle.
      *
-     * @return the agent name
+     * @return true if a session is established
      */
-    public String getAgentName() {
-        return agentName;
-    }
-
-    /**
-     * Gets the YAWL engine URL.
-     *
-     * @return the engine URL
-     */
-    public String getEngineUrl() {
-        return engineUrl;
-    }
-
-    /**
-     * Gets the session handle for engine communication.
-     *
-     * @return the session handle
-     */
-    public String getSessionHandle() {
-        return sessionHandle;
-    }
-
-    @Override
-    public String toString() {
-        return "AgentContext{" +
-                "agentId='" + agentId + '\'' +
-                ", agentName='" + agentName + '\'' +
-                ", engineUrl='" + engineUrl + '\'' +
-                '}';
+    public boolean hasSession() {
+        return !sessionHandle.isBlank();
     }
 }
