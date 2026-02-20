@@ -55,7 +55,7 @@ public final class YNet extends YDecomposition {
     private YOutputCondition _outputCondition;
     private Map<String, YExternalNetElement> _netElements =
             new ConcurrentHashMap<>();
-    private Map<String, YVariable> _localVariables = new HashMap<String, YVariable>();
+    private Map<String, YVariable> _localVariables = new HashMap<>();
     private String _externalDataGateway;
     private YNet _clone;
 
@@ -135,7 +135,7 @@ public final class YNet extends YDecomposition {
     }
 
     public List<YTask> getNetTasks() {
-        List<YTask> result = new ArrayList<YTask>();
+        List<YTask> result = new ArrayList<>();
         for (YNetElement element : _netElements.values()) {
             if (element instanceof YTask)
                 result.add((YTask) element);
@@ -224,11 +224,11 @@ public final class YNet extends YDecomposition {
             visitedBk := {o};
             visitingBk := preset(visitedBk); */
 
-        Set<YExternalNetElement> visitedFw = new HashSet<YExternalNetElement>();
-        Set<YExternalNetElement> visitingFw = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> visitedFw = new HashSet<>();
+        Set<YExternalNetElement> visitingFw = new HashSet<>();
         visitingFw.add(_inputCondition);
-        Set<YExternalNetElement> visitedBk = new HashSet<YExternalNetElement>();
-        Set<YExternalNetElement> visitingBk = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> visitedBk = new HashSet<>();
+        Set<YExternalNetElement> visitingBk = new HashSet<>();
         visitingBk.add(_outputCondition);
 
         /*  Begin Loop:
@@ -282,7 +282,7 @@ public final class YNet extends YDecomposition {
 
 
     public static Set<YExternalNetElement> getPostset(Set<YExternalNetElement> elements) {
-        Set<YExternalNetElement> postset = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> postset = new HashSet<>();
         for (YExternalNetElement element : elements) {
             if (!(element instanceof YOutputCondition)) {
                 postset.addAll(element.getPostsetElements());
@@ -293,7 +293,7 @@ public final class YNet extends YDecomposition {
 
 
     public static Set<YExternalNetElement> getPreset(Set<YExternalNetElement> elements) {
-        Set<YExternalNetElement> preset = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> preset = new HashSet<>();
         for (YExternalNetElement element : elements) {
            if (element != null && !(element instanceof YInputCondition)) {
                 preset.addAll(element.getPresetElements());
@@ -306,10 +306,10 @@ public final class YNet extends YDecomposition {
     public synchronized Object clone() {
         try {
             _clone = (YNet) super.clone();
-            _clone._netElements = new HashMap<String, YExternalNetElement>();
+            _clone._netElements = new HashMap<>();
 
-            Set<YExternalNetElement> visited = new HashSet<YExternalNetElement>();
-            Set<YExternalNetElement> visiting = new HashSet<YExternalNetElement>();
+            Set<YExternalNetElement> visited = new HashSet<>();
+            Set<YExternalNetElement> visiting = new HashSet<>();
             visiting.add(_inputCondition);
 
             do {
@@ -323,7 +323,7 @@ public final class YNet extends YDecomposition {
                 visiting.removeAll(visited);
             } while (visiting.size() > 0);
 
-            _clone._localVariables = new HashMap<String, YVariable>();
+            _clone._localVariables = new HashMap<>();
             for (YVariable variable : _localVariables.values()) {
                 YVariable copyVar = (YVariable) variable.clone();
                 _clone.setLocalVariable(copyVar);
@@ -417,8 +417,8 @@ public final class YNet extends YDecomposition {
         xml.append("<processControlElements>");
         xml.append(_inputCondition.toXML());
 
-        Set<YExternalNetElement> visitedFw = new HashSet<YExternalNetElement>();
-        Set<YExternalNetElement> visitingFw = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> visitedFw = new HashSet<>();
+        Set<YExternalNetElement> visitingFw = new HashSet<>();
         visitingFw.add(_inputCondition);
         do {
             visitedFw.addAll(visitingFw);
@@ -536,7 +536,7 @@ public final class YNet extends YDecomposition {
     }
 
     public Set<YTask> getActiveTasks(YIdentifier id, String taskType) {
-        Set<YTask> activeTasks = new HashSet<YTask>();
+        Set<YTask> activeTasks = new HashSet<>();
         for (YExternalNetElement element : _netElements.values()) {
             if (element instanceof YTask) {
                 YTask task = (YTask) element;

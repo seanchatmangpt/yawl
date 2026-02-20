@@ -30,7 +30,7 @@ import org.yawlfoundation.yawl.elements.YNetElement;
  */
 public class YIdentifierBag {
 
-    private final Map<YIdentifier, Integer> _idToQtyMap = new HashMap<YIdentifier, Integer>();
+    private final Map<YIdentifier, Integer> _idToQtyMap = new HashMap<>();
     public YNetElement _condition;
 
 
@@ -61,7 +61,7 @@ public class YIdentifierBag {
 
 
     public List<YIdentifier> getIdentifiers() {
-        List<YIdentifier> idList = new ArrayList<YIdentifier>();
+        List<YIdentifier> idList = new ArrayList<>();
         for (YIdentifier identifier : _idToQtyMap.keySet()) {
             int amount = _idToQtyMap.get(identifier);
             for (int i = 0; i < amount; i++) {
