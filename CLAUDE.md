@@ -144,94 +144,231 @@ bash scripts/observatory/observatory.sh  # Sync facts with codebase
 **Entry Points**: `YEngine` (stateful) · `YStatelessEngine` (stateless) · `YSpecification` (defs) · `YawlMcpServer` (MCP) · `YawlA2AServer` (A2A)
 **Docs**: All 89 packages have `package-info.java` — read these first.
 
-## μ(O) → A (Agents)
+## μ(O) → A (Subagents) vs τ (Teams)
 
 **μ** = {engineer, validator, architect, integrator, reviewer, tester, prod-val, perf-bench}
 Task(prompt, agent) ∈ μ(O) | See `.claude/agents/` for specifications.
-Task(a₁,...,aₙ) ∈ single_message ∧ max_agents=8 | Keep sessions under 70% context.
+
+**Subagents (within single session)**:
+- Task(a₁,...,aₙ) ∈ single_message ∧ max=5 agents
+- Each subagent: isolated Task execution, results summarized back to lead
+- Best for: quick verification, code review, report-only tasks
+- Cost: ~$C + summaries
+
+**Teams (τ, separate sessions, experimental)**:
+- τ(tm₁,...,tm_N) ∈ {2..5} teammates ∧ CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+- Each teammate: own context window, direct messaging, shared task list
+- Best for: collaborative investigation, cross-layer changes, competing hypotheses
+- Cost: ~$3-5C
+- See "Teams" section above for full architecture
+
+**Choose subagents if**: work is parallelizable but doesn't need inter-task communication.
+**Choose teams if**: teammates need to share findings, iterate, challenge each other.
+**Choose single session if**: work is inherently sequential or scope < 30 min.
+
+Keep single sessions under 70% context usage. Teams manage context per teammate (200K each).
 
 ---
 
-## ⚡ GODSPEED!!! Fanout — Horizontal Parallelization
+## ⚡ GODSPEED!!! Teams — Collaborative Agent Coherence
 
-**Fanout** = spawn n agents in parallel, each running Ψ→Λ→H→Q→Ω with ONE quantum per agent. Max 8 agents. Coordinate via facts, not messages.
+**τ (Team)** = lead session + N teammates ∈ {2..5} | Each teammate: Ψ→Λ→H→Q→Ω on ONE quantum. Coordinate via task list + direct messaging. **Experimental feature** (requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`).
 
-### PreFanout Checklist
+**When to team**: Parallel exploration adds value. **Best for**: research + review, competing hypotheses, cross-layer coordination (frontend + backend + schema). **Not for**: sequential tasks, same-file edits, small scopes (N=1). Subagents are better for "report-only" work; teams are for *collaborative* investigation.
 
-Before spawning agents:
+**Information Density**: τ costs ~3-5× single session tokens. Use only when team ROI > cost. See facts `modules.json` + `reactor.json` to validate team-ability.
+
+### PreTeam Checklist
+
+Before summoning a team:
 
 ```
 [ ] Facts fresh? Run bash scripts/observatory/observatory.sh
-[ ] Pick N quantums (N ≤ 8, each orthogonal)
-[ ] Map each quantum → 1 agent (no overlapping files)
-[ ] No multi-axis changes per agent (1 axis = 1 quantum per agent)
-[ ] Verify zero file conflicts in Ψ.facts/shared-src.json
+[ ] Verify Ψ.facts/reactor.json: build order + parallel safety?
+[ ] Pick N quantums (N ∈ {2,3,4,5}, each orthogonal)
+[ ] Zero file conflicts? Check Ψ.facts/shared-src.json (no teammate overlap)
+[ ] Each quantum is self-contained ≥ 30 min scope? (avoid 5-min tasks)
+[ ] Can teammates message about findings + iterate? (not pure isolation)
 ```
 
-**Fanout Axiom**: Agent independence = zero coordination overhead. If agents need to negotiate, fanout is too wide.
+**Team Axiom**: Teammate coherence = shared task list + direct messaging. If teammates never communicate, use subagents instead. If all work is identical per-file, use single session.
 
-### Agent-to-Quantum Mapping
-
-| Quantum Axis | Best Agent | Rationale |
-|--------------|-----------|-----------|
-| **Toolchain** (Java25/Maven/JUnit) | validator | Verify compile + test gates |
-| **Dependency** (one family) | architect | Check deps-conflicts.json |
-| **Schema** (XSD path) | engineer | Edit + validate schema path |
-| **Engine semantic** (one pattern) | engineer | Core logic fix in yawl/engine/** |
-| **MCP/A2A** (one endpoint) | integrator | Endpoint contract + tests |
-| **Resourcing** (allocation logic) | engineer | Workqueue/resource allocation |
-| **Test coverage** (one module) | tester | Add tests, run coverage gates |
-| **Observability** (one metric) | prod-val | Add monitoring/observability |
-
-### Fanout Circuit (Agent i executes this)
+### Team Structure — Lead + Teammates
 
 ```
-Agent_i picks quantum_i
-
-Ψ: read Ψ.facts/modules.json + gates.json (shared read-only)
-   ↓
-Λ: bash scripts/dx.sh -pl <module_i>  (isolated compile)
-   ↓ red?     → fix code_i
-   ↓ green?   → proceed
-   ↓
-H: hook guard (same H ∩ content = ∅ rule)
-   ↓
-Q: real_impl ∨ throw ∧ ¬mock ∧ ¬lie
-   ↓
-Ω_i: emit { <specific files for quantum_i> }  (stage only YOUR files)
-     (do NOT commit yet — wait for consolidation)
+τ = {
+  lead:       main session (orchestration + synthesis)
+  teammates:  [tm_1, tm_2, ..., tm_N] (each own context window)
+  shared:     task_list + mailbox + facts (read-only)
+  state:      tasks{pending, in_progress, completed} + dependencies
+}
 ```
 
-**Key**: Agent_i only touches `files_i`. Verify no overlaps in `.claude/facts/shared-src.json` pre-spawn.
+**Lead role**:
+- Creates team, spawns teammates
+- Defines initial tasks + dependencies
+- Synthesizes findings from teammates
+- Approves plans if required
+- Never implements; delegates via task list
 
-### PostFanout Consolidation (Main Session)
+**Teammate role**:
+- Claims or is assigned a task from shared list
+- Executes Ψ→Λ→H→Q→Ω independently
+- Messages other teammates to share findings
+- Marks task complete when done
+- Auto-idles when no more blocked tasks
 
-After all agents complete:
+**Messaging protocol**:
+- `message {teammate_name}`: direct message to one
+- `broadcast {message}`: all teammates (⚠️ scales linearly with team size)
+- Auto-delivery: lead doesn't poll; messages arrive asynchronously
+- Each message is logged in shared mailbox for lead review
+
+### Teammate-to-Quantum Mapping
+
+| Quantum Axis | Ideal Teammate | Task Example | YAWL Module |
+|--------------|---|---|---|
+| **Engine semantic** (1 pattern) | Engineer A | Fix task-completion state machine | yawl/engine/** |
+| **Schema** (XSD path) | Engineer B | Modify workflow type definition | schema/** + exampleSpecs/** |
+| **Integration** (MCP/A2A endpoint) | Integrator | Add event publisher endpoint | yawl/integration/** |
+| **Resourcing** (allocation logic) | Engineer C | Implement resource pool draining | yawl/resourcing/** |
+| **Security** (auth + crypto) | Reviewer | Add JWT validation hooks | yawl/authentication/** |
+| **Test coverage** (1 module) | Tester | Write integration tests for engine | yawl/engine/**/src/test/** |
+| **Stateless* (monitor/export) | Engineer D | Build case snapshot API | yawl/stateless/** |
+
+**Constraint**: No two teammates touch same file. Use `Ψ.facts/shared-src.json` to verify. If overlap exists → reduce team size or split quantum differently.
+
+### Team Execution Circuit (Teammate tm_i)
 
 ```
-1. Collect emit{file_i} from all agents
-2. Verify ∩(emit{i}) = ∅  (no file overlaps)
-3. Verify ∧(result_i = green)  (all agents passed Λ)
-4. bash scripts/dx.sh all  (final full compile gate)
-   ↓ red? → identify failing agent_i, resume with fix
+Ψ (Discovery): Read shared task_list
+              find(task where status=pending ∧ all_dependencies_complete)
+              claim task_i OR await lead assignment
+              ↓
+Λ (Local DX):  bash scripts/dx.sh -pl <module_i>  (isolated compile, no blocking)
+              ↓ red?  → fix locally, re-run until green
+              ↓ green?→ proceed
+              ↓
+H (Guard):    hook check (H ∩ content = ∅)
+              ↓ blocked? → fix real violation, re-check
+              ↓ clear?  → proceed
+              ↓
+Q (Invariant): real_impl ∨ throw ∧ ¬mock ∧ ¬lie
+              ↓ failed? → fix invariant, reverify
+              ↓ passed? → proceed
+              ↓
+Message (Info): tm_i broadcasts/messages key findings to teammates
+               (before marking task complete)
+               "Found deadlock in net-runner line 423. Proposing fix XYZ."
+               ↓ teammates may reply with competing theory
+               ↓ reconcile via direct message
+               ↓
+Ω (Commit):   Mark task complete in shared task_list
+              (don't git-commit yet; lead will consolidate)
+              ↓
+Idle:         Wait for next unblocked task OR lead message
+```
+
+**Key governance**:
+- Each teammate's Λ run is isolated (no blocking on other teammates)
+- Messaging happens *before* task completion (collaboration point)
+- No individual git commits; all files stay in emit channel
+- Lead monitors via task_list + mailbox (async, no polling)
+
+### PostTeam Consolidation (Lead Session)
+
+After all teammates report tasks complete:
+
+```
+1. Ψ: Review shared mailbox + task_list
+   ↓ Read all teammate findings + reconciliations
+   ↓ Identify conflicts (if two teammates propose different fixes)
+
+2. Q: Verify ∧(tm_i completed ∨ blocked_on_external)
+   ↓ All ready? Proceed. Some blocked? Wait + nudge.
+
+3. Λ: bash scripts/dx.sh all  (full compile gate, all modules)
+   ↓ red?  → identify failing module_i
+   ↓        → message tm_i: "DX failed in your module. Fix and re-run local Λ."
+   ↓        → tm_i re-runs, confirms green, marks task re-complete
    ↓ green? → proceed
-5. git add <all emit files>  (atomic stage)
-6. git commit -m "..."  (one logical change across agents)
-7. git push -u origin claude/<fanout>-<sessionId>
+
+4. H: Final hook run on all teammate edits combined
+   ↓ Hook blocks? → identify teammate + pattern → message fix request
+   ↓ Clear? → proceed
+
+5. Ω (Atomic Commit):
+   git add <all emit files from all teammates>  (no overlaps verified in step 1)
+   git commit -m "..."  (one logical change spanning N quantums)
+   git push -u origin claude/team-<quantum-names>-<sessionId>
 ```
 
-**Atomicity**: Fanout only commits if ALL agents green + full DX passes.
+**Atomicity guarantee**: All teammates green Λ + all hook clear + lead Λ green = atomic push. Any red = rollback message to failing teammate.
 
-### Fanout Patterns
+### Team Patterns & Use Cases
 
-| Pattern | Example | Agents | Constraint |
-|---------|---------|--------|-----------|
-| **Module parallel** | Fix 3 modules | 3 | Each agent fixes 1 module |
-| **Quantum parallel** | Schema + Engine + MCP | 3 | Each axis independent |
-| **Test parallel** | Unit + Integration + E2E | 3 | Each test module separate |
-| **Multi-module schema** | Fix XSD in 2 modules | 2 | Schema changes don't conflict |
+| Pattern | Quantums | Teammates | YAWL Example |
+|---------|----------|-----------|---|
+| **Engine investigation** | Engine semantic (3 sub-patterns) | 3 engineers | Fix net-runner deadlock (hyp1: state mgt, hyp2: race in executor, hyp3: transition guard logic) |
+| **Schema + impl** | Schema def + Engine use of schema | 2 engineers | Modify workflow type (schema in yawl/elements, usage in yawl/engine) |
+| **Cross-layer** | API + Engine + Tests | 3 (engineer + integrator + tester) | Add case monitoring endpoint (API: yawl/integration, Engine: yawl/stateless, Tests: test/**) |
+| **Security audit** | Auth layer + Crypto + Integration | 3 (reviewer + engineer + integrator) | Add TLS cert validation (auth/**, crypto/**, MCP/A2A/**) |
+| **Code review** | Review by concern (security + perf + coverage) | 3 reviewers | PR #142: each reviews different lens, message findings |
 
-**Constraint**: Zero shared-src overlap. Use `Ψ.facts/shared-src.json` to verify.
+**Rule**: Each teammate owns ≥1 file, ≤2 modules. Overlap = sequential fallback.
+
+### Team Communication Patterns
+
+**When teammate finds issue**:
+```
+Teammate A (engine): "Found null dereference in YNetRunner.checkGuards() line 427"
+Teammate B (schema): "Our schema allows missing guards. Should we forbid at schema level?"
+Teammate A: "Yes—let's add minOccurs=1 to guard element in schema"
+Teammate B: (adds constraint, runs local Λ, messages back)
+Lead: (reads mailbox, approves trade-off, messages both: "proceed")
+```
+
+**When teammates disagree**:
+```
+Teammate A: "Root cause is race in executor.advance()"
+Teammate C: "I traced 50 runs; always fails in state-persist layer"
+Teammate A: "Let me run under synchronized block + report back"
+(A modifies, re-runs local tests, messages: "My hypothesis confirmed by synchronized test")
+(C validates in their module, agrees, both mark tasks complete)
+Lead: synthesizes both findings into commit message
+```
+
+**Message types**:
+- Info: "Found X at line Y" (sharing observation)
+- Question: "Should we constraint schema?" (asking teammate opinion)
+- Challenge: "I think your fix is incomplete because..." (hypothetical clash)
+- Resolution: "Confirmed—marking task done" (collaboration resolved)
+
+### Team Lifecycle Hooks
+
+| Hook | Trigger | Lead Action |
+|------|---------|---|
+| `TeammateIdle` | Teammate finished a task, no more pending blocked tasks | Lead can assign new task OR shut down teammate |
+| `TaskCompleted` | Task being marked complete | Lead can reject + send feedback + force rework |
+| `TeammateShutdown` | Teammate asks permission to exit | Lead approves OR rejects with more work |
+
+Use hooks to enforce "wait for teammates to finish" or "verify findings before closing task".
+
+### Team vs Subagents vs Single Session
+
+| Dimension | Single Session | Subagents | Teams (τ) |
+|-----------|---|---|---|
+| **Parallelism** | None | Limited (within session context) | Full (separate contexts) |
+| **Communication** | N/A | Report-only to lead | Direct teammate-to-teammate |
+| **Context isolation** | N/A | Own context, auto-summarized | Own context, full history in mailbox |
+| **Cost** | ~$C | ~$C + summaries | ~$3-5C per team |
+| **Best for** | Single quantum, tight loop | Quick verification tasks | Investigation + review + cross-layer |
+| **Coordination overhead** | None | Low (report back) | Medium (messaging) |
+
+**Decision tree**:
+- Single quantum, fast feedback → single session
+- N independent verification tasks → subagents (report-only)
+- N collaborative investigations, finding interaction → teams (messaging)
 
 ---
 
@@ -343,10 +480,10 @@ Q: real_impl ∨ throw ∧ ¬mock ∧ ¬lie?
 
 **Automation**:
 - PreToolUse (Ψ→Λ→H→Q→Ω checklist) — keeps session aligned
-- Fanout (n agents, each 1 quantum, coordinate via facts) — horizontal scaling without coordination overhead
+- Teams (τ with N∈{2..5} teammates, coordinate via task list + messaging) — collaborative scaling with shared investigation
 - PostToolUse (hook validation) — enforces H at write time
 - Stop conditions — re-anchor if uncertain
 - Rules (path-scoped) — context-aware governance
 - Facts (observable only) — 100× token compression
 
-**Result**: Zero configuration drift. Single-session and multi-agent scaling. Compile ≺ Test ≺ Validate ≺ Deploy. ✈️⚡
+**Result**: Zero configuration drift. Single-session, subagent, and team scaling. Compile ≺ Test ≺ Validate ≺ Deploy. ✈️⚡
