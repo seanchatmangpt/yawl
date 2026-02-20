@@ -412,15 +412,16 @@ public class YNetRunner {
     private void notifyDeadLock() {
         Set<YTask> deadlockedTasks = new HashSet<>();
         for (Object o : _caseIDForNet.getLocations()) {
-            if (o instanceof YExternalNetElement) {
-                YExternalNetElement element = (YExternalNetElement) o;
+            if (o instanceof YExternalNetElement element) {
                 if (_net.getNetElements().containsValue(element)) {
-                    if (element instanceof YTask) {
-                        deadlockedTasks.add((YTask) element);
+                    if (element instanceof YTask task) {
+                        deadlockedTasks.add(task);
                     }
                     Set<YExternalNetElement> postset = element.getPostsetElements();
                     for (YExternalNetElement postsetElement : postset) {
-                        deadlockedTasks.add((YTask) postsetElement);
+                        if (postsetElement instanceof YTask taskElement) {
+                            deadlockedTasks.add(taskElement);
+                        }
                     }
                 }
             }
@@ -435,8 +436,8 @@ public class YNetRunner {
      */
     private boolean deadLocked() {
         for (YNetElement location : _caseIDForNet.getLocations()) {
-            if (location instanceof YExternalNetElement) {
-                if (((YExternalNetElement) location).getPostsetElements().size() > 0) {
+            if (location instanceof YExternalNetElement extElement) {
+                if (!extElement.getPostsetElements().isEmpty()) {
                     return true;
                 }
             }
@@ -848,14 +849,13 @@ public class YNetRunner {
 
         _cancelling = true;
         for (YExternalNetElement netElement : _net.getNetElements().values()) {
-            if (netElement instanceof YTask) {
-                YTask task = ((YTask) netElement);
+            if (netElement instanceof YTask task) {
                 if (task.t_isBusy()) {
                     task.cancel();
                 }
             }
-            else if (((YCondition) netElement).containsIdentifier()) {
-                ((YCondition) netElement).removeAll();
+            else if (netElement instanceof YCondition cond && cond.containsIdentifier()) {
+                cond.removeAll();
             }
         }
         _enabledTasks = new HashSet<>();
@@ -906,11 +906,11 @@ public class YNetRunner {
 
     public boolean isEmpty() {
         for (YExternalNetElement element : _net.getNetElements().values()) {
-            if (element instanceof YCondition) {
-                if (((YCondition) element).containsIdentifier()) return false;
+            if (element instanceof YCondition cond) {
+                if (cond.containsIdentifier()) return false;
             }
-            else {
-                if (((YTask) element).t_isBusy()) return false;                
+            else if (element instanceof YTask task && task.t_isBusy()) {
+                return false;
             }
         }
         return true;
