@@ -19,7 +19,14 @@ package org.yawlfoundation.yawl.mcp.a2a.gregverse.simulation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.GregVerseAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.BlakeAndersonAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.DanRomeroAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.DickieBushAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.GregIsenbergAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.JamesAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.JustinWelshAgent;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.LeoLeojrrAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.NicolasColeAgent;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.config.GregVerseConfig;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.report.GregVerseReport;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.report.GregVerseReport.AgentInteraction;
@@ -86,18 +93,17 @@ public class GregVerseSimulation {
 
     /**
      * Registry of available Greg-Verse agent suppliers, keyed by agent ID.
-     * New agents should be registered here.
+     * All eight Greg-Verse business advisor agents are registered here.
      */
     private static final Map<String, AgentSupplier> AGENT_REGISTRY = Map.ofEntries(
-        Map.entry("leo-leojrr", LeoLeojrrAgent::new)
-        // Additional agents will be registered as they are implemented:
-        // Map.entry("greg-isenberg", GregIsenbergAgent::new),
-        // Map.entry("james", JamesAgent::new),
-        // Map.entry("nicolas-cole", NicolasColeAgent::new),
-        // Map.entry("dickie-bush", DickieBushAgent::new),
-        // Map.entry("justin-welsh", JustinWelshAgent::new),
-        // Map.entry("dan-romero", DanRomeroAgent::new),
-        // Map.entry("blake-anderson", BlakeAndersonAgent::new)
+        Map.entry("greg-isenberg", GregIsenbergAgent::new),
+        Map.entry("james", JamesAgent::new),
+        Map.entry("nicolas-cole", NicolasColeAgent::new),
+        Map.entry("dickie-bush", DickieBushAgent::new),
+        Map.entry("leo-leojrr", LeoLeojrrAgent::new),
+        Map.entry("justin-welsh", JustinWelshAgent::new),
+        Map.entry("dan-romero", DanRomeroAgent::new),
+        Map.entry("blake-anderson", BlakeAndersonAgent::new)
     );
 
     private final GregVerseConfig config;
