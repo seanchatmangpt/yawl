@@ -129,10 +129,10 @@ public interface Constants
 	public static final String WORD_SEPARATORS = " .:,;+*~/\\?=})]([/{&%$��\"�!^�|<>#'�`@��";
 
 	/**
-	 * TODO@tbe: some data types are not yet supported, see comments below
-	 * Unsupported data types will be handled like strings.
-	 * 
-	 * see www.w3schools.com/schema/schema_dtypes_string.asp
+	 * XSD string data types. Some types (noted in inline comments) are not fully
+	 * supported for scheduling and are handled as string types. Date and time types
+	 * require additional pattern definitions.
+	 * Reference: www.w3schools.com/schema/schema_dtypes_string.asp
 	 */
 	public static final String[] XSDDatatypes_String = new String[] { "ENTITIES", "ENTITY", "ID", "IDREF", "IDREFS",
 			"language", "Name", "NCName", "NMTOKEN", "NMTOKENS", "normalizedString", "QName", "string", "token", "anyURI",

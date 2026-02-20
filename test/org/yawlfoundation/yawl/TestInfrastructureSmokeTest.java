@@ -19,7 +19,8 @@ class TestInfrastructureSmokeTest {
     @Test
     @DisplayName("JUnit 5 is properly configured")
     void junit5IsConfigured() {
-        assertTrue(true, "JUnit 5 should be working");
+        Class<?> testClass = this.getClass();
+        assertNotNull(testClass.getAnnotation(DisplayName.class), "JUnit 5 annotations should be available");
     }
 
     @Test
@@ -41,9 +42,10 @@ class TestInfrastructureSmokeTest {
     @Test
     @DisplayName("Basic assertions work")
     void basicAssertionsWork() {
-        assertEquals(2, 1 + 1, "Basic math should work");
-        assertNotEquals("a", "b", "Strings should not be equal");
-        assertNull(null, "null should be null");
-        assertNotNull(new Object(), "Object should not be null");
+        assertEquals(1 + 1, 2, "Arithmetic should work correctly");
+        assertNotEquals("hello", "world", "Different strings should not be equal");
+        Object obj = new Object();
+        assertNotNull(obj, "Created object should not be null");
+        assertTrue(obj.equals(obj), "Object should equal itself");
     }
 }
