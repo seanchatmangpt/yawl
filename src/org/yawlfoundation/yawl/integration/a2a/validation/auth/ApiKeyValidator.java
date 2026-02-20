@@ -48,7 +48,7 @@ public class ApiKeyValidator {
 
     private final String masterKey;
     private final Map<String, ApiKeyMetadata> keyRegistry;
-    private final RateLimiter rateLimiter;
+    private final ApiKeyRateLimiter rateLimiter;
     private final Pattern apiKeyPattern;
     private final int maxKeyLength;
     private final int minKeyLength;
@@ -79,7 +79,7 @@ public class ApiKeyValidator {
         this.maxKeyLength = maxKeyLength;
         this.apiKeyPattern = Pattern.compile("^[a-zA-Z0-9_\\-]+$");
         this.keyRegistry = new ConcurrentHashMap<>();
-        this.rateLimiter = new RateLimiter();
+        this.rateLimiter = new ApiKeyRateLimiter();
 
         // Register a default API key for testing/operations
         String defaultKey = generateApiKey("default", Set.of("workflow:launch", "workflow:query", "workflow:cancel"));
@@ -446,17 +446,17 @@ public class ApiKeyValidator {
     /**
      * Rate limiter for API keys.
      */
-    private static class RateLimiter {
-        private final Map<String, RateLimit> rateLimits = new ConcurrentHashMap<>();
+    private static class ApiKeyRateLimiter {
+        private final Map<String, ApiKeyRateLimit> rateLimits = new ConcurrentHashMap<>();
         private final int requestsPerMinute = 60;
         private final int burstSize = 10;
 
         public RateLimitResult check(String apiKey) {
-            RateLimit limit = rateLimits.computeIfAbsent(apiKey, k -> new RateLimit());
+            ApiKeyRateLimit limit = rateLimits.computeIfAbsent(apiKey, k -> new ApiKeyRateLimit());
             return limit.check(requestsPerMinute, burstSize);
         }
 
-        private static class RateLimit {
+        private static class ApiKeyRateLimit {
             private final Queue<Instant> timestamps = new LinkedList<>();
             private int tokens;
 

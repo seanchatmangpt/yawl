@@ -45,9 +45,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @version 6.0.0
  * @since 6.0.0
  */
-public final class RateLimiterRegistry {
+public final class ApiKeyRateLimitRegistry {
 
-    private static final Logger log = LogManager.getLogger(RateLimiterRegistry.class);
+    private static final Logger log = LogManager.getLogger(ApiKeyRateLimitRegistry.class);
 
     private static final String GLOBAL_LIMITER = "global-api";
     private static final String CLIENT_LIMITER_PREFIX = "client-";
@@ -64,9 +64,9 @@ public final class RateLimiterRegistry {
     private final AtomicReference<Boolean> globalLimiterEnabled;
 
     /**
-     * Creates a new RateLimiterRegistry with default configurations.
+     * Creates a new ApiKeyRateLimitRegistry with default configurations.
      */
-    public RateLimiterRegistry() {
+    public ApiKeyRateLimitRegistry() {
         this.registry = io.github.resilience4j.ratelimiter.RateLimiterRegistry.ofDefaults();
         this.configs = new ConcurrentHashMap<>();
         this.globalLimiterEnabled = new AtomicReference<>(true);
