@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -123,6 +124,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Successful completion of an upgrade phase or entire upgrade. */
+    @JsonTypeName("success")
     public static final class Success implements UpgradeOutcome {
         private final String message;
 
@@ -161,6 +163,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Failed upgrade with error details. */
+    @JsonTypeName("failure")
     public static final class Failure implements UpgradeOutcome {
         private final String errorMessage;
         private final String errorType;
@@ -221,6 +224,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Partially completed upgrade with some phases succeeding. */
+    @JsonTypeName("partial")
     public static final class Partial implements UpgradeOutcome {
         private final int completedPhases;
         private final int totalPhases;
@@ -275,6 +279,7 @@ public final class UpgradeMemoryStore {
     }
 
     /** Upgrade currently in progress. */
+    @JsonTypeName("inProgress")
     public static final class InProgress implements UpgradeOutcome {
         private final String currentPhase;
         private final double progressPercent;
