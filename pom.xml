@@ -86,7 +86,7 @@
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
         <!-- Default value for JaCoCo late-binding argLine; overridden by jacoco:prepare-agent -->
-        <argLine></argLine>
+        <argLine>-XX:+UseCompactObjectHeaders</argLine>
 
         <!-- ================================================================ -->
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
