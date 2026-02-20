@@ -119,7 +119,7 @@ public class ConflictResolver {
             return 0;
         }
 
-        String taskName = workItem.getName();
+        String taskName = workItem.getTaskName();
         if (taskName == null || taskName.isEmpty()) {
             return 0;
         }
