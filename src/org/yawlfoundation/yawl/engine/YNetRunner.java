@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.lang.ScopedValue;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +42,6 @@ import org.yawlfoundation.yawl.exceptions.YDataStateException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YQueryException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
-import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.logging.YEventLogger;
 import org.yawlfoundation.yawl.logging.YLogDataItem;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
@@ -1570,26 +1570,16 @@ public class YNetRunner {
     }
 
     /**
-     * Determines if a work item handoff should be attempted.
-     * This method provides a stub implementation for observability.
+     * Scoped value carrying the current case identifier for virtual thread context propagation.
      *
-     * @param workItem the work item to evaluate
-     * @return true if handoff should be attempted, false otherwise
+     * <p>Replaces ThreadLocal for case-ID propagation. ScopedValue is immutable, inherited
+     * automatically by forked virtual threads (StructuredTaskScope children), and released
+     * automatically when the scope exits — eliminating the ThreadLocal leak risk.</p>
+     *
+     * <p>Bound per-case during {@link #kick} and {@link #continueIfPossible} via
+     * {@code ScopedValue.callWhere()}. Observable by any virtual thread spawned within
+     * those call trees (e.g., telemetry, logging side-cars).</p>
      */
-    private boolean classifyHandoffIfNeeded(org.yawlfoundation.yawl.engine.interfce.WorkItemRecord workItem) {
-        // Stub implementation for observability
-        // In a real implementation, this would check:
-        // - If the work item can be processed by other agents
-        // - If the current agent lacks required capabilities
-        // - If there are errors that prevent completion
-
-        if (workItem == null) {
-            return false;
-        }
-
-        // For now, always return false to prevent handoff
-        // This should be implemented based on business logic
-        return false;
-    }
+    public static final ScopedValue<String> CASE_CONTEXT = ScopedValue.newInstance();
 
 }

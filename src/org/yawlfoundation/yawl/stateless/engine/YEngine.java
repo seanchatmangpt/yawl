@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.stateless.engine;
 
 import java.io.InputStream;
+import java.lang.ScopedValue;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -56,6 +57,19 @@ public class YEngine {
     private static final Logger logger = LogManager.getLogger(YEngine.class);
     // Engine execution statuses
     public enum Status { Dormant, Initialising, Running, Terminating }
+
+    /**
+     * Scoped value carrying the current workflow context for virtual thread propagation.
+     *
+     * <p>Replaces ad-hoc ThreadLocal usage. Bound per-case in {@link #launchCase} via
+     * {@code ScopedValue.callWhere()} so that every virtual thread spawned within the
+     * case launch call tree inherits the context automatically without explicit passing.
+     * The binding is released when the enclosing {@code ScopedValue.callWhere()} exits.</p>
+     *
+     * <p>Child virtual threads (e.g., StructuredTaskScope subtasks for parallel
+     * announcement delivery) inherit the bound value without any synchronisation.</p>
+     */
+    public static final ScopedValue<WorkflowContext> WORKFLOW_CONTEXT = ScopedValue.newInstance();
 
     private Logger _logger;
     private Status _engineStatus;
@@ -186,27 +200,41 @@ public class YEngine {
 
         checkEngineRunning();
 
-         // initialise case identifier - if caseID is null, a new one is supplied
+        // initialise case identifier - if caseID is null, a new one is supplied
         YIdentifier yCaseID = new YIdentifier(caseID);
 
         // init case monitoring for this case
         _announcer.announceCaseEvent(new YCaseEvent(YEventType.CASE_STARTING, yCaseID));
 
-        try {
-            // check & format case data params (if any)
-            Element data = formatCaseParams(caseParams, spec);
+        // Bind WorkflowContext as a ScopedValue for the duration of this case launch.
+        // All virtual threads spawned within this scope (e.g. event announcements via
+        // StructuredTaskScope) inherit the context without explicit parameter passing.
+        WorkflowContext ctx = WorkflowContext.of(
+                yCaseID.toString(),
+                spec.getSpecificationID().toKeyString(),
+                _engineNbr);
 
-            YNetRunner runner = new YNetRunner(spec.getRootNet(), data, yCaseID);
-            runner.setAnnouncer(_announcer);
-            runner.continueIfPossible();
-            runner.start();
-            announceEvents(runner);
-            logCaseStarted(spec, runner, caseParams, logData);
-            return runner;
+        try {
+            return ScopedValue.callWhere(WORKFLOW_CONTEXT, ctx, () -> {
+                // check & format case data params (if any)
+                Element data = formatCaseParams(caseParams, spec);
+
+                YNetRunner runner = new YNetRunner(spec.getRootNet(), data, yCaseID);
+                runner.setAnnouncer(_announcer);
+                runner.continueIfPossible();
+                runner.start();
+                announceEvents(runner);
+                logCaseStarted(spec, runner, caseParams, logData);
+                return runner;
+            });
         }
         catch (YStateException | YDataStateException | YQueryException ex) {
             _announcer.announceCaseEvent(new YCaseEvent(YEventType.CASE_START_FAILED, yCaseID));
             throw ex;
+        }
+        catch (Exception ex) {
+            _announcer.announceCaseEvent(new YCaseEvent(YEventType.CASE_START_FAILED, yCaseID));
+            throw new YStateException("Unexpected error launching case: " + ex.getMessage(), ex);
         }
     }
 

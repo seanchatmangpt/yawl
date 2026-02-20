@@ -376,36 +376,68 @@ public class GregVerseOrchestrator {
     /**
      * Execute multiple steps in parallel using structured concurrency.
      */
+    /**
+     * Executes saga steps in parallel with proper exception handling and cancellation.
+     *
+     * <p>Uses StructuredTaskScope.ShutdownOnFailure to ensure that when any step fails,
+     * all remaining steps are cancelled immediately. This is critical for saga semantics:
+     * if one step fails, we want to trigger compensation without waiting for other steps.</p>
+     */
     private Map<SagaStep, StepResult> executeParallelSteps(
             List<SagaStep> steps,
             SagaContext context,
             SagaExecution execution) {
 
         Map<SagaStep, StepResult> results = new ConcurrentHashMap<>();
+        List<ExecutionException> failures = Collections.synchronizedList(new ArrayList<>());
 
-        try (var scope = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<StepResult>> futures = new ArrayList<>();
-
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             for (SagaStep step : steps) {
-                Future<StepResult> future = scope.submit(() -> {
-                    StepResult result = executeStep(step, context, execution);
-                    results.put(step, result);
-                    return result;
+                scope.fork(() -> {
+                    try {
+                        StepResult result = executeStep(step, context, execution);
+                        results.put(step, result);
+                        if (!result.success()) {
+                            failures.add(new ExecutionException(
+                                "Step " + step.getName() + " failed: " + result.error(),
+                                null
+                            ));
+                        }
+                        return result;
+                    } catch (Exception e) {
+                        failures.add(new ExecutionException(
+                            "Step " + step.getName() + " threw exception", e));
+                        throw e;
+                    }
                 });
-                futures.add(future);
             }
 
-            // Wait for all to complete
-            for (Future<StepResult> future : futures) {
-                try {
-                    future.get();
-                } catch (ExecutionException e) {
-                    LOGGER.error("Parallel step execution failed", e.getCause());
-                }
+            // Join with timeout - cancels remaining tasks on first failure
+            long timeoutMs = config.getTimeoutDuration().toMillis();
+            scope.joinUntil(Instant.now().plusMillis(timeoutMs));
+
+        } catch (TimeoutException e) {
+            LOGGER.error("Parallel saga execution timeout after {}ms",
+                config.getTimeoutDuration().toMillis());
+            failures.add(new ExecutionException("Execution timeout", e));
+        } catch (StructuredTaskScope.ShutdownException e) {
+            LOGGER.warn("Parallel saga execution was shutdown due to step failure");
+            // This is expected when a step fails - it triggers shutdown
+            if (e.getCause() != null) {
+                failures.add(new ExecutionException("Structured task scope failure", e.getCause()));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOGGER.error("Parallel execution interrupted");
+            LOGGER.error("Parallel saga execution interrupted");
+            failures.add(new ExecutionException("Execution interrupted", e));
+        }
+
+        // If there were failures, log them
+        if (!failures.isEmpty()) {
+            LOGGER.error("Parallel saga execution had {} failures", failures.size());
+            for (ExecutionException failure : failures) {
+                LOGGER.error("  - {}", failure.getMessage(), failure.getCause());
+            }
         }
 
         return results;

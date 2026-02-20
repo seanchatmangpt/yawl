@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
@@ -13,19 +17,31 @@ import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatMessage;
+import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatRequest;
+import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatResponse;
 
 /**
- * Z.AI Function Calling Service for YAWL
+ * Z.AI Function Calling Service for YAWL — Java 25 Edition.
  *
- * Enables AI models to call YAWL workflow operations through function calling.
- * Integrates with YAWL Engine via InterfaceA and InterfaceB clients.
+ * <p>Enables AI models to call YAWL workflow operations through function calling.
+ * Integrates with the YAWL Engine via InterfaceA and InterfaceB clients.
+ *
+ * <p>Java 25 upgrades applied:
+ * <ul>
+ *   <li>{@link FunctionCall} is now a record (immutable, auto-equals/hashCode)</li>
+ *   <li>JSON parsing uses Jackson's {@link ObjectMapper} instead of hand-rolled string splitting</li>
+ *   <li>Uses {@link ZaiHttpClient.ChatMessage} and {@link ZaiHttpClient.ChatRequest} records</li>
+ *   <li>Pattern matching in switch for function dispatch classification</li>
+ *   <li>Retry with exponential backoff is delegated to {@link ZaiHttpClient}</li>
+ * </ul>
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class ZaiFunctionService {
-    private static final Logger logger = LogManager.getLogger(ZaiFunctionService.class);
 
+    private static final Logger logger = LogManager.getLogger(ZaiFunctionService.class);
 
     // Z.AI default model (override via ZAI_MODEL env)
     private static final String DEFAULT_MODEL = "GLM-4.7-Flash";
@@ -35,6 +51,32 @@ public class ZaiFunctionService {
         return (env != null && !env.isEmpty()) ? env : DEFAULT_MODEL;
     }
 
+    /**
+     * Interface for YAWL function handlers.
+     */
+    public interface YawlFunctionHandler {
+        String execute(Map<String, Object> arguments) throws IOException;
+    }
+
+    /**
+     * Immutable record representing a parsed function call from the AI response.
+     *
+     * @param name      the function name (lowercase)
+     * @param arguments the function arguments as a map
+     */
+    public record FunctionCall(String name, Map<String, Object> arguments) {
+
+        public FunctionCall {
+            if (name == null || name.isBlank()) {
+                throw new IllegalArgumentException("FunctionCall name is required");
+            }
+            if (arguments == null) {
+                throw new IllegalArgumentException("FunctionCall arguments must not be null");
+            }
+            arguments = Map.copyOf(arguments);
+        }
+    }
+
     private final ZaiHttpClient httpClient;
     private final Map<String, YawlFunctionHandler> functionHandlers;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
@@ -42,18 +84,13 @@ public class ZaiFunctionService {
     private final String yawlEngineUrl;
     private final String yawlUsername;
     private final String yawlPassword;
+    private final ObjectMapper objectMapper;
     private String sessionHandle;
-    private boolean initialized;
+    private volatile boolean initialized;
 
     /**
-     * Interface for YAWL function handlers
-     */
-    public interface YawlFunctionHandler {
-        String execute(Map<String, Object> arguments) throws IOException;
-    }
-
-    /**
-     * Initialize with environment variables
+     * Initialize with environment variables.
+     * Fails fast if any required variable is missing.
      */
     public ZaiFunctionService() {
         this(
@@ -65,16 +102,24 @@ public class ZaiFunctionService {
     }
 
     /**
-     * Initialize with explicit configuration
+     * Initialize with explicit configuration.
+     *
+     * @param zaiApiKey    Z.AI API key (must not be null or blank)
+     * @param yawlEngineUrl YAWL engine base URL
+     * @param username     engine username
+     * @param password     engine password
      */
-    public ZaiFunctionService(String zaiApiKey, String yawlEngineUrl, String username, String password) {
-        if (zaiApiKey == null || zaiApiKey.isEmpty()) {
-            throw new IllegalArgumentException("ZAI_API_KEY is required");
+    public ZaiFunctionService(String zaiApiKey, String yawlEngineUrl,
+                               String username, String password) {
+        if (zaiApiKey == null || zaiApiKey.isBlank()) {
+            throw new IllegalArgumentException(
+                "ZAI_API_KEY is required. Set ZAI_API_KEY environment variable.");
         }
-        if (yawlEngineUrl == null || yawlEngineUrl.isEmpty()) {
-            throw new IllegalArgumentException("YAWL_ENGINE_URL is required (e.g., http://localhost:8080/yawl)");
+        if (yawlEngineUrl == null || yawlEngineUrl.isBlank()) {
+            throw new IllegalArgumentException(
+                "YAWL_ENGINE_URL is required (e.g., http://localhost:8080/yawl)");
         }
-        if (username == null || username.isEmpty()) {
+        if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("YAWL_USERNAME is required");
         }
         if (password == null || password.isEmpty()) {
@@ -85,13 +130,10 @@ public class ZaiFunctionService {
         this.yawlEngineUrl = yawlEngineUrl;
         this.yawlUsername = username;
         this.yawlPassword = password;
-
-        String interfaceAUrl = yawlEngineUrl + "/ia";
-        String interfaceBUrl = yawlEngineUrl + "/ib";
-
-        this.interfaceAClient = new InterfaceA_EnvironmentBasedClient(interfaceAUrl);
-        this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(interfaceBUrl);
-        this.functionHandlers = new HashMap<>();
+        this.interfaceAClient = new InterfaceA_EnvironmentBasedClient(yawlEngineUrl + "/ia");
+        this.interfaceBClient = new InterfaceB_EnvironmentBasedClient(yawlEngineUrl + "/ib");
+        this.functionHandlers = new ConcurrentHashMap<>();
+        this.objectMapper = new ObjectMapper();
 
         connectToYawlEngine();
         registerDefaultFunctions();
@@ -100,8 +142,9 @@ public class ZaiFunctionService {
 
     private static String getRequiredEnv(String name) {
         String value = System.getenv(name);
-        if (value == null || value.isEmpty()) {
-            throw new IllegalArgumentException(name + " environment variable not set");
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(
+                name + " environment variable is required but not set.");
         }
         return value;
     }
@@ -109,12 +152,15 @@ public class ZaiFunctionService {
     private void connectToYawlEngine() {
         try {
             this.sessionHandle = interfaceBClient.connect(yawlUsername, yawlPassword);
-            if (sessionHandle == null || sessionHandle.contains("failure") || sessionHandle.contains("error")) {
-                throw new RuntimeException("Failed to connect to YAWL engine: " + sessionHandle);
+            if (sessionHandle == null || sessionHandle.contains("failure")
+                    || sessionHandle.contains("error")) {
+                throw new RuntimeException(
+                    "Failed to connect to YAWL engine at " + yawlEngineUrl
+                    + ": " + sessionHandle);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to connect to YAWL engine at " +
-                interfaceBClient.getBackEndURI() + ": " + e.getMessage(), e);
+            throw new RuntimeException(
+                "Failed to connect to YAWL engine at " + yawlEngineUrl + ": " + e.getMessage(), e);
         }
     }
 
@@ -125,12 +171,13 @@ public class ZaiFunctionService {
     }
 
     /**
-     * Register default YAWL workflow functions
+     * Register default YAWL workflow functions.
      */
     private void registerDefaultFunctions() {
         registerFunction("start_workflow", args -> {
             String workflowId = (String) args.get("workflow_id");
-            String inputData = args.get("input_data") != null ? args.get("input_data").toString() : null;
+            String inputData = args.get("input_data") != null
+                ? args.get("input_data").toString() : null;
             return startWorkflow(workflowId, inputData);
         });
 
@@ -142,7 +189,8 @@ public class ZaiFunctionService {
         registerFunction("complete_task", args -> {
             String caseId = (String) args.get("case_id");
             String taskId = (String) args.get("task_id");
-            String outputData = args.get("output_data") != null ? args.get("output_data").toString() : null;
+            String outputData = args.get("output_data") != null
+                ? args.get("output_data").toString() : null;
             return completeTask(caseId, taskId, outputData);
         });
 
@@ -151,11 +199,8 @@ public class ZaiFunctionService {
         registerFunction("process_mining_analyze", args -> {
             String specId = (String) args.get("spec_identifier");
             String xesPath = (String) args.get("xes_path");
-            String skill = (String) args.get("skill");
-            if (skill == null || skill.isEmpty()) skill = "performance";
+            String skill = args.get("skill") instanceof String s && !s.isEmpty() ? s : "performance";
 
-            // Pm4Py and EventLogExporter are optional dependencies
-            // Use reflection to avoid compile-time dependency
             try {
                 if (specId != null && !specId.isEmpty()) {
                     return executeProcessMiningWithSpec(specId, skill);
@@ -164,9 +209,11 @@ public class ZaiFunctionService {
                     return executeProcessMiningWithXes(xesPath, skill);
                 }
             } catch (ClassNotFoundException e) {
-                return "{\"error\":\"Process mining requires Pm4Py library. Install Pm4Py and ensure processmining package is available.\"}";
+                return "{\"error\":\"Process mining requires Pm4Py library. "
+                    + "Install Pm4Py and ensure processmining package is available.\"}";
             } catch (Exception e) {
-                return "{\"error\":\"Process mining failed: " + e.getMessage().replace("\"", "\\\"") + "\"}";
+                return "{\"error\":\"Process mining failed: "
+                    + e.getMessage().replace("\"", "\\\"") + "\"}";
             }
             return "{\"error\":\"Provide spec_identifier or xes_path\"}";
         });
@@ -177,15 +224,18 @@ public class ZaiFunctionService {
      * Uses reflection to avoid compile-time dependency on EventLogExporter and Pm4PyClient.
      */
     private String executeProcessMiningWithSpec(String specId, String skill) throws Exception {
-        Class<?> exporterClass = Class.forName("org.yawlfoundation.yawl.integration.processmining.EventLogExporter");
-        Object exporter = exporterClass.getConstructor(String.class, String.class, String.class)
-                .newInstance(yawlEngineUrl, yawlUsername, yawlPassword);
+        Class<?> exporterClass = Class.forName(
+            "org.yawlfoundation.yawl.integration.processmining.EventLogExporter");
+        Object exporter = exporterClass
+            .getConstructor(String.class, String.class, String.class)
+            .newInstance(yawlEngineUrl, yawlUsername, yawlPassword);
 
         try {
             YSpecificationID sid = parseSpecificationID(specId);
             Path tmp = Files.createTempFile("yawl-xes-", ".xes");
             try {
-                Method exportMethod = exporterClass.getMethod("exportToFile", YSpecificationID.class, boolean.class, Path.class);
+                Method exportMethod = exporterClass.getMethod(
+                    "exportToFile", YSpecificationID.class, boolean.class, Path.class);
                 exportMethod.invoke(exporter, sid, false, tmp);
                 return callPm4Py(skill, tmp.toString());
             } finally {
@@ -199,7 +249,6 @@ public class ZaiFunctionService {
 
     /**
      * Execute process mining analysis with a XES file path.
-     * Uses reflection to avoid compile-time dependency on Pm4PyClient.
      */
     private String executeProcessMiningWithXes(String xesPath, String skill) throws Exception {
         return callPm4Py(skill, xesPath);
@@ -209,7 +258,8 @@ public class ZaiFunctionService {
      * Call Pm4Py using reflection to avoid compile-time dependency.
      */
     private String callPm4Py(String skill, String path) throws Exception {
-        Class<?> pm4pyClass = Class.forName("org.yawlfoundation.yawl.integration.orderfulfillment.Pm4PyClient");
+        Class<?> pm4pyClass = Class.forName(
+            "org.yawlfoundation.yawl.integration.orderfulfillment.Pm4PyClient");
         Method fromEnvMethod = pm4pyClass.getMethod("fromEnvironment");
         Object client = fromEnvMethod.invoke(null);
         Method callMethod = pm4pyClass.getMethod("call", String.class, String.class);
@@ -217,43 +267,57 @@ public class ZaiFunctionService {
     }
 
     /**
-     * Register a custom function handler
+     * Register a custom function handler.
+     *
+     * @param name    the function name (must be unique)
+     * @param handler the handler implementation
      */
     public void registerFunction(String name, YawlFunctionHandler handler) {
         functionHandlers.put(name, handler);
     }
 
     /**
-     * Process a natural language request with function calling
+     * Process a natural language request with function calling using the default model.
+     *
+     * @param userMessage the user's natural language request
+     * @return the function result or a direct AI response
      */
     public String processWithFunctions(String userMessage) {
         return processWithFunctions(userMessage, defaultModel());
     }
 
     /**
-     * Process a natural language request with function calling
+     * Process a natural language request with function calling.
+     *
+     * @param userMessage the user's natural language request
+     * @param model       the model to use
+     * @return the function result or a direct AI response
      */
     public String processWithFunctions(String userMessage, String model) {
         if (!initialized) {
-            throw new IllegalStateException("Service not initialized");
+            throw new IllegalStateException("ZaiFunctionService is not initialized");
         }
 
         String functionPrompt = buildFunctionSelectionPrompt(userMessage);
 
-        List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(mapOf("role", "system", "content", getSystemPrompt()));
-        messages.add(mapOf("role", "user", "content", functionPrompt));
+        ChatRequest request = new ChatRequest(
+            model,
+            List.of(
+                ChatMessage.system(getSystemPrompt()),
+                ChatMessage.user(functionPrompt)
+            )
+        );
 
         try {
-            String response = httpClient.createChatCompletion(model, messages);
-            String content = httpClient.extractContent(response);
+            ChatResponse response = httpClient.createChatCompletionRecord(request);
+            String content = response.content();
 
             FunctionCall functionCall = parseFunctionCall(content);
 
             if (functionCall != null) {
-                String argsJson = mapToJson(functionCall.arguments);
-                String result = executeFunction(functionCall.name, argsJson);
-                return formatResult(functionCall.name, result);
+                String result = executeFunction(functionCall.name(),
+                    objectMapper.writeValueAsString(functionCall.arguments()));
+                return formatResult(functionCall.name(), result);
             } else {
                 return content;
             }
@@ -277,11 +341,17 @@ public class ZaiFunctionService {
     }
 
     private String getSystemPrompt() {
-        return "You are an intelligent assistant for YAWL workflow operations. " +
-                "Analyze user requests and call appropriate functions when needed. " +
-                "Be precise and follow the exact format when calling functions.";
+        return "You are an intelligent assistant for YAWL workflow operations. "
+            + "Analyze user requests and call appropriate functions when needed. "
+            + "Be precise and follow the exact format when calling functions.";
     }
 
+    /**
+     * Parse a function call from the AI response content.
+     *
+     * @param content the AI model's raw text response
+     * @return a {@link FunctionCall} record if detected, or null if the model responded directly
+     */
     private FunctionCall parseFunctionCall(String content) {
         String upperContent = content.toUpperCase();
 
@@ -294,44 +364,40 @@ public class ZaiFunctionService {
         int funcEnd = content.indexOf("\n", funcStart);
         if (funcEnd == -1) funcEnd = content.length();
 
-        String funcName = content.substring(funcStart, funcEnd).trim();
+        String funcName = content.substring(funcStart, funcEnd).trim().toLowerCase();
 
         int argsIdx = upperContent.indexOf("ARGUMENTS:");
-        String argsJson = "{}";
+        Map<String, Object> arguments;
         if (argsIdx != -1) {
             int argsStart = argsIdx + "ARGUMENTS:".length();
             String argsPart = content.substring(argsStart).trim();
             int braceStart = argsPart.indexOf("{");
             int braceEnd = argsPart.lastIndexOf("}");
             if (braceStart != -1 && braceEnd != -1 && braceEnd > braceStart) {
-                argsJson = argsPart.substring(braceStart, braceEnd + 1);
+                String argsJson = argsPart.substring(braceStart, braceEnd + 1);
+                arguments = parseJsonToMapSafe(argsJson);
+            } else {
+                arguments = Map.of();
             }
+        } else {
+            arguments = Map.of();
         }
 
-        return new FunctionCall(funcName.toLowerCase(), parseJsonToMap(argsJson));
+        return new FunctionCall(funcName, arguments);
     }
 
-    private Map<String, Object> parseJsonToMap(String json) {
-        Map<String, Object> result = new HashMap<>();
-        if (json == null || !json.startsWith("{")) {
-            return result;
+    /**
+     * Parse a JSON object string to a Map using Jackson.
+     * Returns an empty map on parse failure rather than throwing.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseJsonToMapSafe(String json) {
+        try {
+            return objectMapper.readValue(json, Map.class);
+        } catch (IOException e) {
+            logger.warn("Failed to parse function arguments JSON: {}", json, e);
+            return Map.of();
         }
-
-        json = json.substring(1, json.length() - 1).trim();
-        if (json.isEmpty()) {
-            return result;
-        }
-
-        String[] pairs = json.split(",");
-        for (String pair : pairs) {
-            String[] kv = pair.split(":", 2);
-            if (kv.length == 2) {
-                String key = kv[0].trim().replace("\"", "");
-                String value = kv[1].trim().replace("\"", "");
-                result.put(key, value);
-            }
-        }
-        return result;
     }
 
     private String formatResult(String functionName, String result) {
@@ -339,8 +405,13 @@ public class ZaiFunctionService {
     }
 
     /**
-     * Execute a registered function
+     * Execute a registered function by name with JSON arguments.
+     *
+     * @param name          the function name
+     * @param argumentsJson JSON string of arguments
+     * @return the function result as a string
      */
+    @SuppressWarnings("unchecked")
     public String executeFunction(String name, String argumentsJson) {
         YawlFunctionHandler handler = functionHandlers.get(name);
         if (handler == null) {
@@ -348,10 +419,13 @@ public class ZaiFunctionService {
         }
 
         try {
-            Map<String, Object> args = parseJsonToMap(argumentsJson);
+            Map<String, Object> args = argumentsJson != null && !argumentsJson.isBlank()
+                ? objectMapper.readValue(argumentsJson, Map.class)
+                : Map.of();
             return handler.execute(args);
         } catch (Exception e) {
-            return "{\"error\": \"" + e.getMessage() + "\"}";
+            logger.error("Function execution failed for '{}': {}", name, e.getMessage(), e);
+            return "{\"error\": \"" + e.getMessage().replace("\"", "'") + "\"}";
         }
     }
 
@@ -367,14 +441,16 @@ public class ZaiFunctionService {
             return "{\"error\": \"Failed to start workflow: " + caseId + "\"}";
         }
 
-        return "{\"status\": \"started\", \"workflow_id\": \"" + workflowId +
-               "\", \"case_id\": \"" + caseId + "\"}";
+        return """
+            {"status": "started", "workflow_id": "%s", "case_id": "%s"}
+            """.formatted(workflowId, caseId).strip();
     }
 
     private String getWorkflowStatus(String caseId) throws IOException {
         ensureConnection();
 
-        List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+        List<WorkItemRecord> workItems =
+            interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
 
         if (workItems == null) {
             return "{\"error\": \"Case not found: " + caseId + "\"}";
@@ -392,37 +468,37 @@ public class ZaiFunctionService {
         }
         tasksJson.append("]");
 
-        return "{\"case_id\": \"" + caseId +
-               "\", \"status\": \"running\", \"current_tasks\": " + tasksJson + "}";
+        return "{\"case_id\": \"" + caseId
+               + "\", \"status\": \"running\", \"current_tasks\": " + tasksJson + "}";
     }
 
     private String completeTask(String caseId, String taskId, String outputData) throws IOException {
         ensureConnection();
 
-        List<WorkItemRecord> workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+        List<WorkItemRecord> workItems =
+            interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
 
         if (workItems == null || workItems.isEmpty()) {
             return "{\"error\": \"No work items found for case: " + caseId + "\"}";
         }
 
-        WorkItemRecord targetItem = null;
-        for (WorkItemRecord item : workItems) {
-            if (item.getTaskID().equals(taskId)) {
-                targetItem = item;
-                break;
-            }
-        }
+        WorkItemRecord targetItem = workItems.stream()
+            .filter(item -> item.getTaskID().equals(taskId))
+            .findFirst()
+            .orElse(null);
 
         if (targetItem == null) {
             return "{\"error\": \"Task not found: " + taskId + " in case: " + caseId + "\"}";
         }
 
         String workItemID = targetItem.getID();
-        String dataToSend = outputData != null ? wrapDataInXML(outputData) :
-                (targetItem.getDataList() != null ? targetItem.getDataList().toString() : null);
+        String dataToSend = outputData != null
+            ? wrapDataInXML(outputData)
+            : (targetItem.getDataList() != null ? targetItem.getDataList().toString() : null);
 
         String checkoutResult = interfaceBClient.checkOutWorkItem(workItemID, sessionHandle);
-        if (checkoutResult == null || checkoutResult.contains("failure") || checkoutResult.contains("error")) {
+        if (checkoutResult == null || checkoutResult.contains("failure")
+                || checkoutResult.contains("error")) {
             return "{\"error\": \"Failed to checkout work item: " + checkoutResult + "\"}";
         }
 
@@ -431,8 +507,8 @@ public class ZaiFunctionService {
             return "{\"error\": \"Failed to complete task: " + checkinResult + "\"}";
         }
 
-        return "{\"status\": \"completed\", \"case_id\": \"" + caseId +
-               "\", \"task_id\": \"" + taskId + "\"}";
+        return "{\"status\": \"completed\", \"case_id\": \""
+               + caseId + "\", \"task_id\": \"" + taskId + "\"}";
     }
 
     private String listWorkflows() throws IOException {
@@ -457,15 +533,13 @@ public class ZaiFunctionService {
 
     private YSpecificationID parseSpecificationID(String workflowId) {
         String[] parts = workflowId.split(":");
-        if (parts.length == 3) {
-            return new YSpecificationID(parts[0], parts[1], parts[2]);
-        } else if (parts.length == 1) {
-            return new YSpecificationID(parts[0], "0.1", "0.1");
-        } else {
-            throw new IllegalArgumentException(
-                "Invalid workflow ID format. Use 'identifier:version:uri' or just 'identifier'"
-            );
-        }
+        return switch (parts.length) {
+            case 3 -> new YSpecificationID(parts[0], parts[1], parts[2]);
+            case 1 -> new YSpecificationID(parts[0], "0.1", "0.1");
+            default -> throw new IllegalArgumentException(
+                "Invalid workflow ID format. Use 'identifier:version:uri' or just 'identifier'. "
+                + "Got: " + workflowId);
+        };
     }
 
     private String wrapDataInXML(String data) {
@@ -475,36 +549,12 @@ public class ZaiFunctionService {
         return "<data>%s</data>".formatted(data);
     }
 
-    private List<String> extractSpecificationNames(String specsXML) {
-        List<String> names = new ArrayList<>();
-
-        int pos = 0;
-        while (true) {
-            int specStart = specsXML.indexOf("<specIdentifier>", pos);
-            if (specStart == -1) break;
-
-            int specEnd = specsXML.indexOf("</specIdentifier>", specStart);
-            if (specEnd == -1) break;
-
-            String specContent = specsXML.substring(specStart + 16, specEnd);
-            names.add(specContent.trim());
-
-            pos = specEnd;
-        }
-
-        if (names.isEmpty()) {
-            names.add("No specifications loaded");
-        }
-
-        return names;
-    }
-
     public boolean isInitialized() {
         return initialized;
     }
 
     public Set<String> getRegisteredFunctions() {
-        return functionHandlers.keySet();
+        return Set.copyOf(functionHandlers.keySet());
     }
 
     public void disconnect() {
@@ -518,42 +568,8 @@ public class ZaiFunctionService {
         }
     }
 
-    private String mapToJson(Map<String, Object> map) {
-        if (map == null || map.isEmpty()) {
-            return "{}";
-        }
-        StringBuilder sb = new StringBuilder("{");
-        boolean first = true;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (!first) sb.append(",");
-            sb.append("\"").append(entry.getKey()).append("\":");
-            sb.append("\"").append(entry.getValue()).append("\"");
-            first = false;
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-
-    private Map<String, String> mapOf(String... keyValues) {
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < keyValues.length - 1; i += 2) {
-            map.put(keyValues[i], keyValues[i + 1]);
-        }
-        return map;
-    }
-
-    private static class FunctionCall {
-        final String name;
-        final Map<String, Object> arguments;
-
-        FunctionCall(String name, Map<String, Object> arguments) {
-            this.name = name;
-            this.arguments = arguments;
-        }
-    }
-
     /**
-     * Main method for testing
+     * Main method for testing.
      */
     public static void main(String[] args) {
         ZaiFunctionService service = new ZaiFunctionService();
@@ -565,7 +581,8 @@ public class ZaiFunctionService {
         System.out.println(result);
 
         System.out.println("\n=== Testing Start Workflow ===");
-        result = service.processWithFunctions("Start an OrderProcessing workflow with customer 'Acme Corp'");
+        result = service.processWithFunctions(
+            "Start an OrderProcessing workflow with customer 'Acme Corp'");
         System.out.println(result);
 
         System.out.println("\n=== Testing Get Status ===");

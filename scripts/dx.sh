@@ -150,22 +150,35 @@ else
     MVN_ARGS+=("--fail-at-end")
 fi
 
+# ── Color codes for enhanced output ─────────────────────────────────────────
+readonly C_RESET='\033[0m'
+readonly C_GREEN='\033[92m'
+readonly C_RED='\033[91m'
+readonly C_BLUE='\033[94m'
+readonly C_YELLOW='\033[93m'
+readonly C_CYAN='\033[96m'
+readonly E_OK='✓'
+readonly E_FAIL='✗'
+
 # ── Execute ──────────────────────────────────────────────────────────────
 LABEL="$PHASE"
+SCOPE_LABEL="all modules"
 if [[ "$SCOPE" == "explicit" ]]; then
     LABEL+=" [${EXPLICIT_MODULES}]"
-else
-    LABEL+=" [all modules]"
+    SCOPE_LABEL="${EXPLICIT_MODULES}"
 fi
 
 # Use Python for cross-platform millisecond precision
 START_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
 
-echo "dx: ${LABEL}"
-echo "dx: mvn ${GOALS[*]} ${MVN_ARGS[*]}"
+# Pretty header
+echo ""
+printf "${C_CYAN}dx${C_RESET}: ${C_BLUE}%s${C_RESET}\n" "${LABEL}"
+printf "${C_CYAN}dx${C_RESET}: scope=%s | phase=%s | fail-strategy=%s\n" \
+    "$SCOPE_LABEL" "$PHASE" "${DX_FAIL_AT:-fast}"
 
 set +e
-$MVN_CMD "${GOALS[@]}" "${MVN_ARGS[@]}"
+$MVN_CMD "${GOALS[@]}" "${MVN_ARGS[@]}" 2>&1 | tee /tmp/dx-build-log.txt
 EXIT_CODE=$?
 set -e
 
@@ -173,9 +186,21 @@ END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
 ELAPSED_MS=$((END_MS - START_MS))
 ELAPSED_S=$(python3 -c "print(f\"{${ELAPSED_MS}/1000:.1f}\")")
 
+# Parse results from Maven log
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null || echo 0)
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null || echo 0)
+MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l)
+
+# Enhanced status with metrics
+echo ""
 if [[ $EXIT_CODE -eq 0 ]]; then
-    echo "dx: OK (${ELAPSED_S}s)"
+    printf "${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_S}s | modules: %d | tests: %d\n" \
+        "$MODULES_COUNT" "$TEST_COUNT"
 else
-    echo "dx: FAILED (${ELAPSED_S}s, exit ${EXIT_CODE})"
+    printf "${C_RED}${E_FAIL} FAILED${C_RESET} | time: ${ELAPSED_S}s (exit ${EXIT_CODE}) | failures: %d\n" \
+        "$TEST_FAILED"
+    printf "\n${C_YELLOW}→${C_RESET} Debug: ${C_CYAN}cat /tmp/dx-build-log.txt | tail -50${C_RESET}\n"
+    printf "${C_YELLOW}→${C_RESET} Run again: ${C_CYAN}DX_VERBOSE=1 bash scripts/dx.sh${C_RESET}\n\n"
     exit $EXIT_CODE
 fi
+echo ""

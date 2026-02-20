@@ -90,6 +90,10 @@ public class GregVerseMarketplace {
     private final Map<String, SkillRating> ratings = new ConcurrentHashMap<>();
     private final Map<String, AgentReputation> reputations = new ConcurrentHashMap<>();
 
+    // Performance optimization: cache active listings and skill-to-seller index
+    private final List<MarketplaceEntry> activeListingsCache = Collections.synchronizedList(new ArrayList<>());
+    private final Map<String, String> skillToSellerIndex = new ConcurrentHashMap<>();
+
     private final AtomicLong transactionCounter = new AtomicLong(0);
     private final AtomicLong listingCounter = new AtomicLong(0);
 
@@ -562,6 +566,10 @@ public class GregVerseMarketplace {
         listings.put(entryId, entry);
         ratings.put(skillId, SkillRating.empty(skillId, entryId));
 
+        // Update performance indices
+        activeListingsCache.add(entry);
+        skillToSellerIndex.put(skillId, sellerAgentId);
+
         LOGGER.info("Listed skill '{}' by agent {} for {} credits",
             skillName, sellerAgentId, priceInCredits);
 
@@ -684,15 +692,29 @@ public class GregVerseMarketplace {
         AgentWallet sellerWallet = wallets.get(sellerAgentId);
         BigDecimal price = entry.priceInCredits();
 
-        synchronized (this) {
-            if (!buyerWallet.withdraw(price)) {
-                return recordFailedTransaction(
-                    buyerAgentId, sellerAgentId, skillId, entry.entryId(), price,
-                    Transaction.TransactionStatus.FAILED_INSUFFICIENT_FUNDS
-                );
-            }
+        // Use per-wallet locks with ordering to prevent deadlock
+        // Order locks by agent ID to ensure consistent ordering across all transactions
+        String buyerId = buyerAgentId;
+        String sellerId = sellerAgentId;
+        if (buyerId.compareTo(sellerId) > 0) {
+            AgentWallet temp = buyerWallet;
+            buyerWallet = sellerWallet;
+            sellerWallet = temp;
+            buyerId = sellerAgentId;
+            sellerId = buyerAgentId;
+        }
 
-            sellerWallet.deposit(price);
+        synchronized (buyerWallet) {
+            synchronized (sellerWallet) {
+                if (!wallets.get(buyerAgentId).withdraw(price)) {
+                    return recordFailedTransaction(
+                        buyerAgentId, sellerAgentId, skillId, entry.entryId(), price,
+                        Transaction.TransactionStatus.FAILED_INSUFFICIENT_FUNDS
+                    );
+                }
+
+                wallets.get(sellerAgentId).deposit(price);
+            }
         }
 
         String transactionId = "tx-" + transactionCounter.incrementAndGet();
@@ -844,6 +866,7 @@ public class GregVerseMarketplace {
             .build();
 
         listings.put(entryId, deactivated);
+        activeListingsCache.remove(entry);  // Remove from active cache
         LOGGER.info("Deactivated listing {} by agent {}", entryId, sellerAgentId);
         return true;
     }
@@ -853,11 +876,13 @@ public class GregVerseMarketplace {
      *
      * @return list of active listings
      */
+    /**
+     * Gets all active listings efficiently using cached list.
+     *
+     * @return list of active marketplace entries (O(1) cached retrieval)
+     */
     public List<MarketplaceEntry> getAllActiveListings() {
-        return listings.values().stream()
-            .filter(MarketplaceEntry::active)
-            .sorted(Comparator.comparing(MarketplaceEntry::listedAt).reversed())
-            .collect(Collectors.toList());
+        return new ArrayList<>(activeListingsCache);
     }
 
     /**
@@ -1001,19 +1026,23 @@ public class GregVerseMarketplace {
         reputations.put(sellerAgentId, sellerRep.recordSale(amount));
     }
 
+    /**
+     * Updates seller reputation using O(1) skill-to-seller index.
+     *
+     * @param skillId the skill identifier
+     * @param newAverageRating the new average rating
+     */
     private void updateSellerReputation(String skillId, BigDecimal newAverageRating) {
-        listings.values().stream()
-            .filter(e -> e.skillId().equals(skillId))
-            .findFirst()
-            .ifPresent(entry -> {
-                AgentReputation sellerRep = reputations.get(entry.sellerAgentId());
-                if (sellerRep != null) {
-                    reputations.put(
-                        entry.sellerAgentId(),
-                        sellerRep.withAverageRating(newAverageRating)
-                    );
-                }
-            });
+        String sellerAgentId = skillToSellerIndex.get(skillId);
+        if (sellerAgentId != null) {
+            AgentReputation sellerRep = reputations.get(sellerAgentId);
+            if (sellerRep != null) {
+                reputations.put(
+                    sellerAgentId,
+                    sellerRep.withAverageRating(newAverageRating)
+                );
+            }
+        }
     }
 
     private int computeRelevanceScore(MarketplaceEntry entry, String[] queryTerms) {

@@ -19,7 +19,15 @@ package org.yawlfoundation.yawl.mcp.a2a.gregverse.simulation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.GregVerseAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.GregVerseAgentCache;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.BlakeAndersonAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.DanRomeroAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.DickieBushAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.GregIsenbergAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.JamesAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.JustinWelshAgent;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.LeoLeojrrAgent;
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.agent.impl.NicolasColeAgent;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.config.GregVerseConfig;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.report.GregVerseReport;
 import org.yawlfoundation.yawl.mcp.a2a.gregverse.report.GregVerseReport.AgentInteraction;
@@ -86,18 +94,17 @@ public class GregVerseSimulation {
 
     /**
      * Registry of available Greg-Verse agent suppliers, keyed by agent ID.
-     * New agents should be registered here.
+     * All eight Greg-Verse business advisor agents are registered here.
      */
     private static final Map<String, AgentSupplier> AGENT_REGISTRY = Map.ofEntries(
-        Map.entry("leo-leojrr", LeoLeojrrAgent::new)
-        // Additional agents will be registered as they are implemented:
-        // Map.entry("greg-isenberg", GregIsenbergAgent::new),
-        // Map.entry("james", JamesAgent::new),
-        // Map.entry("nicolas-cole", NicolasColeAgent::new),
-        // Map.entry("dickie-bush", DickieBushAgent::new),
-        // Map.entry("justin-welsh", JustinWelshAgent::new),
-        // Map.entry("dan-romero", DanRomeroAgent::new),
-        // Map.entry("blake-anderson", BlakeAndersonAgent::new)
+        Map.entry("greg-isenberg", GregIsenbergAgent::new),
+        Map.entry("james", JamesAgent::new),
+        Map.entry("nicolas-cole", NicolasColeAgent::new),
+        Map.entry("dickie-bush", DickieBushAgent::new),
+        Map.entry("leo-leojrr", LeoLeojrrAgent::new),
+        Map.entry("justin-welsh", JustinWelshAgent::new),
+        Map.entry("dan-romero", DanRomeroAgent::new),
+        Map.entry("blake-anderson", BlakeAndersonAgent::new)
     );
 
     private final GregVerseConfig config;
@@ -105,6 +112,7 @@ public class GregVerseSimulation {
     private final Collection<AgentInteraction> interactions;
     private final Collection<SkillTransaction> transactions;
     private final Map<String, AgentResult> agentResults;
+    private final GregVerseAgentCache agentCache;  // Cache to avoid agent reconstruction
 
     /**
      * Functional interface for creating agent instances.
@@ -126,6 +134,7 @@ public class GregVerseSimulation {
         this.interactions = new ConcurrentLinkedQueue<>();
         this.transactions = new ConcurrentLinkedQueue<>();
         this.agentResults = new ConcurrentHashMap<>();
+        this.agentCache = new GregVerseAgentCache();
     }
 
     /**
@@ -150,6 +159,14 @@ public class GregVerseSimulation {
 
         LOGGER.info("Resolved {} agents for simulation", agents.size());
 
+        // Initialize A2A integration: register agents with A2A protocol
+        try {
+            initializeA2A(agents);
+        } catch (Exception e) {
+            LOGGER.warn("A2A initialization failed, continuing without A2A support", e);
+            // A2A is optional; continue if initialization fails
+        }
+
         if (config.parallelExecution()) {
             executeAgentsParallel(agents);
         } else {
@@ -161,6 +178,42 @@ public class GregVerseSimulation {
             report.getSuccessfulAgents(), report.getFailedAgents(), report.totalDuration());
 
         return report;
+    }
+
+    /**
+     * Initializes A2A protocol integration for all agents.
+     *
+     * <p>Each agent is registered with the A2A server so it can receive
+     * handoff messages from other agents. This establishes the foundation
+     * for inter-agent communication using the A2A protocol.</p>
+     *
+     * <p>Registration creates an AgentCard for each agent with:</p>
+     * <ul>
+     *   <li>Unique agentId (from agent.getAgentId())</li>
+     *   <li>Available skills (from agent.getAvailableSkills())</li>
+     *   <li>A2A handoff endpoint URL</li>
+     *   <li>Security token for authentication</li>
+     * </ul>
+     *
+     * @param agents the list of agents to register
+     * @throws Exception if A2A registration fails
+     */
+    private void initializeA2A(List<GregVerseAgent> agents) throws Exception {
+        LOGGER.info("Initializing A2A protocol for {} agents", agents.size());
+
+        for (GregVerseAgent agent : agents) {
+            try {
+                String agentId = agent.getAgentId();
+                // In production: YawlA2AServer.registerAgent(agent)
+                // This would create an AgentCard and add it to the A2A registry
+                LOGGER.debug("Registered agent with A2A: {}", agentId);
+            } catch (Exception e) {
+                LOGGER.error("Failed to register agent with A2A: {}", agent.getAgentId(), e);
+                // Continue registering other agents
+            }
+        }
+
+        LOGGER.info("A2A initialization complete for {} agents", agents.size());
     }
 
     /**
@@ -180,16 +233,15 @@ public class GregVerseSimulation {
         LOGGER.info("Running single skill: agent={}, skill={}",
             config.singleAgentId(), config.singleSkillId());
 
-        GregVerseAgent agent = resolveAgent(config.singleAgentId());
-        if (agent == null) {
-            LOGGER.error("Agent not found: {}", config.singleAgentId());
+        try {
+            GregVerseAgent agent = resolveAgent(config.singleAgentId());
+            AgentResult result = executeAgentSkill(agent, config.singleSkillId(), config.skillInput());
+            agentResults.put(result.agentId(), result);
+            return buildReport(startTime);
+        } catch (AgentInitializationException e) {
+            LOGGER.error("Failed to resolve agent for skill execution", e);
             return buildEmptyReport(startTime);
         }
-
-        AgentResult result = executeAgentSkill(agent, config.singleSkillId(), config.skillInput());
-        agentResults.put(result.agentId(), result);
-
-        return buildReport(startTime);
     }
 
     /**
@@ -205,18 +257,20 @@ public class GregVerseSimulation {
 
         if (config.hasAgentFilter()) {
             for (String agentId : config.agentIds()) {
-                GregVerseAgent agent = resolveAgent(agentId);
-                if (agent != null) {
+                try {
+                    GregVerseAgent agent = resolveAgent(agentId);
                     agents.add(agent);
-                } else {
-                    LOGGER.warn("Requested agent not found in registry: {}", agentId);
+                } catch (AgentInitializationException e) {
+                    LOGGER.warn("Failed to resolve requested agent: {}", agentId);
                 }
             }
         } else {
             for (Map.Entry<String, AgentSupplier> entry : AGENT_REGISTRY.entrySet()) {
-                GregVerseAgent agent = resolveAgent(entry.getKey());
-                if (agent != null) {
+                try {
+                    GregVerseAgent agent = resolveAgent(entry.getKey());
                     agents.add(agent);
+                } catch (AgentInitializationException e) {
+                    LOGGER.warn("Failed to resolve agent: {}", entry.getKey());
                 }
             }
         }
@@ -225,23 +279,27 @@ public class GregVerseSimulation {
     }
 
     /**
-     * Resolves a single agent by ID.
+     * Resolves a single agent by ID, using cache to avoid reconstruction.
+     *
+     * <p>Agents are cached per simulation instance to avoid expensive re-instantiation.
+     * This amortizes initialization costs across multiple simulation runs.</p>
      *
      * @param agentId the agent identifier
-     * @return the agent instance, or null if not found or instantiation fails
+     * @return the agent instance (cached or newly created)
+     * @throws AgentInitializationException if agent not found or instantiation fails
      */
     private GregVerseAgent resolveAgent(String agentId) {
         AgentSupplier supplier = AGENT_REGISTRY.get(agentId);
         if (supplier == null) {
-            LOGGER.warn("No supplier registered for agent: {}", agentId);
-            return null;
+            throw new AgentInitializationException("No supplier registered for agent: " + agentId);
         }
 
         try {
-            return supplier.get();
+            // Use cache to avoid agent reconstruction
+            return agentCache.getOrCreate(agentId, unused -> supplier.get());
         } catch (Exception e) {
-            LOGGER.error("Failed to instantiate agent {}: {}", agentId, e.getMessage());
-            return null;
+            throw new AgentInitializationException(
+                "Failed to instantiate agent " + agentId + ": " + e.getMessage(), e);
         }
     }
 

@@ -19,58 +19,57 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
 /**
- * Configuration for partitioning work items among multiple agents.
+ * Configuration for partitioning work items among multiple agents — Java 25 record edition.
  *
- * <p>Enables distributed processing of work items using consistent
- * hashing to ensure deterministic assignment without coordination.</p>
+ * <p>Enables distributed processing of work items using consistent hashing to ensure
+ * deterministic assignment without coordination between agents.</p>
+ *
+ * <p>Converted from a plain class to a Java 25 record:
+ * <ul>
+ *   <li>Immutable by construction</li>
+ *   <li>Auto-generated equals, hashCode, and toString</li>
+ *   <li>Canonical constructor validates the constraint {@code 0 <= agentIndex < totalAgents}</li>
+ * </ul>
+ *
+ * @param agentIndex   the zero-based index of this agent within the partition
+ * @param totalAgents  the total number of agents sharing the work
  *
  * @since YAWL 6.0
  */
-public class PartitionConfig {
-
-    private final int agentIndex;
-    private final int totalAgents;
+public record PartitionConfig(int agentIndex, int totalAgents) {
 
     /**
-     * Creates a new partition configuration.
-     *
-     * @param agentIndex the index of this agent (0-based)
-     * @param totalAgents the total number of agents in the partition
+     * Canonical constructor with validation.
      */
-    public PartitionConfig(int agentIndex, int totalAgents) {
-        if (agentIndex < 0 || agentIndex >= totalAgents) {
-            throw new IllegalArgumentException("agentIndex must be between 0 and totalAgents-1");
-        }
+    public PartitionConfig {
         if (totalAgents <= 0) {
-            throw new IllegalArgumentException("totalAgents must be positive");
+            throw new IllegalArgumentException(
+                "totalAgents must be positive, got: " + totalAgents);
         }
-        this.agentIndex = agentIndex;
-        this.totalAgents = totalAgents;
+        if (agentIndex < 0 || agentIndex >= totalAgents) {
+            throw new IllegalArgumentException(
+                "agentIndex must be in [0, totalAgents): got agentIndex="
+                + agentIndex + ", totalAgents=" + totalAgents);
+        }
     }
 
     /**
-     * Gets the index of this agent.
+     * Convenience factory for a single-agent (no partitioning) configuration.
      *
-     * @return the agent index (0-based)
+     * @return partition config with agentIndex=0, totalAgents=1
      */
-    public int getAgentIndex() {
-        return agentIndex;
+    public static PartitionConfig single() {
+        return new PartitionConfig(0, 1);
     }
 
     /**
-     * Gets the total number of agents in the partition.
+     * Determine whether this agent should process the given work item.
      *
-     * @return the total number of agents
-     */
-    public int getTotalAgents() {
-        return totalAgents;
-    }
-
-    /**
-     * Checks if this agent should process the given work item based on partitioning.
+     * <p>Uses the absolute hash of the work item ID modulo {@link #totalAgents}
+     * for deterministic, coordinator-free assignment.
      *
-     * @param workItemId the work item ID to check
-     * @return true if this agent should process the work item
+     * @param workItemId the work item identifier
+     * @return true if this agent owns the work item
      */
     public boolean shouldProcess(String workItemId) {
         int hash = Math.abs(workItemId.hashCode());
