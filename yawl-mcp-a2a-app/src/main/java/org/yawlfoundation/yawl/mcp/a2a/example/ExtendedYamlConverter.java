@@ -131,12 +131,15 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                     continue;
                 }
 
+                // Normalize type name: strip namespace prefix (xs:string -> string)
+                String normalizedType = normalizeTypeName(varType);
+
                 if (isInputParam) {
                     // inputParam for variables passed into the workflow
                     xml.append("      <inputParam>\n");
                     xml.append("        <index>").append(index).append("</index>\n");
                     xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
-                    xml.append("        <type>").append(escapeXml(varType)).append("</type>\n");
+                    xml.append("        <type>").append(escapeXml(normalizedType)).append("</type>\n");
                     if (defaultValue != null) {
                         xml.append("        <initialValue>").append(escapeXml(defaultValue)).append("</initialValue>\n");
                     }
@@ -146,7 +149,7 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                     xml.append("      <localVariable>\n");
                     xml.append("        <index>").append(index).append("</index>\n");
                     xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
-                    xml.append("        <type>").append(escapeXml(varType)).append("</type>\n");
+                    xml.append("        <type>").append(escapeXml(normalizedType)).append("</type>\n");
                     if (defaultValue != null) {
                         xml.append("        <initialValue>").append(escapeXml(defaultValue)).append("</initialValue>\n");
                     }
@@ -411,6 +414,25 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             return (Boolean) value;
         }
         return defaultValue;
+    }
+
+    /**
+     * Normalize a type name by stripping namespace prefix.
+     * YAWL schema 4.0 requires NCName for type element (e.g., "string" not "xs:string").
+     *
+     * @param typeName the type name, possibly with namespace prefix
+     * @return the normalized type name without namespace prefix
+     */
+    private String normalizeTypeName(String typeName) {
+        if (typeName == null) {
+            return "string"; // default type
+        }
+        // Strip namespace prefix (xs:string -> string, xsd:int -> int, etc.)
+        int colonIndex = typeName.lastIndexOf(':');
+        if (colonIndex >= 0 && colonIndex < typeName.length() - 1) {
+            return typeName.substring(colonIndex + 1);
+        }
+        return typeName;
     }
 
     // --- Helper methods (private in parent, so reimplemented here) ---

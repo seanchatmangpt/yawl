@@ -92,7 +92,7 @@ public class VirtualThreadConfig implements AsyncConfigurer {
     public VirtualThreadConfig(VirtualThreadProperties properties) {
         this.properties = properties;
         _logger.info("VirtualThreadConfig initialized: enabled={}, shutdownTimeout={}s",
-                     properties.enabled(), properties.gracefulShutdownSeconds());
+                     properties.enabled(), properties.getGracefulShutdownSecondsOrDefault());
     }
 
     /**
@@ -146,15 +146,15 @@ public class VirtualThreadConfig implements AsyncConfigurer {
     @Bean
     @ConditionalOnProperty(prefix = "yawl.a2a.virtual-threads", name = "enabled", havingValue = "true", matchIfMissing = true)
     public HttpClient virtualThreadHttpClient() {
+        int timeoutSeconds = properties.getHttpClientTimeoutSecondsOrDefault();
         HttpClient client = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(properties.httpClientTimeoutSeconds()))
+            .connectTimeout(Duration.ofSeconds(timeoutSeconds))
             .executor(Executors.newVirtualThreadPerTaskExecutor())
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
-        _logger.info("Virtual thread HttpClient created with timeout={}s",
-                     properties.httpClientTimeoutSeconds());
+        _logger.info("Virtual thread HttpClient created with timeout={}s", timeoutSeconds);
         return client;
     }
 
@@ -201,6 +201,28 @@ public class VirtualThreadConfig implements AsyncConfigurer {
                 DEFAULT_GRACEFUL_SHUTDOWN_SECONDS,
                 DEFAULT_HTTP_CLIENT_TIMEOUT_SECONDS
             );
+        }
+
+        /**
+         * Gets the HTTP client timeout with default fallback.
+         *
+         * @return the HTTP client timeout in seconds, never zero or negative
+         */
+        public int getHttpClientTimeoutSecondsOrDefault() {
+            return httpClientTimeoutSeconds > 0
+                ? httpClientTimeoutSeconds
+                : DEFAULT_HTTP_CLIENT_TIMEOUT_SECONDS;
+        }
+
+        /**
+         * Gets the graceful shutdown timeout with default fallback.
+         *
+         * @return the graceful shutdown timeout in seconds, never zero or negative
+         */
+        public int getGracefulShutdownSecondsOrDefault() {
+            return gracefulShutdownSeconds > 0
+                ? gracefulShutdownSeconds
+                : DEFAULT_GRACEFUL_SHUTDOWN_SECONDS;
         }
     }
 }

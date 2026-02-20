@@ -49,10 +49,12 @@ public class McpRetryWithJitter {
     /**
      * Creates a new retry mechanism with the given configuration.
      *
-     * @param properties the retry configuration properties
+     * @param properties the retry configuration properties (uses defaults if null)
      */
     public McpRetryWithJitter(CircuitBreakerProperties.RetryConfig properties) {
-        this.properties = Objects.requireNonNull(properties, "properties must not be null");
+        this.properties = properties != null
+            ? properties
+            : CircuitBreakerProperties.RetryConfig.defaults();
         this.retry = createRetry();
         this.retryObservability = RetryObservability.getInstance();
     }
@@ -61,10 +63,12 @@ public class McpRetryWithJitter {
      * Creates a new retry mechanism for a specific server.
      *
      * @param serverName the MCP server name
-     * @param properties the retry configuration properties
+     * @param properties the retry configuration properties (uses defaults if null)
      */
     public McpRetryWithJitter(String serverName, CircuitBreakerProperties.RetryConfig properties) {
-        this.properties = Objects.requireNonNull(properties, "properties must not be null");
+        this.properties = properties != null
+            ? properties
+            : CircuitBreakerProperties.RetryConfig.defaults();
         this.retry = createRetryForServer(serverName);
         this.retryObservability = RetryObservability.getInstance();
     }
