@@ -25,9 +25,12 @@ If uncertain which rule applies → **stop and re-read this stack**.
 Before ANY tool call (Bash|Task|Read|Glob|Grep|Write|Edit):
 
 ```
-1. Ψ gate:    [ ] Stale facts? Run observatory.sh | [ ] Pick 1 quantum (module + path)?
-2. Fanout:    [ ] N independent quantums? (N ≤ 8) | [ ] Zero file overlap? (check shared-src.json)
-3. Λ context: [ ] Which rule file activates? | [ ] DX loop ready?
+1. Ψ gate:    [ ] Stale facts? Run observatory.sh | [ ] Pick 1 quantum OR detect N ≥ 2 quantums?
+2. τ detect:  [ ] Detected N ≥ 2 quantums? → RUN: bash .claude/hooks/team-recommendation.sh "task"
+              [ ] Hook says TEAM? → Proceed to team mode (default for multi-quantum)
+              [ ] Hook says SINGLE SESSION? → Proceed single quantum
+              (This is AUTOMATIC—teams are default for suitable tasks)
+3. Λ context: [ ] Which rule file activates? (teams/**, engine/**, schema/**, etc.) | [ ] DX loop ready?
 4. H filter:  [ ] Will hook block this? (search H = {TODO,mock,stub,fake,empty,lie})
 5. Q check:   [ ] Real impl ∨ throw? | [ ] No silent fallback?
 6. Ω guard:   [ ] emit channel? | [ ] Session ID set? | [ ] Specific files, not git add .
@@ -35,7 +38,11 @@ Before ANY tool call (Bash|Task|Read|Glob|Grep|Write|Edit):
 
 **Decision Tree**:
 - Ψ facts stale? → `bash scripts/observatory/observatory.sh` + re-read fact file
-- Multiple orthogonal quantums? → Spawn agents (Fanout) instead of sequential work
+- Multiple orthogonal quantums (N ∈ {2,3,4,5})? → **Default: Summon team (τ)** unless user requests single session
+  - Check Ψ.facts/shared-src.json for file conflicts
+  - If N > 5 → reduce scope or split into sequential tasks
+  - If teammates need messaging/collaboration → teams (τ)
+  - If N are purely independent (report-only) → subagents (μ)
 - Cannot pick 1 quantum? → STOP. Read `Ψ.facts/modules.json` + `gates.json`
 - H blocks? → Fix violation for real (don't work around hook)
 - Ω uncertain? → Ask user before Write/Edit outside emit
@@ -401,6 +408,7 @@ bash scripts/dx.sh all → git add <files> → commit with session URL → git p
 
 | Quantum | Rule File | Path Pattern |
 |---------|-----------|--------------|
+| **Teams (τ)** | `teams/team-decision-framework.md` | Multi-quantum tasks (2-5 independent axes) |
 | **Toolchain** | `build/dx-workflow.md` | pom.xml, scripts/, .mvn/ |
 | **Toolchain** | `build/maven-modules.md` | pom.xml, .mvn/ |
 | **Dependency** | `config/static-analysis.md` | checkstyle.xml, pmd, spotbugs, .github/ |
@@ -419,7 +427,9 @@ bash scripts/dx.sh all → git add <files> → commit with session URL → git p
 | **Any** | `testing/chicago-tdd.md` | **/src/test/**, test/** |
 | **Any** | `docker/container-conventions.md` | Dockerfile*, docker-compose*, kubernetes/ |
 
-**Procedure**: Quantum picked → identify files → load matching rule file(s) → proceed.
+**Procedure**: Detect quantums → run `bash .claude/hooks/team-recommendation.sh` (automatic via PreToolUse) → load matching rule file(s) → proceed.
+
+**Hook automation**: Teams are DEFAULT for N ≥ 2 quantums. Override only with explicit user request.
 
 ---
 
@@ -467,6 +477,10 @@ Q: real_impl ∨ throw ∧ ¬mock ∧ ¬lie?
 |-----------|--------|------|
 | Cannot state which module → code belongs? | Read `Ψ.facts/modules.json` | Ψ |
 | Exploring >3 files for 1 answer? | Run `bash scripts/observatory/observatory.sh` | Ψ |
+| N quantums detected but unclear if team needed? | Read Team vs Subagents vs Single Session table + use decision tree | τ |
+| Tempted to spawn team for single quantum? | Don't. Use single session. Teams add 3-5× cost. | τ |
+| Team has >5 teammates? | Reduce scope or split into sequential phases. | τ |
+| Team never needs to message each other? | Use subagents instead (cheaper, simpler). | τ |
 | Hook blocked Write\|Edit? | Fix violation for real. Don't work around. | H |
 | Unsure file in emit vs ⊗? | Ask user before touching. | Ω |
 | Context usage >70%? | Checkpoint + summarize. Batch remaining. | Meta |
