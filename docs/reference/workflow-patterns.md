@@ -15,7 +15,7 @@ Sources authoritative for this document:
 
 The YAWL Workflow Pattern Library is grounded in the formal Workflow Patterns framework by van der Aalst et al. (2003). YAWL's Petri net engine is capable of expressing all 89 patterns catalogued in that framework across six dimensions: control flow, data, resource, exception, service interaction, and cancellation.
 
-The pattern library (v6.0.0) provides 20 documented, executable pattern templates. The library organises patterns into three categories: Control Flow (WCP-), Enterprise (ENT-), and Agent (AGT-). Templates validate against `schema/YAWL_Schema6.0.xsd`.
+The pattern library (v6.0.0) provides 20 documented, executable pattern templates. The library organises patterns into three categories: Control Flow (WCP-), Enterprise (ENT-), and Agent (AGT-). Templates validate against `schema/YAWL_Schema4.0.xsd`.
 
 **Pattern library API:**
 
@@ -118,13 +118,17 @@ Pre-built templates for common business workflow scenarios. Each composes one or
 
 ## Agent Patterns (AGT-)
 
-Patterns for integrating autonomous agents and LLMs into YAWL workflows. Require YAWL Schema 6.0 and the `<agentBinding>` element.
+> **STATUS:** Agent patterns require YAWL Schema 6.0 (PLANNED - not yet implemented).
+> These patterns will be available once Schema 6.0 is created.
+> See [ADR-013: Schema Versioning Strategy](../../architecture/decisions/ADR-013-schema-versioning-strategy.md)
+
+Patterns for integrating autonomous agents and LLMs into YAWL workflows. When YAWL Schema 6.0 is released, these patterns will use the `<agentBinding>` element.
 
 | Pattern ID | Pattern Name | Category | Complexity | YAWL Mechanism | YAWL Schema Requirement | Use Case |
 |---|---|---|---|---|---|---|
-| AGT-AGENT-ASSISTED | Agent-Assisted Task | Decision Support | INTERMEDIATE | `SEQUENCE` | Schema 6.0, `<agentBinding>` | An autonomous agent performs preliminary work (draft, analysis, recommendation) and writes output to a task's data. A human reviews and either accepts or modifies before completing the task. Example: AI drafts response; human reviews and submits. |
-| AGT-LLM-DECISION | LLM Decision Point | Autonomous Routing | ADVANCED | `XOR_SPLIT` | Schema 6.0, `<agentBinding>` | An LLM agent analyses task input data and selects one of N routing branches. The agent's decision is written as a structured output value that drives an `XOR_SPLIT` guard. Example: classify incoming support tickets by content and route to specialised teams. |
-| AGT-HUMAN-AGENT-HANDOFF | Human-Agent Handoff | Fallback | INTERMEDIATE | `XOR_SPLIT`, `XOR_JOIN` | Schema 6.0, `<agentBinding>` | An agent attempts the task. On failure, low confidence, or timeout, the task is automatically handed off to a human participant. Both paths converge at the same completion point via `XOR_JOIN`. Example: agent fails, task assigned to on-call human. |
+| AGT-AGENT-ASSISTED | Agent-Assisted Task | Decision Support | INTERMEDIATE | `SEQUENCE` | YAWL 6.0 (planned), `<agentBinding>` | An autonomous agent performs preliminary work (draft, analysis, recommendation) and writes output to a task's data. A human reviews and either accepts or modifies before completing the task. Example: AI drafts response; human reviews and submits. |
+| AGT-LLM-DECISION | LLM Decision Point | Autonomous Routing | ADVANCED | `XOR_SPLIT` | YAWL 6.0 (planned), `<agentBinding>` | An LLM agent analyses task input data and selects one of N routing branches. The agent's decision is written as a structured output value that drives an `XOR_SPLIT` guard. Example: classify incoming support tickets by content and route to specialised teams. |
+| AGT-HUMAN-AGENT-HANDOFF | Human-Agent Handoff | Fallback | INTERMEDIATE | `XOR_SPLIT`, `XOR_JOIN` | YAWL 6.0 (planned), `<agentBinding>` | An agent attempts the task. On failure, low confidence, or timeout, the task is automatically handed off to a human participant. Both paths converge at the same completion point via `XOR_JOIN`. Example: agent fails, task assigned to on-call human. |
 
 ---
 
@@ -179,6 +183,6 @@ YAWL's resource service implements the van der Aalst resource patterns. These ar
 - **van der Aalst, W.M.P., et al. (2003):** Workflow Patterns. LNCS 2626.
 - **Russell, N., et al. (2006):** Workflow Data Patterns. QUT Technical Report FIT-TR-2006-04.
 - **YAWL Book (2009):** Modern Business Process Automation. Springer. ISBN 978-3-642-03120-5.
-- **YAWL Schema 6.0:** `/home/user/yawl/schema/YAWL_Schema6.0.xsd`
+- **YAWL Schema Status:** See [ADR-013](../../architecture/decisions/ADR-013-schema-versioning-strategy.md) for versioning strategy. Current production schema: YAWL_Schema4.0.xsd. YAWL Schema 6.0 (planned) will introduce agent binding support.
 - **Pattern Registry:** `/home/user/yawl/docs/patterns/registry.json`
 - **ADR-020:** `/home/user/yawl/docs/architecture/decisions/ADR-020-workflow-pattern-library.md`
