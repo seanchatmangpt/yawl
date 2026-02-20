@@ -19,22 +19,19 @@ package org.yawlfoundation.yawl.mcp.a2a.example;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Extended YAML converter supporting all YAWL patterns with advanced features.
+ * Extended YAML converter producing YAWL Schema 4.0 compliant XML.
  *
  * <p>Enhances the base YawlYamlConverter with support for:
- * - Variables and data types
- * - Multi-instance patterns
- * - Timers and deadlines
- * - Cancellation patterns
- * - Agent tasks
- * - Compensations
- * - Business rules
- * - Complex conditions</p>
+ * - Variables as inputParam/localVariable (DecompositionFactsType)
+ * - Multi-instance tasks (MultipleInstanceExternalTaskFactsType)
+ * - Timers with OnEnabled/OnExecuting triggers (TimerType)
+ * - Cancellation via removesTokens (ExternalTaskFactsType)
+ * - Complex conditions with predicates and default flows
+ * - WebServiceGateway task decompositions</p>
  *
- * <p>Generates schema-compliant YAWL XML 4.0 using namespace
+ * <p>All output validates against YAWL_Schema4.0.xsd with namespace
  * http://www.yawlfoundation.org/yawlschema</p>
  *
  * @author YAWL Foundation
@@ -77,7 +74,18 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
     }
 
     /**
-     * Generate XML from extended specification
+     * Generate schema-compliant YAWL XML 4.0 from extended specification.
+     *
+     * <p>Element order per XSD types:
+     * <ul>
+     *   <li>specificationSet: specification+, layout?</li>
+     *   <li>specification: name?, documentation?, metaData, xs:any?, decomposition+, importedNet*</li>
+     *   <li>decomposition (NetFactsType): name?, documentation?, inputParam*, outputParam*,
+     *       logPredicate?, localVariable*, processControlElements, externalDataGateway?</li>
+     *   <li>task (ExternalTaskFactsType): name?, documentation?, flowsInto+, join, split,
+     *       removesTokens*, removesTokensFromFlow*, startingMappings?, completedMappings?,
+     *       enablementMappings?, timer?, resourcing?, customForm?, decomposesTo?</li>
+     * </ul></p>
      */
     @SuppressWarnings("unchecked")
     private String generateExtendedXml(Map<String, Object> spec) {
@@ -88,11 +96,10 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         String firstTask = getString(spec, "first", null);
         List<Map<String, Object>> tasks = getTasks(spec);
         List<Map<String, Object>> variables = getVariables(spec);
-        List<Map<String, Object>> compensations = getCompensations(spec);
 
         xml.append("<specificationSet xmlns=\"").append(NAMESPACE).append("\" ")
            .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
-           .append("xsi:schemaLocation=\"").append(NAMESPACE).append(" YAWL_Schema4.0.xsd\" ")
+           .append("xsi:schemaLocation=\"").append(NAMESPACE).append(" ").append(NAMESPACE).append("/YAWL_Schema4.0.xsd\" ")
            .append("version=\"4.0\">\n");
         xml.append("  <specification uri=\"").append(escapeXml(uri)).append("\">\n");
 
@@ -114,11 +121,10 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
            .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
            .append("xsi:type=\"NetFactsType\">\n");
 
-        // decomposition/name element (required by schema before other child elements)
+        // decomposition/name element (optional per DecompositionFactsType)
         xml.append("      <name>").append(escapeXml(name)).append("Net</name>\n");
 
-        // Variable declarations as inputParam/localVariable BEFORE processControlElements
-        // Per YAWL 4.0 schema, variables must be inside decomposition, not inside processControlElements
+        // inputParam declarations (per DecompositionFactsType, before localVariable)
         if (variables != null && !variables.isEmpty()) {
             int index = 0;
             for (Map<String, Object> var : variables) {
@@ -131,11 +137,9 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                     continue;
                 }
 
-                // Normalize type name: strip namespace prefix (xs:string -> string)
                 String normalizedType = normalizeTypeName(varType);
 
                 if (isInputParam) {
-                    // inputParam for variables passed into the workflow
                     xml.append("      <inputParam>\n");
                     xml.append("        <index>").append(index).append("</index>\n");
                     xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
@@ -144,8 +148,25 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                         xml.append("        <initialValue>").append(escapeXml(defaultValue)).append("</initialValue>\n");
                     }
                     xml.append("      </inputParam>\n");
-                } else {
-                    // localVariable for internal workflow state
+                }
+                index++;
+            }
+
+            // localVariable declarations (per NetFactsType, after inputParam/outputParam)
+            index = 0;
+            for (Map<String, Object> var : variables) {
+                String varName = getString(var, "name", null);
+                String varType = getString(var, "type", "xs:string");
+                String defaultValue = getString(var, "default", null);
+                boolean isInputParam = getBoolean(var, "input", true);
+
+                if (varName == null) {
+                    continue;
+                }
+
+                String normalizedType = normalizeTypeName(varType);
+
+                if (!isInputParam) {
                     xml.append("      <localVariable>\n");
                     xml.append("        <index>").append(index).append("</index>\n");
                     xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
@@ -161,14 +182,13 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
 
         xml.append("      <processControlElements>\n");
 
-        // Input condition (start)
+        // Input condition (ExternalConditionFactsType: name?, documentation?, flowsInto+)
         xml.append("        <inputCondition id=\"i-top\">\n");
         xml.append("          <name>start</name>\n");
         if (firstTask != null) {
             xml.append("          <flowsInto><nextElementRef id=\"")
                .append(escapeXml(firstTask)).append("\"/></flowsInto>\n");
         } else if (!tasks.isEmpty()) {
-            // Default to first task
             String firstId = getString(tasks.get(0), "id", null);
             if (firstId != null) {
                 xml.append("          <flowsInto><nextElementRef id=\"")
@@ -177,37 +197,50 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         }
         xml.append("        </inputCondition>\n");
 
-        // Tasks - ordered per YAWL schema 4.0: name, documentation, flowsInto, join/split, other elements
+        // Tasks - element order per ExternalTaskFactsType:
+        //   name?, documentation?, flowsInto+, join, split, defaultConfiguration?,
+        //   configuration?, removesTokens*, removesTokensFromFlow*,
+        //   startingMappings?, completedMappings?, enablementMappings?,
+        //   timer?, resourcing?, customForm?, decomposesTo?
+        // Multi-instance tasks extend with: minimum, maximum, threshold,
+        //   creationMode, miDataInput, miDataOutput?
         for (Map<String, Object> task : tasks) {
             String taskId = getString(task, "id", null);
             if (taskId == null) {
                 continue;
             }
 
-            xml.append("        <task id=\"").append(escapeXml(taskId)).append("\">\n");
+            Map<String, Object> multiInstance = getMap(task, "multiInstance");
+            boolean isMiTask = multiInstance != null;
 
-            // 1. Name first (required by schema)
+            // Multi-instance tasks use xsi:type to declare the extended type
+            if (isMiTask) {
+                xml.append("        <task id=\"").append(escapeXml(taskId))
+                   .append("\" xsi:type=\"MultipleInstanceExternalTaskFactsType\">\n");
+            } else {
+                xml.append("        <task id=\"").append(escapeXml(taskId)).append("\">\n");
+            }
+
+            // 1. name (optional per schema, but always emit for clarity)
             String taskName = getString(task, "name", taskId);
             xml.append("          <name>").append(escapeXml(taskName)).append("</name>\n");
 
-            // 2. Documentation second (optional)
+            // 2. documentation (optional)
             String description = getString(task, "description", null);
             if (description != null) {
                 xml.append("          <documentation>").append(escapeXml(description)).append("</documentation>\n");
             }
 
-            // 3. flowsInto elements third
+            // 3. flowsInto+ (required, at least one)
             List<String> flows = getStringList(task, "flows");
             String condition = getString(task, "condition", null);
             String defaultFlow = getString(task, "default", null);
 
             for (String flow : flows) {
                 xml.append("          <flowsInto>\n");
-                // Map "end" to output condition id "o-top"
                 String targetId = "end".equals(flow) ? "o-top" : flow;
                 xml.append("            <nextElementRef id=\"").append(escapeXml(targetId)).append("\"/>\n");
 
-                // Check if this is the conditional flow
                 if (condition != null && condition.contains("->")) {
                     String[] parts = condition.split("->");
                     if (parts.length == 2) {
@@ -220,7 +253,6 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                     }
                 }
 
-                // Check if this is the default flow
                 if (defaultFlow != null && flow.equals(defaultFlow)) {
                     xml.append("            <isDefaultFlow/>\n");
                 }
@@ -228,114 +260,70 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 xml.append("          </flowsInto>\n");
             }
 
-            // 4. Join/Split fourth
-            String join = getString(task, "join", null);
-            String split = getString(task, "split", null);
+            // 4. join (REQUIRED by ExternalTaskFactsType, default to xor)
+            String join = getString(task, "join", "xor");
+            xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
 
-            if (join != null) {
-                xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
-            }
-            if (split != null) {
-                xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
-            }
+            // 5. split (REQUIRED by ExternalTaskFactsType, default to xor)
+            String split = getString(task, "split", "xor");
+            xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
 
-            // 5. Other elements: multiInstance, timer, cancellation, agent, approval, businessRules, decomposesTo
-
-            // Multi-instance configuration
-            Map<String, Object> multiInstance = getMap(task, "multiInstance");
-            if (multiInstance != null) {
-                xml.append("          <multiInstance>\n");
-                String min = getString(multiInstance, "min", "1");
-                String max = getString(multiInstance, "max", "1");
-                String mode = getString(multiInstance, "mode", "static");
-                String threshold = getString(multiInstance, "threshold", "all");
-
-                xml.append("            <minInstances>").append(min).append("</minInstances>\n");
-                xml.append("            <maxInstances>").append(max).append("</maxInstances>\n");
-                xml.append("            <instanceSelection>").append(mode).append("</instanceSelection>\n");
-                xml.append("            <completionThreshold>").append(threshold).append("</completionThreshold>\n");
-                xml.append("          </multiInstance>\n");
+            // 6. removesTokens (schema element for cancellation patterns)
+            List<String> cancels = getStringList(task, "cancels");
+            for (String cancel : cancels) {
+                xml.append("          <removesTokens id=\"").append(escapeXml(cancel)).append("\"/>\n");
             }
 
-            // Timer configuration
+            // 7. timer (optional, per TimerType: trigger + duration/expiry)
             Map<String, Object> timer = getMap(task, "timer");
             if (timer != null) {
                 xml.append("          <timer>\n");
-                String trigger = getString(timer, "trigger", "onEnabled");
-                String duration = getString(timer, "duration", "PT5M");
+                String trigger = normalizeTimerTrigger(getString(timer, "trigger", "OnEnabled"));
+                String duration = getString(timer, "duration", null);
+                String expiry = getString(timer, "expiry", null);
 
                 xml.append("            <trigger>").append(trigger).append("</trigger>\n");
-                xml.append("            <duration>").append(duration).append("</duration>\n");
+                if (duration != null) {
+                    xml.append("            <duration>").append(duration).append("</duration>\n");
+                } else if (expiry != null) {
+                    xml.append("            <expiry>").append(expiry).append("</expiry>\n");
+                } else {
+                    xml.append("            <duration>PT5M</duration>\n");
+                }
                 xml.append("          </timer>\n");
             }
 
-            // Cancellation configuration
-            List<String> cancels = getStringList(task, "cancels");
-            String cancelCondition = getString(task, "cancelCondition", null);
-            if (!cancels.isEmpty() || cancelCondition != null) {
-                xml.append("          <cancellation>\n");
-                for (String cancel : cancels) {
-                    xml.append("            <cancelsElement id=\"").append(escapeXml(cancel)).append("\"/>\n");
-                }
-                if (cancelCondition != null) {
-                    xml.append("            <condition>").append(escapeXml(cancelCondition)).append("</condition>\n");
-                }
-                xml.append("          </cancellation>\n");
-            }
-
-            // Agent configuration
-            Map<String, Object> agent = getMap(task, "agent");
-            if (agent != null) {
-                xml.append("          <agent>\n");
-                String agentType = getString(agent, "type", "human");
-                String binding = getString(agent, "binding", "static");
-                List<String> capabilities = getStringList(agent, "capabilities");
-
-                xml.append("            <agentType>").append(agentType).append("</agentType>\n");
-                xml.append("            <binding>").append(binding).append("</binding>\n");
-                if (!capabilities.isEmpty()) {
-                    xml.append("            <capabilities>\n");
-                    for (String cap : capabilities) {
-                        xml.append("              <capability>").append(cap).append("</capability>\n");
-                    }
-                    xml.append("            </capabilities>\n");
-                }
-                xml.append("          </agent>\n");
-            }
-
-            // Approval configuration
-            if (getBoolean(task, "approval", false)) {
-                xml.append("          <approval>true</approval>\n");
-                String approver = getString(task, "approver", null);
-                String amountThreshold = getString(task, "amountThreshold", null);
-                String approvalType = getString(task, "approvalType", "sequential");
-
-                if (approver != null) {
-                    xml.append("          <approver>").append(approver).append("</approver>\n");
-                }
-                if (amountThreshold != null) {
-                    xml.append("          <amountThreshold>").append(amountThreshold).append("</amountThreshold>\n");
-                }
-                xml.append("          <approvalType>").append(approvalType).append("</approvalType>\n");
-            }
-
-            // Business rules
-            List<String> businessRules = getStringList(task, "businessRules");
-            if (!businessRules.isEmpty()) {
-                xml.append("          <businessRules>\n");
-                for (String rule : businessRules) {
-                    xml.append("            <rule>").append(escapeXml(rule)).append("</rule>\n");
-                }
-                xml.append("          </businessRules>\n");
-            }
-
-            // Decomposition
+            // 8. decomposesTo (optional)
             xml.append("          <decomposesTo id=\"").append(escapeXml(taskId))
                .append("Decomposition\"/>\n");
+
+            // For multi-instance tasks: minimum, maximum, threshold, creationMode, miDataInput
+            if (isMiTask) {
+                String min = getString(multiInstance, "min", "1");
+                String max = getString(multiInstance, "max", "1");
+                String threshold = getString(multiInstance, "threshold", "1");
+                String mode = getString(multiInstance, "mode", "static");
+
+                xml.append("          <minimum>").append(min).append("</minimum>\n");
+                xml.append("          <maximum>").append(max).append("</maximum>\n");
+                xml.append("          <threshold>").append(threshold).append("</threshold>\n");
+                xml.append("          <creationMode code=\"").append(escapeXml(mode)).append("\"/>\n");
+
+                // miDataInput is required for MI tasks - generate minimal valid structure
+                String miVar = getString(multiInstance, "variable", "item");
+                String miQuery = getString(multiInstance, "query", "/net/data");
+                String miSplitQuery = getString(multiInstance, "splitQuery", "/data/" + miVar);
+                xml.append("          <miDataInput>\n");
+                xml.append("            <expression query=\"").append(escapeXml(miQuery)).append("\"/>\n");
+                xml.append("            <splittingExpression query=\"").append(escapeXml(miSplitQuery)).append("\"/>\n");
+                xml.append("            <formalInputParam>").append(escapeXml(miVar)).append("</formalInputParam>\n");
+                xml.append("          </miDataInput>\n");
+            }
+
             xml.append("        </task>\n");
         }
 
-        // Output condition (end)
+        // Output condition (OutputConditionFactsType: name?, documentation?)
         xml.append("        <outputCondition id=\"o-top\">\n");
         xml.append("          <name>end</name>\n");
         xml.append("        </outputCondition>\n");
@@ -343,7 +331,7 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         xml.append("      </processControlElements>\n");
         xml.append("    </decomposition>\n");
 
-        // Task decomposition definitions (must have proper structure with name element)
+        // Task decomposition definitions (WebServiceGatewayFactsType)
         for (Map<String, Object> task : tasks) {
             String taskId = getString(task, "id", null);
             if (taskId != null) {
@@ -357,26 +345,28 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             }
         }
 
-        // Compensation definitions
-        if (compensations != null && !compensations.isEmpty()) {
-            xml.append("    <compensations>\n");
-            for (Map<String, Object> comp : compensations) {
-                String compId = getString(comp, "id", null);
-                String description = getString(comp, "description", null);
-
-                xml.append("      <compensation id=\"").append(escapeXml(compId)).append("\">\n");
-                if (description != null) {
-                    xml.append("        <description>").append(escapeXml(description)).append("</description>\n");
-                }
-                xml.append("      </compensation>\n");
-            }
-            xml.append("    </compensations>\n");
-        }
-
         xml.append("  </specification>\n");
         xml.append("</specificationSet>");
 
         return xml.toString();
+    }
+
+    /**
+     * Normalize timer trigger value to match XSD TimerTriggerType enumeration.
+     * XSD requires PascalCase: "OnEnabled" or "OnExecuting".
+     *
+     * @param trigger the trigger value from YAML (may be lowercase)
+     * @return normalized trigger value matching XSD enumeration
+     */
+    private String normalizeTimerTrigger(String trigger) {
+        if (trigger == null) {
+            return "OnEnabled";
+        }
+        return switch (trigger.toLowerCase(Locale.ROOT)) {
+            case "onenabled", "on_enabled", "enabled" -> "OnEnabled";
+            case "onexecuting", "on_executing", "executing" -> "OnExecuting";
+            default -> trigger;
+        };
     }
 
     // --- Extended helper methods ---
@@ -386,15 +376,6 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         Object varsObj = spec.get("variables");
         if (varsObj instanceof List) {
             return (List<Map<String, Object>>) varsObj;
-        }
-        return new ArrayList<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> getCompensations(Map<String, Object> spec) {
-        Object compsObj = spec.get("compensations");
-        if (compsObj instanceof List) {
-            return (List<Map<String, Object>>) compsObj;
         }
         return new ArrayList<>();
     }
@@ -566,26 +547,22 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                     split: xor
                     join: xor
                     timer:
-                      trigger: onEnabled
+                      trigger: OnEnabled
                       duration: PT10M
 
                   - id: ProcessOrder
                     flows: [ShipItems]
                     split: xor
                     join: and
-                    agent:
-                      type: human
-                      binding: dynamic
-                      capabilities: [order-processing]
                     description: "Process customer order"
 
                   - id: ShipItems
                     flows: [end]
                     multiInstance:
                       min: 1
-                      max: count(/items/item)
+                      max: 10
                       mode: dynamic
-                      threshold: all
+                      threshold: 10
                     split: xor
                     join: and
                     description: "Ship order items"
@@ -595,10 +572,6 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                     split: xor
                     join: xor
                     description: "Cancel order"
-
-                compensations:
-                  - id: compensateShip
-                    description: "Reverse shipment"
                 """;
             System.out.println("=== Extended YAML Input ===\n");
         }
@@ -611,13 +584,12 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         System.out.println("\n=== Extended XML Output ===\n");
         System.out.println(xml);
 
-        System.out.println("\n=== Extended Features ===");
-        System.out.println("• Variables with types and defaults");
-        System.out.println("• Timers with duration");
-        System.out.println("• Agent tasks with capabilities");
-        System.out.println("• Multi-instance with dynamic mode");
-        System.out.println("• Compensations");
-        System.out.println("• Complex conditions");
-        System.out.println("• Business rules support");
+        System.out.println("\n=== Extended Features (Schema 4.0 Compliant) ===");
+        System.out.println("• Variables with types and defaults (inputParam/localVariable)");
+        System.out.println("• Timers with duration (OnEnabled/OnExecuting triggers)");
+        System.out.println("• Multi-instance tasks (MultipleInstanceExternalTaskFactsType)");
+        System.out.println("• Cancellation via removesTokens");
+        System.out.println("• Complex conditions with predicates");
+        System.out.println("• WebServiceGateway decompositions");
     }
 }

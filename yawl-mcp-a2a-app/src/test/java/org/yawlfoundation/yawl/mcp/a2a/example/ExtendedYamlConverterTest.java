@@ -476,7 +476,7 @@ class ExtendedYamlConverterTest {
         }
 
         @Test
-        @DisplayName("Should handle multi-instance configuration")
+        @DisplayName("Should handle multi-instance configuration with XSD-compliant type")
         void shouldHandleMultiInstanceConfiguration() {
             String yamlWithMultiInstance = """
                 name: TestWorkflow
@@ -489,19 +489,25 @@ class ExtendedYamlConverterTest {
                       min: 1
                       max: 10
                       mode: dynamic
-                      threshold: all
+                      threshold: 10
                 """;
             String xml = converter.convertToXml(yamlWithMultiInstance);
-            assertTrue(xml.contains("<multiInstance>"),
-                "Should contain multiInstance element");
-            assertTrue(xml.contains("<minInstances>"),
-                "Should contain minInstances element");
-            assertTrue(xml.contains("<maxInstances>"),
-                "Should contain maxInstances element");
+            assertTrue(xml.contains("MultipleInstanceExternalTaskFactsType"),
+                "Should use MultipleInstanceExternalTaskFactsType xsi:type");
+            assertTrue(xml.contains("<minimum>"),
+                "Should contain minimum element (XSD name)");
+            assertTrue(xml.contains("<maximum>"),
+                "Should contain maximum element (XSD name)");
+            assertTrue(xml.contains("<threshold>"),
+                "Should contain threshold element");
+            assertTrue(xml.contains("<creationMode"),
+                "Should contain creationMode element");
+            assertTrue(xml.contains("<miDataInput>"),
+                "Should contain miDataInput element (required by XSD)");
         }
 
         @Test
-        @DisplayName("Should handle timer configuration")
+        @DisplayName("Should handle timer configuration with PascalCase trigger")
         void shouldHandleTimerConfiguration() {
             String yamlWithTimer = """
                 name: TestWorkflow
@@ -517,15 +523,15 @@ class ExtendedYamlConverterTest {
             String xml = converter.convertToXml(yamlWithTimer);
             assertTrue(xml.contains("<timer>"),
                 "Should contain timer element");
-            assertTrue(xml.contains("<trigger>"),
-                "Should contain trigger element");
-            assertTrue(xml.contains("<duration>"),
-                "Should contain duration element");
+            assertTrue(xml.contains("<trigger>OnEnabled</trigger>"),
+                "Should normalize trigger to PascalCase 'OnEnabled' per XSD TimerTriggerType");
+            assertTrue(xml.contains("<duration>PT10M</duration>"),
+                "Should contain duration element with value");
         }
 
         @Test
-        @DisplayName("Should handle agent configuration")
-        void shouldHandleAgentConfiguration() {
+        @DisplayName("Should ignore non-schema agent configuration gracefully")
+        void shouldIgnoreNonSchemaAgentConfiguration() {
             String yamlWithAgent = """
                 name: TestWorkflow
                 uri: test.xml
@@ -539,17 +545,22 @@ class ExtendedYamlConverterTest {
                       capabilities: [order-processing, approval]
                 """;
             String xml = converter.convertToXml(yamlWithAgent);
-            assertTrue(xml.contains("<agent>"),
-                "Should contain agent element");
-            assertTrue(xml.contains("<agentType>"),
-                "Should contain agentType element");
-            assertTrue(xml.contains("<capabilities>"),
-                "Should contain capabilities element");
+            assertFalse(xml.contains("<agent>"),
+                "Should NOT contain non-schema agent element");
+            assertFalse(xml.contains("<agentType>"),
+                "Should NOT contain non-schema agentType element");
+            // Task should still have required schema elements
+            assertTrue(xml.contains("<task"),
+                "Should still contain task element");
+            assertTrue(xml.contains("<join"),
+                "Should contain required join element");
+            assertTrue(xml.contains("<split"),
+                "Should contain required split element");
         }
 
         @Test
-        @DisplayName("Should handle split and join configuration")
-        void shouldHandleSplitAndJoinConfiguration() {
+        @DisplayName("Should always emit join and split (required by XSD)")
+        void shouldAlwaysEmitJoinAndSplit() {
             String yamlWithSplitJoin = """
                 name: TestWorkflow
                 uri: test.xml
@@ -565,15 +576,23 @@ class ExtendedYamlConverterTest {
                     flows: [end]
                 """;
             String xml = converter.convertToXml(yamlWithSplitJoin);
-            assertTrue(xml.contains("<join"),
-                "Should contain join element");
-            assertTrue(xml.contains("<split"),
-                "Should contain split element");
+            assertTrue(xml.contains("code=\"and\""),
+                "Should contain split code='and'");
+            assertTrue(xml.contains("code=\"xor\""),
+                "Should contain join/split code='xor'");
+            // TaskB and TaskC have no explicit join/split, should default to xor
+            // Count join elements - should be 3 (one per task)
+            int joinCount = countOccurrences(xml, "<join ");
+            assertEquals(3, joinCount,
+                "All 3 tasks should have join element (required by XSD)");
+            int splitCount = countOccurrences(xml, "<split ");
+            assertEquals(3, splitCount,
+                "All 3 tasks should have split element (required by XSD)");
         }
 
         @Test
-        @DisplayName("Should handle cancellation configuration")
-        void shouldHandleCancellationConfiguration() {
+        @DisplayName("Should convert cancellation to removesTokens per XSD")
+        void shouldConvertCancellationToRemovesTokens() {
             String yamlWithCancellation = """
                 name: TestWorkflow
                 uri: test.xml
@@ -582,17 +601,80 @@ class ExtendedYamlConverterTest {
                   - id: TaskA
                     flows: [end]
                     cancels: [TaskB, TaskC]
-                    cancelCondition: status = 'cancelled'
                   - id: TaskB
                     flows: [end]
                   - id: TaskC
                     flows: [end]
                 """;
             String xml = converter.convertToXml(yamlWithCancellation);
-            assertTrue(xml.contains("<cancellation>"),
-                "Should contain cancellation element");
-            assertTrue(xml.contains("<cancelsElement"),
-                "Should contain cancelsElement");
+            assertTrue(xml.contains("<removesTokens id=\"TaskB\""),
+                "Should use XSD-compliant removesTokens for TaskB");
+            assertTrue(xml.contains("<removesTokens id=\"TaskC\""),
+                "Should use XSD-compliant removesTokens for TaskC");
+            assertFalse(xml.contains("<cancellation>"),
+                "Should NOT contain non-schema cancellation element");
+            assertFalse(xml.contains("<cancelsElement"),
+                "Should NOT contain non-schema cancelsElement");
+        }
+    }
+
+    @Nested
+    @DisplayName("Schema Compliance - Flow Mapping")
+    class FlowMappingTests {
+
+        @Test
+        @DisplayName("Should map 'end' flow to output condition id 'o-top'")
+        void shouldMapEndFlowToOutputCondition() {
+            String xml = converter.convertToXml(SIMPLE_YAML);
+            assertTrue(xml.contains("nextElementRef id=\"o-top\""),
+                "Flow to 'end' should be mapped to 'o-top' (output condition id)");
+            assertFalse(xml.contains("nextElementRef id=\"end\""),
+                "Should NOT have raw 'end' as nextElementRef (not a valid element id)");
+        }
+
+        @Test
+        @DisplayName("Should have output condition with id o-top")
+        void shouldHaveOutputConditionWithOTop() {
+            String xml = converter.convertToXml(SIMPLE_YAML);
+            assertTrue(xml.contains("outputCondition id=\"o-top\""),
+                "Output condition should have id='o-top'");
+        }
+
+        @Test
+        @DisplayName("Should have input condition with id i-top")
+        void shouldHaveInputConditionWithITop() {
+            String xml = converter.convertToXml(SIMPLE_YAML);
+            assertTrue(xml.contains("inputCondition id=\"i-top\""),
+                "Input condition should have id='i-top'");
+        }
+    }
+
+    @Nested
+    @DisplayName("Schema Compliance - Decomposition")
+    class DecompositionTests {
+
+        @Test
+        @DisplayName("Should have root net decomposition with NetFactsType")
+        void shouldHaveRootNetWithNetFactsType() {
+            String xml = converter.convertToXml(SIMPLE_YAML);
+            assertTrue(xml.contains("xsi:type=\"NetFactsType\""),
+                "Root net should use NetFactsType");
+        }
+
+        @Test
+        @DisplayName("Should have task decompositions with WebServiceGatewayFactsType")
+        void shouldHaveTaskDecompositionsWithWebServiceGatewayFactsType() {
+            String xml = converter.convertToXml(SIMPLE_YAML);
+            assertTrue(xml.contains("xsi:type=\"WebServiceGatewayFactsType\""),
+                "Task decompositions should use WebServiceGatewayFactsType");
+        }
+
+        @Test
+        @DisplayName("Should have decomposesTo reference in task")
+        void shouldHaveDecomposesToReference() {
+            String xml = converter.convertToXml(SIMPLE_YAML);
+            assertTrue(xml.contains("decomposesTo id=\"TaskADecomposition\""),
+                "Task should reference its decomposition");
         }
     }
 
