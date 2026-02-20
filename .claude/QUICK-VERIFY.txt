@@ -1,0 +1,37 @@
+QUICK JAVA 25 VERIFICATION (Next Session)
+
+Check these in order:
+
+1. Java 25 working?
+   java -version && javac -version
+   Should show: openjdk version "25.x.x"
+
+2. Maven proxy running? (if https_proxy env var is set)
+   ps aux | grep maven-proxy | grep -v grep
+   Should see: python3 ... maven-proxy-v2.py
+
+3. Maven settings configured?
+   cat ~/.m2/settings.xml | grep -A2 "proxy id"
+   Should show: local-proxy on 127.0.0.1:3128
+
+4. SessionStart output present?
+   Look at top of chat for "YAWL environment ready for Claude Code Web"
+   Should mention: Java 25 detected + proxy status
+
+5. Quick Maven test:
+   mvn -version | head -1
+   Should work without proxy issues
+
+6. If all good:
+   bash scripts/dx.sh compile -T 1
+
+If any step fails:
+→ Review: /home/user/yawl/.claude/VERIFY-JAVA25-SETUP.md
+→ Check logs: tail /tmp/maven-proxy.log
+→ Read guide: /home/user/yawl/JAVA25-SETUP.md
+
+EXPECTED STATUS:
+- Java 25: ✅ Installed
+- Maven: ✅ Available
+- Proxy: ✅ Auto-started (if egress proxy detected)
+- Build: 🟡 Ready (may need artifact downloads)
