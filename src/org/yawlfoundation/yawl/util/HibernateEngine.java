@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.util;
 import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -545,6 +546,19 @@ public class HibernateEngine {
      * @param whereClause the condition (without the 'where' part) e.g. "age=21"
      * @return a List of the instances retrieved
      */
+    /**
+     * Returns all persisted instances of {@code className} matching a verbatim
+     * HQL where clause.
+     *
+     * <p><strong>WARNING — HQL INJECTION RISK:</strong> The {@code whereClause}
+     * is appended to the query verbatim. Never pass user-supplied strings here.
+     * Use {@link #getObjectsForClassWhereField(String, String, Object)} instead
+     * when the filter value originates from external or user input.</p>
+     *
+     * @param className   the Hibernate entity class name
+     * @param whereClause the HQL predicate (without 'WHERE') — must be static / trusted
+     * @return a List of matching instances, or null on error
+     */
     public List getObjectsForClassWhere(String className, String whereClause) {
         List result = null;
         try {
@@ -556,6 +570,35 @@ public class HibernateEngine {
             _log.error("Error reading data for class: " + className, he);
         }
         return result ;
+    }
+
+
+    /**
+     * Returns all persisted instances of {@code className} where {@code field}
+     * equals {@code value}, using a named HQL parameter to prevent HQL injection.
+     *
+     * <p>Use this method whenever the filter value originates from external input,
+     * user data, or any other untrusted source.</p>
+     *
+     * @param className the Hibernate entity class name
+     * @param field     the entity field name to filter on (must be a trusted constant)
+     * @param value     the filter value (may be user-supplied)
+     * @return a List of matching instances, or null on error
+     */
+    public List getObjectsForClassWhereField(String className, String field, Object value) {
+        List result = null;
+        try {
+            String qry = String.format("from %s as tbl where tbl.%s = :val", className, field);
+            Transaction tx = getOrBeginTransaction();
+            Query query = getSession().createQuery(qry);
+            query.setParameter("val", value);
+            result = query.getResultList();
+        }
+        catch (HibernateException he) {
+            _log.error("Error reading data for class: " + className
+                    + " field: " + field, he);
+        }
+        return result;
     }
 
 

@@ -274,24 +274,21 @@ public class ProcletModel extends DirectedSparseGraph {
 	public boolean buildFromDB() {
 //		this.getVertices().clear();
 //		this.getEdges().clear();
-        List items = DBConnection.getObjectsForClassWhere("StoredProcletBlock",
-                "classID='" + classID + "'");
+        List items = DBConnection.getObjectsForClassWhereField("StoredProcletBlock", "classID", classID);
         for (Object o : items) {
             StoredProcletBlock block = (StoredProcletBlock) o;
             addBlock(block.newProcletBlock());
         }        
 
 		// get ports
-        items = DBConnection.getObjectsForClassWhere("StoredProcletPort",
-                "classID='" + classID + "'");
+        items = DBConnection.getObjectsForClassWhereField("StoredProcletPort", "classID", classID);
         for (Object o : items) {
             StoredProcletPort port = (StoredProcletPort) o;
             addProcletPort(port.newProcletPort(), getBlock(port.getBlockID()));
         }
 
 	    // brels
-        items = DBConnection.getObjectsForClassWhere("StoredBlockRel",
-                "classID='" + classID + "'");
+        items = DBConnection.getObjectsForClassWhereField("StoredBlockRel", "classID", classID);
         for (Object o : items) {
             StoredBlockRel bRel= (StoredBlockRel) o;
             addBRel(getBlock(bRel.getInput()), getBlock(bRel.getOutput()));

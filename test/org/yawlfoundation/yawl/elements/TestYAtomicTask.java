@@ -229,19 +229,18 @@ class TestYAtomicTask {
         }
 
         @Test
-        @DisplayName("Atomic task with YNet decomposition should fail verification")
-        void testAtomicTaskWithNetDecompositionFailsVerification() {
-            // Atomic tasks can only decompose to YAWLServiceGateway, not YNet
-            // This test verifies the error is caught during verification
-            YAtomicTask task = new YAtomicTask("invalidTask", YTask._AND, YTask._AND, _deadNet);
-            // YNet cannot be cast to YAWLServiceGateway, so we skip setting decomposition
-            // and verify that having no decomposition is handled
+        @DisplayName("Atomic task with no decomposition and no flow elements passes verification")
+        void testAtomicTaskWithNoDecompositionPassesVerification() {
+            // A bare atomic task with no decomposition and no preset/postset
+            // should produce no verification errors when it has no MI attributes
+            YAtomicTask task = new YAtomicTask("bareTask", YTask._AND, YTask._AND, _deadNet);
             task.setDecompositionPrototype(null);
 
             YVerificationHandler handler = new YVerificationHandler();
             task.verify(handler);
-            // With no decomposition, verification should still pass for empty tasks
-            // But with MI attributes, it would fail
+            // A bare atomic task with no decomposition, no MI, and no flow links is valid
+            assertFalse(handler.hasErrors(),
+                "Bare atomic task with no decomposition and no MI should have no errors");
         }
     }
 

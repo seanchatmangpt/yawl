@@ -129,6 +129,23 @@ public class DBConnection {
     }
 
 
+    /**
+     * Returns all persisted instances of {@code className} where {@code field}
+     * equals {@code value}, using a named HQL parameter to prevent HQL injection.
+     *
+     * <p>Use this method whenever the filter value originates from external input
+     * or user data.</p>
+     *
+     * @param className the Hibernate entity class name
+     * @param field     the entity field name (must be a trusted constant)
+     * @param value     the filter value (may be user-supplied)
+     * @return a List of matching instances
+     */
+    public static List getObjectsForClassWhereField(String className, String field, Object value) {
+        return _db.getObjectsForClassWhereField(className, field, value);
+    }
+
+
     public static void deleteAll(String className) {
         _db.execUpdate("delete from " + className);
     }

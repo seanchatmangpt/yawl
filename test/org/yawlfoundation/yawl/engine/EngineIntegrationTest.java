@@ -175,9 +175,12 @@ class EngineIntegrationTest {
     }
 
     @Test
-    void testExceptionHandling() throws Exception {
-        YSpecification spec = createMinimalSpecification();
-        assertNotNull(spec, "Specification creation should succeed");
+    void testLaunchCaseWithUnloadedSpecificationThrowsException() throws Exception {
+        // Launching a case with a spec ID that has not been loaded must throw YStateException
+        YSpecificationID unloadedSpec = new YSpecificationID("NonExistent", "0.1", "NonExistent");
+        assertThrows(Exception.class,
+                () -> engine.launchCase(unloadedSpec, null, null, null),
+                "Launching a case for an unloaded specification must throw an exception");
     }
 
     @Test

@@ -409,7 +409,7 @@ public class BlockCP {
 	}
 	
 	public static void setEmidSelected(EntityMID emid) {
-        List items = DBConnection.getObjectsForClassWhere("StoredItem", "emid='" + emid + "'");
+        List items = DBConnection.getObjectsForClassWhereField("StoredItem", "emid", emid.toString());
         for (Object o : items) {
             DBConnection.setStoredItemSelected((StoredItem) o);
         }

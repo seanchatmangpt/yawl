@@ -57,7 +57,7 @@ management:
     tags:
       application: ${spring.application.name}
       environment: ${ENVIRONMENT:development}
-      version: 5.2
+      version: 6.0.0-Alpha
 
 # Server configuration
 server:

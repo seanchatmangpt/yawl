@@ -105,6 +105,11 @@ JVM_FLAGS=(
     # Diagnostics (disable in extreme latency scenarios)
     -XX:+OptimizeStringConcat
 
+    # Compact object headers (Java 25): saves 4-8 bytes per object header,
+    # reducing GC pressure and improving throughput ~5-10% at high object counts.
+    # Free win - no code changes required. Requires Java 25+.
+    -XX:+UseCompactObjectHeaders
+
     # Server port
     "-Dserver.port=${SERVER_PORT}"
 )

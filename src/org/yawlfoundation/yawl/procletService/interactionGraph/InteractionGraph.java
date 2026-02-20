@@ -204,8 +204,7 @@ public class InteractionGraph extends DirectedSparseGraph{
             }
         }
 
-        items = DBConnection.getObjectsForClassWhere("StoredInteractionArc", 
-                "emid='" + emid.getValue() + "'");
+        items = DBConnection.getObjectsForClassWhereField("StoredInteractionArc", "emid", emid.getValue());
         for (Object o : items) {
             StoredInteractionArc item = (StoredInteractionArc) o;
             InteractionNode tail = getNode(item.getTailClassID(), item.getTailProcletID(),

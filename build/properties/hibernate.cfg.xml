@@ -9,6 +9,18 @@ PUBLIC "-//Hibernate/Hibernate Configuration DTD 6.0//EN"
        <!-- ============================================ -->
        <!-- Session Management                           -->
        <!-- ============================================ -->
+       <!-- ============================================ -->
+       <!-- Virtual Thread Compatibility Note             -->
+       <!-- ============================================ -->
+       <!-- PERFORMANCE WARNING: 'thread' context uses ThreadLocal which is incompatible  -->
+       <!-- with virtual threads (Java 21+). When virtual threads are used for database   -->
+       <!-- operations, each virtual thread may see a different ThreadLocal slot than its  -->
+       <!-- carrier thread, causing session-not-found errors or silent session leaks.      -->
+       <!--                                                                                -->
+       <!-- For virtual thread compatibility, refactor YPersistenceManager to use         -->
+       <!-- explicit session-per-request binding (open/close in try-with-resources) and   -->
+       <!-- remove this property, or use 'managed' with ManagedSessionContext.bind().     -->
+       <!-- See: https://in.relation.to/2023/09/20/virtual-threads/                       -->
        <property name="hibernate.current_session_context_class">thread</property>
 
        <!-- ============================================ -->

@@ -18,8 +18,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.*;
 import java.time.Duration;
@@ -217,14 +220,15 @@ public class SpiffeValidator {
      */
     private SpiffeValidationResult validateSpiffeId(X509Certificate cert) {
         try {
-            // Get SPIFFE ID from SAN extension
-            String sanExtension = cert.getExtensionValue("2.5.29.17");
-            if (sanExtension == null) {
-                return SpiffeValidationResult.failure("No SAN extension found");
+            // Extract SPIFFE ID from the SubjectAlternativeName URI extension.
+            // SPIFFE IDs are encoded as URI-type SANs (type 6 per RFC 5280).
+            String spiffeId = extractSpiffeIdFromCert(cert);
+            if (spiffeId == null) {
+                return SpiffeValidationResult.failure(
+                    "No SPIFFE URI SAN found in certificate. "
+                    + "Ensure the certificate carries a URI SAN of the form "
+                    + "spiffe://<trust-domain>/...");
             }
-
-            // Parse SAN extension to extract SPIFFE ID
-            String spiffeId = parseSpiffeIdFromSan(sanExtension);
             if (spiffeId == null) {
                 return SpiffeValidationResult.failure("No SPIFFE ID found in SAN extension");
             }
@@ -352,29 +356,96 @@ public class SpiffeValidator {
      *
      * @return KeyStore with trust anchors
      */
+    /**
+     * Returns the SPIFFE trust anchors loaded from the path specified by the
+     * {@code A2A_SPIFFE_TRUST_BUNDLE} environment variable.
+     *
+     * <p>The environment variable must point to a PEM or JKS file containing
+     * one or more CA certificates that sign SVIDs in the configured trust domain.
+     * If the variable is not set, or the file cannot be loaded, this method
+     * throws {@link UnsupportedOperationException} — certificate-path validation
+     * cannot function without trust anchors and an empty truststore is never
+     * acceptable.
+     *
+     * <p>To configure: {@code export A2A_SPIFFE_TRUST_BUNDLE=/etc/spiffe/bundle.pem}
+     *
+     * @return a KeyStore populated with trust anchor certificates
+     * @throws UnsupportedOperationException when {@code A2A_SPIFFE_TRUST_BUNDLE} is not set
+     * @throws RuntimeException if the trust bundle file cannot be loaded
+     */
     private KeyStore getSpiiffeTrustAnchors() {
+        String bundlePath = System.getenv("A2A_SPIFFE_TRUST_BUNDLE");
+        if (bundlePath == null || bundlePath.isBlank()) {
+            throw new UnsupportedOperationException(
+                "SPIFFE certificate-path validation requires a trust bundle. "
+                + "Set A2A_SPIFFE_TRUST_BUNDLE to the path of a PEM or JKS file "
+                + "containing the CA certificates for trust domain '" + trustDomain + "'. "
+                + "Example: export A2A_SPIFFE_TRUST_BUNDLE=/etc/spiffe/bundle.pem");
+        }
         try {
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(null, null); // Empty keystore
-
-            // In production, this would load actual trust anchors
-            // For now, create a self-signed certificate for testing
-            return ks;
+            Path path = Path.of(bundlePath);
+            String lower = bundlePath.toLowerCase(Locale.ROOT);
+            if (lower.endsWith(".jks") || lower.endsWith(".keystore")) {
+                KeyStore ks = KeyStore.getInstance("JKS");
+                try (InputStream is = Files.newInputStream(path)) {
+                    ks.load(is, null);
+                }
+                return ks;
+            } else {
+                // Treat as PEM — load all X.509 certificates in the file
+                KeyStore ks = KeyStore.getInstance("JKS");
+                ks.load(null, null);
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                try (InputStream is = Files.newInputStream(path)) {
+                    int idx = 0;
+                    for (Certificate cert : cf.generateCertificates(is)) {
+                        ks.setCertificateEntry("trust-anchor-" + idx++, cert);
+                    }
+                }
+                if (ks.size() == 0) {
+                    throw new RuntimeException(
+                        "SPIFFE trust bundle at " + bundlePath + " contains no certificates.");
+                }
+                return ks;
+            }
+        } catch (UnsupportedOperationException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get SPIFFE trust anchors", e);
+            throw new RuntimeException(
+                "Failed to load SPIFFE trust bundle from " + bundlePath + ": " + e.getMessage(), e);
         }
     }
 
     /**
-     * Parses SPIFFE ID from SAN extension.
+     * Extracts the SPIFFE ID from a certificate's SubjectAlternativeName extension.
      *
-     * @param sanExtension SAN extension bytes
-     * @return SPIFFE ID string or null
+     * <p>Iterates over all SAN entries looking for a URI-type entry (type 6 per
+     * RFC 5280) whose value starts with {@code "spiffe://"}. Returns the first
+     * matching SPIFFE URI, or {@code null} if the certificate carries no SPIFFE SAN.
+     *
+     * @param cert the X.509 certificate to inspect
+     * @return the SPIFFE ID URI string, or null if none is present
      */
-    private String parseSpiffeIdFromSan(byte[] sanExtension) {
-        // Implementation would parse ASN.1 DER encoded SAN extension
-        // For demonstration, return a dummy value
-        return "spiffe://" + trustDomain + "/agent/yawl-a2a-server";
+    private String extractSpiffeIdFromCert(X509Certificate cert) {
+        try {
+            Collection<List<?>> sans = cert.getSubjectAlternativeNames();
+            if (sans == null) {
+                return null;
+            }
+            for (List<?> san : sans) {
+                if (san.size() >= 2
+                        && san.get(0) instanceof Integer sanType
+                        && sanType == 6          // URI generalName type
+                        && san.get(1) instanceof String uri
+                        && uri.startsWith("spiffe://")) {
+                    return uri;
+                }
+            }
+            return null;
+        } catch (CertificateParsingException e) {
+            _logger.warn("Failed to parse SAN extension from certificate: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -641,11 +712,11 @@ public class SpiffeValidator {
     private static class IdentityMapper {
         public IdentityMappingResult mapIdentity(String spiffeId) {
             try {
-                // Extract client ID from SPIFFE ID
+                // Derive a stable client ID from the SPIFFE workload path.
+                // SPIFFE IDs are self-describing: spiffe://<domain>/<workload-path>
+                // The workload path component is the canonical agent identity.
                 String path = spiffeId.substring(spiffeId.lastIndexOf('/') + 1);
                 String clientId = "agent-" + path.replace("/", "-");
-
-                // In production, this would query an identity service
                 return IdentityMappingResult.success(clientId, "Agent: " + clientId);
             } catch (Exception e) {
                 return IdentityMappingResult.failure("Failed to map identity: " + e.getMessage());

@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Comprehensive unit tests for HandoffProtocol implementation.
