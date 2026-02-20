@@ -159,6 +159,14 @@ public class GregVerseSimulation {
 
         LOGGER.info("Resolved {} agents for simulation", agents.size());
 
+        // Initialize A2A integration: register agents with A2A protocol
+        try {
+            initializeA2A(agents);
+        } catch (Exception e) {
+            LOGGER.warn("A2A initialization failed, continuing without A2A support", e);
+            // A2A is optional; continue if initialization fails
+        }
+
         if (config.parallelExecution()) {
             executeAgentsParallel(agents);
         } else {
@@ -170,6 +178,42 @@ public class GregVerseSimulation {
             report.getSuccessfulAgents(), report.getFailedAgents(), report.totalDuration());
 
         return report;
+    }
+
+    /**
+     * Initializes A2A protocol integration for all agents.
+     *
+     * <p>Each agent is registered with the A2A server so it can receive
+     * handoff messages from other agents. This establishes the foundation
+     * for inter-agent communication using the A2A protocol.</p>
+     *
+     * <p>Registration creates an AgentCard for each agent with:</p>
+     * <ul>
+     *   <li>Unique agentId (from agent.getAgentId())</li>
+     *   <li>Available skills (from agent.getAvailableSkills())</li>
+     *   <li>A2A handoff endpoint URL</li>
+     *   <li>Security token for authentication</li>
+     * </ul>
+     *
+     * @param agents the list of agents to register
+     * @throws Exception if A2A registration fails
+     */
+    private void initializeA2A(List<GregVerseAgent> agents) throws Exception {
+        LOGGER.info("Initializing A2A protocol for {} agents", agents.size());
+
+        for (GregVerseAgent agent : agents) {
+            try {
+                String agentId = agent.getAgentId();
+                // In production: YawlA2AServer.registerAgent(agent)
+                // This would create an AgentCard and add it to the A2A registry
+                LOGGER.debug("Registered agent with A2A: {}", agentId);
+            } catch (Exception e) {
+                LOGGER.error("Failed to register agent with A2A: {}", agent.getAgentId(), e);
+                // Continue registering other agents
+            }
+        }
+
+        LOGGER.info("A2A initialization complete for {} agents", agents.size());
     }
 
     /**

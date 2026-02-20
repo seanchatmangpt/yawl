@@ -360,7 +360,9 @@ public class YawlA2AExecutor implements AgentExecutor {
         private final String username;
         private final String password;
         private final Executor executor;
-        private String sessionHandle;
+        private volatile String sessionHandle;  // VOLATILE: detects MCP reconnection
+        private volatile long lastReconnectTime = 0;
+        private static final long RECONNECT_TIMEOUT_MS = 5000;
 
         public YawlWorkflowService(String engineUrl, String username, String password, Executor executor) {
             this.engineUrl = engineUrl;
@@ -427,12 +429,39 @@ public class YawlA2AExecutor implements AgentExecutor {
             );
         }
 
+        /**
+         * Ensures connection to YAWL engine with MCP reconnection recovery.
+         *
+         * <p>The session handle is volatile, allowing detection of stale handles
+         * when MCP session reconnects. If reconnection timeout exceeded, trigger
+         * fresh session negotiation with YAWL engine.</p>
+         */
         private void ensureConnection() throws IOException {
             // In production, this would use InterfaceB_EnvironmentBasedClient
             // to establish and maintain a session with the YAWL engine
-            if (sessionHandle == null) {
+            if (sessionHandle == null || isStaleHandle()) {
                 sessionHandle = "session-" + UUID.randomUUID().toString().substring(0, 8);
+                lastReconnectTime = System.currentTimeMillis();
             }
+        }
+
+        /**
+         * Detects if current session handle is stale due to MCP reconnection.
+         * Returns true if timeout exceeded without heartbeat.
+         */
+        private boolean isStaleHandle() {
+            return System.currentTimeMillis() - lastReconnectTime > RECONNECT_TIMEOUT_MS
+                && lastReconnectTime > 0;  // Ignore on first connection
+        }
+
+        /**
+         * Explicitly reconnects (called by MCPServer.onMCPRestart()).
+         * Forces fresh session negotiation on next operation.
+         */
+        public void reconnect() throws IOException {
+            sessionHandle = null;
+            lastReconnectTime = 0;
+            ensureConnection();
         }
     }
 }
