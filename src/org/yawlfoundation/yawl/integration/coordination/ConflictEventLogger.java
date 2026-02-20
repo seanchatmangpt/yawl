@@ -497,8 +497,7 @@ public class ConflictEventLogger {
         );
 
         public boolean shouldLog(Object event) {
-            // For now, allow all coordination events
-            // Future: Add filtering based on severity and type
+            // All coordination events are logged; no severity filtering is applied.
             return true;
         }
     }

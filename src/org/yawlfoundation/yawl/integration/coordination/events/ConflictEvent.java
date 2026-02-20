@@ -204,8 +204,6 @@ public final class ConflictEvent {
 
     /** The case ID associated with this conflict. */
     public String getCaseId() {
-        // This should be stored in the context or passed during construction
-        // For now, we'll look for it in the context
         return context.get("caseId");
     }
 

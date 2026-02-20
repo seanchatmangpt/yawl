@@ -258,9 +258,10 @@ public class MajorityVoteConflictResolver implements ConflictResolver {
 
         // Prefer confidence-based tie-breaking
         if (breakByConfidence) {
-            // This would require additional context about agent confidences
-            // For now, return the first tied decision as a simple implementation
-            return tiedDecisions.get(0).getKey();
+            // Confidence-based tie-breaking is not yet implemented.
+            // Requires AgentInfo records to carry a confidence score, then select
+            // the agent whose most-voted decision has the highest average confidence.
+            // Fall through to alphabetical order until agent confidence tracking is added.
         }
 
         // Fall back to alphabetical order
