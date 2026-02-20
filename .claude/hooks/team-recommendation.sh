@@ -12,7 +12,8 @@ YELLOW='\033[1;33m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
 
-if [[ -z "$TASK_DESCRIPTION" ]]; then
+# Check if empty or whitespace-only
+if [[ -z "${TASK_DESCRIPTION// /}" ]]; then
     exit 0
 fi
 
@@ -26,7 +27,7 @@ DETECTED=""
 
 desc_lower="${TASK_DESCRIPTION,,}"
 
-if [[ $desc_lower =~ (engine|ynetrunner|workflow|deadlock|state|task.completion) ]]; then
+if [[ $desc_lower =~ (engine|ynetrunner|deadlock|state|execution|task.completion) ]]; then
     ((QUANTUM_COUNT++))
     DETECTED="$DETECTED  ${MAGENTA}◆${NC} Engine Semantic (yawl/engine/**)\n"
 fi
@@ -41,7 +42,7 @@ if [[ $desc_lower =~ (integration|mcp|a2a|endpoint|event|publisher) ]]; then
     DETECTED="$DETECTED  ${MAGENTA}◆${NC} Integration (yawl/integration/**)\n"
 fi
 
-if [[ $desc_lower =~ (resource|allocation|pool|workqueue|queue) ]]; then
+if [[ $desc_lower =~ (resource|resourc|allocation|pool|workqueue|queue) ]]; then
     ((QUANTUM_COUNT++))
     DETECTED="$DETECTED  ${MAGENTA}◆${NC} Resourcing (yawl/resourcing/**)\n"
 fi
@@ -98,7 +99,7 @@ elif [[ $QUANTUM_COUNT -gt 5 ]]; then
     exit 2
 
 else
-    echo -e "${YELLOW}ℹ️  Could not detect clear quantums. Analyze manually.${NC}"
+    echo -e "${YELLOW}⚠️  Could not detect clear quantums. Provide task with specific quantum keywords.${NC}"
     echo ""
-    exit 0
+    exit 2
 fi
