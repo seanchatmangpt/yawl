@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WCP-28: Structured Loop (Control Flow)
+  A while-do loop with explicit entry/check/body/exit structure.
+  The test drives the loop for 3 iterations then exits.
+
+  Structure:
+    start -> initialize -> loopCheck --[default]--> exitLoop -> finalize -> end
+                              |
+                           [loop] -> loopBody -> loopCheck (via loopBackCond)
+-->
+<specificationSet version="4.0"
+    xmlns="http://www.yawlfoundation.org/yawlschema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="Wcp28StructuredLoop">
+    <metaData>
+      <title>WCP-28 Structured Loop</title>
+      <creator>YAWL Stateless Test</creator>
+      <description>WCP-28: Structured while-do loop with explicit loop-back condition. The loop check task uses XOR-split to either continue the loop body or exit.</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="wcp28Net" xsi:type="NetFactsType" isRootNet="true">
+      <name>WCP-28 Net</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="initialize"/>
+          </flowsInto>
+        </inputCondition>
+        <!--
+          initialize: set up loop variables.
+          Flows into the loopCheck via an intermediate condition so the
+          loop-back from loopBody can also target that condition.
+        -->
+        <task id="initialize">
+          <name>Initialize</name>
+          <documentation>Initialize loop variables (iteration counter)</documentation>
+          <flowsInto>
+            <nextElementRef id="loopEntryCondition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="initializeGW"/>
+        </task>
+        <!--
+          loopEntryCondition is the merge point for both the initial
+          entry and the loop-back from loopBody.
+        -->
+        <condition id="loopEntryCondition">
+          <name>Loop Entry</name>
+          <flowsInto>
+            <nextElementRef id="loopCheck"/>
+          </flowsInto>
+        </condition>
+        <!--
+          loopCheck: XOR-split decides whether to continue or exit.
+          Default flow goes to loopBody (continue); named flow goes to exitLoop.
+        -->
+        <task id="loopCheck">
+          <name>Check Loop Condition</name>
+          <documentation>Evaluate loop continuation condition (XOR split: continue or exit)</documentation>
+          <flowsInto>
+            <nextElementRef id="loopBody"/>
+            <isDefaultFlow/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="exitLoop"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+          <decomposesTo id="loopCheckGW"/>
+        </task>
+        <!--
+          loopBody: the work performed in each iteration.
+          Flows back to loopEntryCondition to create the loop cycle.
+        -->
+        <task id="loopBody">
+          <name>Loop Body</name>
+          <documentation>Perform loop body work for this iteration</documentation>
+          <flowsInto>
+            <nextElementRef id="loopEntryCondition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="loopBodyGW"/>
+        </task>
+        <task id="exitLoop">
+          <name>Exit Loop</name>
+          <documentation>Exit the structured loop</documentation>
+          <flowsInto>
+            <nextElementRef id="finalize"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="exitLoopGW"/>
+        </task>
+        <task id="finalize">
+          <name>Finalize</name>
+          <documentation>Finalize loop results and clean up</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="finalizeGW"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="initializeGW" xsi:type="WebServiceGatewayFactsType">
+      <name>initializeGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="loopCheckGW" xsi:type="WebServiceGatewayFactsType">
+      <name>loopCheckGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="loopBodyGW" xsi:type="WebServiceGatewayFactsType">
+      <name>loopBodyGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="exitLoopGW" xsi:type="WebServiceGatewayFactsType">
+      <name>exitLoopGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="finalizeGW" xsi:type="WebServiceGatewayFactsType">
+      <name>finalizeGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+  </specification>
+</specificationSet>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WCP-27: Concurrent Multiple Instances Without A Priori Knowledge
+  Instance count determined at runtime; all instances execute concurrently.
+  Pattern: start -> discover -> processConcurrent (MI, AND-split/join) -> aggregate -> end
+-->
+<specificationSet version="4.0"
+    xmlns="http://www.yawlfoundation.org/yawlschema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="Wcp27ConcurrentMI">
+    <metaData>
+      <title>WCP-27 Concurrent Multiple Instances Without A Priori Knowledge</title>
+      <creator>YAWL Stateless Test</creator>
+      <description>WCP-27: Concurrent MI task where instance count is determined at runtime and all instances run in parallel.</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="wcp27Net" xsi:type="NetFactsType" isRootNet="true">
+      <name>WCP-27 Net</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="startTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="startTask">
+          <name>Start Task</name>
+          <documentation>Initialise concurrent multi-instance processing</documentation>
+          <flowsInto>
+            <nextElementRef id="processConcurrent"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="startTaskGW"/>
+        </task>
+        <task id="processConcurrent" xsi:type="MultipleInstanceExternalTaskFactsType">
+          <name>Concurrent Process</name>
+          <documentation>WCP-27: All instances run in parallel, count determined at runtime. Dynamic creation with AND semantics for join after all complete.</documentation>
+          <flowsInto>
+            <nextElementRef id="aggregate"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <minimum>1</minimum>
+          <maximum>5</maximum>
+          <threshold>3</threshold>
+          <creationMode code="dynamic"/>
+          <decomposesTo id="processConcurrentGW"/>
+        </task>
+        <task id="aggregate">
+          <name>Aggregate Results</name>
+          <documentation>Aggregate all concurrent processing results</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="aggregateGW"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+    <decomposition id="startTaskGW" xsi:type="WebServiceGatewayFactsType">
+      <name>startTaskGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="processConcurrentGW" xsi:type="WebServiceGatewayFactsType">
+      <name>processConcurrentGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+    <decomposition id="aggregateGW" xsi:type="WebServiceGatewayFactsType">
+      <name>aggregateGW</name>
+      <externalInteraction>manual</externalInteraction>
+    </decomposition>
+  </specification>
+</specificationSet>
