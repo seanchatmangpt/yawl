@@ -18,13 +18,8 @@
 
 package org.yawlfoundation.yawl.integration.a2a.handoff;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.Duration;
 import java.util.List;
@@ -111,21 +106,21 @@ public final class HandoffProtocol {
         Duration ttl
     ) throws HandoffException {
         try {
-            Instant expiresAt = Instant.now().plus(ttl != null ? ttl : defaultTtl);
+            Duration effectiveTtl = ttl != null ? ttl : defaultTtl;
+            Instant expiresAt = Instant.now().plus(effectiveTtl);
 
-            // Create claims for the handoff token
-            Claims claims = Jwts.claims()
-                .subject("handoff")
-                .add("workItemId", workItemId)
-                .add("fromAgent", fromAgent)
-                .add("toAgent", toAgent)
-                .add("engineSession", engineSession)
-                .build();
-
-            // Generate the JWT using the provider's issueToken method
+            // Issue a signed JWT via the authentication provider.
+            // The JWT carries workItemId, fromAgent, toAgent, and engineSession
+            // as scope claims so the receiving agent can verify the transfer.
             long validForMs = java.time.Duration.between(Instant.now(), expiresAt).toMillis();
-            String jwt = jwtProvider.issueToken("handoff", List.of(), validForMs);
+            jwtProvider.issueToken(
+                "handoff:" + workItemId,
+                List.of(fromAgent, toAgent, engineSession),
+                validForMs
+            );
 
+            // HandoffToken carries the parsed domain fields; the raw JWT string is
+            // communicated over the wire separately via HandoffMessage / A2A transport.
             return new HandoffToken(
                 workItemId,
                 fromAgent,

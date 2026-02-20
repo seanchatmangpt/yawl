@@ -119,14 +119,21 @@ public record HandoffToken(
     }
 
     /**
-     * Returns the JWT string representation of this token.
-     * This method is used for authorization headers in HTTP requests.
+     * Not supported on this record. JWT strings are issued by
+     * {@link org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol#generateHandoffToken}
+     * via {@link org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider#issueToken},
+     * and are never stored inside the token record itself.
      *
-     * @return the JWT string
+     * <p>To obtain a signed JWT for use in an Authorization header, call
+     * {@code HandoffProtocol.generateHandoffToken(...)}, which returns the
+     * signed string through the provider.
+     *
+     * @throws UnsupportedOperationException always — use HandoffProtocol to sign tokens
      */
     public String getJwt() {
-        // This should be implemented using the HandoffProtocol's sign method
-        // For now, return a placeholder - actual implementation should generate JWT
-        return "placeholder-jwt-token";
+        throw new UnsupportedOperationException(
+            "HandoffToken does not carry a raw JWT string. "
+            + "Obtain a signed JWT via HandoffProtocol.generateHandoffToken() "
+            + "which delegates to JwtAuthenticationProvider.issueToken().");
     }
 }

@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;

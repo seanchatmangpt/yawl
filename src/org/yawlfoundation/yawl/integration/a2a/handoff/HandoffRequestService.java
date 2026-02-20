@@ -218,8 +218,8 @@ public class HandoffRequestService {
                 }
             }
         } catch (Exception e) {
-            // Log error but return null
-            System.err.println("Error finding task for work item: " + e.getMessage());
+            throw new IllegalStateException(
+                    "Error finding task for work item '" + workItem.getID() + "': " + e.getMessage(), e);
         }
         return null;
     }

@@ -409,7 +409,7 @@ services:
     image: yawl/resource-service:${YAWL_VERSION:-6.0.0-Alpha}
     build:
       context: .
-      dockerfile: containerization/Dockerfile.resourceService
+      dockerfile: docker/production/Dockerfile.engine  # ACTION REQUIRED: Create containerization/Dockerfile.resourceService before production deploy
     container_name: yawl-resource-service
     restart: unless-stopped
     depends_on:
@@ -462,7 +462,7 @@ services:
     image: yawl/worklet-service:${YAWL_VERSION:-6.0.0-Alpha}
     build:
       context: .
-      dockerfile: containerization/Dockerfile.workletService
+      dockerfile: docker/production/Dockerfile.engine  # ACTION REQUIRED: Create containerization/Dockerfile.workletService before production deploy
     container_name: yawl-worklet-service
     restart: unless-stopped
     depends_on:
@@ -515,7 +515,7 @@ services:
     image: yawl/monitor-service:${YAWL_VERSION:-6.0.0-Alpha}
     build:
       context: .
-      dockerfile: containerization/Dockerfile.monitorService
+      dockerfile: docker/production/Dockerfile.engine  # ACTION REQUIRED: Create containerization/Dockerfile.monitorService before production deploy
     container_name: yawl-monitor-service
     restart: unless-stopped
     depends_on:
@@ -807,7 +807,9 @@ services:
     container_name: yawl-postgres-exporter
     restart: unless-stopped
     environment:
-      DATA_SOURCE_NAME: "postgresql://yawl:yawl@postgres:5432/yawl?sslmode=require"
+      DATA_SOURCE_URI: "postgres:5432/yawl?sslmode=require"
+      DATA_SOURCE_USER: "yawl"
+      DATA_SOURCE_PASS_FILE: /run/secrets/db_password
       PG_EXPORTER_EXTEND_QUERY_PATH: ""
     secrets:
       - db_password

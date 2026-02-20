@@ -37,7 +37,6 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceAManagementOb
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBClientObserver;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBInterop;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBClient;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.time.YTimedObject;
 import org.yawlfoundation.yawl.engine.time.YTimer;
@@ -61,6 +60,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Lachlan Aldred
@@ -115,6 +115,15 @@ public class YEngine implements InterfaceADesign,
     private String _engineClassesRootFilePath;
     private boolean _allowGenericAdminID;
     private final YAWLTelemetry _telemetry = YAWLTelemetry.getInstance();
+
+    /**
+     * Replaces {@code synchronized(this)} on {@link #doPersistAction} to prevent
+     * virtual thread pinning.  When a virtual thread blocks on a {@code synchronized}
+     * method the carrier thread is pinned and cannot serve other virtual threads,
+     * negating the scalability benefit.  {@link ReentrantLock} allows the virtual
+     * thread to unmount the carrier while waiting, keeping the carrier pool free.
+     */
+    private final ReentrantLock _persistActionLock = new ReentrantLock();
 
     /********************************************************************************/
 
@@ -2300,21 +2309,39 @@ public class YEngine implements InterfaceADesign,
     }
 
 
-    private synchronized void doPersistAction(Object obj, int action) throws YPersistenceException {
-        /* DEADLOCK FIX: Removed inner synchronized(_pmgr) block.
-         * Previously: doPersistAction held 'this' (YEngine) lock, then acquired _pmgr lock.
-         * Any thread holding _pmgr lock and calling a synchronized YEngine method produced
-         * an ABBA deadlock. The outer 'synchronized' on this method already provides the
-         * required mutual exclusion for all persistence operations; the inner lock was
-         * redundant and created the inversion. */
-        if (isPersisting() && _pmgr != null) {
-            boolean isLocalTransaction = startTransaction();
-            switch (action) {
-                case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
-                case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
-                case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
+    /**
+     * Executes a single persist, update, or delete operation within its own transaction.
+     *
+     * <p>Uses {@link ReentrantLock} instead of {@code synchronized} to prevent virtual
+     * thread pinning.  A {@code synchronized} method holds the carrier thread while
+     * blocked, preventing other virtual threads from executing on that carrier.
+     * {@code ReentrantLock} allows the virtual thread to unmount the carrier during
+     * lock contention, keeping the carrier pool available for other virtual threads.</p>
+     *
+     * <p>Mutual exclusion semantics are identical to the previous
+     * {@code synchronized void doPersistAction}: only one persist operation proceeds
+     * per engine instance at a time.</p>
+     *
+     * @param obj    the object to persist, update, or delete
+     * @param action one of {@link YPersistenceManager#DB_INSERT},
+     *               {@link YPersistenceManager#DB_UPDATE},
+     *               {@link YPersistenceManager#DB_DELETE}
+     * @throws YPersistenceException if the operation fails
+     */
+    private void doPersistAction(Object obj, int action) throws YPersistenceException {
+        _persistActionLock.lock();
+        try {
+            if (isPersisting() && _pmgr != null) {
+                boolean isLocalTransaction = startTransaction();
+                switch (action) {
+                    case YPersistenceManager.DB_UPDATE -> _pmgr.updateObject(obj);
+                    case YPersistenceManager.DB_DELETE -> _pmgr.deleteObject(obj);
+                    case YPersistenceManager.DB_INSERT -> _pmgr.storeObject(obj);
+                }
+                if (isLocalTransaction) commitTransaction();
             }
-            if (isLocalTransaction) commitTransaction();
+        } finally {
+            _persistActionLock.unlock();
         }
     }
 
@@ -2503,25 +2530,18 @@ public class YEngine implements InterfaceADesign,
 
     /**
      * Determines if a work item handoff should be attempted.
-     * This method provides a stub implementation for observability.
+     *
+     * <p>Handoff classification requires integration with the resourcing service
+     * and agent capability model. Callers must implement this logic at the
+     * integration layer via the InterfaceB resourcing API.</p>
      *
      * @param workItem the work item to evaluate
-     * @return true if handoff should be attempted, false otherwise
+     * @throws UnsupportedOperationException always - requires resourcing service integration
      */
     private boolean classifyHandoffIfNeeded(org.yawlfoundation.yawl.engine.interfce.WorkItemRecord workItem) {
-        // Stub implementation for observability
-        // In a real implementation, this would check:
-        // - If the work item can be processed by other agents
-        // - If the current agent lacks required capabilities
-        // - If there are errors that prevent completion
-
-        if (workItem == null) {
-            return false;
-        }
-
-        // For now, always return false to prevent handoff
-        // This should be implemented based on business logic
-        return false;
+        throw new UnsupportedOperationException(
+                "classifyHandoffIfNeeded requires integration with the resourcing service " +
+                "and agent capability model");
     }
 
     /**

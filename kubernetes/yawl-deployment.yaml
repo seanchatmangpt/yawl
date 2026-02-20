@@ -98,22 +98,21 @@ metadata:
     app.kubernetes.io/name: yawl
     app.kubernetes.io/component: secret
 type: Opaque
-data:
-  # Database credentials (base64 encoded)
-  # Default: yawl_user / yawl_secure_password_change_me
-  # Generate new: kubectl create secret generic yawl-secrets --from-literal=DB_PASSWORD=<password> -n yawl --dry-run=client -o yaml
-  DB_USER: eWF3bF91c2Vy
-  DB_PASSWORD: eWF3bF9zZWN1cmVfcGFzc3dvcmRfY2hhbmdlX21l
-
-  # JWT signing key (base64 encoded)
-  # Generate: openssl rand -base64 64 | tr -d '\n'
-  JWT_SIGNING_KEY: Y2hhbmdlX3RoaXNfdG9fYV9zZWN1cmVfcmFuZG9tX2tleV9mb3JfcHJvZHVjdGlvbl9hdF9sZWFzdF82NF9ieXRlcw==
-
-  # Admin API key (base64 encoded)
-  ADMIN_API_KEY: Y2hhbmdlX3RoaXNfYXBpX2tleV9mb3JfcHJvZHVjdGlvbg==
-
-  # Encryption key for sensitive workflow data (base64 encoded)
-  ENCRYPTION_KEY: Y2hhbmdlX3RoaXNfZW5jcnlwdGlvbl9rZXlfZm9yX3Byb2R1Y3Rpb25fMzJfYnl0ZXM=
+# SECURITY: Placeholder values have been removed.
+# Populate secrets via CI/CD pipeline injection or External Secrets Operator (ESO).
+#
+# Option A - kubectl (development/staging only):
+#   kubectl create secret generic yawl-secrets -n yawl \
+#     --from-literal=DB_USER=yawl \
+#     --from-literal=DB_PASSWORD=$(openssl rand -base64 32) \
+#     --from-literal=JWT_SIGNING_KEY=$(openssl rand -base64 64 | tr -d '\n') \
+#     --from-literal=ADMIN_API_KEY=$(openssl rand -hex 32) \
+#     --from-literal=ENCRYPTION_KEY=$(openssl rand -base64 24)
+#
+# Option B - External Secrets Operator (production):
+#   Configure ExternalSecret CR pointing to AWS Secrets Manager / Vault / GCP SM.
+#
+# data: block intentionally absent - values MUST be injected at deploy time.
 
 ---
 # PersistentVolumeClaim for YAWL data persistence

@@ -792,8 +792,13 @@ public class YWorkItem {
 
     private void set_status(YPersistenceManager pmgr, YWorkItemStatus status)
                                                          throws YPersistenceException {
-        _engine.getAnnouncer().announceWorkItemStatusChange(this, _status, status);
+        YWorkItemStatus oldStatus = _status;
+        _engine.getAnnouncer().announceWorkItemStatusChange(this, oldStatus, status);
         _status = status;
+        // Notify the repository status index so O(1) status-based lookups stay accurate
+        if (_engine != null) {
+            _engine.getWorkItemRepository().notifyStatusChange(getIDString(), oldStatus, status);
+        }
         if (pmgr != null) pmgr.updateObject(this);
     }
 
@@ -816,6 +821,18 @@ public class YWorkItem {
         _dataString = getDataString();
     }
 
+    /**
+     * Sets the work item status field directly.
+     *
+     * <p><b>Restriction</b>: this method is intended only for Hibernate entity
+     * restoration (re-hydration from the database) or unit tests.  It bypasses
+     * announcer and status-index notification.  For all runtime status transitions
+     * use the typed {@code setStatusToStarted}, {@code setStatusToComplete}, etc.
+     * methods, or the private {@link #set_status(YPersistenceManager, YWorkItemStatus)}
+     * helper which keeps both the announcer and the repository index consistent.</p>
+     *
+     * @param status the status to set
+     */
     public void setStatus(YWorkItemStatus status) { _status = status; }
 
     public YWorkItemID getWorkItemID() { return _workItemID; }

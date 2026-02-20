@@ -1436,12 +1436,29 @@ public class YNetRunner {
         In other words, gets the id of the next task in the process flow
         @param task the task to get the flows-into task id for
         @return the task id, or null if task is null or not an atomic task */
+    /**
+     * Returns the ID of the first direct postset element of the given atomic task.
+     *
+     * <p>Performance: replaces the prior XML round-trip (serialize task to XML string,
+     * parse to JDOM Element, navigate children) with a direct graph traversal via
+     * {@link YExternalNetElement#getPostsetFlows()}.  The postset map is already
+     * materialised in memory; no serialization or parsing is required.</p>
+     *
+     * <p>Complexity: O(1) - the postset flows map lookup is constant-time.</p>
+     *
+     * @param task the task whose direct postset element ID is requested
+     * @return the ID of the first postset element, or {@code null} if the task is
+     *         {@code null}, not an atomic task, or has no outgoing flows
+     */
     private String getFlowsIntoTaskID(YTask task) {
         if ((task != null) && (task instanceof YAtomicTask atomicTask)) {
-            Element eTask = JDOMUtil.stringToElement(atomicTask.toXML());
-            return eTask.getChild("flowsInto").getChild("nextElementRef").getAttributeValue("id");
+            // Direct graph traversal: O(1), replaces XML serialize+parse (was O(N*size(XML)))
+            Set<YFlow> postsetFlows = atomicTask.getPostsetFlows();
+            if (!postsetFlows.isEmpty()) {
+                return postsetFlows.iterator().next().getNextElement().getID();
+            }
         }
-        return null ;
+        return null;
     }
 
 
@@ -1458,17 +1475,31 @@ public class YNetRunner {
     }
 
 
+    /**
+     * Restores timer states from persisted data after engine restart.
+     *
+     * <p>Performance: replaced the prior O(N*M) nested loop (N=timerStates, M=netTasks)
+     * with a single O(M) pass to build a name-to-task index, then O(N) lookups - total
+     * O(N+M) instead of O(N*M).  For a net with 50 tasks and 10 timer states this
+     * reduces comparisons from 500 to 60.</p>
+     */
     public void restoreTimerStates() {
-        if (! _timerStates.isEmpty()) {
-            for (String timerKey : _timerStates.keySet()) {
-                for (YTask task : _netTasks) {
-                    String taskName = NullCheckModernizer.firstNonNull(task.getName(), task.getID());
-                    if (timerKey.equals(taskName)) {
-                        String stateStr = _timerStates.get(timerKey);
-                        YTimerVariable timerVar = task.getTimerVariable();
-                        timerVar.setState(YWorkItemTimer.State.valueOf(stateStr), true);
-                        break;
-                    }
+        if (_timerStates.isEmpty()) return;
+
+        // Build name-to-task index once: O(M) where M = number of net tasks
+        Map<String, YTask> taskByName = new HashMap<>(_netTasks.size() * 2);
+        for (YTask task : _netTasks) {
+            String name = NullCheckModernizer.firstNonNull(task.getName(), task.getID());
+            taskByName.put(name, task);
+        }
+
+        // Restore each timer state via O(1) map lookup instead of O(M) linear scan
+        for (Map.Entry<String, String> entry : _timerStates.entrySet()) {
+            YTask task = taskByName.get(entry.getKey());
+            if (task != null) {
+                YTimerVariable timerVar = task.getTimerVariable();
+                if (timerVar != null) {
+                    timerVar.setState(YWorkItemTimer.State.valueOf(entry.getValue()), true);
                 }
             }
         }
@@ -1571,25 +1602,18 @@ public class YNetRunner {
 
     /**
      * Determines if a work item handoff should be attempted.
-     * This method provides a stub implementation for observability.
+     *
+     * <p>Not yet implemented: handoff classification requires integration with the
+     * resourcing service and agent capability model. Callers must implement this
+     * logic at the integration layer via the YEngine interface.</p>
      *
      * @param workItem the work item to evaluate
-     * @return true if handoff should be attempted, false otherwise
+     * @throws UnsupportedOperationException always - not yet implemented
      */
     private boolean classifyHandoffIfNeeded(org.yawlfoundation.yawl.engine.interfce.WorkItemRecord workItem) {
-        // Stub implementation for observability
-        // In a real implementation, this would check:
-        // - If the work item can be processed by other agents
-        // - If the current agent lacks required capabilities
-        // - If there are errors that prevent completion
-
-        if (workItem == null) {
-            return false;
-        }
-
-        // For now, always return false to prevent handoff
-        // This should be implemented based on business logic
-        return false;
+        throw new UnsupportedOperationException(
+                "classifyHandoffIfNeeded is not implemented: handoff classification " +
+                "requires integration with the resourcing service and agent capability model");
     }
 
 }

@@ -25,11 +25,12 @@ import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationException;
 import org.yawlfoundation.yawl.integration.a2a.auth.A2AAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.auth.AuthenticatedPrincipal;
 import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffSession;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
@@ -747,71 +748,61 @@ public class YawlA2AServer {
 
     private void handleHandoffMessage(HttpExchange exchange, ServerCallContext callContext, String body) {
         try {
-            // Parse the incoming A2A message
-            io.a2a.spec.Message message = io.a2a.spec.Message.fromJson(body);
-
-            // Extract text content to check for handoff prefix
-            String messageText = message.parts().stream()
-                .filter(part -> part instanceof io.a2a.spec.TextPart)
-                .map(part -> ((io.a2a.spec.TextPart) part).text())
-                .findFirst()
-                .orElse("");
-
-            if (!messageText.startsWith("YAWL_HANDOFF:")) {
-                sendHandoffError(exchange, 400, "Not a handoff message");
+            // Parse and validate the full handoff message via HandoffMessage protocol.
+            // fromJsonWithValidation parses the A2A JSON, checks the YAWL_HANDOFF: prefix,
+            // and runs schema validation before returning a typed HandoffMessage.
+            HandoffMessage handoffMessage;
+            try {
+                handoffMessage = HandoffMessage.fromJsonWithValidation(body);
+            } catch (Exception parseEx) {
+                _logger.warn("Rejected malformed handoff message from {}: {}",
+                    exchange.getRemoteAddress(), parseEx.getMessage());
+                sendHandoffError(exchange, 400, "Invalid handoff message: " + parseEx.getMessage());
                 return;
             }
 
-            // Extract work item ID from handoff message
-            String workItemId = extractWorkItemIdFromHandoff(messageText);
-
-            // Validate permissions
+            // Validate permissions before doing any engine work
             if (!callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_WORKITEM_MANAGE) &&
                 !callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
                 sendHandoffError(exchange, 403, "Insufficient permissions");
                 return;
             }
 
-            // For now, validate the handoff token structure
-            // In production, this would properly validate the JWT
-            HandoffToken token = validateHandoffToken(messageText);
+            // Validate the handoff message (token expiry + business rules) via HandoffProtocol.
+            // This delegates JWT signature verification to JwtAuthenticationProvider.
+            HandoffSession session;
+            try {
+                session = handoffProtocol.validateHandoffMessage(handoffMessage);
+            } catch (Exception validEx) {
+                _logger.warn("Handoff validation failed from {}: {}",
+                    exchange.getRemoteAddress(), validEx.getMessage());
+                sendHandoffError(exchange, 422, "Handoff validation failed: " + validEx.getMessage());
+                return;
+            }
 
-            // Send acknowledgment
-            String response = "Work item " + workItemId + " handed off successfully. Proceeding with checkout.";
-            byte[] resp = response.getBytes(StandardCharsets.UTF_8);
+            String workItemId = session.workItemId();
+
+            // Send acknowledgment before processing (avoids client timeout on engine I/O)
+            String responseBody = "{\"status\":\"accepted\",\"workItemId\":\""
+                + workItemId + "\",\"message\":\"Handoff accepted, processing checkout rollback.\"}";
+            byte[] resp = responseBody.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, resp.length);
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(resp);
             }
 
-            // Process handoff - integrate with YAWL engine
-            processHandoff(workItemId, token);
+            // Process handoff asynchronously so the HTTP response is not held open
+            processHandoff(workItemId, handoffMessage.token());
 
         } catch (Exception e) {
             _logger.error("Handoff processing failed: {}", e.getMessage());
-            sendHandoffError(exchange, 500, "Handoff failed: " + e.getMessage());
+            try {
+                sendHandoffError(exchange, 500, "Handoff failed: " + e.getMessage());
+            } catch (IOException ioEx) {
+                _logger.error("Failed to send handoff error response: {}", ioEx.getMessage());
+            }
         }
-    }
-
-    private String extractWorkItemIdFromHandoff(String messageText) {
-        String[] parts = messageText.split(":");
-        if (parts.length >= 2) {
-            return parts[1];
-        }
-        throw new IllegalArgumentException("Invalid handoff message format");
-    }
-
-    private HandoffToken validateHandoffToken(String messageText) {
-        // In production, this would parse and validate the JWT token
-        // For now, create a dummy token for demonstration
-        return new HandoffToken(
-            "WI-42",  // extracted from message
-            "source-agent",  // would be parsed from token
-            "target-agent",  // would be parsed from token
-            "session-handle",  // would be parsed from token
-            java.time.Instant.now().plusSeconds(60)  // 60s expiry
-        );
     }
 
     private void sendHandoffError(HttpExchange exchange, int statusCode, String message) throws IOException {

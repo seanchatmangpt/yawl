@@ -15,7 +15,7 @@ Deploy autonomous party agents for order fulfillment simulation.
 ```bash
 kubectl create secret generic yawl-credentials \
   --from-literal=username=admin \
-  --from-literal=password=YAWL
+  --from-literal=password=$(openssl rand -base64 32)
 
 kubectl create secret generic zai-secrets \
   --from-literal=api_key=YOUR_ZAI_API_KEY

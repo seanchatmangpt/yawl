@@ -23,14 +23,10 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 /**
  * Reasons about whether a work item is eligible for processing by an agent.
  *
- * <p>This is a stub implementation that considers all work items eligible.
- * In a real implementation, this would check:</p>
- * <ul>
- *   <li>Agent capabilities vs task requirements</li>
- *   <li>Work item data vs agent expertise</li>
- *   <li>Agent load and availability</li>
- *   <li>Business rules for task assignment</li>
- * </ul>
+ * <p>Eligibility reasoning is not yet implemented. The method throws
+ * {@link UnsupportedOperationException} to prevent the agent loop from
+ * claiming all work items are eligible (which is incorrect). A concrete
+ * subclass must supply real capability matching logic.</p>
  *
  * @since YAWL 6.0
  */
@@ -41,14 +37,16 @@ public class EligibilityReasoner {
      *
      * @param workItem the work item to evaluate
      * @return true if the work item can be processed by this agent
+     * @throws UnsupportedOperationException always — not yet implemented
      */
     public boolean isEligible(WorkItemRecord workItem) {
-        // Stub implementation - consider all work items eligible
-        // In a real implementation, this would:
-        // 1. Check agent capabilities against task requirements
-        // 2. Validate work item data against agent expertise
-        // 3. Check agent availability and load
-        // 4. Apply business rules for assignment
-        return true;
+        throw new UnsupportedOperationException(
+            "isEligible() is not implemented. Eligibility reasoning requires:\n" +
+            "  1. A capability model for the agent (set of task names or resource roles)\n" +
+            "  2. Extraction of task name / resource role from workItem.getTaskName()\n" +
+            "  3. Matching logic (exact, wildcard, or role-hierarchy)\n" +
+            "  4. Optional load check: reject if agent has too many active items\n" +
+            "Create a concrete subclass of EligibilityReasoner and inject it into the agent."
+        );
     }
 }

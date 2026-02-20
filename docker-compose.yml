@@ -176,7 +176,7 @@ services:
       - production
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-yawl}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yawl_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set - no default allowed in production}
       POSTGRES_DB: ${POSTGRES_DB:-yawl}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
@@ -232,7 +232,7 @@ services:
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-yawl}
       DB_USER: ${POSTGRES_USER:-yawl}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-yawl_password}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set - no default allowed in production}
 
       # HikariCP connection pool settings
       HIKARI_MAXIMUM_POOL_SIZE: ${HIKARI_MAXIMUM_POOL_SIZE:-20}
@@ -376,7 +376,7 @@ services:
       - observability
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set - no default allowed in production}
       GF_INSTALL_PLUGINS: grafana-piechart-panel
       GF_FEATURE_TOGGLES_ENABLE: tempoSearch tempoBackendSearch traceqlEditor
     volumes:

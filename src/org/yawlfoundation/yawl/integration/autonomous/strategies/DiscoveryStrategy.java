@@ -28,9 +28,10 @@ import java.util.List;
 /**
  * Strategy for discovering work items by autonomous agents.
  *
- * <p>This is a stub implementation that returns no work items.
- * In a real implementation, this would query the YAWL engine
- * for work items that match the agent's capabilities.</p>
+ * <p>Work item discovery is not yet implemented. The method throws
+ * {@link UnsupportedOperationException} to prevent the agent loop from
+ * silently processing zero items. A concrete subclass must query the
+ * YAWL engine for work items that match the agent's capabilities.</p>
  *
  * @since YAWL 6.0
  */
@@ -41,16 +42,19 @@ public class DiscoveryStrategy {
      *
      * @param client the Interface B client for engine communication
      * @param sessionHandle the session handle for authentication
-     * @return list of available work items, empty if none
+     * @return list of available work items
+     * @throws UnsupportedOperationException always — not yet implemented
      * @throws IOException if communication with engine fails
      */
     public List<WorkItemRecord> discoverWorkItems(InterfaceB_EnvironmentBasedClient client,
                                                  String sessionHandle) throws IOException {
-        // Stub implementation - return no work items
-        // In a real implementation, this would:
-        // 1. Query the engine for enabled work items
-        // 2. Filter based on agent capabilities
-        // 3. Return matching work items
-        return Collections.emptyList();
+        throw new UnsupportedOperationException(
+            "discoverWorkItems() is not implemented. Work item discovery requires:\n" +
+            "  1. Call client.getAvailableWorkItems(sessionHandle) via Interface B\n" +
+            "  2. Deserialise the XML response into List<WorkItemRecord>\n" +
+            "  3. Filter items against agent capabilities (see EligibilityReasoner)\n" +
+            "  4. Handle session expiry by re-authenticating and retrying once\n" +
+            "Create a concrete subclass of DiscoveryStrategy and inject it into the agent."
+        );
     }
 }

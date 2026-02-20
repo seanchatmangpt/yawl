@@ -26,14 +26,9 @@ import java.util.List;
 /**
  * Resolves conflicts when multiple agents compete for the same work item.
  *
- * <p>This is a stub implementation that provides no conflict resolution.
- * In a real implementation, this would:</p>
- * <ul>
- *   <li>Detect work item conflicts</li>
- *   <li>Apply resolution strategies (first-come, priority, etc.)</li>
- *   <li>Handle arbitration and negotiation</li>
- *   <li>Manage deadlock scenarios</li>
- * </ul>
+ * <p>Conflict resolution is not yet implemented. Both methods throw
+ * {@link UnsupportedOperationException} to prevent silent no-op behaviour
+ * in production. Implementations must provide a concrete subclass.</p>
  *
  * @since YAWL 6.0
  */
@@ -44,25 +39,32 @@ public class ConflictResolver {
      *
      * @param workItem the work item with conflicts
      * @param competingAgents list of agents wanting the work item
-     * @return the ID of the selected agent, or null if no resolution
+     * @return the ID of the selected agent
+     * @throws UnsupportedOperationException always — not yet implemented
      */
     public String resolveConflict(WorkItemRecord workItem, List<String> competingAgents) {
-        // Stub implementation - no resolution
-        // In a real implementation, this would:
-        // 1. Analyze the conflict scenario
-        // 2. Apply resolution strategy (priority, load balancing, etc.)
-        // 3. Select the most appropriate agent
-        // 4. Return the selected agent ID
-        return null;
+        throw new UnsupportedOperationException(
+            "resolveConflict() is not implemented. Conflict resolution requires:\n" +
+            "  1. A priority or load-balancing strategy injected at construction time\n" +
+            "  2. A registry of agent capability scores (see AgentInfoStore)\n" +
+            "  3. A deadlock-detection sweep over competing work items\n" +
+            "Create a concrete subclass of ConflictResolver and inject it into the agent loop."
+        );
     }
 
     /**
      * Gets the list of work items currently in conflict.
      *
      * @return list of conflicting work item IDs
+     * @throws UnsupportedOperationException always — not yet implemented
      */
     public List<String> getConflictingWorkItems() {
-        // Stub implementation - no conflicts
-        return Collections.emptyList();
+        throw new UnsupportedOperationException(
+            "getConflictingWorkItems() is not implemented. Conflict tracking requires:\n" +
+            "  1. A concurrent map keyed by work-item ID with competing agent lists\n" +
+            "  2. Registration hooks in the agent checkout path\n" +
+            "  3. Eviction on successful checkout or timeout\n" +
+            "Create a concrete subclass of ConflictResolver and inject it into the agent loop."
+        );
     }
 }

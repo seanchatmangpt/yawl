@@ -550,13 +550,13 @@ public abstract class YTask extends YExternalNetElement implements IMarkingTask 
 
 
     public synchronized boolean t_isExitEnabled() {
-        return t_isBusy() &&
-                ((
-                        _mi_active.getIdentifiers().containsAll(_mi_complete.getIdentifiers()) &&
-                                _mi_complete.getIdentifiers().containsAll(_mi_active.getIdentifiers())
-                ) || (
-                        _mi_complete.getIdentifiers().size() >= _multiInstAttr.getThreshold()
-                ));
+        if (!t_isBusy()) return false;
+        // All-complete check: active and complete identifier lists are identical (covers both MI and non-MI tasks)
+        List<YIdentifier> active = _mi_active.getIdentifiers();
+        List<YIdentifier> complete = _mi_complete.getIdentifiers();
+        if (active.containsAll(complete) && complete.containsAll(active)) return true;
+        // Threshold check: only applicable when multi-instance attributes are defined
+        return _multiInstAttr != null && complete.size() >= _multiInstAttr.getThreshold();
     }
 
 

@@ -23,14 +23,10 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 /**
  * Produces output for work items based on agent decision logic.
  *
- * <p>This is a stub implementation that returns minimal output.
- * In a real implementation, this would:</p>
- * <ul>
- *   <li>Analyze work item data</li>
- *   <li>Apply domain-specific logic</li>
- *   <li>Generate appropriate output</li>
- *   <li>Handle edge cases and errors</li>
- * </ul>
+ * <p>Output production is not yet implemented. The method throws
+ * {@link UnsupportedOperationException} to prevent silent fabrication
+ * of output data in production. A concrete subclass must supply the
+ * domain-specific decision logic.</p>
  *
  * @since YAWL 6.0
  */
@@ -41,26 +37,16 @@ public class DecisionReasoner {
      *
      * @param workItem the work item to process
      * @return the output data for the work item
-     * @throws RuntimeException if decision fails
+     * @throws UnsupportedOperationException always — not yet implemented
      */
     public String produceOutput(WorkItemRecord workItem) {
-        // Stub implementation - return minimal output
-        // In a real implementation, this would:
-        // 1. Analyze work item input data
-        // 2. Apply business logic and rules
-        // 3. Generate appropriate output
-        // 4. Handle validation and error cases
-
-        if (workItem == null) {
-            throw new IllegalArgumentException("Work item cannot be null");
-        }
-
-        // Generate simple output based on task name
-        String taskName = workItem.getTaskName();
-        if (taskName == null || taskName.trim().isEmpty()) {
-            return "<output>Task completed</output>";
-        }
-
-        return String.format("<output>Task '%s' completed successfully</output>", taskName);
+        throw new UnsupportedOperationException(
+            "produceOutput() is not implemented. Output production requires:\n" +
+            "  1. Domain-specific business rules for each task type\n" +
+            "  2. Parsing of work item input data (workItem.getDataListAsXML())\n" +
+            "  3. Application of XQuery/XPath expressions to derive output values\n" +
+            "  4. Serialisation of result back to YAWL data XML format\n" +
+            "Create a concrete subclass of DecisionReasoner with task-specific logic."
+        );
     }
 }

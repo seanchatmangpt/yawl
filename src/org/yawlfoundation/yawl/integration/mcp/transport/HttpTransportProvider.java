@@ -279,13 +279,19 @@ public class HttpTransportProvider {
 
         /**
          * Handles an MCP method call.
+         *
+         * @throws UnsupportedOperationException always — MCP method routing is not implemented
          */
         private JsonNode handleMethod(String method, JsonNode params) throws IOException {
-            // In a real implementation, this would route to the appropriate MCP method
-            // For now, we'll return a simple response
-            return jsonMapper.createObjectNode()
-                .put("result", "Method not implemented: " + method)
-                .put("error", "Method not implemented");
+            throw new UnsupportedOperationException(
+                "handleMethod() is not implemented for method '" + method + "'. " +
+                "MCP method routing requires:\n" +
+                "  1. A dispatch table mapping method names to handler functions\n" +
+                "  2. Handlers for at minimum: initialize, tools/list, tools/call\n" +
+                "  3. JSON-RPC 2.0 response framing (id, jsonrpc, result/error)\n" +
+                "  4. Error code mapping per MCP specification (see MCP spec section 4)\n" +
+                "See YawlMcpHttpServer.java for a complete Spring-based MCP server example."
+            );
         }
     }
 

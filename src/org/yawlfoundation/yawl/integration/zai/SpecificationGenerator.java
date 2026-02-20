@@ -304,9 +304,15 @@ public class SpecificationGenerator {
     }
 
     private YSpecification fixIdentifiers(YSpecification spec) {
-        // Implement auto-fixing of invalid identifiers if needed
-        // This is a placeholder for identifier normalization logic
-        return spec;
+        throw new UnsupportedOperationException(
+            "fixIdentifiers() is not implemented. Identifier normalization requires:\n" +
+            "  1. A traversal of all YDecomposition, YTask, and YCondition elements\n" +
+            "  2. Validation of each ID against the NCName grammar (XML spec section 2.3)\n" +
+            "  3. Replacement of invalid characters (spaces, colons) with underscores\n" +
+            "  4. Deduplication of resulting IDs with a numeric suffix strategy\n" +
+            "See YSpecification.java and YNetElement.java for the element hierarchy.\n" +
+            "Disable autoFixIds in GenerationOptions until this is implemented."
+        );
     }
 
     private String truncate(String s, int maxLength) {

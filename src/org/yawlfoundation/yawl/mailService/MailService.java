@@ -337,7 +337,7 @@ public class MailService extends InterfaceBWebsideController {
         if ("PLAIN".equalsIgnoreCase(strategyString)) return TransportStrategy.SMTP;
         if ("SSL".equalsIgnoreCase(strategyString)) return TransportStrategy.SMTPS;
         if ("TLS".equalsIgnoreCase(strategyString)) {
-            _extraProperties.put("mail.smtp.ssl.protocols", "TLSv1.2");
+            _extraProperties.put("mail.smtp.ssl.protocols", "TLSv1.3 TLSv1.2");
             return TransportStrategy.SMTP_TLS;
         }
 
