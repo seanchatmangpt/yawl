@@ -109,7 +109,7 @@ public class CompleteCaseDeleteCase {
 	}
 	
 	public List<EntityMID> emidsFromArcsNoDupl(List<InteractionArc> arcs) {
-		List<EntityMID> emids = new ArrayList<EntityMID>();
+		List<EntityMID> emids = new ArrayList<>();
 		for (InteractionArc arc : arcs) {
 			EntityMID emid = arc.getEntityID().getEmid();
 			boolean exists = false;
@@ -127,7 +127,7 @@ public class CompleteCaseDeleteCase {
 	}
 	
 	public List<Object> exceptionCase (List<EntityMID> emids, String classID) {
-		List<Object> returnList = new ArrayList<Object>();
+		List<Object> returnList = new ArrayList<>();
 
 		// get exception block
 		ProcletModels pmodels = ProcletModels.getInstance();
@@ -296,7 +296,7 @@ public class CompleteCaseDeleteCase {
 									if (graph.getEntityMID().getValue().equals(emidToRemove.getValue() + "TEMP")) {
 
 										// find if there are outgoing CP arcs with no outgoing or incoming arcs
-										List<InteractionNode> nodesRemove = new ArrayList<InteractionNode>();
+										List<InteractionNode> nodesRemove = new ArrayList<>();
 										for (InteractionNode node : graph.getNodes()) {
 											boolean found = false;
 											for (InteractionArc arc : graph.getArcs()) {
@@ -420,7 +420,7 @@ public class CompleteCaseDeleteCase {
             String emidsStr = item.getEmid();
 
             // split the string
-            List<EntityMID> emids = new ArrayList<EntityMID>();
+            List<EntityMID> emids = new ArrayList<>();
             String[] split = emidsStr.split(",");
             for (String t : split) {
                 emids.add(new EntityMID(t));
@@ -436,7 +436,7 @@ public class CompleteCaseDeleteCase {
     }
 	
 	public static List<InteractionNode> getExceptionCasesSelected () {
-		List<InteractionNode> nodes = new ArrayList<InteractionNode>();
+		List<InteractionNode> nodes = new ArrayList<>();
         List items = DBConnection.getStoredItems(Item.ExceptionCaseSelection);
         for (Object o : items) {
             StoredItem item = (StoredItem) o;
@@ -506,7 +506,7 @@ public class CompleteCaseDeleteCase {
 	}
 	
 	public static List<EntityMID> getAvailableEmidsCaseExceptionToUser() {
-		List<EntityMID> emidList = new ArrayList<EntityMID>();
+		List<EntityMID> emidList = new ArrayList<>();
         List items = DBConnection.getStoredItems(Item.EmidExceptionCaseSelection);
         for (Object o : items) {
             emidList.add(((StoredItem) o).newEntityMID());

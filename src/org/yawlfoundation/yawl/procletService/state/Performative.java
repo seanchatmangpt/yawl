@@ -36,7 +36,7 @@ public class Performative {
 	private Timestamp time = null;
 	private String channel = "";
 	private String sender = "";
-	private List<String> receivers = new ArrayList<String>();
+	private List<String> receivers = new ArrayList<>();
 	private String action = "";
 	private String content = null;
 	private String scope = "";

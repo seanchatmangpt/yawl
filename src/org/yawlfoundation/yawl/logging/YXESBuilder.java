@@ -285,7 +285,7 @@ public class YXESBuilder {
 
 
     private Map<String, String> parseComplexTypeDefinition(XNode typeNode) {
-        Map<String, String> element2TypeMap = new HashMap<String, String>();
+        Map<String, String> element2TypeMap = new HashMap<>();
         if (typeNode.hasChildren()) {
             for (XNode child : typeNode.getChildren()) {
                 if (child.getName().endsWith("element")) {

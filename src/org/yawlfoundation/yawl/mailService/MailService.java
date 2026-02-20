@@ -372,7 +372,7 @@ public class MailService extends InterfaceBWebsideController {
                 return new Recipient(null, s, javaxRecipientType);
             }).collect(Collectors.toList());
         }
-        return Collections.emptyList();
+        return List.of();
     }
 
     private RecipientType convertRecipientType(jakarta.mail.Message.RecipientType jakartaType) {

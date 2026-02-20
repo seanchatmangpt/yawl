@@ -1166,8 +1166,8 @@ public class YNetRunner {
                     task.cancel(pmgr);
                 }
             }
-            else if (((YCondition) netElement).containsIdentifier()) {
-                ((YCondition) netElement).removeAll(pmgr);
+            else if (netElement instanceof YCondition cond && cond.containsIdentifier()) {
+                cond.removeAll(pmgr);
             }
         }
         _enabledTasks = new HashSet<>();

@@ -208,7 +208,7 @@ public class ZaiDecisionReasoner {
      */
     public DataQualityResult assessDataQuality(String data, String dataSchema) throws DecisionException {
         if (data == null || data.isEmpty()) {
-            return new DataQualityResult(0.0, "Empty data", Collections.emptyList());
+            return new DataQualityResult(0.0, "Empty data", List.of());
         }
 
         long startTime = System.currentTimeMillis();
@@ -386,7 +386,7 @@ public class ZaiDecisionReasoner {
      * @return unmodifiable list of audit entries
      */
     public List<DecisionAuditEntry> getAuditLog() {
-        return Collections.unmodifiableList(new ArrayList<>(auditLog));
+        return List.copyOf(new ArrayList<>(auditLog));
     }
 
     /**
@@ -924,7 +924,7 @@ public class ZaiDecisionReasoner {
         public DataQualityResult(double score, String summary, List<String> issues) {
             this.score = Math.max(0.0, Math.min(1.0, score));
             this.summary = summary;
-            this.issues = issues != null ? issues : Collections.emptyList();
+            this.issues = issues != null ? issues : List.of();
         }
 
         public double getScore() { return score; }
@@ -963,8 +963,8 @@ public class ZaiDecisionReasoner {
         private final List<String> recommendations;
 
         public BottleneckAnalysis(List<Bottleneck> bottlenecks, List<String> recommendations) {
-            this.bottlenecks = bottlenecks != null ? bottlenecks : Collections.emptyList();
-            this.recommendations = recommendations != null ? recommendations : Collections.emptyList();
+            this.bottlenecks = bottlenecks != null ? bottlenecks : List.of();
+            this.recommendations = recommendations != null ? recommendations : List.of();
         }
 
         public List<Bottleneck> getBottlenecks() { return bottlenecks; }
@@ -982,7 +982,7 @@ public class ZaiDecisionReasoner {
 
         public WorkerProfile(String id, List<String> skills, String level) {
             this.id = id;
-            this.skills = skills != null ? skills : Collections.emptyList();
+            this.skills = skills != null ? skills : List.of();
             this.level = level != null ? level : "standard";
         }
 
@@ -1021,7 +1021,7 @@ public class ZaiDecisionReasoner {
         public CompletionPrediction(int estimatedMinutes, double confidence, List<String> factors) {
             this.estimatedMinutes = Math.max(0, estimatedMinutes);
             this.confidence = confidence;
-            this.factors = factors != null ? factors : Collections.emptyList();
+            this.factors = factors != null ? factors : List.of();
         }
 
         public int getEstimatedMinutes() { return estimatedMinutes; }
@@ -1040,7 +1040,7 @@ public class ZaiDecisionReasoner {
         public TransitionValidation(boolean valid, String reason, List<String> warnings) {
             this.valid = valid;
             this.reason = reason;
-            this.warnings = warnings != null ? warnings : Collections.emptyList();
+            this.warnings = warnings != null ? warnings : List.of();
         }
 
         public boolean isValid() { return valid; }

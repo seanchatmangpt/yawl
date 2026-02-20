@@ -597,7 +597,7 @@ public final class SecurityEventBus {
      * @return list of current subscribers
      */
     public List<Subscriber> getSubscribers() {
-        return Collections.unmodifiableList(subscribers);
+        return List.copyOf(subscribers);
     }
 
     // =========================================================================

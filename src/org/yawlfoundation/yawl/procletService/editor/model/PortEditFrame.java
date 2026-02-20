@@ -96,14 +96,14 @@ public class PortEditFrame extends JDialog {
         if (blockpv != null) {
         	blockComboBox.setSelectedItem(blockpv);
         }
-        java.util.List<String> valuesDir = new ArrayList<String>();
+        java.util.List<String> valuesDir = new ArrayList<>();
         valuesDir.add("IN");
         valuesDir.add("OUT");
         directionComboBox = new javax.swing.JComboBox(valuesDir.toArray());
         if (this.dirpv != null) {
         	directionComboBox.setSelectedItem(dirpv.toString());
         }
-        java.util.List<String> valuesCard = new ArrayList<String>();
+        java.util.List<String> valuesCard = new ArrayList<>();
         //valuesCard.add("ZERO");
         valuesCard.add("ONE");
         valuesCard.add("PLUS");
@@ -114,7 +114,7 @@ public class PortEditFrame extends JDialog {
         	cardinalityComboBox.setSelectedItem(cardpv.toString());
         }
         jLabel5 = new javax.swing.JLabel();
-        java.util.List<String> valuesMult = new ArrayList<String>();
+        java.util.List<String> valuesMult = new ArrayList<>();
         //valuesMult.add("ZERO");
         valuesMult.add("ONE");
         valuesMult.add("PLUS");

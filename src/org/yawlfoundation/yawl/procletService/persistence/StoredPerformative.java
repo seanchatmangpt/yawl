@@ -63,7 +63,7 @@ public class StoredPerformative {
 
 
     public Performative newPerformative() {
- 	    List<String> receivers = new ArrayList<String>();
+ 	    List<String> receivers = new ArrayList<>();
         Collections.addAll(receivers, receiver.split(","));
 		ProcletPort.Direction dir = ProcletPort.getDirectionFromString(direction);
         List<EntityID> eids = Performatives.parseEntityIDsStr(entityIDs);

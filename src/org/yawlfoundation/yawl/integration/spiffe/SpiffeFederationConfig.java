@@ -71,7 +71,7 @@ public class SpiffeFederationConfig {
         }
 
         public Map<String, String> getMetadata() {
-            return Collections.unmodifiableMap(metadata);
+            return Map.copyOf(metadata);
         }
 
         public String getCloud() {

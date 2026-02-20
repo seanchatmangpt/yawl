@@ -31,8 +31,8 @@ public class PortConnections extends DirectedSparseGraph {
 	
 	private static PortConnections pconns = null;
 
-	private List<PortConnection> pcs = new ArrayList<PortConnection>();
-	private List<String> channels = new ArrayList<String>();
+	private List<PortConnection> pcs = new ArrayList<>();
+	private List<String> channels = new ArrayList<>();
 	
 	private PortConnections () {
 		
@@ -58,7 +58,7 @@ public class PortConnections extends DirectedSparseGraph {
 	
 	public List<String> getChannels () {
 		return this.channels;
-//		List<String> returnList = new ArrayList<String>();
+//		List<String> returnList = new ArrayList<>();
 //		for (PortConnection pconn : getPortConnections()) {
 //			String channel = pconn.getChannel();
 //			if (!returnList.contains(channel)) {

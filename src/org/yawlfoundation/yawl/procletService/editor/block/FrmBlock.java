@@ -58,15 +58,15 @@ public class FrmBlock extends DesignInternalFrame {
   private javax.swing.JPanel bottomPanel;
   private javax.swing.JButton buttonCommit;
   private javax.swing.JComboBox comboBoxAvEmids;
-  List<JPanel> createItemPanelList = new ArrayList<JPanel>();
-  List<JPanel> nonCreateItemPanelList = new ArrayList<JPanel>();
-  List<JPanel> fragmentItemPanelList = new ArrayList<JPanel>();
-  List<JSpinner> createItemSpinnerList = new ArrayList<JSpinner>();
-  List<JCheckBox> fragmentItemCheckBoxList = new ArrayList<JCheckBox>();
-  List<JCheckBox> nonCreateItemCheckBoxList = new ArrayList<JCheckBox>();
-  List<List> createItemItemList = new ArrayList<List>();
-  List<List> fragmentItemItemList = new ArrayList<List>();
-  List<List> nonCreateItemItemList = new ArrayList<List>();
+  List<JPanel> createItemPanelList = new ArrayList<>();
+  List<JPanel> nonCreateItemPanelList = new ArrayList<>();
+  List<JPanel> fragmentItemPanelList = new ArrayList<>();
+  List<JSpinner> createItemSpinnerList = new ArrayList<>();
+  List<JCheckBox> fragmentItemCheckBoxList = new ArrayList<>();
+  List<JCheckBox> nonCreateItemCheckBoxList = new ArrayList<>();
+  List<List> createItemItemList = new ArrayList<>();
+  List<List> fragmentItemItemList = new ArrayList<>();
+  List<List> nonCreateItemItemList = new ArrayList<>();
   private javax.swing.JButton finishSelButton;
   private javax.swing.JLabel labelCreatePanel;
   private javax.swing.JLabel labelFragmentPanel;
@@ -100,7 +100,7 @@ public class FrmBlock extends DesignInternalFrame {
   private Transformer edgeLabel = null;
   
   private JButton selectButton = new javax.swing.JButton();
-  private List<JRadioButton> initRadioButtons = new ArrayList<JRadioButton>();
+  private List<JRadioButton> initRadioButtons = new ArrayList<>();
   private Map<JRadioButton,InteractionNode> initRadioButtonMapping = new HashMap<JRadioButton,InteractionNode>();
   private InteractionNode selectedNode = null;
   // init panel
@@ -157,7 +157,7 @@ public class FrmBlock extends DesignInternalFrame {
 //				  if (obj instanceof InteractionNode) {
 //					  InteractionNode objNode = (InteractionNode) obj;
 //					  // first get all choice nodes
-//					  List<InteractionNode> nodesRel = new ArrayList<InteractionNode>();
+//					  List<InteractionNode> nodesRel = new ArrayList<>();
 //					  if (nonCreateItemItemList != null) {
 //						  for (List item : nonCreateItemItemList) {
 //							  InteractionNode node = (InteractionNode) item.get(3);
@@ -648,7 +648,7 @@ private void initComponents() {
 //      vv = new VisualizationViewer(new CircleLayout(pconnsInst));
       
       // options
-      List<String> options = new ArrayList<String>();
+      List<String> options = new ArrayList<>();
       options.add("FRLayout");
       options.add("KKLayout");
       options.add("CircleLayout");
@@ -845,7 +845,7 @@ private void initComponents() {
 private void initPanel() {
 	// find source nodes
     // inform which emid is chosen and get options
-    List<InteractionNode> nodes = new ArrayList<InteractionNode>();
+    List<InteractionNode> nodes = new ArrayList<>();
     //create
     for (List item : this.createItemItemList) {
     	InteractionNode node = (InteractionNode) item.get(2);

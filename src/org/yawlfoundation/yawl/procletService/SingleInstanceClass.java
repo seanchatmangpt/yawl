@@ -34,13 +34,13 @@ public class SingleInstanceClass {
 
 	private static final SingleInstanceClass singleInstance = new SingleInstanceClass();
 
-	private List<ThreadNotify> registeredClasses = new ArrayList<ThreadNotify>();
+	private List<ThreadNotify> registeredClasses = new ArrayList<>();
 	private HashMap<ThreadNotify,InternalRunner> mapping = new HashMap<ThreadNotify,InternalRunner>();
 	private HashMap<ThreadNotify,Boolean> mappingDone = new HashMap<ThreadNotify,Boolean>();
 	private final ReentrantLock _mutex = new ReentrantLock();
 	private final ReentrantLock _mutex2 = new ReentrantLock();
 	private final ReentrantLock _mutex3 = new ReentrantLock();
-	private List<String> blockedCases = new ArrayList<String>();
+	private List<String> blockedCases = new ArrayList<>();
 
 	private SingleInstanceClass() {
 		super();

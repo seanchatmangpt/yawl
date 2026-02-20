@@ -87,7 +87,7 @@ public class InteractionGraphs {
 	}
 	
 	public List<InteractionGraph> getTempGraphs() {
-		List<InteractionGraph> graphs = new ArrayList<InteractionGraph>();
+		List<InteractionGraph> graphs = new ArrayList<>();
 		for (InteractionGraph graph : this.getGraphs()) {
 			if (graph.getEntityMID().getValue().contains("TEMP")) {
 				graphs.add(graph);
@@ -125,7 +125,7 @@ public class InteractionGraphs {
 	}
 	
 	public void createTempGraphs() {
-		List<InteractionGraph> tempList = new ArrayList<InteractionGraph>();
+		List<InteractionGraph> tempList = new ArrayList<>();
 		for (InteractionGraph graph : this.getGraphs()) {
 			tempList.add(graph);
 		}
@@ -135,7 +135,7 @@ public class InteractionGraphs {
 	}
 	
 	public void deleteTempGraphs() {
-		List<InteractionGraph> remGraphs = new ArrayList<InteractionGraph>();
+		List<InteractionGraph> remGraphs = new ArrayList<>();
 		for (InteractionGraph graph : this.getGraphs()) { 
 			if (graph.getEntityMID().getValue().contains("TEMP")) {
 				remGraphs.add(graph);
@@ -297,7 +297,7 @@ public class InteractionGraphs {
 	public void updateGraphPerfInFailed(List<EntityID> eids) {
 		for (EntityID eid : eids) {
 			for (InteractionGraph graph : this.getGraphs()) {
-				List<InteractionArc> removeArcs = new ArrayList<InteractionArc>();
+				List<InteractionArc> removeArcs = new ArrayList<>();
 				if (graph.getEntityMID().getValue().equals(eid.getEmid().getValue()) || 
 						graph.getEntityMID().getValue().equals(eid.getEmid().getValue() + "TEMP")) {
 					// arc
@@ -370,7 +370,7 @@ public class InteractionGraphs {
 	public void commitTempGraphs () {
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		List<InteractionGraph> graphsTemp = igraphs.getTempGraphs();
-		List<InteractionGraph> graphsToRemove = new ArrayList<InteractionGraph>();
+		List<InteractionGraph> graphsToRemove = new ArrayList<>();
 		for (InteractionGraph tempGraph : graphsTemp) {
 			EntityMID emidTemp = tempGraph.getEntityMID();
 			EntityMID emitWithoutTemp = new EntityMID(emidTemp.getValue().replace("TEMP",""));
@@ -392,7 +392,7 @@ public class InteractionGraphs {
 	public void commitTempGraphEmid (String emid) {
 		InteractionGraphs igraphs = InteractionGraphs.getInstance();
 		List<InteractionGraph> graphsTemp = igraphs.getTempGraphs();
-		List<InteractionGraph> graphsToRemove = new ArrayList<InteractionGraph>();
+		List<InteractionGraph> graphsToRemove = new ArrayList<>();
 		for (InteractionGraph tempGraph : graphsTemp) {
 			EntityMID emidTemp = tempGraph.getEntityMID();
 			EntityMID emidWithoutTemp = new EntityMID(emidTemp.getValue().replace("TEMP",""));
