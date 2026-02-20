@@ -130,47 +130,47 @@
         <!-- ============================================================== -->
 
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-spec</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-server-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-transport-rest</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-http-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client-transport-jsonrpc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client-transport-rest</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client-transport-spi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-jsonrpc-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-transport-jsonrpc</artifactId>
         </dependency>
 

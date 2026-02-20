@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.mcp.a2a.a2a;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -76,6 +77,7 @@ public class YawlA2AExecutor implements AgentExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(YawlA2AExecutor.class);
 
     @Autowired
+    @Qualifier("virtualThreadTaskExecutor")
     private AsyncTaskExecutor virtualThreadExecutor;
 
     @Value("${yawl.engine.url:http://localhost:8080/yawl}")

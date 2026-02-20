@@ -221,7 +221,7 @@ public record HandoffMessage(
      * @return true if validation passes
      * @throws HandoffException if validation fails
      */
-    public boolean validate() {
+    public boolean validate() throws HandoffException {
         SchemaValidator validator = new SchemaValidator();
         String json = toJson();
         SchemaValidator.ValidationResult result = validator.validateMessage(json);
@@ -237,7 +237,7 @@ public record HandoffMessage(
      * @return true if validation with business rules passes
      * @throws HandoffException if validation fails
      */
-    public boolean validateWithBusinessRules() {
+    public boolean validateWithBusinessRules() throws HandoffException {
         // First do schema validation
         validate();
         // Then business rules
