@@ -1,0 +1,78 @@
+# WCP-62: Human-AI Handoff Pattern
+# Seamless transition between AI and human workers
+
+name: HumanAIHandoffPattern
+uri: human-ai-handoff.xml
+first: ReceiveTask
+
+variables:
+  - name: taskType
+    type: xs:string
+  - name: aiConfidence
+    type: xs:decimal
+    default: 0.0
+  - name: confidenceThreshold
+    type: xs:decimal
+    default: 0.85
+  - name: requiresHuman
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: ReceiveTask
+    flows: [AIClassification]
+    split: xor
+    join: xor
+    description: "Receive incoming task"
+
+  - id: AIClassification
+    flows: [CheckConfidence]
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      binding: dynamic
+      capabilities: [classification]
+    description: "AI classifies task"
+
+  - id: CheckConfidence
+    flows: [AIHandle, HumanHandle]
+    condition: aiConfidence >= confidenceThreshold -> AIHandle
+    default: HumanHandle
+    split: xor
+    join: xor
+    description: "Check AI confidence level"
+
+  - id: AIHandle
+    flows: [CompleteTask]
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      binding: dynamic
+      capabilities: [processing]
+    description: "AI processes task"
+
+  - id: HumanHandle
+    flows: [HumanReview, HumanProcess]
+    split: xor
+    join: xor
+    description: "Route to human"
+
+  - id: HumanReview
+    flows: [HumanProcess]
+    split: xor
+    join: xor
+    description: "Human reviews AI suggestion"
+
+  - id: HumanProcess
+    flows: [CompleteTask]
+    split: xor
+    join: xor
+    description: "Human completes task"
+
+  - id: CompleteTask
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Task completed"

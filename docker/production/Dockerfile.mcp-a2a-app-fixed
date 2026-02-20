@@ -1,0 +1,75 @@
+# =============================================================================
+# YAWL v6.0 Dockerfile for MCP-A2A Application (Spring Boot)
+# =============================================================================
+# Multi-stage build for optimized Spring Boot application with Java 25
+# Usage:
+#   docker build -f docker/production/Dockerfile.mcp-a2a-app-fixed -t yawl-mcp-a2a-app .
+#   docker buildx bake --load -f docker/docker-bake.hcl --set mcp-a2a-app.context=. mcp-a2a-app
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder (Maven build)
+# -----------------------------------------------------------------------------
+FROM eclipse-temurin:25-jdk-alpine AS builder
+
+# Install Maven for Alpine Linux
+RUN apk add --no-cache maven
+
+# Create working directory
+WORKDIR /build
+
+# Copy entire project
+COPY . .
+
+# Build only the MCP-A2A application with dependencies
+# -T 1.5C enables parallel builds (1.5 × CPU cores)
+# -pl yawl-mcp-a2a-app builds only the specified module
+# -am builds required dependencies
+# -DskipTests skips tests for faster builds
+# -Dmaven.javadoc.skip skips JavaDoc generation
+RUN mvn -T 1.5C clean package \
+  -pl yawl-mcp-a2a-app \
+  -am \
+  -DskipTests \
+  -Dmaven.javadoc.skip \
+  -Dmaven.build.cache=/root/.m2/repository
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime (Minimal Java 25 JRE)
+# -----------------------------------------------------------------------------
+FROM eclipse-temurin:25-jre-alpine AS runtime
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Create non-root user for security
+RUN addgroup -S yawl && \
+    adduser -S dev -G yawl && \
+    mkdir -p /app && \
+    chown -R dev:yawl /app
+
+# Switch to non-root user
+USER dev:yawl
+
+# Set working directory
+WORKDIR /app
+
+# Copy JAR from builder stage
+COPY --from=builder /build/yawl-mcp-a2a-app/target/*.jar app.jar
+
+# Environment variables for optimization
+ENV JAVA_OPTS="-XX:+UseZGC -XX:ZGenerational=true -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"
+ENV JAVA_TOOL_OPTIONS="-Djava.security.egd=file:/dev/./urandom"
+
+# Expose ports
+# - 8080: Spring Boot application
+# - 8081: MCP server
+# - 8082: A2A agent
+EXPOSE 8080 8081 8082
+
+# Health check endpoints
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health/liveness || exit 1
+
+# Default command to start the application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

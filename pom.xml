@@ -173,7 +173,7 @@
         <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
         <!-- ================================================================ -->
-        <mcp.version>1.0.0-RC1</mcp.version>
+        <mcp.version>0.18.1</mcp.version>
         <a2a.version>1.0.0.Alpha2</a2a.version>
 
         <!-- ================================================================ -->
@@ -710,6 +710,11 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
@@ -796,57 +801,62 @@
                 <version>${mcp.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-spec</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-common</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-server-common</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-transport-rest</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-http-client</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-client</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-client-transport-jsonrpc</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-client-transport-rest</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
+                <artifactId>a2a-java-sdk-client-transport-grpc</artifactId>
+                <version>${a2a.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-client-transport-spi</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-jsonrpc-common</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.anthropic</groupId>
+                <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-transport-jsonrpc</artifactId>
                 <version>${a2a.version}</version>
             </dependency>
@@ -987,6 +997,38 @@
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-registry-prometheus</artifactId>
                 <version>${micrometer.version}</version>
+            </dependency>
+
+            <!-- Resilience4j modules for retry and circuit breaker -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-retry</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-circuitbreaker</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-core</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-micrometer</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-bulkhead</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-ratelimiter</artifactId>
+                <version>${resilience4j.version}</version>
             </dependency>
 
             <!-- ============================================================== -->
@@ -1204,6 +1246,30 @@
             <groupId>org.jspecify</groupId>
             <artifactId>jspecify</artifactId>
             <version>${jspecify.version}</version>
+        </dependency>
+
+        <!-- OpenTelemetry API for observability classes in src/ -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+
+        <!-- Resilience4j for resilience patterns -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-bulkhead</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-ratelimiter</artifactId>
         </dependency>
     </dependencies>
 

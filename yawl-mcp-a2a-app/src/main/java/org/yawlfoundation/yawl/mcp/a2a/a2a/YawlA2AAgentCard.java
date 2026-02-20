@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentCapabilities;
+import io.a2a.spec.AgentInterface;
 import io.a2a.spec.AgentProvider;
 import io.a2a.spec.AgentSkill;
 
@@ -81,6 +82,12 @@ public class YawlA2AAgentCard {
 
     @Value("${yawl.a2a.agent-description:YAWL workflow management agent with MCP tool support}")
     private String agentDescription;
+
+    @Value("${yawl.a2a.transport.rest.port:8082}")
+    private int restPort;
+
+    @Value("${yawl.a2a.transport.rest.path:/a2a}")
+    private String restPath;
 
     private AgentCard agentCard;
 
@@ -139,6 +146,12 @@ public class YawlA2AAgentCard {
                     List.of("transform", "json", "xml")),
                 createSkill("transform-data", "Transform workflow data using specified rules",
                     List.of("transform", "data", "convert"))
+            ))
+            .supportedInterfaces(List.of(
+                new AgentInterface(
+                    "a2a-rest",
+                    "http://localhost:" + restPort + restPath
+                )
             ))
             .build();
 

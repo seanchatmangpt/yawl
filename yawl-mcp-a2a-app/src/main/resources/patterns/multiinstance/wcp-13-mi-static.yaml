@@ -1,0 +1,26 @@
+# WCP-13: Multiple Instances with Static Design
+# Fixed number of instances known at design time
+
+name: MIStaticPattern
+uri: mi-static.xml
+first: ProcessAll
+
+variables:
+  - name: item1
+    type: xs:string
+  - name: item2
+    type: xs:string
+  - name: item3
+    type: xs:string
+
+tasks:
+  - id: ProcessAll
+    flows: [end]
+    split: xor
+    join: and
+    multiInstance:
+      min: 3
+      max: 3
+      mode: static
+      threshold: all
+    description: "Process exactly 3 items in parallel"

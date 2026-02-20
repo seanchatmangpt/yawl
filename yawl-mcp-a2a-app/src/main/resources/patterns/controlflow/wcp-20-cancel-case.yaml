@@ -1,0 +1,74 @@
+# WCP-20: Cancel Case Pattern
+# Cancel entire workflow case - all active tasks are terminated
+
+name: CancelCasePattern
+uri: cancel-case.xml
+first: StartTask
+
+variables:
+  - name: cancelCaseRequested
+    type: xs:boolean
+    default: false
+  - name: caseStatus
+    type: xs:string
+    default: "running"
+  - name: cancellationReason
+    type: xs:string
+    default: ""
+
+tasks:
+  - id: StartTask
+    flows: [ProcessA, ProcessB, CancelMonitor]
+    split: and
+    join: xor
+    description: "Start parallel processing branches with case cancellation monitor"
+
+  - id: ProcessA
+    flows: [MergeResults]
+    split: xor
+    join: xor
+    description: "First processing branch - can be canceled by case-level cancellation"
+    cancel: CancelMonitor
+
+  - id: ProcessB
+    flows: [MergeResults]
+    split: xor
+    join: xor
+    description: "Second processing branch - can be canceled by case-level cancellation"
+    cancel: CancelMonitor
+
+  - id: CancelMonitor
+    flows: [CancellationHandler]
+    split: xor
+    join: xor
+    description: "Monitor that triggers case-wide cancellation"
+    condition: cancelCaseRequested == true
+
+  - id: CancellationHandler
+    flows: [CaseCancelled]
+    split: xor
+    join: xor
+    description: "Handle case-level cancellation cleanup and logging"
+
+  - id: MergeResults
+    flows: [CaseComplete]
+    split: xor
+    join: and
+    description: "Merge results from all processing branches"
+
+  - id: CaseComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Normal case completion"
+
+  - id: CaseCancelled
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Case terminated via cancellation"
+
+cancellation:
+  - trigger: CancelMonitor
+    cancels: [ProcessA, ProcessB, MergeResults]
+    scope: case

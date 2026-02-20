@@ -94,6 +94,33 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   echo 'export YAWL_DATABASE_TYPE=h2' >> "$CLAUDE_ENV_FILE"
 fi
 
+# ============================================================================
+# Observatory Codebase Analysis
+# ============================================================================
+
+echo "🔍 Running Observatory to generate codebase facts..."
+
+# Run Observatory in facts-only mode for fast startup (~13s)
+if bash scripts/observatory/observatory.sh --facts; then
+    echo "✅ Observatory facts generated successfully"
+
+    # Display summary from INDEX.md
+    if [ -f "docs/v6/latest/INDEX.md" ]; then
+        FACT_COUNT=$(grep -c "^- " docs/v6/latest/INDEX.md || echo "0")
+        echo "   📊 Available facts: ${FACT_COUNT} files"
+
+        # Show recent commit info
+        if [ -f "docs/v6/latest/receipts/observatory.json" ]; then
+            COMMIT_HASH=$(jq -r '.repo.git.commit // "N/A"' docs/v6/latest/receipts/observatory.json)
+            echo "   🔍 Commit hash: ${COMMIT_HASH}"
+        fi
+    fi
+else
+    echo "⚠️  Observatory generation failed - continuing without facts"
+    echo "   You can manually run: bash scripts/observatory/observatory.sh"
+fi
+
+echo ""
 echo "✨ YAWL environment ready for Claude Code Web"
 echo ""
 echo "📋 Environment Summary:"
@@ -101,6 +128,7 @@ echo "   • Java Version: Java $JAVA_VERSION (required)"
 echo "   • Build System: Maven 3.x"
 echo "   • Maven Cache: ${M2_CACHE_DIR}"
 echo "   • Database: H2 (in-memory)"
+echo "   • Observatory: Facts auto-generated on startup"
 echo "   • Test Command: bash scripts/dx.sh (fast) or mvn clean test (full)"
 echo "   • Environment: Remote/Ephemeral"
 echo ""

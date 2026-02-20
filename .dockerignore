@@ -122,10 +122,10 @@ ansible/
 # ============================================================================
 # Build Scripts and Config (host-only)
 # ============================================================================
-scripts/
-Makefile
-*.sh
-!entrypoint.sh
+# scripts/ is needed for test runner inside Docker
+# Makefile
+# *.sh is needed for healthcheck scripts
+# !entrypoint.sh
 
 # ============================================================================
 # Miscellaneous

@@ -33,7 +33,7 @@ public class ZaiHttpClient {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private Duration connectTimeout = Duration.ofSeconds(30);
-    private Duration readTimeout = Duration.ofSeconds(60);
+    private Duration readTimeout = Duration.ofSeconds(120);
 
     public ZaiHttpClient(String apiKey) {
         this(apiKey, ZAI_API_BASE);

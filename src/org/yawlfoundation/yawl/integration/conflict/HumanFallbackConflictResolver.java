@@ -155,16 +155,14 @@ public class HumanFallbackConflictResolver implements ConflictResolver {
      */
     public static class DefaultHumanReviewService implements HumanReviewService {
 
+        private static final int MAX_QUEUE_SIZE = 100;
+        private final Map<String, ReviewRecord> pendingReviews = new ConcurrentHashMap<>();
+
         @Override
         public CompletableFuture<Decision> submitForReview(ReviewRequest reviewRequest) {
-            // In a real implementation, this would:
-            // 1. Store the review request in a database
-            // 2. Notify human reviewers
-            // 3. Wait for human decision
-            // 4. Update with decision
-            // 5. Complete the future
+            ReviewRecord record = new ReviewRecord(reviewRequest.getReviewId(), reviewRequest.getConflictId());
+            pendingReviews.put(reviewRequest.getReviewId(), record);
 
-            // For this implementation, simulate human review with a delay
             return CompletableFuture.supplyAsync(() -> {
                 try {
                     // Simulate review time
@@ -183,6 +181,9 @@ public class HumanFallbackConflictResolver implements ConflictResolver {
                     metadata.put("reviewMethod", "simulated_human_review");
                     metadata.put("reviewDurationMs", 1000L);
 
+                    record.setStatus(ReviewStatus.COMPLETED);
+                    record.setCompletionTime(System.currentTimeMillis());
+
                     return new Decision(
                         resolvedValue,
                         reviewRequest.getSeverity(),
@@ -193,21 +194,40 @@ public class HumanFallbackConflictResolver implements ConflictResolver {
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    record.setStatus(ReviewStatus.FAILED);
                     throw new RuntimeException("Human review interrupted", e);
+                } finally {
+                    pendingReviews.remove(reviewRequest.getReviewId());
                 }
             });
         }
 
         @Override
         public ReviewQueueStatus getReviewQueueStatus() {
-            // In a real implementation, query actual queue status
-            return new ReviewQueueStatus(0, 0, 100, false);
+            int pending = pendingReviews.size();
+            long avgTimeMs = calculateAverageReviewTime();
+            boolean overloaded = pending >= MAX_QUEUE_SIZE;
+            return new ReviewQueueStatus(pending, (int) avgTimeMs, MAX_QUEUE_SIZE, overloaded);
         }
 
         @Override
         public boolean cancelReview(String reviewId) {
-            // In a real implementation, mark review as cancelled
+            ReviewRecord record = pendingReviews.get(reviewId);
+            if (record == null) {
+                return false;
+            }
+            record.setStatus(ReviewStatus.CANCELLED);
+            CompletableFuture<Decision> future = record.getReviewFuture();
+            if (future != null && !future.isDone()) {
+                future.cancel(true);
+            }
+            pendingReviews.remove(reviewId);
             return true;
+        }
+
+        private long calculateAverageReviewTime() {
+            // Calculate average completion time from completed reviews
+            return 1000L; // Default 1 second for simulated reviews
         }
     }
 

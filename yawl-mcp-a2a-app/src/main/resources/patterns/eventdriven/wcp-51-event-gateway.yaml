@@ -1,0 +1,43 @@
+# WCP-51: Event Gateway Pattern
+# Wait for one of multiple events, first event triggers continuation
+
+name: EventGatewayPattern
+uri: event-gateway.xml
+first: WaitForEvents
+
+variables:
+  - name: triggeredEvent
+    type: xs:string
+    default: ""
+
+tasks:
+  - id: WaitForEvents
+    flows: [EventA, EventB, EventC]
+    split: xor
+    join: xor
+    eventGateway: true
+    description: "Wait for first event"
+
+  - id: EventA
+    flows: [ProcessEvent]
+    split: xor
+    join: discriminator
+    description: "Event A received"
+
+  - id: EventB
+    flows: [ProcessEvent]
+    split: xor
+    join: discriminator
+    description: "Event B received"
+
+  - id: EventC
+    flows: [ProcessEvent]
+    split: xor
+    join: discriminator
+    description: "Event C received"
+
+  - id: ProcessEvent
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Process triggered event"

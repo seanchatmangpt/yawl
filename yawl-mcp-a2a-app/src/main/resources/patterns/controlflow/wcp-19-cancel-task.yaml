@@ -1,0 +1,55 @@
+# WCP-19: Cancel Task Pattern
+# A task that can be canceled by another task (cancellation region)
+
+name: CancelTaskPattern
+uri: cancel-task.xml
+first: StartTask
+
+variables:
+  - name: cancelRequested
+    type: xs:boolean
+    default: false
+  - name: processingStatus
+    type: xs:string
+    default: "pending"
+  - name: cancellationReason
+    type: xs:string
+    default: ""
+
+tasks:
+  - id: StartTask
+    flows: [MainTask, CancelTrigger]
+    split: and
+    join: xor
+    description: "Start parallel branches - main processing and cancellation monitor"
+
+  - id: MainTask
+    flows: [EndTask]
+    split: xor
+    join: xor
+    description: "Main processing task that can be canceled"
+    cancel: CancelTrigger
+
+  - id: CancelTrigger
+    flows: [CancellationHandler]
+    split: xor
+    join: xor
+    description: "Trigger task that cancels MainTask when executed"
+    condition: cancelRequested == true
+
+  - id: CancellationHandler
+    flows: [EndTask]
+    split: xor
+    join: xor
+    description: "Handle cancellation cleanup"
+
+  - id: EndTask
+    flows: [end]
+    split: xor
+    join: and
+    description: "Complete workflow - reached from either main or cancellation path"
+
+cancellation:
+  - trigger: CancelTrigger
+    cancels: [MainTask]
+    scope: region

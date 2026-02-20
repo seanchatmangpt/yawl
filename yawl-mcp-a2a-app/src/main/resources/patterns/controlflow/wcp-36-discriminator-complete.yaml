@@ -1,0 +1,61 @@
+# WCP-36: Discriminator + Complete MI Pattern
+# Discriminator that completes multi-instance after first completion
+
+name: DiscriminatorCompleteMIPattern
+uri: discriminator-complete-mi.xml
+first: StartTask
+
+variables:
+  - name: itemCount
+    type: xs:integer
+    default: 5
+  - name: firstResult
+    type: xs:string
+  - name: completedEarly
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartTask
+    flows: [ProcessItems]
+    split: xor
+    join: xor
+    description: "Start discriminator workflow"
+
+  - id: ProcessItems
+    flows: [Discriminator]
+    split: and
+    join: xor
+    multiInstance:
+      min: 3
+      max: 5
+      mode: dynamic
+      threshold: first
+    description: "Process items in parallel"
+
+  - id: Discriminator
+    flows: [CompleteRemaining, Continue]
+    condition: completedEarly == true -> CompleteRemaining
+    default: Continue
+    split: xor
+    join: discriminator
+    description: "Discriminator - first completion wins"
+
+  - id: CompleteRemaining
+    flows: [HandleResult]
+    split: xor
+    join: xor
+    completeMI: ProcessItems
+    description: "Complete remaining instances"
+
+  - id: Continue
+    flows: [HandleResult]
+    split: xor
+    join: xor
+    description: "Continue with first result"
+
+  - id: HandleResult
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Handle the result"

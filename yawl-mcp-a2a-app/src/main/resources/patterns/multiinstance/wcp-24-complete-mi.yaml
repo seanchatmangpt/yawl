@@ -1,0 +1,68 @@
+# WCP-24: Complete Multiple Instances Pattern
+# Complete all instances simultaneously without waiting
+
+name: CompleteMIPattern
+uri: complete-mi.xml
+first: StartTask
+
+variables:
+  - name: itemCount
+    type: xs:integer
+    default: 5
+  - name: forceComplete
+    type: xs:boolean
+    default: false
+  - name: completedCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [ProcessItems]
+    split: xor
+    join: xor
+    description: "Start multi-instance workflow"
+
+  - id: ProcessItems
+    flows: [CheckForceComplete, ContinueProcessing]
+    split: and
+    join: xor
+    multiInstance:
+      min: 3
+      max: 5
+      mode: dynamic
+      threshold: all
+    description: "Process items in parallel"
+
+  - id: CheckForceComplete
+    flows: [ForceCompleteAll, WaitForAll]
+    condition: forceComplete == true -> ForceCompleteAll
+    default: WaitForAll
+    split: xor
+    join: xor
+    description: "Check if force complete is needed"
+
+  - id: ContinueProcessing
+    flows: [WaitForAll]
+    split: xor
+    join: xor
+    description: "Continue normal processing"
+
+  - id: ForceCompleteAll
+    flows: [AllComplete]
+    split: xor
+    join: xor
+    completeMI: ProcessItems
+    description: "Force complete all instances"
+
+  - id: WaitForAll
+    flows: [AllComplete]
+    split: xor
+    join: and
+    description: "Wait for all instances"
+
+  - id: AllComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "All instances complete"

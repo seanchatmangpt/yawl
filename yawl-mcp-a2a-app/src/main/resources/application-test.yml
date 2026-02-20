@@ -1,0 +1,102 @@
+# Test profile configuration
+# Activates with: --spring.profiles.active=test
+# Used for Docker Compose testing without YAWL engine dependency
+
+spring:
+  config:
+    activate:
+      on-profile: test
+  main:
+    banner-mode: off
+    log-startup-info: false
+    lazy-initialization: true
+  autoconfigure:
+    exclude:
+      # Disable Prometheus auto-configuration to avoid NoClassDefFoundError
+      # The micrometer-registry-prometheus 1.16.x requires prometheus-metrics-exposition-formats
+      # which is not included by default
+      - org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
+
+# Disable file logging in test mode
+logging:
+  level:
+    root: WARN
+    org.yawlfoundation.yawl: INFO
+    org.yawlfoundation.yawl.mcp.a2a: INFO
+    org.springframework: WARN
+    io.modelcontextprotocol: INFO
+    io.anthropic.a2a: INFO
+  file:
+    name:
+
+# Minimal actuator endpoints for test
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  # Disable all metrics to avoid Prometheus class loading issues
+  metrics:
+    enable:
+      all: false
+    export:
+      prometheus:
+        enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: false
+
+# Disable OpenTelemetry in test mode
+otel:
+  sdk:
+    disabled: true
+  traces:
+    exporter: none
+  metrics:
+    exporter: none
+  logs:
+    exporter: none
+
+# Test-specific YAWL settings
+# Engine is mocked/unavailable in test mode
+yawl:
+  engine:
+    url: http://localhost:8080/yawl
+    connection:
+      timeout-ms: 2000
+      retry-attempts: 1
+
+  mcp:
+    enabled: true
+    transport: http
+    http:
+      enabled: true
+      port: 8081
+
+  a2a:
+    enabled: true
+    transport:
+      rest:
+        enabled: true
+        port: 8082
+      jsonrpc:
+        enabled: false
+
+  metrics:
+    enabled: false
+
+# Disable unnecessary features in test mode
+server:
+  port: 8080
+  shutdown: immediate

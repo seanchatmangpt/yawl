@@ -1,0 +1,57 @@
+# WCP-37: Local Trigger Pattern
+# Trigger task from external event within workflow scope
+
+name: LocalTriggerPattern
+uri: local-trigger.xml
+first: StartTask
+
+variables:
+  - name: triggerReceived
+    type: xs:boolean
+    default: false
+  - name: triggerData
+    type: xs:string
+  - name: timeout
+    type: xs:duration
+    default: PT5M
+
+tasks:
+  - id: StartTask
+    flows: [WaitForTrigger]
+    split: xor
+    join: xor
+    description: "Start and wait for trigger"
+
+  - id: WaitForTrigger
+    flows: [ProcessTrigger, HandleTimeout]
+    split: xor
+    join: xor
+    trigger:
+      type: local
+      event: external_signal
+      timeout: PT5M
+    description: "Wait for local trigger"
+
+  - id: ProcessTrigger
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Process the trigger"
+
+  - id: HandleTimeout
+    flows: [HandleNoTrigger]
+    split: xor
+    join: xor
+    description: "Handle timeout"
+
+  - id: HandleNoTrigger
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Complete without trigger"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete workflow"

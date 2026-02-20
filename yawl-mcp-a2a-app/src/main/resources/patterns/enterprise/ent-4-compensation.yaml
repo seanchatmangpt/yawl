@@ -1,0 +1,72 @@
+# ENT-4: Compensation Pattern
+# Undo work when subsequent steps fail
+
+name: EnterpriseCompensationPattern
+uri: enterprise-compensation.xml
+first: StartProcess
+
+variables:
+  - name: processId
+    type: xs:string
+  - name: step1Complete
+    type: xs:boolean
+    default: false
+  - name: step2Complete
+    type: xs:boolean
+    default: false
+  - name: failureOccurred
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartProcess
+    flows: [Step1]
+    split: xor
+    join: xor
+    description: "Start business process"
+
+  - id: Step1
+    flows: [Step2, UndoStep1]
+    condition: failureOccurred == false -> Step2
+    default: UndoStep1
+    split: xor
+    join: xor
+    description: "Execute step 1"
+
+  - id: Step2
+    flows: [Step3, UndoStep2]
+    condition: failureOccurred == false -> Step3
+    default: UndoStep2
+    split: xor
+    join: xor
+    description: "Execute step 2"
+
+  - id: Step3
+    flows: [ProcessComplete]
+    split: xor
+    join: xor
+    description: "Execute step 3"
+
+  - id: UndoStep2
+    flows: [UndoStep1]
+    split: xor
+    join: xor
+    description: "Compensate step 2"
+
+  - id: UndoStep1
+    flows: [ProcessRolledBack]
+    split: xor
+    join: xor
+    description: "Compensate step 1"
+
+  - id: ProcessComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Process completed"
+
+  - id: ProcessRolledBack
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Process rolled back"

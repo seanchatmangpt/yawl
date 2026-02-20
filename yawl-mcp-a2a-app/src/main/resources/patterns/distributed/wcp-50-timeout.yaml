@@ -1,0 +1,55 @@
+# WCP-50: Timeout Pattern
+# Limit execution time with fallback
+
+name: TimeoutPattern
+uri: timeout.xml
+first: StartWithTimeout
+
+variables:
+  - name: timeoutSeconds
+    type: xs:integer
+    default: 30
+  - name: completed
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartWithTimeout
+    flows: [MainOperation, TimeoutMonitor]
+    split: and
+    join: xor
+    description: "Start with timeout"
+
+  - id: MainOperation
+    flows: [OperationComplete]
+    split: xor
+    join: xor
+    description: "Main operation"
+
+  - id: TimeoutMonitor
+    flows: [HandleTimeout, OperationComplete]
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT${timeoutSeconds}S
+    description: "Monitor for timeout"
+
+  - id: HandleTimeout
+    flows: [FallbackOperation]
+    split: xor
+    join: xor
+    cancels: [MainOperation]
+    description: "Handle timeout"
+
+  - id: FallbackOperation
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Execute fallback"
+
+  - id: OperationComplete
+    flows: [end]
+    split: xor
+    join: and
+    description: "Operation completed"

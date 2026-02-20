@@ -106,7 +106,8 @@ public class YStatelessEngineSuspendResumeTest extends TestCase
     private YSpecification loadSpec() throws YSyntaxException {
         InputStream is = getClass().getResourceAsStream(MINIMAL_SPEC_RESOURCE);
         assertNotNull("MinimalSpec.xml resource must exist", is);
-        String xml = StringUtil.streamToString(is);
+        String xml = StringUtil.streamToString(is)
+                .orElseThrow(() -> new AssertionError("Empty spec XML from " + MINIMAL_SPEC_RESOURCE));
         return engine.unmarshalSpecification(xml);
     }
 

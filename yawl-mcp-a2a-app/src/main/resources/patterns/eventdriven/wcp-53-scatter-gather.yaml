@@ -1,0 +1,55 @@
+# WCP-53: Scatter-Gather Pattern
+# Broadcast to multiple services and aggregate responses
+
+name: ScatterGatherPattern
+uri: scatter-gather.xml
+first: Scatter
+
+variables:
+  - name: request
+    type: xs:string
+  - name: responseA
+    type: xs:string
+  - name: responseB
+    type: xs:string
+  - name: responseC
+    type: xs:string
+  - name: aggregatedResult
+    type: xs:string
+
+tasks:
+  - id: Scatter
+    flows: [ServiceA, ServiceB, ServiceC]
+    split: and
+    join: xor
+    description: "Broadcast request"
+
+  - id: ServiceA
+    flows: [Gather]
+    split: xor
+    join: xor
+    description: "Service A processing"
+
+  - id: ServiceB
+    flows: [Gather]
+    split: xor
+    join: xor
+    description: "Service B processing"
+
+  - id: ServiceC
+    flows: [Gather]
+    split: xor
+    join: xor
+    description: "Service C processing"
+
+  - id: Gather
+    flows: [Aggregate]
+    split: xor
+    join: and
+    description: "Collect all responses"
+
+  - id: Aggregate
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Aggregate results"

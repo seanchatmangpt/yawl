@@ -1,0 +1,62 @@
+# WCP-23: Cancel Multiple Instances Pattern
+# Cancel all instances of a multi-instance task
+
+name: CancelMIPattern
+uri: cancel-mi.xml
+first: StartTask
+
+variables:
+  - name: itemCount
+    type: xs:integer
+    default: 5
+  - name: shouldCancel
+    type: xs:boolean
+    default: false
+  - name: cancelledCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [ProcessItems, CheckCancel]
+    split: and
+    join: xor
+    description: "Start multi-instance processing"
+
+  - id: ProcessItems
+    flows: [CheckCancel]
+    split: xor
+    join: xor
+    multiInstance:
+      min: 1
+      max: 5
+      mode: dynamic
+      threshold: all
+    description: "Process multiple items in parallel"
+
+  - id: CheckCancel
+    flows: [CancelAllInstances, AllComplete]
+    condition: shouldCancel == true -> CancelAllInstances
+    default: AllComplete
+    split: xor
+    join: and
+    description: "Check if cancellation is needed"
+
+  - id: CancelAllInstances
+    flows: [HandleCancellation]
+    split: xor
+    join: xor
+    cancelMI: ProcessItems
+    description: "Cancel all instances of ProcessItems"
+
+  - id: AllComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "All instances completed normally"
+
+  - id: HandleCancellation
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Handle the cancellation result"

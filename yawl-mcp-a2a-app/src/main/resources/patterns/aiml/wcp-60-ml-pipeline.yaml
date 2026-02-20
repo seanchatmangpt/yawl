@@ -1,0 +1,109 @@
+# WCP-60: ML Pipeline Pattern
+# Machine learning training pipeline workflow
+
+name: MLPipelinePattern
+uri: ml-pipeline.xml
+first: StartPipeline
+
+variables:
+  - name: datasetPath
+    type: xs:string
+  - name: modelType
+    type: xs:string
+    default: "classification"
+  - name: hyperparameters
+    type: xs:string
+  - name: validationSplit
+    type: xs:float
+    default: 0.2
+  - name: modelMetrics
+    type: xs:string
+
+tasks:
+  - id: StartPipeline
+    flows: [DataIngestion]
+    split: xor
+    join: xor
+    description: "Start ML pipeline"
+
+  - id: DataIngestion
+    flows: [DataValidation]
+    split: xor
+    join: xor
+    description: "Ingest data from source"
+
+  - id: DataValidation
+    flows: [DataPreprocessing, HandleValidationError]
+    condition: dataValid == true -> DataPreprocessing
+    default: HandleValidationError
+    split: xor
+    join: xor
+    description: "Validate data quality"
+
+  - id: HandleValidationError
+    flows: [ReportError]
+    split: xor
+    join: xor
+    description: "Handle validation error"
+
+  - id: ReportError
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Report pipeline error"
+
+  - id: DataPreprocessing
+    flows: [FeatureEngineering]
+    split: xor
+    join: xor
+    description: "Preprocess data"
+
+  - id: FeatureEngineering
+    flows: [TrainTestSplit]
+    split: xor
+    join: xor
+    description: "Engineer features"
+
+  - id: TrainTestSplit
+    flows: [ModelTraining]
+    split: xor
+    join: xor
+    description: "Split into train/test sets"
+
+  - id: ModelTraining
+    flows: [ModelEvaluation]
+    split: xor
+    join: xor
+    description: "Train ML model"
+
+  - id: ModelEvaluation
+    flows: [ModelValidation, RetrainModel]
+    condition: modelMetrics.accuracy > 0.8 -> ModelValidation
+    default: RetrainModel
+    split: xor
+    join: xor
+    description: "Evaluate model performance"
+
+  - id: RetrainModel
+    flows: [ModelTraining]
+    split: xor
+    join: xor
+    description: "Retrain with adjusted params"
+
+  - id: ModelValidation
+    flows: [ModelRegistration]
+    split: xor
+    join: xor
+    description: "Validate model on test set"
+
+  - id: ModelRegistration
+    flows: [PipelineComplete]
+    split: xor
+    join: xor
+    description: "Register model in registry"
+
+  - id: PipelineComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Pipeline complete"

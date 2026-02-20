@@ -1,0 +1,48 @@
+# WCP-55: Event Stream Pattern
+# Process continuous stream of events
+
+name: EventStreamPattern
+uri: event-stream.xml
+first: ConsumeStream
+
+variables:
+  - name: streamPosition
+    type: xs:long
+    default: 0
+  - name: batchSize
+    type: xs:integer
+    default: 100
+  - name: continueConsuming
+    type: xs:boolean
+    default: true
+
+tasks:
+  - id: ConsumeStream
+    flows: [ProcessEventBatch]
+    split: xor
+    join: xor
+    description: "Consume from event stream"
+
+  - id: ProcessEventBatch
+    flows: [Checkpoint, StopConsuming]
+    condition: continueConsuming == true -> Checkpoint
+    default: StopConsuming
+    split: xor
+    join: xor
+    multiInstance:
+      min: 1
+      max: batchSize
+      mode: dynamic
+    description: "Process batch of events"
+
+  - id: Checkpoint
+    flows: [ConsumeStream]
+    split: xor
+    join: xor
+    description: "Save stream position"
+
+  - id: StopConsuming
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Stop stream consumption"

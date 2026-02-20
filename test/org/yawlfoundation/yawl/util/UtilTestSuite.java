@@ -15,7 +15,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
 @SuiteDisplayName("Util Test Suite")
 @SelectClasses({
         TestSafeNumberParser.class,
-        TestNullCheckModernizer.class
+        TestNullCheckModernizer.class,
+        TestStringUtilOptional.class
 })
 public class UtilTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

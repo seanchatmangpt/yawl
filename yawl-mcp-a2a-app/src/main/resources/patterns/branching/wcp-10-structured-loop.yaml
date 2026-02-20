@@ -1,0 +1,37 @@
+# WCP-10: Structured Loop Pattern
+# Repeat task until condition is met
+
+name: StructuredLoopPattern
+uri: structured-loop.xml
+first: CheckCondition
+
+variables:
+  - name: counter
+    type: xs:integer
+    default: 0
+  - name: maxIterations
+    type: xs:integer
+    default: 10
+  - name: result
+    type: xs:string
+
+tasks:
+  - id: CheckCondition
+    flows: [ProcessItem, EndLoop]
+    condition: counter < maxIterations -> ProcessItem
+    default: EndLoop
+    split: xor
+    join: xor
+    description: "Check loop condition"
+
+  - id: ProcessItem
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Process one iteration"
+
+  - id: EndLoop
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Exit loop"

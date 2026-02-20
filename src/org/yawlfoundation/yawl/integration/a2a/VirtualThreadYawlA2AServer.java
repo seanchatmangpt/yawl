@@ -1143,48 +1143,60 @@ public class VirtualThreadYawlA2AServer {
     // =========================================================================
 
     private void handleHandoffMessage(HttpExchange exchange, ServerCallContext callContext, String body) {
-        try {
-            io.a2a.spec.Message message = io.a2a.spec.Message.fromJson(body);
-
-            String messageText = message.parts().stream()
-                .filter(part -> part instanceof io.a2a.spec.TextPart)
-                .map(part -> ((io.a2a.spec.TextPart) part).text())
-                .findFirst()
-                .orElse("");
-
-            if (!messageText.startsWith("YAWL_HANDOFF:")) {
-                sendHandoffError(exchange, 400, "Not a handoff message");
-                return;
-            }
-
-            String workItemId = extractWorkItemIdFromHandoff(messageText);
-
-            if (!callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_WORKITEM_MANAGE) &&
-                !callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
-                sendHandoffError(exchange, 403, "Insufficient permissions");
-                return;
-            }
-
-            HandoffToken token = validateHandoffToken(messageText);
-
-            String response = "Work item " + workItemId + " handed off successfully. Proceeding with checkout.";
-            byte[] resp = response.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, resp.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(resp);
-            }
-
-            processHandoff(workItemId, token);
-
-        } catch (Exception e) {
-            _logger.error("Handoff processing failed: {}", e.getMessage());
+        // Process handoff asynchronously to avoid race condition
+        Thread.ofVirtual().name("handoff-processor").start(() -> {
             try {
-                sendHandoffError(exchange, 500, "Handoff failed: " + e.getMessage());
-            } catch (IOException ioe) {
-                _logger.error("Failed to send handoff error response", ioe);
+                io.a2a.spec.Message message = io.a2a.spec.Message.fromJson(body);
+
+                String messageText = message.parts().stream()
+                    .filter(part -> part instanceof io.a2a.spec.TextPart)
+                    .map(part -> ((io.a2a.spec.TextPart) part).text())
+                    .findFirst()
+                    .orElse("");
+
+                if (!messageText.startsWith("YAWL_HANDOFF:")) {
+                    sendHandoffError(exchange, 400, "Not a handoff message");
+                    return;
+                }
+
+                String workItemId = extractWorkItemIdFromHandoff(messageText);
+
+                if (!callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_WORKITEM_MANAGE) &&
+                    !callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
+                    sendHandoffError(exchange, 403, "Insufficient permissions");
+                    return;
+                }
+
+                HandoffToken token = validateHandoffToken(messageText);
+
+                // Process handoff first before sending success response
+                processHandoff(workItemId, token);
+
+                // Only send success response after handoff processing completes successfully
+                String response = "Work item " + workItemId + " handed off successfully and checkout completed.";
+                byte[] resp = response.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, resp.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp);
+                }
+
+            } catch (HandoffException e) {
+                _logger.error("Handoff validation failed: {}", e.getMessage());
+                try {
+                    sendHandoffError(exchange, 400, "Handoff failed: " + e.getMessage());
+                } catch (IOException ioe) {
+                    _logger.error("Failed to send handoff error response", ioe);
+                }
+            } catch (Exception e) {
+                _logger.error("Handoff processing failed: {}", e.getMessage());
+                try {
+                    sendHandoffError(exchange, 500, "Handoff failed: " + e.getMessage());
+                } catch (IOException ioe) {
+                    _logger.error("Failed to send handoff error response", ioe);
+                }
             }
-        }
+        });
     }
 
     private String extractWorkItemIdFromHandoff(String messageText) {
@@ -1196,13 +1208,30 @@ public class VirtualThreadYawlA2AServer {
     }
 
     private HandoffToken validateHandoffToken(String messageText) {
-        return new HandoffToken(
-            "WI-42",
-            "source-agent",
-            "target-agent",
-            "session-handle",
-            java.time.Instant.now().plusSeconds(60)
-        );
+        try {
+            // Extract JWT from message (assuming message format: "handoff:<jwt>")
+            String[] parts = messageText.split(":", 2);
+            if (parts.length < 2) {
+                throw new HandoffException("Invalid handoff message format");
+            }
+
+            String jwt = parts[1];
+
+            // Use HandoffProtocol to verify the token
+            HandoffProtocol protocol = new HandoffProtocol();
+            HandoffToken token = protocol.verifyHandoffToken(jwt);
+
+            // Additional validation - check if token is still valid
+            if (!token.isValid()) {
+                throw new HandoffException("Handoff token has expired");
+            }
+
+            return token;
+        } catch (HandoffException e) {
+            throw e; // Re-throw handoff exceptions
+        } catch (Exception e) {
+            throw new HandoffException("Failed to validate handoff token: " + e.getMessage(), e);
+        }
     }
 
     private void sendHandoffError(HttpExchange exchange, int statusCode, String message) throws IOException {

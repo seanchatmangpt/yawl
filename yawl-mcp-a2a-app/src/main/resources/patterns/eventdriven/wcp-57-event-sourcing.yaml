@@ -1,0 +1,70 @@
+# WCP-57: Event Sourcing Pattern
+# Store state changes as sequence of events
+
+name: EventSourcingPattern
+uri: event-sourcing.xml
+first: ExecuteCommand
+
+variables:
+  - name: aggregateId
+    type: xs:string
+  - name: commandType
+    type: xs:string
+  - name: currentVersion
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: ExecuteCommand
+    flows: [LoadEvents]
+    split: xor
+    join: xor
+    description: "Receive command"
+
+  - id: LoadEvents
+    flows: [RebuildState]
+    split: xor
+    join: xor
+    description: "Load event history"
+
+  - id: RebuildState
+    flows: [ValidateCommand]
+    split: xor
+    join: xor
+    description: "Rebuild aggregate state"
+
+  - id: ValidateCommand
+    flows: [GenerateEvent, RejectCommand]
+    split: xor
+    join: xor
+    description: "Validate against state"
+
+  - id: GenerateEvent
+    flows: [PersistEvent]
+    split: xor
+    join: xor
+    description: "Generate new event"
+
+  - id: PersistEvent
+    flows: [PublishEvent]
+    split: xor
+    join: xor
+    description: "Persist event to store"
+
+  - id: PublishEvent
+    flows: [CommandComplete]
+    split: xor
+    join: xor
+    description: "Publish to subscribers"
+
+  - id: RejectCommand
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Reject invalid command"
+
+  - id: CommandComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Command completed"

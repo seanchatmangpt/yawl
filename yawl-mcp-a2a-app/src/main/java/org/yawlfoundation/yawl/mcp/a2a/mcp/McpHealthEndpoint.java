@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +50,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("${yawl.mcp.http.path:/mcp}")
+@ConditionalOnProperty(prefix = "yawl.mcp.http", name = "enabled", havingValue = "true")
 public class McpHealthEndpoint {
 
     private static final String SERVER_VERSION = "6.0.0";

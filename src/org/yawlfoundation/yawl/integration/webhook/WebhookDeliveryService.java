@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEventSerializer;
+import org.yawlfoundation.yawl.resilience.observability.RetryObservability;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -86,6 +87,7 @@ public final class WebhookDeliveryService {
 
     private static final String USER_AGENT = "YAWL-Webhook/6.0.0";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
+    private static final String COMPONENT_NAME = "webhook";
 
     /**
      * Retry delay schedule in seconds.
@@ -99,6 +101,7 @@ public final class WebhookDeliveryService {
     private final HttpClient                    httpClient;
     private final ScheduledExecutorService      retryScheduler;
     private final ExecutorService               deliveryExecutor;
+    private final RetryObservability            retryObservability;
 
     /**
      * Construct the delivery service.
@@ -117,6 +120,7 @@ public final class WebhookDeliveryService {
         this.deliveryExecutor = Executors.newVirtualThreadPerTaskExecutor();
         this.retryScheduler   = Executors.newScheduledThreadPool(2, r ->
                 Thread.ofVirtual().name("yawl-webhook-retry").unstarted(r));
+        this.retryObservability = RetryObservability.getInstance();
     }
 
     /**
@@ -162,6 +166,15 @@ public final class WebhookDeliveryService {
         String deliveryId = UUID.randomUUID().toString();
         Instant attemptAt = Instant.now();
 
+        // Calculate backoff for this attempt (0 for first attempt)
+        long backoffMs = (attemptNumber > 1 && attemptNumber <= RETRY_DELAYS_SECONDS.length + 1)
+                ? RETRY_DELAYS_SECONDS[attemptNumber - 2] * 1000L
+                : 0;
+
+        int maxAttempts = RETRY_DELAYS_SECONDS.length + 1;
+        RetryObservability.RetryContext retryCtx = retryObservability.startRetry(
+                COMPONENT_NAME, "deliver", attemptNumber, maxAttempts, backoffMs);
+
         String signatureHeader;
         try {
             signatureHeader = WebhookSigner.buildSignatureHeader(
@@ -173,6 +186,7 @@ public final class WebhookDeliveryService {
                                       deliveryId, attemptNumber, attemptAt, 0,
                                       "Signature computation failed: " + e.getMessage(),
                                       null);
+            retryCtx.recordFailure(e);
             return;
         }
 
@@ -199,6 +213,8 @@ public final class WebhookDeliveryService {
                 deliveryLog.recordSuccess(event.getEventId(), subscription.getSubscriptionId(),
                                           deliveryId, attemptNumber, attemptAt,
                                           statusCode, latencyMs, responseBody);
+                retryCtx.recordSuccess();
+                retryObservability.completeSequence(COMPONENT_NAME, "deliver", true, attemptNumber);
             } else {
                 // Non-success HTTP status
                 log.warn("Webhook delivery failed: sub={}, event={}, attempt={}, status={}",
@@ -207,6 +223,7 @@ public final class WebhookDeliveryService {
                 deliveryLog.recordFailure(event.getEventId(), subscription.getSubscriptionId(),
                                           deliveryId, attemptNumber, attemptAt,
                                           statusCode, "HTTP " + statusCode, responseBody);
+                retryCtx.recordFailure(new RuntimeException("HTTP " + statusCode));
                 scheduleRetry(event, subscription, bodyBytes, attemptNumber);
             }
 
@@ -214,6 +231,7 @@ public final class WebhookDeliveryService {
             Thread.currentThread().interrupt();
             log.warn("Webhook delivery interrupted: sub={}, event={}",
                      subscription.getSubscriptionId(), event.getEventId());
+            retryCtx.recordFailure(e);
         } catch (Exception e) {
             long latencyMs = (System.nanoTime() - startNs) / 1_000_000;
             log.warn("Webhook delivery error: sub={}, event={}, attempt={}: {}",
@@ -222,6 +240,7 @@ public final class WebhookDeliveryService {
             deliveryLog.recordFailure(event.getEventId(), subscription.getSubscriptionId(),
                                       deliveryId, attemptNumber, attemptAt,
                                       statusCode, e.getMessage(), null);
+            retryCtx.recordFailure(e);
             scheduleRetry(event, subscription, bodyBytes, attemptNumber);
         }
     }
@@ -238,6 +257,9 @@ public final class WebhookDeliveryService {
                     lastAttempt, subscription.getSubscriptionId(), event.getEventId());
             deliveryLog.recordDeadLetter(event.getEventId(), subscription.getSubscriptionId(),
                                          lastAttempt, Instant.now());
+            // Record exhausted retry sequence
+            retryObservability.recordRetryAttempt(COMPONENT_NAME, "deliver", RetryObservability.RESULT_EXHAUSTED);
+            retryObservability.completeSequence(COMPONENT_NAME, "deliver", false, lastAttempt);
             // Pause the subscription to prevent further delivery storms
             subscriptionRepo.pauseSubscription(
                     subscription.getSubscriptionId(),
@@ -246,8 +268,13 @@ public final class WebhookDeliveryService {
         }
 
         long delaySeconds = RETRY_DELAYS_SECONDS[retryIndex];
+        long delayMs = delaySeconds * 1000L;
+
         log.info("Scheduling webhook retry: sub={}, event={}, attempt={} in {}s",
                  subscription.getSubscriptionId(), event.getEventId(), nextAttempt, delaySeconds);
+
+        // Record backoff duration
+        retryObservability.recordBackoff(COMPONENT_NAME, "deliver", delayMs);
 
         retryScheduler.schedule(
                 () -> attemptDelivery(event, subscription, bodyBytes, nextAttempt),

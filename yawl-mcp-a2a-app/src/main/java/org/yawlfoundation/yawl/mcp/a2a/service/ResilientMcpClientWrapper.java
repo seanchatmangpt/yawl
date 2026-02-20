@@ -97,7 +97,10 @@ public class ResilientMcpClientWrapper implements AutoCloseable {
         this.connectionStatus = new ConcurrentHashMap<>();
         this.circuitBreakerRegistry = new McpCircuitBreakerRegistry(properties);
         this.retryRegistry = new ConcurrentHashMap<>();
-        this.fallbackHandler = new McpFallbackHandler(properties.fallback());
+        this.fallbackHandler = new McpFallbackHandler(
+            properties.fallback() != null
+                ? properties.fallback()
+                : CircuitBreakerProperties.FallbackConfig.defaults());
         this.jsonMapper = new JacksonMcpJsonMapper(new ObjectMapper());
 
         LOGGER.info("Initialized resilient MCP client wrapper with circuit breaker enabled: {}",
@@ -407,8 +410,11 @@ public class ResilientMcpClientWrapper implements AutoCloseable {
         // Initialize circuit breaker
         circuitBreakerRegistry.getOrCreate(serverId);
 
-        // Initialize retry with jitter
-        McpRetryWithJitter retry = new McpRetryWithJitter(serverId, properties.retry());
+        // Initialize retry with jitter (use defaults if retry config is null)
+        CircuitBreakerProperties.RetryConfig retryConfig = properties.retry() != null
+            ? properties.retry()
+            : CircuitBreakerProperties.RetryConfig.defaults();
+        McpRetryWithJitter retry = new McpRetryWithJitter(serverId, retryConfig);
         retryRegistry.put(serverId, retry);
 
         LOGGER.debug("Initialized resilience patterns for server: {}", serverId);
@@ -440,7 +446,10 @@ public class ResilientMcpClientWrapper implements AutoCloseable {
 
         McpRetryWithJitter retry = retryRegistry.get(serverId);
         if (retry == null) {
-            retry = new McpRetryWithJitter(properties.retry());
+            CircuitBreakerProperties.RetryConfig retryConfig = properties.retry() != null
+                ? properties.retry()
+                : CircuitBreakerProperties.RetryConfig.defaults();
+            retry = new McpRetryWithJitter(retryConfig);
         }
 
         try {

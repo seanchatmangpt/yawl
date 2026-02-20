@@ -1,0 +1,52 @@
+# WCP-21: Cancel Case Pattern
+# Entire case can be cancelled
+
+name: CancelCasePattern
+uri: cancel-case.xml
+first: StartCase
+
+variables:
+  - name: caseCancelled
+    type: xs:boolean
+    default: false
+  - name: reason
+    type: xs:string
+
+tasks:
+  - id: StartCase
+    flows: [TaskA, TaskB, CancelMonitor]
+    split: and
+    join: xor
+    description: "Start case with multiple tasks"
+
+  - id: TaskA
+    flows: [TaskC]
+    split: xor
+    join: xor
+    description: "Process task A"
+
+  - id: TaskB
+    flows: [TaskC]
+    split: xor
+    join: xor
+    description: "Process task B"
+
+  - id: CancelMonitor
+    flows: [HandleCancel]
+    condition: caseCancelled == true -> HandleCancel
+    split: xor
+    join: xor
+    description: "Monitor for cancellation"
+
+  - id: TaskC
+    flows: [end]
+    split: xor
+    join: and
+    description: "Continue case"
+
+  - id: HandleCancel
+    flows: [end]
+    split: xor
+    join: xor
+    cancels: [TaskA, TaskB, TaskC]
+    description: "Cancel entire case"

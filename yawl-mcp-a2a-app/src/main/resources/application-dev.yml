@@ -16,9 +16,7 @@ logging:
     org.hibernate.SQL: DEBUG
     io.modelcontextprotocol: TRACE
     io.anthropic.a2a: TRACE
-
-# Disable file logging in development
-logging:
+  # Disable file logging in development
   file:
     name:
 

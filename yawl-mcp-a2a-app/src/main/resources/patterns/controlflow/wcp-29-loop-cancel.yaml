@@ -1,0 +1,101 @@
+# WCP-29: Structured Loop + Cancel Task Pattern
+# Loop with ability to cancel a specific task
+
+name: LoopCancelTaskPattern
+uri: loop-cancel-task.xml
+first: StartTask
+
+variables:
+  - name: maxIterations
+    type: xs:integer
+    default: 10
+  - name: currentIteration
+    type: xs:integer
+    default: 0
+  - name: continueLoop
+    type: xs:boolean
+    default: true
+  - name: cancelRequested
+    type: xs:boolean
+    default: false
+  - name: result
+    type: xs:string
+
+tasks:
+  - id: StartTask
+    flows: [Initialize]
+    split: xor
+    join: xor
+    description: "Start loop with cancel capability"
+
+  - id: Initialize
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Initialize loop"
+
+  - id: CheckCondition
+    flows: [CheckCancel, LoopBody, ExitLoop]
+    condition: cancelRequested == true -> CheckCancel
+    condition: continueLoop == true && currentIteration < maxIterations -> LoopBody
+    default: ExitLoop
+    split: xor
+    join: xor
+    description: "Check loop and cancel conditions"
+
+  - id: CheckCancel
+    flows: [CancelTask, ResumeLoop]
+    condition: cancelRequested == true -> CancelTask
+    default: ResumeLoop
+    split: xor
+    join: xor
+    description: "Check if cancel is needed"
+
+  - id: CancelTask
+    flows: [HandleCancellation]
+    split: xor
+    join: xor
+    cancelTask: CurrentTask
+    description: "Cancel the current task"
+
+  - id: HandleCancellation
+    flows: [ExitLoop]
+    split: xor
+    join: xor
+    description: "Handle task cancellation"
+
+  - id: ResumeLoop
+    flows: [LoopBody]
+    split: xor
+    join: xor
+    description: "Resume loop execution"
+
+  - id: LoopBody
+    flows: [CurrentTask]
+    split: xor
+    join: xor
+    description: "Execute loop body"
+
+  - id: CurrentTask
+    flows: [IncrementCounter]
+    split: xor
+    join: xor
+    description: "Current task in iteration"
+
+  - id: IncrementCounter
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Increment counter"
+
+  - id: ExitLoop
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "Exit loop"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize results"

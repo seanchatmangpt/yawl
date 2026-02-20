@@ -1,0 +1,37 @@
+# WCP-14: Multiple Instances with Dynamic Design
+# Number of instances determined at runtime
+
+name: MIDynamicPattern
+uri: mi-dynamic.xml
+first: PrepareData
+
+variables:
+  - name: itemCount
+    type: xs:integer
+    default: 5
+  - name: items
+    type: xs:string
+
+tasks:
+  - id: PrepareData
+    flows: [ProcessItems]
+    split: xor
+    join: xor
+    description: "Prepare data and count items"
+
+  - id: ProcessItems
+    flows: [Finalize]
+    split: xor
+    join: and
+    multiInstance:
+      min: 1
+      max: itemCount
+      mode: dynamic
+      threshold: all
+    description: "Process items in parallel"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete processing"

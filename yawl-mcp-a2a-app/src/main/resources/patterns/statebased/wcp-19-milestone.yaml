@@ -1,0 +1,52 @@
+# WCP-19: Milestone Pattern
+# Task can only execute when milestone is reached
+
+name: MilestonePattern
+uri: milestone.xml
+first: StartProcess
+
+variables:
+  - name: milestoneReached
+    type: xs:boolean
+    default: false
+  - name: taskReady
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartProcess
+    flows: [ParallelWork, MilestoneTask]
+    split: and
+    join: xor
+    description: "Start parallel paths"
+
+  - id: ParallelWork
+    flows: [MilestoneReached]
+    split: xor
+    join: xor
+    description: "Do parallel work"
+
+  - id: MilestoneTask
+    flows: [WaitForMilestone]
+    split: xor
+    join: xor
+    description: "Prepare milestone-dependent task"
+
+  - id: MilestoneReached
+    flows: [WaitForMilestone]
+    split: xor
+    join: xor
+    description: "Mark milestone complete"
+
+  - id: WaitForMilestone
+    flows: [Continue]
+    split: xor
+    join: and
+    milestone: milestoneReached
+    description: "Execute after milestone"
+
+  - id: Continue
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Continue process"

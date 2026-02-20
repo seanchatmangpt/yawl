@@ -1,124 +1,79 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
  *
  * This file is part of YAWL. YAWL is free software: you can
  * redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation.
  *
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * Public License for more details.
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.autonomous;
 
-import java.util.Objects;
-
 /**
- * Configuration for agent partitioning strategy.
+ * Configuration for partitioning work items among multiple agents.
  *
- * <p>Enables horizontal scaling by distributing work items across multiple
- * agents using consistent hashing. Each agent processes only work items
- * assigned to its partition based on the formula: (hash % totalAgents) == agentIndex.</p>
+ * <p>Enables distributed processing of work items using consistent
+ * hashing to ensure deterministic assignment without coordination.</p>
  *
- * <h2>Partition Strategy</h2>
- * <ul>
- * <li>Even Distribution: Hash-based assignment ensures balanced workload</li>
- * <li>Consistency: Same work item always assigned to same partition</li>
- * <li>Scalability: Adding/removing agents redistributes work automatically</li>
- * </ul>
- *
- * <h2>Usage Example</h2>
- * <pre>
- * PartitionConfig partitionConfig = PartitionConfig.builder()
- *     .agentIndex(0)
- *     .totalAgents(4)
- *     .build();
- *
- * AgentConfiguration config = AgentConfiguration.builder()
- *     .capability(capability)
- *     .engineUrl("http://localhost:8080/yawl")
- *     .partitionConfig(partitionConfig)
- *     // other configuration
- *     .build();
- * </pre>
- *
- * @author YAWL Foundation
- * @version 5.2
- * @see PollingDiscoveryStrategy#partitionFilter
+ * @since YAWL 6.0
  */
-public final class PartitionConfig {
+public class PartitionConfig {
 
     private final int agentIndex;
     private final int totalAgents;
 
-    private PartitionConfig(Builder builder) {
-        this.agentIndex = builder.agentIndex;
-        this.totalAgents = builder.totalAgents;
+    /**
+     * Creates a new partition configuration.
+     *
+     * @param agentIndex the index of this agent (0-based)
+     * @param totalAgents the total number of agents in the partition
+     */
+    public PartitionConfig(int agentIndex, int totalAgents) {
+        if (agentIndex < 0 || agentIndex >= totalAgents) {
+            throw new IllegalArgumentException("agentIndex must be between 0 and totalAgents-1");
+        }
+        if (totalAgents <= 0) {
+            throw new IllegalArgumentException("totalAgents must be positive");
+        }
+        this.agentIndex = agentIndex;
+        this.totalAgents = totalAgents;
     }
 
+    /**
+     * Gets the index of this agent.
+     *
+     * @return the agent index (0-based)
+     */
     public int getAgentIndex() {
         return agentIndex;
     }
 
+    /**
+     * Gets the total number of agents in the partition.
+     *
+     * @return the total number of agents
+     */
     public int getTotalAgents() {
         return totalAgents;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PartitionConfig that = (PartitionConfig) o;
-        return agentIndex == that.agentIndex && totalAgents == that.totalAgents;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(agentIndex, totalAgents);
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionConfig{" +
-                "agentIndex=" + agentIndex +
-                ", totalAgents=" + totalAgents +
-                '}';
-    }
-
-    public static final class Builder {
-        private int agentIndex;
-        private int totalAgents;
-
-        private Builder() {
-        }
-
-        public Builder agentIndex(int agentIndex) {
-            this.agentIndex = agentIndex;
-            return this;
-        }
-
-        public Builder totalAgents(int totalAgents) {
-            this.totalAgents = totalAgents;
-            return this;
-        }
-
-        public PartitionConfig build() {
-            if (agentIndex < 0) {
-                throw new IllegalStateException("agentIndex must be non-negative");
-            }
-            if (totalAgents <= 0) {
-                throw new IllegalStateException("totalAgents must be positive");
-            }
-            if (agentIndex >= totalAgents) {
-                throw new IllegalStateException("agentIndex must be less than totalAgents");
-            }
-            return new PartitionConfig(this);
-        }
+    /**
+     * Checks if this agent should process the given work item based on partitioning.
+     *
+     * @param workItemId the work item ID to check
+     * @return true if this agent should process the work item
+     */
+    public boolean shouldProcess(String workItemId) {
+        int hash = Math.abs(workItemId.hashCode());
+        return (hash % totalAgents) == agentIndex;
     }
 }

@@ -1,0 +1,62 @@
+# WCP-61: ML Model Inference Pattern
+# Integrate machine learning model predictions into workflow
+
+name: MlModelPattern
+uri: ml-model.xml
+first: TaskA
+
+variables:
+  - name: inputData
+    type: xs:string
+  - name: modelId
+    type: xs:string
+  - name: prediction
+    type: xs:string
+    default: ""
+  - name: probability
+    type: xs:decimal
+    default: 0.0
+  - name: confidenceThreshold
+    type: xs:decimal
+    default: 0.8
+
+tasks:
+  - id: TaskA
+    flows: [TaskB]
+    split: xor
+    join: xor
+    description: "Prepare input data for model"
+
+  - id: TaskB
+    flows: [TaskC]
+    split: xor
+    join: xor
+    mlInference: true
+    modelEndpoint: modelId
+    description: "Execute ML model inference"
+
+  - id: TaskC
+    flows: [TaskD, TaskE]
+    condition: probability >= confidenceThreshold -> TaskD
+    default: TaskE
+    split: xor
+    join: xor
+    description: "Evaluate prediction confidence"
+
+  - id: TaskD
+    flows: [TaskF]
+    split: xor
+    join: xor
+    description: "High confidence - proceed with prediction"
+
+  - id: TaskE
+    flows: [TaskF]
+    split: xor
+    join: xor
+    description: "Low confidence - flag for review"
+
+  - id: TaskF
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete ML-driven workflow"

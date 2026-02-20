@@ -1,0 +1,62 @@
+# WCP-38: Global Trigger Pattern
+# Trigger from global event across workflow instances
+
+name: GlobalTriggerPattern
+uri: global-trigger.xml
+first: StartTask
+
+variables:
+  - name: globalEventReceived
+    type: xs:boolean
+    default: false
+  - name: eventData
+    type: xs:string
+  - name: subscriptionId
+    type: xs:string
+
+tasks:
+  - id: StartTask
+    flows: [SubscribeToEvent, ContinueWork]
+    split: and
+    join: xor
+    description: "Start and subscribe to global event"
+
+  - id: SubscribeToEvent
+    flows: [WaitForGlobalEvent]
+    split: xor
+    join: xor
+    description: "Subscribe to global event bus"
+
+  - id: ContinueWork
+    flows: [WaitForGlobalEvent]
+    split: xor
+    join: xor
+    description: "Continue with other work"
+
+  - id: WaitForGlobalEvent
+    flows: [ProcessGlobalEvent, HandleTimeout]
+    split: xor
+    join: and
+    trigger:
+      type: global
+      event: system_broadcast
+      channel: all_instances
+    description: "Wait for global trigger"
+
+  - id: ProcessGlobalEvent
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Process global event"
+
+  - id: HandleTimeout
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Handle timeout without event"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete workflow"

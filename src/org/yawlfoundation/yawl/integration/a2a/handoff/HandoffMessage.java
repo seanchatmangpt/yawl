@@ -18,13 +18,16 @@
 
 package org.yawlfoundation.yawl.integration.a2a.handoff;
 
+
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.yawlfoundation.yawl.integration.validation.a2a.A2ASchemaValidator;
-import org.yawlfoundation.yawl.integration.validation.schema.JsonSchemaValidator;
-import org.yawlfoundation.yawl.integration.validation.schema.SchemaValidationError;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.yawlfoundation.yawl.integration.a2a.validation.SchemaValidator;
 
 /**
  * Immutable record representing a handoff message for agent-to-agent communication.
@@ -215,25 +218,36 @@ public record HandoffMessage(
     /**
      * Validates this handoff message against the A2A schema.
      *
-     * @return validation result
-     * @throws SchemaValidationError if validation fails
+     * @return true if validation passes
+     * @throws HandoffException if validation fails
      */
-    public JsonSchemaValidator.ValidationResult validate() throws SchemaValidationError {
-        A2ASchemaValidator validator = new A2ASchemaValidator();
+    public boolean validate() throws HandoffException {
+        SchemaValidator validator = new SchemaValidator();
         String json = toJson();
-        return validator.validateHandoffMessageWithRules(json);
+        SchemaValidator.ValidationResult result = validator.validateMessage(json);
+        if (!result.isValid()) {
+            throw new HandoffException("Validation failed: " + result.getSummary());
+        }
+        return true;
     }
 
     /**
      * Validates this handoff message against the A2A schema with business rules.
      *
-     * @return validation result with business rule checks
-     * @throws SchemaValidationError if validation fails
+     * @return true if validation with business rules passes
+     * @throws HandoffException if validation fails
      */
-    public JsonSchemaValidator.ValidationResult validateWithBusinessRules() throws SchemaValidationError {
-        A2ASchemaValidator validator = new A2ASchemaValidator();
-        String json = toJson();
-        return validator.validateHandoffMessageWithRules(json);
+    public boolean validateWithBusinessRules() throws HandoffException {
+        // First do schema validation
+        validate();
+        // Then business rules
+        if (!token.isValid()) {
+            throw new HandoffException("Handoff token has expired");
+        }
+        if (fromAgent.equals(toAgent)) {
+            throw new HandoffException("fromAgent and toAgent cannot be the same");
+        }
+        return true;
     }
 
     /**
@@ -256,28 +270,16 @@ public record HandoffMessage(
      * @throws SchemaValidationError if validation fails
      * @throws HandoffException if parsing fails
      */
-    public static HandoffMessage fromJsonWithValidation(String json) throws SchemaValidationError, HandoffException {
-        // First validate the JSON structure
-        A2ASchemaValidator validator = new A2ASchemaValidator();
-        JsonSchemaValidator.ValidationResult validationResult = validator.validateHandoffMessage(json);
-
-        if (!validationResult.isValid()) {
-            throw new SchemaValidationError(
-                "Invalid handoff message JSON",
-                SchemaValidationError.ErrorType.VALIDATION_ERROR,
-                null,
-                "Check the message format against the A2A schema",
-                validationResult.getMetadata()
-            );
-        }
-
-        // Parse the JSON and create the message
+    public static HandoffMessage fromJsonWithValidation(String json) throws HandoffException {
         try {
-            List<Map<String, Object>> parts = new com.fasterxml.jackson.databind.ObjectMapper()
-                .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
-
-            return HandoffMessage.fromA2AMessage(parts);
-        } catch (Exception e) {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> root = mapper.readValue(json, new TypeReference<>() {});
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> parts = (List<Map<String, Object>>) root.get("parts");
+            HandoffMessage message = fromA2AMessage(parts);
+            message.validate();
+            return message;
+        } catch (IOException e) {
             throw new HandoffException("Failed to parse handoff message from JSON", e);
         }
     }

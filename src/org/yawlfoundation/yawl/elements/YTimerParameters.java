@@ -200,8 +200,8 @@ public class YTimerParameters {
         setWorkDaysOnly(eTimerTypeValue.getChild("workdays") != null);
 
         if (expiry.startsWith("P")) {         // duration types start with P
-            Duration duration = StringUtil.strToDuration(expiry);
-            if (duration == null) throw new IllegalArgumentException("Malformed duration value");
+            Duration duration = StringUtil.strToDuration(expiry)
+                    .orElseThrow(() -> new IllegalArgumentException("Malformed duration value"));
             set(trigger, duration);
             return true;
         }

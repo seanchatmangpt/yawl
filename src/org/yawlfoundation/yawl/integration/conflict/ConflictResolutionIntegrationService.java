@@ -392,9 +392,9 @@ public class ConflictResolutionIntegrationService {
             metrics.increment("mcpResolutionFailures");
             throw new ConflictResolutionException(
                 "MCP conflict resolution failed: " + e.getMessage(),
+                e,
                 ConflictResolver.Strategy.HYBRID,
-                conflictContext.getConflictId(),
-                e
+                conflictContext.getConflictId()
             );
         }
     }

@@ -35,6 +35,7 @@ import org.yawlfoundation.yawl.engine.interfce.Marshaller;
 import org.yawlfoundation.yawl.exceptions.YLogException;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YQueryException;
+import org.yawlfoundation.yawl.util.ErrorSpanHelper;
 
 /**
  * 
@@ -401,15 +402,26 @@ public class YWorklistGUI extends JPanel implements ActionListener, ListSelectio
 
     public void reportGeneralProblem(Exception e) {
         String message;
+        String errorType;
+
         if (e instanceof IOException ioEx || e instanceof JDOMParseException jdomEx) {
             message = "There was a problem parsing your input data.  \n" +
                     "Perhaps check that the XML is well formed.";
+            errorType = "data.parsing";
         } else if (e instanceof YQueryException queryEx) {
             message = e.getMessage();
+            errorType = "query.failed";
         } else {
             message = e.getMessage();
+            errorType = "general.error";
         }
-        e.printStackTrace();
+
+        // Log the error with structured logging
+        logger.error("UI error reported: type={}, message={}", errorType, message, e);
+
+        // Record error via ErrorSpanHelper for observability
+        ErrorSpanHelper.recordError("swingworklist." + errorType, null, e);
+
         JOptionPane.showMessageDialog(
                 this,
                 message,

@@ -1,0 +1,80 @@
+# WCP-65: Feature Store Pattern
+# Centralized feature computation and serving
+
+name: FeatureStorePattern
+uri: feature-store.xml
+first: RequestFeatures
+
+variables:
+  - name: entityId
+    type: xs:string
+  - name: featureNames
+    type: xs:string
+  - name: featureValues
+    type: xs:string
+  - name: cacheHit
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: RequestFeatures
+    flows: [CheckCache]
+    split: xor
+    join: xor
+    description: "Request features"
+
+  - id: CheckCache
+    flows: [ReturnCached, ComputeFeatures]
+    condition: cacheHit == true -> ReturnCached
+    default: ComputeFeatures
+    split: xor
+    join: xor
+    description: "Check feature cache"
+
+  - id: ComputeFeatures
+    flows: [FeatureA, FeatureB, FeatureC]
+    split: and
+    join: xor
+    description: "Compute features"
+
+  - id: FeatureA
+    flows: [AggregateFeatures]
+    split: xor
+    join: xor
+    description: "Compute feature A"
+
+  - id: FeatureB
+    flows: [AggregateFeatures]
+    split: xor
+    join: xor
+    description: "Compute feature B"
+
+  - id: FeatureC
+    flows: [AggregateFeatures]
+    split: xor
+    join: xor
+    description: "Compute feature C"
+
+  - id: AggregateFeatures
+    flows: [UpdateCache]
+    split: xor
+    join: and
+    description: "Aggregate computed features"
+
+  - id: UpdateCache
+    flows: [ReturnFeatures]
+    split: xor
+    join: xor
+    description: "Update feature cache"
+
+  - id: ReturnCached
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Return cached features"
+
+  - id: ReturnFeatures
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Return computed features"

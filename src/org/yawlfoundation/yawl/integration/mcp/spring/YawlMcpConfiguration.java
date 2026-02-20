@@ -266,9 +266,18 @@ public class YawlMcpConfiguration {
             return server;
 
         } else if (properties.getTransport() == YawlMcpProperties.Transport.HTTP) {
-            throw new UnsupportedOperationException(
-                "HTTP transport not yet implemented in Spring integration. " +
-                "Use transport: stdio or implement HTTP transport with Spring WebMVC.");
+            HttpTransportProvider httpTransport = new HttpTransportProvider(
+                properties.getHttpPort(),
+                jsonMapper
+            );
+            McpSyncServer server = McpServer.sync(httpTransport)
+                .serverInfo(SERVER_NAME, SERVER_VERSION)
+                .capabilities(YawlServerCapabilities.full())
+                .tools(toolRegistry.getAllToolSpecifications())
+                .resources(resourceRegistry.getAllResourceSpecifications())
+                .build();
+            loggingHandler.info(server, "YAWL MCP Server started with HTTP transport on port " + properties.getHttpPort());
+            return server;
         } else {
             throw new IllegalStateException("Unknown transport type: " + properties.getTransport());
         }

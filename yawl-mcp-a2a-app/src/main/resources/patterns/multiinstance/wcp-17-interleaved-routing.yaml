@@ -1,0 +1,51 @@
+# WCP-17: Interleaved Parallel Routing Pattern
+# Tasks can execute in any order but not concurrently
+
+name: InterleavedRoutingPattern
+uri: interleaved-routing.xml
+first: Start
+
+variables:
+  - name: taskA_done
+    type: xs:boolean
+    default: false
+  - name: taskB_done
+    type: xs:boolean
+    default: false
+  - name: taskC_done
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: Start
+    flows: [TaskA, TaskB, TaskC]
+    split: xor
+    join: xor
+    description: "Begin interleaved processing"
+
+  - id: TaskA
+    flows: [TaskB, TaskC, AllComplete]
+    condition: taskA_done == false -> TaskA
+    split: xor
+    join: xor
+    description: "Task A (if not done)"
+
+  - id: TaskB
+    flows: [TaskA, TaskC, AllComplete]
+    condition: taskB_done == false -> TaskB
+    split: xor
+    join: xor
+    description: "Task B (if not done)"
+
+  - id: TaskC
+    flows: [TaskA, TaskB, AllComplete]
+    condition: taskC_done == false -> TaskC
+    split: xor
+    join: xor
+    description: "Task C (if not done)"
+
+  - id: AllComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "All tasks complete"

@@ -1,0 +1,75 @@
+# WCP-39: Reset Trigger Pattern
+# Reset workflow state on external trigger
+
+name: ResetTriggerPattern
+uri: reset-trigger.xml
+first: StartTask
+
+variables:
+  - name: resetRequested
+    type: xs:boolean
+    default: false
+  - name: currentState
+    type: xs:string
+    default: "initialized"
+  - name: resetPoint
+    type: xs:string
+    default: "StartTask"
+
+tasks:
+  - id: StartTask
+    flows: [ProcessStep1]
+    split: xor
+    join: xor
+    description: "Start workflow"
+
+  - id: ProcessStep1
+    flows: [CheckReset, ProcessStep2]
+    condition: resetRequested == true -> CheckReset
+    default: ProcessStep2
+    split: xor
+    join: xor
+    description: "Process step 1"
+
+  - id: CheckReset
+    flows: [ResetToCheckpoint, ContinueProcessing]
+    condition: resetRequested == true -> ResetToCheckpoint
+    default: ContinueProcessing
+    split: xor
+    join: xor
+    trigger:
+      type: reset
+      event: reset_signal
+    description: "Check for reset trigger"
+
+  - id: ResetToCheckpoint
+    flows: [ProcessStep1]
+    split: xor
+    join: xor
+    reset: currentState
+    resetPoint: StartTask
+    description: "Reset to checkpoint"
+
+  - id: ContinueProcessing
+    flows: [ProcessStep2]
+    split: xor
+    join: xor
+    description: "Continue processing"
+
+  - id: ProcessStep2
+    flows: [ProcessStep3]
+    split: xor
+    join: xor
+    description: "Process step 2"
+
+  - id: ProcessStep3
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Process step 3"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete workflow"

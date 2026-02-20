@@ -1,0 +1,50 @@
+# WCP-49: Bulkhead Pattern
+# Isolate failures to prevent total system failure
+
+name: BulkheadPattern
+uri: bulkhead.xml
+first: RouteRequest
+
+variables:
+  - name: requestType
+    type: xs:string
+  - name: poolA_available
+    type: xs:boolean
+    default: true
+  - name: poolB_available
+    type: xs:boolean
+    default: true
+
+tasks:
+  - id: RouteRequest
+    flows: [PoolA, PoolB, RejectRequest]
+    condition: poolA_available == true -> PoolA
+    condition: poolB_available == true -> PoolB
+    default: RejectRequest
+    split: xor
+    join: xor
+    description: "Route to available pool"
+
+  - id: PoolA
+    flows: [ProcessComplete]
+    split: xor
+    join: xor
+    description: "Process in isolated pool A"
+
+  - id: PoolB
+    flows: [ProcessComplete]
+    split: xor
+    join: xor
+    description: "Process in isolated pool B"
+
+  - id: RejectRequest
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Reject - all pools full"
+
+  - id: ProcessComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Processing complete"

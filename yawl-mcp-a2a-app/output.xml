@@ -1,0 +1,170 @@
+=== Extended YAML Input ===
+
+name: ExtendedWorkflow
+uri: extended.xml
+first: StartProcess
+
+variables:
+  - name: customerId
+    type: xs:string
+  - name: orderValue
+    type: xs:decimal
+    default: 0.0
+
+tasks:
+  - id: StartProcess
+    flows: [CheckOrder]
+    split: xor
+    join: and
+    description: "Start order processing"
+
+  - id: CheckOrder
+    flows: [ProcessOrder, CancelOrder]
+    condition: orderValue > 0 -> ProcessOrder
+    default: CancelOrder
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT10M
+
+  - id: ProcessOrder
+    flows: [ShipItems]
+    split: xor
+    join: and
+    agent:
+      type: human
+      binding: dynamic
+      capabilities: [order-processing]
+    description: "Process customer order"
+
+  - id: ShipItems
+    flows: [end]
+    multiInstance:
+      min: 1
+      max: count(/items/item)
+      mode: dynamic
+      threshold: all
+    split: xor
+    join: and
+    description: "Ship order items"
+
+  - id: CancelOrder
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Cancel order"
+
+compensations:
+  - id: compensateShip
+    description: "Reverse shipment"
+
+
+=== Extended XML Output ===
+
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <specification uri="extended.xml">
+    <rootNet id="top">
+      <processControlElements>
+        <inputCondition id="i-top">
+          <flowsInto><nextElementRef id="StartProcess"/></flowsInto>
+        </inputCondition>
+        <variableDeclarations>
+          <variable id="customerId">
+            <typeDeclaration>xs:string</typeDeclaration>
+          </variable>
+          <variable id="orderValue">
+            <typeDeclaration>xs:decimal</typeDeclaration>
+            <defaultValue>0.0</defaultValue>
+          </variable>
+        </variableDeclarations>
+        <task id="StartProcess">
+          <description>Start order processing</description>
+          <flowsInto>
+            <nextElementRef id="CheckOrder"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="xor"/>
+          <decomposesTo id="StartProcessDecomposition"/>
+        </task>
+        <task id="CheckOrder">
+          <flowsInto>
+            <nextElementRef id="ProcessOrder"/>
+            <predicate>orderValue &gt; 0</predicate>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="CancelOrder"/>
+            <isDefaultFlow/>
+          </flowsInto>
+          <timer>
+            <trigger>onEnabled</trigger>
+            <duration>PT10M</duration>
+          </timer>
+          <join code="xor"/>
+          <split code="xor"/>
+          <decomposesTo id="CheckOrderDecomposition"/>
+        </task>
+        <task id="ProcessOrder">
+          <description>Process customer order</description>
+          <flowsInto>
+            <nextElementRef id="ShipItems"/>
+          </flowsInto>
+          <agent>
+            <agentType>human</agentType>
+            <binding>dynamic</binding>
+            <capabilities>
+              <capability>order-processing</capability>
+            </capabilities>
+          </agent>
+          <join code="and"/>
+          <split code="xor"/>
+          <decomposesTo id="ProcessOrderDecomposition"/>
+        </task>
+        <task id="ShipItems">
+          <description>Ship order items</description>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <multiInstance>
+            <minInstances>1</minInstances>
+            <maxInstances>count(/items/item)</maxInstances>
+            <instanceSelection>dynamic</instanceSelection>
+            <completionThreshold>all</completionThreshold>
+          </multiInstance>
+          <join code="and"/>
+          <split code="xor"/>
+          <decomposesTo id="ShipItemsDecomposition"/>
+        </task>
+        <task id="CancelOrder">
+          <description>Cancel order</description>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+          <decomposesTo id="CancelOrderDecomposition"/>
+        </task>
+        <outputCondition id="o-top"/>
+      </processControlElements>
+    </rootNet>
+    <decomposition id="StartProcessDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="CheckOrderDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="ProcessOrderDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="ShipItemsDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <decomposition id="CancelOrderDecomposition" xsi:type="WebServiceGatewayFactsType"/>
+    <compensations>
+      <compensation id="compensateShip">
+        <description>Reverse shipment</description>
+      </compensation>
+    </compensations>
+  </specification>
+</specificationSet>
+
+=== Extended Features ===
+• Variables with types and defaults
+• Timers with duration
+• Agent tasks with capabilities
+• Multi-instance with dynamic mode
+• Compensations
+• Complex conditions
+• Business rules support

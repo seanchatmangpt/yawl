@@ -1,0 +1,111 @@
+# WCP-62: Data Preprocessing Pattern
+# Data preprocessing pipeline for ML
+
+name: DataPreprocessingPattern
+uri: preprocessing.xml
+first: StartPreprocessing
+
+variables:
+  - name: inputPath
+    type: xs:string
+  - name: outputPath
+    type: xs:string
+  - name: preprocessingSteps
+    type: xs:string
+  - name: schema
+    type: xs:string
+
+tasks:
+  - id: StartPreprocessing
+    flows: [LoadData]
+    split: xor
+    join: xor
+    description: "Start preprocessing"
+
+  - id: LoadData
+    flows: [AnalyzeSchema]
+    split: xor
+    join: xor
+    description: "Load raw data"
+
+  - id: AnalyzeSchema
+    flows: [ValidateSchema, HandleSchemaError]
+    condition: schemaValid == true -> ValidateSchema
+    default: HandleSchemaError
+    split: xor
+    join: xor
+    description: "Analyze data schema"
+
+  - id: HandleSchemaError
+    flows: [ReportError]
+    split: xor
+    join: xor
+    description: "Handle schema error"
+
+  - id: ReportError
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Report preprocessing error"
+
+  - id: ValidateSchema
+    flows: [CleanData]
+    split: xor
+    join: xor
+    description: "Validate schema"
+
+  - id: CleanData
+    flows: [HandleMissing]
+    split: xor
+    join: xor
+    description: "Clean data"
+
+  - id: HandleMissing
+    flows: [TransformData]
+    split: xor
+    join: xor
+    description: "Handle missing values"
+
+  - id: TransformData
+    flows: [NormalizeData]
+    split: xor
+    join: xor
+    description: "Transform data types"
+
+  - id: NormalizeData
+    flows: [EncodeCategories]
+    split: xor
+    join: xor
+    description: "Normalize numeric values"
+
+  - id: EncodeCategories
+    flows: [ValidateOutput]
+    split: xor
+    join: xor
+    description: "Encode categorical variables"
+
+  - id: ValidateOutput
+    flows: [SaveData, FixIssues]
+    condition: outputValid == true -> SaveData
+    default: FixIssues
+    split: xor
+    join: xor
+    description: "Validate preprocessed data"
+
+  - id: FixIssues
+    flows: [CleanData]
+    split: xor
+    join: xor
+    description: "Fix validation issues"
+
+  - id: SaveData
+    flows: [PreprocessingComplete]
+    split: xor
+    join: xor
+    description: "Save preprocessed data"
+
+  - id: PreprocessingComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Preprocessing complete"

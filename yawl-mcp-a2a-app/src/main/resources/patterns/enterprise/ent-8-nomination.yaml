@@ -1,0 +1,71 @@
+# ENT-8: Nomination Pattern
+# Nominate specific person for task
+
+name: NominationPattern
+uri: nomination.xml
+first: CreateTask
+
+variables:
+  - name: taskId
+    type: xs:string
+  - name: requiredRole
+    type: xs:string
+  - name: nominatedUser
+    type: xs:string
+  - name: nominationAccepted
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: CreateTask
+    flows: [FindCandidates]
+    split: xor
+    join: xor
+    description: "Create task requiring nomination"
+
+  - id: FindCandidates
+    flows: [NominateUser]
+    split: xor
+    join: xor
+    description: "Find eligible candidates"
+
+  - id: NominateUser
+    flows: [WaitForAcceptance, TimeoutNomination]
+    split: and
+    join: xor
+    description: "Nominate specific user"
+
+  - id: WaitForAcceptance
+    flows: [CheckAcceptance]
+    split: xor
+    join: xor
+    description: "Wait for user response"
+
+  - id: CheckAcceptance
+    flows: [ExecuteTask, NominateUser]
+    condition: nominationAccepted == true -> ExecuteTask
+    default: NominateUser
+    split: xor
+    join: xor
+    description: "Check acceptance"
+
+  - id: TimeoutNomination
+    flows: [NominateUser]
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT2H
+    description: "Nomination timeout"
+
+  - id: ExecuteTask
+    flows: [TaskComplete]
+    split: xor
+    join: xor
+    description: "Execute task"
+
+  - id: TaskComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Task completed"

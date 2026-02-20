@@ -1,0 +1,41 @@
+# WCP-3: Synchronization Pattern
+# Converge multiple parallel branches into a single thread of control
+
+name: SynchronizationPattern
+uri: synchronization.xml
+first: TaskA
+
+variables:
+  - name: requestId
+    type: xs:string
+  - name: parallelCount
+    type: xs:integer
+    default: 2
+  - name: syncStatus
+    type: xs:string
+    default: "pending"
+
+tasks:
+  - id: TaskA
+    flows: [TaskB, TaskC]
+    split: and
+    join: xor
+    description: "Fan out to parallel branches"
+
+  - id: TaskB
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "Execute branch 1"
+
+  - id: TaskC
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "Execute branch 2"
+
+  - id: TaskD
+    flows: [end]
+    split: xor
+    join: and
+    description: "Synchronize all branches"

@@ -1,0 +1,70 @@
+# WCP-25: Cancel Multiple Instances + Complete MI Pattern
+# Combined cancel and complete for multi-instance tasks
+
+name: CancelCompleteMIPattern
+uri: cancel-complete-mi.xml
+first: StartTask
+
+variables:
+  - name: itemCount
+    type: xs:integer
+    default: 5
+  - name: action
+    type: xs:string
+    default: "process"
+  - name: completedCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [ProcessItems]
+    split: xor
+    join: xor
+    description: "Start the workflow"
+
+  - id: ProcessItems
+    flows: [DetermineAction]
+    split: xor
+    join: xor
+    multiInstance:
+      min: 1
+      max: 5
+      mode: dynamic
+      threshold: all
+    description: "Process multiple items"
+
+  - id: DetermineAction
+    flows: [CancelInstances, CompleteInstances, NormalComplete]
+    condition: action == "cancel" -> CancelInstances
+    condition: action == "complete" -> CompleteInstances
+    default: NormalComplete
+    split: xor
+    join: xor
+    description: "Determine action for instances"
+
+  - id: CancelInstances
+    flows: [HandleResult]
+    split: xor
+    join: xor
+    cancelMI: ProcessItems
+    description: "Cancel all remaining instances"
+
+  - id: CompleteInstances
+    flows: [HandleResult]
+    split: xor
+    join: xor
+    completeMI: ProcessItems
+    description: "Complete all instances immediately"
+
+  - id: NormalComplete
+    flows: [HandleResult]
+    split: xor
+    join: xor
+    description: "Wait for normal completion"
+
+  - id: HandleResult
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Handle the final result"

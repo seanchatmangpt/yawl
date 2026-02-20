@@ -50,8 +50,7 @@ public interface ZaiMcpBridge extends AutoCloseable {
     static ZaiMcpBridge create(ZaiMcpConfig config) throws IOException {
         return switch (config.getMode()) {
             case STDIO -> new StdioZaiMcpBridge(config);
-            case HTTP -> throw new UnsupportedOperationException(
-                "HTTP transport not yet implemented. Use STDIO mode.");
+            case HTTP -> new HttpZaiMcpBridge(config);
         };
     }
 

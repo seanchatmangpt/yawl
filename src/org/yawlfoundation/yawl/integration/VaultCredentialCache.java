@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.integration;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.resilience.observability.FallbackObservability;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -228,6 +229,116 @@ public class VaultCredentialCache {
         long elapsedMs = (System.nanoTime() - start) / 1_000_000;
         _logger.info("Credential cache pre-warm complete: {}/{} keys loaded in {}ms",
                 loaded, keys.size(), elapsedMs);
+    }
+
+    /**
+     * Retrieves a credential with fallback and staleness tracking.
+     *
+     * <p>If the cache entry is expired or missing, records this as a fallback operation
+     * with FallbackObservability. This enables P1 Andon alerts when stale credentials
+     * are used.</p>
+     *
+     * @param key the credential key
+     * @param fallbackValue fallback value if cache miss and supplier fails (can be null)
+     * @return CredentialResult with value and staleness information
+     */
+    public CredentialResult getWithFallback(String key, String fallbackValue) {
+        long start = System.nanoTime();
+        CachedEntry entry = _cache.get(key);
+
+        if (entry != null && !entry.isExpired()) {
+            // Cache hit - fresh data
+            long elapsed = System.nanoTime() - start;
+            _totalHits++;
+            _totalHitNanos += elapsed;
+            _logger.trace("Cache HIT  key='{}' elapsed={}ns", key, elapsed);
+            return new CredentialResult(entry.value, false, Duration.between(entry.expiresAt.minus(_ttl), Instant.now()));
+        }
+
+        // Cache miss or expired - attempt fetch
+        Supplier<String> supplier = _suppliers.get(key);
+        if (supplier == null) {
+            // No supplier - use fallback value with observability
+            if (fallbackValue != null) {
+                FallbackObservability fallbackObs = FallbackObservability.getInstance();
+                FallbackObservability.FallbackResult result = fallbackObs.recordDefaultFallback(
+                    "vault-credential-cache",
+                    "get:" + key,
+                    FallbackObservability.FallbackReason.SERVICE_UNAVAILABLE,
+                    fallbackValue
+                );
+
+                _logger.warn("Using fallback value for key '{}' (no supplier registered)", key);
+                return new CredentialResult(fallbackValue, true, null);
+            }
+            throw new IllegalStateException(
+                    "No supplier registered for credential key '" + key +
+                    "'. Call register() before get().");
+        }
+
+        // Entry expired - record as stale data fallback
+        if (entry != null && entry.isExpired()) {
+            Instant entryCreated = entry.expiresAt.minus(_ttl);
+            FallbackObservability fallbackObs = FallbackObservability.getInstance();
+
+            // First try to get fresh value
+            try {
+                String freshValue = supplier.get();
+                if (freshValue != null) {
+                    // Update cache with fresh value
+                    _rwLock.writeLock().lock();
+                    try {
+                        _cache.put(key, new CachedEntry(freshValue, _ttl));
+                    } finally {
+                        _rwLock.writeLock().unlock();
+                    }
+                    long elapsed = System.nanoTime() - start;
+                    _totalMisses++;
+                    _totalMissNanos += elapsed;
+                    _logger.debug("Refreshed expired credential for key '{}'", key);
+                    return new CredentialResult(freshValue, false, Duration.between(entryCreated, Instant.now()));
+                }
+            } catch (Exception e) {
+                _logger.warn("Failed to refresh expired credential for key '{}': {}", key, e.getMessage());
+            }
+
+            // Use expired value as stale fallback
+            FallbackObservability.FallbackResult result = fallbackObs.recordCacheFallback(
+                "vault-credential-cache",
+                "get:" + key,
+                () -> entry.value,
+                entryCreated
+            );
+
+            _logger.warn("Using expired (stale) credential for key '{}' (age={}ms)",
+                key, result.getDataAgeMs());
+            return new CredentialResult(entry.value, true, Duration.between(entryCreated, Instant.now()));
+        }
+
+        // Complete cache miss - fetch fresh
+        long elapsed = fetchAndCache(key, start);
+        _totalMissNanos += elapsed;
+        String value = _cache.get(key).value;
+        return new CredentialResult(value, false, Duration.ZERO);
+    }
+
+    /**
+     * Result of a credential retrieval with staleness information.
+     */
+    public static final class CredentialResult {
+        private final String value;
+        private final boolean isStale;
+        private final Duration age;
+
+        private CredentialResult(String value, boolean isStale, Duration age) {
+            this.value = value;
+            this.isStale = isStale;
+            this.age = age;
+        }
+
+        public String getValue() { return value; }
+        public boolean isStale() { return isStale; }
+        public Duration getAge() { return age; }
     }
 
     /**

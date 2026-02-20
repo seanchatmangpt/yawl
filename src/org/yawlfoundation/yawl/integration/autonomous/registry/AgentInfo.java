@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
  *
  * This file is part of YAWL. YAWL is free software: you can
  * redistribute it and/or modify it under the terms of the GNU Lesser
@@ -8,224 +10,139 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * Public License for more details.
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.autonomous.registry;
 
-import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
-import org.yawlfoundation.yawl.util.SafeNumberParser;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Agent registration information for the agent registry.
+ * Information about an autonomous agent in the YAWL registry.
  *
- * This represents a registered agent with its connection details,
- * capability, and health tracking.
+ * <p>Provides agent identity, capabilities, and network endpoint for
+ * agent-to-agent communication and work item handoff.</p>
  *
- * @author YAWL Foundation
- * @version 5.2
+ * @since YAWL 6.0
  */
-public final class AgentInfo {
+public class AgentInfo {
 
     private final String id;
     private final String name;
-    private final AgentCapability capability;
+    private final List<String> capabilities;
     private final String host;
     private final int port;
-    private volatile long lastHeartbeat;
+    private final Map<String, Object> metadata;
 
     /**
-     * Create agent registration information.
+     * Creates a new agent info.
      *
-     * @param id unique agent identifier
-     * @param name human-readable agent name
-     * @param capability agent's domain capability
-     * @param host agent's host address
-     * @param port agent's listening port
+     * @param id the unique identifier for this agent
+     * @param name the display name of this agent
+     * @param capabilities the list of capabilities this agent has
+     * @param host the host where this agent is running
+     * @param port the port where this agent can be reached
      */
-    public AgentInfo(String id, String name, AgentCapability capability,
-                     String host, int port) {
-        if (id == null || id.trim().isEmpty()) {
-            throw new IllegalArgumentException("id is required");
-        }
-        if (name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("name is required");
-        }
-        if (capability == null) {
-            throw new IllegalArgumentException("capability is required");
-        }
-        if (host == null || host.trim().isEmpty()) {
-            throw new IllegalArgumentException("host is required");
-        }
-        if (port < 1 || port > 65535) {
-            throw new IllegalArgumentException("port must be between 1 and 65535");
-        }
-
-        this.id = id.trim();
-        this.name = name.trim();
-        this.capability = capability;
-        this.host = host.trim();
-        this.port = port;
-        this.lastHeartbeat = System.currentTimeMillis();
+    public AgentInfo(String id, String name, List<String> capabilities,
+                    String host, int port) {
+        this(id, name, capabilities, host, port, Map.of());
     }
 
+    /**
+     * Creates a new agent info with metadata.
+     *
+     * @param id the unique identifier for this agent
+     * @param name the display name of this agent
+     * @param capabilities the list of capabilities this agent has
+     * @param host the host where this agent is running
+     * @param port the port where this agent can be reached
+     * @param metadata additional metadata about the agent
+     */
+    public AgentInfo(String id, String name, List<String> capabilities,
+                    String host, int port, Map<String, Object> metadata) {
+        this.id = id;
+        this.name = name;
+        this.capabilities = capabilities;
+        this.host = host;
+        this.port = port;
+        this.metadata = metadata;
+    }
+
+    /**
+     * Gets the unique identifier for this agent.
+     *
+     * @return the agent ID
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Gets the display name of this agent.
+     *
+     * @return the agent name
+     */
     public String getName() {
         return name;
     }
 
-    public AgentCapability getCapability() {
-        return capability;
+    /**
+     * Gets the capabilities of this agent.
+     *
+     * @return list of capabilities
+     */
+    public List<String> getCapabilities() {
+        return capabilities;
     }
 
+    /**
+     * Gets the host where this agent is running.
+     *
+     * @return the host
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * Gets the port where this agent can be reached.
+     *
+     * @return the port
+     */
     public int getPort() {
         return port;
     }
 
-    public long getLastHeartbeat() {
-        return lastHeartbeat;
-    }
-
     /**
-     * Update the last heartbeat timestamp to current time.
-     */
-    public void updateHeartbeat() {
-        this.lastHeartbeat = System.currentTimeMillis();
-    }
-
-    /**
-     * Check if agent is considered alive based on heartbeat timeout.
+     * Gets additional metadata about this agent.
      *
-     * @param timeoutMillis maximum time since last heartbeat
-     * @return true if agent has sent heartbeat within timeout
+     * @return metadata map
      */
-    public boolean isAlive(long timeoutMillis) {
-        return (System.currentTimeMillis() - lastHeartbeat) <= timeoutMillis;
+    public Map<String, Object> getMetadata() {
+        return metadata;
     }
 
     /**
-     * Convert to JSON representation.
+     * Gets the endpoint URL for this agent.
      *
-     * @return JSON string
+     * @return the endpoint URL
      */
-    public String toJson() {
-        return String.format(
-            "{\"id\":\"%s\",\"name\":\"%s\",\"capability\":{\"domainName\":\"%s\"," +
-            "\"description\":\"%s\"},\"host\":\"%s\",\"port\":%d,\"lastHeartbeat\":%d}",
-            escapeJson(id),
-            escapeJson(name),
-            escapeJson(capability.domainName()),
-            escapeJson(capability.description()),
-            escapeJson(host),
-            port,
-            lastHeartbeat
-        );
-    }
-
-    /**
-     * Parse from JSON representation.
-     *
-     * @param json JSON string
-     * @return AgentInfo instance
-     */
-    public static AgentInfo fromJson(String json) {
-        String id = extractJsonField(json, "id");
-        String name = extractJsonField(json, "name");
-        String domainName = extractNestedJsonField(json, "capability", "domainName");
-        String description = extractNestedJsonField(json, "capability", "description");
-        String host = extractJsonField(json, "host");
-        int port = SafeNumberParser.parseIntOrThrow(extractJsonField(json, "port"), "agent port in registry JSON");
-
-        AgentCapability capability = new AgentCapability(domainName, description);
-        AgentInfo info = new AgentInfo(id, name, capability, host, port);
-
-        String heartbeatStr = extractJsonField(json, "lastHeartbeat");
-        if (heartbeatStr != null && !heartbeatStr.isEmpty()) {
-            info.lastHeartbeat = SafeNumberParser.parseLongOrThrow(heartbeatStr, "agent lastHeartbeat in registry JSON");
-        }
-
-        return info;
-    }
-
-    private static String extractJsonField(String json, String fieldName) {
-        String pattern = "\"" + fieldName + "\":";
-        int start = json.indexOf(pattern);
-        if (start == -1) {
-            return null;
-        }
-        start += pattern.length();
-
-        while (start < json.length() && Character.isWhitespace(json.charAt(start))) {
-            start++;
-        }
-
-        if (start >= json.length()) {
-            return null;
-        }
-
-        if (json.charAt(start) == '"') {
-            start++;
-            int end = json.indexOf('"', start);
-            if (end == -1) {
-                return null;
-            }
-            return json.substring(start, end);
-        } else {
-            int end = start;
-            while (end < json.length() &&
-                   json.charAt(end) != ',' &&
-                   json.charAt(end) != '}' &&
-                   json.charAt(end) != ']') {
-                end++;
-            }
-            return json.substring(start, end).trim();
-        }
-    }
-
-    private static String extractNestedJsonField(String json, String parentField,
-                                                  String childField) {
-        String parentPattern = "\"" + parentField + "\":";
-        int parentStart = json.indexOf(parentPattern);
-        if (parentStart == -1) {
-            return null;
-        }
-        parentStart += parentPattern.length();
-
-        int objectStart = json.indexOf('{', parentStart);
-        if (objectStart == -1) {
-            return null;
-        }
-
-        int objectEnd = json.indexOf('}', objectStart);
-        if (objectEnd == -1) {
-            return null;
-        }
-
-        String objectJson = json.substring(objectStart, objectEnd + 1);
-        return extractJsonField(objectJson, childField);
-    }
-
-    private static String escapeJson(String value) {
-        if (value == null) {
-            throw new IllegalArgumentException("Cannot escape null JSON value");
-        }
-        return value.replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\t", "\\t");
+    public String getEndpointUrl() {
+        return "http://" + host + ":" + port;
     }
 
     @Override
     public String toString() {
-        return String.format("AgentInfo[id=%s, name=%s, capability=%s, host=%s:%d]",
-                           id, name, capability, host, port);
+        return "AgentInfo{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", capabilities=" + capabilities +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                '}';
     }
 }

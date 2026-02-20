@@ -279,6 +279,15 @@ public class YAWLTracing {
     }
 
     /**
+     * Get the OpenTelemetry tracer for custom span creation.
+     *
+     * @return the Tracer instance
+     */
+    public static Tracer getTracer() {
+        return tracer;
+    }
+
+    /**
      * Get the current context.
      *
      * @return the current context

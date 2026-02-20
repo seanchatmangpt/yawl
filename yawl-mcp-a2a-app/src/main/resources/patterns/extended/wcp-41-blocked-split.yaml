@@ -1,0 +1,99 @@
+# WCP-41: Blocked And-Split Pattern
+# Split that blocks until all branches are ready to proceed
+
+name: BlockedAndSplitPattern
+uri: blocked-split.xml
+first: StartTask
+
+variables:
+  - name: branchCount
+    type: xs:integer
+    default: 3
+  - name: allReady
+    type: xs:boolean
+    default: false
+  - name: readyBranches
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [PrepareBranches]
+    split: xor
+    join: xor
+    description: "Start blocked split workflow"
+
+  - id: PrepareBranches
+    flows: [BranchA, BranchB, BranchC]
+    split: and
+    join: xor
+    description: "Prepare all branches"
+
+  - id: BranchA
+    flows: [CheckAllReady]
+    split: xor
+    join: xor
+    description: "Branch A preparation"
+
+  - id: BranchB
+    flows: [CheckAllReady]
+    split: xor
+    join: xor
+    description: "Branch B preparation"
+
+  - id: BranchC
+    flows: [CheckAllReady]
+    split: xor
+    join: xor
+    description: "Branch C preparation"
+
+  - id: CheckAllReady
+    flows: [BlockedSplit, WaitMore]
+    condition: allReady == true -> BlockedSplit
+    default: WaitMore
+    split: xor
+    join: and
+    description: "Check if all branches ready"
+
+  - id: WaitMore
+    flows: [CheckAllReady]
+    split: xor
+    join: xor
+    description: "Wait for more branches"
+
+  - id: BlockedSplit
+    flows: [ProcessA, ProcessB, ProcessC]
+    split: and
+    join: xor
+    blocked: true
+    description: "Blocked split - all proceed together"
+
+  - id: ProcessA
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    description: "Process branch A"
+
+  - id: ProcessB
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    description: "Process branch B"
+
+  - id: ProcessC
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    description: "Process branch C"
+
+  - id: SyncPoint
+    flows: [Complete]
+    split: xor
+    join: and
+    description: "Synchronization point"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete workflow"

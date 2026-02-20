@@ -1,0 +1,53 @@
+# WCP-33: Generalized And-Join Pattern
+# Join that handles dynamic parallelism
+
+name: GeneralizedAndJoinPattern
+uri: generalized-join.xml
+first: StartTask
+
+variables:
+  - name: dynamicBranchCount
+    type: xs:integer
+    default: 0
+  - name: maxBranches
+    type: xs:integer
+    default: 5
+  - name: completedCount
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [DetermineBranches]
+    split: xor
+    join: xor
+    description: "Start dynamic workflow"
+
+  - id: DetermineBranches
+    flows: [ProcessBranches]
+    split: xor
+    join: xor
+    description: "Determine number of branches dynamically"
+
+  - id: ProcessBranches
+    flows: [GeneralizedJoin]
+    split: and
+    join: xor
+    multiInstance:
+      mode: dynamic
+      query: dynamicBranchCount
+      threshold: all
+    description: "Process dynamic branches"
+
+  - id: GeneralizedJoin
+    flows: [Complete]
+    split: xor
+    join: and
+    generalizedJoin: true
+    description: "Generalized join for dynamic branches"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Workflow complete"

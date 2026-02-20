@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -84,10 +85,11 @@ public final class OAuth2TokenValidator {
     private static final String ENV_AUDIENCE   = "YAWL_OAUTH2_AUDIENCE";
     private static final String ENV_JWKS_URI   = "YAWL_OAUTH2_JWKS_URI";
 
-    private static final Duration HTTP_TIMEOUT          = Duration.ofSeconds(10);
-    private static final long     JWKS_REFRESH_INTERVAL = 5; // minutes
-    private static final int      JWKS_CACHE_MAX_SIZE   = 64;
-    private static final int      CLOCK_SKEW_SECONDS    = 30;
+    private static final Duration HTTP_TIMEOUT              = Duration.ofSeconds(10);
+    private static final long     JWKS_REFRESH_INTERVAL     = 5; // minutes
+    private static final int      JWKS_CACHE_MAX_SIZE       = 64;
+    private static final int      CLOCK_SKEW_SECONDS        = 30;
+    private static final long     STALE_CACHE_THRESHOLD_SECONDS = 300; // 5 minutes (P0 Andon threshold)
 
     private final String issuerUri;
     private final String expectedAudience;
@@ -99,6 +101,12 @@ public final class OAuth2TokenValidator {
     private final Map<String, PublicKey> jwksCache;
     private final ReadWriteLock          jwksCacheLock;
     private final ScheduledExecutorService refreshScheduler;
+
+    // Cache age tracking for stale detection and Andon alerts
+    private final AtomicLong lastSuccessfulRefreshEpochMs;
+
+    // Security event bus for alerting
+    private volatile SecurityEventBus securityEventBus;
 
     /**
      * Construct from environment variables.
@@ -136,6 +144,12 @@ public final class OAuth2TokenValidator {
         this.objectMapper = new ObjectMapper();
         this.jwksCache    = new ConcurrentHashMap<>(JWKS_CACHE_MAX_SIZE);
         this.jwksCacheLock = new ReentrantReadWriteLock();
+        this.lastSuccessfulRefreshEpochMs = new AtomicLong(0);
+        this.securityEventBus = SecurityEventBus.getInstance();
+
+        // Register gauge suppliers for real-time OTEL metrics
+        this.securityEventBus.setCacheAgeSupplier(this::getCacheAgeSeconds);
+        this.securityEventBus.setCacheStaleSupplier(this::isCacheStale);
 
         // Initial load
         refreshJwksCache();
@@ -220,6 +234,9 @@ public final class OAuth2TokenValidator {
     }
 
     private PublicKey resolvePublicKey(String kid) throws OAuth2ValidationException {
+        // Check for stale cache before resolving key
+        checkAndEmitStaleWarning();
+
         jwksCacheLock.readLock().lock();
         try {
             if (kid != null && jwksCache.containsKey(kid)) {
@@ -253,6 +270,27 @@ public final class OAuth2TokenValidator {
                 "No public key found for kid=" + kid + ". JWKS endpoint returned " + jwksCache.size() + " keys.",
                 OAuth2ValidationException.Code.KEY_NOT_FOUND);
     }
+
+    /**
+     * Check cache staleness and emit warning if threshold exceeded.
+     * Uses throttling to avoid log spam (at most once per minute).
+     */
+    private void checkAndEmitStaleWarning() {
+        long cacheAgeSeconds = getCacheAgeSeconds();
+        if (cacheAgeSeconds > STALE_CACHE_THRESHOLD_SECONDS) {
+            // Throttle warnings: emit at most once per minute
+            long now = System.currentTimeMillis();
+            long lastWarning = lastStaleWarningEpochMs.get();
+            if (now - lastWarning > 60000) {
+                if (lastStaleWarningEpochMs.compareAndSet(lastWarning, now)) {
+                    emitStaleCacheWarning(cacheAgeSeconds);
+                }
+            }
+        }
+    }
+
+    // Timestamp of last stale cache warning (for throttling)
+    private final AtomicLong lastStaleWarningEpochMs = new AtomicLong(0);
 
     // -------------------------------------------------------------------------
     // Claims validation
@@ -424,11 +462,93 @@ public final class OAuth2TokenValidator {
             } finally {
                 jwksCacheLock.writeLock().unlock();
             }
+
+            // Update last successful refresh timestamp
+            lastSuccessfulRefreshEpochMs.set(System.currentTimeMillis());
+
+            // Emit success event
+            emitJwksRefreshSuccess(newCache.size());
+
             log.info("JWKS cache refreshed: {} RSA signing key(s) loaded", newCache.size());
 
         } catch (Exception e) {
-            log.error("JWKS refresh failed: {}. Continuing with stale cache ({} keys)",
-                      e.getMessage(), jwksCache.size());
+            // P0 Andon alert: JWKS refresh failure
+            // The system continues with stale cache but token validation may fail
+            long cacheAgeSeconds = getCacheAgeSeconds();
+            int cacheSize = jwksCache.size();
+
+            emitJwksRefreshFailure(e, cacheSize, cacheAgeSeconds);
+
+            log.error("JWKS refresh failed: {}. Continuing with stale cache ({} keys, {} seconds old)",
+                      e.getMessage(), cacheSize, cacheAgeSeconds);
+        }
+    }
+
+    /**
+     * Get the age of the JWKS cache in seconds.
+     *
+     * @return cache age in seconds, or -1 if never refreshed
+     */
+    public long getCacheAgeSeconds() {
+        long lastRefresh = lastSuccessfulRefreshEpochMs.get();
+        if (lastRefresh == 0) {
+            return -1;
+        }
+        return (System.currentTimeMillis() - lastRefresh) / 1000;
+    }
+
+    /**
+     * Check if the JWKS cache is stale (exceeds threshold).
+     *
+     * @return true if cache is stale or never refreshed
+     */
+    public boolean isCacheStale() {
+        long age = getCacheAgeSeconds();
+        return age < 0 || age > STALE_CACHE_THRESHOLD_SECONDS;
+    }
+
+    /**
+     * Get the number of keys in the JWKS cache.
+     *
+     * @return cache size
+     */
+    public int getCacheSize() {
+        jwksCacheLock.readLock().lock();
+        try {
+            return jwksCache.size();
+        } finally {
+            jwksCacheLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set a custom SecurityEventBus. For testing or custom configurations.
+     *
+     * @param eventBus the event bus to use
+     */
+    public void setSecurityEventBus(SecurityEventBus eventBus) {
+        this.securityEventBus = eventBus != null ? eventBus : SecurityEventBus.getInstance();
+    }
+
+    private void emitJwksRefreshSuccess(int cacheSize) {
+        SecurityEventBus bus = this.securityEventBus;
+        if (bus != null) {
+            bus.publish(new SecurityEventBus.JwksRefreshSuccess(jwksUri, cacheSize));
+        }
+    }
+
+    private void emitJwksRefreshFailure(Throwable cause, int cacheSize, long cacheAgeSeconds) {
+        SecurityEventBus bus = this.securityEventBus;
+        if (bus != null) {
+            bus.publish(new SecurityEventBus.JwksRefreshFailure(jwksUri, cause, cacheSize, cacheAgeSeconds));
+        }
+    }
+
+    private void emitStaleCacheWarning(long cacheAgeSeconds) {
+        SecurityEventBus bus = this.securityEventBus;
+        if (bus != null) {
+            bus.publish(new SecurityEventBus.JwksStaleCacheWarning(
+                jwksUri, cacheAgeSeconds, STALE_CACHE_THRESHOLD_SECONDS));
         }
     }
 

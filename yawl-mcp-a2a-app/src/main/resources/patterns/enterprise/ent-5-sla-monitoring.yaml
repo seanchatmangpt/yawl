@@ -1,0 +1,67 @@
+# ENT-5: SLA Monitoring Pattern
+# Monitor and enforce service level agreements
+
+name: SLAMonitoringPattern
+uri: sla-monitoring.xml
+first: StartService
+
+variables:
+  - name: serviceId
+    type: xs:string
+  - name: slaLevel
+    type: xs:string
+    default: "gold"
+  - name: responseTime
+    type: xs:long
+    default: 0
+  - name: slaBreached
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartService
+    flows: [ProcessRequest, StartSLATimer]
+    split: and
+    join: xor
+    description: "Start service request"
+
+  - id: StartSLATimer
+    flows: [CheckSLA]
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT30M
+    description: "Start SLA timer"
+
+  - id: ProcessRequest
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Process service request"
+
+  - id: CheckSLA
+    flows: [SLABreached, Complete]
+    condition: slaBreached == true -> SLABreached
+    default: Complete
+    split: xor
+    join: xor
+    description: "Check SLA status"
+
+  - id: SLABreached
+    flows: [EscalateSLA]
+    split: xor
+    join: xor
+    description: "Handle SLA breach"
+
+  - id: EscalateSLA
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Escalate SLA violation"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: and
+    description: "Service completed"

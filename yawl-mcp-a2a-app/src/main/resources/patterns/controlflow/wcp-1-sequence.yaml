@@ -1,0 +1,32 @@
+# WCP-1: Sequence Pattern
+# Basic sequence of tasks that must be executed in order
+
+name: SequencePattern
+uri: sequence.xml
+first: TaskA
+
+variables:
+  - name: orderId
+    type: xs:string
+  - name: status
+    type: xs:string
+    default: "started"
+
+tasks:
+  - id: TaskA
+    flows: [TaskB]
+    split: xor
+    join: and
+    description: "Initialize order"
+
+  - id: TaskB
+    flows: [TaskC]
+    split: xor
+    join: and
+    description: "Process payment"
+
+  - id: TaskC
+    flows: [end]
+    split: xor
+    join: and
+    description: "Complete order"

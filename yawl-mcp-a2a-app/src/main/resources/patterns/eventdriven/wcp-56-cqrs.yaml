@@ -1,0 +1,77 @@
+# WCP-56: CQRS Pattern
+# Separate command and query paths
+
+name: CQRSPattern
+uri: cqrs.xml
+first: ReceiveRequest
+
+variables:
+  - name: requestType
+    type: xs:string
+  - name: requestData
+    type: xs:string
+  - name: result
+    type: xs:string
+
+tasks:
+  - id: ReceiveRequest
+    flows: [CommandPath, QueryPath]
+    condition: requestType == "command" -> CommandPath
+    default: QueryPath
+    split: xor
+    join: xor
+    description: "Route to CQRS path"
+
+  - id: CommandPath
+    flows: [ValidateCommand, QueryReadModel]
+    split: xor
+    join: xor
+    description: "Process command"
+
+  - id: ValidateCommand
+    flows: [ExecuteCommand]
+    split: xor
+    join: xor
+    description: "Validate command"
+
+  - id: ExecuteCommand
+    flows: [PublishEvents]
+    split: xor
+    join: xor
+    description: "Execute on write model"
+
+  - id: PublishEvents
+    flows: [UpdateReadModel]
+    split: xor
+    join: xor
+    description: "Publish domain events"
+
+  - id: UpdateReadModel
+    flows: [CommandComplete]
+    split: xor
+    join: xor
+    description: "Update read model"
+
+  - id: QueryPath
+    flows: [QueryReadModel]
+    split: xor
+    join: xor
+    description: "Process query"
+
+  - id: QueryReadModel
+    flows: [ReturnResult]
+    split: xor
+    join: xor
+    description: "Query read model"
+
+  - id: CommandComplete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Command completed"
+
+  - id: ReturnResult
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Return query result"

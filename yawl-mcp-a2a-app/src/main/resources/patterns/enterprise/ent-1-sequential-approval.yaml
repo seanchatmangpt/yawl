@@ -1,0 +1,71 @@
+# ENT-1: Sequential Approval Pattern
+# Chain of approvers in sequence
+
+name: SequentialApprovalPattern
+uri: sequential-approval.xml
+first: SubmitRequest
+
+variables:
+  - name: requestId
+    type: xs:string
+  - name: amount
+    type: xs:decimal
+    default: 0.0
+  - name: managerApproved
+    type: xs:boolean
+    default: false
+  - name: directorApproved
+    type: xs:boolean
+    default: false
+  - name: vpApproved
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: SubmitRequest
+    flows: [ManagerApproval]
+    split: xor
+    join: xor
+    description: "Submit approval request"
+
+  - id: ManagerApproval
+    flows: [DirectorApproval, Rejected]
+    condition: managerApproved == true -> DirectorApproval
+    default: Rejected
+    split: xor
+    join: xor
+    approval: true
+    approver: manager
+    description: "Manager review"
+
+  - id: DirectorApproval
+    flows: [VpApproval, Rejected]
+    condition: directorApproved == true -> VpApproval
+    default: Rejected
+    split: xor
+    join: xor
+    approval: true
+    approver: director
+    description: "Director review"
+
+  - id: VpApproval
+    flows: [Approved, Rejected]
+    condition: vpApproved == true -> Approved
+    default: Rejected
+    split: xor
+    join: xor
+    approval: true
+    approver: vp
+    description: "VP review"
+
+  - id: Approved
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Request approved"
+
+  - id: Rejected
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Request rejected"

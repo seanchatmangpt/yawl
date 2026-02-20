@@ -543,12 +543,95 @@ public class SpiffeValidator {
     }
 
     /**
-     * Certificate revocation checker.
+     * Certificate revocation checker using OCSP and CRL.
      */
     private static class CertificateRevocationChecker {
+        private static final java.security.cert.PKIXRevocationChecker.Option OCSP_OPTION =
+            java.security.cert.PKIXRevocationChecker.Option.ONLY_END_ENTITY;
+        private static final java.security.cert.PKIXRevocationChecker.Option CRL_OPTION =
+            java.security.cert.PKIXRevocationChecker.Option.PREFER_CRLS;
+
+        /**
+         * Check if certificate is revoked using OCSP and CRL.
+         *
+         * @param cert the certificate to check
+         * @return true if certificate is valid (not revoked), false if revoked
+         */
         public boolean checkRevocation(X509Certificate cert) {
-            // Implementation would check CRL and/or OCSP
-            return true; // For now, assume valid
+            if (cert == null) {
+                return false;
+            }
+
+            try {
+                // Try OCSP first (faster)
+                if (checkOCSP(cert)) {
+                    return true;
+                }
+
+                // Fall back to CRL check
+                return checkCRL(cert);
+            } catch (Exception e) {
+                // If revocation check fails, log and return false for safety
+                java.util.logging.Logger.getLogger(CertificateRevocationChecker.class.getName())
+                    .warning("Certificate revocation check failed: " + e.getMessage());
+                return false;
+            }
+        }
+
+        /**
+         * Check certificate using OCSP (Online Certificate Status Protocol).
+         */
+        private boolean checkOCSP(X509Certificate cert) throws Exception {
+            try {
+                java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X.509");
+                java.security.cert.PKIXRevocationChecker revocationChecker =
+                    (java.security.cert.PKIXRevocationChecker) cf.getCertificateRevocationChecker();
+
+                // Configure to check only end-entity certificates
+                revocationChecker.setOptions(java.util.Set.of(OCSP_OPTION));
+
+                // Perform the check - throws exception if revoked
+                revocationChecker.check(cert);
+                return true;
+            } catch (java.security.cert.CertPathValidatorException e) {
+                // Certificate is revoked or unknown
+                java.util.logging.Logger.getLogger(CertificateRevocationChecker.class.getName())
+                    .warning("OCSP check failed for certificate: " + e.getMessage());
+                return false;
+            } catch (Exception e) {
+                // OCSP not available, fall through to CRL
+                throw e;
+            }
+        }
+
+        /**
+         * Check certificate using CRL (Certificate Revocation List).
+         */
+        private boolean checkCRL(X509Certificate cert) throws Exception {
+            try {
+                // Check if certificate has CRL distribution points
+                byte[] crlDistributionPointsExtension = cert.getExtensionValue("2.5.29.31");
+                if (crlDistributionPointsExtension == null) {
+                    // No CRL distribution points, assume valid
+                    return true;
+                }
+
+                // Get CRLs from certificate
+                java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X.509");
+                java.security.cert.PKIXRevocationChecker revocationChecker =
+                    (java.security.cert.PKIXRevocationChecker) cf.getCertificateRevocationChecker();
+
+                // Configure to prefer CRLs
+                revocationChecker.setOptions(java.util.Set.of(CRL_OPTION));
+
+                // Perform the check
+                revocationChecker.check(cert);
+                return true;
+            } catch (java.security.cert.CertPathValidatorException e) {
+                java.util.logging.Logger.getLogger(CertificateRevocationChecker.class.getName())
+                    .warning("CRL check failed for certificate: " + e.getMessage());
+                return false;
+            }
         }
     }
 

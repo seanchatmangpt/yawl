@@ -1,0 +1,71 @@
+# ENT-2: Parallel Approval Pattern
+# Multiple approvers review simultaneously
+
+name: ParallelApprovalPattern
+uri: parallel-approval.xml
+first: SubmitRequest
+
+variables:
+  - name: requestId
+    type: xs:string
+  - name: approver1Approved
+    type: xs:boolean
+    default: false
+  - name: approver2Approved
+    type: xs:boolean
+    default: false
+  - name: approver3Approved
+    type: xs:boolean
+    default: false
+  - name: requiredApprovals
+    type: xs:integer
+    default: 2
+
+tasks:
+  - id: SubmitRequest
+    flows: [Approver1, Approver2, Approver3]
+    split: and
+    join: xor
+    description: "Submit for parallel approval"
+
+  - id: Approver1
+    flows: [CollectApprovals]
+    split: xor
+    join: xor
+    approval: true
+    approver: approver1
+    description: "Approver 1 review"
+
+  - id: Approver2
+    flows: [CollectApprovals]
+    split: xor
+    join: xor
+    approval: true
+    approver: approver2
+    description: "Approver 2 review"
+
+  - id: Approver3
+    flows: [CollectApprovals]
+    split: xor
+    join: xor
+    approval: true
+    approver: approver3
+    description: "Approver 3 review"
+
+  - id: CollectApprovals
+    flows: [Approved, Rejected]
+    split: xor
+    join: and
+    description: "Collect all approvals"
+
+  - id: Approved
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Sufficient approvals received"
+
+  - id: Rejected
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Request rejected"

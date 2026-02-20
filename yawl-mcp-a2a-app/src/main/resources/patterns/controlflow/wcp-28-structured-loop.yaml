@@ -1,0 +1,64 @@
+# WCP-28: Structured Loop Pattern
+# Loop with explicit structure and conditions
+
+name: StructuredLoopPattern
+uri: structured-loop.xml
+first: StartTask
+
+variables:
+  - name: maxIterations
+    type: xs:integer
+    default: 10
+  - name: currentIteration
+    type: xs:integer
+    default: 0
+  - name: continueLoop
+    type: xs:boolean
+    default: true
+  - name: result
+    type: xs:string
+
+tasks:
+  - id: StartTask
+    flows: [Initialize]
+    split: xor
+    join: xor
+    description: "Start loop workflow"
+
+  - id: Initialize
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Initialize loop variables"
+
+  - id: CheckCondition
+    flows: [LoopBody, ExitLoop]
+    condition: continueLoop == true && currentIteration < maxIterations -> LoopBody
+    default: ExitLoop
+    split: xor
+    join: xor
+    description: "Check loop continuation condition"
+
+  - id: LoopBody
+    flows: [IncrementCounter]
+    split: xor
+    join: xor
+    description: "Execute loop body"
+
+  - id: IncrementCounter
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Increment iteration counter"
+
+  - id: ExitLoop
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "Exit the loop"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize loop results"

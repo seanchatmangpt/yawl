@@ -1,0 +1,105 @@
+# WCP-30: Structured Loop + Cancel Region Pattern
+# Loop with ability to cancel a region of tasks
+
+name: LoopCancelRegionPattern
+uri: loop-cancel-region.xml
+first: StartTask
+
+variables:
+  - name: maxIterations
+    type: xs:integer
+    default: 10
+  - name: currentIteration
+    type: xs:integer
+    default: 0
+  - name: continueLoop
+    type: xs:boolean
+    default: true
+  - name: cancelRegion
+    type: xs:boolean
+    default: false
+
+tasks:
+  - id: StartTask
+    flows: [Initialize]
+    split: xor
+    join: xor
+    description: "Start loop with region cancel"
+
+  - id: Initialize
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Initialize loop variables"
+
+  - id: CheckCondition
+    flows: [CheckCancelRegion, LoopBody, ExitLoop]
+    condition: cancelRegion == true -> CheckCancelRegion
+    condition: continueLoop == true && currentIteration < maxIterations -> LoopBody
+    default: ExitLoop
+    split: xor
+    join: xor
+    description: "Check conditions"
+
+  - id: CheckCancelRegion
+    flows: [CancelRegion, ContinueLoop]
+    condition: cancelRegion == true -> CancelRegion
+    default: ContinueLoop
+    split: xor
+    join: xor
+    description: "Check if region cancel needed"
+
+  - id: CancelRegion
+    flows: [HandleRegionCancel]
+    split: xor
+    join: xor
+    cancelRegion: [RegionTaskA, RegionTaskB]
+    description: "Cancel the region"
+
+  - id: HandleRegionCancel
+    flows: [ExitLoop]
+    split: xor
+    join: xor
+    description: "Handle region cancellation"
+
+  - id: ContinueLoop
+    flows: [LoopBody]
+    split: xor
+    join: xor
+    description: "Continue loop"
+
+  - id: LoopBody
+    flows: [RegionTaskA]
+    split: xor
+    join: xor
+    description: "Start loop body"
+
+  - id: RegionTaskA
+    flows: [RegionTaskB]
+    split: xor
+    join: xor
+    description: "Region task A"
+
+  - id: RegionTaskB
+    flows: [IncrementCounter]
+    split: xor
+    join: xor
+    description: "Region task B"
+
+  - id: IncrementCounter
+    flows: [CheckCondition]
+    split: xor
+    join: xor
+    description: "Increment counter"
+
+  - id: ExitLoop
+    flows: [Finalize]
+    split: xor
+    join: xor
+    description: "Exit loop"
+
+  - id: Finalize
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Finalize"

@@ -1,0 +1,73 @@
+# AGT-3: Human-Agent Handoff Pattern
+# Transfer work between human and agent seamlessly
+
+name: HumanAgentHandoffPattern
+uri: human-agent-handoff.xml
+first: ReceiveRequest
+
+variables:
+  - name: requestId
+    type: xs:string
+  - name: complexity
+    type: xs:string
+  - name: handoffCount
+    type: xs:integer
+    default: 0
+  - name: maxHandoffs
+    type: xs:integer
+    default: 3
+  - name: resolution
+    type: xs:string
+
+tasks:
+  - id: ReceiveRequest
+    flows: [AgentHandle]
+    split: xor
+    join: xor
+    description: "Receive request"
+
+  - id: AgentHandle
+    flows: [CheckResolution, HumanHandle]
+    condition: resolution != "" -> CheckResolution
+    default: HumanHandle
+    split: xor
+    join: xor
+    agent:
+      type: ai
+      binding: dynamic
+      capabilities: [handling, routing]
+    description: "Agent handles request"
+
+  - id: CheckResolution
+    flows: [Complete, CheckHandoffs]
+    condition: resolution == "resolved" -> Complete
+    default: CheckHandoffs
+    split: xor
+    join: xor
+    description: "Check if resolved"
+
+  - id: CheckHandoffs
+    flows: [AgentHandle, Escalate]
+    condition: handoffCount < maxHandoffs -> AgentHandle
+    default: Escalate
+    split: xor
+    join: xor
+    description: "Check handoff limit"
+
+  - id: HumanHandle
+    flows: [AgentHandle, Complete]
+    split: xor
+    join: xor
+    description: "Human handles request"
+
+  - id: Escalate
+    flows: [Complete]
+    split: xor
+    join: xor
+    description: "Escalate to supervisor"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Request completed"

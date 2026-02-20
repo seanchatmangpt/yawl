@@ -37,6 +37,8 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceAManagementOb
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBClientObserver;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBInterop;
+import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceBClient;
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.time.YTimedObject;
 import org.yawlfoundation.yawl.engine.time.YTimer;
 import org.yawlfoundation.yawl.exceptions.*;
@@ -47,7 +49,13 @@ import org.yawlfoundation.yawl.logging.YLogPredicate;
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.YDataValidator;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.engine.observability.YAWLTelemetry;
+import org.yawlfoundation.yawl.engine.observability.YAWLTracing;
 import org.yawlfoundation.yawl.util.*;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -106,6 +114,7 @@ public class YEngine implements InterfaceADesign,
     private YBuildProperties _buildProps;
     private String _engineClassesRootFilePath;
     private boolean _allowGenericAdminID;
+    private final YAWLTelemetry _telemetry = YAWLTelemetry.getInstance();
 
     /********************************************************************************/
 
@@ -234,47 +243,63 @@ public class YEngine implements InterfaceADesign,
      */
     private void restore(boolean redundantMode) throws YPersistenceException {
         _logger.debug("--> restore");
-        _restoring = true;
 
-        YEngineRestorer restorer = new YEngineRestorer(_thisInstance, _pmgr);
-        try {
-            _pmgr.setRestoring(true);
-            startTransaction();
+        Span span = YAWLTracing.createEngineSpan("yawl.engine.restore");
+        span.setAttribute("yawl.restore.redundant_mode", redundantMode);
+        long startTime = System.currentTimeMillis();
 
-            // restore data objects from persistence (sequence is important)
-            restorer.restoreServicesAndClients();
+        try (Scope scope = span.makeCurrent()) {
+            _restoring = true;
 
-            if (! redundantMode) {
-                restorer.restoreSpecifications();
-                _caseNbrStore = restorer.restoreNextAvailableCaseNumber();
-                restorer.restoreInstances();
-                _expiredTimers = restorer.restoreTimedObjects();
-                restorer.restartRestoredProcessInstances();
+            YEngineRestorer restorer = new YEngineRestorer(_thisInstance, _pmgr);
+            try {
+                _pmgr.setRestoring(true);
+                startTransaction();
+
+                // restore data objects from persistence (sequence is important)
+                restorer.restoreServicesAndClients();
+
+                if (! redundantMode) {
+                    restorer.restoreSpecifications();
+                    _caseNbrStore = restorer.restoreNextAvailableCaseNumber();
+                    restorer.restoreInstances();
+                    _expiredTimers = restorer.restoreTimedObjects();
+                    restorer.restartRestoredProcessInstances();
+                }
+
+                // complete transaction
+                commitTransaction();
+                _pmgr.setRestoring(false);
+
+                _workItemRepository.cleanseRepository();         // synch with net runners
+
+                dump();                                          // log result (if debugging)
+
+                span.setStatus(StatusCode.OK);
+                _telemetry.recordEngineOperation("restore", System.currentTimeMillis() - startTime);
             }
-            
-            // complete transaction
-            commitTransaction();
-            _pmgr.setRestoring(false);
+            catch (YPersistenceException ype) {
+                _logger.fatal("Failure to restart engine from persistence image", ype);
+                span.setStatus(StatusCode.ERROR, ype.getMessage());
+                span.recordException(ype);
+                throw new YPersistenceException("Failure to restart engine from persistence image");
+            }
+            catch (Exception e) {
 
-            _workItemRepository.cleanseRepository();         // synch with net runners
-
-            dump();                                          // log result (if debugging)
-        }
-        catch (YPersistenceException ype) {
-            _logger.fatal("Failure to restart engine from persistence image", ype);
-            throw new YPersistenceException("Failure to restart engine from persistence image");
-        }
-        catch (Exception e) {
-
-            // a non-YPersistenceException means the restore failed, but the engine is
-            // still operational
-            _logger.error("Persisted state failed to fully restore - engine is " +
-                          "operational but may be in an inconsistent state. Exception: ", e);
-        }
-        finally {
-            _logger.debug("restore <---");
-            _restoring = false;
-            restorer.persistDefaultClients();       // delayed til restoring is complete
+                // a non-YPersistenceException means the restore failed, but the engine is
+                // still operational
+                _logger.error("Persisted state failed to fully restore - engine is " +
+                              "operational but may be in an inconsistent state. Exception: ", e);
+                span.setStatus(StatusCode.ERROR, e.getMessage());
+                span.recordException(e);
+            }
+            finally {
+                _logger.debug("restore <---");
+                _restoring = false;
+                restorer.persistDefaultClients();       // delayed til restoring is complete
+            }
+        } finally {
+            span.end();
         }
     }
 
@@ -846,28 +871,51 @@ public class YEngine implements InterfaceADesign,
     public void cancelCase(YIdentifier caseID, String serviceHandle)
             throws YPersistenceException, YEngineStateException {
         _logger.debug("--> cancelCase");
-        checkEngineRunning();
         NullCheckModernizer.requirePresent(caseID, "Attempt to cancel a case using a null caseID",
                 IllegalArgumentException::new);
 
-        _logger.info("Deleting persisted process instance: {}", caseID);
+        YSpecification spec = _runningCaseIDToSpecMap.get(caseID);
+        String specId = spec != null ? spec.getURI() : "unknown";
 
-        Set<YWorkItem> removedItems = _workItemRepository.removeWorkItemsForCase(caseID);
-        YNetRunner runner = _netRunnerRepository.get(caseID);
-        synchronized(_pmgr) {
-            startTransaction();
-            if (_persisting) clearWorkItemsFromPersistence(removedItems);
-            YTimer.getInstance().cancelTimersForCase(caseID.toString());
-            removeCaseFromCaches(caseID);
-            if (runner != null) runner.cancel(_pmgr);
-            clearCaseFromPersistence(caseID);
-            _yawllog.logCaseCancelled(caseID, null, serviceHandle);
-            for (YWorkItem item : removedItems) {
-                _yawllog.logWorkItemEvent(item,
-                        YWorkItemStatus.statusCancelledByCase, null);
+        Span span = YAWLTracing.createCaseSpan("yawl.case.cancel",
+                caseID.toString(), specId);
+        long startTime = System.currentTimeMillis();
+
+        try (Scope scope = span.makeCurrent()) {
+            checkEngineRunning();
+            _logger.info("Deleting persisted process instance: {}", caseID);
+
+            Set<YWorkItem> removedItems = _workItemRepository.removeWorkItemsForCase(caseID);
+            YNetRunner runner = _netRunnerRepository.get(caseID);
+            synchronized(_pmgr) {
+                startTransaction();
+                if (_persisting) clearWorkItemsFromPersistence(removedItems);
+                YTimer.getInstance().cancelTimersForCase(caseID.toString());
+                removeCaseFromCaches(caseID);
+                if (runner != null) runner.cancel(_pmgr);
+                clearCaseFromPersistence(caseID);
+                _yawllog.logCaseCancelled(caseID, null, serviceHandle);
+                for (YWorkItem item : removedItems) {
+                    _yawllog.logWorkItemEvent(item,
+                            YWorkItemStatus.statusCancelledByCase, null);
+                }
+                commitTransaction();
+                _announcer.announceCaseCancellation(caseID, getYAWLServices());
             }
-            commitTransaction();
-            _announcer.announceCaseCancellation(caseID, getYAWLServices());
+
+            span.setStatus(StatusCode.OK);
+            _telemetry.recordCaseCancelled(caseID.toString(), specId);
+            _telemetry.recordEngineOperation("cancelCase", System.currentTimeMillis() - startTime);
+        } catch (YPersistenceException | YEngineStateException e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw new YPersistenceException("Failed to cancel case: " + caseID, e);
+        } finally {
+            span.end();
         }
     }
     
@@ -909,32 +957,59 @@ public class YEngine implements InterfaceADesign,
             YQueryException, YPersistenceException {
         _logger.debug("--> launchCase");
 
-        // ensure that the caseid passed (if any) is not already in use
-        if ((caseID != null) && (getCaseID(caseID) != null)) {
-            throw new YStateException("CaseID '" + caseID + "' is already active.");
-        }
-        checkEngineRunning();
+        Span span = YAWLTracing.createCaseSpan("yawl.case.launch",
+                caseID != null ? caseID : "pending", specID.getUri());
+        span.setAttribute("yawl.case.delayed", delayed);
+        long startTime = System.currentTimeMillis();
 
-        synchronized(_pmgr) {
-            startTransaction();
-            try {
-                YIdentifier yCaseID = startCase(specID, caseParams, completionObserver,
-                        caseID, logData, serviceHandle, delayed);
-                if (yCaseID != null) {
-                    commitTransaction();
-                    announceEvents(yCaseID);
-                    return yCaseID.toString();
+        try (Scope scope = span.makeCurrent()) {
+            // ensure that the caseid passed (if any) is not already in use
+            if ((caseID != null) && (getCaseID(caseID) != null)) {
+                YStateException ex = new YStateException("CaseID '" + caseID + "' is already active.");
+                span.setStatus(StatusCode.ERROR, ex.getMessage());
+                span.recordException(ex);
+                throw ex;
+            }
+            checkEngineRunning();
+
+            String resultCaseId = null;
+            synchronized(_pmgr) {
+                startTransaction();
+                try {
+                    YIdentifier yCaseID = startCase(specID, caseParams, completionObserver,
+                            caseID, logData, serviceHandle, delayed);
+                    if (yCaseID != null) {
+                        commitTransaction();
+                        announceEvents(yCaseID);
+                        resultCaseId = yCaseID.toString();
+
+                        // Update span with actual case ID
+                        span.setAttribute(YAWLTracing.YAWL_CASE_ID, resultCaseId);
+                        span.setStatus(StatusCode.OK);
+                        _telemetry.recordCaseStarted(resultCaseId, specID.getUri());
+                        _telemetry.recordEngineOperation("launchCase", System.currentTimeMillis() - startTime);
+                        return resultCaseId;
+                    }
+                    else {
+                        YStateException ex = new YStateException("Unable to start case.");
+                        span.setStatus(StatusCode.ERROR, ex.getMessage());
+                        span.recordException(ex);
+                        throw ex;
+                    }
                 }
-                else throw new YStateException("Unable to start case.");
+                catch (YAWLException ye) {
+                    _logger.error("Failure returned from startCase - Rolling back Hibernate TXN", ye);
+                    rollbackTransaction();
+                    span.setStatus(StatusCode.ERROR, ye.getMessage());
+                    span.recordException(ye);
+                    ye.rethrow();
+                }
             }
-            catch (YAWLException ye) {
-                _logger.error("Failure returned from startCase - Rolling back Hibernate TXN", ye);
-                rollbackTransaction();
-                ye.rethrow();
-            }
+            _logger.debug("<-- launchCase");
+            return null;
+        } finally {
+            span.end();
         }
-        _logger.debug("<-- launchCase");
-        return null;
     }
 
 
@@ -1424,54 +1499,84 @@ public class YEngine implements InterfaceADesign,
 
         _logger.debug("--> startWorkItem");
         checkEngineRunning();
-        YWorkItem startedItem = null;
 
-        synchronized(_pmgr) {
-            startTransaction();
-            try {
-                YNetRunner netRunner = null;
-                if (workItem != null) {
-                    netRunner = switch (workItem.getStatus()) {
-                        case statusEnabled -> getNetRunner(workItem.getCaseID());
-                        case statusFired -> getNetRunner(workItem.getCaseID().getParent());
-                        case statusDeadlocked -> null;
-                        default -> null;
-                    };
+        String workItemId = workItem != null ? workItem.getIDString() : "unknown";
+        String caseId = workItem != null ? workItem.getCaseID().toString() : "unknown";
+        String taskId = workItem != null ? workItem.getTaskID() : "unknown";
 
-                    startedItem = switch (workItem.getStatus()) {
-                        case statusEnabled -> startEnabledWorkItem(netRunner, workItem, client);
-                        case statusFired -> startFiredWorkItem(netRunner, workItem, client);
-                        case statusDeadlocked -> workItem;
-                        default -> { // this work item is likely already executing.
-                            rollbackTransaction();
-                            throw new YStateException(String.format(
-                                    "Item [%s]: status [%s] does not permit starting.",
-                                     workItem.getIDString(), workItem.getStatus()));
-                        }
-                    };
+        Span span = YAWLTracing.createWorkItemSpan("yawl.workitem.start",
+                workItemId, caseId, taskId);
+        long startTime = System.currentTimeMillis();
+
+        try (Scope scope = span.makeCurrent()) {
+            YWorkItem startedItem = null;
+
+            synchronized(_pmgr) {
+                startTransaction();
+                try {
+                    YNetRunner netRunner = null;
+                    if (workItem != null) {
+                        netRunner = switch (workItem.getStatus()) {
+                            case statusEnabled -> getNetRunner(workItem.getCaseID());
+                            case statusFired -> getNetRunner(workItem.getCaseID().getParent());
+                            case statusDeadlocked -> null;
+                            default -> null;
+                        };
+
+                        startedItem = switch (workItem.getStatus()) {
+                            case statusEnabled -> startEnabledWorkItem(netRunner, workItem, client);
+                            case statusFired -> startFiredWorkItem(netRunner, workItem, client);
+                            case statusDeadlocked -> workItem;
+                            default -> { // this work item is likely already executing.
+                                rollbackTransaction();
+                                YStateException ex = new YStateException(String.format(
+                                        "Item [%s]: status [%s] does not permit starting.",
+                                         workItem.getIDString(), workItem.getStatus()));
+                                span.setStatus(StatusCode.ERROR, ex.getMessage());
+                                span.recordException(ex);
+                                throw ex;
+                            }
+                        };
+                    }
+                    else {
+                        rollbackTransaction();
+                        YStateException ex = new YStateException("Cannot start null work item.");
+                        span.setStatus(StatusCode.ERROR, ex.getMessage());
+                        span.recordException(ex);
+                        throw ex;
+                    }
+
+                    // COMMIT POINT
+                    commitTransaction();
+                    if (netRunner != null) announceEvents(netRunner.getCaseID());
+
+                    span.setStatus(StatusCode.OK);
+                    if (startedItem != null) {
+                        _telemetry.recordWorkItemStarted(startedItem.getIDString(),
+                                startedItem.getCaseID().toString(), startedItem.getTaskID());
+                    }
+                    _telemetry.recordEngineOperation("startWorkItem", System.currentTimeMillis() - startTime);
+
+                    _logger.debug("<-- startWorkItem");
                 }
-                else {
+                catch (YAWLException ye) {
                     rollbackTransaction();
-                    throw new YStateException("Cannot start null work item.");
+                    span.setStatus(StatusCode.ERROR, ye.getMessage());
+                    span.recordException(ye);
+                    ye.rethrow();
                 }
-
-                // COMMIT POINT
-                commitTransaction();
-                if (netRunner != null) announceEvents(netRunner.getCaseID());
-
-                _logger.debug("<-- startWorkItem");
+                catch (Exception e) {
+                    rollbackTransaction();
+                    _logger.error("Failure starting workitem " + workItem.getIDString(), e);
+                    span.setStatus(StatusCode.ERROR, e.getMessage());
+                    span.recordException(e);
+                    throw new YStateException(e.getMessage());
+                }
             }
-            catch (YAWLException ye) {
-                rollbackTransaction();
-                ye.rethrow();
-            }
-            catch (Exception e) {
-                rollbackTransaction();
-                _logger.error("Failure starting workitem " + workItem.getIDString(), e);
-                throw new YStateException(e.getMessage());
-            }
+            return startedItem;
+        } finally {
+            span.end();
         }
-        return startedItem;
     }
 
 
@@ -1542,43 +1647,76 @@ public class YEngine implements InterfaceADesign,
         }
         checkEngineRunning();
 
-        synchronized(_pmgr) {
-            startTransaction();
-            try {
-                if (workItem != null) {
-                    if (! workItem.getCaseID().hasParent()) {
-                        throw new YStateException("WorkItem with ID [" + workItem.getIDString() +
-                                "] is a 'parent' and so may not be completed.");
-                    }
-                    YNetRunner netRunner = getNetRunner(workItem.getCaseID().getParent());
-                    if (workItem.getStatus().equals(YWorkItemStatus.statusExecuting)) {
-                        completeExecutingWorkitem(workItem, netRunner, data,
-                                logPredicate, completionType);
-                    }
-                    else if (workItem.getStatus().equals(YWorkItemStatus.statusDeadlocked)) {
-                        _workItemRepository.removeWorkItemFamily(workItem);
+        String workItemId = workItem != null ? workItem.getIDString() : "unknown";
+        String caseId = workItem != null ? workItem.getCaseID().toString() : "unknown";
+        String taskId = workItem != null ? workItem.getTaskID() : "unknown";
+
+        Span span = YAWLTracing.createWorkItemSpan("yawl.workitem.complete",
+                workItemId, caseId, taskId);
+        span.setAttribute("yawl.workitem.completion_type", completionType != null ? completionType.name() : "normal");
+        long startTime = System.currentTimeMillis();
+
+        try (Scope scope = span.makeCurrent()) {
+            synchronized(_pmgr) {
+                startTransaction();
+                try {
+                    if (workItem != null) {
+                        if (! workItem.getCaseID().hasParent()) {
+                            YStateException ex = new YStateException("WorkItem with ID [" + workItem.getIDString() +
+                                    "] is a 'parent' and so may not be completed.");
+                            span.setStatus(StatusCode.ERROR, ex.getMessage());
+                            span.recordException(ex);
+                            throw ex;
+                        }
+                        YNetRunner netRunner = getNetRunner(workItem.getCaseID().getParent());
+                        if (workItem.getStatus().equals(YWorkItemStatus.statusExecuting)) {
+                            completeExecutingWorkitem(workItem, netRunner, data,
+                                    logPredicate, completionType);
+                        }
+                        else if (workItem.getStatus().equals(YWorkItemStatus.statusDeadlocked)) {
+                            _workItemRepository.removeWorkItemFamily(workItem);
+                        }
+                        else {
+                            YStateException ex = new YStateException("WorkItem with ID [" + workItem.getIDString() +
+                                    "] not in executing state.");
+                            span.setStatus(StatusCode.ERROR, ex.getMessage());
+                            span.recordException(ex);
+                            throw ex;
+                        }
+
+                        // COMMIT POINT
+                        commitTransaction();
+                        if (netRunner != null) announceEvents(netRunner.getCaseID());
+
+                        span.setStatus(StatusCode.OK);
+                        _telemetry.recordWorkItemCompleted(workItemId, caseId, taskId);
+                        _telemetry.recordEngineOperation("completeWorkItem", System.currentTimeMillis() - startTime);
                     }
                     else {
-                        throw new YStateException("WorkItem with ID [" + workItem.getIDString() +
-                                "] not in executing state.");
+                        YStateException ex = new YStateException("WorkItem argument is equal to null.");
+                        span.setStatus(StatusCode.ERROR, ex.getMessage());
+                        span.recordException(ex);
+                        throw ex;
                     }
-
-                    // COMMIT POINT
-                    commitTransaction();
-                    if (netRunner != null) announceEvents(netRunner.getCaseID());
                 }
-                else throw new YStateException("WorkItem argument is equal to null.");
+                catch (YAWLException ye) {
+                    rollbackTransaction();
+                    span.setStatus(StatusCode.ERROR, ye.getMessage());
+                    span.recordException(ye);
+                    ye.rethrow();
+                }
+                catch (Exception e) {
+                    rollbackTransaction();
+                    _logger.error("Exception completing workitem", e);
+                    span.setStatus(StatusCode.ERROR, e.getMessage());
+                    span.recordException(e);
+                    throw new YStateException("Failed to complete workitem: " + e.getMessage(), e);
+                }
             }
-            catch (YAWLException ye) {
-                rollbackTransaction();
-                ye.rethrow();
-            }
-            catch (Exception e) {
-                rollbackTransaction();
-                _logger.error("Exception completing workitem", e);
-            }
+            _logger.debug("<-- completeWorkItem");
+        } finally {
+            span.end();
         }
-        _logger.debug("<-- completeWorkItem");
     }
 
 
@@ -2361,6 +2499,29 @@ public class YEngine implements InterfaceADesign,
     public int getLoadedSpecificationCount() {
         return NullCheckModernizer.mapOrElse(_specifications,
                 s -> s.getSpecIDs().size(), 0);
+    }
+
+    /**
+     * Determines if a work item handoff should be attempted.
+     * This method provides a stub implementation for observability.
+     *
+     * @param workItem the work item to evaluate
+     * @return true if handoff should be attempted, false otherwise
+     */
+    private boolean classifyHandoffIfNeeded(org.yawlfoundation.yawl.engine.interfce.WorkItemRecord workItem) {
+        // Stub implementation for observability
+        // In a real implementation, this would check:
+        // - If the work item can be processed by other agents
+        // - If the current agent lacks required capabilities
+        // - If there are errors that prevent completion
+
+        if (workItem == null) {
+            return false;
+        }
+
+        // For now, always return false to prevent handoff
+        // This should be implemented based on business logic
+        return false;
     }
 
     /**

@@ -1,0 +1,72 @@
+# WCP-22: Cancel Region Pattern
+# Cancel all tasks in a specific region of the workflow
+
+name: CancelRegionPattern
+uri: cancel-region.xml
+first: StartTask
+
+variables:
+  - name: shouldCancel
+    type: xs:boolean
+    default: false
+  - name: regionStatus
+    type: xs:string
+    default: "active"
+
+tasks:
+  - id: StartTask
+    flows: [CheckCondition, CancelRegion, Proceed]
+    split: xor
+    join: xor
+    description: "Start task that determines flow"
+
+  - id: CheckCondition
+    flows: [CancelRegion, Proceed]
+    condition: shouldCancel == true -> CancelRegion
+    default: Proceed
+    split: xor
+    join: xor
+    description: "Check if cancellation needed"
+
+  - id: CancelRegion
+    flows: [HandleCancel]
+    split: xor
+    join: xor
+    cancelRegion: [TaskA, TaskB, TaskC]
+    description: "Cancel the specified region"
+
+  - id: TaskA
+    flows: [RegionComplete]
+    split: xor
+    join: xor
+    description: "Region task A"
+
+  - id: TaskB
+    flows: [RegionComplete]
+    split: xor
+    join: xor
+    description: "Region task B"
+
+  - id: TaskC
+    flows: [RegionComplete]
+    split: xor
+    join: xor
+    description: "Region task C"
+
+  - id: RegionComplete
+    flows: [end]
+    split: xor
+    join: and
+    description: "All region tasks complete"
+
+  - id: Proceed
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Continue without cancellation"
+
+  - id: HandleCancel
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Handle cancelled region"

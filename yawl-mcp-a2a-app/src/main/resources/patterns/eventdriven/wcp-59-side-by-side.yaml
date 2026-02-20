@@ -1,0 +1,61 @@
+# WCP-59: Side-by-Side Pattern
+# Run new version alongside old for validation
+
+name: SideBySidePattern
+uri: side-by-side.xml
+first: ReceiveRequest
+
+variables:
+  - name: requestId
+    type: xs:string
+  - name: useNewVersion
+    type: xs:boolean
+    default: true
+  - name: compareResults
+    type: xs:boolean
+    default: true
+
+tasks:
+  - id: ReceiveRequest
+    flows: [OldVersion, NewVersion]
+    split: and
+    join: xor
+    description: "Process with both versions"
+
+  - id: OldVersion
+    flows: [CompareResults, ReturnOld]
+    split: xor
+    join: xor
+    description: "Process with old version"
+
+  - id: NewVersion
+    flows: [CompareResults, ReturnNew]
+    split: xor
+    join: xor
+    description: "Process with new version"
+
+  - id: CompareResults
+    flows: [LogDifference, ReturnOld]
+    condition: compareResults == true -> LogDifference
+    default: ReturnOld
+    split: xor
+    join: and
+    description: "Compare version results"
+
+  - id: LogDifference
+    flows: [ReturnOld]
+    split: xor
+    join: xor
+    description: "Log differences"
+
+  - id: ReturnOld
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Return old version result"
+
+  - id: ReturnNew
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Return new version result"

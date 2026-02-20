@@ -98,7 +98,7 @@ public class SchemaHandler {
      */
     public SchemaHandler(InputStream is) {
         this();
-        schemaString = StringUtil.streamToString(is);
+        schemaString = StringUtil.streamToString(is).orElse(null);
         setSchema(schemaString);
     }
 
@@ -272,7 +272,7 @@ public class SchemaHandler {
      */
     private String streamToString(URL url) {
         try {
-            return StringUtil.streamToString(url.openStream());
+            return StringUtil.streamToString(url.openStream()).orElse(null);
         }
         catch (IOException ioe) {
             _log.error("Failed to read schema content from URL '{}': {}", url, ioe.getMessage(), ioe);

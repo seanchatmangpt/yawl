@@ -1,0 +1,28 @@
+name: SimpleTestWorkflow
+uri: test.xml
+first: TaskA
+
+tasks:
+  - id: TaskA
+    flows: [TaskB, TaskC]
+    split: xor
+    join: and
+    description: "First task splits into two paths"
+
+  - id: TaskB
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "Path B goes to TaskD"
+
+  - id: TaskC
+    flows: [TaskD]
+    split: xor
+    join: xor
+    description: "Path C goes to TaskD"
+
+  - id: TaskD
+    flows: [end]
+    split: xor
+    join: and
+    description: "Both paths converge here"

@@ -18,6 +18,11 @@
     <name>YAWL MCP-A2A Application</name>
     <description>Spring Boot application providing MCP server and A2A agent capabilities for YAWL workflow engine integration</description>
 
+    <properties>
+        <!-- Override parent's maven.test.skip to run tests in this module -->
+        <maven.test.skip>false</maven.test.skip>
+    </properties>
+
     <dependencies>
         <!-- ============================================================== -->
         <!-- YAWL INTER-MODULE DEPENDENCIES                                 -->
@@ -30,6 +35,10 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-engine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-stateless</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yawlfoundation</groupId>
@@ -130,47 +139,47 @@
         <!-- ============================================================== -->
 
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-spec</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-server-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-transport-rest</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-http-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client-transport-jsonrpc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client-transport-rest</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-client-transport-spi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-jsonrpc-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.anthropic</groupId>
+            <groupId>io.github.a2asdk</groupId>
             <artifactId>a2a-java-sdk-transport-jsonrpc</artifactId>
         </dependency>
 
@@ -223,12 +232,6 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.prometheus</groupId>
-                    <artifactId>prometheus-metrics-exposition-textformats</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- ============================================================== -->
@@ -286,6 +289,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -455,16 +462,34 @@
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                     </compilerArgs>
-                    <includes>
-                        <include>**/org/yawlfoundation/yawl/mcp/a2a/**/*.java</include>
-                    </includes>
-                    <excludes>
-                        <exclude>**/*Test.java</exclude>
-                        <exclude>**/*Tests.java</exclude>
-                        <exclude>**/benchmarks/**/*.java</exclude>
-                        <exclude>**/jmh/**/*.java</exclude>
-                    </excludes>
                 </configuration>
+                <executions>
+                    <!-- Main compile: only include specific packages -->
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <includes>
+                                <include>**/org/yawlfoundation/yawl/mcp/a2a/**/*.java</include>
+                                <include>**/org/yawlfoundation/yawl/resilience/**/*.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*Test.java</exclude>
+                                <exclude>**/*Tests.java</exclude>
+                                <exclude>**/benchmarks/**/*.java</exclude>
+                                <exclude>**/jmh/**/*.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!-- Test compile: compile all test sources -->
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Surefire Plugin for unit tests -->

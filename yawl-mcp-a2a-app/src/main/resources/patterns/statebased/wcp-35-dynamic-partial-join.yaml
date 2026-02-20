@@ -1,0 +1,61 @@
+# WCP-35: Dynamic Partial Join Pattern
+# Join with dynamic partial synchronization
+
+name: DynamicPartialJoinPattern
+uri: dynamic-partial-join.xml
+first: StartTask
+
+variables:
+  - name: branchCount
+    type: xs:integer
+    default: 0
+  - name: thresholdPercentage
+    type: xs:integer
+    default: 60
+  - name: dynamicThreshold
+    type: xs:integer
+    default: 0
+
+tasks:
+  - id: StartTask
+    flows: [DetermineBranches]
+    split: xor
+    join: xor
+    description: "Start dynamic workflow"
+
+  - id: DetermineBranches
+    flows: [CalculateThreshold]
+    split: xor
+    join: xor
+    description: "Determine number of branches"
+
+  - id: CalculateThreshold
+    flows: [ProcessBranches]
+    split: xor
+    join: xor
+    description: "Calculate dynamic threshold"
+
+  - id: ProcessBranches
+    flows: [DynamicPartialJoin]
+    split: and
+    join: xor
+    multiInstance:
+      mode: dynamic
+      query: branchCount
+      threshold: dynamic
+    description: "Process dynamic branches"
+
+  - id: DynamicPartialJoin
+    flows: [Complete]
+    split: xor
+    join: partial
+    threshold: dynamic
+    thresholdPercentage: 60
+    remaining: cancel
+    description: "Dynamic partial join"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Workflow complete"

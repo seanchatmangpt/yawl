@@ -84,7 +84,8 @@ public class TestYCaseImporter {
     private YSpecification loadMinimalSpec() throws YSyntaxException {
         InputStream is = getClass().getResourceAsStream(MINIMAL_SPEC_RESOURCE);
         assertNotNull(is, "Missing resource: " + MINIMAL_SPEC_RESOURCE);
-        String xml = StringUtil.streamToString(is);
+        String xml = StringUtil.streamToString(is)
+                .orElseThrow(() -> new AssertionError("Empty spec XML from " + MINIMAL_SPEC_RESOURCE));
         return engine.unmarshalSpecification(xml);
     }
 

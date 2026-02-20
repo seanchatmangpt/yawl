@@ -1,0 +1,47 @@
+# WCP-18: Deferred Choice Pattern
+# Choice is made by environment, not explicit decision
+
+name: DeferredChoicePattern
+uri: deferred-choice.xml
+first: WaitForEvent
+
+variables:
+  - name: eventType
+    type: xs:string
+  - name: eventData
+    type: xs:string
+
+tasks:
+  - id: WaitForEvent
+    flows: [HandleTimeout, HandleMessage, HandleSignal]
+    split: xor
+    join: xor
+    deferredChoice: true
+    description: "Wait for external event"
+
+  - id: HandleTimeout
+    flows: [ProcessResult]
+    split: xor
+    join: xor
+    timer:
+      trigger: onEnabled
+      duration: PT5M
+    description: "Timeout path"
+
+  - id: HandleMessage
+    flows: [ProcessResult]
+    split: xor
+    join: xor
+    description: "Message received path"
+
+  - id: HandleSignal
+    flows: [ProcessResult]
+    split: xor
+    join: xor
+    description: "Signal received path"
+
+  - id: ProcessResult
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Process the event result"

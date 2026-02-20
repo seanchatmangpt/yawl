@@ -1,0 +1,63 @@
+# ENT-1: Approval Workflow Pattern
+# Multi-level approval process
+
+name: ApprovalWorkflow
+uri: approval.xml
+first: TaskA
+
+variables:
+  - name: requestType
+    type: xs:string
+  - name: amount
+    type: xs:decimal
+  - name: approver
+    type: xs:string
+    default: "manager"
+
+tasks:
+  - id: TaskA
+    flows: [TaskB]
+    split: xor
+    join: xor
+    description: "Submit request"
+
+  - id: TaskB
+    flows: [TaskC, TaskD]
+    approval: true
+    approver: manager
+    amountThreshold: 1000
+    split: xor
+    join: xor
+    description: "Review request"
+
+  - id: TaskC
+    flows: [TaskE]
+    split: xor
+    join: xor
+    condition: amount <= 1000
+    description: "Approve small request"
+
+  - id: TaskD
+    flows: [TaskF]
+    split: xor
+    join: xor
+    condition: amount > 1000
+    description: "Escalate to director"
+
+  - id: TaskE
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Approval complete"
+
+  - id: TaskF
+    flows: [TaskG]
+    split: xor
+    join: xor
+    description: "Director review"
+
+  - id: TaskG
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Final approval"

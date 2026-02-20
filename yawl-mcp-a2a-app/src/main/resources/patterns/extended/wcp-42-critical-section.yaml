@@ -1,0 +1,106 @@
+# WCP-42: Critical Section Pattern
+# Protected region for concurrent access
+
+name: CriticalSectionPattern
+uri: critical-section.xml
+first: StartTask
+
+variables:
+  - name: semaphore
+    type: xs:integer
+    default: 1
+  - name: waitingCount
+    type: xs:integer
+    default: 0
+  - name: resourceAvailable
+    type: xs:boolean
+    default: true
+
+tasks:
+  - id: StartTask
+    flows: [RequestAccess1, RequestAccess2]
+    split: and
+    join: xor
+    description: "Start concurrent access"
+
+  - id: RequestAccess1
+    flows: [AcquireLock1, Wait1]
+    condition: resourceAvailable == true -> AcquireLock1
+    default: Wait1
+    split: xor
+    join: xor
+    description: "Request access 1"
+
+  - id: Wait1
+    flows: [RequestAccess1]
+    split: xor
+    join: xor
+    description: "Wait for lock 1"
+
+  - id: AcquireLock1
+    flows: [CriticalSection1]
+    split: xor
+    join: xor
+    semaphore: acquire
+    description: "Acquire lock 1"
+
+  - id: CriticalSection1
+    flows: [ReleaseLock1]
+    split: xor
+    join: xor
+    criticalSection: true
+    description: "Critical section 1"
+
+  - id: ReleaseLock1
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    semaphore: release
+    description: "Release lock 1"
+
+  - id: RequestAccess2
+    flows: [AcquireLock2, Wait2]
+    condition: resourceAvailable == true -> AcquireLock2
+    default: Wait2
+    split: xor
+    join: xor
+    description: "Request access 2"
+
+  - id: Wait2
+    flows: [RequestAccess2]
+    split: xor
+    join: xor
+    description: "Wait for lock 2"
+
+  - id: AcquireLock2
+    flows: [CriticalSection2]
+    split: xor
+    join: xor
+    semaphore: acquire
+    description: "Acquire lock 2"
+
+  - id: CriticalSection2
+    flows: [ReleaseLock2]
+    split: xor
+    join: xor
+    criticalSection: true
+    description: "Critical section 2"
+
+  - id: ReleaseLock2
+    flows: [SyncPoint]
+    split: xor
+    join: xor
+    semaphore: release
+    description: "Release lock 2"
+
+  - id: SyncPoint
+    flows: [Complete]
+    split: xor
+    join: and
+    description: "Sync point"
+
+  - id: Complete
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Complete"
