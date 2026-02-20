@@ -91,7 +91,7 @@ public class HolidayLoader {
         }
         catch (Exception e) {
             _log.error(e.getMessage());
-            holidays = Collections.emptyList();
+            holidays = List.of();
         }
         return holidays;
     }
@@ -101,7 +101,7 @@ public class HolidayLoader {
         HibernateEngine persister = getPersister();
         HolidayRegion holidayRegion = getLocation(persister);
         if (holidayRegion == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         String country = holidayRegion.getCountry();
         String region = holidayRegion.getRegion();
@@ -130,7 +130,7 @@ public class HolidayLoader {
         if (error != null) {
             throw new IOException(error);
         }
-        List<Holiday> holidays = new ArrayList<Holiday>();
+        List<Holiday> holidays = new ArrayList<>();
         for (XNode holidayNode : root.getChildren()) {
             holidays.add(new Holiday(holidayNode));
         }
@@ -156,7 +156,7 @@ public class HolidayLoader {
             if (year > -1) {
                 List<Holiday> holidays = holidayMap.get(year);
                 if (holidays == null) {
-                    holidays = new ArrayList<Holiday>();
+                    holidays = new ArrayList<>();
                     holidayMap.put(year, holidays);
                 }
                 holidays.add(holiday);
@@ -206,7 +206,7 @@ public class HolidayLoader {
 
 
     private HibernateEngine getPersister() {
-        Set<Class> classSet = new HashSet<Class>();
+        Set<Class> classSet = new HashSet<>();
         classSet.add(Holiday.class);
         classSet.add(HolidayRegion.class);
         return new HibernateEngine(true, classSet);

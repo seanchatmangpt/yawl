@@ -41,7 +41,7 @@ public class YAttributeMap extends TreeMap<String, String> {
      * Construct an (initially) empty attribute map.
      */
     public YAttributeMap() {
-        _dynamics = new TreeMap<String, DynamicValue>();
+        _dynamics = new TreeMap<>();
     }
 
     /**
@@ -117,7 +117,7 @@ public class YAttributeMap extends TreeMap<String, String> {
      * @return a Set of populated JDOM Attribute objects.
      */
     public Set<Attribute> toJDOM() {
-        Set<Attribute> result = new HashSet<Attribute>();
+        Set<Attribute> result = new HashSet<>();
         for (String key : keySet()) {
             result.add(new Attribute(key, this.get(key)));
         }

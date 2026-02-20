@@ -949,14 +949,14 @@ public class YNetRunner {
         List<YExternalNetElement> haveTokens = new ArrayList<YExternalNetElement>();
         for (YExternalNetElement element : _net.getNetElements().values()) {
             if (! (element instanceof YOutputCondition)) {  // ignore end condition tokens
-                if ((element instanceof YCondition) && ((YCondition) element).containsIdentifier()) {
+                if (element instanceof YCondition cond && cond.containsIdentifier()) {
                     haveTokens.add(element);
                 }
-                else if ((element instanceof YTask) && ((YTask) element).t_isBusy()) {
+                else if (element instanceof YTask task && task.t_isBusy()) {
                     haveTokens.add(element);
 
                     // flag and announce any executing workitems
-                    YInternalCondition exeCondition = ((YTask) element).getMIExecuting();
+                    YInternalCondition exeCondition = task.getMIExecuting();
                     for (YIdentifier id : exeCondition.getIdentifiers()) {
                         YWorkItem executingItem = _workItemRepository.get(
                                 id.toString(), element.getID());
@@ -1049,8 +1049,8 @@ public class YNetRunner {
     /** returns the task id of the task that the specified task flows into
         In other words, gets the id of the next task in the process flow */
     private String getFlowsIntoTaskID(YTask task) {
-        if ((task != null) && (task instanceof YAtomicTask)) {
-            Element eTask = JDOMUtil.stringToElement(task.toXML());
+        if ((task != null) && (task instanceof YAtomicTask atomicTask)) {
+            Element eTask = JDOMUtil.stringToElement(atomicTask.toXML());
             return eTask.getChild("flowsInto").getChild("nextElementRef").getAttributeValue("id");
         }
         return null ;

@@ -167,7 +167,7 @@ public class ServletUtils {
                 String paramStr = new String(contents, StandardCharsets.UTF_8);
 
         // split into params & rebuild map
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         String[] params = paramStr.split("&");
         for (String param : params) {
             String[] parts = param.split("=");

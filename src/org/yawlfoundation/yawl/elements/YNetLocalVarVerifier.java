@@ -48,7 +48,7 @@ public class YNetLocalVarVerifier {
      */
     public YNetLocalVarVerifier(YNet net) {
         _net = net;
-        _uninitialisedLocalVars = new HashMap<String, LocalTaskMap>();
+        _uninitialisedLocalVars = new HashMap<>();
         _log = LogManager.getLogger(this.getClass());
     }
 
@@ -87,7 +87,7 @@ public class YNetLocalVarVerifier {
         // for each affected task, check each of its backward paths to the start
         // condition to see if any tasks on the path output a value to the local var
         for (YTask task : map.getInputTasks()) {
-            verify(map, task, task, new ArrayList<YExternalNetElement>(),
+            verify(map, task, task, new ArrayList<>(),
                     new Stack<Integer>());
         }
 
@@ -219,7 +219,7 @@ public class YNetLocalVarVerifier {
      * @return the reinitialised list
      */
     private List<YExternalNetElement> resetVisited(YExternalNetElement element) {
-        List<YExternalNetElement> newVisited = new ArrayList<YExternalNetElement>();
+        List<YExternalNetElement> newVisited = new ArrayList<>();
         newVisited.add(element);
         return newVisited;
     }
@@ -359,7 +359,7 @@ public class YNetLocalVarVerifier {
      */
     private void unwindOrJoins(YTask task,
                                List<YExternalNetElement> visited) {
-        Set<YExternalNetElement> toDiscard = new HashSet<YExternalNetElement>();
+        Set<YExternalNetElement> toDiscard = new HashSet<>();
 
         // discard all visited elements back to the XOR-join
         for (int i = visited.size()-1; i >= 0; i--) {
@@ -488,8 +488,8 @@ public class YNetLocalVarVerifier {
 
         public LocalTaskMap(YVariable localVar) {
             _localVar = localVar;
-            _inputTasks = new HashSet<YTask>();
-            _outputTasks = new HashMap<YTask, Boolean>();
+            _inputTasks = new HashSet<>();
+            _outputTasks = new HashMap<>();
         }
 
         public YVariable getLocalVar() { return _localVar; }

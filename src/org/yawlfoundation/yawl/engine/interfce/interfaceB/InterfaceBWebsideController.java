@@ -651,7 +651,7 @@ public abstract class InterfaceBWebsideController {
         if (!enabledWorkItem.getStatus().equals(WorkItemRecord.statusEnabled))
             throw new IllegalArgumentException("Param enabledWorkItem must be enabled.");
 
-        List<WorkItemRecord> instances = new ArrayList<WorkItemRecord>();
+        List<WorkItemRecord> instances = new ArrayList<>();
 
         // first of all checkout an enabled work item
         WorkItemRecord result = checkOut(enabledWorkItem.getID(), sessionHandle);

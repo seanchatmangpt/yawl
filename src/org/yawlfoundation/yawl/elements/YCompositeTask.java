@@ -88,7 +88,7 @@ public final class YCompositeTask extends YTask {
 
     @Override
     public synchronized void cancel(YPersistenceManager pmgr) throws YPersistenceException {
-        List<YNetRunner> cancelledRunners = new ArrayList<YNetRunner>();
+        List<YNetRunner> cancelledRunners = new ArrayList<>();
         YIdentifier thisI = _i;
         if (_i != null) {
             for (YIdentifier identifier : _mi_active.getIdentifiers()) {

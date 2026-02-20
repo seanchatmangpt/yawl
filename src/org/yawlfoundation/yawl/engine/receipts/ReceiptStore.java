@@ -68,8 +68,8 @@ public class ReceiptStore {
      * Returns in chronological order (oldest first).
      */
     public List<Receipt> getReceiptsByCase(String caseId) {
-        return Collections.unmodifiableList(
-            receiptsByCase.getOrDefault(caseId, Collections.emptyList())
+        return List.copyOf(
+            receiptsByCase.getOrDefault(caseId, List.of())
         );
     }
 
@@ -129,8 +129,8 @@ public class ReceiptStore {
      * Query receipts by status (admitted vs rejected).
      */
     public List<Receipt> getAdmittedReceipts(String caseId) {
-        return Collections.unmodifiableList(
-            receiptsByCase.getOrDefault(caseId, Collections.emptyList())
+        return List.copyOf(
+            receiptsByCase.getOrDefault(caseId, List.of())
                 .stream()
                 .filter(Receipt::isCommitted)
                 .toList()
@@ -138,8 +138,8 @@ public class ReceiptStore {
     }
 
     public List<Receipt> getRejectedReceipts(String caseId) {
-        return Collections.unmodifiableList(
-            receiptsByCase.getOrDefault(caseId, Collections.emptyList())
+        return List.copyOf(
+            receiptsByCase.getOrDefault(caseId, List.of())
                 .stream()
                 .filter(Receipt::isRejected)
                 .toList()
@@ -150,8 +150,8 @@ public class ReceiptStore {
      * Query receipts by time range (for audits, incident response).
      */
     public List<Receipt> getReceiptsByTimeRange(String caseId, long startMs, long endMs) {
-        return Collections.unmodifiableList(
-            receiptsByCase.getOrDefault(caseId, Collections.emptyList())
+        return List.copyOf(
+            receiptsByCase.getOrDefault(caseId, List.of())
                 .stream()
                 .filter(r -> r.getTimestamp() >= startMs && r.getTimestamp() <= endMs)
                 .toList()

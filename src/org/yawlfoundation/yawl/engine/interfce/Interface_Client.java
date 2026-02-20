@@ -220,7 +220,7 @@ public class Interface_Client {
      * @return the initialised Map
      */
     protected Map<String, String> prepareParamMap(String action, String handle) {
-        Map<String, String> paramMap = new HashMap<String, String>();
+        Map<String, String> paramMap = new HashMap<>();
         paramMap.put("action", action) ;
         if (handle != null) paramMap.put("sessionHandle", handle) ;
         return paramMap;

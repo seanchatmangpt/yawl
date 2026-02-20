@@ -62,7 +62,7 @@ public class YAnnouncer {
     protected YAnnouncer(YEngine engine) {
         _engine = engine;
         _logger = LogManager.getLogger(this.getClass());
-        _interfaceXListeners = new HashSet<InterfaceX_EngineSideClient>();
+        _interfaceXListeners = new HashSet<>();
         _announcementContext = AnnouncementContext.NORMAL;
         _controller = new ObserverGatewayController();
 
@@ -462,7 +462,7 @@ public class YAnnouncer {
 
 
     private int reannounceWorkItems(Set<YWorkItem> workItems) throws YStateException {
-        Set<YAnnouncement> announcements = new HashSet<YAnnouncement>();
+        Set<YAnnouncement> announcements = new HashSet<>();
         for (YWorkItem workitem : workItems) {
             YAnnouncement announcement = createAnnouncement(workitem, ITEM_ADD);
             if (announcement != null) announcements.add(announcement);

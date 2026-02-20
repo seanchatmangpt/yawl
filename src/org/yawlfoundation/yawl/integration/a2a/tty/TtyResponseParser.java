@@ -233,7 +233,7 @@ public final class TtyResponseParser {
             if (value instanceof Map) {
                 return (Map<String, Object>) value;
             }
-            return Collections.emptyMap();
+            return Map.of();
         }
     }
 
@@ -321,7 +321,7 @@ public final class TtyResponseParser {
             return new ErrorResponse(
                 e.getClass().getSimpleName(),
                 e.getMessage(),
-                Collections.emptyMap(),
+                Map.of(),
                 e.toString(),
                 Instant.now()
             );
@@ -577,7 +577,7 @@ public final class TtyResponseParser {
             return parseCodeBlocks(text);
         }
 
-        return Collections.emptyList();
+        return List.of();
     }
 
     private TtyResponse parseJson(String content) {
@@ -589,7 +589,7 @@ public final class TtyResponseParser {
                 Object errorObj = data.get("error");
                 String errorCode = "JSON_ERROR";
                 String message = "Unknown error";
-                Map<String, Object> details = Collections.emptyMap();
+                Map<String, Object> details = Map.of();
 
                 if (errorObj instanceof String) {
                     message = (String) errorObj;
@@ -611,7 +611,7 @@ public final class TtyResponseParser {
             return new ErrorResponse(
                 "PARSE_ERROR",
                 "Failed to parse JSON: " + e.getMessage(),
-                Collections.emptyMap(),
+                Map.of(),
                 content,
                 Instant.now()
             );
@@ -653,7 +653,7 @@ public final class TtyResponseParser {
             }
 
             String eventType = "message";
-            Map<String, Object> data = Collections.emptyMap();
+            Map<String, Object> data = Map.of();
             String id = null;
 
             for (String line : block.split("\n")) {
@@ -728,7 +728,7 @@ public final class TtyResponseParser {
 
     private SseEvent parseSseEvent(String block) {
         String eventType = "message";
-        Map<String, Object> data = Collections.emptyMap();
+        Map<String, Object> data = Map.of();
         String id = null;
 
         for (String line : block.split("\n")) {
@@ -755,7 +755,7 @@ public final class TtyResponseParser {
         // Simple JSON parser for basic structures
         // For production, use Jackson or Gson
         if (json == null || json.isBlank()) {
-            return Collections.emptyMap();
+            return Map.of();
         }
 
         json = json.trim();

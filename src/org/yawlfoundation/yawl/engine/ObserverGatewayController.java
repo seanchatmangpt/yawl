@@ -79,7 +79,7 @@ public class ObserverGatewayController {
         }
         Set<ObserverGateway> schemeGateways = _gateways.get(scheme);
         if (schemeGateways == null) {
-            schemeGateways = new HashSet<ObserverGateway>();
+            schemeGateways = new HashSet<>();
             _gateways.put(scheme, schemeGateways);
         }
         schemeGateways.add(gateway);
@@ -404,7 +404,7 @@ public class ObserverGatewayController {
      */
     private Set<YAWLServiceReference> getServicesForScheme(
             Set<YAWLServiceReference> services, String scheme) {
-        Set<YAWLServiceReference> matches = new HashSet<YAWLServiceReference>();
+        Set<YAWLServiceReference> matches = new HashSet<>();
         for (YAWLServiceReference service : services) {
             if (service.getScheme().equals(scheme)) {
                 matches.add(service);

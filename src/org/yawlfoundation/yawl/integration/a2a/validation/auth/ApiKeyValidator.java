@@ -405,7 +405,7 @@ public class ApiKeyValidator {
             this.description = description;
             this.createdAt = createdAt;
             this.expiration = expiration;
-            this.permissions = Collections.unmodifiableSet(new HashSet<>(permissions));
+            this.permissions = Set.copyOf(new HashSet<>(permissions));
             this.active = active;
         }
 
@@ -520,7 +520,7 @@ public class ApiKeyValidator {
         // Getters
         public boolean isValid() { return valid; }
         public String getMessage() { return message; }
-        public Map<String, Object> getDetails() { return Collections.unmodifiableMap(details); }
+        public Map<String, Object> getDetails() { return Map.copyOf(details); }
     }
 
     /**
@@ -590,7 +590,7 @@ public class ApiKeyValidator {
             return new PermissionResult(false, message, null, null);
         }
 
-        public List<String> getPermissions() { return Collections.unmodifiableList(permissions); }
+        public List<String> getPermissions() { return List.copyOf(permissions); }
     }
 
     /**

@@ -48,8 +48,8 @@ public class SpecificationData {
     private String _documentation;
     private String _status;
     private String _specAsXML;
-    private Map<String, YParameter> _inputParams = new HashMap<String, YParameter>();
-    private Map<String, String> _dataTypes = new HashMap<String, String>();
+    private Map<String, YParameter> _inputParams = new HashMap<>();
+    private Map<String, String> _dataTypes = new HashMap<>();
     private YSchemaVersion _schemaVersion;
     private String _rootNetID;
     private String _schema ;
