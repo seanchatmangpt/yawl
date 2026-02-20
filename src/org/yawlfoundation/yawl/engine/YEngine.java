@@ -2411,12 +2411,15 @@ public class YEngine implements InterfaceADesign,
                     if (child != null) clearCaseFromPersistence(child);
                 }
 
-                synchronized (_pmgr) {
+                _pmgrAccessLock.lock();
+                try {
                     Object obj = _pmgr.getSession().get(YNetRunner.class, id.toString());
                     if (obj == null) {
                         obj = _pmgr.getSession().get(YIdentifier.class, id.toString());
                     }
                     if (obj != null) _pmgr.deleteObject(obj);
+                } finally {
+                    _pmgrAccessLock.unlock();
                 }
             }
             catch (Exception e) {
