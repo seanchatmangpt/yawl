@@ -1,72 +1,93 @@
 # WCP-22: Cancel Region Pattern
-# Cancel all tasks in a specific region of the workflow
+# Cancel all tasks in a specific region of the workflow.
+#
+# CRITICAL FIX (v6.0.0):
+# - Fixed flow topology to prevent multiple simultaneous tokens
+# - StartTask uses single XOR-split decision, not parallel flows
+# - Single token path ensures proper join semantics at end
+# - Region tasks properly join to consolidation point before exit
+#
+# Flow: StartTask -> (Decision) -> [CancelPath] OR [NormalPath]
+#       CancelPath: CancelRegion -> RegionCancel
+#       NormalPath: TaskA, TaskB, TaskC -> RegionJoin
+#       Both paths converge at RegionJoin -> end (AND-join for consistency)
+#
+# Petri Net Semantics:
+# - Place(StartTask): 1 token
+# - Transition(CheckCondition): XOR-split creates EITHER cancel OR normal path
+# - Place(Region): Contains all region task firings
+# - Transition(RegionJoin): AND-join collects region completions
+# - Place(End): Final place, single token on completion
 
 name: CancelRegionPattern
 uri: cancel-region.xml
-first: StartTask
+first: CheckCondition
 
 variables:
   - name: shouldCancel
     type: xs:boolean
     default: false
+  - name: cancelReason
+    type: xs:string
+    default: "user_request"
   - name: regionStatus
     type: xs:string
     default: "active"
+  - name: completionTime
+    type: xs:long
+    default: 0
 
 tasks:
-  - id: StartTask
-    flows: [CheckCondition, CancelRegion, Proceed]
-    split: xor
-    join: xor
-    description: "Start task that determines flow"
-
+  # Entry point: single decision node (XOR-split to prevent token duplication)
   - id: CheckCondition
-    flows: [CancelRegion, Proceed]
+    flows: [CancelRegion, NormalPath]
     condition: shouldCancel == true -> CancelRegion
-    default: Proceed
+    default: NormalPath
     split: xor
     join: xor
-    description: "Check if cancellation needed"
+    description: "Gate decision: cancel or proceed normally. XOR-split ensures single token path."
 
+  # CANCEL PATH: Execute cancellation logic
   - id: CancelRegion
-    flows: [HandleCancel]
+    flows: [RegionJoin]
     split: xor
     join: xor
     cancelRegion: [TaskA, TaskB, TaskC]
-    description: "Cancel the specified region"
+    description: "Cancel all tasks in the region (TaskA, TaskB, TaskC). Emits cancellation event."
 
+  # NORMAL PATH: Execute region tasks (any or all depending on strategy)
+  - id: NormalPath
+    flows: [TaskA, TaskB, TaskC]
+    split: and
+    join: xor
+    description: "Normal path: execute region tasks in parallel. AND-split creates tokens for each task."
+
+  # Region tasks (can complete independently or be cancelled)
   - id: TaskA
-    flows: [RegionComplete]
+    flows: [RegionJoin]
     split: xor
     join: xor
-    description: "Region task A"
+    description: "Region task A. Flows to RegionJoin regardless of cancel status."
 
   - id: TaskB
-    flows: [RegionComplete]
+    flows: [RegionJoin]
     split: xor
     join: xor
-    description: "Region task B"
+    description: "Region task B. Flows to RegionJoin regardless of cancel status."
 
   - id: TaskC
-    flows: [RegionComplete]
+    flows: [RegionJoin]
     split: xor
     join: xor
-    description: "Region task C"
+    description: "Region task C. Flows to RegionJoin regardless of cancel status."
 
-  - id: RegionComplete
+  # SYNCHRONIZATION POINT: Join all paths before completion
+  # AND-join ensures single token propagation to end
+  # Receives exactly 1 token from: CancelRegion OR all of (TaskA, TaskB, TaskC)
+  - id: RegionJoin
     flows: [end]
     split: xor
     join: and
-    description: "All region tasks complete"
+    description: "Consolidation point. Joins cancel path (1 token) or normal path (3 tokens). Produces 1 token."
 
-  - id: Proceed
-    flows: [end]
-    split: xor
-    join: xor
-    description: "Continue without cancellation"
-
-  - id: HandleCancel
-    flows: [end]
-    split: xor
-    join: xor
-    description: "Handle cancelled region"
+  # END: Workflow completion

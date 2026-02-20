@@ -8,7 +8,7 @@ first: TaskA
 variables:
   - name: orderId
     type: xs:string
-    default: ""
+    default: "ORD-001"
   - name: status
     type: xs:string
     default: "started"

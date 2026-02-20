@@ -18,28 +18,25 @@ variables:
 
 tasks:
   - id: Decision
-    flows: [TaskA, TaskB, TaskC]
+    flows: [TaskA, TaskB, TaskC, Merge]
     split: or
-    join: xor
-    description: "Evaluate multiple conditions"
+    join: and
+    description: "Evaluate multiple conditions and route to appropriate tasks or merge"
 
   - id: TaskA
     flows: [Merge]
-    condition: conditionA == true -> Merge
     split: xor
     join: xor
     description: "Path A execution"
 
   - id: TaskB
     flows: [Merge]
-    condition: conditionB == true -> Merge
     split: xor
     join: xor
     description: "Path B execution"
 
   - id: TaskC
     flows: [Merge]
-    condition: conditionC == true -> Merge
     split: xor
     join: xor
     description: "Path C execution"

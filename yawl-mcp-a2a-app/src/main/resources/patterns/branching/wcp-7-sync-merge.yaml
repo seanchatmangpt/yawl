@@ -1,5 +1,26 @@
 # WCP-7: Structured Synchronizing Merge Pattern
-# Wait for all activated branches to complete before continuing
+# Wait for all activated branches to complete before continuing.
+#
+# SEMANTICS:
+# - Explicitly defined static structure (known at design time)
+# - AND-split at Split creates 3 tokens (one per branch)
+# - Each branch (TaskA, TaskB, TaskC) processes independently
+# - AND-join at Merge collects all 3 tokens before proceeding
+# - Single consolidated token continues to end
+#
+# Petri Net:
+# - Place(Split): 1 token
+# - Transition(Split): AND-split -> Place(A), Place(B), Place(C) = 3 tokens
+# - Transition(Merge): AND-join consumes all 3 tokens -> 1 token to Place(End)
+#
+# Key Difference from WCP-8 (Multi-Merge):
+# - WCP-7: All branches are KNOWN and ACTIVATED at design time
+# - WCP-7: Merge waits for all branches (synchronization)
+# - WCP-8: Branches may be independent (no sync requirement)
+#
+# Usage:
+# Pattern: if (condition1) { branch_a(); } if (condition2) { branch_b(); } if (condition3) { branch_c(); }
+#          synchronize_all_branches(); continue();
 
 name: StructuredSyncMergePattern
 uri: sync-merge.xml
@@ -8,35 +29,42 @@ first: Split
 variables:
   - name: branchCount
     type: xs:integer
-    default: 0
+    default: 3
+    description: "Number of branches to synchronize (design-time constant)"
+  - name: branchAResult
+    type: xs:string
+  - name: branchBResult
+    type: xs:string
+  - name: branchCResult
+    type: xs:string
 
 tasks:
   - id: Split
     flows: [TaskA, TaskB, TaskC]
     split: and
     join: xor
-    description: "Fork into parallel branches"
+    description: "AND-split creates 3 tokens (one per activated branch). Design-time static structure."
 
   - id: TaskA
     flows: [Merge]
     split: xor
     join: xor
-    description: "Branch A task"
+    description: "Branch A processing. Independent of other branches. Completes asynchronously."
 
   - id: TaskB
     flows: [Merge]
     split: xor
     join: xor
-    description: "Branch B task"
+    description: "Branch B processing. Independent of other branches. Completes asynchronously."
 
   - id: TaskC
     flows: [Merge]
     split: xor
     join: xor
-    description: "Branch C task"
+    description: "Branch C processing. Independent of other branches. Completes asynchronously."
 
   - id: Merge
     flows: [end]
     split: xor
     join: and
-    description: "Wait for all branches"
+    description: "AND-join (synchronizing merge). Collects all 3 tokens from TaskA, TaskB, TaskC. Produces single output token. Blocks if any branch incomplete."

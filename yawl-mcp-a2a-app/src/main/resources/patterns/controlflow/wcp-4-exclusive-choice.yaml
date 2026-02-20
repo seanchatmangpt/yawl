@@ -8,7 +8,7 @@ first: TaskA
 variables:
   - name: amount
     type: xs:decimal
-    default: "0.0"
+    default: "500.0"
   - name: priority
     type: xs:string
     default: "normal"

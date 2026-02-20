@@ -1,5 +1,30 @@
 # WCP-8: Multi-Merge Pattern
-# Multiple branches merge without synchronization, each continues independently
+# Multiple branches merge without synchronization - each branch completion independently triggers continuation.
+#
+# SEMANTICS:
+# - AND-split at Split creates 2 tokens (one per branch)
+# - TaskA and TaskB execute in parallel (asynchronously)
+# - No synchronization at merge: each branch INDEPENDENTLY continues
+# - Merge is XOR (not AND): consumes 1 token, produces 1 token
+# - Continue is multi-instance: triggered multiple times (once per branch)
+#
+# Petri Net:
+# - Place(Split): 1 token
+# - Transition(Split): AND-split -> 2 tokens (in A, B)
+# - Transition(Merge): XOR-join triggered by EITHER A OR B (not both)
+#   - First completion: consumes 1 token, produces 1 Continue instance
+#   - Second completion: consumes 1 token, produces 1 Continue instance
+# - Continue: 2 instances total, execute independently
+#
+# Key Difference from WCP-7 (Structured Sync Merge):
+# - WCP-7: AND-join waits for ALL branches (synchronization)
+# - WCP-8: XOR-join allows EACH branch to continue independently (no sync)
+# - WCP-8: Continue executes once per branch (multi-instance)
+# - WCP-8: Used when post-merge logic is independent per branch
+#
+# Usage:
+# Pattern: parallel { branch_a(); branch_b(); }
+#          continue_independently();  // triggers for each branch completion
 
 name: MultiMergePattern
 uri: multi-merge.xml
@@ -8,27 +33,39 @@ first: Split
 variables:
   - name: resultA
     type: xs:string
+    description: "Result from branch A"
   - name: resultB
     type: xs:string
+    description: "Result from branch B"
+  - name: branchCount
+    type: xs:integer
+    default: 2
+    description: "Number of parallel branches"
 
 tasks:
   - id: Split
     flows: [TaskA, TaskB]
     split: and
     join: xor
-    description: "Start parallel branches"
+    description: "AND-split creates 2 parallel tokens. Both branches start immediately."
 
   - id: TaskA
-    flows: [Continue]
+    flows: [Merge]
     split: xor
     join: xor
-    description: "Process branch A"
+    description: "Branch A processing. Completes asynchronously at arbitrary time."
 
   - id: TaskB
+    flows: [Merge]
+    split: xor
+    join: xor
+    description: "Branch B processing. Completes asynchronously at arbitrary time."
+
+  - id: Merge
     flows: [Continue]
     split: xor
     join: xor
-    description: "Process branch B"
+    description: "XOR-merge (no synchronization). Triggered by EITHER branch completion. Does not wait for other branches. Each completion triggers one Continue instance."
 
   - id: Continue
     flows: [end]
@@ -38,4 +75,5 @@ tasks:
       min: 1
       max: 2
       mode: dynamic
-    description: "Continue for each completed branch"
+      threshold: 1
+    description: "Multi-instance task. Executes once per branch completion. Total instances = number of branches. No inter-instance synchronization."
