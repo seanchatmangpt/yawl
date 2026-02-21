@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.observability;
 
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -390,8 +391,8 @@ public class BottleneckDetector {
     }
 
     private void registerMetrics() {
-        meterRegistry.gaugeCollectionSize("yawl.bottleneck.active_bottlenecks",
-                Collections.emptyList(), currentBottlenecks);
+        Gauge.builder("yawl.bottleneck.active_bottlenecks", currentBottlenecks, Map::size)
+                .register(meterRegistry);
         meterRegistry.gaugeCollectionSize("yawl.bottleneck.alert_history",
                 Collections.emptyList(), alertHistory);
     }

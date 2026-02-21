@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.observability;
 
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -443,8 +444,8 @@ public class CostAttributor {
     }
 
     private void registerMetrics() {
-        meterRegistry.gaugeCollectionSize("yawl.cost.tracked_cases",
-                Collections.emptyList(), caseCosts);
+        Gauge.builder("yawl.cost.tracked_cases", caseCosts, Map::size)
+                .register(meterRegistry);
         meterRegistry.gauge("yawl.cost.total_cost",
                 Collections.emptyList(),
                 this,

@@ -122,7 +122,9 @@ public class YWorkItemRepository {
      */
     public Set<YWorkItem> cancelNet(YIdentifier caseIDForNet) {
         Set<String> itemsToRemove = new HashSet<>();
-        for (YWorkItem item : _itemMap.values()) {
+        // Create a defensive copy to avoid concurrent modification issues
+        Collection<YWorkItem> itemsCopy = new ArrayList<>(_itemMap.values());
+        for (YWorkItem item : itemsCopy) {
             YIdentifier identifier = item.getWorkItemID().getCaseID();
             if (identifier.isImmediateChildOf(caseIDForNet) ||
                     identifier.toString().equals(caseIDForNet.toString())) {
@@ -214,7 +216,9 @@ public class YWorkItemRepository {
     // check that the items in the repository are in synch with the engine
     public void cleanseRepository() {
         Set<String> itemsToRemove = new HashSet<>();
-        for (YWorkItem workitem : _itemMap.values()) {
+        // Create a defensive copy to avoid concurrent modification issues
+        Collection<YWorkItem> itemsCopy = new ArrayList<>(_itemMap.values());
+        for (YWorkItem workitem : itemsCopy) {
 
             // keep deadlocked items in repository for visibility and handling
             if (workitem.getStatus() == statusDeadlocked) {

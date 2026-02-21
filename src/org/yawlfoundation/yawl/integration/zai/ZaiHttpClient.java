@@ -345,7 +345,7 @@ public class ZaiHttpClient {
             scope.join();
             scope.throwIfFailed(e -> new IOException("Batch Z.AI request failed", e));
 
-            return tasks.stream().map(StructuredTaskScope.Subtask::resultNow).toList();
+            return tasks.stream().map(StructuredTaskScope.Subtask::get).toList();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Batch Z.AI request interrupted", e);

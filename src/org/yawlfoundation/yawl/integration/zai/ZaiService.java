@@ -163,7 +163,7 @@ public class ZaiService {
             scope.join();
             scope.throwIfFailed(e -> new IOException("Parallel Z.AI call failed", e));
 
-            return new String[]{ task1.resultNow(), task2.resultNow() };
+            return new String[]{ task1.get(), task2.get() };
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Parallel chat interrupted", e);
@@ -182,8 +182,12 @@ public class ZaiService {
      */
     public String chatWithContext(String systemPromptOverride, String message) {
         ensureInitialized();
-        return ScopedValue.callWhere(WORKFLOW_SYSTEM_PROMPT, systemPromptOverride,
-                () -> chat(message));
+        try {
+            return ScopedValue.callWhere(WORKFLOW_SYSTEM_PROMPT, systemPromptOverride,
+                    () -> chat(message));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to invoke chat with workflow context", e);
+        }
     }
 
     /**

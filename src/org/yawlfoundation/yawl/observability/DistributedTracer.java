@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.observability;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
@@ -72,7 +73,7 @@ public class DistributedTracer {
         Objects.requireNonNull(taskName);
 
         String spanName = String.format(SPAN_NAME_FORMAT, "workitem", taskName);
-        Span.Builder spanBuilder = tracer.spanBuilder(spanName)
+        SpanBuilder spanBuilder = tracer.spanBuilder(spanName)
                 .setAttribute("yawl.case.id", caseId)
                 .setAttribute("yawl.workitem.id", workItemId)
                 .setAttribute("yawl.task.name", taskName)
@@ -96,16 +97,16 @@ public class DistributedTracer {
         Objects.requireNonNull(caseId);
 
         String spanName = String.format(SPAN_NAME_FORMAT, "task", taskName);
-        Span span = tracer.spanBuilder(spanName)
+        SpanBuilder spanBuilder = tracer.spanBuilder(spanName)
                 .setAttribute("yawl.task.name", taskName)
                 .setAttribute("yawl.case.id", caseId)
                 .setAttribute("yawl.event.type", "task_started");
 
         if (agentId != null) {
-            span.setAttribute("yawl.agent.id", agentId);
+            spanBuilder.setAttribute("yawl.agent.id", agentId);
         }
 
-        Span startedSpan = span.startSpan();
+        Span startedSpan = spanBuilder.startSpan();
         String traceId = startedSpan.getSpanContext().getTraceId();
 
         return new TraceSpan(startedSpan, traceId);

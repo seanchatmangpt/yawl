@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.observability;
 
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -310,8 +311,8 @@ public class WorkflowOptimizer {
     }
 
     private void registerMetrics() {
-        meterRegistry.gaugeCollectionSize("yawl.optimizer.tracked_tasks",
-                Collections.emptyList(), taskMetrics);
+        Gauge.builder("yawl.optimizer.tracked_tasks", taskMetrics, Map::size)
+                .register(meterRegistry);
         meterRegistry.gaugeCollectionSize("yawl.optimizer.active_suggestions",
                 Collections.emptyList(), suggestions);
     }

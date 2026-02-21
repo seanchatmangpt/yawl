@@ -58,6 +58,7 @@ public class YNetRunnerRepository extends ConcurrentHashMap<YIdentifier, YNetRun
 
 
     public YNetRunner get(String caseID) {
+        if (caseID == null) return null;
         YIdentifier id = getCaseIdentifier(caseID);
         return (id != null) ? this.get(id) : null;
     }
