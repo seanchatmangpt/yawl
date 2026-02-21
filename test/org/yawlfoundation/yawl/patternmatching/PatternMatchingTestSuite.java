@@ -33,7 +33,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     YSpecificationPatternTest.class,
     EnumExhaustivenessTest.class,
     PatternMatchingEdgeCaseTest.class,
-    PatternMatchingRegressionTest.class
+    PatternMatchingRegressionTest.class,
+    PatternMatchingIntegrationTest.class
 })
 public class PatternMatchingTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

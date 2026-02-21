@@ -33,7 +33,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 @DisplayName("YEngine Lifecycle Tests")
 @Tag("integration")
 @Execution(ExecutionMode.SAME_THREAD)
-class TestYEngineLifecycle {
+public class TestYEngineLifecycle {
 
     private YEngine engine;
 
@@ -58,11 +58,11 @@ class TestYEngineLifecycle {
 
     @Nested
     @DisplayName("Engine Initialization")
-    class EngineInitializationTests {
+    public class EngineInitializationTests {
 
         @Test
         @DisplayName("Engine singleton pattern returns same instance")
-        void engineSingletonReturnsSameInstance() {
+        public void engineSingletonReturnsSameInstance() {
             YEngine engine1 = YEngine.getInstance();
             YEngine engine2 = YEngine.getInstance();
 
@@ -71,20 +71,20 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Engine instance is never null")
-        void engineInstanceNeverNull() {
+        public void engineInstanceNeverNull() {
             YEngine instance = YEngine.getInstance();
             assertNotNull(instance, "YEngine.getInstance() must return non-null instance");
         }
 
         @Test
         @DisplayName("Engine reports running status after initialization")
-        void engineReportsRunningStatusAfterInit() {
+        public void engineReportsRunningStatusAfterInit() {
             assertTrue(YEngine.isRunning(), "Engine should report running status after initialization");
         }
 
         @Test
         @DisplayName("Engine status can be retrieved")
-        void engineStatusCanBeRetrieved() {
+        public void engineStatusCanBeRetrieved() {
             YEngine.Status status = engine.getEngineStatus();
             assertNotNull(status, "Engine status should not be null");
             assertEquals(YEngine.Status.Running, status, "Engine status should be Running");
@@ -92,7 +92,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Engine has no loaded specifications initially after clear")
-        void engineHasNoLoadedSpecificationsAfterClear() throws YPersistenceException, YEngineStateException {
+        public void engineHasNoLoadedSpecificationsAfterClear() throws YPersistenceException, YEngineStateException {
             EngineClearer.clear(engine);
             Set<YSpecificationID> specs = engine.getLoadedSpecificationIDs();
             assertTrue(specs.isEmpty(), "Engine should have no loaded specifications after clear");
@@ -100,7 +100,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Engine has no running cases initially after clear")
-        void engineHasNoRunningCasesAfterClear() throws YPersistenceException, YEngineStateException {
+        public void engineHasNoRunningCasesAfterClear() throws YPersistenceException, YEngineStateException {
             EngineClearer.clear(engine);
             List<YIdentifier> cases = engine.getRunningCaseIDs();
             assertTrue(cases.isEmpty(), "Engine should have no running cases after clear");
@@ -108,37 +108,37 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Engine work item repository is accessible")
-        void engineWorkItemRepositoryIsAccessible() {
+        public void engineWorkItemRepositoryIsAccessible() {
             assertNotNull(engine.getWorkItemRepository(), "Work item repository should be accessible");
         }
 
         @Test
         @DisplayName("Engine net runner repository is accessible")
-        void engineNetRunnerRepositoryIsAccessible() {
+        public void engineNetRunnerRepositoryIsAccessible() {
             assertNotNull(engine.getNetRunnerRepository(), "Net runner repository should be accessible");
         }
 
         @Test
         @DisplayName("Engine specification table is accessible")
-        void engineSpecificationTableIsAccessible() {
+        public void engineSpecificationTableIsAccessible() {
             assertNotNull(engine.getSpecificationTable(), "Specification table should be accessible");
         }
 
         @Test
         @DisplayName("Engine session cache is accessible")
-        void engineSessionCacheIsAccessible() {
+        public void engineSessionCacheIsAccessible() {
             assertNotNull(engine.getSessionCache(), "Session cache should be accessible");
         }
 
         @Test
         @DisplayName("Engine announcer is accessible")
-        void engineAnnouncerIsAccessible() {
+        public void engineAnnouncerIsAccessible() {
             assertNotNull(engine.getAnnouncer(), "Announcer should be accessible");
         }
 
         @Test
         @DisplayName("Engine instance cache is accessible")
-        void engineInstanceCacheIsAccessible() {
+        public void engineInstanceCacheIsAccessible() {
             assertNotNull(engine.getInstanceCache(), "Instance cache should be accessible");
         }
     }
@@ -149,11 +149,11 @@ class TestYEngineLifecycle {
 
     @Nested
     @DisplayName("Specification Loading and Unloading")
-    class SpecificationLoadingTests {
+    public class SpecificationLoadingTests {
 
         @Test
         @DisplayName("Load specification from MakeMusic.xml")
-        void loadSpecificationFromMakeMusicXml() throws Exception {
+        public void loadSpecificationFromMakeMusicXml() throws Exception {
             YSpecificationID specID = loadSpecification("MakeMusic.xml");
 
             assertNotNull(specID, "Specification ID should not be null after loading");
@@ -163,7 +163,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Load specification from YAWL_Specification2.xml")
-        void loadSpecificationFromYAWLSpecification2Xml() throws Exception {
+        public void loadSpecificationFromYAWLSpecification2Xml() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             assertNotNull(specID, "Specification ID should not be null after loading");
@@ -173,7 +173,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Unload specification successfully")
-        void unloadSpecificationSuccessfully() throws Exception {
+        public void unloadSpecificationSuccessfully() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             // Verify it's loaded
@@ -189,7 +189,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Cannot unload specification with active cases")
-        void cannotUnloadSpecificationWithActiveCases() throws Exception {
+        public void cannotUnloadSpecificationWithActiveCases() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             // Launch a case
@@ -207,7 +207,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Cannot unload non-existent specification")
-        void cannotUnloadNonExistentSpecification() {
+        public void cannotUnloadNonExistentSpecification() {
             YSpecificationID nonexistentSpecID = new YSpecificationID("nonexistent", "0.1", "NonExistent");
 
             assertThrows(YStateException.class, () -> engine.unloadSpecification(nonexistentSpecID),
@@ -216,7 +216,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get specification by ID returns correct specification")
-        void getSpecificationByIdReturnsCorrectSpecification() throws Exception {
+        public void getSpecificationByIdReturnsCorrectSpecification() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             YSpecification spec = engine.getSpecification(specID);
@@ -226,7 +226,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get specification by key (URI) returns correct specification")
-        void getSpecificationByKeyReturnsCorrectSpecification() throws Exception {
+        public void getSpecificationByKeyReturnsCorrectSpecification() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             YSpecification spec = engine.getLatestSpecification(specID.getUri());
@@ -235,7 +235,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Load specification returns correct load status")
-        void loadSpecificationReturnsCorrectLoadStatus() throws Exception {
+        public void loadSpecificationReturnsCorrectLoadStatus() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String status = engine.getLoadStatus(specID);
@@ -249,7 +249,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get data schema for loaded specification")
-        void getDataSchemaForLoadedSpecification() throws Exception {
+        public void getDataSchemaForLoadedSpecification() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String schema = engine.getSpecificationDataSchema(specID);
@@ -260,7 +260,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Load multiple specifications")
-        void loadMultipleSpecifications() throws Exception {
+        public void loadMultipleSpecifications() throws Exception {
             YSpecificationID specID1 = loadSpecification("YAWL_Specification2.xml");
             YSpecificationID specID2 = loadSpecification("YAWL_Specification3.xml");
 
@@ -271,7 +271,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Add specifications with verification handler")
-        void addSpecificationsWithVerificationHandler() throws Exception {
+        public void addSpecificationsWithVerificationHandler() throws Exception {
             String specXml = loadResourceAsString("YAWL_Specification2.xml");
             YVerificationHandler handler = new YVerificationHandler();
 
@@ -283,7 +283,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Add specifications ignoring errors")
-        void addSpecificationsIgnoringErrors() throws Exception {
+        public void addSpecificationsIgnoringErrors() throws Exception {
             String specXml = loadResourceAsString("YAWL_Specification2.xml");
             YVerificationHandler handler = new YVerificationHandler();
 
@@ -300,11 +300,11 @@ class TestYEngineLifecycle {
 
     @Nested
     @DisplayName("Case Launch and Management")
-    class CaseLaunchTests {
+    public class CaseLaunchTests {
 
         @Test
         @DisplayName("Launch case with valid specification")
-        void launchCaseWithValidSpecification() throws Exception {
+        public void launchCaseWithValidSpecification() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -315,7 +315,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Launched case appears in running case IDs")
-        void launchedCaseAppearsInRunningCaseIds() throws Exception {
+        public void launchedCaseAppearsInRunningCaseIds() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -327,7 +327,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get case ID by string returns correct identifier")
-        void getCaseIdByStringReturnsCorrectIdentifier() throws Exception {
+        public void getCaseIdByStringReturnsCorrectIdentifier() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -339,7 +339,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get cases for specification returns correct cases")
-        void getCasesForSpecificationReturnsCorrectCases() throws Exception {
+        public void getCasesForSpecificationReturnsCorrectCases() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID1 = engine.launchCase(specID, null, null, null);
@@ -351,7 +351,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get running case map groups by specification")
-        void getRunningCaseMapGroupsBySpecification() throws Exception {
+        public void getRunningCaseMapGroupsBySpecification() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             engine.launchCase(specID, null, null, null);
@@ -364,7 +364,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Cancel case removes it from running cases")
-        void cancelCaseRemovesFromRunningCases() throws Exception {
+        public void cancelCaseRemovesFromRunningCases() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -383,7 +383,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Cannot launch case with invalid specification ID")
-        void cannotLaunchCaseWithInvalidSpecificationId() {
+        public void cannotLaunchCaseWithInvalidSpecificationId() {
             YSpecificationID unregisteredSpecID = new YSpecificationID("nonexistent", "0.1", "NonExistent");
 
             assertThrows(YStateException.class,
@@ -393,7 +393,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Cannot launch case with duplicate case ID")
-        void cannotLaunchCaseWithDuplicateCaseId() throws Exception {
+        public void cannotLaunchCaseWithDuplicateCaseId() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = "TestDuplicateCase123";
@@ -407,7 +407,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Launch case with custom case ID")
-        void launchCaseWithCustomCaseId() throws Exception {
+        public void launchCaseWithCustomCaseId() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String customCaseID = "CustomTestCaseID456";
@@ -418,7 +418,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get case data for running case")
-        void getCaseDataForRunningCase() throws Exception {
+        public void getCaseDataForRunningCase() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -429,7 +429,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get state for case returns valid XML")
-        void getStateForCaseReturnsValidXml() throws Exception {
+        public void getStateForCaseReturnsValidXml() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -442,7 +442,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Cancel null case ID throws exception")
-        void cancelNullCaseIdThrowsException() {
+        public void cancelNullCaseIdThrowsException() {
             assertThrows(IllegalArgumentException.class,
                     () -> engine.cancelCase(null),
                     "Should throw exception for null case ID");
@@ -450,7 +450,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get next case number returns unique values")
-        void getNextCaseNumberReturnsUniqueValues() {
+        public void getNextCaseNumberReturnsUniqueValues() {
             String caseNbr1 = engine.getNextCaseNbr();
             String caseNbr2 = engine.getNextCaseNbr();
 
@@ -461,7 +461,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get case data as YNetData object")
-        void getCaseDataAsYNetDataObject() throws Exception {
+        public void getCaseDataAsYNetDataObject() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -473,7 +473,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get specification for running case")
-        void getSpecificationForRunningCase() throws Exception {
+        public void getSpecificationForRunningCase() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -491,11 +491,11 @@ class TestYEngineLifecycle {
 
     @Nested
     @DisplayName("Work Item Management")
-    class WorkItemTests {
+    public class WorkItemTests {
 
         @Test
         @DisplayName("Get available work items after case launch")
-        void getAvailableWorkItemsAfterCaseLaunch() throws Exception {
+        public void getAvailableWorkItemsAfterCaseLaunch() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             engine.launchCase(specID, null, null, null);
@@ -506,7 +506,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get all work items returns work item set")
-        void getAllWorkItemsReturnsWorkItemSet() throws Exception {
+        public void getAllWorkItemsReturnsWorkItemSet() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             engine.launchCase(specID, null, null, null);
@@ -517,7 +517,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get work item by ID returns correct item")
-        void getWorkItemByIdReturnsCorrectItem() throws Exception {
+        public void getWorkItemByIdReturnsCorrectItem() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             engine.launchCase(specID, null, null, null);
@@ -535,7 +535,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Work item repository contains launched case items")
-        void workItemRepositoryContainsLaunchedCaseItems() throws Exception {
+        public void workItemRepositoryContainsLaunchedCaseItems() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             String caseID = engine.launchCase(specID, null, null, null);
@@ -552,18 +552,18 @@ class TestYEngineLifecycle {
 
     @Nested
     @DisplayName("Engine State Management")
-    class EngineStateTests {
+    public class EngineStateTests {
 
         @Test
         @DisplayName("Check engine running does not throw when running")
-        void checkEngineRunningDoesNotThrowWhenRunning() throws YEngineStateException {
+        public void checkEngineRunningDoesNotThrowWhenRunning() throws YEngineStateException {
             assertDoesNotThrow(() -> engine.checkEngineRunning(),
                     "checkEngineRunning should not throw when engine is running");
         }
 
         @Test
         @DisplayName("Engine status transitions correctly")
-        void engineStatusTransitionsCorrectly() {
+        public void engineStatusTransitionsCorrectly() {
             // Engine should be running
             assertEquals(YEngine.Status.Running, engine.getEngineStatus());
 
@@ -578,7 +578,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("IsRunning static method returns correct value")
-        void isRunningStaticMethodReturnsCorrectValue() {
+        public void isRunningStaticMethodReturnsCorrectValue() {
             assertTrue(YEngine.isRunning(), "isRunning should return true after initialization");
         }
     }
@@ -589,18 +589,18 @@ class TestYEngineLifecycle {
 
     @Nested
     @DisplayName("YAWL Services Management")
-    class YawlServicesTests {
+    public class YawlServicesTests {
 
         @Test
         @DisplayName("Get YAWL services returns set")
-        void getYawlServicesReturnsSet() {
+        public void getYawlServicesReturnsSet() {
             Set<YAWLServiceReference> services = engine.getYAWLServices();
             assertNotNull(services, "YAWL services set should not be null");
         }
 
         @Test
         @DisplayName("Get registered YAWL service returns null for non-existent")
-        void getRegisteredYawlServiceReturnsNullForNonExistent() {
+        public void getRegisteredYawlServiceReturnsNullForNonExistent() {
             YAWLServiceReference service = engine.getRegisteredYawlService("http://nonexistent/service");
             assertNull(service, "Should return null for non-existent service");
         }
@@ -612,11 +612,11 @@ class TestYEngineLifecycle {
 
     @Nested
     @DisplayName("Task Definition Tests")
-    class TaskDefinitionTests {
+    public class TaskDefinitionTests {
 
         @Test
         @DisplayName("Get task definition for existing task")
-        void getTaskDefinitionForExistingTask() throws Exception {
+        public void getTaskDefinitionForExistingTask() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             // Get task definition - "a-top" is a task in YAWL_Specification2.xml
@@ -626,7 +626,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get task definition for non-existent task returns null")
-        void getTaskDefinitionForNonExistentTaskReturnsNull() throws Exception {
+        public void getTaskDefinitionForNonExistentTaskReturnsNull() throws Exception {
             YSpecificationID specID = loadSpecification("YAWL_Specification2.xml");
 
             var task = engine.getTaskDefinition(specID, "nonexistent-task");
@@ -635,7 +635,7 @@ class TestYEngineLifecycle {
 
         @Test
         @DisplayName("Get parameters for task")
-        void getParametersForTask() throws Exception {
+        public void getParametersForTask() throws Exception {
             YSpecificationID specID = loadSpecification("MakeMusic.xml");
 
             // "decide" task has parameters in MakeMusic.xml
@@ -672,12 +672,16 @@ class TestYEngineLifecycle {
     }
 
     /**
-     * Loads a resource file as a string.
+     * Loads a resource file as a string from the classpath.
      * @param filename the resource file name
      * @return the file contents as a string
      */
     private String loadResourceAsString(String filename) throws IOException {
-        Path resourcePath = Path.of("test/org/yawlfoundation/yawl/engine", filename);
-        return Files.readString(resourcePath);
+        java.net.URL fileURL = getClass().getResource(filename);
+        if (fileURL == null) {
+            throw new IOException("Resource not found on classpath: " + filename);
+        }
+        java.io.File file = new java.io.File(fileURL.getFile());
+        return Files.readString(file.toPath());
     }
 }
