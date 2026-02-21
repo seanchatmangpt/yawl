@@ -32,7 +32,7 @@ fi
 
 echo "☕ Validating Java 25 requirement..."
 
-JAVA_VERSION=$(java -version 2>&1 | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
+JAVA_VERSION=$(java -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
 
 if [ "$JAVA_VERSION" != "25" ]; then
     echo "❌ ERROR: Java 25 required, found Java $JAVA_VERSION"
@@ -82,7 +82,7 @@ if [ -n "${https_proxy:-}" ] || [ -n "${HTTPS_PROXY:-}" ]; then
             sleep 2
 
             # Verify proxy is running
-            if pgrep -p "${PROXY_PID}" > /dev/null 2>&1; then
+            if kill -0 "${PROXY_PID}" > /dev/null 2>&1; then
                 echo "   ✅ Local Maven proxy started (PID: ${PROXY_PID})"
                 export MAVEN_PROXY_ENABLED=true
                 export MAVEN_PROXY_PORT=3128
