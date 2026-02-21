@@ -17,9 +17,9 @@ package org.yawlfoundation.yawl.resilience.autonomics;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.stateless.engine.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
-import org.yawlfoundation.yawl.stateless.elements.YWorkItem;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import org.yawlfoundation.yawl.stateless.monitor.YCase;
 import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
 import org.yawlfoundation.yawl.stateless.listener.event.YExceptionEvent;
@@ -142,8 +142,8 @@ public final class WorkflowAutonomicsEngine {
     // ─── Internal: Event Listeners ────────────────────────────────────────
 
     private void setupEventListeners() {
-        workflowEngine.registerWorkItemEventListener(new AutoRetryListener());
-        workflowEngine.registerExceptionEventListener(new AutoEscalationListener());
+        workflowEngine.addWorkItemEventListener(new AutoRetryListener());
+        workflowEngine.addExceptionEventListener(new AutoEscalationListener());
         LOGGER.debug("Autonomic event listeners registered");
     }
 
@@ -190,16 +190,15 @@ public final class WorkflowAutonomicsEngine {
     private class AutoRetryListener implements YWorkItemEventListener {
         @Override
         public void handleWorkItemEvent(org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent event) {
-            if (event.getStatus().equals("failed")) {
-                String exceptionType = event.getException() != null
-                    ? event.getException().getClass().getSimpleName()
-                    : "UnknownException";
-
+            if (event.getEventType() == org.yawlfoundation.yawl.stateless.listener.event.YEventType.ITEM_ABORT) {
+                String exceptionType = event.getEventType().name();
                 RetryPolicy policy = retryCoordinator.getPolicyFor(exceptionType);
                 if (policy != null && policy.isTransient()) {
-                    retryCoordinator.scheduleRetry(event.getWorkItemID(), policy);
+                    YWorkItem item = event.getWorkItem();
+                    String itemId = item != null ? item.getWorkItemID().toString() : "unknown";
+                    retryCoordinator.scheduleRetry(itemId, policy);
                     LOGGER.info("Scheduled auto-retry for work item {}: {} (attempt 1/{})",
-                            event.getWorkItemID(), exceptionType, policy.maxAttempts());
+                            itemId, exceptionType, policy.maxAttempts());
                 }
             }
         }
@@ -210,14 +209,15 @@ public final class WorkflowAutonomicsEngine {
     private class AutoEscalationListener implements org.yawlfoundation.yawl.stateless.listener.YExceptionEventListener {
         @Override
         public void handleExceptionEvent(YExceptionEvent event) {
-            String severity = event.getSeverity();
+            boolean isCritical = event.getEventType() == org.yawlfoundation.yawl.stateless.listener.event.YEventType.CASE_DEADLOCKED
+                    || event.getEventType() == org.yawlfoundation.yawl.stateless.listener.event.YEventType.ITEM_ABORT;
 
-            if ("HIGH".equals(severity)) {
+            if (isCritical) {
                 LOGGER.error("Critical exception in case {}: {}",
-                        event.getCaseID(), event.getMessage());
+                        event.getCaseID(), event.getEventType().name());
                 deadLetterQueue.add(new StuckCase(
                         event.getCaseID(),
-                        "Critical exception: " + event.getExceptionType(),
+                        "Critical exception: " + event.getEventType().name(),
                         Instant.now().toEpochMilli()
                 ));
             }

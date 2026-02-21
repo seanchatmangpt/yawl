@@ -46,6 +46,7 @@ public class YSpecificationTable
 
 
     public boolean loadSpecification(YSpecification spec) {
+        if (spec == null) return false;
         String key = spec.getSpecificationID().getKey();
         SpecList list = super.get(key);
         if (list != null) {
@@ -111,10 +112,12 @@ public class YSpecificationTable
 
 
     public boolean contains(String key) {
+        if (key == null) return false;
         return super.containsKey(key);
     }
 
     public boolean contains(YSpecification spec) {
+        if (spec == null) return false;
         return contains(spec.getSpecificationID());
     }
 

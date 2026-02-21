@@ -417,10 +417,10 @@ public class YCaseImporter {
 
                 postTaskCondition(task, net, splitname[0], id);
             } else {
-                if (element instanceof YTask task) {
-                    task.setI(id);
-                    task.prepareDataDocsForTaskOutput();
-                    id.addLocation(task);
+                if (element instanceof YTask taskElement) {
+                    taskElement.setI(id);
+                    taskElement.prepareDataDocsForTaskOutput();
+                    id.addLocation(taskElement);
                 } else if (element instanceof YCondition condition) {
                     ((YConditionInterface) condition).add(id);
                 }

@@ -148,7 +148,7 @@ public class CaseInstance implements YInstance {
     }
 
     public Collection<WorkItemInstance> getWorkItems() {
-        return workitems.values();
+        return new java.util.ArrayList<>(workitems.values());
     }
 
     public void addWorkItemInstance(WorkItemInstance item) {

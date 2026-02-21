@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -147,7 +148,7 @@ public class WorkItemBatcher {
             }
         }
 
-        itemsProcessed.increment();
+        itemsProcessed.incrementAndGet();
     }
 
     /**
@@ -213,7 +214,7 @@ public class WorkItemBatcher {
         }
 
         // Record metrics
-        totalBatches.increment();
+        totalBatches.incrementAndGet();
         totalBatchSize.addAndGet(batch.size());
         contextSwitchesAvoided.addAndGet(switchesAvoided);
 

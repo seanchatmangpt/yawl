@@ -561,29 +561,29 @@ public class YEngineRestorer {
 
                 postTaskCondition(task, net, splitname[0], id);
             } else {
-                if (element instanceof YTask task) {
-                    task.setI(id);
-                    if (task.isMultiInstance()) {
-                        _miTasks.add(task);
+                if (element instanceof YTask taskElement) {
+                    taskElement.setI(id);
+                    if (taskElement.isMultiInstance()) {
+                        _miTasks.add(taskElement);
                         try {
-                            task.determineHowManyInstancesToCreate();
+                            taskElement.determineHowManyInstancesToCreate();
                         }
                         catch (YDataStateException | YQueryException e) {
                             _log.warn("Failed to restore data for unstarted MI work items");
                         }
                     }
 
-                    task.prepareDataDocsForTaskOutput(null);
+                    taskElement.prepareDataDocsForTaskOutput(null);
 
-                    if (task.isMultiInstance()) {
-                        String uniqueID = id.get_idString() + ":" + task.getID();
+                    if (taskElement.isMultiInstance()) {
+                        String uniqueID = id.get_idString() + ":" + taskElement.getID();
                         GroupedMIOutputData miOutputData = _miOutputDataLookupTable.get(uniqueID);
                         if (miOutputData != null) {
-                            task.setGroupedMultiInstanceOutputData(miOutputData);
+                            taskElement.setGroupedMultiInstanceOutputData(miOutputData);
                         }
                     }
 
-                    id.addLocation(null, task);
+                    id.addLocation(null, taskElement);
                 } else if (element instanceof YCondition condition) {
                     ((YConditionInterface) condition).add(_pmgr, id);
                 }

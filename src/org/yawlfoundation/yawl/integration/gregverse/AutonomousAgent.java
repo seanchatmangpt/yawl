@@ -13,10 +13,10 @@ package org.yawlfoundation.yawl.integration.gregverse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.resilience.autonomics.WorkflowAutonomicsEngine;
-import org.yawlfoundation.yawl.stateless.engine.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
 import org.yawlfoundation.yawl.stateless.elements.YSpecification;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
-import org.yawlfoundation.yawl.stateless.elements.YWorkItem;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 
 import java.time.Duration;
 import java.util.*;
@@ -110,14 +110,17 @@ public final class AutonomousAgent {
      * @return case identifier
      */
     public YIdentifier executeWorkflow(YSpecification spec, Map<String, String> inputData) {
-        YIdentifier caseID = workflowEngine.createCase(spec, inputData);
-        WorkflowExecution execution = new WorkflowExecution(caseID, spec);
-        activeWorkflows.put(caseID, execution);
-
-        LOGGER.info("[{}] Starting autonomous execution: {}", agentID, caseID);
-        brain.recordExecution(caseID, spec.getID());
-
-        return caseID;
+        try {
+            org.yawlfoundation.yawl.stateless.engine.YNetRunner runner = workflowEngine.launchCase(spec);
+            YIdentifier caseID = runner.get_caseIDForNet();
+            WorkflowExecution execution = new WorkflowExecution(caseID, spec, runner);
+            activeWorkflows.put(caseID, execution);
+            LOGGER.info("[{}] Starting autonomous execution: {}", agentID, caseID);
+            brain.recordExecution(caseID, spec.getID());
+            return caseID;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to launch workflow case for spec: " + spec.getID(), e);
+        }
     }
 
     /**
@@ -395,21 +398,24 @@ public final class AutonomousAgent {
         private final YIdentifier caseID;
         private final String workflowID;
         private final long startTimeMs;
+        private final org.yawlfoundation.yawl.stateless.engine.YNetRunner runner;
         private long lastProgressTimeMs;
         private int taskCount = 0;
         private int completedTaskCount = 0;
 
-        WorkflowExecution(YIdentifier caseID, YSpecification spec) {
+        WorkflowExecution(YIdentifier caseID, YSpecification spec,
+                          org.yawlfoundation.yawl.stateless.engine.YNetRunner runner) {
             this.caseID = caseID;
             this.workflowID = spec.getID();
+            this.runner = runner;
             this.startTimeMs = System.currentTimeMillis();
             this.lastProgressTimeMs = startTimeMs;
         }
 
         void updateHealthMetrics(YStatelessEngine engine) {
-            Set<YWorkItem> items = engine.getWorkItems(caseID);
-            if (!items.isEmpty()) {
-                completedTaskCount += items.size();
+            Set<String> busyTasks = runner.getBusyTaskNames();
+            if (!busyTasks.isEmpty()) {
+                completedTaskCount += busyTasks.size();
                 lastProgressTimeMs = System.currentTimeMillis();
             }
         }

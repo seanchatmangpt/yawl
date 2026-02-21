@@ -27,6 +27,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.logging.Logger;
 
+import java.security.cert.CertificateException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.X509ExtendedTrustManager;
 
@@ -136,9 +137,13 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      * @throws SSLPeerUnverifiedException if pin validation fails
      */
     @Override
-    public void checkServerTrusted(X509Certificate[] chain, String authType) {
-        validateChainNotEmpty(chain);
-        validateAndPinCertificate(chain[0]);
+    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        try {
+            validateChainNotEmpty(chain);
+            validateAndPinCertificate(chain[0]);
+        } catch (SSLPeerUnverifiedException e) {
+            throw new CertificateException("Server certificate pin validation failed: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -152,7 +157,7 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      * @throws UnsupportedOperationException if no default trust manager
      */
     @Override
-    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         if (defaultTrustManager != null) {
             defaultTrustManager.checkClientTrusted(chain, authType);
         } else {
@@ -185,7 +190,7 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      */
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType,
-                                  java.net.Socket socket) {
+                                  java.net.Socket socket) throws CertificateException {
         checkServerTrusted(chain, authType);
     }
 
@@ -199,7 +204,7 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      */
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType,
-                                  javax.net.ssl.SSLEngine engine) {
+                                  javax.net.ssl.SSLEngine engine) throws CertificateException {
         checkServerTrusted(chain, authType);
     }
 
@@ -213,7 +218,7 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      */
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType,
-                                  java.net.Socket socket) {
+                                  java.net.Socket socket) throws CertificateException {
         checkClientTrusted(chain, authType);
     }
 
@@ -227,7 +232,7 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      */
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType,
-                                  javax.net.ssl.SSLEngine engine) {
+                                  javax.net.ssl.SSLEngine engine) throws CertificateException {
         checkClientTrusted(chain, authType);
     }
 
@@ -237,7 +242,7 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      * @param chain the certificate chain
      * @throws SSLPeerUnverifiedException if chain is null or empty
      */
-    private void validateChainNotEmpty(X509Certificate[] chain) {
+    private void validateChainNotEmpty(X509Certificate[] chain) throws SSLPeerUnverifiedException {
         if (chain == null || chain.length == 0) {
             LOGGER.severe(LOG_PREFIX + " Certificate chain is null or empty");
             throw new SSLPeerUnverifiedException("Certificate chain is empty");
@@ -250,7 +255,7 @@ public class PinnedTrustManager extends X509ExtendedTrustManager {
      * @param cert the server certificate
      * @throws SSLPeerUnverifiedException if validation fails
      */
-    private void validateAndPinCertificate(X509Certificate cert) {
+    private void validateAndPinCertificate(X509Certificate cert) throws SSLPeerUnverifiedException {
         try {
             String certificatePin = computeCertificatePin(cert);
             LOGGER.fine(LOG_PREFIX + " Computed pin: " + certificatePin);

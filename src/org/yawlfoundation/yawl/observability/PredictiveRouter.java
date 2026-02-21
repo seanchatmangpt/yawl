@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.observability;
 
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
@@ -255,7 +256,7 @@ public class PredictiveRouter {
     }
 
     private void registerMetrics() {
-        meterRegistry.gaugeCollectionSize("yawl.router.registered_agents",
-                java.util.Collections.emptyList(), agentMetrics);
+        Gauge.builder("yawl.router.registered_agents", agentMetrics, Map::size)
+                .register(meterRegistry);
     }
 }

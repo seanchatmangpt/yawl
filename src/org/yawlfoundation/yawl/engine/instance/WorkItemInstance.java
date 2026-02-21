@@ -247,7 +247,7 @@ public class WorkItemInstance implements YInstance {
     }
 
     public Collection<ParameterInstance> getParameters() {
-        return parameters.values();
+        return new java.util.ArrayList<>(parameters.values());
     }
 
     public void addParameterInstance(ParameterInstance param) {

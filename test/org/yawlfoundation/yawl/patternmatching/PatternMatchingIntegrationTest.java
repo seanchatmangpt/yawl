@@ -59,12 +59,12 @@ import org.yawlfoundation.yawl.unmarshal.YMetaData;
  */
 @DisplayName("Pattern Matching Integration Tests")
 @Tag("integration")
-class PatternMatchingIntegrationTest {
+public class PatternMatchingIntegrationTest {
 
     private YSpecification specification;
 
     @BeforeEach
-    void setUp() throws YSyntaxException {
+    public void setUp() throws YSyntaxException {
         specification = createComplexSpecification();
     }
 
@@ -74,11 +74,11 @@ class PatternMatchingIntegrationTest {
 
     @Nested
     @DisplayName("End-to-End Workflow Pattern Matching")
-    class EndToEndWorkflowTests {
+    public class EndToEndWorkflowTests {
 
         @Test
         @DisplayName("Specification toXML uses pattern matching for all decompositions")
-        void specificationToXmlUsesPatternMatchingForAllDecompositions() {
+        public void specificationToXmlUsesPatternMatchingForAllDecompositions() {
             String xml = specification.toXML();
 
             assertNotNull(xml);
@@ -91,7 +91,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Pattern matching handles all task types")
-        void patternMatchingHandlesAllTaskTypes() {
+        public void patternMatchingHandlesAllTaskTypes() {
             YNet rootNet = specification.getRootNet();
 
             int atomicCount = 0;
@@ -111,7 +111,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Pattern matching in specification ID equals")
-        void patternMatchingInSpecificationIdEquals() {
+        public void patternMatchingInSpecificationIdEquals() {
             YSpecificationID id1 = new YSpecificationID("spec-uri", "4.0", "owner");
             YSpecificationID id2 = new YSpecificationID("spec-uri", "4.0", "owner");
             YSpecificationID id3 = new YSpecificationID("different-uri", "4.0", "owner");
@@ -125,7 +125,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Pattern matching handles null gracefully")
-        void patternMatchingHandlesNullGracefully() {
+        public void patternMatchingHandlesNullGracefully() {
             YSpecificationID id = new YSpecificationID("uri", "4.0", "owner");
 
             // Pattern matching with null should return false
@@ -134,7 +134,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Work item status pattern matching")
-        void workItemStatusPatternMatching() {
+        public void workItemStatusPatternMatching() {
             // Test status value handling (used in switch expressions)
             YWorkItemStatus status = YWorkItemStatus.statusEnabled;
 
@@ -155,11 +155,11 @@ class PatternMatchingIntegrationTest {
 
     @Nested
     @DisplayName("Nested Patterns in Complex Specifications")
-    class NestedPatternTests {
+    public class NestedPatternTests {
 
         @Test
         @DisplayName("Nested nets have correct types in XML")
-        void nestedNetsHaveCorrectTypesInXml() throws YSyntaxException {
+        public void nestedNetsHaveCorrectTypesInXml() throws YSyntaxException {
             YSpecification spec = createNestedSpecification();
             String xml = spec.toXML();
 
@@ -173,7 +173,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Composite task references correct decomposition")
-        void compositeTaskReferencesCorrectDecomposition() {
+        public void compositeTaskReferencesCorrectDecomposition() {
             YNet rootNet = specification.getRootNet();
 
             for (var element : rootNet.getNetElements().values()) {
@@ -187,7 +187,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Gateway with codelet serialization")
-        void gatewayWithCodeletSerialization() throws YSyntaxException {
+        public void gatewayWithCodeletSerialization() throws YSyntaxException {
             YSpecification spec = createTestSpecification("codelet-test");
             YAWLServiceGateway gateway = new YAWLServiceGateway("test-gateway", spec);
             gateway.setCodelet("com.example.TestCodelet");
@@ -200,7 +200,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Multiple gateway types in same specification")
-        void multipleGatewayTypesInSameSpecification() throws YSyntaxException {
+        public void multipleGatewayTypesInSameSpecification() throws YSyntaxException {
             YSpecification spec = createTestSpecification("multi-gateway");
 
             YAWLServiceGateway gateway1 = new YAWLServiceGateway("gateway1", spec);
@@ -221,7 +221,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Deep nesting preserves pattern match correctness")
-        void deepNestingPreservesPatternMatchCorrectness() throws YSyntaxException {
+        public void deepNestingPreservesPatternMatchCorrectness() throws YSyntaxException {
             YSpecification spec = createDeeplyNestedSpecification(5);
 
             String xml = spec.toXML();
@@ -238,12 +238,12 @@ class PatternMatchingIntegrationTest {
 
     @Nested
     @DisplayName("Full Specification Roundtrip")
-    class FullSpecificationRoundtripTests {
+    public class FullSpecificationRoundtripTests {
 
         @Test
         @DisplayName("Marshal and unmarshal preserves decomposition types")
-        void marshalAndUnmarshalPreservesDecompositionTypes() throws YSyntaxException {
-            String xml = specification.toXML();
+        public void marshalAndUnmarshalPreservesDecompositionTypes() throws YSyntaxException {
+            String xml = wrapSpecificationForUnmarshalling(specification);
             List<YSpecification> specs = YMarshal.unmarshalSpecifications(xml, false);
 
             assertEquals(1, specs.size());
@@ -261,8 +261,8 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Roundtrip preserves specification ID")
-        void roundtripPreservesSpecificationId() throws YSyntaxException {
-            String originalXml = specification.toXML();
+        public void roundtripPreservesSpecificationId() throws YSyntaxException {
+            String originalXml = wrapSpecificationForUnmarshalling(specification);
 
             List<YSpecification> specs = YMarshal.unmarshalSpecifications(originalXml, false);
             YSpecification restored = specs.get(0);
@@ -276,7 +276,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Roundtrip preserves task configuration")
-        void roundtripPreservesTaskConfiguration() throws YSyntaxException {
+        public void roundtripPreservesTaskConfiguration() throws YSyntaxException {
             YNet originalNet = specification.getRootNet();
             int originalTaskCount = 0;
             for (var element : originalNet.getNetElements().values()) {
@@ -285,7 +285,7 @@ class PatternMatchingIntegrationTest {
                 }
             }
 
-            String xml = specification.toXML();
+            String xml = wrapSpecificationForUnmarshalling(specification);
             List<YSpecification> specs = YMarshal.unmarshalSpecifications(xml, false);
             YSpecification restored = specs.get(0);
 
@@ -302,11 +302,11 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Multiple roundtrips produce consistent output")
-        void multipleRoundtripsProduceConsistentOutput() throws YSyntaxException {
-            String xml1 = specification.toXML();
+        public void multipleRoundtripsProduceConsistentOutput() throws YSyntaxException {
+            String xml1 = wrapSpecificationForUnmarshalling(specification);
 
             List<YSpecification> specs1 = YMarshal.unmarshalSpecifications(xml1, false);
-            String xml2 = specs1.get(0).toXML();
+            String xml2 = wrapSpecificationForUnmarshalling(specs1.get(0));
 
             List<YSpecification> specs2 = YMarshal.unmarshalSpecifications(xml2, false);
             String xml3 = specs2.get(0).toXML();
@@ -321,14 +321,14 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("External interaction preserved in roundtrip")
-        void externalInteractionPreservedInRoundtrip() throws YSyntaxException {
+        public void externalInteractionPreservedInRoundtrip() throws YSyntaxException {
             YSpecification spec = createTestSpecification("ext-test");
 
             YAWLServiceGateway gateway = new YAWLServiceGateway("ext-gateway", spec);
             gateway.setExternalInteraction(true);
             spec.addDecomposition(gateway);
 
-            String xml = spec.toXML();
+            String xml = wrapSpecificationForUnmarshalling(spec);
             List<YSpecification> restored = YMarshal.unmarshalSpecifications(xml, false);
 
             YAWLServiceGateway restoredGateway = (YAWLServiceGateway)
@@ -339,7 +339,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Beta version serialization differs from release")
-        void betaVersionSerializationDiffersFromRelease() throws YSyntaxException {
+        public void betaVersionSerializationDiffersFromRelease() throws YSyntaxException {
             YSpecification releaseSpec = createTestSpecification("release-spec");
             releaseSpec.setVersion(YSchemaVersion.FourPointZero);
 
@@ -371,11 +371,11 @@ class PatternMatchingIntegrationTest {
 
     @Nested
     @DisplayName("Cross-Subsystem Pattern Matching")
-    class CrossSubsystemPatternMatchingTests {
+    public class CrossSubsystemPatternMatchingTests {
 
         @Test
         @DisplayName("Pattern matching in YDataStateException unmarshalling")
-        void patternMatchingInYDataStateExceptionUnmarshalling() throws Exception {
+        public void patternMatchingInYDataStateExceptionUnmarshalling() throws Exception {
             org.jdom2.Document doc = new org.jdom2.Document();
             Element root = new Element("YDataQueryException");
             root.addContent(new Element("message").setText("Query failed"));
@@ -391,7 +391,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Pattern matching in YAWLException.rethrow")
-        void patternMatchingInYawlExceptionRethrow() {
+        public void patternMatchingInYawlExceptionRethrow() {
             org.yawlfoundation.yawl.exceptions.YStateException stateEx =
                 new org.yawlfoundation.yawl.exceptions.YStateException("State error");
 
@@ -402,7 +402,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Pattern matching in specification element sorting")
-        void patternMatchingInSpecificationElementSorting() throws YSyntaxException {
+        public void patternMatchingInSpecificationElementSorting() throws YSyntaxException {
             YSpecification spec = createTestSpecification("sort-test");
 
             // Add decompositions in random order
@@ -437,11 +437,11 @@ class PatternMatchingIntegrationTest {
 
     @Nested
     @DisplayName("Edge Cases and Error Handling")
-    class EdgeCasesTests {
+    public class EdgeCasesTests {
 
         @Test
         @DisplayName("Empty specification serializes correctly")
-        void emptySpecificationSerializesCorrectly() throws YSyntaxException {
+        public void emptySpecificationSerializesCorrectly() throws YSyntaxException {
             YSpecification spec = createTestSpecification("empty-spec");
 
             String xml = spec.toXML();
@@ -452,7 +452,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Specification with only root net serializes")
-        void specificationWithOnlyRootNetSerializes() throws YSyntaxException {
+        public void specificationWithOnlyRootNetSerializes() throws YSyntaxException {
             YSpecification spec = createTestSpecification("minimal-spec");
 
             String xml = spec.toXML();
@@ -463,7 +463,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Null decomposition ID throws exception")
-        void nullDecompositionIdThrowsException() {
+        public void nullDecompositionIdThrowsException() {
             assertThrows(IllegalArgumentException.class, () -> {
                 new YNet(null, specification);
             });
@@ -471,7 +471,7 @@ class PatternMatchingIntegrationTest {
 
         @Test
         @DisplayName("Special characters in specification ID")
-        void specialCharactersInSpecificationId() throws YSyntaxException {
+        public void specialCharactersInSpecificationId() throws YSyntaxException {
             YSpecification spec = createTestSpecification("spec-with-special_chars.123");
 
             String xml = spec.toXML();
@@ -483,6 +483,13 @@ class PatternMatchingIntegrationTest {
     // ============================================================
     // Helper Methods
     // ============================================================
+
+    private String wrapSpecificationForUnmarshalling(YSpecification spec) {
+        StringBuilder xml = new StringBuilder(spec.getSchemaVersion().getHeader());
+        xml.append(spec.toXML());
+        xml.append("</specificationSet>");
+        return xml.toString();
+    }
 
     private YSpecification createTestSpecification(String specId) throws YSyntaxException {
         YSpecification spec = new YSpecification(specId);

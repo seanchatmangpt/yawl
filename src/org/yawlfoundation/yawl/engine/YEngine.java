@@ -260,17 +260,17 @@ public class YEngine implements InterfaceADesign,
 
     /**
      * Validates that the current tenant has access to a case.
-     * Throws UnauthorizedException if not authorized.
+     * Throws YAuthenticationException if not authorized.
      *
      * @param caseID The case identifier to check
-     * @throws UnauthorizedException if not authorized
+     * @throws YAuthenticationException if not authorized
      */
-    private static void validateTenantAccess(String caseID) throws UnauthorizedException {
+    private static void validateTenantAccess(String caseID) throws YAuthenticationException {
         TenantContext context = getTenantContext();
         if (context != null && !context.isAuthorized(caseID)) {
             logger.warn("Tenant {} attempted unauthorized access to case {}",
                     context.getTenantId(), caseID);
-            throw new UnauthorizedException("Access denied: not authorized for case " + caseID);
+            throw new YAuthenticationException("Access denied: not authorized for case " + caseID);
         }
     }
 
@@ -1168,7 +1168,11 @@ public class YEngine implements InterfaceADesign,
 
     public String getCaseData(String caseID) throws YStateException {
         // MULTI-TENANT: Validate tenant access before processing
-        validateTenantAccess(caseID);
+        try {
+            validateTenantAccess(caseID);
+        } catch (YAuthenticationException e) {
+            throw new YStateException("Access denied: not authorized for case " + caseID, e);
+        }
 
         // if this is for a sub-net, act accordingly
         if (caseID.contains(".")) return getNetData(caseID) ;

@@ -42,7 +42,9 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     TestYSpecificationTable.class,
     TestYDefClientsLoader.class,
     TestYEngineEvent.class,
-    TestAnnouncementContext.class
+    TestAnnouncementContext.class,
+    // Phase 2 - Lifecycle tests
+    TestYEngineLifecycle.class
 })
 public class EngineTestSuite {
     // JUnit 5 suite uses annotations - no main method needed

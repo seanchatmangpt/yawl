@@ -1918,7 +1918,7 @@
     <profiles>
 
         <!-- ================================================================ -->
-        <!-- Default profile: Java 25 LTS (current production target)          -->
+        <!-- Default profile: Java 21 compatible (JDK 21 available)            -->
         <!-- ================================================================ -->
         <profile>
             <id>java25</id>
@@ -1931,6 +1931,28 @@
                 <!-- JaCoCo disabled by default; re-enable with -Djacoco.skip=false -->
                 <jacoco.skip>true</jacoco.skip>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <release>21</release>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                                <arg>-Xlint:all</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>--enable-preview</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <!-- ================================================================ -->
@@ -2827,6 +2849,52 @@
                             <systemPropertyVariables>
                                 <test.docker.enabled>true</test.docker.enabled>
                             </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Integration-test profile: runs v5.2 integration tests           -->
+        <!-- No testcontainers required; excludes slow/chaos/containers.      -->
+        <!-- Usage: mvn test -P integration-test                              -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>integration-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <!-- combine.self="override" replaces the base parallel config entirely,
+                             ensuring integration tests run sequentially to prevent YEngine
+                             singleton state corruption between concurrent test classes. -->
+                        <configuration combine.self="override">
+                            <argLine>--enable-preview</argLine>
+                            <useModulePath>false</useModulePath>
+                            <groups>integration</groups>
+                            <excludedGroups>docker,containers,slow</excludedGroups>
+                            <forkCount>1</forkCount>
+                            <reuseForks>true</reuseForks>
+                            <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
+                            </classpathDependencyExcludes>
+                            <!-- Disable JUnit 5 platform-level parallelism for integration tests.
+                                 The YEngine is a shared singleton; concurrent test classes
+                                 calling EngineClearer.clear() corrupt each other's state. -->
+                            <properties>
+                                <configurationParameters>
+                                    junit.jupiter.execution.parallel.enabled=false
+                                </configurationParameters>
+                            </properties>
+                            <!-- Exclude suite classes - they re-run the same test classes,
+                                 causing double execution and engine state corruption. -->
+                            <excludes>
+                                <exclude>**/EngineTestSuite.java</exclude>
+                                <exclude>**/PatternMatchingTestSuite.java</exclude>
+                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>

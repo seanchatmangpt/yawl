@@ -66,7 +66,7 @@ public class InstanceCache extends ConcurrentHashMap<String, CaseInstance> {
 
 
     public Collection<CaseInstance> getCases() {
-        return this.values();
+        return new java.util.ArrayList<>(this.values());
     }
 
 

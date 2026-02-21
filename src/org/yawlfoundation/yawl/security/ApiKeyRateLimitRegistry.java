@@ -126,11 +126,16 @@ public final class ApiKeyRateLimitRegistry {
         String limiterName = CLIENT_LIMITER_PREFIX + clientId;
 
         try {
-            if (!registry.rateLimiters().containsKey(limiterName)) {
-                createClientLimiter(clientId, DEFAULT_CLIENT_PERMITS, DEFAULT_CLIENT_PERIOD_SECONDS);
-            }
+            // Check if limiter exists or create it
+            RateLimiter limiter = registry.rateLimiter(limiterName, () -> {
+                RateLimiterConfig config = RateLimiterConfig.custom()
+                        .limitRefreshPeriod(Duration.ofSeconds(DEFAULT_CLIENT_PERIOD_SECONDS))
+                        .limitForPeriod(DEFAULT_CLIENT_PERMITS)
+                        .timeoutDuration(Duration.ofMillis(TIMEOUT_MS))
+                        .build();
+                return config;
+            });
 
-            RateLimiter limiter = registry.rateLimiter(limiterName);
             return limiter.executeSupplier(() -> true);
         } catch (Exception e) {
             log.warn("Rate limit exceeded for client: {}", clientId);
@@ -158,11 +163,17 @@ public final class ApiKeyRateLimitRegistry {
         String limiterName = ENDPOINT_LIMITER_PREFIX + endpoint;
 
         try {
-            if (!registry.rateLimiters().containsKey(limiterName)) {
-                createEndpointLimiter(endpoint, permitsPerMinute);
-            }
+            // Check if limiter exists or create it
+            int permitsPerPeriod = Math.max(1, permitsPerMinute / 10);
+            RateLimiter limiter = registry.rateLimiter(limiterName, () -> {
+                RateLimiterConfig config = RateLimiterConfig.custom()
+                        .limitRefreshPeriod(Duration.ofSeconds(6))  // 6 second period
+                        .limitForPeriod(permitsPerPeriod)
+                        .timeoutDuration(Duration.ofMillis(TIMEOUT_MS))
+                        .build();
+                return config;
+            });
 
-            RateLimiter limiter = registry.rateLimiter(limiterName);
             return limiter.executeSupplier(() -> true);
         } catch (Exception e) {
             log.warn("Rate limit exceeded for endpoint: {}", endpoint);
@@ -266,15 +277,19 @@ public final class ApiKeyRateLimitRegistry {
      * @return count of rate limiters
      */
     public int getLimiterCount() {
-        return registry.rateLimiters().size();
+        return configs.size();
     }
 
     /**
      * Resets all rate limiters to their initial state.
      * Useful for testing or configuration changes.
+     * NOTE: Resilience4j RateLimiter doesn't expose a reset() method in public API.
+     * To achieve reset functionality, recreate limiters with fresh configs.
      */
     public void resetAll() {
-        registry.rateLimiters().values().forEach(RateLimiter::reset);
+        // Clear the configs and re-initialize global limiter
+        configs.clear();
+        initializeGlobalLimiter();
         log.info("All rate limiters reset");
     }
 }

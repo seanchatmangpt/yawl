@@ -83,28 +83,6 @@ public record AgentConfiguration(
         String version,
         long pollIntervalMs) {
 
-    private AgentConfiguration(Builder builder) {
-        this.capability = builder.capability;
-        this.engineUrl = builder.engineUrl;
-        this.username = builder.username;
-        this.password = builder.password;
-        this.discoveryStrategy = builder.discoveryStrategy;
-        this.eligibilityReasoner = builder.eligibilityReasoner;
-        this.decisionReasoner = builder.decisionReasoner;
-        this.port = builder.port;
-        this.version = builder.version;
-        this.pollIntervalMs = builder.pollIntervalMs;
-    }
-
-    /**
-     * Creates a new builder for AgentConfiguration.
-     *
-     * @return a new builder instance
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
     /**
      * Gets the agent's capability description.
      *
@@ -120,7 +98,7 @@ public record AgentConfiguration(
      * @return the agent name
      */
     public String getAgentName() {
-        return capability.domainName();
+        return capability.getDomainName();
     }
 
     /**

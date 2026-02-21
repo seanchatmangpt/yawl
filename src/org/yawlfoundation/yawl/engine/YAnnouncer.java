@@ -339,6 +339,9 @@ public class YAnnouncer {
 
     protected void announceCheckWorkItemConstraints(YWorkItem item, Document data,
                                                     boolean preCheck) {
+        if (item == null) {
+            return;  // No work item to announce constraints for
+        }
         for (InterfaceX_EngineSideClient listener : _interfaceXListeners) {
             _logger.debug("Announcing Check Constraints for task {} on client {}",
                     item.getIDString(), listener.toString());
