@@ -172,7 +172,7 @@ log_success "ggen verification successful: ${GGEN_OUT}"
 # ── Summary ───────────────────────────────────────────────────────────────
 
 log_success "ggen initialization complete"
-log_info "Workspace: ${WORKSPACE_DIR}"
+log_info "ggen CLI: $(which ggen)"
 log_info "Ready for graph generation. Use: bash scripts/ggen-sync.sh"
 
 exit 0

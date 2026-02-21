@@ -277,6 +277,11 @@ class Generator:
 
 def main() -> int:
     """Main entry point."""
+    # Handle --version first (before full argument parsing)
+    if "--version" in sys.argv:
+        print(f"ggen {VERSION} (Python wrapper implementation)")
+        return 0
+
     parser = argparse.ArgumentParser(
         prog="ggen",
         description="Graph Generation CLI (Python implementation)"
@@ -292,15 +297,12 @@ def main() -> int:
     gen_parser.add_argument("--output", required=True, help="Output file path")
     gen_parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
-    # 'version' subcommand
-    ver_parser = subparsers.add_parser("--version", help="Show version")
-
     # Parse args
     args = parser.parse_args()
 
-    if not args.command or args.command == "--version":
-        print(f"ggen {VERSION} (Python wrapper implementation)")
-        return 0
+    if not args.command:
+        parser.print_help()
+        return 2
 
     if args.command == "generate":
         try:
