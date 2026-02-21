@@ -52,6 +52,12 @@ public class TestYEngineLifecycle {
         }
     }
 
+    @Test
+    @DisplayName("Outer class test - confirms test discovery")
+    public void testDiscovery() {
+        assertNotNull(engine, "Engine should be initialized");
+    }
+
     // =========================================================================
     // Engine Initialization Tests
     // =========================================================================
