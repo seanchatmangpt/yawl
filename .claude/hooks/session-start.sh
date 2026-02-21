@@ -37,7 +37,6 @@ fi
 echo "🌐 Checking for egress proxy requirements..."
 
 if [ -n "${https_proxy:-}" ] || [ -n "${HTTPS_PROXY:-}" ]; then
-    PROXY_URL="${https_proxy:-${HTTPS_PROXY:-}}"
     echo "   📡 Egress proxy detected"
 
     # Resolve project root (hook may run from any cwd)
