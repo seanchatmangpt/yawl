@@ -1,0 +1,244 @@
+# ggen v6 Configuration for YAWL Project
+# Ontology-Driven Code Generation from Turtle RDF + SPARQL Queries
+# Generated: 2026-02-21
+#
+# This configuration drives the complete code generation pipeline:
+# 1. Load Turtle ontologies (yawl-ontology.ttl, yawl-shapes.ttl, extended-patterns.ttl)
+# 2. Execute SPARQL queries to extract schema, properties, patterns, validation rules
+# 3. Apply Tera templates to generate Java 25 code (records, sealed interfaces, annotations)
+# 4. Validate generated code against ontology constraints
+#
+# Usage: ggen generate --config .specify/ggen.toml
+
+[project]
+name = "yawl-codegen"
+version = "6.0.0"
+description = "YAWL ontology-driven code generation targeting Java 25"
+authors = ["YAWL Foundation"]
+license = "LGPL-3.0"
+repository = "https://github.com/yawlfoundation/yawl"
+
+[ontology]
+# Primary RDF source directory containing .ttl files
+source_dir = ".specify"
+# Format: turtle (.ttl) files with embedded Turtle syntax
+format = "turtle"
+# Base namespace for generated code (YAWL schema)
+default_namespace = "http://www.yawlfoundation.org/yawlschema#"
+
+# Ontology files to load (in dependency order for correctness)
+ontology_files = [
+    "yawl-ontology.ttl",       # Core OWL 2 DL ontology (1369 lines)
+    "yawl-shapes.ttl",         # SHACL validation shapes (1247 lines)
+    "patterns/ontology/extended-patterns.ttl",  # 25 workflow patterns
+]
+
+[namespaces]
+# YAWL primary namespace - all generated classes use this
+yawls = "http://www.yawlfoundation.org/yawlschema#"
+# OWL/RDF standard namespaces (required for ontology reasoning)
+owl = "http://www.w3.org/2002/07/owl#"
+rdfs = "http://www.w3.org/2000/01/rdf-schema#"
+rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xsd = "http://www.w3.org/2001/XMLSchema#"
+# Workflow pattern namespaces
+yawl-pattern = "http://yawlfoundation.org/yawl/pattern#"
+yawl-new = "http://yawlfoundation.org/yawl/pattern/new#"
+# Semantic web standards (Dublin Core, SKOS, SHACL)
+dc = "http://purl.org/dc/elements/1.1/"
+dcterms = "http://purl.org/dc/terms/"
+skos = "http://www.w3.org/2004/02/skos/core#"
+sh = "http://www.w3.org/ns/shacl#"
+
+[sparql]
+# SPARQL query directory for data extraction
+queries_dir = ".specify/queries"
+# Query execution timeout (prevents infinite queries)
+timeout_ms = 30000
+# Enable result caching to speed up repeated generation
+cache_enabled = true
+# Cache TTL: regenerate cached results every hour
+cache_ttl_sec = 3600
+
+[output]
+# Root output directory for all generated files
+root_dir = "src/generated"
+# Create directories if they don't exist
+create_dirs = true
+# Overwrite existing generated files
+overwrite = true
+
+# Java-specific generation configuration
+[java]
+# Java version (25 for latest preview features: records, sealed classes, patterns)
+version = "25"
+# Target package for all generated code
+package = "org.yawlfoundation.yawl.generated"
+# Enable Java records (Java 16+) for immutable data classes
+use_records = true
+# Enable sealed classes (Java 17+) for class hierarchies
+use_sealed_classes = true
+# Generate Javadoc comments from rdfs:comment
+generate_javadoc = true
+# Add @javax.annotation.Generated annotation to all generated classes
+add_generated_annotation = true
+# Nullable annotation for optional properties
+nullable_annotation = "javax.annotation.Nullable"
+# Non-null annotation for required properties
+nonnull_annotation = "javax.annotation.Nonnull"
+# Module system (JPMS) support
+module_system = true
+module_name = "org.yawlfoundation.yawl.generated"
+
+# Generation targets: define what to generate and from which sources
+[[targets]]
+name = "java-records"
+enabled = true
+description = "Generate Java records from OWL domain classes"
+template = "templates/java-class.tera"
+query = "queries/classes.sparql"
+# Output pattern: interpolates className, packagePath, etc.
+output_pattern = "records/{className}.java"
+config = { package = "org.yawlfoundation.yawl.generated.records" }
+
+[[targets]]
+name = "java-interfaces"
+enabled = true
+description = "Generate sealed Java interfaces for abstract OWL classes"
+template = "templates/java-interface.tera"
+query = "queries/classes.sparql"
+output_pattern = "interfaces/{interfaceName}.java"
+# Filter to only generate for abstract classes
+filter_sparql = """
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX yawls: <http://www.yawlfoundation.org/yawlschema#>
+SELECT ?class
+WHERE {
+    ?class a owl:Class .
+    ?class rdfs:comment ?comment .
+    FILTER(STRSTARTS(?comment, "Abstract") || STRSTARTS(?comment, "Base"))
+}
+"""
+config = { package = "org.yawlfoundation.yawl.generated.interfaces" }
+
+[[targets]]
+name = "property-descriptors"
+enabled = true
+description = "Generate property accessor utilities from OWL properties"
+template = "templates/property-descriptor.tera"
+query = "queries/properties.sparql"
+output_pattern = "properties/{propertyName}Descriptor.java"
+config = { package = "org.yawlfoundation.yawl.generated.properties" }
+
+[[targets]]
+name = "workflow-patterns"
+enabled = true
+description = "Generate Java annotations for workflow control-flow patterns (WCP-44 to WCP-68)"
+template = "templates/workflow-pattern.tera"
+query = "queries/workflow-patterns.sparql"
+output_pattern = "patterns/{patternCategory}/{patternName}.java"
+config = { package = "org.yawlfoundation.yawl.generated.patterns" }
+
+[[targets]]
+name = "shacl-validators"
+enabled = true
+description = "Generate Java validators from SHACL shapes and constraints"
+template = "templates/shacl-validator.tera"
+query = "queries/shacl-shapes.sparql"
+output_pattern = "validation/{shapeName}Validator.java"
+config = { package = "org.yawlfoundation.yawl.generated.validation" }
+
+[[targets]]
+name = "cardinality-constraints"
+enabled = true
+description = "Generate cardinality constraint enums"
+template = "templates/cardinality.tera"
+query = "queries/properties.sparql"
+output_pattern = "constraints/{propertyName}Constraint.java"
+filter_sparql = """
+PREFIX yawls: <http://www.yawlfoundation.org/yawlschema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+SELECT ?property ?minCardinality ?maxCardinality
+WHERE {
+    ?property a owl:ObjectProperty .
+    ?restriction owl:onProperty ?property ;
+                 ?cardinalityPredicate ?cardinalityValue .
+    FILTER(?cardinalityPredicate IN (owl:minCardinality, owl:maxCardinality, owl:cardinality))
+}
+"""
+config = { package = "org.yawlfoundation.yawl.generated.constraints" }
+
+[template_engine]
+# Template engine: Tera (Jinja2-compatible)
+engine = "tera"
+# Template source directory
+templates_dir = ".specify/templates"
+# Strict mode: fail if template variable is undefined
+strict_mode = true
+# Auto-escape HTML (false for code generation)
+autoescape = false
+
+[processing]
+# Validate generated code compiles
+validate_generated = true
+# Check hierarchy consistency
+check_hierarchy = true
+# Verify property domains/ranges match
+check_properties = true
+# Enforce Java naming conventions
+check_naming = true
+# Generate Javadoc and comments
+generate_docs = true
+
+[context]
+# Default context variables passed to all templates
+[context.meta]
+timestamp = "${now}"
+version = "6.0.0"
+authors = "YAWL Foundation"
+license = "LGPL-3.0"
+copyright = """Generated by ggen from YAWL RDF ontologies
+(c) YAWL Foundation 2026
+Licensed under LGPL v3"""
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"
+# Write detailed logs to file
+log_file = ".specify/ggen.log"
+# Log template execution details
+trace_template_execution = false
+
+[validation]
+# Validate ontology before generation
+validate_ontology = true
+# Check SHACL constraints on extracted data
+check_shacl = true
+# Fail on validation warnings (not just errors)
+strict_mode = false
+
+[formatting]
+# Java code formatting: google, sun, eclipse
+style = "google"
+# Auto-format generated code
+auto_format = true
+# Line length limit
+line_length = 120
+# Indentation spaces
+indent_spaces = 4
+
+[testing]
+# Generate unit test stubs
+generate_tests = true
+# Test framework: junit5, testng
+test_framework = "junit5"
+# Test output directory
+test_output_dir = "src/generated/test"
+
+[caching]
+# Cache compiled ontology graphs
+enabled = true
+cache_dir = ".specify/.ggen-cache"
+# Cache TTL in seconds
+ttl_sec = 3600

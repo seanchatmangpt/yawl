@@ -1,0 +1,191 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX yawls: <http://www.yawlfoundation.org/yawlschema#>
+
+# SPARQL Query: Extract SHACL Validation Shapes from YAWL Shapes Ontology v6.0.0
+# Purpose: Generate Java validators for YAWL RDF instances
+# Returns: All NodeShapes and PropertyShapes with complete constraint metadata
+#
+# Variables:
+#   ?shape              - The SHACL shape URI
+#   ?shapeLocalName     - Short name (after #)
+#   ?label              - rdfs:label
+#   ?comment            - rdfs:comment
+#   ?targetClass        - sh:targetClass (class being validated)
+#   ?propertyPath       - sh:path (property being validated in PropertyShapes)
+#   ?constraintType     - Type of constraint (minCount, maxCount, pattern, etc.)
+#   ?constraintValue    - Constraint value (numeric or string)
+#   ?message            - sh:message (validation error message)
+#   ?severity           - sh:severity (Violation, Warning, Info)
+#   ?datatype           - sh:datatype (expected XSD type)
+#   ?minCount           - sh:minCount (minimum cardinality)
+#   ?maxCount           - sh:maxCount (maximum cardinality)
+#   ?pattern            - sh:pattern (regex pattern)
+#   ?minLength          - sh:minLength (minimum string length)
+#   ?maxLength          - sh:maxLength (maximum string length)
+#   ?minInclusive       - sh:minInclusive (minimum numeric value)
+#   ?maxInclusive       - sh:maxInclusive (maximum numeric value)
+#   ?nodeKind           - sh:nodeKind (IRI, Literal, BlankNode, etc.)
+#   ?class              - sh:class (expected RDF type)
+
+SELECT DISTINCT
+    ?shape
+    ?shapeLocalName
+    (COALESCE(?label, ?shapeLocalName) AS ?displayLabel)
+    ?comment
+    ?targetClassUri
+    (STRAFTER(STR(?targetClassUri), "#") AS ?targetClassName)
+    ?propertyPathUri
+    (STRAFTER(STR(?propertyPathUri), "#") AS ?propertyPathName)
+    ?datatypeUri
+    (STRAFTER(STR(?datatypeUri), "#") AS ?datatypeName)
+    ?minCountValue
+    ?maxCountValue
+    ?patternValue
+    ?minLengthValue
+    ?maxLengthValue
+    ?minInclusiveValue
+    ?maxInclusiveValue
+    ?messageLiteral
+    (COALESCE(?severityValue, "Violation") AS ?severityLevel)
+    ?nodeKindValue
+    ?classConstraint
+    ?hasValueConstraint
+    (GROUP_CONCAT(DISTINCT ?enumerationValue; SEPARATOR="|") AS ?enumerationValues)
+    (GROUP_CONCAT(DISTINCT ?subShapeDef; SEPARATOR="|") AS ?subShapes)
+
+WHERE {
+    # Find all SHACL shapes (both NodeShapes and PropertyShapes)
+    {
+        # NodeShapes - define validation constraints for classes
+        ?shape a sh:NodeShape ;
+               rdfs:label ?label .
+
+        # Extract local name from IRI
+        BIND(STRAFTER(STR(?shape), "#") AS ?shapeLocalName)
+
+        # Get target class (what this shape validates)
+        OPTIONAL { ?shape sh:targetClass ?targetClassUri . }
+
+        # Get comment/documentation
+        OPTIONAL { ?shape rdfs:comment ?comment . }
+
+        # Get severity (Violation, Warning, Info)
+        OPTIONAL {
+            ?shape sh:severity ?severityUri .
+            BIND(STRAFTER(STR(?severityUri), "#") AS ?severityValue)
+        }
+
+        # Get all constraints from this shape
+        OPTIONAL { ?shape sh:datatype ?datatypeUri . }
+        OPTIONAL { ?shape sh:minCount ?minCountValue . }
+        OPTIONAL { ?shape sh:maxCount ?maxCountValue . }
+        OPTIONAL { ?shape sh:minInclusive ?minInclusiveValue . }
+        OPTIONAL { ?shape sh:maxInclusive ?maxInclusiveValue . }
+        OPTIONAL { ?shape sh:minLength ?minLengthValue . }
+        OPTIONAL { ?shape sh:maxLength ?maxLengthValue . }
+        OPTIONAL { ?shape sh:pattern ?patternValue . }
+        OPTIONAL { ?shape sh:message ?messageLiteral . }
+        OPTIONAL { ?shape sh:nodeKind ?nodeKindValue . }
+        OPTIONAL { ?shape sh:class ?classConstraint . }
+        OPTIONAL { ?shape sh:hasValue ?hasValueConstraint . }
+
+        # Handle sh:in lists (enumeration of allowed values)
+        OPTIONAL {
+            ?shape sh:in ?inList .
+            ?inList rdf:rest* ?listNode .
+            ?listNode rdf:first ?enumerationValue .
+            FILTER(?enumerationValue != rdf:nil)
+        }
+
+        # Get nested property shapes
+        OPTIONAL {
+            ?shape sh:property ?subShape .
+            BIND(STRAFTER(STR(?subShape), "#") AS ?subShapeDef)
+        }
+    }
+    UNION
+    {
+        # PropertyShapes - define constraints for specific properties
+        ?nodeShape a sh:NodeShape ;
+                   sh:property ?shape .
+
+        # Extract shape name
+        BIND(STRAFTER(STR(?shape), "#") AS ?shapeLocalName)
+
+        # Get label for property shape
+        OPTIONAL { ?shape rdfs:label ?label . }
+
+        # Get target class from parent NodeShape
+        OPTIONAL { ?nodeShape sh:targetClass ?targetClassUri . }
+
+        # Get comment
+        OPTIONAL { ?shape rdfs:comment ?comment . }
+
+        # Get property path (which property this shape constrains)
+        OPTIONAL { ?shape sh:path ?propertyPathUri . }
+
+        # Get severity
+        OPTIONAL {
+            ?shape sh:severity ?severityUri .
+            BIND(STRAFTER(STR(?severityUri), "#") AS ?severityValue)
+        }
+
+        # Get all constraints
+        OPTIONAL { ?shape sh:datatype ?datatypeUri . }
+        OPTIONAL { ?shape sh:minCount ?minCountValue . }
+        OPTIONAL { ?shape sh:maxCount ?maxCountValue . }
+        OPTIONAL { ?shape sh:minInclusive ?minInclusiveValue . }
+        OPTIONAL { ?shape sh:maxInclusive ?maxInclusiveValue . }
+        OPTIONAL { ?shape sh:minLength ?minLengthValue . }
+        OPTIONAL { ?shape sh:maxLength ?maxLengthValue . }
+        OPTIONAL { ?shape sh:pattern ?patternValue . }
+        OPTIONAL { ?shape sh:message ?messageLiteral . }
+        OPTIONAL { ?shape sh:nodeKind ?nodeKindValue . }
+        OPTIONAL { ?shape sh:class ?classConstraint . }
+        OPTIONAL { ?shape sh:hasValue ?hasValueConstraint . }
+
+        # Enumeration values
+        OPTIONAL {
+            ?shape sh:in ?inList .
+            ?inList rdf:rest* ?listNode .
+            ?listNode rdf:first ?enumerationValue .
+            FILTER(?enumerationValue != rdf:nil)
+        }
+    }
+
+    # Filter to only YAWL shapes and shapes targeting YAWL classes
+    FILTER(
+        STRSTARTS(STR(?shape), "http://www.yawlfoundation.org/yawlschema/shapes#") ||
+        (BOUND(?targetClassUri) && STRSTARTS(STR(?targetClassUri), STR(yawls:)))
+    )
+}
+
+GROUP BY
+    ?shape
+    ?shapeLocalName
+    ?label
+    ?comment
+    ?targetClassUri
+    ?propertyPathUri
+    ?datatypeUri
+    ?minCountValue
+    ?maxCountValue
+    ?patternValue
+    ?minLengthValue
+    ?maxLengthValue
+    ?minInclusiveValue
+    ?maxInclusiveValue
+    ?messageLiteral
+    ?severityValue
+    ?nodeKindValue
+    ?classConstraint
+    ?hasValueConstraint
+
+ORDER BY
+    ?targetClassName
+    ?shapeLocalName
+    ?propertyPathName

@@ -1,0 +1,219 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX yawl-pattern: <http://yawlfoundation.org/yawl/pattern#>
+PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
+
+# SPARQL Query: Extract Workflow Patterns from Extended Patterns Ontology v6.0.0
+# Purpose: Generate Java annotations for workflow control-flow patterns (WCP-1 to WCP-68)
+# Returns: All workflow patterns with full metadata for code generation
+#
+# Variables:
+#   ?pattern              - The pattern class URI
+#   ?patternLocalName     - Short name (after #)
+#   ?patternId            - WCP identifier (e.g., "WCP-44")
+#   ?patternName          - Human-readable name
+#   ?definition           - skos:definition (pattern description)
+#   ?comment              - rdfs:comment (additional notes)
+#   ?category             - Pattern category (e.g., DistributedTransaction)
+#   ?categoryLocalName    - Category name
+#   ?formalism            - yawl-new:formalism (mathematical specification)
+#   ?useCases             - yawl-new:useCase values (pipe-separated)
+#   ?relatedPatterns      - yawl-new:relatedPattern values (pipe-separated)
+#   ?isDistributed        - true if DistributedTransactionPattern
+#   ?isResilient          - true if ResiliencePattern
+#   ?isTemporal           - true if TemporalPattern
+#   ?isEventDriven        - true if EventDrivenPattern
+#   ?hasCompensation      - true if CompensationPattern
+#   ?hasAISupport         - true if AIPattern
+#   ?isCloudNative        - true if CloudNativePattern
+#   ?experimental         - true if marked experimental
+#   ?author               - Pattern author (default: YAWL Foundation)
+#   ?reference            - Reference URL or publication
+
+SELECT DISTINCT
+    ?pattern
+    ?patternLocalName
+    (COALESCE(?patternId, "") AS ?displayPatternId)
+    (COALESCE(?patternName, ?patternLocalName) AS ?displayPatternName)
+    (COALESCE(?definition, ?comment) AS ?patternDefinition)
+    ?categoryLocalName
+    (COALESCE(?categoryName, "Other") AS ?displayCategory)
+    ?formalism
+    (GROUP_CONCAT(DISTINCT ?useCase; SEPARATOR="|") AS ?useCases)
+    (GROUP_CONCAT(DISTINCT ?relPatternName; SEPARATOR="|") AS ?relatedPatterns)
+    (COALESCE(?distributedFlag, false) AS ?isDistributed)
+    (COALESCE(?resilientFlag, false) AS ?isResilient)
+    (COALESCE(?temporalFlag, false) AS ?isTemporal)
+    (COALESCE(?eventDrivenFlag, false) AS ?isEventDriven)
+    (COALESCE(?compensationFlag, false) AS ?isCompensation)
+    (COALESCE(?aiFlag, false) AS ?hasAISupport)
+    (COALESCE(?cloudNativeFlag, false) AS ?isCloudNative)
+    (COALESCE(?experimentalFlag, false) AS ?isExperimental)
+    (COALESCE(?minVersionValue, "4.0.0") AS ?minVersion)
+    (COALESCE(?authorValue, "YAWL Foundation") AS ?author)
+    ?reference
+
+WHERE {
+    # Select all workflow pattern classes (WCP-1 to WCP-68)
+    ?pattern a owl:Class ;
+             rdfs:label ?patternLabel .
+
+    # Extract local name from IRI
+    BIND(STRAFTER(STR(?pattern), "#") AS ?patternLocalName)
+
+    # Get pattern ID (WCP-xx identifier)
+    OPTIONAL {
+        ?pattern yawl-pattern:patternId ?patternId .
+    }
+
+    # Get pattern name
+    OPTIONAL {
+        ?pattern yawl-pattern:patternName ?patternName .
+    }
+
+    # Get pattern definition (primary source of documentation)
+    OPTIONAL {
+        ?pattern skos:definition ?definition .
+    }
+
+    # Get comment as fallback for definition
+    OPTIONAL {
+        ?pattern rdfs:comment ?comment .
+    }
+
+    # Get pattern category via superclass relationship
+    OPTIONAL {
+        ?pattern rdfs:subClassOf ?categoryClass .
+        ?categoryClass a owl:Class ;
+                       rdfs:label ?categoryName .
+        BIND(STRAFTER(STR(?categoryClass), "#") AS ?categoryLocalName)
+    }
+
+    # Get formal specification (mathematical/algorithmic)
+    OPTIONAL {
+        ?pattern yawl-new:formalism ?formalism .
+    }
+
+    # Get use cases (may be multiple)
+    OPTIONAL {
+        ?pattern yawl-new:useCase ?useCase .
+    }
+
+    # Get related patterns
+    OPTIONAL {
+        ?pattern yawl-new:relatedPattern ?relatedPattern .
+        OPTIONAL {
+            ?relatedPattern rdfs:label ?relPatternName .
+        }
+    }
+
+    # Pattern characteristic: Distributed Transaction Pattern
+    OPTIONAL {
+        ?pattern rdfs:subClassOf yawl-new:DistributedTransactionPattern .
+        BIND(true AS ?distributedFlag)
+    }
+
+    # Pattern characteristic: Resilience Pattern
+    OPTIONAL {
+        ?pattern rdfs:subClassOf yawl-new:ResiliencePattern .
+        BIND(true AS ?resilientFlag)
+    }
+
+    # Pattern characteristic: Temporal Pattern
+    OPTIONAL {
+        ?pattern rdfs:subClassOf yawl-new:TemporalPattern .
+        BIND(true AS ?temporalFlag)
+    }
+
+    # Pattern characteristic: Event-Driven Pattern
+    OPTIONAL {
+        ?pattern rdfs:subClassOf yawl-new:EventDrivenPattern .
+        BIND(true AS ?eventDrivenFlag)
+    }
+
+    # Pattern characteristic: Compensation Pattern
+    OPTIONAL {
+        ?pattern rdfs:subClassOf yawl-new:CompensationPattern .
+        BIND(true AS ?compensationFlag)
+    }
+
+    # Pattern characteristic: AI/ML Pattern
+    OPTIONAL {
+        ?pattern rdfs:subClassOf yawl-new:AIPattern .
+        BIND(true AS ?aiFlag)
+    }
+
+    # Pattern characteristic: Cloud-Native Pattern
+    OPTIONAL {
+        ?pattern rdfs:subClassOf yawl-new:CloudNativePattern .
+        BIND(true AS ?cloudNativeFlag)
+    }
+
+    # Check if pattern is experimental
+    OPTIONAL {
+        ?pattern rdfs:comment ?commentText .
+        FILTER(
+            CONTAINS(LCASE(?commentText), "experimental") ||
+            CONTAINS(LCASE(?commentText), "draft") ||
+            CONTAINS(LCASE(?commentText), "evolving")
+        )
+        BIND(true AS ?experimentalFlag)
+    }
+
+    # Get minimum YAWL version
+    OPTIONAL {
+        ?pattern dct:isVersionOf ?minVersionValue .
+    }
+
+    # Get author/creator
+    OPTIONAL {
+        ?pattern dc:creator ?authorValue .
+    }
+
+    # Get reference URL
+    OPTIONAL {
+        ?pattern dct:isReferencedBy ?reference .
+    }
+
+    # Filter to only pattern classes in YAWL pattern namespace
+    FILTER(
+        STRSTARTS(STR(?pattern), STR(yawl-pattern:)) ||
+        STRSTARTS(STR(?pattern), STR(yawl-new:))
+    )
+
+    # Exclude pure category/meta classes (only want actual patterns)
+    FILTER(
+        !STRSTARTS(?patternLocalName, "DataFlow") ||
+        EXISTS { ?pattern yawl-pattern:patternId ?patId . }
+    )
+}
+
+GROUP BY
+    ?pattern
+    ?patternLocalName
+    ?patternId
+    ?patternName
+    ?patternLabel
+    ?definition
+    ?comment
+    ?categoryLocalName
+    ?categoryName
+    ?formalism
+    ?distributedFlag
+    ?resilientFlag
+    ?temporalFlag
+    ?eventDrivenFlag
+    ?compensationFlag
+    ?aiFlag
+    ?cloudNativeFlag
+    ?experimentalFlag
+    ?minVersionValue
+    ?authorValue
+    ?reference
+
+ORDER BY ?displayPatternId ?displayPatternName

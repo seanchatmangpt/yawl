@@ -16,6 +16,7 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.turtle.YawlTurtleToolSpecifications;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
@@ -113,6 +114,13 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
+        // Create combined tool list (core YAWL tools + Turtle tools)
+        java.util.List<McpServerFeatures.SyncToolSpecification> allTools =
+            new java.util.ArrayList<>(
+                YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle));
+        allTools.addAll(
+            YawlTurtleToolSpecifications.createAll(interfaceAClient, interfaceBClient, sessionHandle));
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -120,15 +128,14 @@ public class YawlMcpServer {
                 YAWL Workflow Engine MCP Server v6.0.0.
 
                 Use tools to launch and manage workflow cases, query and upload specifications,
-                checkout and complete work items. Resources provide read-only access to
-                specifications, cases, and work items. Prompts guide workflow analysis,
-                task completion, troubleshooting, and design review.
+                checkout and complete work items. Import/export specifications in Turtle RDF format.
+                Resources provide read-only access to specifications, cases, and work items.
+                Prompts guide workflow analysis, task completion, troubleshooting, and design review.
 
-                Capabilities: 15 tools, 3 resources, 3 resource templates, 4 prompts,
-                3 completions, logging (MCP 2025-11-25 compliant).
+                Capabilities: 19 tools (15 core + 4 Turtle), 3 resources, 3 resource templates,
+                4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(
-                interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -141,7 +148,7 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 15 tools, 3 resources, 3 resource templates, " +
+        System.err.println("Capabilities: 19 tools, 3 resources, 3 resource templates, " +
             "4 prompts, 3 completions, logging");
     }
 

@@ -1,0 +1,138 @@
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX yawls: <http://www.yawlfoundation.org/yawlschema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+# SPARQL Query: Extract OWL Classes from YAWL Ontology v6.0.0
+# Purpose: Generate Java records and sealed interfaces
+# Returns: All OWL classes with complete metadata for code generation
+#
+# Variables:
+#   ?class           - The OWL class URI
+#   ?classLocalName  - Short name (after #)
+#   ?label           - rdfs:label (human-readable class name)
+#   ?comment         - rdfs:comment (class documentation)
+#   ?parentClasses   - All rdfs:subClassOf classes (pipe-separated)
+#   ?properties      - All properties defined via restrictions (pipe-separated)
+#   ?isAbstract      - true/false (inferred from subclasses)
+#   ?dataProperties  - DatatypeProperties (pipe-separated URIs)
+#   ?objectProperties - ObjectProperties (pipe-separated URIs)
+#   ?implementingClasses - Classes that subclass this (for sealed interface generation)
+
+SELECT DISTINCT
+    ?class
+    ?classLocalName
+    (COALESCE(?label, ?classLocalName) AS ?displayLabel)
+    ?comment
+    ?definition
+    (COALESCE(?isAbstractValue, false) AS ?isAbstract)
+    (GROUP_CONCAT(DISTINCT ?parentClassUri; SEPARATOR="|") AS ?parentClasses)
+    (GROUP_CONCAT(DISTINCT ?objectProp; SEPARATOR="|") AS ?objectProperties)
+    (GROUP_CONCAT(DISTINCT ?dataProp; SEPARATOR="|") AS ?dataProperties)
+    (GROUP_CONCAT(DISTINCT ?implementingClass; SEPARATOR="|") AS ?implementations)
+    (GROUP_CONCAT(DISTINCT ?cardinalityRestriction; SEPARATOR="|") AS ?restrictions)
+
+WHERE {
+    # Main clause: Select all OWL classes in YAWL namespace
+    ?class a owl:Class ;
+           rdfs:label ?label .
+
+    # Extract local name from IRI
+    BIND(STRAFTER(STR(?class), "#") AS ?classLocalName)
+
+    # Get rdfs:comment (optional)
+    OPTIONAL { ?class rdfs:comment ?comment . }
+
+    # Get skos:definition (optional alternative to rdfs:comment)
+    OPTIONAL { ?class skos:definition ?definition . }
+
+    # Determine if this class is abstract (has any subclasses)
+    OPTIONAL {
+        SELECT ?class (true AS ?isAbstractValue)
+        WHERE {
+            ?anySubClass rdfs:subClassOf ?class .
+            FILTER(?anySubClass != ?class)
+        }
+    }
+
+    # Get parent classes via rdfs:subClassOf
+    OPTIONAL {
+        ?class rdfs:subClassOf ?parentClass .
+        FILTER(
+            ?parentClass != owl:Thing &&
+            ?parentClass != owl:Class &&
+            STRSTARTS(STR(?parentClass), STR(yawls:))
+        )
+        BIND(?parentClass AS ?parentClassUri)
+    }
+
+    # Get Object Properties via OWL restrictions
+    OPTIONAL {
+        ?class rdfs:subClassOf [
+            a owl:Restriction ;
+            owl:onProperty ?objectPropDef ;
+            rdf:type owl:ObjectProperty
+        ] .
+        BIND(?objectPropDef AS ?objectProp)
+    }
+
+    # Get Datatype Properties via OWL restrictions
+    OPTIONAL {
+        ?class rdfs:subClassOf [
+            a owl:Restriction ;
+            owl:onProperty ?dataPropDef ;
+            rdf:type owl:DatatypeProperty
+        ] .
+        BIND(?dataPropDef AS ?dataProp)
+    }
+
+    # Get implementing/subclasses (for sealed interface permits clause)
+    OPTIONAL {
+        ?implementingClass rdfs:subClassOf ?class .
+        FILTER(?implementingClass != ?class)
+    }
+
+    # Get cardinality restrictions on properties
+    OPTIONAL {
+        ?class rdfs:subClassOf ?restriction .
+        ?restriction a owl:Restriction ;
+                     owl:onProperty ?cardProp ;
+                     ?cardPred ?cardValue .
+        FILTER(
+            ?cardPred IN (
+                owl:minCardinality,
+                owl:maxCardinality,
+                owl:cardinality,
+                owl:minQualifiedCardinality,
+                owl:maxQualifiedCardinality
+            )
+        )
+        BIND(CONCAT(STR(?cardProp), ":", STR(?cardValue)) AS ?cardinalityRestriction)
+    }
+
+    # Filter to only YAWL schema classes (not other ontologies)
+    FILTER(STRSTARTS(STR(?class), STR(yawls:)))
+
+    # Exclude purely structural OWL classes
+    FILTER(
+        ?class != owl:Thing &&
+        ?class != owl:Class &&
+        ?class != owl:ObjectProperty &&
+        ?class != owl:DatatypeProperty &&
+        ?class != rdfs:Resource
+    )
+}
+
+GROUP BY
+    ?class
+    ?classLocalName
+    ?label
+    ?comment
+    ?definition
+    ?isAbstractValue
+
+ORDER BY ?displayLabel

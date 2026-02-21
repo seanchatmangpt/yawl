@@ -157,6 +157,11 @@
         <networknt.json.schema.validator.version>1.5.7</networknt.json.schema.validator.version>
 
         <!-- ================================================================ -->
+        <!-- RDF / Turtle (ggen ontology-driven code generation)            -->
+        <!-- ================================================================ -->
+        <jena.version>4.10.0</jena.version>
+
+        <!-- ================================================================ -->
         <!-- XML processing                                                     -->
         <!-- ================================================================ -->
         <jdom.version>2.0.6.1</jdom.version>
@@ -725,6 +730,28 @@
                 <groupId>com.networknt</groupId>
                 <artifactId>json-schema-validator</artifactId>
                 <version>${networknt.json.schema.validator.version}</version>
+            </dependency>
+
+            <!-- ============================================================== -->
+            <!-- 7b. RDF / TURTLE (ggen ontology-driven code generation)      -->
+            <!-- ============================================================== -->
+
+            <!-- Apache Jena ARQ: Turtle/N-Triples I/O + SPARQL query support -->
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-arq</artifactId>
+                <version>${jena.version}</version>
+                <exclusions>
+                    <!-- Exclude SLF4J bindings to avoid conflicts with Log4j2 -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>jcl-over-slf4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- ============================================================== -->
@@ -1918,7 +1945,7 @@
     <profiles>
 
         <!-- ================================================================ -->
-        <!-- Default profile: Java 21 compatible (JDK 21 available)            -->
+        <!-- Default profile: Java 25 with preview features enabled           -->
         <!-- ================================================================ -->
         <profile>
             <id>java25</id>
@@ -1937,7 +1964,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <release>21</release>
+                            <release>25</release>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>

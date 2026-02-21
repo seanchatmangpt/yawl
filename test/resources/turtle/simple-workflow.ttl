@@ -1,0 +1,93 @@
+@prefix yawls: <http://www.yawlfoundation.org/yawlschema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+# Simple Workflow Specification for Testing
+<urn:yawl:SimpleWorkflow> a yawls:Specification ;
+    yawls:uri "http://www.example.org/workflows/SimpleWorkflow" ;
+    dcterms:title "Simple Test Workflow" ;
+    dcterms:description "A minimal workflow specification for testing Turtle import/export" ;
+    dcterms:creator "Test Suite" ;
+    dcterms:created "2026-02-21"^^xsd:date ;
+    yawls:hasDecomposition <urn:yawl:SimpleWorkflow#net-RootNet> ;
+    yawls:hasRootNet <urn:yawl:SimpleWorkflow#net-RootNet> .
+
+# Root Workflow Net
+<urn:yawl:SimpleWorkflow#net-RootNet> a yawls:WorkflowNet ;
+    yawls:id "RootNet" ;
+    yawls:label "Root Workflow Net" ;
+    yawls:documentation "The main workflow net containing process flow" ;
+    yawls:hasInputCondition <urn:yawl:SimpleWorkflow#net-RootNet#element-InputCondition> ;
+    yawls:hasOutputCondition <urn:yawl:SimpleWorkflow#net-RootNet#element-OutputCondition> ;
+    yawls:hasCondition <urn:yawl:SimpleWorkflow#net-RootNet#element-Condition1> ;
+    yawls:hasTask <urn:yawl:SimpleWorkflow#net-RootNet#element-Task1> ;
+    yawls:hasTask <urn:yawl:SimpleWorkflow#net-RootNet#element-Task2> .
+
+# Input Condition (entry point)
+<urn:yawl:SimpleWorkflow#net-RootNet#element-InputCondition> a yawls:InputCondition ;
+    yawls:id "InputCondition" ;
+    yawls:label "Start" ;
+    yawls:hasFlowInto <urn:yawl:SimpleWorkflow#net-RootNet#element-InputCondition_to_Task1> .
+
+# Output Condition (exit point)
+<urn:yawl:SimpleWorkflow#net-RootNet#element-OutputCondition> a yawls:OutputCondition ;
+    yawls:id "OutputCondition" ;
+    yawls:label "End" .
+
+# Intermediate Condition
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Condition1> a yawls:Condition ;
+    yawls:id "Condition1" ;
+    yawls:label "Processing Complete" ;
+    yawls:hasFlowInto <urn:yawl:SimpleWorkflow#net-RootNet#element-Condition1_to_Task2> .
+
+# Task 1 (XOR join, XOR split)
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task1> a yawls:Task ;
+    yawls:id "Task1" ;
+    yawls:label "Process Request" ;
+    yawls:documentation "First task in the workflow" ;
+    yawls:hasJoin <urn:yawl:SimpleWorkflow#net-RootNet#element-Task1#join> ;
+    yawls:hasSplit <urn:yawl:SimpleWorkflow#net-RootNet#element-Task1#split> ;
+    yawls:hasFlowInto <urn:yawl:SimpleWorkflow#net-RootNet#element-Task1_to_Condition1> .
+
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task1#join> a yawls:Join ;
+    yawls:code yawls:XOR .
+
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task1#split> a yawls:Split ;
+    yawls:code yawls:XOR .
+
+# Task 2 (AND join, XOR split)
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task2> a yawls:Task ;
+    yawls:id "Task2" ;
+    yawls:label "Complete Request" ;
+    yawls:documentation "Final task in the workflow" ;
+    yawls:hasJoin <urn:yawl:SimpleWorkflow#net-RootNet#element-Task2#join> ;
+    yawls:hasSplit <urn:yawl:SimpleWorkflow#net-RootNet#element-Task2#split> ;
+    yawls:hasFlowInto <urn:yawl:SimpleWorkflow#net-RootNet#element-Task2_to_OutputCondition> .
+
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task2#join> a yawls:Join ;
+    yawls:code yawls:AND .
+
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task2#split> a yawls:Split ;
+    yawls:code yawls:XOR .
+
+# Flow 1: InputCondition -> Task1
+<urn:yawl:SimpleWorkflow#net-RootNet#element-InputCondition_to_Task1> a yawls:FlowInto ;
+    yawls:nextElement <urn:yawl:SimpleWorkflow#net-RootNet#element-Task1> ;
+    yawls:isDefaultFlow "true"^^xsd:boolean .
+
+# Flow 2: Task1 -> Condition1
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task1_to_Condition1> a yawls:FlowInto ;
+    yawls:nextElement <urn:yawl:SimpleWorkflow#net-RootNet#element-Condition1> ;
+    yawls:isDefaultFlow "true"^^xsd:boolean .
+
+# Flow 3: Condition1 -> Task2
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Condition1_to_Task2> a yawls:FlowInto ;
+    yawls:nextElement <urn:yawl:SimpleWorkflow#net-RootNet#element-Task2> ;
+    yawls:isDefaultFlow "true"^^xsd:boolean .
+
+# Flow 4: Task2 -> OutputCondition
+<urn:yawl:SimpleWorkflow#net-RootNet#element-Task2_to_OutputCondition> a yawls:FlowInto ;
+    yawls:nextElement <urn:yawl:SimpleWorkflow#net-RootNet#element-OutputCondition> ;
+    yawls:isDefaultFlow "true"^^xsd:boolean .

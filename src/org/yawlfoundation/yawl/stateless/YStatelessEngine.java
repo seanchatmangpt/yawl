@@ -423,10 +423,10 @@ public class YStatelessEngine {
 
         List<YNetRunner> runners = new ArrayList<>(caseParams.size());
 
-        try (StructuredTaskScope<YNetRunner, Void> scope =
-                     StructuredTaskScope.open(StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow(),
-                             cfg -> cfg.withName("yawl-parallel-launch")
-                                       .withThreadFactory(Thread.ofVirtual().factory()))) {
+        try (var scope = StructuredTaskScope.open(
+                     StructuredTaskScope.Joiner.<YNetRunner>allSuccessfulOrThrow(),
+                     cfg -> cfg.withName("yawl-parallel-launch")
+                               .withThreadFactory(Thread.ofVirtual().factory()))) {
 
             // Fork one subtask per case; each runs on a named virtual thread
             List<StructuredTaskScope.Subtask<YNetRunner>> subtasks = new ArrayList<>(caseParams.size());

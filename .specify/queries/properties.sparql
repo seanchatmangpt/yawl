@@ -1,0 +1,156 @@
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX yawls: <http://www.yawlfoundation.org/yawlschema#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+# SPARQL Query: Extract OWL Properties from YAWL Ontology v6.0.0
+# Purpose: Generate property descriptors and cardinality constraints
+# Returns: All object and datatype properties with complete constraints
+#
+# Variables:
+#   ?property              - The OWL property URI
+#   ?propertyLocalName     - Short name (after #)
+#   ?label                 - rdfs:label (human-readable)
+#   ?comment               - rdfs:comment (documentation)
+#   ?propertyType          - "ObjectProperty" or "DatatypeProperty"
+#   ?domain                - rdfs:domain (defining classes)
+#   ?range                 - rdfs:range (value type/class)
+#   ?minCardinality        - owl:minCardinality value (if specified)
+#   ?maxCardinality        - owl:maxCardinality value (if specified)
+#   ?isFunctional          - true if owl:FunctionalProperty
+#   ?isInverseFunctional   - true if owl:InverseFunctionalProperty
+#   ?isTransitive          - true if owl:TransitiveProperty
+#   ?isSymmetric           - true if owl:SymmetricProperty
+#   ?inverseProperty       - Inverse property URI (if defined)
+#   ?subPropertyOf         - Parent property in hierarchy
+
+SELECT DISTINCT
+    ?property
+    ?propertyLocalName
+    (COALESCE(?label, ?propertyLocalName) AS ?displayLabel)
+    ?comment
+    ?definition
+    ?propertyType
+    (GROUP_CONCAT(DISTINCT ?domainClass; SEPARATOR="|") AS ?domains)
+    ?rangeClass
+    ?minCardValue
+    ?maxCardValue
+    (COALESCE(?functionalFlag, false) AS ?isFunctional)
+    (COALESCE(?inverseFunctionalFlag, false) AS ?isInverseFunctional)
+    (COALESCE(?transitiveFlag, false) AS ?isTransitive)
+    (COALESCE(?symmetricFlag, false) AS ?isSymmetric)
+    (COALESCE(?asymmetricFlag, false) AS ?isAsymmetric)
+    (COALESCE(?reflexiveFlag, false) AS ?isReflexive)
+    (COALESCE(?irreflexiveFlag, false) AS ?isIrreflexive)
+    ?inversePropertyUri
+    (GROUP_CONCAT(DISTINCT ?superProp; SEPARATOR="|") AS ?superProperties)
+
+WHERE {
+    # Find all Object Properties
+    {
+        ?property a owl:ObjectProperty ;
+                  rdfs:label ?label .
+        BIND("ObjectProperty" AS ?propertyType)
+
+        OPTIONAL { ?property rdfs:comment ?comment . }
+        OPTIONAL { ?property skos:definition ?definition . }
+        OPTIONAL { ?property rdfs:domain ?domainClass . }
+        OPTIONAL { ?property rdfs:range ?rangeClass . }
+
+        # Functional property characteristics
+        OPTIONAL { ?property a owl:FunctionalProperty . BIND(true AS ?functionalFlag) }
+        OPTIONAL { ?property a owl:InverseFunctionalProperty . BIND(true AS ?inverseFunctionalFlag) }
+        OPTIONAL { ?property a owl:TransitiveProperty . BIND(true AS ?transitiveFlag) }
+        OPTIONAL { ?property a owl:SymmetricProperty . BIND(true AS ?symmetricFlag) }
+        OPTIONAL { ?property a owl:AsymmetricProperty . BIND(true AS ?asymmetricFlag) }
+        OPTIONAL { ?property a owl:ReflexiveProperty . BIND(true AS ?reflexiveFlag) }
+        OPTIONAL { ?property a owl:IrreflexiveProperty . BIND(true AS ?irreflexiveFlag) }
+
+        # Inverse property
+        OPTIONAL { ?property owl:inverseOf ?inversePropertyUri . }
+
+        # Super-properties (property hierarchy)
+        OPTIONAL { ?property rdfs:subPropertyOf ?superProp . }
+    }
+    UNION
+    {
+        # Find all Datatype Properties
+        ?property a owl:DatatypeProperty ;
+                  rdfs:label ?label .
+        BIND("DatatypeProperty" AS ?propertyType)
+
+        OPTIONAL { ?property rdfs:comment ?comment . }
+        OPTIONAL { ?property skos:definition ?definition . }
+        OPTIONAL { ?property rdfs:domain ?domainClass . }
+        OPTIONAL { ?property rdfs:range ?rangeClass . }
+
+        # Functional property characteristics
+        OPTIONAL { ?property a owl:FunctionalProperty . BIND(true AS ?functionalFlag) }
+        OPTIONAL { ?property a owl:InverseFunctionalProperty . BIND(true AS ?inverseFunctionalFlag) }
+        OPTIONAL { ?property a owl:TransitiveProperty . BIND(true AS ?transitiveFlag) }
+        OPTIONAL { ?property a owl:SymmetricProperty . BIND(true AS ?symmetricFlag) }
+        OPTIONAL { ?property a owl:AsymmetricProperty . BIND(true AS ?asymmetricFlag) }
+        OPTIONAL { ?property a owl:ReflexiveProperty . BIND(true AS ?reflexiveFlag) }
+        OPTIONAL { ?property a owl:IrreflexiveProperty . BIND(true AS ?irreflexiveFlag) }
+
+        # Inverse property
+        OPTIONAL { ?property owl:inverseOf ?inversePropertyUri . }
+
+        # Super-properties (property hierarchy)
+        OPTIONAL { ?property rdfs:subPropertyOf ?superProp . }
+    }
+
+    # Extract local name from IRI
+    BIND(STRAFTER(STR(?property), "#") AS ?propertyLocalName)
+
+    # Cardinality constraints via qualified cardinality restrictions
+    # These are typically on class restrictions, but we capture them here
+    OPTIONAL {
+        ?classRestriction a owl:Restriction ;
+                          owl:onProperty ?property ;
+                          owl:minQualifiedCardinality ?minCardValue ;
+                          owl:onClass ?restrictionClass .
+    }
+    OPTIONAL {
+        ?classRestriction a owl:Restriction ;
+                          owl:onProperty ?property ;
+                          owl:maxQualifiedCardinality ?maxCardValue ;
+                          owl:onClass ?restrictionClass .
+    }
+
+    # Filter to only YAWL schema properties
+    FILTER(STRSTARTS(STR(?property), STR(yawls:)))
+
+    # Exclude OWL meta-properties
+    FILTER(
+        ?property != rdf:type &&
+        ?property != rdf:value &&
+        ?property != rdf:rest &&
+        ?property != rdf:first
+    )
+}
+
+GROUP BY
+    ?property
+    ?propertyLocalName
+    ?label
+    ?comment
+    ?definition
+    ?propertyType
+    ?rangeClass
+    ?minCardValue
+    ?maxCardValue
+    ?functionalFlag
+    ?inverseFunctionalFlag
+    ?transitiveFlag
+    ?symmetricFlag
+    ?asymmetricFlag
+    ?reflexiveFlag
+    ?irreflexiveFlag
+    ?inversePropertyUri
+
+ORDER BY ?propertyType ?displayLabel
