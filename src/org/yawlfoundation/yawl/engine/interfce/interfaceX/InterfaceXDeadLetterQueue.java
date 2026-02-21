@@ -136,12 +136,11 @@ public class InterfaceXDeadLetterQueue {
      * Shuts down the singleton instance, releasing resources.
      */
     public static void shutdownInstance() {
-        if (instance != null) {
-            synchronized (INSTANCE_LOCK) {
-                if (instance != null) {
-                    instance.close();
-                    instance = null;
-                }
+        synchronized (INSTANCE_LOCK) {
+            if (instance != null) {
+                instance.clear();
+                instance.close();
+                instance = null;
             }
         }
     }

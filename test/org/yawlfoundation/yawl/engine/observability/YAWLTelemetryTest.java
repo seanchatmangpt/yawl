@@ -51,16 +51,24 @@ public class YAWLTelemetryTest {
 
     @BeforeAll
     public static void setupAll() {
-        Resource resource = Resource.getDefault();
+        try {
+            // Check if GlobalOpenTelemetry is already initialized
+            GlobalOpenTelemetry.get();
+            // If we get here, it's already registered. Reuse the existing instance.
+            openTelemetrySdk = null;  // Don't own the shutdown
+        } catch (IllegalStateException e) {
+            // Not yet registered, proceed with registration
+            Resource resource = Resource.getDefault();
 
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-                .setResource(resource)
-                .build();
+            SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
+                    .setResource(resource)
+                    .build();
 
-        openTelemetrySdk = OpenTelemetrySdk.builder()
-                .setTracerProvider(tracerProvider)
-                .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
-                .buildAndRegisterGlobal();
+            openTelemetrySdk = OpenTelemetrySdk.builder()
+                    .setTracerProvider(tracerProvider)
+                    .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+                    .buildAndRegisterGlobal();
+        }
 
         telemetry = YAWLTelemetry.getInstance();
     }
@@ -70,7 +78,10 @@ public class YAWLTelemetryTest {
         if (openTelemetrySdk != null) {
             CompletableResultCode shutdown = openTelemetrySdk.shutdown();
             shutdown.join(5, TimeUnit.SECONDS);
+            openTelemetrySdk = null;
         }
+        // If openTelemetrySdk is null, it means another test owns the global instance.
+        // Don't shut it down—let it remain for other tests.
     }
 
     @BeforeEach

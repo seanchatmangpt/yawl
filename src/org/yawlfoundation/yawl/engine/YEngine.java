@@ -821,32 +821,54 @@ public class YEngine implements InterfaceADesign,
         // check & format case data params (if any)
         Element data = formatCaseParams(caseParams, specification);
 
-        YNetRunner runner = new YNetRunner(_pmgr, specification.getRootNet(), data, caseID);
-        _netRunnerRepository.add(runner);
-        logCaseStarted(specID, runner, completionObserver, caseParams, logData,
-                serviceRef, delayed);
+        // Start a transaction for case creation and persistence. In Hibernate 6.x,
+        // persist() requires an active transaction. We manage the transaction here
+        // unless we're in restore mode (where the caller has already started a transaction).
+        boolean localTransaction = (!_restoring) && startTransaction();
 
-        // persist it
-        if ((! _restoring) && (_pmgr != null)) {
-            _pmgr.storeObject(runner);
+        try {
+            YNetRunner runner = new YNetRunner(_pmgr, specification.getRootNet(), data, caseID);
+            _netRunnerRepository.add(runner);
+            logCaseStarted(specID, runner, completionObserver, caseParams, logData,
+                    serviceRef, delayed);
+
+            // persist it
+            if ((! _restoring) && (_pmgr != null)) {
+                _pmgr.storeObject(runner);
+            }
+
+            runner.continueIfPossible(_pmgr);
+            runner.start(_pmgr);
+            YIdentifier runnerCaseID = runner.getCaseID();
+
+            // Commit the local transaction if we started one
+            if (localTransaction) {
+                commitTransaction();
+            }
+
+            // special case: if spec contains exactly one task, and its empty,
+            // the case (and runner) has already completed, so don't update map
+            if (runner.hasActiveTasks()) {
+                _runningCaseIDToSpecMap.put(runnerCaseID, specification);
+
+                // announce the new case to the standalone gui (if any)
+                NullCheckModernizer.ifPresent(_interfaceBClient, c -> {
+                    _logger.debug("Asking client to add case {}", runnerCaseID.toString());
+                    c.addCase(specID, runnerCaseID.toString());
+                });
+            }
+            return runnerCaseID;
+        } catch (Exception e) {
+            // If we started the transaction and an error occurred, rollback
+            if (localTransaction) {
+                try {
+                    rollbackTransaction();
+                } catch (YPersistenceException rollbackEx) {
+                    _logger.error("Error rolling back transaction after startCase failure", rollbackEx);
+                }
+            }
+            throw e;
         }
-
-        runner.continueIfPossible(_pmgr);
-        runner.start(_pmgr);
-        YIdentifier runnerCaseID = runner.getCaseID();
-
-        // special case: if spec contains exactly one task, and its empty,
-        // the case (and runner) has already completed, so don't update map
-        if (runner.hasActiveTasks()) {
-            _runningCaseIDToSpecMap.put(runnerCaseID, specification);
-
-            // announce the new case to the standalone gui (if any)
-            NullCheckModernizer.ifPresent(_interfaceBClient, c -> {
-                _logger.debug("Asking client to add case {}", runnerCaseID.toString());
-                c.addCase(specID, runnerCaseID.toString());
-            });
-        }
-        return runnerCaseID;
     }
 
 

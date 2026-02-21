@@ -533,10 +533,14 @@ public final class InterfaceMetrics {
         interfaceATotalRequests.reset();
         interfaceBTotalRequests.reset();
         interfaceBTotalWorkItems.reset();
+        interfaceBTotalConnectionPoolWaitTime.reset();
         interfaceETotalQueries.reset();
+        interfaceETotalResultSize.reset();
         interfaceXTotalNotifications.reset();
         interfaceXTotalRetries.reset();
         interfaceXTotalFailures.reset();
+        interfaceXTotalDeadLetters.reset();
+        enabled = true;
         operationStartTimes.clear();
         _logger.debug("InterfaceMetrics reset");
     }

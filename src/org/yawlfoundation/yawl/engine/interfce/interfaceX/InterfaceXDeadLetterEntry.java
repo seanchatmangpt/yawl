@@ -70,7 +70,7 @@ public class InterfaceXDeadLetterEntry {
         this.id = UUID.randomUUID().toString();
         this.command = command;
         this.parameters = parameters != null
-                ? Collections.unmodifiableMap(parameters)
+                ? Collections.unmodifiableMap(new java.util.HashMap<>(parameters))
                 : Collections.emptyMap();
         this.observerURI = observerURI;
         this.failureReason = failureReason;
