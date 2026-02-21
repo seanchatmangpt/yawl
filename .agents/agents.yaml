@@ -1,0 +1,114 @@
+---
+# YAWL Agents Marketplace — Registry Manifest
+# This file indexes all registered agents and their versions
+#
+# To register a new agent:
+# 1. Create .agents/agent-profiles/{agent-id}.yaml
+# 2. Add entry to manifest below
+# 3. Commit and push (registry auto-syncs)
+
+apiVersion: agents.marketplace/v1
+kind: AgentRegistry
+metadata:
+  name: YAWL Agents Marketplace
+  description: Enterprise autonomous agent registry
+  managedBy: Integration Team
+  lastUpdated: 2026-02-21T00:00:00Z
+
+agents:
+  - id: approval-agent
+    name: Approval Agent
+    version: 1.0.0
+    status: active
+    author: acme-team
+    capabilities:
+      - approve-expense
+      - escalate-approval
+    description: Auto-approves expenses under delegation limit
+    profile: agent-profiles/approval-agent.yaml
+
+  - id: validation-agent
+    name: Validation Agent
+    version: 1.0.0
+    status: active
+    author: acme-team
+    capabilities:
+      - validate-input
+      - validate-expense
+    description: Validates workflow data against schema
+    profile: agent-profiles/validation-agent.yaml
+
+  - id: po-agent
+    name: Purchase Order Agent
+    version: 1.0.0
+    status: active
+    author: supply-chain-team
+    capabilities:
+      - create-po
+      - update-po-status
+    description: Creates and manages purchase orders
+    profile: agent-profiles/po-agent.yaml
+
+  - id: expense-agent
+    name: Expense Agent
+    version: 1.0.0
+    status: active
+    author: finance-team
+    capabilities:
+      - categorize-expense
+      - create-expense-report
+    description: Categorizes expenses and generates reports
+    profile: agent-profiles/expense-agent.yaml
+
+  - id: scheduler-agent
+    name: Scheduler Agent
+    version: 1.0.0
+    status: active
+    author: operations-team
+    capabilities:
+      - schedule-meeting
+      - find-available-time
+    description: Schedules meetings and checks calendar availability
+    profile: agent-profiles/scheduler-agent.yaml
+
+  - id: monitor-agent
+    name: Monitor Agent
+    version: 1.0.0
+    status: active
+    author: integration-team
+    capabilities:
+      - monitor-case-health
+      - detect-stuck-workflows
+    description: Monitors case execution and detects failures
+    profile: agent-profiles/monitor-agent.yaml
+
+# Template registry
+templates:
+  - id: approval-workflow
+    name: Approval Workflow
+    pattern: sequential
+    agents:
+      - validation-agent
+      - approval-agent
+      - notification-agent
+    description: Sequential workflow for expense approval
+    template: orchestration/approval-workflow.json
+
+  - id: procurement-workflow
+    name: Procurement Workflow
+    pattern: parallel
+    agents:
+      - validation-agent
+      - compliance-agent
+      - approval-agent
+    description: Parallel validation and approval for procurement
+    template: orchestration/procurement-workflow.json
+
+  - id: conditional-approval
+    name: Conditional Approval
+    pattern: conditional
+    agents:
+      - approval-agent
+      - escalation-agent
+    description: Conditional approval based on amount thresholds
+    template: orchestration/conditional-approval.json
