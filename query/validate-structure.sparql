@@ -1,0 +1,58 @@
+PREFIX yawls: <http://www.yawlfoundation.org/yawlschema#>
+
+ASK
+WHERE {
+  ?net a yawls:WorkflowNet .
+
+  {
+    SELECT ?orphanTask
+    WHERE {
+      ?net yawls:hasProcessControlElements ?pce .
+      ?pce yawls:hasTask ?orphanTask .
+      ?orphanTask yawls:id ?taskId .
+
+      FILTER NOT EXISTS {
+        ?orphanTask yawls:hasFlowInto ?outgoing .
+      }
+
+      FILTER NOT EXISTS {
+        ?someElement yawls:hasFlowInto ?incoming .
+        ?incoming yawls:nextElement ?orphanTask .
+      }
+
+      FILTER(?taskId != "InputCondition" && ?taskId != "OutputCondition")
+    }
+  }
+
+  UNION
+
+  {
+    SELECT ?invalidFlow
+    WHERE {
+      ?element yawls:hasFlowInto ?invalidFlow .
+      ?invalidFlow yawls:nextElement ?target .
+
+      FILTER NOT EXISTS {
+        ?target a yawls:NetElement
+      }
+    }
+  }
+
+  UNION
+
+  {
+    SELECT ?taskWithoutControl
+    WHERE {
+      ?net yawls:hasProcessControlElements ?pce .
+      ?pce yawls:hasTask ?taskWithoutControl .
+
+      FILTER NOT EXISTS {
+        ?taskWithoutControl yawls:hasSplit ?split
+      }
+
+      FILTER NOT EXISTS {
+        ?taskWithoutControl yawls:hasJoin ?join
+      }
+    }
+  }
+}
