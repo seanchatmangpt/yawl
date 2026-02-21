@@ -1,0 +1,275 @@
+@prefix code: <http://yawlfoundation.org/code#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ============================================================================
+# INVARIANT SHAPE DEFINITIONS FOR YAWL CODE GENERATION
+# Validates: real_impl ∨ throw, ¬mock, ¬silent_fallback, ¬lie
+# ============================================================================
+
+# Namespace aliases for clarity
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix code: <http://yawlfoundation.org/code#> .
+
+# ============================================================================
+# SHAPE 1: Real Implementation or Throw Exception
+# ============================================================================
+# Invariant Q1: Every method must either implement real logic OR throw
+# UnsupportedOperationException. No empty stubs.
+# ============================================================================
+
+code:RealImplOrThrowShape a sh:NodeShape ;
+    sh:targetClass code:Method ;
+    sh:name "Real Implementation or Throw Exception" ;
+    sh:description
+        "Each method must contain real implementation logic (body length >= 10 chars) " ;
+        "OR throw UnsupportedOperationException. No empty method bodies allowed." ;
+    sh:severity sh:Violation ;
+    sh:sparql [
+        a sh:SPARQLSelectValidator ;
+        sh:message "Method {$this} ({?methodName} in {?className}): "
+                   "Empty body (length {?bodyLen}) without throwing exception at line {?line}" ;
+        sh:select """
+            PREFIX code: <http://yawlfoundation.org/code#>
+            SELECT $this ?className ?methodName ?line ?bodyLen WHERE {
+                $this a code:Method ;
+                      code:belongsTo ?class ;
+                      code:name ?methodName ;
+                      code:lineNumber ?line ;
+                      code:body ?body .
+                ?class code:name ?className .
+                BIND(strlen(?body) AS ?bodyLen)
+                
+                # Violation: body too short (likely empty or stub)
+                FILTER (?bodyLen < 10)
+                
+                # AND doesn't throw UnsupportedOperationException
+                FILTER NOT EXISTS {
+                    $this code:throwsException code:UnsupportedOperationException
+                }
+            }
+            ORDER BY ?className ?methodName
+        """
+    ] .
+
+# ============================================================================
+# SHAPE 2: No Mock/Stub/Fake Objects
+# ============================================================================
+# Invariant Q2: No class or variable names containing mock/stub/fake/demo.
+# All classes must represent real implementations.
+# ============================================================================
+
+code:NoMockObjectsShape a sh:NodeShape ;
+    sh:targetClass code:Class ;
+    sh:name "No Mock/Stub/Fake/Demo Classes" ;
+    sh:description "Class names must not indicate mock, stub, fake, or demo implementations" ;
+    sh:severity sh:Violation ;
+    sh:property [
+        sh:path code:name ;
+        sh:pattern "^(?!Mock|Stub|Fake|Demo)" ;
+        sh:flags "i" ;
+        sh:message "Class name '{?value}' indicates mock/stub implementation (forbidden by invariant Q2)"
+    ] .
+
+code:NoMockVariablesShape a sh:NodeShape ;
+    sh:targetClass code:Variable ;
+    sh:name "No Mock Variables" ;
+    sh:description "Variable names must not indicate mock or test data" ;
+    sh:severity sh:Violation ;
+    sh:sparql [
+        a sh:SPARQLSelectValidator ;
+        sh:message "Variable {?varName} in {?methodName}: name indicates mock/fake/test data" ;
+        sh:select """
+            PREFIX code: <http://yawlfoundation.org/code#>
+            SELECT $this ?varName ?methodName WHERE {
+                $this a code:Variable ;
+                      code:name ?varName ;
+                      code:belongsTo ?method .
+                ?method code:name ?methodName .
+                
+                FILTER regex(?varName, "(mock|fake|test|stub|demo|sample)", "i")
+            }
+        """
+    ] .
+
+# ============================================================================
+# SHAPE 3: No Silent Fallbacks in Exception Handlers
+# ============================================================================
+# Invariant Q3: Catch blocks must NOT silently return fake data.
+# Must: re-throw, log + provide alternative, OR implement real recovery.
+# ============================================================================
+
+code:NoSilentFallbackShape a sh:NodeShape ;
+    sh:targetClass code:CatchBlock ;
+    sh:name "No Silent Fallback to Fake Data" ;
+    sh:description
+        "Exception handlers must not silently return fake/mock/test data. " ;
+        "Must re-throw, log + alternative, or implement real recovery logic." ;
+    sh:severity sh:Violation ;
+    sh:sparql [
+        a sh:SPARQLSelectValidator ;
+        sh:message "Catch block in {?methodName} (line {?line}): "
+                   "silent fallback detected (returns fake/mock/demo without re-throw)" ;
+        sh:select """
+            PREFIX code: <http://yawlfoundation.org/code#>
+            SELECT $this ?methodName ?line WHERE {
+                $this a code:CatchBlock ;
+                      code:body ?body ;
+                      code:lineNumber ?line ;
+                      code:belongsTo ?method .
+                ?method code:name ?methodName .
+                
+                # Violation: returns fake/mock/demo data
+                FILTER regex(?body, "return\\s+(mock|fake|test|sample|demo|Demo|Fake)[A-Za-z0-9()]*", "i")
+                
+                # AND doesn't re-throw exception
+                FILTER NOT EXISTS {
+                    $this code:rethrows ?ex
+                }
+                
+                # AND doesn't log error + alternative
+                FILTER NOT EXISTS {
+                    $this code:logsError code:Error
+                }
+            }
+            ORDER BY ?methodName ?line
+        """
+    ] .
+
+# ============================================================================
+# SHAPE 4: Code Must Match Documentation (No Lies)
+# ============================================================================
+# Invariant Q4: Method behavior must align with javadoc @throws and description.
+# If doc claims throws X, code must throw X. If doc claims behavior Y, code does Y.
+# ============================================================================
+
+code:NoLieShape a sh:NodeShape ;
+    sh:targetClass code:Method ;
+    sh:name "Code Matches Documentation" ;
+    sh:description
+        "Method implementation must match its javadoc contract. " ;
+        "If javadoc @throws declares exception X, code must throw X. " ;
+        "Method behavior must align with description." ;
+    sh:severity sh:Violation ;
+    sh:sparql [
+        a sh:SPARQLSelectValidator ;
+        sh:message "Method {?methodName} in {?className} (line {?line}): "
+                   "Documentation claims 'throws {?docThrows}' but code doesn't throw it" ;
+        sh:select """
+            PREFIX code: <http://yawlfoundation.org/code#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT $this ?className ?methodName ?line ?docThrows WHERE {
+                $this a code:Method ;
+                      code:belongsTo ?class ;
+                      code:name ?methodName ;
+                      code:lineNumber ?line ;
+                      rdfs:comment ?documentation ;
+                      code:body ?body .
+                ?class code:name ?className .
+                
+                # Extract expected exception from javadoc
+                # Pattern: @throws ExceptionType or throws ExceptionType
+                BIND(
+                    REGEX(?documentation, "@throws\\s+([A-Za-z0-9]+Exception)|throws\\s+([A-Za-z0-9]+Exception)", "i")
+                    AS ?docThrows
+                )
+                FILTER BOUND(?docThrows)
+                
+                # Violation: doc mentions exception but code doesn't throw it
+                FILTER NOT EXISTS {
+                    $this code:throwsException ?exception .
+                    FILTER regex(str(?exception), ?docThrows)
+                }
+            }
+            ORDER BY ?className ?methodName
+        """
+    ] .
+
+code:MethodReturnTypeMatchesDocShape a sh:NodeShape ;
+    sh:targetClass code:Method ;
+    sh:name "Return Type Matches Documentation" ;
+    sh:description "Method return type must match what javadoc claims" ;
+    sh:severity sh:Violation ;
+    sh:sparql [
+        a sh:SPARQLSelectValidator ;
+        sh:message "Method {?methodName}: return type mismatch with javadoc" ;
+        sh:select """
+            PREFIX code: <http://yawlfoundation.org/code#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT $this ?methodName WHERE {
+                $this a code:Method ;
+                      code:name ?methodName ;
+                      code:returnType ?actualType ;
+                      rdfs:comment ?documentation .
+                
+                # Extract @return statement from javadoc
+                BIND(
+                    REGEX(?documentation, "@return\\s+([A-Za-z0-9<>]+)", "i")
+                    AS ?docType
+                )
+                FILTER BOUND(?docType)
+                
+                # Violation: documented type doesn't match actual return type
+                FILTER (!regex(str(?actualType), ?docType, "i"))
+            }
+        """
+    ] .
+
+# ============================================================================
+# METADATA SHAPES (for compliance tracking)
+# ============================================================================
+
+code:MethodMetadataShape a sh:NodeShape ;
+    sh:targetClass code:Method ;
+    sh:name "Method Metadata Completeness" ;
+    sh:description "Method must have essential metadata for validation" ;
+    sh:property [
+        sh:path code:name ;
+        sh:minCount 1 ;
+        sh:message "Method missing name"
+    ] ;
+    sh:property [
+        sh:path code:body ;
+        sh:minCount 1 ;
+        sh:message "Method missing body"
+    ] ;
+    sh:property [
+        sh:path code:lineNumber ;
+        sh:minCount 1 ;
+        sh:message "Method missing line number"
+    ] ;
+    sh:property [
+        sh:path code:belongsTo ;
+        sh:minCount 1 ;
+        sh:message "Method not associated with class"
+    ] .
+
+code:ClassMetadataShape a sh:NodeShape ;
+    sh:targetClass code:Class ;
+    sh:name "Class Metadata Completeness" ;
+    sh:description "Class must have essential metadata" ;
+    sh:property [
+        sh:path code:name ;
+        sh:minCount 1 ;
+        sh:message "Class missing name"
+    ] ;
+    sh:property [
+        sh:path code:package ;
+        sh:minCount 1 ;
+        sh:message "Class missing package"
+    ] .
+
+# ============================================================================
+# SHAPE COLLECTION FOR BATCH PROCESSING
+# ============================================================================
+
+code:AllInvariantShapes a rdf:Bag ;
+    rdf:_1 code:RealImplOrThrowShape ;
+    rdf:_2 code:NoMockObjectsShape ;
+    rdf:_3 code:NoMockVariablesShape ;
+    rdf:_4 code:NoSilentFallbackShape ;
+    rdf:_5 code:NoLieShape ;
+    rdf:_6 code:MethodReturnTypeMatchesDocShape ;
+    rdf:_7 code:MethodMetadataShape ;
+    rdf:_8 code:ClassMetadataShape .
