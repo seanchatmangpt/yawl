@@ -105,6 +105,16 @@ public final class InterfaceXMetrics {
     }
 
     /**
+     * Resets the singleton instance (for testing only).
+     * This method is intentionally package-private for test access.
+     */
+    static void resetSingleton() {
+        synchronized (INSTANCE_LOCK) {
+            instance = null;
+        }
+    }
+
+    /**
      * Records a notification attempt.
      *
      * @param commandName the command name for tagging

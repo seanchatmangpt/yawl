@@ -540,6 +540,7 @@ public final class InterfaceMetrics {
         interfaceXTotalRetries.reset();
         interfaceXTotalFailures.reset();
         interfaceXTotalDeadLetters.reset();
+        enabled = true;
         operationStartTimes.clear();
         _logger.debug("InterfaceMetrics reset");
     }

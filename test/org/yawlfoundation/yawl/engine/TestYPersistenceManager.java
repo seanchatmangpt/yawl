@@ -529,14 +529,32 @@ class TestYPersistenceManager {
         if (_specification == null || !_pmgr.isEnabled()) {
             return;
         }
-        _engine.loadSpecification(_specification);
-        _caseID = _engine.startCase(
-                _specification.getSpecificationID(), null, null, null, null, null, false);
-        assertNotNull(_caseID, "Case must be started for round-trip test");
 
-        // Close any pending session from startCase() to ensure all changes are committed
-        // before we start a new transaction for querying
-        _pmgr.closeSession();
+        // Start a transaction for case creation and persistence.
+        // YEngine.startCase() requires an active transaction to persist the YNetRunner
+        // and YIdentifier objects.
+        _pmgr.startTransaction();
+        try {
+            _engine.loadSpecification(_specification);
+            _caseID = _engine.startCase(
+                    _specification.getSpecificationID(), null, null, null, null, null, false);
+            assertNotNull(_caseID, "Case must be started for round-trip test");
+
+            // Flush any pending changes to the database before commit
+            Session session = _pmgr.getSession();
+            if (session != null) {
+                session.flush();
+            }
+
+            _pmgr.commit();
+        } catch (Exception e) {
+            try {
+                _pmgr.rollbackTransaction();
+            } catch (Exception rollbackEx) {
+                // Ignore rollback errors
+            }
+            throw e;
+        }
 
         // Now query in a fresh transaction to verify persistence
         _pmgr.startTransaction();
