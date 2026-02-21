@@ -140,7 +140,11 @@ public class YWorkItemRepository {
         Set<YWorkItem> removedSet = new HashSet<>();
         for (String workItemID : itemsToRemove) {
             YWorkItem item = _itemMap.remove(workItemID);
-            if (item != null) removedSet.add(item);
+            if (item != null) {
+                // P3: keep status index in sync with map
+                _statusIndex.remove(workItemID);
+                removedSet.add(item);
+            }
         }
         return removedSet;
     }

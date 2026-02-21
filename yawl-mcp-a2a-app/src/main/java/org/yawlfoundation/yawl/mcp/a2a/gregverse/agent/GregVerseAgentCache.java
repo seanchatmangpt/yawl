@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 
 /**
  * Thread-safe cache for Greg-Verse agent instances.
@@ -63,6 +62,14 @@ public class GregVerseAgentCache {
     private volatile boolean cleared = false;
 
     /**
+     * Functional interface for agent factory that can throw checked exceptions.
+     */
+    @FunctionalInterface
+    public interface AgentFactory {
+        GregVerseAgent create() throws Exception;
+    }
+
+    /**
      * Gets a cached agent or creates one using the provided factory.
      *
      * <p>This method is thread-safe and uses optimistic locking. If the agent
@@ -75,7 +82,7 @@ public class GregVerseAgentCache {
      * @throws IllegalArgumentException if agentId is null or empty
      * @throws Exception if factory throws an exception
      */
-    public GregVerseAgent getOrCreate(String agentId, Function<Void, GregVerseAgent> factory) {
+    public GregVerseAgent getOrCreate(String agentId, AgentFactory factory) throws Exception {
         if (agentId == null || agentId.isEmpty()) {
             throw new IllegalArgumentException("agentId cannot be null or empty");
         }
@@ -111,7 +118,7 @@ public class GregVerseAgentCache {
             }
 
             LOGGER.info("Creating and caching agent: {}", agentId);
-            GregVerseAgent agent = factory.apply(null);
+            GregVerseAgent agent = factory.create();
             Objects.requireNonNull(agent, "factory returned null");
 
             cache.put(agentId, agent);

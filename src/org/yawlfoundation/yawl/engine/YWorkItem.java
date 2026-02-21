@@ -185,11 +185,11 @@ public class YWorkItem {
                                 throws YPersistenceException {
         _engine = YEngine.getInstance();
         _workItemID = workItemID;
-        addToRepository();
+        _status = status ;                          // must be set BEFORE addToRepository()
+        addToRepository();                          // status index requires _status to be non-null
         set_thisID(_workItemID.toString() + "!" + _workItemID.getUniqueID());
         _specID = specificationID;
         _allowsDynamicCreation = allowsDynamicInstanceCreation;
-        _status = status ;
     }
 
 

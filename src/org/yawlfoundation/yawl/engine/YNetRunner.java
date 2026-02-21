@@ -796,7 +796,11 @@ public class YNetRunner {
 
                         // if the task is not (or no longer) an enabled transition, and it
                         // has been previously enabled by the engine, then it must be withdrawn
-                        if (_enabledTasks.contains(task)) {
+                        // BUT: only withdraw tasks that were NOT just fired in this cycle.
+                        // A task that just finished firing will still have tokens being removed,
+                        // so t_enabled() returning false is expected and should not trigger withdrawal.
+                        // Fired tasks are marked with _i (an identifier), so t_isBusy() returns true.
+                        if (_enabledTasks.contains(task) && !task.t_isBusy()) {
                             withdrawEnabledTask(task, pmgr);
                         }
                     }

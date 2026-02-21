@@ -2862,6 +2862,9 @@
         <!-- ================================================================ -->
         <profile>
             <id>integration-test</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+            </properties>
             <build>
                 <plugins>
                     <plugin>

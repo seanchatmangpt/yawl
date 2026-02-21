@@ -296,7 +296,7 @@ public class GregVerseSimulation {
 
         try {
             // Use cache to avoid agent reconstruction
-            return agentCache.getOrCreate(agentId, unused -> supplier.get());
+            return agentCache.getOrCreate(agentId, supplier::get);
         } catch (Exception e) {
             throw new AgentInitializationException(
                 "Failed to instantiate agent " + agentId + ": " + e.getMessage(), e);

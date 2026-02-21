@@ -397,9 +397,9 @@ public class GregVerseOrchestrator {
                     try {
                         StepResult result = executeStep(step, context, execution);
                         results.put(step, result);
-                        if (!result.success()) {
+                        if (!result.isSuccess()) {
                             failures.add(new ExecutionException(
-                                "Step " + step.getName() + " failed: " + result.error(),
+                                "Step " + step.getName() + " failed: " + result.getError(),
                                 null
                             ));
                         }
@@ -413,18 +413,19 @@ public class GregVerseOrchestrator {
             }
 
             // Join with timeout - cancels remaining tasks on first failure
-            long timeoutMs = config.getTimeoutDuration().toMillis();
+            long timeoutMs = timeout.toMillis();
             scope.joinUntil(Instant.now().plusMillis(timeoutMs));
+            scope.throwIfFailed();
 
         } catch (TimeoutException e) {
             LOGGER.error("Parallel saga execution timeout after {}ms",
-                config.getTimeoutDuration().toMillis());
+                timeout.toMillis());
             failures.add(new ExecutionException("Execution timeout", e));
-        } catch (StructuredTaskScope.ShutdownException e) {
-            LOGGER.warn("Parallel saga execution was shutdown due to step failure");
+        } catch (ExecutionException e) {
+            LOGGER.warn("Parallel saga execution failed: {}", e.getMessage());
             // This is expected when a step fails - it triggers shutdown
             if (e.getCause() != null) {
-                failures.add(new ExecutionException("Structured task scope failure", e.getCause()));
+                failures.add(new ExecutionException("Step execution failed", e.getCause()));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
