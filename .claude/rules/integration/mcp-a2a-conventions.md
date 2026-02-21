@@ -8,11 +8,15 @@ paths:
 
 # MCP & A2A Integration Rules
 
-## MCP Server (6 Tools)
-- Tools: launch_case, cancel_case, get_case_state, list_specifications, get_workitems, complete_workitem
-- Protocol version: 2024-11-05 | SDK: 1.0.0-RC1
-- Transport: STDIO (default) or HTTP (via HttpTransportProvider)
+## MCP Server (15 Tools)
+- Tools: yawl_launch_case, yawl_cancel_case, yawl_get_case_status, yawl_list_specifications, yawl_get_specification, yawl_upload_specification, yawl_get_work_items, yawl_get_work_items_for_case, yawl_checkout_work_item, yawl_checkin_work_item, yawl_get_running_cases, yawl_get_case_data, yawl_suspend_case, yawl_resume_case, yawl_skip_work_item
+- Resources: 3 static (yawl://specifications, yawl://cases, yawl://workitems) + 3 templates (yawl://cases/{caseId}, yawl://cases/{caseId}/data, yawl://workitems/{workItemId})
+- Prompts: 4 (workflow_analysis, task_completion_guide, troubleshooting_guide, design_review)
+- Completions: 3 (workflow_analysis, task_completion_guide, case_resource)
+- Protocol version: 2025-11-25 | SDK: 0.18.1 (official v1.0.0 GA not yet released)
+- Transport: STDIO (recommended) via StdioServerTransportProvider
 - Entry: `org.yawlfoundation.yawl.integration.mcp.YawlMcpServer`
+- Session handle: Dynamic via Supplier<String> to support session refresh on expiry
 
 ## A2A Server (6 Skills)
 - Skills: introspect, generate, build, test, commit, upgrade

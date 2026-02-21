@@ -179,15 +179,10 @@ public class HttpTransportProvider {
      * This would typically use a web framework like Spring Boot or Netty.
      */
     private void startServer() {
-        // In a real implementation, this would start an HTTP server
-        // For now, we'll just log the start
-        _logger.info("HTTP server would start on port {}", httpPort);
-
-        // Example endpoint implementations would go here:
-        // POST /mcp/call_tool
-        // POST /mcp/subscribe
-        // GET /mcp/session/{id}
-        // SSE /mcp/stream/{id}
+        throw new UnsupportedOperationException(
+            "HTTP transport is not yet implemented. Use STDIO transport via StdioServerTransportProvider instead. " +
+            "HTTP transport requires implementation of McpServerTransportProvider from MCP SDK."
+        );
     }
 
     /**
@@ -281,11 +276,9 @@ public class HttpTransportProvider {
          * Handles an MCP method call.
          */
         private JsonNode handleMethod(String method, JsonNode params) throws IOException {
-            // In a real implementation, this would route to the appropriate MCP method
-            // For now, we'll return a simple response
-            return jsonMapper.createObjectNode()
-                .put("result", "Method not implemented: " + method)
-                .put("error", "Method not implemented");
+            throw new UnsupportedOperationException(
+                "HTTP transport does not yet implement MCP method routing. Use STDIO transport instead."
+            );
         }
     }
 

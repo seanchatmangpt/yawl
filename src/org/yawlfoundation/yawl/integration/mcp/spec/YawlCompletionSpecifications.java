@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.integration.mcp.spec;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
@@ -43,24 +44,24 @@ public class YawlCompletionSpecifications {
      * Creates all completion specifications backed by real YAWL engine calls.
      *
      * @param client the YAWL InterfaceB client connected to the engine
-     * @param sessionHandle the authenticated YAWL session handle
+     * @param sessionHandleSupplier.get()Supplier supplier of the authenticated YAWL session handle
      * @return list of sync completion specifications for MCP registration
      */
     public static List<McpServerFeatures.SyncCompletionSpecification> createAll(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier.get()Supplier) {
         if (client == null) {
             throw new IllegalArgumentException(
                 "InterfaceB_EnvironmentBasedClient is required to create YAWL MCP completions");
         }
-        if (sessionHandle == null || sessionHandle.isEmpty()) {
+        if (sessionHandleSupplier.get()Supplier == null) {
             throw new IllegalArgumentException(
-                "A valid YAWL session handle is required to create YAWL MCP completions");
+                "sessionHandleSupplier.get()Supplier is required - provide a Supplier that returns the active session handle");
         }
 
         List<McpServerFeatures.SyncCompletionSpecification> completions = new ArrayList<>();
-        completions.add(createWorkflowAnalysisCompletion(client, sessionHandle));
-        completions.add(createTaskCompletionGuideCompletion(client, sessionHandle));
-        completions.add(createCaseResourceCompletion(client, sessionHandle));
+        completions.add(createWorkflowAnalysisCompletion(client, sessionHandleSupplier.get()Supplier.get()));
+        completions.add(createTaskCompletionGuideCompletion(client, sessionHandleSupplier.get()Supplier.get()));
+        completions.add(createCaseResourceCompletion(client, sessionHandleSupplier.get()Supplier.get()));
         return completions;
     }
 
@@ -76,14 +77,14 @@ public class YawlCompletionSpecifications {
      * identifiers and returns those matching the user's partial input.
      */
     private static McpServerFeatures.SyncCompletionSpecification createWorkflowAnalysisCompletion(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier.get()Supplier) {
 
         return new McpServerFeatures.SyncCompletionSpecification(
             new McpSchema.PromptReference("workflow_analysis"),
             (exchange, request) -> {
                 try {
                     String partial = request.argument().value();
-                    List<SpecificationData> specs = client.getSpecificationList(sessionHandle);
+                    List<SpecificationData> specs = client.getSpecificationList(sessionHandleSupplier.get());
 
                     List<String> matches = new ArrayList<>();
                     if (specs != null) {
@@ -127,14 +128,14 @@ public class YawlCompletionSpecifications {
      * returns those matching the user's partial input.
      */
     private static McpServerFeatures.SyncCompletionSpecification createTaskCompletionGuideCompletion(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier.get()Supplier) {
 
         return new McpServerFeatures.SyncCompletionSpecification(
             new McpSchema.PromptReference("task_completion_guide"),
             (exchange, request) -> {
                 try {
                     String partial = request.argument().value();
-                    List<WorkItemRecord> items = client.getCompleteListOfLiveWorkItems(sessionHandle);
+                    List<WorkItemRecord> items = client.getCompleteListOfLiveWorkItems(sessionHandleSupplier.get());
 
                     List<String> matches = new ArrayList<>();
                     if (items != null) {
@@ -178,14 +179,14 @@ public class YawlCompletionSpecifications {
      * input. Case IDs are parsed from the engine's XML response.
      */
     private static McpServerFeatures.SyncCompletionSpecification createCaseResourceCompletion(
-            InterfaceB_EnvironmentBasedClient client, String sessionHandle) {
+            InterfaceB_EnvironmentBasedClient client, Supplier<String> sessionHandleSupplier.get()Supplier) {
 
         return new McpServerFeatures.SyncCompletionSpecification(
             new McpSchema.ResourceReference("yawl://cases/{caseId}"),
             (exchange, request) -> {
                 try {
                     String partial = request.argument().value();
-                    String casesXml = client.getAllRunningCases(sessionHandle);
+                    String casesXml = client.getAllRunningCases(sessionHandleSupplier.get());
 
                     List<String> caseIds = parseCaseIdsFromXml(casesXml);
 

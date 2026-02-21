@@ -268,8 +268,7 @@
                         <!-- Claude integration - StructuredTaskScope API issue -->
                         <exclude>**/claude/**</exclude>
 
-                        <!-- MCP Server - JacksonMcpJsonMapper not in SDK 0.18.0 -->
-                        <exclude>**/mcp/YawlMcpServer.java</exclude>
+                        <!-- MCP SDK classes - selectively excluded below by path -->
                         <exclude>**/mcp/sdk/**</exclude>
 
                         <!-- OpenTelemetry config requires OTEL SDK jars not locally cached -->
@@ -317,7 +316,6 @@
                         <!-- Exclude classes that depend on ZaiFunctionService -->
                         <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
                         <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
-                        <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
 
                         <!-- Memory package - sealed class issues (pre-existing) -->
                         <!-- memory package - re-enabled for stress testing -->
