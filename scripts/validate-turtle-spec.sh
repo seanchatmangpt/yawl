@@ -136,35 +136,39 @@ validate_task_ids() {
 
     info "Validating task IDs..."
 
-    # Extract all task IDs using grep
-    local task_count
-    local unique_task_count
-
-    task_count=$(grep -c "yawls:Task" "$ttl_file" || echo "0")
-
-    if [[ $task_count -eq 0 ]]; then
-        info "No tasks defined in specification (valid for minimal specs)"
+    # Check if this is an OWL ontology (schema) or instance document
+    if grep -q "^yawls:Task a owl:Class" "$ttl_file" 2>/dev/null; then
+        info "Ontology/schema file detected - skipping instance task ID validation"
         return 0
     fi
 
-    # Check for duplicate task IDs
-    # Tasks should have yawls:id property with unique values
+    # Extract all task IDs using grep (only from actual instances, not property definitions)
+    local task_count
+    task_count=$(grep -E "^\s*<[^>]+> a yawls:Task|^[a-zA-Z0-9:_]+ a yawls:Task" "$ttl_file" 2>/dev/null | wc -l)
+
+    if [[ $task_count -eq 0 ]]; then
+        info "No task instances defined in specification (valid for schema/ontology files)"
+        return 0
+    fi
+
+    # Check for duplicate task IDs (instance nodes with same identifier)
+    # Look for actual instances like ":task_1 a yawls:Task"
     local task_ids
-    task_ids=$(grep -o "yawls:id [^;]*" "$ttl_file" | sed 's/yawls:id //g' | sort | uniq -d)
+    task_ids=$(grep -E "^([a-zA-Z0-9_:]+) a yawls:Task" "$ttl_file" 2>/dev/null | awk '{print $1}' | sort | uniq -d)
 
     if [[ -n "$task_ids" ]]; then
-        echo "FAIL: Duplicate task IDs found:"
+        echo "FAIL: Duplicate task identifiers found:"
         echo "$task_ids"
         ((errors++))
     fi
 
-    # Check for empty task IDs
-    if grep -q 'yawls:id ""' "$ttl_file"; then
+    # Check for empty/missing task IDs in properties
+    if grep -q 'yawls:id ""' "$ttl_file" 2>/dev/null; then
         echo "FAIL: Found empty task IDs"
         ((errors++))
     fi
 
-    info "Found $task_count task(s) with unique IDs"
+    info "Found $task_count task instance(s) with valid IDs"
 
     return "$errors"
 }

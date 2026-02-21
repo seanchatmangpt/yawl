@@ -123,20 +123,13 @@ validate_yawl_structure() {
 
     info "Validating YAWL workflow structure..."
 
-    # Count critical workflow elements
-    local spec_count
-    local net_count
-    local task_count
-    local condition_count
+    # Count critical workflow elements (using tr to strip whitespace safely)
+    local spec_count net_count task_count condition_count
 
-    spec_count=$(grep -c "<specification\|<Specification" "$yawl_file" 2>/dev/null || echo "0")
-    spec_count=$(echo "$spec_count" | xargs)
-    net_count=$(grep -c "<net\|<Net" "$yawl_file" 2>/dev/null || echo "0")
-    net_count=$(echo "$net_count" | xargs)
-    task_count=$(grep -c "<task\|<Task" "$yawl_file" 2>/dev/null || echo "0")
-    task_count=$(echo "$task_count" | xargs)
-    condition_count=$(grep -c "<condition\|<Condition" "$yawl_file" 2>/dev/null || echo "0")
-    condition_count=$(echo "$condition_count" | xargs)
+    spec_count=$(grep -c "<specification\|<Specification" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
+    net_count=$(grep -c "<net\|<Net" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
+    task_count=$(grep -c "<task\|<Task" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
+    condition_count=$(grep -c "<condition\|<Condition" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
 
     info "Found: $spec_count specification(s), $net_count net(s), $task_count task(s), $condition_count condition(s)"
 
@@ -151,8 +144,7 @@ validate_yawl_structure() {
     # If we have tasks, validate they have required attributes
     if [[ $task_count -gt 0 ]]; then
         local task_ids_missing
-        task_ids_missing=$(grep "<task\|<Task" "$yawl_file" 2>/dev/null | grep -v "id=" | wc -l || echo "0")
-        task_ids_missing=$(echo "$task_ids_missing" | xargs)
+        task_ids_missing=$(grep "<task\|<Task" "$yawl_file" 2>/dev/null | grep -v "id=" | wc -l | tr -d ' \n' || echo "0")
 
         if [[ $task_ids_missing -gt 0 ]]; then
             echo "WARN: Found $task_ids_missing task(s) without id attribute"
