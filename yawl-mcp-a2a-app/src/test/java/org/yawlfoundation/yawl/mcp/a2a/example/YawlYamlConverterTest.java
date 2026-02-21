@@ -434,7 +434,7 @@ class YawlYamlConverterTest {
         @DisplayName("WCP-2: Branch tasks without explicit join/split default to xor")
         void shouldDefaultBranchTasksToXorJoinSplit() {
             String xml = converter.convertToXml(PARALLEL_YAML);
-            int branchAStart = xml.indexOf("id=\"BranchA\"");
+            int branchAStart = xml.indexOf("<task id=\"BranchA\"");
             int branchAEnd = xml.indexOf("</task>", branchAStart);
             String branchAXml = xml.substring(branchAStart, branchAEnd);
             assertTrue(branchAXml.contains("join code=\"xor\""),
