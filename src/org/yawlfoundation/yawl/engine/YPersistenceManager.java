@@ -580,6 +580,11 @@ public class YPersistenceManager {
      * arbitrary result shapes. Callers that know the result type should cast
      * appropriately. Returns {@code null} if persistence is disabled.</p>
      *
+     * <p>Hibernate 6.x throws {@link org.hibernate.query.sqm.UnknownEntityException}
+     * (a subclass of {@link IllegalArgumentException}) for invalid entity names.
+     * This is caught and wrapped in {@link YPersistenceException} for consistent
+     * error handling across all persistence operations.</p>
+     *
      * @param queryString the HQL query string
      * @return a TypedQuery for the given HQL string, or {@code null} if disabled
      * @throws YPersistenceException if the query cannot be created
@@ -592,6 +597,9 @@ public class YPersistenceManager {
                         getSession().createQuery(queryString, Object.class);
                 return query;
             } catch (HibernateException e) {
+                throw new YPersistenceException("Failure to create Hibernate query object", e);
+            } catch (IllegalArgumentException e) {
+                // Hibernate 6.x: UnknownEntityException extends IllegalArgumentException
                 throw new YPersistenceException("Failure to create Hibernate query object", e);
             }
         }
@@ -623,6 +631,9 @@ public class YPersistenceManager {
             return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
             throw new YPersistenceException("Error executing query", he);
+        } catch (IllegalArgumentException iae) {
+            // Hibernate 6.x: UnknownEntityException extends IllegalArgumentException
+            throw new YPersistenceException("Error executing query", iae);
         }
     }
 
@@ -655,12 +666,15 @@ public class YPersistenceManager {
      */
     public List<?> getObjectsForClassWhere(String className, String whereClause)
             throws YPersistenceException {
+        String hql = String.format("from %s as tbl where tbl.%s", className, whereClause);
+        TypedQuery<Object> query = createQuery(hql);
         try {
-            String hql = String.format("from %s as tbl where tbl.%s", className, whereClause);
-            TypedQuery<Object> query = createQuery(hql);
             return (query != null) ? query.getResultList() : null;
         } catch (HibernateException he) {
             throw new YPersistenceException("Error reading data for class: " + className, he);
+        } catch (IllegalArgumentException iae) {
+            // Hibernate 6.x: UnknownEntityException extends IllegalArgumentException
+            throw new YPersistenceException("Error reading data for class: " + className, iae);
         }
     }
 

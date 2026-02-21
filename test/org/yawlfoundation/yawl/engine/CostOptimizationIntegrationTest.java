@@ -336,6 +336,10 @@ public class CostOptimizationIntegrationTest {
             assertTrue(latch.await(30, TimeUnit.SECONDS),
                       "All tasks should complete");
 
+            // Ensure all batches are flushed before checking metrics
+            Thread.sleep(150);  // Wait for scheduled flush to complete
+            batcher.flushAllBatches();
+
             // Verify combined metrics
             VirtualThreadPool.CostMetrics vtMetrics = pool.getCostMetrics();
             WorkItemBatcher.BatchMetrics batchMetrics = batcher.getMetrics();

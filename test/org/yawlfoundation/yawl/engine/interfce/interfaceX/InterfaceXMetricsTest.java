@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.engine.interfce.metrics.InterfaceMetrics;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,21 +36,31 @@ class InterfaceXMetricsTest {
 
     @BeforeEach
     void setUp() {
-        resetMetricsSingleton();
+        resetMetricsSingletons();
     }
 
     @AfterEach
     void tearDown() {
-        resetMetricsSingleton();
+        resetMetricsSingletons();
     }
 
-    private void resetMetricsSingleton() {
+    private void resetMetricsSingletons() {
         try {
             var field = InterfaceXMetrics.class.getDeclaredField("instance");
             field.setAccessible(true);
             field.set(null, null);
+            if (InterfaceXMetrics.isInitialized()) {
+                throw new RuntimeException("Failed to reset InterfaceXMetrics.instance via reflection");
+            }
         } catch (Exception e) {
-            // Ignore if reflection fails
+            throw new RuntimeException("Failed to reset InterfaceXMetrics singleton", e);
+        }
+        try {
+            var field = InterfaceMetrics.class.getDeclaredField("_instance");
+            field.setAccessible(true);
+            field.set(null, null);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to reset InterfaceMetrics singleton", e);
         }
     }
 

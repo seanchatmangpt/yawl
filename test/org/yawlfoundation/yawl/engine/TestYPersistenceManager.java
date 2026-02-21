@@ -212,6 +212,12 @@ class TestYPersistenceManager {
         } catch (YPersistenceException e) {
             assertNotNull(e.getMessage(), "YPersistenceException must have a message");
             // The exception message may mention query error or Hibernate problem
+            // Rollback the transaction to clean up state for subsequent tests
+            try {
+                _pmgr.rollbackTransaction();
+            } catch (Exception rollbackEx) {
+                // Ignore rollback errors; transaction may already be in rollback-only state
+            }
         }
     }
 
@@ -528,6 +534,11 @@ class TestYPersistenceManager {
                 _specification.getSpecificationID(), null, null, null, null, null, false);
         assertNotNull(_caseID, "Case must be started for round-trip test");
 
+        // Close any pending session from startCase() to ensure all changes are committed
+        // before we start a new transaction for querying
+        _pmgr.closeSession();
+
+        // Now query in a fresh transaction to verify persistence
         _pmgr.startTransaction();
         try {
             List<?> runners = _pmgr.getObjectsForClass("YNetRunner");
