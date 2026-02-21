@@ -45,6 +45,13 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $*" >&2
 }
 
+log_debug() {
+    # Debug logging (silent unless VERBOSE=1)
+    if [[ "${VERBOSE:-0}" == "1" ]]; then
+        echo -e "${BLUE}[DEBUG]${NC} $*"
+    fi
+}
+
 # ── Check Rust toolchain ──────────────────────────────────────────────────
 
 log_info "Checking Rust toolchain..."
@@ -99,62 +106,56 @@ fi
 
 # ── Install ggen CLI ──────────────────────────────────────────────────────
 
-log_info "Installing ggen CLI from crates.io..."
+log_info "Setting up ggen CLI wrapper..."
 
-# Ensure cargo is in PATH
-if [[ ! -f "$HOME/.cargo/env" ]]; then
-    log_error "cargo environment not properly initialized"
-    exit 2
-fi
-# shellcheck source=/dev/null
-source "$HOME/.cargo/env"
+# Create ggen command in scripts directory (Python-based wrapper)
+GGEN_WRAPPER="${REPO_ROOT}/scripts/ggen-wrapper.py"
+GGEN_COMMAND="${REPO_ROOT}/scripts/ggen"
 
-if ! command -v cargo &> /dev/null; then
-    log_error "cargo not found even after Rust install"
+if [[ ! -f "$GGEN_WRAPPER" ]]; then
+    log_error "ggen-wrapper.py not found at: ${GGEN_WRAPPER}"
     exit 2
 fi
 
-# Check if ggen is already installed
-if command -v ggen &> /dev/null; then
-    GGEN_VERSION=$(ggen --version 2>&1 || true)
-    log_success "ggen already installed: ${GGEN_VERSION}"
-else
-    log_info "ggen not found. Installing via cargo..."
-    if ! cargo install ggen-cli 2>&1 | tail -5; then
-        log_error "Failed to install ggen-cli (network error or crates.io unavailable)"
+log_debug "ggen wrapper found: ${GGEN_WRAPPER}"
+
+# Make ggen command executable
+if [[ ! -x "$GGEN_COMMAND" ]]; then
+    log_info "Making ggen command executable..."
+    chmod +x "$GGEN_COMMAND"
+fi
+
+# Verify Python dependencies
+log_info "Verifying Python dependencies..."
+
+if ! python3 -c "import rdflib" 2>/dev/null; then
+    log_warn "rdflib not found. Installing via pip..."
+    if ! python3 -m pip install rdflib >/dev/null 2>&1; then
+        log_error "Failed to install rdflib"
         exit 1
     fi
-
-    # Verify installation
-    if ! command -v ggen &> /dev/null; then
-        log_error "ggen installation verification failed"
-        exit 2
-    fi
-
-    GGEN_VERSION=$(ggen --version 2>&1 || true)
-    log_success "ggen installed: ${GGEN_VERSION}"
+    log_success "rdflib installed"
 fi
 
-# ── Create ggen workspace ─────────────────────────────────────────────────
+if ! python3 -c "import jinja2" 2>/dev/null; then
+    log_warn "jinja2 not found. Installing via pip..."
+    if ! python3 -m pip install jinja2 >/dev/null 2>&1; then
+        log_error "Failed to install jinja2"
+        exit 1
+    fi
+    log_success "jinja2 installed"
+fi
 
-WORKSPACE_DIR="${REPO_ROOT}/ggen-workspace"
+# Add scripts directory to PATH for this session
+export PATH="${REPO_ROOT}/scripts:${PATH}"
 
-if [[ -d "$WORKSPACE_DIR" ]]; then
-    log_warn "ggen workspace already exists at: ${WORKSPACE_DIR}"
+# Verify ggen is accessible
+if command -v ggen &> /dev/null; then
+    GGEN_VERSION=$(ggen --version 2>&1 || true)
+    log_success "ggen wrapper ready: ${GGEN_VERSION}"
 else
-    log_info "Creating ggen workspace at: ${WORKSPACE_DIR}"
-
-    if ! ggen new yawl-workflows --output-dir "${WORKSPACE_DIR}" 2>&1 | tail -5; then
-        log_warn "ggen workspace creation had issues, but may be partial"
-        # Don't fail here—workspace may be partially initialized
-    fi
-
-    if [[ ! -d "$WORKSPACE_DIR" ]]; then
-        log_error "ggen workspace creation failed"
-        exit 2
-    fi
-
-    log_success "ggen workspace created: ${WORKSPACE_DIR}"
+    log_error "ggen command not accessible after setup"
+    exit 2
 fi
 
 # ── Verify ggen CLI ───────────────────────────────────────────────────────

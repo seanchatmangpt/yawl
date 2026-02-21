@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# ggen — Shell wrapper for Python-based ggen implementation
+#
+# Provides command-line interface compatible with ggen CLI.
+# Delegates to ggen-wrapper.py for RDF + template processing.
+#
+# Usage:
+#   ggen --version
+#   ggen generate --template <file> --input <file> --output <file>
+#
+# ==============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WRAPPER_SCRIPT="${SCRIPT_DIR}/ggen-wrapper.py"
+
+# Check if Python wrapper exists
+if [[ ! -f "$WRAPPER_SCRIPT" ]]; then
+    echo "ERROR: ggen-wrapper.py not found at: $WRAPPER_SCRIPT" >&2
+    exit 2
+fi
+
+# Delegate to Python wrapper
+python3 "$WRAPPER_SCRIPT" "$@"
