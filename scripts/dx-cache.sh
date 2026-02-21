@@ -93,8 +93,8 @@ if [[ "$COMMAND" == "status" ]]; then
             # Check if source has newer files than cache
             SOURCE_DIR="${REPO_ROOT}/${mod}/src"
             if [[ -d "$SOURCE_DIR" ]]; then
-                NEWEST_SOURCE=$(find "$SOURCE_DIR" -type f -exec stat -f %m {} \; 2>/dev/null | sort -rn | head -1 || echo "0")
-                NEWEST_CACHE=$(find "$CACHE_MOD_DIR" -type f -exec stat -f %m {} \; 2>/dev/null | sort -rn | head -1 || echo "0")
+                NEWEST_SOURCE=$(find "$SOURCE_DIR" -type f -exec stat -c %Y {} \; 2>/dev/null | sort -rn | head -1 || echo "0")
+                NEWEST_CACHE=$(find "$CACHE_MOD_DIR" -type f -exec stat -c %Y {} \; 2>/dev/null | sort -rn | head -1 || echo "0")
 
                 if [[ "$NEWEST_SOURCE" -gt "$NEWEST_CACHE" ]]; then
                     printf "%-25s %10s %15s\n" "$mod" "$(format_size $SIZE)" "STALE"

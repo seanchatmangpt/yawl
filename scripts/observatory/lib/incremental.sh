@@ -132,7 +132,7 @@ get_newest_mtime() {
     for path in "$@"; do
         if [[ -e "${REPO_ROOT}/${path}" ]]; then
             local mtime
-            mtime=$(stat -f %m "${REPO_ROOT}/${path}" 2>/dev/null || stat -c %Y "${REPO_ROOT}/${path}" 2>/dev/null || echo "0")
+            mtime=$(stat -c %Y "${REPO_ROOT}/${path}" 2>/dev/null || stat -f %m "${REPO_ROOT}/${path}" 2>/dev/null || echo "0")
             [[ "$mtime" -gt "$newest" ]] && newest="$mtime"
         fi
     done
@@ -143,7 +143,7 @@ get_newest_mtime() {
 get_output_mtime() {
     local output_file="$1"
     if [[ -f "$output_file" ]]; then
-        stat -f %m "$output_file" 2>/dev/null || stat -c %Y "$output_file" 2>/dev/null || echo "0"
+        stat -c %Y "$output_file" 2>/dev/null || stat -f %m "$output_file" 2>/dev/null || echo "0"
     else
         echo "0"
     fi
@@ -176,14 +176,14 @@ needs_regeneration() {
             while IFS= read -r file; do
                 [[ -z "$file" ]] && continue
                 local file_mtime
-                file_mtime=$(stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo "0")
+                file_mtime=$(stat -c %Y "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null || echo "0")
                 if [[ "$file_mtime" -gt "$output_mtime" ]]; then
                     return 0
                 fi
             done < <(eval "find ${REPO_ROOT}/${input} -type f 2>/dev/null" | head -100)
         elif [[ -e "$input_path" ]]; then
             local input_mtime
-            input_mtime=$(stat -f %m "$input_path" 2>/dev/null || stat -c %Y "$input_path" 2>/dev/null || echo "0")
+            input_mtime=$(stat -c %Y "$input_path" 2>/dev/null || stat -f %m "$input_path" 2>/dev/null || echo "0")
             if [[ "$input_mtime" -gt "$output_mtime" ]]; then
                 return 0
             fi
