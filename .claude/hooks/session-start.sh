@@ -4,10 +4,14 @@ set -euo pipefail
 # SessionStart hook for YAWL in Claude Code Web
 # This hook:
 # 1. Verifies Maven is available (for build system)
-# 2. Validates Java 25 requirement (YAWL v5.2)
-# 3. Configures H2 database for ephemeral testing
-# 4. Configures Maven dependency caching
-# 5. Only runs in remote Claude Code Web environment
+# 2. Ensures Java 25 is installed (auto-installs via Adoptium if missing)
+# 3. Configures apt proxy for package downloads
+# 4. Starts local Maven proxy bridge (maven-proxy-v2.py)
+# 5. Configures Maven settings.xml to use local proxy
+# 6. Configures H2 database for ephemeral testing
+# 7. Only runs in remote Claude Code Web environment
+
+TEMURIN_25_HOME="/usr/lib/jvm/temurin-25-jdk-amd64"
 
 # Exit early if not in Claude Code Web
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
@@ -27,79 +31,99 @@ else
 fi
 
 # ============================================================================
-# JAVA 25 VALIDATION (Required for YAWL v5.2)
-# ============================================================================
-
-echo "☕ Validating Java 25 requirement..."
-
-JAVA_VERSION=$(java -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
-
-if [ "$JAVA_VERSION" != "25" ]; then
-    echo "❌ ERROR: Java 25 required, found Java $JAVA_VERSION"
-    echo "   YAWL v5.2 requires Java 25 specifically"
-    echo "   Install: https://jdk.java.net/25/"
-    echo ""
-    echo "   Current: Java $JAVA_VERSION"
-    echo "   Required: Java 25"
-    exit 1
-fi
-
-echo "   ✅ Java 25 detected"
-
-# Enable Java 25 preview features
-export MAVEN_OPTS="--enable-preview --add-modules jdk.incubator.concurrent -Xmx2g"
-echo "   ✅ Maven configured for Java 25 preview features"
-
-# ============================================================================
-# MAVEN PROXY SETUP (Web Environment Only)
+# MAVEN PROXY SETUP — must start BEFORE apt/Java install so downloads work
 # ============================================================================
 
 echo "🌐 Checking for egress proxy requirements..."
 
-# Detect if we need to use Maven proxy workaround
 if [ -n "${https_proxy:-}" ] || [ -n "${HTTPS_PROXY:-}" ]; then
-    PROXY_URL="${https_proxy:-${HTTPS_PROXY:-}}"
-    echo "   📡 Egress proxy detected: ${PROXY_URL%:*}***" # Hide password
+    echo "   📡 Egress proxy detected"
 
-    # Start local Maven proxy in background if not already running
-    if ! pgrep -f "maven-proxy.*python" > /dev/null 2>&1; then
-        echo "   🔧 Starting local Maven proxy..."
+    # Resolve project root (hook may run from any cwd)
+    HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
 
-        # Use maven-proxy-v2.py if available, fallback to maven-proxy.py
+    # Start local Maven proxy bridge if not already running
+    if ! pgrep -f "maven-proxy.*python\|python.*maven-proxy" > /dev/null 2>&1; then
+        echo "   🔧 Starting local Maven proxy bridge..."
         PROXY_SCRIPT=""
-        if [ -f "maven-proxy-v2.py" ]; then
-            PROXY_SCRIPT="maven-proxy-v2.py"
-        elif [ -f "maven-proxy.py" ]; then
-            PROXY_SCRIPT="maven-proxy.py"
-        fi
+        [ -f "${REPO_ROOT}/maven-proxy-v2.py" ] && PROXY_SCRIPT="${REPO_ROOT}/maven-proxy-v2.py"
+        [ -z "${PROXY_SCRIPT}" ] && [ -f "${REPO_ROOT}/maven-proxy.py" ] && PROXY_SCRIPT="${REPO_ROOT}/maven-proxy.py"
 
         if [ -n "${PROXY_SCRIPT}" ]; then
-            # Start proxy on port 3128 (non-privileged)
-            python3 "${PROXY_SCRIPT}" > /tmp/maven-proxy.log 2>&1 &
-            PROXY_PID=$!
-
-            # Wait for proxy to start
+            nohup python3 "${PROXY_SCRIPT}" > /tmp/maven-proxy.log 2>&1 &
             sleep 2
-
-            # Verify proxy is running
-            if kill -0 "${PROXY_PID}" > /dev/null 2>&1; then
-                echo "   ✅ Local Maven proxy started (PID: ${PROXY_PID})"
-                export MAVEN_PROXY_ENABLED=true
-                export MAVEN_PROXY_PORT=3128
+            if pgrep -f "maven-proxy" > /dev/null 2>&1; then
+                echo "   ✅ Local Maven proxy started (127.0.0.1:3128)"
             else
-                echo "   ⚠️  Failed to start local Maven proxy"
+                echo "   ⚠️  Proxy start failed — check /tmp/maven-proxy.log"
             fi
-        else
-            echo "   ⚠️  Maven proxy scripts not found in repository"
         fi
     else
         echo "   ✅ Local Maven proxy already running"
-        export MAVEN_PROXY_ENABLED=true
-        export MAVEN_PROXY_PORT=3128
+    fi
+    export MAVEN_PROXY_ENABLED=true
+    export MAVEN_PROXY_PORT=3128
+
+    # Configure apt to use the upstream proxy for package downloads
+    if [ -n "${http_proxy:-}" ]; then
+        mkdir -p /etc/apt/apt.conf.d
+        cat > /etc/apt/apt.conf.d/99claude-proxy << APTEOF
+Acquire::http::Proxy "${http_proxy}";
+Acquire::https::Proxy "${https_proxy:-${http_proxy}}";
+APTEOF
+        echo "   ✅ apt proxy configured"
     fi
 else
     echo "   ✅ No egress proxy detected - using direct repository access"
 fi
+
+# ============================================================================
+# JAVA 25 — install via Adoptium if not present
+# ============================================================================
+
+echo "☕ Checking Java 25 requirement..."
+
+JAVA_VERSION=$(java -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
+
+if [ "$JAVA_VERSION" = "25" ]; then
+    echo "   ✅ Java 25 already active"
+else
+    echo "   ⚠️  Java $JAVA_VERSION detected — installing Java 25 (Eclipse Temurin)..."
+
+    # Add Adoptium GPG key + repo
+    if [ ! -f /etc/apt/trusted.gpg.d/adoptium.gpg ]; then
+        wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public \
+            | gpg --dearmor -o /etc/apt/trusted.gpg.d/adoptium.gpg
+        . /etc/os-release
+        echo "deb https://packages.adoptium.net/artifactory/deb ${VERSION_CODENAME} main" \
+            > /etc/apt/sources.list.d/adoptium.list
+        apt-get update -qq
+    fi
+
+    DEBIAN_FRONTEND=noninteractive apt-get install -y temurin-25-jdk
+
+    # Register with update-alternatives
+    update-alternatives --install /usr/bin/java  java  "${TEMURIN_25_HOME}/bin/java"  100
+    update-alternatives --install /usr/bin/javac javac "${TEMURIN_25_HOME}/bin/javac" 100
+    update-alternatives --set java  "${TEMURIN_25_HOME}/bin/java"
+    update-alternatives --set javac "${TEMURIN_25_HOME}/bin/javac"
+
+    JAVA_VERSION=$(java -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
+    if [ "$JAVA_VERSION" != "25" ]; then
+        echo "❌ Java 25 installation failed. Cannot continue."
+        exit 1
+    fi
+    echo "   ✅ Java 25 installed successfully"
+fi
+
+# Always export JAVA_HOME pointing at Temurin 25
+if [ -d "${TEMURIN_25_HOME}" ]; then
+    export JAVA_HOME="${TEMURIN_25_HOME}"
+    export PATH="${JAVA_HOME}/bin:${PATH}"
+fi
+
+echo "   ✅ JAVA_HOME=${JAVA_HOME:-$(dirname $(dirname $(readlink -f $(which java))))}"
 
 # Setup Maven cache directory
 echo "📦 Configuring Maven dependency cache..."

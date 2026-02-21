@@ -150,7 +150,8 @@ public class ZaiService {
         ensureInitialized();
         String model = defaultModel();
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.<String>awaitAllSuccessfulOrThrow())) {
             var task1 = scope.fork(() -> {
                 ChatRequest req = new ChatRequest(model, buildMessageList(message1));
                 return httpClient.createChatCompletionRecord(req).content();
@@ -161,12 +162,14 @@ public class ZaiService {
             });
 
             scope.join();
-            scope.throwIfFailed(e -> new IOException("Parallel Z.AI call failed", e));
 
             return new String[]{ task1.get(), task2.get() };
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Parallel chat interrupted", e);
+        } catch (Exception e) {
+            if (e instanceof IOException ioe) throw ioe;
+            throw new IOException("Parallel Z.AI call failed", e);
         }
     }
 
@@ -183,8 +186,8 @@ public class ZaiService {
     public String chatWithContext(String systemPromptOverride, String message) {
         ensureInitialized();
         try {
-            return ScopedValue.callWhere(WORKFLOW_SYSTEM_PROMPT, systemPromptOverride,
-                    () -> chat(message));
+            return ScopedValue.where(WORKFLOW_SYSTEM_PROMPT, systemPromptOverride)
+                    .call(() -> chat(message));
         } catch (Exception e) {
             throw new RuntimeException("Failed to invoke chat with workflow context", e);
         }

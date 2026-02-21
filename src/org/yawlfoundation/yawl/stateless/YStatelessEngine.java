@@ -423,9 +423,10 @@ public class YStatelessEngine {
 
         List<YNetRunner> runners = new ArrayList<>(caseParams.size());
 
-        try (StructuredTaskScope.ShutdownOnFailure scope =
-                     new StructuredTaskScope.ShutdownOnFailure("yawl-parallel-launch",
-                             Thread.ofVirtual().factory())) {
+        try (StructuredTaskScope<YNetRunner, Void> scope =
+                     StructuredTaskScope.open(StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow(),
+                             cfg -> cfg.withName("yawl-parallel-launch")
+                                       .withThreadFactory(Thread.ofVirtual().factory()))) {
 
             // Fork one subtask per case; each runs on a named virtual thread
             List<StructuredTaskScope.Subtask<YNetRunner>> subtasks = new ArrayList<>(caseParams.size());
@@ -439,8 +440,7 @@ public class YStatelessEngine {
 
             // Wait for all subtasks; propagate first failure if any
             try {
-                scope.join().throwIfFailed(cause -> new YStateException(
-                        "Parallel case launch failed: " + cause.getMessage(), cause));
+                scope.join(); // awaitAllSuccessfulOrThrow: throws if any subtask failed
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 throw new YStateException("Parallel case launch interrupted", ie);

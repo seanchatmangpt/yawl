@@ -217,7 +217,7 @@ public class YEngine {
                 _engineNbr);
 
         try {
-            return ScopedValue.callWhere(WORKFLOW_CONTEXT, ctx, () -> {
+            return ScopedValue.where(WORKFLOW_CONTEXT, ctx).call(() -> {
                 // check & format case data params (if any)
                 Element data = formatCaseParams(caseParams, spec);
 

@@ -821,16 +821,16 @@ public class VirtualThreadYawlA2AServer {
             StringBuilder errors = new StringBuilder();
 
             // Use structured concurrency for parallel processing
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            try (var scope = StructuredTaskScope.open(
+                    StructuredTaskScope.Joiner.<WorkItemResult>awaitAllSuccessfulOrThrow())) {
                 List<StructuredTaskScope.Subtask<WorkItemResult>> tasks = processableItems.stream()
                     .map(item -> scope.fork(() -> processWorkItemWithResult(item)))
                     .toList();
 
                 scope.join();
-                scope.throwIfFailed();
 
                 for (StructuredTaskScope.Subtask<WorkItemResult> task : tasks) {
-                    WorkItemResult result = task.resultNow();
+                    WorkItemResult result = task.get();
                     if (result.success()) {
                         processed++;
                     } else {
@@ -844,8 +844,8 @@ public class VirtualThreadYawlA2AServer {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return "Batch processing interrupted.";
-            } catch (ExecutionException e) {
-                return "Batch processing failed: " + e.getCause().getMessage();
+            } catch (Exception e) {
+                return "Batch processing failed: " + e.getMessage();
             }
 
             StringBuilder sb = new StringBuilder();
