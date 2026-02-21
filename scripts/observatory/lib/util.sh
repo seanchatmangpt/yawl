@@ -382,9 +382,9 @@ detect_java_version() {
         return 1
     fi
 
-    # Get first line for parsing
+    # Get first meaningful line for parsing (skip JAVA_TOOL_OPTIONS noise)
     local first_line
-    first_line=$(echo "$version_output" | head -1)
+    first_line=$(echo "$version_output" | grep -v "^Picked up" | head -1)
 
     # Handle multiple formats:
     # - "java version "17.0.1"" (Oracle)
@@ -436,7 +436,7 @@ detect_maven_version() {
         return 1
     fi
 
-    echo "$version_output" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
+    echo "$version_output" | grep -v "^Picked up" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "unknown"
 }
 
 # Check toolchain availability and versions
