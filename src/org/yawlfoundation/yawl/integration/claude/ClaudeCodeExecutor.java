@@ -14,8 +14,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -157,9 +155,10 @@ public class ClaudeCodeExecutor {
         Instant start = Instant.now();
         String processKey = sessionId != null ? sessionId : "single-" + System.nanoTime();
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.<ClaudeExecutionResult>awaitAllSuccessfulOrThrow())) {
 
-            Future<ClaudeExecutionResult> future = scope.fork(() -> {
+            StructuredTaskScope.Subtask<ClaudeExecutionResult> subtask = scope.fork(() -> {
                 Process process = pb.start();
                 activeProcesses.put(processKey, process);
 
@@ -195,24 +194,20 @@ public class ClaudeCodeExecutor {
             });
 
             scope.join();
-            scope.throwIfFailed();
 
-            return future.get();
+            return subtask.get();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            Duration duration = Duration.between(start, Instant.now());
             return ClaudeExecutionResult.failure("Execution interrupted", -1);
-
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            String errorMsg = cause != null ? cause.getMessage() : e.getMessage();
-            LOGGER.log(Level.SEVERE, "Execution failed", cause);
-            return ClaudeExecutionResult.failure(errorMsg, -1);
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to execute Claude CLI", e);
             return ClaudeExecutionResult.failure("Failed to start Claude CLI: " + e.getMessage(), -1);
+
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Execution failed", e);
+            return ClaudeExecutionResult.failure(e.getMessage(), -1);
         }
     }
 

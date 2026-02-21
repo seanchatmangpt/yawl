@@ -391,7 +391,9 @@ public class GregVerseOrchestrator {
         Map<SagaStep, StepResult> results = new ConcurrentHashMap<>();
         List<ExecutionException> failures = Collections.synchronizedList(new ArrayList<>());
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.<StepResult>awaitAll(),
+                cfg -> cfg.withTimeout(timeout))) {
             for (SagaStep step : steps) {
                 scope.fork(() -> {
                     try {
@@ -412,25 +414,22 @@ public class GregVerseOrchestrator {
                 });
             }
 
-            // Join with timeout - cancels remaining tasks on first failure
-            long timeoutMs = timeout.toMillis();
-            scope.joinUntil(Instant.now().plusMillis(timeoutMs));
-            scope.throwIfFailed();
+            // Join - timeout configured via withTimeout() above
+            scope.join();
 
-        } catch (TimeoutException e) {
-            LOGGER.error("Parallel saga execution timeout after {}ms",
-                timeout.toMillis());
-            failures.add(new ExecutionException("Execution timeout", e));
-        } catch (ExecutionException e) {
-            LOGGER.warn("Parallel saga execution failed: {}", e.getMessage());
-            // This is expected when a step fails - it triggers shutdown
-            if (e.getCause() != null) {
-                failures.add(new ExecutionException("Step execution failed", e.getCause()));
+            // Detect timeout via scope cancellation flag
+            if (scope.isCancelled()) {
+                LOGGER.error("Parallel saga execution timeout after {}ms", timeout.toMillis());
+                failures.add(new ExecutionException("Execution timeout", null));
             }
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.error("Parallel saga execution interrupted");
             failures.add(new ExecutionException("Execution interrupted", e));
+        } catch (Exception e) {
+            LOGGER.warn("Parallel saga execution failed: {}", e.getMessage());
+            failures.add(new ExecutionException("Step execution failed", e));
         }
 
         // If there were failures, log them
