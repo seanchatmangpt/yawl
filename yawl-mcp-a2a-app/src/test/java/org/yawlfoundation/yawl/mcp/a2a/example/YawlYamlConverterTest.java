@@ -351,7 +351,7 @@ class YawlYamlConverterTest {
             String xml = converter.convertToXml(ORDER_FULFILLMENT_YAML);
             // Count flowsInto elements in VerifyPayment block
             // The VerifyPayment task element starts at id="VerifyPayment"
-            int taskStart = xml.indexOf("id=\"VerifyPayment\"");
+            int taskStart = xml.indexOf("<task id=\"VerifyPayment\"");
             int taskEnd = xml.indexOf("</task>", taskStart);
             String taskXml = xml.substring(taskStart, taskEnd);
             int flowsIntoCount = countOccurrences(taskXml, "<flowsInto>");
@@ -364,7 +364,7 @@ class YawlYamlConverterTest {
         void shouldDefaultMissingJoinSplitToXor() {
             String xml = converter.convertToXml(ORDER_FULFILLMENT_YAML);
             // CheckInventory has no explicit join/split in YAML — must default to xor
-            int checkInvTaskStart = xml.indexOf("id=\"CheckInventory\"");
+            int checkInvTaskStart = xml.indexOf("<task id=\"CheckInventory\"");
             int checkInvTaskEnd = xml.indexOf("</task>", checkInvTaskStart);
             String checkInvXml = xml.substring(checkInvTaskStart, checkInvTaskEnd);
             assertTrue(checkInvXml.contains("join code=\"xor\""),
@@ -409,7 +409,7 @@ class YawlYamlConverterTest {
         @DisplayName("WCP-2: StartTask must flow into both BranchA and BranchB")
         void shouldEmitBothBranchFlows() {
             String xml = converter.convertToXml(PARALLEL_YAML);
-            int startTaskStart = xml.indexOf("id=\"StartTask\"");
+            int startTaskStart = xml.indexOf("<task id=\"StartTask\"");
             int startTaskEnd = xml.indexOf("</task>", startTaskStart);
             String startTaskXml = xml.substring(startTaskStart, startTaskEnd);
             assertTrue(startTaskXml.contains("nextElementRef id=\"BranchA\""),
@@ -422,7 +422,7 @@ class YawlYamlConverterTest {
         @DisplayName("WCP-2: AND-split task must have exactly two flowsInto elements")
         void shouldEmitTwoParallelBranches() {
             String xml = converter.convertToXml(PARALLEL_YAML);
-            int startTaskStart = xml.indexOf("id=\"StartTask\"");
+            int startTaskStart = xml.indexOf("<task id=\"StartTask\"");
             int startTaskEnd = xml.indexOf("</task>", startTaskStart);
             String startTaskXml = xml.substring(startTaskStart, startTaskEnd);
             int flowsIntoCount = countOccurrences(startTaskXml, "<flowsInto>");
@@ -434,7 +434,7 @@ class YawlYamlConverterTest {
         @DisplayName("WCP-2: Branch tasks without explicit join/split default to xor")
         void shouldDefaultBranchTasksToXorJoinSplit() {
             String xml = converter.convertToXml(PARALLEL_YAML);
-            int branchAStart = xml.indexOf("id=\"BranchA\"");
+            int branchAStart = xml.indexOf("<task id=\"BranchA\"");
             int branchAEnd = xml.indexOf("</task>", branchAStart);
             String branchAXml = xml.substring(branchAStart, branchAEnd);
             assertTrue(branchAXml.contains("join code=\"xor\""),
@@ -1047,7 +1047,7 @@ class YawlYamlConverterTest {
                     flows: [end]
                 """;
             String xml = converter.convertToXml(yaml);
-            int splitterStart = xml.indexOf("id=\"Splitter\"");
+            int splitterStart = xml.indexOf("<task id=\"Splitter\"");
             int splitterEnd = xml.indexOf("</task>", splitterStart);
             String splitterXml = xml.substring(splitterStart, splitterEnd);
             int flowsIntoCount = countOccurrences(splitterXml, "<flowsInto>");
