@@ -122,12 +122,14 @@ public class InterfaceXDeadLetterQueue {
      * @return the singleton instance
      */
     public static InterfaceXDeadLetterQueue getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (instance == null) {
-                instance = new InterfaceXDeadLetterQueue(DEFAULT_TTL_HOURS);
+        if (instance == null) {
+            synchronized (INSTANCE_LOCK) {
+                if (instance == null) {
+                    instance = new InterfaceXDeadLetterQueue(DEFAULT_TTL_HOURS);
+                }
             }
-            return instance;
         }
+        return instance;
     }
 
     /**

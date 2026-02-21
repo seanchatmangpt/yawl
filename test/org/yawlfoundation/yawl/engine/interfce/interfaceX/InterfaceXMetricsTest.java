@@ -46,13 +46,6 @@ class InterfaceXMetricsTest {
 
     private void resetMetricsSingletons() {
         InterfaceXMetrics.resetSingleton();
-        try {
-            var field = InterfaceMetrics.class.getDeclaredField("_instance");
-            field.setAccessible(true);
-            field.set(null, null);
-        } catch (Exception e) {
-            // Ignore if reflection fails
-        }
     }
 
     @Test
