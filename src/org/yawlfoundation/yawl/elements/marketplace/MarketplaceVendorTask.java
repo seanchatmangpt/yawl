@@ -19,21 +19,16 @@
 package org.yawlfoundation.yawl.elements.marketplace;
 
 import org.jdom2.Element;
-import org.yawlfoundation.yawl.elements.YAtomicTask;
-import org.yawlfoundation.yawl.elements.YNet;
-import org.yawlfoundation.yawl.engine.YPersistenceManager;
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import java.util.*;
 
 /**
- * Specialized atomic task for GCP Marketplace vendor operations.
+ * Specialized vendor task context for GCP Marketplace operations.
  *
- * <p>MarketplaceVendorTask represents activities executed by vendors in a marketplace,
- * such as product listing management, inventory updates, and vendor profile modifications.
- * This task type enforces vendor-specific validation and credentials checking.</p>
+ * <p>MarketplaceVendorTask provides vendor-specific attributes and behaviors for YAtomicTask,
+ * managing activities such as product listing management, inventory updates, and vendor
+ * profile modifications. Enforces vendor-specific validation and credentials checking.</p>
  *
  * <h2>Vendor Task Types</h2>
  * <ul>
@@ -52,10 +47,14 @@ import java.util.*;
  *   <li>Task supports multi-instance execution for batch operations</li>
  * </ul>
  *
+ * <h2>Integration with YAtomicTask</h2>
+ * <p>This class should be used as a wrapper or delegate to YAtomicTask, attaching
+ * vendor-specific metadata and state management via data mappings and task attributes.</p>
+ *
  * @author YAWL Marketplace Extension
  * @since 6.0.0
  */
-public final class MarketplaceVendorTask extends YAtomicTask {
+public final class MarketplaceVendorTask {
 
     /**
      * Vendor task type constants
@@ -74,15 +73,10 @@ public final class MarketplaceVendorTask extends YAtomicTask {
     private Map<String, String> vendorMetadata = new HashMap<>();
 
     /**
-     * Constructs a new marketplace vendor task.
-     *
-     * @param id the task identifier
-     * @param joinType the task's join type (YAtomicTask._AND, ._OR, ._XOR)
-     * @param splitType the task's split type
-     * @param container the task's containing net
+     * Creates a new marketplace vendor task context with empty state.
      */
-    public MarketplaceVendorTask(String id, int joinType, int splitType, YNet container) {
-        super(id, joinType, splitType, container);
+    public MarketplaceVendorTask() {
+        // No-arg constructor for data mapping
     }
 
     /**

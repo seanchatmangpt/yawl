@@ -19,19 +19,18 @@
 package org.yawlfoundation.yawl.elements.marketplace;
 
 import org.jdom2.Element;
-import org.yawlfoundation.yawl.elements.YAtomicTask;
-import org.yawlfoundation.yawl.elements.YNet;
 import org.yawlfoundation.yawl.util.StringUtil;
 
 import java.math.BigDecimal;
 import java.util.*;
 
 /**
- * Specialized atomic task for GCP Marketplace customer purchase operations.
+ * Customer purchase task context for GCP Marketplace operations.
  *
- * <p>CustomerPurchaseTask represents activities in the customer purchase journey,
- * including product selection, cart management, payment processing, and order confirmation.
- * This task type manages multi-instance expansion for handling multiple products per order.</p>
+ * <p>CustomerPurchaseTask provides customer purchase-specific attributes and behaviors,
+ * managing activities in the customer purchase journey including product selection, cart
+ * management, payment processing, and order confirmation. Manages multi-instance expansion
+ * for handling multiple products per order.</p>
  *
  * <h2>Purchase Task Types</h2>
  * <ul>
@@ -44,18 +43,22 @@ import java.util.*;
  * </ul>
  *
  * <h2>Multi-Instance Behavior</h2>
- * <p>When an order contains multiple products, CustomerPurchaseTask can expand into
- * multiple instances using static or dynamic creation mode. Each instance processes
- * a single product's requirements (inventory check, availability, pricing).</p>
+ * <p>When an order contains multiple products, this context supports dynamic multi-instance
+ * expansion where each instance processes a single product's requirements
+ * (inventory check, availability, pricing).</p>
  *
  * <h2>Cancellation Support</h2>
  * <p>Tasks can be cancelled if customer abandons purchase or payment fails.
  * Cancellation automatically triggers refund and inventory restoration.</p>
  *
+ * <h2>Integration with YAtomicTask</h2>
+ * <p>Use this class as a data container attached to YAtomicTask instances via
+ * YAWL data mappings and task attributes.</p>
+ *
  * @author YAWL Marketplace Extension
  * @since 6.0.0
  */
-public final class CustomerPurchaseTask extends YAtomicTask {
+public final class CustomerPurchaseTask {
 
     /**
      * Customer purchase task type constants
@@ -94,15 +97,10 @@ public final class CustomerPurchaseTask extends YAtomicTask {
     private Map<String, String> customerPreferences = new HashMap<>();
 
     /**
-     * Constructs a new customer purchase task.
-     *
-     * @param id the task identifier
-     * @param joinType the task's join type (YAtomicTask._AND, ._OR, ._XOR)
-     * @param splitType the task's split type
-     * @param container the task's containing net
+     * Creates a new customer purchase task context with empty state.
      */
-    public CustomerPurchaseTask(String id, int joinType, int splitType, YNet container) {
-        super(id, joinType, splitType, container);
+    public CustomerPurchaseTask() {
+        // No-arg constructor for data mapping
     }
 
     /**

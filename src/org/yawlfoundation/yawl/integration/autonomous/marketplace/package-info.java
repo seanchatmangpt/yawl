@@ -1,35 +1,37 @@
 /**
- * GCP Marketplace Integration Package
+ * GCP Marketplace autonomous agent integration for YAWL.
  *
- * Provides MCP and A2A integration points for autonomous marketplace operations:
- * - Vendor agent ↔ YAWL engine (order notifications)
- * - Fulfillment agent ↔ YAWL engine (status updates)
- * - Payment processor ↔ YAWL engine (transaction confirmations)
+ * <h2>Overview</h2>
+ * This package provides event schemas and autonomous agent integration for
+ * GCP Cloud Marketplace, enabling YAWL to coordinate with vendor, fulfillment,
+ * and payment processing agents.
  *
- * Subpackages:
- * - events: Domain model for marketplace events (orders, vendors, payments)
- * - mcp: Model Context Protocol endpoints for autonomous agents
- * - a2a: Agent-to-Agent message protocols with idempotency guarantees
- * - gateway: GCP Pub/Sub integration for event sourcing
+ * <h2>Event Types</h2>
+ * <ul>
+ *   <li><b>Order Events:</b> OrderCreated, OrderConfirmed, OrderShipped,
+ *       OrderDelivered, OrderReturned</li>
+ *   <li><b>Vendor Events:</b> VendorOnboarded, VendorVerified, VendorSuspended</li>
+ *   <li><b>Payment Events:</b> PaymentAuthorized, PaymentCaptured, PaymentFailed,
+ *       PayoutInitiated</li>
+ * </ul>
  *
- * Architecture:
- * - Event schema: JSON records with message ordering and deduplication keys
- * - MCP tools: stateless endpoints for querying/modifying marketplace state
- * - A2A messages: authenticated asynchronous notifications between agents
- * - Idempotency: all operations keyed on idempotency token + version
+ * <h2>Message Ordering & Idempotency</h2>
+ * All events include:
+ * <ul>
+ *   <li><b>sequenceNumber:</b> Monotonic counter per stream (ensures ordering)</li>
+ *   <li><b>idempotencyKey:</b> Unique identifier (deduplicates replays)</li>
+ *   <li><b>timestamp:</b> UTC timestamp for causality tracking</li>
+ * </ul>
  *
- * Message Ordering Guarantee (per agent):
- * - Events from same agent processed strictly in order
- * - Duplicate detection via (agent_id, idempotency_token) key
- * - At-least-once delivery with idempotent processing
+ * <h2>Workflow Integration</h2>
+ * Events trigger corresponding YAWL workflow cases:
+ * <ul>
+ *   <li>OrderCreatedEvent → launches "ProcessOrder" case</li>
+ *   <li>VendorOnboardedEvent → launches "OnboardVendor" case</li>
+ *   <li>PaymentFailedEvent → launches "HandlePaymentFailure" case</li>
+ * </ul>
  *
- * @author YAWL Foundation
- * @version 6.0.0
- * @since 2026-02-21
+ * @since 6.0.0
+ * @author YAWL Marketplace Integration
  */
 package org.yawlfoundation.yawl.integration.autonomous.marketplace;
-
-import org.yawlfoundation.yawl.integration.autonomous.marketplace.events.MarketplaceEvent;
-import org.yawlfoundation.yawl.integration.autonomous.marketplace.events.OrderEvent;
-import org.yawlfoundation.yawl.integration.autonomous.marketplace.events.PaymentEvent;
-import org.yawlfoundation.yawl.integration.autonomous.marketplace.events.VendorEvent;
