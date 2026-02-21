@@ -1594,16 +1594,33 @@ public class YEngine implements InterfaceADesign,
                 try {
                     YNetRunner netRunner = null;
                     if (workItem != null) {
-                        netRunner = switch (workItem.getStatus()) {
-                            case statusEnabled -> getNetRunner(workItem.getCaseID());
-                            case statusFired -> getNetRunner(workItem.getCaseID().getParent());
-                            case statusDeadlocked -> null;
-                            default -> null;
-                        };
+                        netRunner = _netRunnerRepository.get(workItem);
 
                         startedItem = switch (workItem.getStatus()) {
-                            case statusEnabled -> startEnabledWorkItem(netRunner, workItem, client);
-                            case statusFired -> startFiredWorkItem(netRunner, workItem, client);
+                            case statusEnabled -> {
+                                if (netRunner == null) {
+                                    rollbackTransaction();
+                                    YStateException ex = new YStateException(String.format(
+                                            "Cannot start work item [%s]: net runner not found.",
+                                            workItem.getIDString()));
+                                    span.setStatus(StatusCode.ERROR, ex.getMessage());
+                                    span.recordException(ex);
+                                    throw ex;
+                                }
+                                yield startEnabledWorkItem(netRunner, workItem, client);
+                            }
+                            case statusFired -> {
+                                if (netRunner == null) {
+                                    rollbackTransaction();
+                                    YStateException ex = new YStateException(String.format(
+                                            "Cannot start work item [%s]: parent case net runner not found.",
+                                            workItem.getIDString()));
+                                    span.setStatus(StatusCode.ERROR, ex.getMessage());
+                                    span.recordException(ex);
+                                    throw ex;
+                                }
+                                yield startFiredWorkItem(netRunner, workItem, client);
+                            }
                             case statusDeadlocked -> workItem;
                             default -> { // this work item is likely already executing.
                                 rollbackTransaction();
