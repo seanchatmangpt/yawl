@@ -150,8 +150,7 @@ public class ZaiService {
         ensureInitialized();
         String model = defaultModel();
 
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.<String>awaitAllSuccessfulOrThrow())) {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             var task1 = scope.fork(() -> {
                 ChatRequest req = new ChatRequest(model, buildMessageList(message1));
                 return httpClient.createChatCompletionRecord(req).content();
@@ -162,6 +161,7 @@ public class ZaiService {
             });
 
             scope.join();
+            scope.throwIfFailed(e -> new IOException("Parallel Z.AI call failed", e));
 
             return new String[]{ task1.get(), task2.get() };
         } catch (InterruptedException e) {

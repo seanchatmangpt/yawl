@@ -337,13 +337,13 @@ public class ZaiHttpClient {
      * @throws IOException if any request fails
      */
     public List<String> createChatCompletionsBatch(List<ChatRequest> requests) throws IOException {
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.<String>awaitAllSuccessfulOrThrow())) {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
             List<StructuredTaskScope.Subtask<String>> tasks = requests.stream()
                     .map(req -> scope.fork(() -> executeWithRetry(req)))
                     .toList();
 
             scope.join();
+            scope.throwIfFailed(e -> new IOException("Batch Z.AI request failed", e));
 
             return tasks.stream().map(StructuredTaskScope.Subtask::get).toList();
         } catch (InterruptedException e) {

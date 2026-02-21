@@ -98,7 +98,8 @@ public class McpConfigurationStep implements WizardStep<McpWizardConfiguration> 
             }
 
             // Load available tools from session context
-            Optional<List<McpToolDescriptor>> toolsOpt = session.get(
+            @SuppressWarnings("unchecked")
+            Optional<List<McpToolDescriptor>> toolsOpt = (Optional<List<McpToolDescriptor>>) (Optional<?>) session.get(
                 "mcp.tools.all", List.class);
             if (toolsOpt.isEmpty()) {
                 return WizardStepResult.failure(stepId(),

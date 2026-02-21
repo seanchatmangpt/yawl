@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.stateless;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -423,10 +424,7 @@ public class YStatelessEngine {
 
         List<YNetRunner> runners = new ArrayList<>(caseParams.size());
 
-        try (StructuredTaskScope<YNetRunner, Void> scope =
-                     StructuredTaskScope.open(StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow(),
-                             cfg -> cfg.withName("yawl-parallel-launch")
-                                       .withThreadFactory(Thread.ofVirtual().factory()))) {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 
             // Fork one subtask per case; each runs on a named virtual thread
             List<StructuredTaskScope.Subtask<YNetRunner>> subtasks = new ArrayList<>(caseParams.size());
@@ -440,10 +438,13 @@ public class YStatelessEngine {
 
             // Wait for all subtasks; propagate first failure if any
             try {
-                scope.join(); // awaitAllSuccessfulOrThrow: throws if any subtask failed
+                scope.join();
+                scope.throwIfFailed(); // throws ExecutionException if any subtask failed
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 throw new YStateException("Parallel case launch interrupted", ie);
+            } catch (ExecutionException ex) {
+                throw new YStateException("Parallel case launch failed: " + ex.getCause().getMessage(), ex.getCause());
             }
 
             // All subtasks succeeded — collect results in submission order

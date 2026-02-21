@@ -190,7 +190,7 @@ public class AutonomicMonitor {
             Object a2aCfg = session.context().get("a2aConfiguration");
 
             // Simple conflict detection: if both are maps, check for mismatched sizes
-            if (mcpCfg instanceof Map<?> mcpMap && a2aCfg instanceof Map<?> a2aMap) {
+            if (mcpCfg instanceof Map<?, ?> mcpMap && a2aCfg instanceof Map<?, ?> a2aMap) {
                 // Check if tool count and agent count mismatch significantly
                 int toolCount = session.get("discoveredMcpTools", List.class)
                     .map(List::size).orElse(0);
