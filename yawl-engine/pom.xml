@@ -217,6 +217,10 @@
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -307,6 +311,9 @@
                         <exclude>**/*.jpg</exclude>
                         <exclude>**/*.png</exclude>
                         <exclude>**/*.gif</exclude>
+                        <!-- Exclude test files misplaced under src/test/; they belong in
+                             testSourceDirectory (../test) where JUnit deps are available -->
+                        <exclude>**/test/**</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>

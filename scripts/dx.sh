@@ -28,6 +28,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
+# ── Ensure JAVA_HOME points to the JDK on PATH ───────────────────────────────
+# When fork=true in the Maven compiler plugin, javac is invoked as a separate
+# process using JAVA_HOME. If JAVA_HOME is stale (e.g. pointing to Java 21
+# while java on PATH is Java 25), the forked javac will be the wrong version
+# and fail to compile for --release 25. Auto-correct JAVA_HOME here.
+if command -v java >/dev/null 2>&1; then
+    _java_real="$(readlink -f "$(command -v java)" 2>/dev/null || true)"
+    if [[ -n "$_java_real" ]]; then
+        _java_home_from_path="${_java_real%/bin/java}"
+        if [[ "${JAVA_HOME:-}" != "$_java_home_from_path" ]]; then
+            export JAVA_HOME="$_java_home_from_path"
+        fi
+    fi
+fi
+
 # ── Parse arguments ───────────────────────────────────────────────────────
 PHASE="compile-test"
 SCOPE="changed"
@@ -120,8 +135,9 @@ fi
 # Profile
 MVN_ARGS+=("-P" "agent-dx")
 
-# Offline
-[[ -n "$OFFLINE_FLAG" ]] && MVN_ARGS+=("$OFFLINE_FLAG")
+# Offline (only for explicit/changed module builds; all-scope needs network
+# to download external deps and must not trust partial local cache state)
+[[ "$SCOPE" != "all" && -n "$OFFLINE_FLAG" ]] && MVN_ARGS+=("$OFFLINE_FLAG")
 
 # Quiet unless verbose
 [[ "${DX_VERBOSE:-0}" != "1" ]] && MVN_ARGS+=("-q")
@@ -139,7 +155,17 @@ esac
 
 # Module targeting
 if [[ "$SCOPE" == "explicit" && -n "$EXPLICIT_MODULES" ]]; then
-    MVN_ARGS+=("-pl" "$EXPLICIT_MODULES" "-amd")
+    # -am: also build dependency modules (ensures reactor resolves inter-module deps)
+    # -amd: also build dependent modules (downstream consumers)
+    MVN_ARGS+=("-pl" "$EXPLICIT_MODULES" "-am" "-amd")
+fi
+
+# For full builds: clear stale org.yawlfoundation cache markers so Maven
+# resolves local reactor modules from source, not from remote failure cache.
+# Stale .lastUpdated markers accumulate in ephemeral environments and cause
+# "was not found during a previous attempt" errors even for reactor artifacts.
+if [[ "$SCOPE" == "all" ]]; then
+    rm -rf "${HOME}/.m2/repository/org/yawlfoundation" 2>/dev/null || true
 fi
 
 # Fail strategy
