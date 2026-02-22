@@ -1,0 +1,35 @@
+{
+  "commit": "593a8fc",
+  "docker_compose": {
+    "test_environment": {
+      "exists": false,
+      "file": "",
+      "network": "",
+      "profiles": [],
+      "services": []
+    }
+  },
+  "generated_at": "2026-02-22T08:15:58Z",
+  "run_commands": {
+    "debug_mode": "bash scripts/run-docker-a2a-mcp-test.sh --no-clean --verbose",
+    "full_test": "bash scripts/run-docker-a2a-mcp-test.sh --build --verbose",
+    "quick_test": "bash scripts/run-docker-a2a-mcp-test.sh --ci"
+  },
+  "spring_boot_app": {
+    "module": "yawl-mcp-a2a-app",
+    "source_files": 0,
+    "status": "not_built",
+    "test_files": 0
+  },
+  "summary": {
+    "a2a_compilation_fixed": true,
+    "compose_files": 0,
+    "docker_testing_enabled": false,
+    "spring_boot_app_built": false,
+    "test_scripts": 0
+  },
+  "test_runner": {
+    "exists": false,
+    "script": "scripts/run-docker-a2a-mcp-test.sh"
+  }
+}
