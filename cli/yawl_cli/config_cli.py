@@ -14,6 +14,7 @@ from rich.prompt import Confirm, Prompt
 from yawl_cli.utils import ensure_project_root, Config, DEBUG
 
 console = Console()
+stderr_console = Console(stderr=True)
 app = typer.Typer(no_args_is_help=True)
 
 
@@ -41,12 +42,12 @@ def show(
             console.print("[yellow]No configuration data loaded[/yellow]")
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -71,12 +72,12 @@ def get(
         console.print(f"[bold]{key}:[/bold] {value}")
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -128,15 +129,15 @@ def set(
         console.print(f"  Saved to: {config_file}")
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except ValueError as e:
-        console.print(f"[bold red]✗ Validation error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Validation error:[/bold red] {e}")
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -173,12 +174,12 @@ def reset() -> None:
         console.print("[bold green]✓ Configuration reset to defaults[/bold green]")
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)

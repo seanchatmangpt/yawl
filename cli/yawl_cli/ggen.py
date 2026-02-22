@@ -10,6 +10,7 @@ from rich.console import Console
 from yawl_cli.utils import ensure_project_root, run_shell_cmd, DEBUG
 
 console = Console()
+stderr_console = Console(stderr=True)
 ggen_app = typer.Typer(no_args_is_help=True)
 
 
@@ -37,12 +38,12 @@ def init(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -99,17 +100,17 @@ def generate(
             raise typer.Exit(code=exit_code)
 
     except FileNotFoundError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -148,17 +149,17 @@ def validate(
             raise typer.Exit(code=exit_code)
 
     except FileNotFoundError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -211,17 +212,17 @@ def export(
             raise typer.Exit(code=exit_code)
 
     except (FileNotFoundError, ValueError) as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -283,17 +284,17 @@ def round_trip(
         console.print("[bold green]✓ Round-trip test successful[/bold green]")
 
     except FileNotFoundError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)

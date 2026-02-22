@@ -11,6 +11,7 @@ from rich.table import Table
 from yawl_cli.utils import ensure_project_root, run_shell_cmd, DEBUG
 
 console = Console()
+stderr_console = Console(stderr=True)
 team_app = typer.Typer(no_args_is_help=True)
 
 
@@ -71,15 +72,15 @@ def create(
             raise typer.Exit(code=exit_code)
 
     except ValueError as e:
-        console.print(f"[bold red]✗ Validation error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Validation error:[/bold red] {e}")
         raise typer.Exit(code=1)
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -125,12 +126,12 @@ def list() -> None:
         console.print(table)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -178,12 +179,12 @@ def resume(
             raise typer.Exit(code=exit_code)
 
     except (ValueError, RuntimeError) as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)

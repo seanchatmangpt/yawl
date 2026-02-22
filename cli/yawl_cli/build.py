@@ -13,6 +13,7 @@ from rich.panel import Panel
 from yawl_cli.utils import ensure_project_root, run_shell_cmd, DEBUG
 
 console = Console()
+stderr_console = Console(stderr=True)
 build_app = typer.Typer(no_args_is_help=True)
 
 
@@ -54,7 +55,7 @@ def compile(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -62,7 +63,7 @@ def compile(
         console.print("\n[yellow]Compilation cancelled by user[/yellow]")
         raise typer.Exit(code=130)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -104,7 +105,7 @@ def test(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -112,7 +113,7 @@ def test(
         console.print("\n[yellow]Tests cancelled by user[/yellow]")
         raise typer.Exit(code=130)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -150,7 +151,7 @@ def validate(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -158,7 +159,7 @@ def validate(
         console.print("\n[yellow]Validation cancelled by user[/yellow]")
         raise typer.Exit(code=130)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -198,7 +199,7 @@ def all(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -206,7 +207,7 @@ def all(
         console.print("\n[yellow]Build cancelled by user[/yellow]")
         raise typer.Exit(code=130)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -240,7 +241,7 @@ def clean(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -248,7 +249,7 @@ def clean(
         console.print("\n[yellow]Clean cancelled by user[/yellow]")
         raise typer.Exit(code=130)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)

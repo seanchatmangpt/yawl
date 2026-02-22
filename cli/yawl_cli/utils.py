@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional, Any, Dict
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from rich.console import Console
 
 console = Console()

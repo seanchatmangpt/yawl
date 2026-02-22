@@ -1,6 +1,7 @@
 """Observatory fact generation and analysis."""
 
 import json
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -11,6 +12,7 @@ from rich.table import Table
 from yawl_cli.utils import ensure_project_root, run_shell_cmd, load_facts
 
 console = Console()
+stderr_console = Console(stderr=True)
 observatory_app = typer.Typer(no_args_is_help=True)
 
 

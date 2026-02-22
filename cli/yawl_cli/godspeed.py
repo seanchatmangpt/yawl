@@ -12,6 +12,7 @@ from rich.table import Table
 from yawl_cli.utils import ensure_project_root, run_shell_cmd, DEBUG
 
 console = Console()
+stderr_console = Console(stderr=True)
 godspeed_app = typer.Typer(no_args_is_help=True)
 
 
@@ -38,12 +39,12 @@ def discover(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -78,12 +79,12 @@ def compile(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -113,12 +114,12 @@ def guard(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -150,7 +151,7 @@ def verify(
             raise typer.Exit(code=exit_code)
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -158,7 +159,7 @@ def verify(
         console.print("\n[yellow]Verification cancelled by user[/yellow]")
         raise typer.Exit(code=130)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -225,7 +226,7 @@ def full(
                     raise typer.Exit(code=exit_code)
 
             except RuntimeError as e:
-                console.print(f"[bold red]✗ {phase_name} error:[/bold red] {e}", file=sys.stderr)
+                stderr_console.print(f"[bold red]✗ {phase_name} error:[/bold red] {e}")
                 results.append((phase_name, "ERROR", 0))
                 raise typer.Exit(code=1)
 
@@ -248,7 +249,7 @@ def full(
         console.print("[dim]Ready for Ω (consolidation) → commit & push[/dim]")
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -256,7 +257,7 @@ def full(
         console.print("\n[yellow]GODSPEED circuit cancelled by user[/yellow]")
         raise typer.Exit(code=130)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
