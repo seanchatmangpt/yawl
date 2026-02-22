@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 from typing import Optional
+import re
 
 import typer
 from rich.console import Console
@@ -11,6 +12,17 @@ from rich.table import Table
 from yawl_cli.utils import ensure_project_root, run_shell_cmd, DEBUG
 
 console = Console()
+
+def _validate_team_identifier(value: str, field_name: str) -> None:
+    """Validate team identifier strings to prevent shell injection."""
+    if not value:
+        raise ValueError(f"{field_name} cannot be empty")
+    if len(value) > 255:
+        raise ValueError(f"{field_name} too long (max 255 chars)")
+    # Allow alphanumeric, hyphens, underscores, dots
+    if not re.match(r"^[a-zA-Z0-9._-]+$", value):
+        raise ValueError(f"{field_name} contains invalid characters (only alphanumeric, -, _, . allowed)")
+
 stderr_console = Console(stderr=True)
 team_app = typer.Typer(no_args_is_help=True)
 
@@ -120,8 +132,21 @@ def list() -> None:
 
         for team_path in teams:
             team_id = team_path.name
-            # Would read metadata.json here
-            table.add_row(team_id, "active", "3", "5")
+            try:
+                metadata_file = team_path / "metadata.json"
+                if metadata_file.exists():
+                    import json
+                    with open(metadata_file) as f:
+                        metadata = json.load(f)
+                        status = metadata.get("status", "unknown")
+                        agents = metadata.get("agent_count", "?")
+                        tasks = metadata.get("task_count", "?")
+                        table.add_row(team_id, status, str(agents), str(tasks))
+                else:
+                    table.add_row(team_id, "unknown", "?", "?")
+            except Exception as e:
+                stderr_console.print(f"[yellow]Warning:[/yellow] Error reading team metadata: {e}")
+                table.add_row(team_id, "error", "?", "?")
 
         console.print(table)
 
@@ -213,6 +238,10 @@ def message(
     text: str = typer.Argument(..., help="Message text"),
 ) -> None:
     """Send a message to a team agent."""
+    # Validate inputs
+    _validate_team_identifier(team_id, "Team ID")
+    _validate_team_identifier(agent, "Agent name")
+    
     project_root = ensure_project_root()
 
     console.print(f"[bold cyan]Sending message to {team_id}/{agent}[/bold cyan]")

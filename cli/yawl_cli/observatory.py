@@ -108,8 +108,8 @@ def search(
                 content = f.read()
                 if pattern in content:
                     found.append(fact_file.name)
-        except Exception:
-            pass
+        except (OSError, UnicodeDecodeError) as e:
+            stderr_console.print(f"[yellow]Warning:[/yellow] Error reading {fact_file.name}: {e}")
 
     if found:
         console.print(f"[bold green]Found in {len(found)} fact file(s):[/bold green]")
