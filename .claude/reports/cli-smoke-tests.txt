@@ -1,5 +1,5 @@
 YAWL CLI Smoke Tests Report
-Generated: 2026-02-22T06:07:36Z
+Generated: 2026-02-22T06:43:40Z
 Python: Python 3.11.14
 Platform: Linux runsc 4.4.0 #1 SMP Sun Jan 10 15:06:54 PST 2016 x86_64 x86_64 x86_64 GNU/Linux
 
@@ -16,41 +16,49 @@ Platform: Linux runsc 4.4.0 #1 SMP Sun Jan 10 15:06:54 PST 2016 x86_64 x86_64 x8
 
 === 2. Basic CLI Operations ===
   ✗ [TEST 5] FAILED: Version command failed or incorrect version
-Output: Traceback (most recent call last):
-  File "/usr/local/bin/yawl", line 5, in <module>
-    from godspeed_cli import app
-ModuleNotFoundError: No module named 'godspeed_cli'
-  ✗ [TEST 6] FAILED: Help command failed or empty
-    ✗ Missing subcommand: build
-    ✗ Missing subcommand: observatory
+Output: Usage: yawl [OPTIONS] COMMAND [ARGS]...
+Try 'yawl --help' for help.
+╭─ Error ──────────────────────────────────────────────────────────────────────╮
+│ No such option: --version Did you mean --verbose?                            │
+╰──────────────────────────────────────────────────────────────────────────────╯
+  ✓ [TEST 6] PASSED
+  Help text generated (27 lines)
+    ✓ Found subcommand: build
+    ✓ Found subcommand: observatory
     ✓ Found subcommand: godspeed
-    ✗ Missing subcommand: ggen
-    ✗ Missing subcommand: gregverse
-    ✗ Missing subcommand: team
-    ✗ Missing subcommand: config
-  ✗ [TEST 7] FAILED: Missing 6 subcommands
+    ✓ Found subcommand: ggen
+    ✓ Found subcommand: gregverse
+    ✓ Found subcommand: team
+    ✓ Found subcommand: config
+  ✓ [TEST 7] PASSED
 
 === 3. Subcommand Help Text ===
-  ✗ [TEST 8] FAILED: Help failed for build
-  ✗ [TEST 9] FAILED: Help failed for observatory
-  ✗ [TEST 10] FAILED: Help failed for godspeed
-  ✗ [TEST 11] FAILED: Help failed for ggen
-  ✗ [TEST 12] FAILED: Help failed for gregverse
-  ✗ [TEST 13] FAILED: Help failed for team
-  ✗ [TEST 14] FAILED: Help failed for config
+  ✓ [TEST 8] PASSED
+    Help text: 16 lines
+  ✓ [TEST 9] PASSED
+    Help text: 16 lines
+  ✓ [TEST 10] PASSED
+    Help text: 16 lines
+  ✓ [TEST 11] PASSED
+    Help text: 16 lines
+  ✓ [TEST 12] PASSED
+    Help text: 17 lines
+  ✓ [TEST 13] PASSED
+    Help text: 17 lines
+  ✓ [TEST 14] PASSED
+    Help text: 16 lines
 
 === 4. Project Detection ===
-  ✗ [TEST 15] FAILED: Status failed in YAWL project
-Traceback (most recent call last):
-  File "/usr/local/bin/yawl", line 5, in <module>
-    from godspeed_cli import app
-ModuleNotFoundError: No module named 'godspeed_cli'
+  ✓ [TEST 15] PASSED
+  Status detected YAWL project
   ✓ [TEST 16] PASSED
   Gracefully handled missing project
 
 === 5. Configuration Management ===
-  ✗ [TEST 17] FAILED: Config show failed
-  ✗ [TEST 18] FAILED: Config help failed
+  ✓ [TEST 17] PASSED
+  Config show output: 6 lines
+  ✓ [TEST 18] PASSED
+  Config help available
 
 === 6. Error Handling ===
   ✓ [TEST 19] PASSED
@@ -61,8 +69,11 @@ ModuleNotFoundError: No module named 'godspeed_cli'
   Correctly rejected subcommand invalid flag
 
 === 7. Integration Smoke Tests ===
-  ✗ [TEST 22] FAILED: Failed to recognize minimal project
-  ✗ [TEST 23] FAILED: Status failed on minimal project
-  ✗ [TEST 24] FAILED: init command failed
+  ✓ [TEST 22] PASSED
+  Minimal project initialized and recognized
+  ✓ [TEST 23] PASSED
+  Status works on minimal project
+  ✓ [TEST 24] PASSED
+  init completed successfully
 
 === 8. Performance ===
