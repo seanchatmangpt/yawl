@@ -64,7 +64,6 @@ jobs:
       - name: Build with Maven
         run: |
           mvn clean install \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -T 1.5C \
@@ -74,7 +73,6 @@ jobs:
       - name: Run Tests
         run: |
           mvn test \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -Dmaven.test.failure.ignore=false
@@ -89,7 +87,7 @@ jobs:
             --batch-mode \
             --no-transfer-progress \
             -Djacoco.haltOnFailure=true
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Upload Coverage Report
         if: always()
@@ -167,7 +165,6 @@ jobs:
           DB_PASSWORD: yawl_test_pass
         run: |
           mvn verify \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -Pintegration-tests \
@@ -291,7 +288,6 @@ jobs:
       - name: Build Application
         run: |
           mvn clean package \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -DskipTests=true
@@ -299,7 +295,6 @@ jobs:
       - name: Run Virtual Thread Scalability Test
         run: |
           mvn test \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -Dtest=VirtualThreadScalabilityTest \
@@ -358,7 +353,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.java25
@@ -435,7 +430,6 @@ jobs:
       - name: Publish to GitHub Packages
         run: |
           mvn deploy \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -DskipTests=true \

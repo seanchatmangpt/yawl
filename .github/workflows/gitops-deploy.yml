@@ -135,7 +135,6 @@ jobs:
       - name: Build with Maven
         run: |
           mvn clean package \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -T 1.5C \
@@ -145,7 +144,6 @@ jobs:
         if: github.event.inputs.skip_tests != 'true'
         run: |
           mvn test \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress
 
@@ -200,7 +198,7 @@ jobs:
 
       - name: Build and Push Container
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/production/Dockerfile.engine
