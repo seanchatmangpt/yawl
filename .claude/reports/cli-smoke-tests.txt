@@ -1,6 +1,68 @@
-[0;34m======================================[0m
-[0;34mYAWL CLI Smoke Tests[0m
-[0;34m======================================[0m
+YAWL CLI Smoke Tests Report
+Generated: 2026-02-22T06:07:36Z
+Python: Python 3.11.14
+Platform: Linux runsc 4.4.0 #1 SMP Sun Jan 10 15:06:54 PST 2016 x86_64 x86_64 x86_64 GNU/Linux
 
-[0;34m[1] Entry Points[0m
-[0;31m✗[0m yawl version command works (substring not found: 6.0.0)
+
+=== 1. Installation Verification ===
+  ✓ [TEST 1] PASSED
+  All core dependencies present
+  ✓ [TEST 2] PASSED
+  Installation successful
+  ✓ [TEST 3] PASSED
+  yawl command found at: /usr/local/bin/yawl
+  ✓ [TEST 4] PASSED
+  Entry point is executable
+
+=== 2. Basic CLI Operations ===
+  ✗ [TEST 5] FAILED: Version command failed or incorrect version
+Output: Traceback (most recent call last):
+  File "/usr/local/bin/yawl", line 5, in <module>
+    from godspeed_cli import app
+ModuleNotFoundError: No module named 'godspeed_cli'
+  ✗ [TEST 6] FAILED: Help command failed or empty
+    ✗ Missing subcommand: build
+    ✗ Missing subcommand: observatory
+    ✓ Found subcommand: godspeed
+    ✗ Missing subcommand: ggen
+    ✗ Missing subcommand: gregverse
+    ✗ Missing subcommand: team
+    ✗ Missing subcommand: config
+  ✗ [TEST 7] FAILED: Missing 6 subcommands
+
+=== 3. Subcommand Help Text ===
+  ✗ [TEST 8] FAILED: Help failed for build
+  ✗ [TEST 9] FAILED: Help failed for observatory
+  ✗ [TEST 10] FAILED: Help failed for godspeed
+  ✗ [TEST 11] FAILED: Help failed for ggen
+  ✗ [TEST 12] FAILED: Help failed for gregverse
+  ✗ [TEST 13] FAILED: Help failed for team
+  ✗ [TEST 14] FAILED: Help failed for config
+
+=== 4. Project Detection ===
+  ✗ [TEST 15] FAILED: Status failed in YAWL project
+Traceback (most recent call last):
+  File "/usr/local/bin/yawl", line 5, in <module>
+    from godspeed_cli import app
+ModuleNotFoundError: No module named 'godspeed_cli'
+  ✓ [TEST 16] PASSED
+  Gracefully handled missing project
+
+=== 5. Configuration Management ===
+  ✗ [TEST 17] FAILED: Config show failed
+  ✗ [TEST 18] FAILED: Config help failed
+
+=== 6. Error Handling ===
+  ✓ [TEST 19] PASSED
+  Correctly rejected invalid subcommand
+  ✓ [TEST 20] PASSED
+  Correctly rejected invalid flag
+  ✓ [TEST 21] PASSED
+  Correctly rejected subcommand invalid flag
+
+=== 7. Integration Smoke Tests ===
+  ✗ [TEST 22] FAILED: Failed to recognize minimal project
+  ✗ [TEST 23] FAILED: Status failed on minimal project
+  ✗ [TEST 24] FAILED: init command failed
+
+=== 8. Performance ===

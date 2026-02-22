@@ -139,26 +139,54 @@ def list() -> None:
 @team_app.command()
 def resume(
     team_id: str = typer.Argument(..., help="Team ID to resume"),
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Resume an existing team session."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    console.print(f"[bold cyan]Resuming team: {team_id}[/bold cyan]")
+        # Validate team ID format
+        if not team_id or not all(c.isalnum() or c in "-_" for c in team_id):
+            raise ValueError(
+                f"Invalid team ID: {team_id}\n"
+                f"Team ID must contain only alphanumeric characters, hyphens, and underscores"
+            )
 
-    # Run team resume script
-    cmd = ["bash", ".claude/hooks/team-resume.sh", team_id]
+        # Check if team exists
+        team_state_dir = project_root / ".team-state" / team_id
+        if not team_state_dir.exists():
+            raise RuntimeError(
+                f"Team not found: {team_id}\n"
+                f"Run 'yawl team list' to see available teams"
+            )
 
-    exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root)
+        console.print(f"[bold cyan]Resuming team: {team_id}[/bold cyan]")
 
-    if exit_code == 0:
-        console.print("[bold green]✓ Team resumed[/bold green]")
-        if stdout:
-            console.print(f"[dim]{stdout}[/dim]")
-    else:
-        console.print("[bold red]✗ Resume failed[/bold red]")
-        if stderr:
-            console.print(f"[red]{stderr}[/red]")
-        raise typer.Exit(code=exit_code)
+        # Run team resume script
+        cmd = ["bash", ".claude/hooks/team-resume.sh", team_id]
+
+        exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose, timeout=120)
+
+        if exit_code == 0:
+            console.print("[bold green]✓ Team resumed[/bold green]")
+            if stdout:
+                console.print(f"[dim]{stdout}[/dim]")
+        else:
+            console.print("[bold red]✗ Resume failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=exit_code)
+
+    except (ValueError, RuntimeError) as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
 
 
 @team_app.command()

@@ -30,7 +30,7 @@ class TestGregverseCommands:
         import yawl_cli.gregverse
         monkeypatch.setattr(yawl_cli.gregverse, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(gregverse_app, ["import", "bpmn", str(bpmn_file)])
+        result = runner.invoke(gregverse_app, ["import-workflow", str(bpmn_file), "--format", "bpmn"])
 
         assert result.exit_code == 0
         assert "Imported" in result.stdout or result.exit_code == 0

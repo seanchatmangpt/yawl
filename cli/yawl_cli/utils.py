@@ -400,7 +400,7 @@ def load_facts(facts_dir: Path, fact_name: str) -> dict:
         with open(fact_file, "r", encoding="utf-8") as f:
             content = json.load(f)
             if not isinstance(content, dict):
-                raise ValueError(f"Expected JSON object, got {type(content).__name__}")
+                raise RuntimeError(f"Expected JSON object, got {type(content).__name__}")
             return content
     except json.JSONDecodeError as e:
         raise RuntimeError(
