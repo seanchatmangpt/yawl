@@ -542,14 +542,7 @@ def prompt_yes_no(message: str, default: bool = True) -> bool:
         response = input(prompt_text).strip().lower()
         if response == "":
             return default
-        # Recognize yes responses
-        if response in ["y", "yes", "1", "true"]:
-            return True
-        # Recognize no responses
-        if response in ["n", "no", "0", "false"]:
-            return False
-        # Invalid input: use default
-        return default
+        return response in ["y", "yes", "1", "true"]
     except EOFError:
         # Non-interactive mode
         return default

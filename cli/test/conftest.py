@@ -167,3 +167,14 @@ def temp_workflow_file(temp_project_dir: Path) -> Path:
 def reset_project_root(monkeypatch, temp_project_dir: Path) -> None:
     """Reset current working directory to temp project for each test."""
     monkeypatch.chdir(temp_project_dir)
+
+
+@pytest.fixture(autouse=True)
+def mock_console(monkeypatch) -> None:
+    """Mock Rich console to avoid 'file' parameter issues in test environment."""
+    from unittest.mock import MagicMock
+    from yawl_cli import utils
+
+    # Create a mock console that accepts 'file' parameter but ignores it
+    mock_console = MagicMock()
+    monkeypatch.setattr(utils, "console", mock_console)

@@ -70,12 +70,12 @@ class TestConfigLoading:
         assert config.branch == "feature/test-branch"
 
     def test_load_invalid_yaml_raises_error(
-        self, temp_project_dir: Path, invalid_yaml_file: Path
+        self, temp_project_dir: Path
     ) -> None:
         """Loading invalid YAML raises RuntimeError."""
-        # Replace valid config with invalid one
-        (temp_project_dir / ".yawl" / "config.yaml").unlink()
-        invalid_yaml_file.rename(temp_project_dir / ".yawl" / "config.yaml")
+        # Create invalid YAML config file
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config_file.write_text("invalid: yaml: content:\n  - this: is: bad\n    [invalid")
 
         with pytest.raises(RuntimeError, match="Invalid YAML"):
             Config.from_project(temp_project_dir)
