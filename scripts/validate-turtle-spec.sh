@@ -109,9 +109,9 @@ validate_namespaces() {
 
     info "Validating namespace declarations..."
 
-    # Check for required YAWL namespace
-    if ! grep -q "yawls:\|yawlfoundation.org/yawlschema" "$ttl_file"; then
-        echo "FAIL: YAWL namespace (yawls:) not declared"
+    # Check for required YAWL namespace (can be yawl: or yawls:)
+    if ! grep -q "yawl:\|yawls:\|yawlfoundation.org/yawlschema" "$ttl_file"; then
+        echo "FAIL: YAWL namespace (yawl: or yawls:) not declared"
         ((errors++))
     fi
 
@@ -198,33 +198,38 @@ validate_split_join_balance() {
 
     info "Validating split/join balance..."
 
-    # Count split and join occurrences
+    # Count split and join occurrences using awk to be more robust
     local split_count
     local join_count
 
-    split_count=$(grep -c "yawls:hasSplit\|yawls:Split" "$ttl_file" || echo "0")
-    join_count=$(grep -c "yawls:hasJoin\|yawls:Join" "$ttl_file" || echo "0")
+    split_count=$(grep -Ec "yawl:hasSplit|yawl:Split" "$ttl_file" 2>/dev/null | awk '{print $1}')
+    join_count=$(grep -Ec "yawl:hasJoin|yawl:Join" "$ttl_file" 2>/dev/null | awk '{print $1}')
 
-    if [[ $split_count -gt 0 ]] && [[ $join_count -eq 0 ]]; then
+    # Default to 0 if empty
+    split_count="${split_count:-0}"
+    join_count="${join_count:-0}"
+
+    if (( split_count > 0 )) && (( join_count == 0 )); then
         echo "FAIL: Found $split_count split(s) but no joins"
         ((errors++))
     fi
 
-    if [[ $join_count -gt 0 ]] && [[ $split_count -eq 0 ]]; then
+    if (( join_count > 0 )) && (( split_count == 0 )); then
         echo "FAIL: Found $join_count join(s) but no splits"
         ((errors++))
     fi
 
     # Validate split types are valid
     local invalid_split_types
-    invalid_split_types=$(grep -o "yawls:Split.*yawls:code [^;]*" "$ttl_file" | grep -v "AND\|XOR\|OR" | wc -l)
+    invalid_split_types=$(grep -Eo "yawl:Split.*yawl:code [^;]*" "$ttl_file" 2>/dev/null | grep -v "AND\|XOR\|OR" | wc -l)
+    invalid_split_types=$(echo "$invalid_split_types" | awk '{print $1}')
 
-    if [[ $invalid_split_types -gt 0 ]]; then
+    if (( invalid_split_types > 0 )); then
         echo "FAIL: Found $invalid_split_types invalid split types (must be AND, XOR, or OR)"
         ((errors++))
     fi
 
-    if [[ $split_count -gt 0 ]] && [[ $join_count -gt 0 ]]; then
+    if (( split_count > 0 )) && (( join_count > 0 )); then
         info "Found $split_count split(s) and $join_count join(s) - balanced"
     fi
 
@@ -241,23 +246,28 @@ validate_connectivity() {
     local input_cond_count
     local output_cond_count
 
-    input_cond_count=$(grep -c "yawls:InputCondition\|yawls:isInputCondition" "$ttl_file" || echo "0")
-    output_cond_count=$(grep -c "yawls:OutputCondition\|yawls:isOutputCondition" "$ttl_file" || echo "0")
+    input_cond_count=$(grep -Ec "yawl:InputCondition|yawl:isInputCondition" "$ttl_file" 2>/dev/null | awk '{print $1}')
+    output_cond_count=$(grep -Ec "yawl:OutputCondition|yawl:isOutputCondition" "$ttl_file" 2>/dev/null | awk '{print $1}')
+
+    # Default to 0 if empty
+    input_cond_count="${input_cond_count:-0}"
+    output_cond_count="${output_cond_count:-0}"
 
     # A well-formed workflow should have exactly one input and one output condition
-    if [[ $input_cond_count -eq 0 ]] && grep -q "yawls:Task" "$ttl_file"; then
+    if (( input_cond_count == 0 )) && grep -Eq "yawl:Task|yawl:Condition" "$ttl_file"; then
         echo "WARN: No input condition found (tasks exist but no entry point)"
     fi
 
-    if [[ $output_cond_count -eq 0 ]] && grep -q "yawls:Task" "$ttl_file"; then
+    if (( output_cond_count == 0 )) && grep -Eq "yawl:Task|yawl:Condition" "$ttl_file"; then
         echo "WARN: No output condition found (tasks exist but no exit point)"
     fi
 
     # Check for flow connections
     local flow_count
-    flow_count=$(grep -c "yawls:hasFlowInto\|yawls:FlowInto" "$ttl_file" || echo "0")
+    flow_count=$(grep -Ec "yawl:hasFlowInto|yawl:FlowInto|yawl:hasFlow" "$ttl_file" 2>/dev/null | awk '{print $1}')
+    flow_count="${flow_count:-0}"
 
-    if [[ $flow_count -eq 0 ]] && grep -q "yawls:Task" "$ttl_file"; then
+    if (( flow_count == 0 )) && grep -Eq "yawl:Task|yawl:Condition" "$ttl_file"; then
         echo "FAIL: No flow connections found (tasks exist but no control flow)"
         ((errors++))
     fi
@@ -273,20 +283,22 @@ validate_decomposition() {
 
     # Check for decomposition elements
     local decomp_count
-    decomp_count=$(grep -c "yawls:Decomposition\|yawls:WorkflowNet" "$ttl_file" || echo "0")
+    decomp_count=$(grep -Ec "yawl:Decomposition|yawl:Net|yawl:Specification" "$ttl_file" 2>/dev/null | awk '{print $1}')
+    decomp_count="${decomp_count:-0}"
 
-    if [[ $decomp_count -eq 0 ]]; then
+    if (( decomp_count == 0 )); then
         info "No decompositions found (valid for data/schema-only files)"
         return 0
     fi
 
     # If we have decompositions, check they have at least one element
-    if grep -q "yawls:WorkflowNet" "$ttl_file"; then
+    if grep -Eq "yawl:Net|yawl:Specification" "$ttl_file"; then
         local pce_count
-        pce_count=$(grep -c "yawls:hasProcessControlElements" "$ttl_file" || echo "0")
+        pce_count=$(grep -Ec "yawl:hasElement|yawl:hasProcessControlElements" "$ttl_file" 2>/dev/null | awk '{print $1}')
+        pce_count="${pce_count:-0}"
 
-        if [[ $pce_count -eq 0 ]]; then
-            echo "WARN: WorkflowNet(s) found but no process control elements defined"
+        if (( pce_count == 0 )); then
+            echo "WARN: Net(s) found but no process control elements defined"
         fi
     fi
 

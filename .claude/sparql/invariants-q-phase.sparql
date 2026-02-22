@@ -1,0 +1,484 @@
+# Q PHASE INVARIANT VERIFICATION QUERIES
+# ========================================
+# Validates the four core Q-phase invariants:
+# Q1: real_impl ∨ throw - Methods implement real logic or throw UnsupportedOperationException
+# Q2: ¬mock - No mock, stub, fake, test implementations
+# Q3: ¬lie - Code behavior matches documentation and method signature
+# Q4: ¬silent_fallback - Exceptions propagated, never silently caught and faked
+#
+# Usage:
+#   ggen validate --phase invariants --emit <dir> --sparql-file invariants-q-phase.sparql
+#
+# Output: invariants-receipt.json with violations list
+# Exit codes: 0 (GREEN - all pass) or 2 (RED - violations found)
+#
+# Integration: Called after H (Guards) phase passes, before consolidation (Ω)
+
+PREFIX code: <http://yawl.org/code#>
+PREFIX java: <http://yawl.org/java#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# ==============================================================================
+# QUERY 1: Q_REAL_IMPL_OR_THROW
+# INVARIANT: Methods either implement real logic or throw UnsupportedOperationException
+# SEVERITY: FAIL (blocks consolidation)
+# ==============================================================================
+# Detects:
+# - Empty method bodies: public void foo() { }
+# - Stub returns: return ""; or return 0; or return null;
+# - Methods that throw wrong exception type
+# - Methods with only placeholder comments, no implementation
+#
+# Pattern detection:
+#   1. Body is empty or nearly empty
+#   2. No UnsupportedOperationException thrown
+#   3. Return type is non-void (i.e., must return something)
+#   4. No logic-bearing statements (no db calls, no API calls, no algorithm)
+#
+# Allowed:
+#   - throw new UnsupportedOperationException("Implementation guide...")
+#   - Empty methods that are abstract (interface/abstract class)
+#   - Empty methods that are lifecycle hooks (optional to implement)
+# ==============================================================================
+
+SELECT ?violation ?method_name ?class_name ?line ?body_preview ?severity ?fix_guidance
+WHERE {
+  ?method a code:Method ;
+          code:name ?method_name ;
+          code:lineNumber ?line ;
+          code:body ?body ;
+          code:returnType ?retType ;
+          code:visibility ?visibility ;
+          code:inClass ?class .
+
+  ?class code:name ?class_name .
+
+  # Skip abstract methods and interface methods (they're allowed to be empty)
+  FILTER(?visibility NOT IN ("abstract", "interface"))
+
+  # Pattern 1: Completely empty method body
+  # Detected: method body is just { } with possible whitespace
+  FILTER(
+    REGEX(?body, '^\\s*\\{\\s*\\}\\s*$') &&
+    ?retType != "void"  # Empty return is only valid for void
+  )
+
+  # Pattern 2: Methods with ONLY a placeholder return (not throwing)
+  FILTER(
+    (
+      REGEX(?body, '^\\s*\\{\\s*return\\s+("");|^\\s*\\{\\s*return\\s+(0|null);') &&
+      !REGEX(?body, 'UnsupportedOperationException')
+    ) ||
+    (
+      # Returns empty collection without semantic meaning
+      REGEX(?body, 'return\\s+(Collections\\.empty|new\\s+(HashMap|ArrayList)\\(\\));\\s*\\}\\s*$') &&
+      !REGEX(?body, 'real.*logic|TODO|FIXME')  # If it claims to be real, allow empty collection
+    )
+  )
+
+  # Pattern 3: Methods with no throw and no real implementation keyword
+  FILTER(
+    !REGEX(?body, 'UnsupportedOperationException|throw\\s+\\w+Exception') &&
+    !REGEX(?body, '(insert|update|delete|select|execute|call|query|request|fetch|save|load|database|api|http|network|file|stream|reader|writer)')
+  )
+
+  # Extract body preview (first 50 chars)
+  BIND(SUBSTR(?body, 1, 50) AS ?body_preview)
+
+  BIND("Q_REAL_IMPL_OR_THROW" AS ?violation)
+  BIND("FAIL" AS ?severity)
+  BIND(
+    CONCAT(
+      "Method must implement real logic or throw UnsupportedOperationException. ",
+      "Currently: ", ?body_preview, "... ",
+      "See HYPER_STANDARDS.md for required pattern."
+    ) AS ?fix_guidance
+  )
+}
+ORDER BY ?class_name ?method_name ?line
+LIMIT 1000
+
+# ==============================================================================
+# QUERY 2: Q_NO_MOCK_IMPLEMENTATIONS
+# INVARIANT: No mock, stub, fake, test, demo, sample, or temporary implementations
+# SEVERITY: FAIL (blocks consolidation)
+# ==============================================================================
+# Detects production code containing mock-like names:
+#   - Methods: mockFetch(), getFakeData(), testResponse()
+#   - Classes: MockService, FakeRepository, TestAdapter
+#   - Variables: String mockData = "...", Object dummyUser = null
+#   - Flags: boolean useMockData, MOCK_MODE, TEST_MODE
+#
+# Detection logic:
+#   1. Scan method names for mock/stub/fake/test/demo/sample/temp prefix or suffix
+#   2. Scan class names for Mock/Fake/Stub/Test/Demo/Sample prefix
+#   3. Scan variable names (fields, local variables)
+#   4. Scan for mock mode boolean flags (isMocking, useMockData, etc)
+#
+# Context: These patterns are valid in test/ directories only, forbidden in src/main
+# ==============================================================================
+
+SELECT ?violation ?item_name ?item_type ?class_name ?line ?severity ?fix_guidance
+WHERE {
+  {
+    # Sub-query 1: Mock method names
+    ?method a code:Method ;
+            code:name ?item_name ;
+            code:lineNumber ?line ;
+            code:inClass ?class .
+
+    ?class code:name ?class_name ;
+           code:sourceFile ?sourceFile .
+
+    # Only report from src/main, not src/test
+    FILTER(!REGEX(?sourceFile, '/test/'))
+
+    # Check for mock-like pattern in method name
+    FILTER(
+      REGEX(?item_name, '^(mock|stub|fake|test|demo|sample|temp)[A-Z]') ||
+      REGEX(?item_name, '(Mock|Stub|Fake|Test|Demo|Sample|Temp)$')
+    )
+
+    BIND("method" AS ?item_type)
+
+  } UNION {
+
+    # Sub-query 2: Mock class names
+    ?class a code:Class ;
+           code:name ?item_name ;
+           code:lineNumber ?line ;
+           code:sourceFile ?sourceFile .
+
+    FILTER(!REGEX(?sourceFile, '/test/'))
+
+    FILTER(
+      REGEX(?item_name, '^(Mock|Stub|Fake|Test|Demo|Sample)[A-Za-z]*$')
+    )
+
+    BIND(?item_name AS ?class_name)
+    BIND("class" AS ?item_type)
+
+  } UNION {
+
+    # Sub-query 3: Mock variable/field names
+    ?field a code:Field ;
+           code:name ?item_name ;
+           code:lineNumber ?line ;
+           code:inClass ?class .
+
+    ?class code:name ?class_name ;
+           code:sourceFile ?sourceFile .
+
+    FILTER(!REGEX(?sourceFile, '/test/'))
+
+    FILTER(
+      REGEX(?item_name, '^(mock|stub|fake|test|demo|sample|temp|dummy)[A-Z]') ||
+      REGEX(?item_name, '(Mock|Stub|Fake|Test|Demo|Sample|Temp|Dummy)$')
+    )
+
+    BIND("field" AS ?item_type)
+
+  }
+
+  BIND("Q_NO_MOCK" AS ?violation)
+  BIND("FAIL" AS ?severity)
+  BIND(
+    CONCAT(
+      "Remove mock implementation: ", ?item_name, " (", ?item_type, "). ",
+      "Implement real version or throw UnsupportedOperationException. ",
+      "See HYPER_STANDARDS.md Pattern 2."
+    ) AS ?fix_guidance
+  )
+}
+ORDER BY ?item_type ?class_name ?item_name ?line
+LIMIT 1000
+
+# ==============================================================================
+# QUERY 3: Q_NO_SILENT_FALLBACK
+# INVARIANT: Exceptions are propagated or logged with re-throw, never caught silently
+# SEVERITY: FAIL (blocks consolidation)
+# ==============================================================================
+# Detects error handling antipatterns:
+#   1. catch(...) { return mockData(); } - Fake recovery
+#   2. catch(...) { } - Silent swallow
+#   3. catch(...) { log.warn("failed"); } - Log and ignore
+#   4. catch(...) { return defaultValue; } - Default fallback
+#   5. getOrDefault(key, "fake_default") - Coalesce to fake value
+#
+# Requirements (at least one):
+#   - throw the exception (re-throw or throw new)
+#   - throw a different exception (if wrapping)
+#   - don't catch at all (let it propagate)
+#
+# Allowed patterns:
+#   - catch(Exception e) { throw new RuntimeException("...", e); }
+#   - catch(IOException e) { log.error("Failed to read", e); throw e; }
+#   - catch(SQLException e) { throw new DataAccessException(e); }
+# ==============================================================================
+
+SELECT ?violation ?method_name ?class_name ?line ?catch_pattern ?severity ?fix_guidance
+WHERE {
+  ?method a code:Method ;
+          code:name ?method_name ;
+          code:lineNumber ?line ;
+          code:body ?body ;
+          code:inClass ?class .
+
+  ?class code:name ?class_name ;
+         code:sourceFile ?sourceFile .
+
+  FILTER(!REGEX(?sourceFile, '/test/'))
+
+  # Detect antipattern: catch block with silent handling
+  FILTER(
+    # Pattern 1: catch(...) { return mock/fake/default/empty; }
+    REGEX(?body, 'catch\\s*\\([^)]*\\)\\s*\\{[^}]*(return\\s+(mock|fake|test|default|empty|new\\s+\\w+\\(\\))[^}]*(?!throw))') ||
+
+    # Pattern 2: catch(...) { } - completely empty
+    REGEX(?body, 'catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}') ||
+
+    # Pattern 3: catch with only logging, no re-throw
+    (
+      REGEX(?body, 'catch\\s*\\([^)]*\\)\\s*\\{[^}]*log\\.(warn|error|info)\\(') &&
+      !REGEX(?body, 'throw')
+    ) ||
+
+    # Pattern 4: .getOrDefault with non-semantic default
+    REGEX(?body, '\\.getOrDefault\\([^,]+,\\s*"(test|mock|fake|default|sample)"') ||
+
+    # Pattern 5: ternary with fake fallback in catch context
+    REGEX(?body, 'catch[^}]*\\?[^:]*:[^}]*(mock|fake|test|default)')
+  )
+
+  # Extract catch clause for reporting
+  BIND(REGEX(?body, 'catch\\s*\\(([^)]*)\\)') AS ?catch_pattern)
+
+  BIND("Q_NO_SILENT_FALLBACK" AS ?violation)
+  BIND("FAIL" AS ?severity)
+  BIND(
+    CONCAT(
+      "Silent exception fallback detected in catch block. ",
+      "Must throw exception (not return fake/mock/default). ",
+      "Pattern: catch(...) { throw new RuntimeException(..., e); } ",
+      "See HYPER_STANDARDS.md Pattern 4."
+    ) AS ?fix_guidance
+  )
+}
+ORDER BY ?class_name ?method_name ?line
+LIMIT 1000
+
+# ==============================================================================
+# QUERY 4: Q_CODE_MATCHES_DOCUMENTATION (Q_NO_LIE)
+# INVARIANT: Method implementation matches documentation and signature
+# SEVERITY: FAIL (blocks consolidation)
+# ==============================================================================
+# Detects semantic lies where:
+#   - Javadoc claims validation but method doesn't validate
+#   - Javadoc claims persistence but method doesn't persist
+#   - Javadoc claims exception handling but method doesn't throw
+#   - Javadoc claims transformation but method doesn't transform
+#   - Method name claims action but method is a no-op
+#
+# Semantic analysis required:
+#   1. Extract Javadoc @return claims
+#   2. Extract Javadoc @throws claims
+#   3. Check method body for corresponding implementation
+#   4. Check method name verbs (save, load, validate, fetch, etc)
+#
+# AI NOTE: This query requires semantic understanding. Regex helps but human review needed.
+# ==============================================================================
+
+SELECT ?violation ?method_name ?class_name ?line ?javadoc_excerpt ?severity ?fix_guidance
+WHERE {
+  ?method a code:Method ;
+          code:name ?method_name ;
+          code:lineNumber ?line ;
+          code:javadoc ?javadoc ;
+          code:body ?body ;
+          code:inClass ?class .
+
+  ?class code:name ?class_name ;
+         code:sourceFile ?sourceFile .
+
+  FILTER(!REGEX(?sourceFile, '/test/'))
+
+  # Pattern 1: Claims validation but doesn't validate
+  (
+    (
+      REGEX(?javadoc, '(validates?|checks?|verifies?|ensures?|confirms?)') &&
+      REGEX(?body, '^\\s*\\{\\s*\\}\\s*$')
+    ) ||
+
+    # Pattern 2: Claims persistence but doesn't persist
+    (
+      REGEX(?javadoc, '(persists?|saves?|stores?|writes?)') &&
+      !REGEX(?body, '(save|persist|update|insert|execute|Statement|Connection|repository)')
+    ) ||
+
+    # Pattern 3: Claims exception handling but doesn't throw
+    (
+      REGEX(?javadoc, '(throws|may throw|raises)\\s+(\\w+)') &&
+      !REGEX(?body, 'throw\\s+\\w+')
+    ) ||
+
+    # Pattern 4: Claims transformation but returns original unchanged
+    (
+      REGEX(?javadoc, '(transforms?|converts?|processes?|maps?)') &&
+      REGEX(?body, 'return\\s+(this|input|arg\\w+|param)\\s*;')
+    ) ||
+
+    # Pattern 5: Method name indicates fetch/load but returns empty/null
+    (
+      REGEX(?method_name, '(fetch|load|retrieve|get|find|query|search)') &&
+      REGEX(?body, 'return\\s+(null|""|Collections\\.empty|new\\s+(HashMap|ArrayList)\\(\\))\\s*;')
+    )
+  )
+
+  # Extract javadoc excerpt for reporting
+  BIND(SUBSTR(?javadoc, 1, 80) AS ?javadoc_excerpt)
+
+  BIND("Q_NO_LIE" AS ?violation)
+  BIND("FAIL" AS ?severity)
+  BIND(
+    CONCAT(
+      "Implementation does not match documentation. ",
+      "Method: ", ?method_name, " claims: ", ?javadoc_excerpt, "... ",
+      "But implementation does not deliver. ",
+      "Fix: Either implement what you promised, or update documentation. ",
+      "See HYPER_STANDARDS.md Pattern 5."
+    ) AS ?fix_guidance
+  )
+}
+ORDER BY ?class_name ?method_name ?line
+LIMIT 1000
+
+# ==============================================================================
+# QUERY 5: Q_COMPLETE_INVARIANT_VIOLATIONS (Summary)
+# Aggregates all Q-phase violations for overall status report
+# ==============================================================================
+# Returns: count of violations by type, total severity level
+
+SELECT (COUNT(?violation) AS ?total_violations)
+       (COUNT(DISTINCT ?violation_type) AS ?violation_types)
+       (COUNT(DISTINCT ?class_name) AS ?classes_with_violations)
+       (IF(?total_violations > 0, "FAIL", "GREEN") AS ?overall_status)
+WHERE {
+  {
+    # All Q phase violations (union of all patterns)
+    ?method a code:Method ;
+            code:body ?body ;
+            code:inClass ?class .
+
+    ?class code:name ?class_name ;
+           code:sourceFile ?sourceFile .
+
+    FILTER(!REGEX(?sourceFile, '/test/'))
+
+    # Detect any violation pattern
+    FILTER(
+      # Q1: Empty/stub methods
+      (REGEX(?body, '^\\s*\\{\\s*\\}\\s*$')) ||
+
+      # Q3: Silent catch
+      (REGEX(?body, 'catch\\s*\\([^)]*\\)\\s*\\{[^}]*(return|log\\.(warn|error))')) ||
+
+      # Q2: Mock patterns detected elsewhere
+      (REGEX(?body, '(mock|fake|test|dummy)'))
+    )
+
+    # Bind violation type for counting
+    BIND(
+      IF(REGEX(?body, '^\\s*\\{\\s*\\}\\s*$'),
+         "Q1_REAL_IMPL",
+         IF(REGEX(?body, 'catch\\s*\\([^)]*\\)\\s*\\{'),
+            "Q3_NO_SILENT_FALLBACK",
+            "Q2_NO_MOCK"
+         )
+      ) AS ?violation_type
+    )
+
+    BIND(?method AS ?violation)
+  }
+}
+
+# ==============================================================================
+# QUERY 6: Q_METHOD_ERROR_HANDLING_AUDIT
+# UTILITY: Identify critical methods lacking proper error handling
+# ==============================================================================
+# Flags methods that:
+#   1. Have critical semantics (save, load, fetch, validate, auth, encrypt)
+#   2. Lack exception handling (try/catch/throws)
+# These aren't violations (Q4) but indicate risk areas
+#
+# Useful for code review and risk assessment
+
+SELECT ?class_name ?method_name ?line ?semantics ?has_exception_handling ?risk_level
+WHERE {
+  ?method a code:Method ;
+          code:name ?method_name ;
+          code:lineNumber ?line ;
+          code:body ?body ;
+          code:inClass ?class .
+
+  ?class code:name ?class_name ;
+         code:sourceFile ?sourceFile .
+
+  FILTER(!REGEX(?sourceFile, '/test/'))
+
+  # Check if method has exception handling
+  BIND(
+    (
+      REGEX(?body, '(try|catch|throws|throw|Exception)')
+    ) AS ?has_exception_handling
+  )
+
+  # Determine semantic criticality
+  BIND(
+    CASE
+      WHEN REGEX(?method_name, '(save|persist|update|insert|delete|execute)') THEN "database_operation"
+      WHEN REGEX(?method_name, '(fetch|load|retrieve|get|find|query|search)') THEN "data_access"
+      WHEN REGEX(?method_name, '(encrypt|decrypt|hash|sign|verify|validate)') THEN "security_operation"
+      WHEN REGEX(?method_name, '(send|receive|request|call|invoke)') THEN "network_operation"
+      WHEN REGEX(?method_name, '(auth|login|logout|authenticate|authorize)') THEN "authentication"
+      ELSE NULL
+    END AS ?semantics
+  )
+
+  # Determine risk level
+  BIND(
+    IF(?semantics IS NOT NULL && !?has_exception_handling,
+       "HIGH",
+       IF(?semantics IS NOT NULL,
+          "MEDIUM",
+          "LOW"
+       )
+    ) AS ?risk_level
+  )
+
+  # Only report high-risk methods lacking exception handling
+  FILTER(?risk_level = "HIGH")
+}
+ORDER BY ?class_name ?method_name
+LIMIT 500
+
+# ==============================================================================
+# END OF Q PHASE SPARQL QUERIES
+# ==============================================================================
+# Integration Points:
+#   1. Called by: ggen validate --phase invariants
+#   2. Input: Generated Java code (AST in RDF form)
+#   3. Output: invariants-receipt.json with violation details
+#   4. Exit codes: 0 (GREEN - all pass), 2 (RED - violations found)
+#
+# When violations found:
+#   1. Read invariants-receipt.json for details
+#   2. Fix code (implement real logic or throw exception)
+#   3. Rerun: ggen validate --phase invariants
+#   4. Proceed to consolidation (Ω)
+#
+# References:
+#   - .claude/HYPER_STANDARDS.md - Five Commandments
+#   - docs/GODSPEED_CLI_GUIDE.md - Q Phase Usage
+#   - error-recovery.md - When violations are found
