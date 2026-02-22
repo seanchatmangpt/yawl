@@ -294,7 +294,8 @@ def main() -> int:
     gen_parser = subparsers.add_parser("generate", help="Generate from RDF + template")
     gen_parser.add_argument("--template", required=True, help="Tera/Jinja2 template file")
     gen_parser.add_argument("--input", required=True, help="RDF Turtle input file")
-    gen_parser.add_argument("--output", required=True, help="Output file path")
+    gen_parser.add_argument("--output", required=True, help="Output file path (directory for SPARQL looped generation)")
+    gen_parser.add_argument("--sparql", required=False, help="SPARQL query file for looped generation")
     gen_parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     # Parse args

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YAWL_Specification>
+  <SpecificationSet>
+    <Specification name="{{ agent_name|replace(' ', '_') }}_Workflow">
+      <Task id="task_{{ agent_name|replace(' ', '_')|lower }}">
+        <Name>{{ agent_name }} - Phase {{ phase }}</Name>
+        <Documentation>Role: {{ agent_role }}</Documentation>
+      </Task>
+    </Specification>
+  </SpecificationSet>
+</YAWL_Specification>
