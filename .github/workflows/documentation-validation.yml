@@ -104,7 +104,7 @@ jobs:
           ERRORS=0
           for xsd in schema/*.xsd; do
             if [[ -f "$xsd" ]]; then
-              if ! xmllint --schema "$xsd" "$xsd" --noout 2>&1; then
+              if ! xmllint --noout "$xsd" 2>&1; then
                 ERRORS=$((ERRORS + 1))
                 echo "::error file=$xsd::Schema validation failed"
               fi

@@ -200,7 +200,7 @@ jobs:
 
       - name: Build and Push Container
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/production/Dockerfile.engine
@@ -217,7 +217,7 @@ jobs:
           sbom: true
 
       - name: Scan Container with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: 'sarif'

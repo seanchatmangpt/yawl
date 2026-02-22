@@ -105,8 +105,7 @@ jobs:
             runner: ubuntu-latest
             arch: arm64
     outputs:
-      image-digest-amd64: ${{ steps.build-amd64.outputs.digest }}
-      image-digest-arm64: ${{ steps.build-arm64.outputs.digest }}
+      image-digest: ${{ steps.build.outputs.digest }}
       image-tag: ${{ steps.meta.outputs.version }}
 
     steps:
@@ -169,7 +168,7 @@ jobs:
             ${{ runner.os }}-buildx-mcp-
 
       - name: Build MCP Server Image (${{ matrix.platform }})
-        id: build-${{ matrix.arch }}
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -198,7 +197,7 @@ jobs:
 
       - name: Run Trivy Security Scan on MCP Image
         if: github.event_name == 'pull_request'
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: image
           image-ref: ${{ env.REGISTRY }}/${{ env.MCP_IMAGE_NAME }}:${{ steps.meta.outputs.version || 'latest' }}
