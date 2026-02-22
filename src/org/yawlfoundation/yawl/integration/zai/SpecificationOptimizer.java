@@ -243,7 +243,7 @@ public class SpecificationOptimizer {
 
     private String serializeSpecFull(YSpecification spec) {
         try {
-            return org.yawlfoundation.yawl.marshal.YMarshal.marshal(spec);
+            return org.yawlfoundation.yawl.unmarshal.YMarshal.marshal(spec);
         } catch (Exception e) {
             LOGGER.warning("Failed to marshal spec, using simplified format: " + e.getMessage());
             return "<specification id=\"" + spec.getURI() + "\">...</specification>";

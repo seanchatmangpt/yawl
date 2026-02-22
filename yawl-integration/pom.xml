@@ -379,9 +379,12 @@
                              ===================================================================== -->
 
                         <!-- =====================================================================
-                             MCP Spring classes that reference ZaiFunctionService
+                             MCP Spring classes - still have MCP SDK 1.0.0-RC3 API drift
+                             (CallToolResult constructor changed, cannot find symbol errors)
                              ===================================================================== -->
-                        <!-- MCP Spring classes included for testing -->
+                        <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
+                        <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
+                        <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
 
                         <!-- =====================================================================
                              Packages that depend on zai.ZaiFunctionService (excluded above)
