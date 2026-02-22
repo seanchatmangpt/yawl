@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<specificationSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.yawlfoundation.org/yawlschema">
-  <specification name="{{ agentName|replace(' ', '_') }}_Workflow">
-    <task id="task_{{ agentName|replace(' ', '_')|lower }}">
-      <name>{{ agentName }} - Phase {{ phase }}</name>
-      <documentation>Role: {{ agentRole }}</documentation>
-    </task>
-  </specification>
-</specificationSet>
+<!-- Generated YAWL Agent Workflow -->
+<!-- Agent: {{ agentName }}, Role: {{ agentRole }}, Phase: {{ phase }} -->
+<workflow>
+  <agentSpecification>
+    <name>{{ agentName }}</name>
+    <role>{{ agentRole }}</role>
+    <phase>{{ phase }}</phase>
+    <metadata>
+      <description>Auto-generated workflow for {{ agentName }}</description>
+      <generated-timestamp>2026-02-22T01:43:00Z</generated-timestamp>
+      <generator>ggen v0.1.0</generator>
+    </metadata>
+  </agentSpecification>
+</workflow>
