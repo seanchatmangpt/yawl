@@ -175,7 +175,6 @@ jobs:
           mvn clean package \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -Pprod \
             -DskipTests=false
 
@@ -314,7 +313,7 @@ jobs:
 
       - name: Build and Push Docker Image
         id: docker-build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/production/Dockerfile.engine
@@ -447,7 +446,7 @@ jobs:
           cat RELEASE_NOTES.md
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.determine-version.outputs.version }}
           name: Release ${{ needs.determine-version.outputs.version }}
@@ -525,7 +524,6 @@ jobs:
           mvn deploy \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -Pprod \
             -DskipTests=true \
             -DaltDeploymentRepository=nexus::default::https://nexus.example.com/repository/releases

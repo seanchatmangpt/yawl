@@ -1,0 +1,19 @@
+{
+  "commit": "593a8fc",
+  "coverage_hints": {
+    "minimum_branch_coverage": 0.55,
+    "minimum_line_coverage": 0.65,
+    "profile": "coverage",
+    "run_command": "mvn -T 1.5C clean verify -P coverage"
+  },
+  "generated_at": "2026-02-22T08:15:58Z",
+  "summary": {
+    "jacoco_exec_available": false,
+    "junit4_count": 0,
+    "junit5_count": 0,
+    "modules_with_tests": 0,
+    "test_resource_files": 0,
+    "total_test_files": 0
+  },
+  "test_inventory": []
+}

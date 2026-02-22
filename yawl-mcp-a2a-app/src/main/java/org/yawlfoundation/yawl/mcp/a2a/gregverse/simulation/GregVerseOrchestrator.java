@@ -391,17 +391,16 @@ public class GregVerseOrchestrator {
         Map<SagaStep, StepResult> results = new ConcurrentHashMap<>();
         List<ExecutionException> failures = Collections.synchronizedList(new ArrayList<>());
 
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<java.util.concurrent.Callable<StepResult>> tasks = new ArrayList<>();
             for (SagaStep step : steps) {
-                scope.fork(() -> {
+                tasks.add(() -> {
                     try {
                         StepResult result = executeStep(step, context, execution);
                         results.put(step, result);
                         if (!result.isSuccess()) {
                             failures.add(new ExecutionException(
-                                "Step " + step.getName() + " failed: " + result.getError(),
-                                null
-                            ));
+                                "Step " + step.getName() + " failed: " + result.getError(), null));
                         }
                         return result;
                     } catch (Exception e) {
@@ -411,23 +410,25 @@ public class GregVerseOrchestrator {
                     }
                 });
             }
-
-            // Join with deadline for timeout
-            scope.joinUntil(Instant.now().plus(timeout));
-
-            // Detect scope shutdown (early cancellation due to failure)
-            if (scope.isShutdown()) {
-                LOGGER.error("Parallel saga execution cancelled after {}ms", timeout.toMillis());
-                failures.add(new ExecutionException("Execution cancelled", null));
+            // invokeAll with timeout equivalent
+            boolean timedOut = false;
+            try {
+                List<Future<StepResult>> futures = executor.invokeAll(
+                        tasks, timeout.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+                for (Future<StepResult> future : futures) {
+                    if (!future.isDone()) {
+                        timedOut = true;
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOGGER.error("Parallel saga execution interrupted");
+                failures.add(new ExecutionException("Execution interrupted", e));
             }
-
-        } catch (TimeoutException e) {
-            LOGGER.error("Parallel saga execution timeout after {}ms", timeout.toMillis());
-            failures.add(new ExecutionException("Execution timeout", e));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.error("Parallel saga execution interrupted");
-            failures.add(new ExecutionException("Execution interrupted", e));
+            if (timedOut) {
+                LOGGER.error("Parallel saga execution timeout after {}ms", timeout.toMillis());
+                failures.add(new ExecutionException("Execution timeout", null));
+            }
         } catch (Exception e) {
             LOGGER.warn("Parallel saga execution failed: {}", e.getMessage());
             failures.add(new ExecutionException("Step execution failed", e));
