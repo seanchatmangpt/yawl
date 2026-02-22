@@ -313,6 +313,10 @@
                         <exclude>**/org/yawlfoundation/yawl/engine/interfce/rest/**/*.java</exclude>
                         <!-- Resilience health indicators require resilience4j dependencies not in local cache -->
                         <exclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/**/*.java</exclude>
+                        <!-- A2A Lifecycle Integration - API mismatch with A2A SDK Alpha2 -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/A2ALifecycleIntegration.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/A2AEventPublisher.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/A2ACaseMonitor.java</exclude>
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>

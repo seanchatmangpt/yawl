@@ -25,9 +25,13 @@ import junit.framework.TestSuite;
  *   CompositeProvider - all using real HttpServer captures (no mocks)
  * - A2AProtocolTest: full HTTP transport layer tests with real server instances
  * - A2AClientTest: client construction, pre-connection guards, close idempotency
+ * - A2AComplianceTest: A2A protocol compliance verification
+ * - A2AIntegrationTest: end-to-end workflow lifecycle tests
+ * - AutonomousAgentScenarioTest: autonomous agent scenario tests
+ * - VirtualThreadConcurrencyTest: virtual thread performance and concurrency tests
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class A2ATestSuite {
 
@@ -41,6 +45,10 @@ public class A2ATestSuite {
         suite.addTestSuite(A2AAuthenticationTest.class);
         suite.addTestSuite(A2AProtocolTest.class);
         suite.addTestSuite(A2AClientTest.class);
+        suite.addTestSuite(A2AComplianceTest.class);
+        suite.addTestSuite(A2AIntegrationTest.class);
+        suite.addTestSuite(AutonomousAgentScenarioTest.class);
+        suite.addTestSuite(VirtualThreadConcurrencyTest.class);
         return suite;
     }
 

@@ -73,6 +73,7 @@
         <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>
+        <module>yawl-benchmark</module>
     </modules>
 
     <!-- ======================================================================

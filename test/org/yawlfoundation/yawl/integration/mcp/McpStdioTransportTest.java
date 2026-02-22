@@ -633,8 +633,7 @@ public class McpStdioTransportTest {
 
     @Test
     @Order(8)
-    @Disabled("PipedInputStream buffer handling for 70KB+ messages requires async reader")
-    @DisplayName("Test large message handling exceeding default buffer size")
+        @DisplayName("Test large message handling exceeding default buffer size")
     @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
     void testLargeMessage() throws Exception {
         BufferedWriter clientWriter = new BufferedWriter(
@@ -730,8 +729,7 @@ public class McpStdioTransportTest {
 
     @Test
     @Order(9)
-    @Disabled("PipedInputStream buffer handling for 50KB+ sequential messages requires async reader")
-    @DisplayName("Test multiple large messages in sequence")
+        @DisplayName("Test multiple large messages in sequence")
     @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
     void testSequentialLargeMessages() throws Exception {
         BufferedWriter clientWriter = new BufferedWriter(
