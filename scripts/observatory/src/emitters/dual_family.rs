@@ -16,21 +16,10 @@ const STATELESS_PRIMARY: &[&str] = &["YStatelessEngine", "YCaseMonitor", "YCaseI
 pub fn emit(ctx: &EmitCtx, disc: &Discovery, cache: &Cache) -> EmitResult {
     let out = ctx.facts_dir().join("dual-family.json");
 
-    // Check cache: any Java file in engine or stateless packages
-    let mut input_paths: Vec<&Path> = vec![];
-    for java_file in disc.java_files() {
-        let s = java_file.to_string_lossy();
-        if s.contains("yawl/engine/") || s.contains("yawl/stateless/") {
-            input_paths.push(java_file);
-        }
-    }
-
-    let default_src = ctx.repo.join("src");
-    if input_paths.is_empty() {
-        input_paths.push(&default_src);
-    }
-
-    if !cache.is_stale("facts/dual-family.json", &input_paths) {
+    // Check cache: module dirs + src
+    let mut dir_inputs: Vec<std::path::PathBuf> = disc.module_dirs().iter().cloned().collect();
+    dir_inputs.push(ctx.repo.join("src"));
+    if !cache.is_stale("facts/dual-family.json", &dir_inputs.iter().map(|p| p.as_path()).collect::<Vec<_>>()) {
         return Ok(out);
     }
 
@@ -109,7 +98,6 @@ fn count_family_classes(java_files: &[std::path::PathBuf], path_filter: &str, _i
 }
 
 /// Find interfaces defined in shared source (../src or ../test).
-/// These are likely shared between families (Observer, ResourcePool, etc.).
 fn find_shared_interfaces(java_files: &[std::path::PathBuf]) -> Vec<String> {
     let mut interfaces = Vec::new();
     let mut seen = std::collections::HashSet::new();
@@ -118,19 +106,20 @@ fn find_shared_interfaces(java_files: &[std::path::PathBuf]) -> Vec<String> {
         let s = java_file.to_string_lossy();
 
         // Check if in ../src or ../test (shared) but NOT in engine/ or stateless/
-        let in_shared = (s.contains("/src/") || s.contains("/test/")) && !s.contains("/src/main/") && !s.contains("/src/test/");
+        let in_shared = (s.contains("/src/") || s.contains("/test/"))
+            && !s.contains("/src/main/")
+            && !s.contains("/src/test/");
         if !in_shared {
             continue;
         }
 
-        // Also skip test files
+        // Skip test files
         if s.contains("/test/") && s.contains("Test.java") {
             continue;
         }
 
-        // Extract package and class name
+        // Check if it's an interface
         if let Ok(content) = std::fs::read_to_string(java_file) {
-            // Check if it's an interface
             if !content.contains("interface ") {
                 continue;
             }
@@ -138,11 +127,10 @@ fn find_shared_interfaces(java_files: &[std::path::PathBuf]) -> Vec<String> {
             // Extract package
             if let Some(pkg) = extract_package(java_file) {
                 if pkg.starts_with("org.yawlfoundation.yawl") {
-                    // Extract class name from filename
                     if let Some(filename) = java_file.file_name().and_then(|n| n.to_str()) {
                         if let Some(classname) = filename.strip_suffix(".java") {
                             let full_name = format!("{}.{}", pkg, classname);
-                            if seen.insert(full_name.clone()) {
+                            if seen.insert(full_name) {
                                 interfaces.push(classname.to_string());
                             }
                         }
@@ -152,7 +140,6 @@ fn find_shared_interfaces(java_files: &[std::path::PathBuf]) -> Vec<String> {
         }
     }
 
-    // Sort for deterministic output
     interfaces.sort();
     interfaces
 }

@@ -107,7 +107,7 @@ fn main() {
     // Run discovery (parallel file scan)
     eprint!("{}[observatory]{} Scanning repository... ", CYAN, RESET);
     let disc_start = Instant::now();
-    let discovery = Discovery::scan(&config.repo_root);
+    let discovery = Discovery::scan_cached(&config.repo_root, &config.out_dir, config.force);
     let disc_elapsed = disc_start.elapsed().as_millis();
     eprintln!(
         "done ({}ms): {} Java, {} POMs, {} tests",

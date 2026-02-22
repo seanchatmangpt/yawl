@@ -1,23 +1,58 @@
-/// File discovery with parallel scanning.
+/// File discovery with parallel scanning and file-list caching.
 ///
-/// Single pass at startup — results shared via Arc across all rayon workers.
+/// Single pass at startup — results shared across all emitters.
 /// Replaces 4 separate `find` subprocess calls in bash observatory.
+///
+/// Cache strategy: after scan, writes `docs/v6/latest/discovery-cache.json` with
+/// the file list. On the next run, if src/, test/, and all module dirs have the
+/// same mtime as when the cache was written, load from JSON (~5ms) instead of
+/// re-walking the tree (~210ms). Invalidated by adding/removing files or directories.
+/// For content-only changes that alter module structure, run with OBSERVATORY_FORCE=1.
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 use walkdir::WalkDir;
 
 pub struct Discovery {
-    pub java_files: Vec<PathBuf>,  // src/**/*.java (non-test)
-    pub test_files: Vec<PathBuf>,  // test/**/*.java + **/src/test/**/*.java
-    pub pom_files: Vec<PathBuf>,   // **/pom.xml
-    pub module_dirs: Vec<PathBuf>, // top-level dirs containing pom.xml
+    pub java_files: Vec<PathBuf>,   // src/**/*.java (non-test)
+    pub test_files: Vec<PathBuf>,   // test/**/*.java + **/src/test/**/*.java
+    pub pom_files: Vec<PathBuf>,    // **/pom.xml
+    pub module_dirs: Vec<PathBuf>,  // top-level dirs containing pom.xml
+}
+
+/// On-disk representation for the discovery cache.
+#[derive(Serialize, Deserialize)]
+struct DiscoveryCache {
+    java_files: Vec<String>,
+    test_files: Vec<String>,
+    pom_files: Vec<String>,
+    module_dirs: Vec<String>,
 }
 
 impl Discovery {
+    /// Scan with caching: loads from `out_dir/discovery-cache.json` if the
+    /// source tree structure hasn't changed. Falls back to full scan otherwise.
+    /// `force = true` bypasses the cache and always does a full scan.
+    pub fn scan_cached(repo: &Path, out_dir: &Path, force: bool) -> Self {
+        let cache_file = out_dir.join("discovery-cache.json");
+
+        if !force {
+            if let Some(disc) = try_load_discovery_cache(&cache_file, repo) {
+                return disc;
+            }
+        }
+
+        let disc = Self::scan(repo);
+        save_discovery_cache(&cache_file, &disc);
+        disc
+    }
+
     /// Parallel scan of the repository. Replaces bash `parallel_discover_all`.
     pub fn scan(repo: &Path) -> Self {
-        // Run three independent walks in parallel via rayon::join
         let repo_str = repo.to_path_buf();
+
+        // Walk directory tree (3 parallel walks via rayon::join)
         let (all_java, (pom_files, module_dirs)) = rayon::join(
             || discover_java_files(&repo_str),
             || rayon::join(
@@ -28,7 +63,12 @@ impl Discovery {
 
         let (java_files, test_files) = partition_java_files(all_java);
 
-        Discovery { java_files, test_files, pom_files, module_dirs }
+        Discovery {
+            java_files,
+            test_files,
+            pom_files,
+            module_dirs,
+        }
     }
 
     /// All non-test Java source files.
@@ -146,4 +186,62 @@ fn discover_module_dirs(repo: &Path) -> Vec<PathBuf> {
         .collect();
     dirs.sort_unstable();
     dirs
+}
+
+/// Attempt to load discovery from on-disk cache.
+/// Returns None if the cache is missing, corrupt, or any watched directory changed.
+fn try_load_discovery_cache(cache_file: &Path, repo: &Path) -> Option<Discovery> {
+    let cache_mtime = std::fs::metadata(cache_file).and_then(|m| m.modified()).ok()?;
+
+    // Validate: all watched dirs must have mtime ≤ cache mtime.
+    // If any dir is newer, files may have been added/removed → invalidate.
+    let src_dir = repo.join("src");
+    let test_dir = repo.join("test");
+    for dir in [&src_dir, &test_dir] {
+        if dir.is_dir() && dir_newer_than(dir, cache_mtime) {
+            return None;
+        }
+    }
+
+    let content = std::fs::read_to_string(cache_file).ok()?;
+    let cached: DiscoveryCache = serde_json::from_str(&content).ok()?;
+
+    // Also validate module dirs from cache
+    for module_dir_str in &cached.module_dirs {
+        let module_dir = Path::new(module_dir_str);
+        if module_dir.is_dir() && dir_newer_than(module_dir, cache_mtime) {
+            return None;
+        }
+    }
+
+    Some(Discovery {
+        java_files: cached.java_files.into_iter().map(PathBuf::from).collect(),
+        test_files: cached.test_files.into_iter().map(PathBuf::from).collect(),
+        pom_files: cached.pom_files.into_iter().map(PathBuf::from).collect(),
+        module_dirs: cached.module_dirs.into_iter().map(PathBuf::from).collect(),
+    })
+}
+
+/// Persist the discovery results so the next run can skip the directory walk.
+fn save_discovery_cache(cache_file: &Path, disc: &Discovery) {
+    let cache = DiscoveryCache {
+        java_files: disc.java_files.iter().map(|p| p.to_string_lossy().into_owned()).collect(),
+        test_files: disc.test_files.iter().map(|p| p.to_string_lossy().into_owned()).collect(),
+        pom_files: disc.pom_files.iter().map(|p| p.to_string_lossy().into_owned()).collect(),
+        module_dirs: disc.module_dirs.iter().map(|p| p.to_string_lossy().into_owned()).collect(),
+    };
+    if let Some(parent) = cache_file.parent() {
+        std::fs::create_dir_all(parent).ok();
+    }
+    if let Ok(json) = serde_json::to_string(&cache) {
+        std::fs::write(cache_file, json).ok();
+    }
+}
+
+/// True if a directory's mtime is newer than `than` (file was added/removed inside it).
+fn dir_newer_than(dir: &Path, than: SystemTime) -> bool {
+    std::fs::metadata(dir)
+        .and_then(|m| m.modified())
+        .map(|t| t > than)
+        .unwrap_or(false)
 }

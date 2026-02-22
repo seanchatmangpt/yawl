@@ -55,11 +55,33 @@ impl<'a> EmitCtx<'a> {
 
 // ── Shared helpers used across multiple emitters ──────────────────────────
 
-/// Read a file and extract the first `package foo.bar;` declaration.
-/// Only scans the first 30 lines (package always near top in Java).
-pub fn extract_package(path: &Path) -> Option<String> {
-    let content = std::fs::read_to_string(path).ok()?;
+/// Extract package from already-loaded content (no disk I/O).
+///
+/// Companion to `extract_package()` for use with pre-read heads from `Discovery`.
+/// Stops at the first `package` declaration within 30 lines.
+pub fn extract_package_from_str(content: &str) -> Option<&str> {
     for line in content.lines().take(30) {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix("package ") {
+            let pkg = rest.trim_end_matches(';').trim();
+            if !pkg.is_empty() {
+                return Some(pkg);
+            }
+        }
+    }
+    None
+}
+
+/// Read a file and extract the first `package foo.bar;` declaration.
+///
+/// Uses BufReader with early exit — stops reading after finding the package
+/// or scanning 30 lines. Avoids reading entire file into memory (avg 8KB → ~200 bytes).
+pub fn extract_package(path: &Path) -> Option<String> {
+    use std::io::{BufRead, BufReader};
+    let file = std::fs::File::open(path).ok()?;
+    let reader = BufReader::with_capacity(1024, file); // 1KB buffer, stops at package line
+    for line in reader.lines().take(30) {
+        let line = line.ok()?;
         let trimmed = line.trim();
         if let Some(rest) = trimmed.strip_prefix("package ") {
             let pkg = rest.trim_end_matches(';').trim().to_string();

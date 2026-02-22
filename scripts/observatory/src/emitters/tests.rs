@@ -6,7 +6,7 @@
 /// - Organize test inventory by module
 /// - Report coverage targets
 ///
-/// Performance: ~100ms via parallel grep on test_files (vs 689ms bash version).
+/// Performance: Fast via coarse directory cache check (20 dirs vs 448 files).
 use crate::{Cache, Discovery};
 use super::{write_json, EmitCtx, EmitResult, file_contains};
 use rayon::prelude::*;
@@ -16,12 +16,10 @@ use std::path::PathBuf;
 pub fn emit(ctx: &EmitCtx, disc: &Discovery, cache: &Cache) -> EmitResult {
     let out = ctx.facts_dir().join("tests.json");
 
-    // Cache inputs: test files + module directories
-    let mut cache_inputs = Vec::new();
-    cache_inputs.extend_from_slice(disc.test_files());
-    cache_inputs.extend_from_slice(disc.module_dirs());
-
-    if !cache.is_stale("facts/tests.json", &cache_inputs.iter().map(|p| p.as_ref()).collect::<Vec<_>>()) {
+    // Fast cache check: module dirs + test dirs (20 stat() vs 448).
+    let mut dir_inputs: Vec<std::path::PathBuf> = disc.module_dirs().iter().cloned().collect();
+    dir_inputs.push(ctx.repo.join("test"));
+    if !cache.is_stale("facts/tests.json", &dir_inputs.iter().map(|p| p.as_path()).collect::<Vec<_>>()) {
         return Ok(out);
     }
 
@@ -122,28 +120,21 @@ pub fn emit(ctx: &EmitCtx, disc: &Discovery, cache: &Cache) -> EmitResult {
 }
 
 /// Parallel JUnit version detection for a batch of test files.
-/// Returns (junit5_count, junit4_count)
+/// Returns (junit5_count, junit4_count).
 fn count_junit_versions(test_files: &[&PathBuf]) -> (usize, usize) {
     if test_files.is_empty() {
         return (0, 0);
     }
 
-    let (junit5_count, junit4_count) = test_files
+    test_files
         .par_iter()
         .fold(
-            || (0, 0),
+            || (0, 0usize),
             |(j5, j4), file| {
-                // Check for JUnit 5 (Jupiter)
                 let has_j5 = file_contains(file, "org.junit.jupiter");
-                // Check for JUnit 4
                 let has_j4 = file_contains(file, "org.junit.Test") || file_contains(file, "org.junit.Before");
-
-                let new_j5 = if has_j5 { 1 } else { 0 };
-                let new_j4 = if has_j4 { 1 } else { 0 };
-                (j5 + new_j5, j4 + new_j4)
+                (j5 + has_j5 as usize, j4 + has_j4 as usize)
             },
         )
-        .reduce(|| (0, 0), |(j5a, j4a), (j5b, j4b)| (j5a + j5b, j4a + j4b));
-
-    (junit5_count, junit4_count)
+        .reduce(|| (0, 0), |(j5a, j4a), (j5b, j4b)| (j5a + j5b, j4a + j4b))
 }
