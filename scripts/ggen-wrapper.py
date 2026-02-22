@@ -96,10 +96,11 @@ class RDFGraphHandler:
             results = self.graph.query(sparql_query)
             rows = []
             for row in results:
-                # Convert row to dict, using variable names as keys
+                # Convert row to dict, using variable names as keys (without ? prefix)
                 row_dict = {}
                 for var in results.vars:
-                    row_dict[f"?{var}"] = str(row[var]) if row[var] else None
+                    var_name = str(var)  # Convert Variable object to string
+                    row_dict[var_name] = str(row[var]) if row[var] else None
                 rows.append(row_dict)
             log.info(f"SPARQL query returned {len(rows)} rows")
             return rows
@@ -280,15 +281,18 @@ class Generator:
 
     def _prepare_sparql_context(self, sparql_row: Dict[str, Any]) -> Dict[str, Any]:
         """Prepare template context from SPARQL result row."""
-        # Remove '?' prefix from SPARQL variable names
+        # Convert camelCase variable names to snake_case for template use
         context = {}
         for key, value in sparql_row.items():
-            clean_key = key.lstrip('?')
-            context[clean_key] = value
+            # Keep original variable names for direct template access
+            context[key] = value
 
         # Add standard metadata
         context["generator"] = "ggen-wrapper"
         context["version"] = VERSION
+
+        log.debug(f"Context prepared with keys: {list(context.keys())}")
+        log.debug(f"Context values: {context}")
 
         return context
 
