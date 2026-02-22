@@ -442,9 +442,7 @@ public class GregVerseOrchestrator {
                         results.put(step, result);
                         if (!result.isSuccess()) {
                             failures.add(new ExecutionException(
-                                "Step " + step.getName() + " failed: " + result.getError(),
-                                null
-                            ));
+                                "Step " + step.getName() + " failed: " + result.getError(), null));
                         }
                     } catch (Exception ex) {
                         failures.add(new ExecutionException(

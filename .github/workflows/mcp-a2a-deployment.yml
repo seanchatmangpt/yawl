@@ -97,7 +97,6 @@ jobs:
       - name: Compile Integration Module
         run: |
           mvn clean compile \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -T 1.5C \
@@ -108,7 +107,6 @@ jobs:
         if: ${{ !inputs.skip_tests }}
         run: |
           mvn test \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -Dtest="YawlMcpServerTest,YawlA2AServerTest" \
@@ -117,7 +115,6 @@ jobs:
       - name: Package Integration JAR
         run: |
           mvn package \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -T 1.5C \
@@ -182,7 +179,6 @@ jobs:
           YAWL_PASSWORD: YAWL
         run: |
           mvn test \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -Dtest="McpA2AIntegrationTest#testMcpToolRegistration+testMcpResourceRegistration+testMcpPromptRegistration" \
@@ -201,7 +197,6 @@ jobs:
           A2A_API_KEY: test-api-key-ci
         run: |
           mvn test \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -Dtest="McpA2AIntegrationTest#testA2AAgentCardDiscovery+testA2AHandshakeProtocol+testA2AAuthenticationReject" \
@@ -213,7 +208,6 @@ jobs:
       - name: Run Agent Discovery Loop Test
         run: |
           mvn test \
-            --enable-preview \
             --batch-mode \
             --no-transfer-progress \
             -Dtest="McpA2AIntegrationTest#testAgentDiscoveryLoop+testAgentRegistration+testAgentHeartbeat" \
@@ -267,7 +261,7 @@ jobs:
 
       - name: Build PM4Py MCP Server Container
         id: build-mcp
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: scripts/pm4py
           file: scripts/pm4py/Dockerfile.mcp
@@ -292,7 +286,7 @@ jobs:
 
       - name: Build PM4Py A2A Server Container
         id: build-a2a
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: scripts/pm4py
           file: scripts/pm4py/Dockerfile.a2a
@@ -339,7 +333,7 @@ jobs:
 
       - name: Build YAWL MCP Server Container
         id: build-mcp
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.mcp-server
@@ -355,7 +349,7 @@ jobs:
 
       - name: Build YAWL A2A Server Container
         id: build-a2a
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.a2a-server
@@ -371,7 +365,7 @@ jobs:
 
       - name: Build Agent Registry Container
         id: build-registry
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.agent-registry

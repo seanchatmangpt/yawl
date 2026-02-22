@@ -1,0 +1,10 @@
+{
+  "advice": "No conflicts detected. Add new deps to <dependencyManagement> in root pom.xml first.",
+  "commit": "593a8fc",
+  "conflict_count": 0,
+  "conflicts": [],
+  "direct_deps_by_module": {},
+  "generated_at": "2026-02-22T08:15:58Z",
+  "managed_versions": {},
+  "status": "clean"
+}

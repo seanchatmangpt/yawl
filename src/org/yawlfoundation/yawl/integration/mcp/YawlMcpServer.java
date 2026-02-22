@@ -1,6 +1,8 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
@@ -16,15 +18,19 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlProcessMiningToolSpecifications;
+
+import io.modelcontextprotocol.server.McpServerFeatures;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
  *
  * Implements MCP 2025-11-25 specification with full capabilities over STDIO transport.
  *
- * Tools (15): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
+ * Tools (20): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
  *   work items, get specification data/XML/schema, get running cases, upload/unload specifications,
- *   suspend/resume cases, skip work items.
+ *   suspend/resume cases, skip work items. Process mining tools: export XES, analyze performance,
+ *   discover variants, analyze resource networks.
  *
  * Resources (3 static):
  *   - yawl://specifications - All loaded specifications
@@ -124,11 +130,10 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 15 tools, 3 resources, 3 resource templates, 4 prompts,
-                3 completions, logging (MCP 2025-11-25 compliant).
+                Capabilities: 20 tools (15 workflow + 5 process mining), 3 resources,
+                3 resource templates, 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(
-                interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(combinedTools(interfaceBClient, interfaceAClient, sessionHandle))
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -141,8 +146,8 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 15 tools, 3 resources, 3 resource templates, " +
-            "4 prompts, 3 completions, logging");
+        System.err.println("Capabilities: 20 tools (15 workflow + 5 process mining), " +
+            "3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
     }
 
     /**
@@ -211,6 +216,25 @@ public class YawlMcpServer {
             }
             sessionHandle = null;
         }
+    }
+
+    /**
+     * Combine workflow tools (15) with process mining tools (5).
+     *
+     * @param interfaceBClient YAWL InterfaceB client
+     * @param interfaceAClient YAWL InterfaceA client
+     * @param sessionHandle    Active session handle
+     * @return Combined list of all 20 tool specifications
+     */
+    private List<McpServerFeatures.SyncToolSpecification> combinedTools(
+            InterfaceB_EnvironmentBasedClient interfaceBClient,
+            InterfaceA_EnvironmentBasedClient interfaceAClient,
+            String sessionHandle) {
+        List<McpServerFeatures.SyncToolSpecification> tools = new ArrayList<>(
+            YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle));
+        tools.addAll(new YawlProcessMiningToolSpecifications(
+            yawlEngineUrl, yawlUsername, yawlPassword).createAll());
+        return tools;
     }
 
     /**

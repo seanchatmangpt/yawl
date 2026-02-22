@@ -29,8 +29,8 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
-// ZaiFunctionService is optional - loaded via reflection when available
-// import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.a2a.skills.ProcessMiningSkill;
+import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
@@ -93,6 +93,7 @@ public class YawlA2AServer {
     private final Object zaiFunctionService;  // ZaiFunctionService via reflection
     private final java.lang.reflect.Method zaiProcessMethod;  // Cached method
     private final A2AAuthenticationProvider authProvider;
+    private final ProcessMiningSkill processMiningSkill;
 
     // Handoff services
     private HandoffProtocol handoffProtocol;
@@ -165,6 +166,8 @@ public class YawlA2AServer {
             this.zaiFunctionService = null;
             this.zaiProcessMethod = null;
         }
+
+        this.processMiningSkill = new ProcessMiningSkill(yawlEngineUrl, username, password);
     }
 
     /**
@@ -410,6 +413,21 @@ public class YawlA2AServer {
                     ))
                     .inputModes(List.of("text"))
                     .outputModes(List.of("text"))
+                    .build(),
+                AgentSkill.builder()
+                    .id("process_mining_analyze")
+                    .name("Process Mining Analyze")
+                    .description("Analyze YAWL workflow event logs for performance, variants, conformance, "
+                        + "and social network patterns. Supports XES export, performance metrics, "
+                        + "variant discovery, and handover-of-work analysis.")
+                    .tags(List.of("process-mining", "analytics", "xes", "performance", "variants"))
+                    .examples(List.of(
+                        "Analyze performance of specification 'OrderProcessing'",
+                        "Show top variants for workflow 'InvoiceApproval'",
+                        "Export XES event log for specification 'Procurement'"
+                    ))
+                    .inputModes(List.of("text"))
+                    .outputModes(List.of("text"))
                     .build()
             ))
             .build();
@@ -493,6 +511,12 @@ public class YawlA2AServer {
 
             if (lower.contains("cancel") || lower.contains("stop")) {
                 return handleCancelCase(userText);
+            }
+
+            if (lower.contains("mine") || lower.contains("analyze") || lower.contains("analyse")
+                    || lower.contains("xes") || lower.contains("variant") || lower.contains("performance")
+                    || lower.contains("social network") || lower.contains("handover")) {
+                return handleProcessMiningRequest(userText);
             }
 
             return handleListSpecifications();
@@ -617,6 +641,54 @@ public class YawlA2AServer {
             return "Case " + caseId + " cancelled successfully.";
         }
 
+        private String handleProcessMiningRequest(String userText) {
+            String lower = userText.toLowerCase();
+            String specIdentifier = extractSpecIdentifier(userText);
+
+            if (specIdentifier == null) {
+                return "Please specify a workflow specification identifier to analyze. " +
+                    "Example: 'Analyze OrderProcessing' or 'Mine InvoiceApproval'";
+            }
+
+            String analysisType = "performance";
+            if (lower.contains("xes")) {
+                analysisType = "xes";
+            } else if (lower.contains("variant")) {
+                analysisType = "variants";
+            } else if (lower.contains("social") || lower.contains("handover")) {
+                analysisType = "social_network";
+            } else if (lower.contains("full") || (lower.contains("mine") && lower.contains("all"))) {
+                analysisType = "full";
+            }
+
+            Map<String, String> params = new HashMap<>();
+            params.put("specIdentifier", specIdentifier);
+            params.put("specVersion", "0.1");
+            params.put("specUri", specIdentifier);
+            params.put("analysisType", analysisType);
+            params.put("withData", "false");
+
+            SkillRequest skillRequest = new SkillRequest(
+                processMiningSkill.getId(),
+                params
+            );
+
+            SkillResult result = processMiningSkill.execute(skillRequest);
+
+            if (result.isSuccess()) {
+                Object message = result.get("message");
+                if (message != null) {
+                    return message.toString();
+                }
+                return result.getData().values().stream()
+                    .findFirst()
+                    .map(Object::toString)
+                    .orElse("Analysis completed");
+            } else {
+                return "Process mining analysis failed: " + result.getError();
+            }
+        }
+
         private String extractTextFromMessage(Message message) {
             if (message == null || message.parts() == null) {
                 throw new IllegalArgumentException("Message has no content parts");
@@ -663,6 +735,32 @@ public class YawlA2AServer {
             if (m.find()) {
                 return m.group(1);
             }
+            return null;
+        }
+
+        private String extractSpecIdentifier(String text) {
+            String[] quoted = text.split("'");
+            if (quoted.length >= 2) {
+                return quoted[1];
+            }
+
+            String lower = text.toLowerCase();
+            String[] parts = text.split("\\s+");
+
+            for (int i = 0; i < parts.length; i++) {
+                String part = parts[i].toLowerCase();
+                if (("analyze".equals(part) || "analyse".equals(part) ||
+                     "mine".equals(part) || "export".equals(part)) && i + 1 < parts.length) {
+                    String candidate = parts[i + 1];
+                    if (!candidate.toLowerCase().matches("(performance|variant|social|xes|full|network|all)")) {
+                        return candidate;
+                    }
+                    if (i + 2 < parts.length) {
+                        return parts[i + 2];
+                    }
+                }
+            }
+
             return null;
         }
     }
