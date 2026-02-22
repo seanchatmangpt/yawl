@@ -302,8 +302,6 @@
                         <!-- Claude integration - StructuredTaskScope API issue -->
                         <exclude>**/claude/**</exclude>
 
-                        <!-- MCP Server and tools - process-mining still needs work -->
-                        <exclude>**/mcp/spec/YawlProcessMiningToolSpecifications.java</exclude>
                         <!-- MCP spec tools - depends on ZAI spec generator integration -->
                         <exclude>**/mcp/spec/YawlSpecToolSpecifications.java</exclude>
 
