@@ -20,26 +20,26 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   version="4.0"
                   xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
-  <specification uri="{{ specUri | default(value=specId) }}">
+  <specification uri="{{ specUri or specId }}">
     {# Specification Metadata #}
-    <documentation>{{ documentation | default(value="YAWL workflow specification generated from RDF ontology") }}</documentation>
+    <documentation>{{ documentation or "YAWL workflow specification generated from RDF ontology" }}</documentation>
     <metaData>
       <creator>yawl-ggen</creator>
-      <description>{{ documentation | default(value="Auto-generated YAWL workflow") }}</description>
+      <description>{{ documentation or "Auto-generated YAWL workflow" }}</description>
       <coverage>4.0</coverage>
-      <version>{{ specVersion | default(value="0.1") }}</version>
+      <version>{{ specVersion or "0.1" }}</version>
       <persistent>false</persistent>
-      <identifier>UID_{{ specId }}-{{ "now" | date(format="%s") }}</identifier>
+      <identifier>UID_{{ specId }}-{{ range(1000000)|random }}</identifier>
     </metaData>
 
     {# XSD Schema for data bindings #}
     <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" />
 
     {# Root Net Decomposition #}
-    <decomposition id="{{ rootNetId | default(value=specId) }}" isRootNet="true" xsi:type="NetFactsType">
+    <decomposition id="{{ rootNetId or specId }}" isRootNet="true" xsi:type="NetFactsType">
       {# Local Variables #}
       {% set var_index = 0 %}
-      {% for variable in variables | default(value=[]) %}
+      {% for variable in (variables or []) %}
       <localVariable>
         <index>{{ var_index }}</index>
         <name>{{ variable['?varName'] | default(value=variable.varName) }}</name>

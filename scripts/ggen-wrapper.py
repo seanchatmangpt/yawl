@@ -144,6 +144,14 @@ class TemplateRenderer:
         else:
             self.env = Environment(loader=FileSystemLoader("."))
 
+        # Add custom filters for Tera compatibility
+        self.env.filters['default'] = self._filter_default
+
+    @staticmethod
+    def _filter_default(value, default_value=""):
+        """Tera-like default filter (value=default_value syntax)."""
+        return value if value else default_value
+
     def render(self, template_path: str, context: Dict[str, Any]) -> str:
         """Render template with given context."""
         try:
