@@ -1,0 +1,34 @@
+[0;34m============================================[0m
+[0;34mYAWL CLI Comprehensive Smoke Tests[0m
+[0;34m============================================[0m
+
+[0;34m[1] Basic CLI Functionality[0m
+[0;32m✓[0m Main app imports successfully
+[0;32m✓[0m version command shows 6.0.0
+[0;32m✓[0m help command works
+
+[0;34m[2] Subcommand Availability[0m
+[0;32m✓[0m subcommand: build
+[0;32m✓[0m subcommand: observatory
+[0;32m✓[0m subcommand: godspeed
+[0;32m✓[0m subcommand: ggen
+[0;32m✓[0m subcommand: gregverse
+[0;32m✓[0m subcommand: team
+[0;32m✓[0m subcommand: config
+
+[0;34m[3] Build Subcommands[0m
+[0;32m✓[0m build compile
+[0;32m✓[0m build test
+[0;32m✓[0m build validate
+[0;32m✓[0m build all
+[0;32m✓[0m build clean
+
+[0;34m[4] GODSPEED Phases[0m
+[0;32m✓[0m godspeed discover
+[0;32m✓[0m godspeed compile
+[0;32m✓[0m godspeed guard
+[0;32m✓[0m godspeed verify
+[0;32m✓[0m godspeed full
+
+[0;34m[5] ggen Commands[0m
+[0;32m✓[0m ggen init
