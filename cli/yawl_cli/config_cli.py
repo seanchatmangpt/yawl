@@ -216,7 +216,7 @@ def locations() -> None:
     console.print("[dim]Later files override earlier ones.[/dim]")
 
 
-def _print_config_dict(data: dict, indent: int = 0) -> None:
+def _print_config_dict(data: dict[str, Any], indent: int = 0) -> None:
     """Recursively print configuration dictionary."""
     for key, value in data.items():
         prefix = "  " * indent

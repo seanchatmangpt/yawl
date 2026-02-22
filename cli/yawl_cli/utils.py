@@ -98,7 +98,7 @@ class Config(BaseModel):
             project_root / ".yawl" / "config.yaml",
         ]
 
-        merged_config = {}
+        merged_config: Dict[str, Any] = {}
 
         for config_path in config_paths:
             if not config_path.exists():
@@ -150,7 +150,7 @@ class Config(BaseModel):
         self.config_data = merged_config
 
     @staticmethod
-    def _deep_merge(base: Dict, override: Dict) -> Dict:
+    def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """Recursively merge override dict into base dict."""
         for key, value in override.items():
             if key in base and isinstance(base[key], dict) and isinstance(value, dict):
@@ -165,17 +165,17 @@ class Config(BaseModel):
             return default
 
         keys = key.split(".")
-        value = self.config_data
+        current: Any = self.config_data
 
         for k in keys:
-            if isinstance(value, dict):
-                value = value.get(k)
-                if value is None:
+            if isinstance(current, dict):
+                current = current.get(k)
+                if current is None:
                     return default
             else:
                 return default
 
-        return value
+        return current
 
     def set(self, key: str, value: Any) -> None:
         """Set config value using dot notation."""
@@ -330,7 +330,7 @@ def ensure_project_root() -> Path:
     )
 
 
-def load_facts(facts_dir: Path, fact_name: str) -> dict:
+def load_facts(facts_dir: Path, fact_name: str) -> Dict[str, Any]:
     """Load a fact JSON file with error handling.
 
     Args:
@@ -524,6 +524,7 @@ def run_shell_cmd(
     # Should not reach here, but raise last error if we do
     if last_error:
         raise last_error
+    raise RuntimeError("Command execution failed: no result produced")
 
 
 def prompt_yes_no(message: str, default: bool = True) -> bool:

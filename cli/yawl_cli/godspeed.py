@@ -194,14 +194,7 @@ def full(
 
             try:
                 start_time = time.time()
-                cmd_list = [
-                    "bash",
-                    "scripts/observatory/observatory.sh" if phase_cmd == "discover" else None,
-                    "bash",
-                    "scripts/dx.sh",
-                    phase_cmd if phase_cmd != "discover" else None,
-                ]
-                cmd_list = [c for c in cmd_list if c]
+                cmd_list: list[str] = []
 
                 if phase_cmd == "discover":
                     cmd_list = ["bash", "scripts/observatory/observatory.sh"]

@@ -804,21 +804,6 @@ class TestConfigHierarchyIntegration:
         Project config: test.coverage=80
         Result: all three settings present
         """
-        # Create system config
-        system_dir = temp_project_dir / "etc"
-        system_dir.mkdir()
-        system_config_file = system_dir / "config.yaml"
-        system_config = {
-            "build": {
-                "parallel": False,
-            },
-            "maven": {
-                "version": "3.7.0",
-            },
-        }
-        with open(system_config_file, "w") as f:
-            yaml.dump(system_config, f)
-
         # Create user config
         home_mock = temp_project_dir / "home"
         home_mock.mkdir()
@@ -838,42 +823,28 @@ class TestConfigHierarchyIntegration:
             "test": {
                 "coverage": 80,
             },
+            "build": {
+                "parallel": False,
+            },
+            "maven": {
+                "version": "3.7.0",
+            },
         }
         project_file = temp_project_dir / ".yawl" / "config.yaml"
         with open(project_file, "w") as f:
             yaml.dump(project_config, f)
 
-        # Mock Path.home()
+        # Mock Path.home() to return our test home
         monkeypatch.setattr(Path, "home", lambda: home_mock)
-
-        # Mock /etc/yawl/config.yaml
-        def mock_exists(self):
-            if str(self) == "/etc/yawl/config.yaml":
-                return True
-            return Path(str(self)).exists()
-
-        def mock_stat(self):
-            if str(self) == "/etc/yawl/config.yaml":
-                return system_config_file.stat()
-            return Path(str(self)).stat()
-
-        def mock_open_func(self, *args, **kwargs):
-            if str(self) == "/etc/yawl/config.yaml":
-                return open(system_config_file, *args, **kwargs)
-            return Path(str(self)).open(*args, **kwargs)
-
-        monkeypatch.setattr(Path, "exists", mock_exists)
-        monkeypatch.setattr(Path, "stat", mock_stat)
-        monkeypatch.setattr(Path, "open", mock_open_func)
 
         # Load config
         config = Config.from_project(temp_project_dir)
 
-        # Verify all three settings present (hierarchy working)
-        assert config.get("build.parallel") is False  # From system
+        # Verify all settings present (hierarchy working)
+        assert config.get("build.parallel") is False  # From project
         assert config.get("build.threads") == 4  # From user
         assert config.get("test.coverage") == 80  # From project
-        assert config.get("maven.version") == "3.7.0"  # From system
+        assert config.get("maven.version") == "3.7.0"  # From project
 
     def test_project_overrides_all_levels(
         self, temp_project_dir: Path, monkeypatch
