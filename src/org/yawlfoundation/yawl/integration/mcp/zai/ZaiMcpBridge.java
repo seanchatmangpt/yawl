@@ -79,10 +79,11 @@ public interface ZaiMcpBridge extends AutoCloseable {
             return callTool(toolName, parameters)
                 .orTimeout(timeout.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS)
                 .join();
-        } catch (java.util.concurrent.TimeoutException e) {
-            throw new IOException("Tool call timed out after " + timeout, e);
         } catch (java.util.concurrent.CompletionException e) {
             Throwable cause = e.getCause();
+            if (cause instanceof java.util.concurrent.TimeoutException) {
+                throw new IOException("Tool call timed out after " + timeout, cause);
+            }
             if (cause instanceof IOException ioEx) {
                 throw ioEx;
             }
