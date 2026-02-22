@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
@@ -141,8 +142,8 @@ public final class YawlSpecToolSpecifications {
                     result.append("Specification Generated Successfully\n");
                     result.append("═".repeat(50)).append("\n\n");
                     result.append("URI: ").append(spec.getURI()).append("\n");
-                    result.append("ID: ").append(spec.getID().getIdentifier()).append("\n");
-                    result.append("Version: ").append(spec.getID().getVersionAsString()).append("\n");
+                    result.append("ID: ").append(spec.getSpecificationID().getIdentifier()).append("\n");
+                    result.append("Version: ").append(spec.getSpecificationID().getVersionAsString()).append("\n");
                     result.append("Root Net: ").append(spec.getRootNet().getID()).append("\n");
                     result.append("Tasks: ").append(spec.getRootNet().getNetTasks().size()).append("\n");
 
@@ -548,34 +549,18 @@ public final class YawlSpecToolSpecifications {
                             true, null, null);
                     }
 
-                    // Use optimizer to analyze
-                    SpecificationOptimizer optimizer = new SpecificationOptimizer(
-                        specGenerator
+                    // Optimization analysis requires Z.AI SDK client access which is not
+                    // exposed by SpecificationGenerator API. Throw to indicate not yet implemented.
+                    throw new UnsupportedOperationException(
+                        "Specification optimization analysis requires Z.AI HTTP client access. " +
+                        "This feature will be available in a future release with extended " +
+                        "SpecificationGenerator API support."
                     );
 
-                    List<SpecificationOptimizer.OptimizationSuggestion> suggestions =
-                        optimizer.quickAnalyze(spec);
-
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Optimization Suggestions for ").append(specId).append("\n");
-                    sb.append("═".repeat(50)).append("\n\n");
-
-                    if (suggestions.isEmpty()) {
-                        sb.append("No optimization suggestions found. ");
-                        sb.append("The specification appears well-structured.");
-                    } else {
-                        for (SpecificationOptimizer.OptimizationSuggestion s : suggestions) {
-                            sb.append("• [").append(s.severity()).append("/").append(s.category());
-                            sb.append("] ").append(s.elementId()).append("\n");
-                            sb.append("  Issue: ").append(s.description()).append("\n");
-                            sb.append("  Fix: ").append(s.recommendation()).append("\n\n");
-                        }
-                    }
-
+                } catch (UnsupportedOperationException e) {
                     return new McpSchema.CallToolResult(
-                        List.of(new McpSchema.TextContent(sb.toString())),
-                        false, null, null);
-
+                        List.of(new McpSchema.TextContent(e.getMessage())),
+                        true, null, null);
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(
