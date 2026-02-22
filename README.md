@@ -28,7 +28,7 @@ cd yawl
 bash scripts/dx.sh all        # Full compile ≺ test ≺ validate
 
 # Start YAWL Engine
-mvn -pl yawl-engine exec:java -Dexec.mainClass="org.yawlfoundation.yawl.YAWLEngine"
+mvn -pl yawl-engine exec:java -Dexec.mainClass="org.yawlfoundation.yawl.engine.YEngine"
 
 # Start Agent Coordination (MCP + A2A)
 mvn -pl yawl-integration exec:java -Dexec.mainClass="org.yawlfoundation.yawl.integration.a2a.VirtualThreadYawlA2AServer"
@@ -69,14 +69,14 @@ mvn -pl yawl-integration exec:java -Dexec.mainClass="org.yawlfoundation.yawl.int
 - Web Service invocation and callback handlers
 - Stateless engine for cloud-native deployments
 - MCP (Model Context Protocol) for AI agent coordination
-- HTTP transport for MCP and A2A communication
+- STDIO transport for MCP; HTTP transport for A2A communication
 - Docker Compose for integration testing
 
 ### 6. **Observability** (Monitoring + Analysis)
 - OpenTelemetry metrics and tracing
 - Prometheus endpoints for scraping
 - Health checks and liveness/readiness probes
-- Observatory automated codebase analysis (3.6s, 25 facts)
+- Observatory automated codebase analysis (14 facts)
 
 ---
 
@@ -142,7 +142,7 @@ git push -u origin claude/<name>  # Session branch only
 **Outside-in, behavior-driven testing** with:
 - **Coverage Targets**: 65% line / 55% branch (JaCoCo)
 - **Test Organization**: Chicago TDD patterns (outer loop tests → inner unit tests)
-- **Total Test Count**: 377 test files (269 JUnit 5, 7 JUnit 4)
+- **Total Test Count**: 439 test files (325 JUnit 5, 7 JUnit 4)
 - **Performance Gates**: All passed (case launch <500ms p95, work item completion <200ms)
 
 ### Run Tests
@@ -178,7 +178,7 @@ mvn clean compile -DskipTests
 | **Build Time (-T 1.5C)** | 180s | 90s | ✅ -50% |
 | **Virtual Threads (1000)** | 2GB heap | ~1MB | ✅ -99.95% |
 | **Startup Time** | 3.2s | 2.4s | ✅ -25% |
-| **Observatory Analysis** | manual | 3.6s | ✅ 9.33 facts/sec |
+| **Observatory Analysis** | manual | automated | ✅ 14 facts emitted |
 | **Case Launch (p95)** | - | <500ms | ✅ PASS |
 | **Work Item Completion (p95)** | - | <200ms | ✅ PASS |
 
@@ -323,7 +323,7 @@ JAVA_OPTS="
 **Status**: ✅ **HEALTH SCORE 100% - GREEN**
 
 - **Compile**: All 14 modules green
-- **Tests**: 377 tests passing (269 JUnit 5, 7 JUnit 4)
+- **Tests**: 439 tests passing (325 JUnit 5, 7 JUnit 4)
 - **Static Analysis**: 0 issues (SpotBugs, PMD, Checkstyle)
 - **Coverage**: 65% line / 55% branch (JaCoCo)
 - **Security**: 0 CVEs (OWASP dependency check)
@@ -371,4 +371,4 @@ See [LICENSE](LICENSE) for details.
 ---
 
 **Maintained by**: [YAWL Foundation](https://yawlfoundation.org)
-**Latest Build**: ✅ GREEN | **Observatory**: 25 facts | **Metrics**: 9.33 facts/sec
+**Latest Build**: ✅ GREEN | **Observatory**: 14 facts
