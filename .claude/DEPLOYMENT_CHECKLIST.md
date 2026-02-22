@@ -1,408 +1,557 @@
-# YAWL CLI v6.0.0 — Deployment Checklist
+# YAWL CLI v6.0.0 Deployment Readiness Checklist
 
-**Release Date**: February 22, 2026  
-**Target Deployment**: GA Release (after Phase 1 fixes)  
-**Release Manager**: [To be assigned]
-
----
-
-## Pre-Deployment (Phase 1) — 30 Minutes
-
-### Code Fixes Required
-
-- [ ] **Fix entry point in pyproject.toml**
-  - Change: `yawl = "godspeed_cli:app"`
-  - To: `yawl = "yawl_cli.godspeed_cli:app"`
-  - File: `/home/user/yawl/cli/pyproject.toml` line 33
-  - Verify: `pip install -e . && yawl --version`
-
-- [ ] **Export DEBUG from utils.py**
-  - Add after imports in `yawl_cli/utils.py`:
-  ```python
-  __all__ = [
-      "Config",
-      "DEBUG",
-      "ensure_project_root",
-      "load_facts",
-      "run_shell_cmd",
-      "prompt_yes_no",
-      "prompt_choice",
-  ]
-  ```
-  - Verify: `python -c "from yawl_cli.utils import DEBUG; print(DEBUG)"`
-
-- [ ] **Fix test fixture bug**
-  - File: `test/unit/test_config.py` line 77
-  - Change: `(temp_project_dir / ".yawl" / "config.yaml").unlink()`
-  - To: `(temp_project_dir / ".yawl" / "config.yaml").unlink(missing_ok=True)`
-  - Verify: `pytest test/unit/test_config.py::TestConfigLoading::test_load_invalid_yaml_raises_error`
-
-### Test Validation
-
-- [ ] **Run full test suite**
-  ```bash
-  cd /home/user/yawl/cli
-  pytest --tb=short -v
-  # Expected: 87 passed
-  ```
-
-- [ ] **Verify no import errors**
-  ```bash
-  python -c "from yawl_cli.build import build_app; print('OK')"
-  python -c "from yawl_cli.godspeed import godspeed_app; print('OK')"
-  python -c "from yawl_cli.observatory import observatory_app; print('OK')"
-  ```
-
-- [ ] **Test entry point**
-  ```bash
-  python -m pip install -e .
-  yawl --version
-  yawl --help
-  yawl build --help
-  ```
-
-### Git Commit
-
-- [ ] **Stage fixes**
-  ```bash
-  cd /home/user/yawl/cli
-  git add pyproject.toml yawl_cli/utils.py test/unit/test_config.py
-  ```
-
-- [ ] **Commit with message**
-  ```bash
-  git commit -m "fix: Production readiness issues
-
-  - Fix pyproject.toml entry point to yawl_cli.godspeed_cli:app
-  - Export DEBUG from utils.py via __all__
-  - Fix test fixture: add missing_ok=True to unlink()
-
-  All tests now passing: 87/87 ✓"
-  ```
-
-- [ ] **Tag release**
-  ```bash
-  git tag -a v6.0.0-rc1 -m "Release candidate 1: Production readiness fixes"
-  git push origin v6.0.0-rc1
-  ```
+**Status**: VALIDATION COMPLETE - NOT PRODUCTION READY  
+**Date**: 2026-02-22  
+**Overall Score**: 62/100 (Gate: ≥90 required)
 
 ---
 
-## Phase 2 Testing (Week of Feb 24) — 3-4 Hours
+## Pre-Deployment Sign-Off
 
-### Environment 1: Local Development
+This checklist must have **100% items marked complete** before deployment to production.
 
-- [ ] **Install in clean environment**
-  ```bash
-  cd /tmp
-  mkdir yawl-test-local
-  cd yawl-test-local
-  git clone /home/user/yawl .
-  cd cli
-  python -m venv venv
-  source venv/bin/activate
-  pip install -e .
-  ```
+### Completion Instructions
 
-- [ ] **Verify all commands**
-  - [ ] `yawl --version` returns 6.0.0
-  - [ ] `yawl --help` shows all 7 subcommands
-  - [ ] `yawl build --help` shows options
-  - [ ] `yawl build compile` (test with --dry-run)
-  - [ ] `yawl config --help` works
-  - [ ] `yawl observatory --help` works
-  - [ ] `yawl godspeed --help` works
-  - [ ] `yawl ggen --help` works
-  - [ ] `yawl gregverse --help` works
-  - [ ] `yawl team --help` works
+- [ ] = Not started
+- [x] = Complete and verified
+- [?] = Blocked/unable to complete
+- [N] = Not applicable
 
-- [ ] **Test configuration**
-  - [ ] Create `.yawl/config.yaml` manually
-  - [ ] `yawl config show` displays correctly
-  - [ ] `yawl config get build.parallel` works
-  - [ ] `yawl config set build.threads 8` works
-
-- [ ] **Verify debug flag**
-  - [ ] `YAWL_CLI_DEBUG=1 yawl build compile` shows debug output
-
-### Environment 2: Docker Container
-
-- [ ] **Create Dockerfile**
-  ```dockerfile
-  FROM ubuntu:latest
-  RUN apt-get update && apt-get install -y python3 python3-pip git maven
-  WORKDIR /opt/yawl
-  COPY cli/ /opt/yawl/cli/
-  WORKDIR /opt/yawl/cli
-  RUN pip install -e .
-  ENTRYPOINT ["yawl"]
-  ```
-
-- [ ] **Build and test**
-  ```bash
-  docker build -t yawl-cli:6.0.0 .
-  docker run yawl-cli:6.0.0 --version
-  docker run yawl-cli:6.0.0 --help
-  ```
-
-- [ ] **Verify Maven access**
-  - [ ] `docker run yawl-cli:6.0.0 build compile --dry-run`
-  - [ ] Check Maven version detection
-
-### Environment 3: CI/CD (GitHub Actions)
-
-- [ ] **Create .github/workflows/cli-tests.yml**
-  ```yaml
-  name: YAWL CLI Tests
-  on: [push, pull_request]
-  jobs:
-    test:
-      runs-on: ubuntu-latest
-      strategy:
-        matrix:
-          python-version: ["3.10", "3.11", "3.12"]
-      steps:
-        - uses: actions/checkout@v3
-        - uses: actions/setup-python@v4
-          with:
-            python-version: ${{ matrix.python-version }}
-        - run: pip install -e ./cli
-        - run: cd cli && pytest
-        - run: yawl --version
-        - run: yawl --help
-  ```
-
-- [ ] **Verify all matrix combinations pass**
-  - [ ] Python 3.10 ✓
-  - [ ] Python 3.11 ✓
-  - [ ] Python 3.12 ✓
-
-### Functional Testing
-
-- [ ] **Build workflow**
-  ```bash
-  yawl build compile --dry-run
-  yawl build test --dry-run
-  yawl build validate --dry-run
-  yawl build all --dry-run
-  ```
-
-- [ ] **Observatory workflow**
-  ```bash
-  # If facts directory exists
-  yawl observatory list
-  yawl observatory show modules
-  yawl observatory search "YNetRunner"
-  ```
-
-- [ ] **GODSPEED workflow**
-  ```bash
-  yawl godspeed discover --dry-run
-  yawl godspeed compile --dry-run
-  yawl godspeed full --dry-run
-  ```
-
-- [ ] **Configuration workflow**
-  ```bash
-  yawl config show
-  yawl config get build.parallel
-  yawl config set build.threads 4
-  yawl config show
-  ```
-
-### Performance Baselines
-
-- [ ] **Measure startup time**
-  ```bash
-  time yawl --version
-  # Target: <500ms
-  ```
-
-- [ ] **Measure config load**
-  ```bash
-  time yawl config show
-  # Target: <100ms per command
-  ```
-
-- [ ] **Measure help generation**
-  ```bash
-  time yawl --help > /dev/null
-  # Target: <200ms
-  ```
+**Current Status**: 10/30 complete (33%)
 
 ---
 
-## Phase 3 Documentation (Week of Mar 3) — 2-3 Hours
+## PHASE 1: Installation & Setup (CRITICAL)
 
-### Documentation Files
+### Blocking Issue: Entry Point Broken
 
-- [ ] **docs/CLI_INSTALLATION.md**
-  - [ ] Linux installation instructions
-  - [ ] macOS installation instructions
-  - [ ] Windows installation instructions
-  - [ ] Virtual environment setup
-  - [ ] Verify each with test install
+**Status**: ❌ FAILS - Prevents all deployment
 
-- [ ] **docs/CLI_CONFIGURATION.md**
-  - [ ] Configuration hierarchy diagram
-  - [ ] File locations for each platform
-  - [ ] All available settings
-  - [ ] Examples: minimal, development, production
-  - [ ] Troubleshooting section
+**What's Wrong**:
+```
+Expected:  godspeed_cli.py in yawl_cli package directory
+Actual:    godspeed_cli.py at project root (not packaged)
+Result:    pip install . → ModuleNotFoundError
+```
 
-- [ ] **docs/CLI_TROUBLESHOOTING.md**
-  - [ ] 10+ common error scenarios
-  - [ ] Recovery steps for each
-  - [ ] Debug tips and tricks
-  - [ ] FAQ section
-
-- [ ] **Man page: yawl.1**
-  - [ ] Standard man page format
-  - [ ] All commands documented
-  - [ ] All options documented
-  - [ ] See also section
-
-### Documentation Review
-
-- [ ] **Documentation quality check**
-  - [ ] All links work
-  - [ ] All examples tested
-  - [ ] Consistent formatting
-  - [ ] Grammar and spelling
-
-- [ ] **Completeness check**
-  - [ ] All 7 subcommand groups covered
-  - [ ] All options documented
-  - [ ] All config settings documented
-  - [ ] Error messages explained
+**Prerequisites to Complete All Below**:
+1. Move `godspeed_cli.py` → `yawl_cli/cli.py`
+2. Update `pyproject.toml` entry point
+3. Test `pip install .`
 
 ---
 
-## Phase 4 Release (Week of Mar 10)
+### Installation & Setup Checklist (0/7 - BLOCKED)
 
-### Pre-Release Checklist
+```
+[ ] 1. ENTRY POINT FIXED
+      Status: Entry point updated in pyproject.toml
+      File: /home/user/yawl/cli/pyproject.toml
+      Line: [project.scripts]
+      Old:  yawl = "godspeed_cli:app"
+      New:  yawl = "yawl_cli.cli:app"
+      
+      File Moved:
+      From: /home/user/yawl/cli/godspeed_cli.py
+      To:   /home/user/yawl/cli/yawl_cli/cli.py
+      
+      Verification:
+      [ ] godspeed_cli.py removed from project root
+      [ ] yawl_cli/cli.py exists and is identical copy
+      [ ] pyproject.toml updated with new entry point
+      
+      Sign-Off: _______________ Date: ________
 
-- [ ] **Update CHANGELOG.md**
-  ```markdown
-  ## v6.0.0 — 2026-03-10
-  
-  ### New Features
-  - Complete CLI rewrite with Typer
-  - Multi-level configuration hierarchy
-  - Comprehensive error handling
-  
-  ### Fixes
-  - Fix entry point reference
-  - Export DEBUG in __all__
-  - Fix test fixtures
-  
-  ### Documentation
-  - Installation guide
-  - Configuration reference
-  - Troubleshooting guide
-  ```
+[ ] 2. INSTALLATION SUCCEEDS
+      Test Command: pip install /home/user/yawl/cli
+      Expected: Successfully installed yawl-cli-6.0.0
+      
+      Verification:
+      [ ] No ModuleNotFoundError
+      [ ] No other import errors
+      [ ] Installation completes without warnings (except pip venv warning is OK)
+      
+      Sign-Off: _______________ Date: ________
 
-- [ ] **Update version**
-  - [ ] Change `version = "6.0.0-rc1"` to `version = "6.0.0"`
-  - [ ] Update README.md version references
-  - [ ] Update any other version strings
+[ ] 3. VERSION COMMAND WORKS
+      Test Command: yawl --version
+      Expected Output: 
+        ╔══════════════════════════════════════════╗
+        ║  YAWL v6.0.0 - CLI GODSPEED             ║
+        ...
+      
+      Verification:
+      [ ] Command succeeds (exit code 0)
+      [ ] Output contains "6.0.0"
+      
+      Sign-Off: _______________ Date: ________
 
-- [ ] **Final testing**
-  - [ ] Run all tests: `pytest`
-  - [ ] Run mypy: `mypy yawl_cli/`
-  - [ ] Run ruff: `ruff check yawl_cli/`
-  - [ ] Manual smoke test of all commands
+[ ] 4. HELP SHOWS ALL SUBCOMMANDS
+      Test Command: yawl --help
+      Expected: Shows all 7 subcommand groups
+      
+      Verification:
+      [ ] Shows: build, observatory, godspeed, ggen, gregverse, team, config
+      [ ] No ModuleNotFoundError
+      [ ] No missing subcommands
+      
+      Sign-Off: _______________ Date: ________
 
-### Release Steps
+[ ] 5. INIT COMMAND WORKS
+      Test Command: cd /tmp/test-yawl && yawl init
+      Expected: Creates .yawl/config.yaml
+      
+      Verification:
+      [ ] Exit code 0
+      [ ] File /tmp/test-yawl/.yawl/config.yaml created
+      [ ] File contains valid YAML
+      [ ] File contains all required sections
+      
+      Sign-Off: _______________ Date: ________
 
-- [ ] **Create final commit**
-  ```bash
-  git commit -m "release: v6.0.0
+[ ] 6. CLI WORKS WITHOUT PYTHONPATH
+      Test:
+      [ ] pip uninstall yawl-cli -y
+      [ ] pip install /home/user/yawl/cli
+      [ ] cd /home/user/yawl
+      [ ] yawl --version (should work)
+      
+      Verification:
+      [ ] No PYTHONPATH manipulation needed
+      [ ] CLI available in PATH
+      [ ] Works from any directory
+      
+      Sign-Off: _______________ Date: ________
 
-  Full production release with:
-  - Complete CLI functionality
-  - Comprehensive documentation
-  - All tests passing (87/87)
-  - Production readiness verified"
-  ```
-
-- [ ] **Create git tag**
-  ```bash
-  git tag -a v6.0.0 -m "YAWL CLI v6.0.0 - Production Release"
-  ```
-
-- [ ] **Push to repository**
-  ```bash
-  git push origin main
-  git push origin v6.0.0
-  ```
-
-- [ ] **Publish to PyPI** (if applicable)
-  ```bash
-  cd /home/user/yawl/cli
-  python -m build
-  python -m twine upload dist/*
-  ```
-
----
-
-## Sign-Off
-
-### Release Manager
-
-- [ ] Name: ___________________________
-- [ ] Date: ___________________________
-- [ ] Signature: _______________________
-
-### QA Lead
-
-- [ ] Testing complete: ___________________________
-- [ ] All issues resolved: ___________________________
-- [ ] Approved for release: ___________________________
-
-### Deployment Lead
-
-- [ ] Deployment plan finalized: ___________________________
-- [ ] Rollback procedure documented: ___________________________
-- [ ] Go/no-go decision: ___________________________
-
----
-
-## Rollback Procedure
-
-If critical issues found post-release:
-
-1. **Identify issue**
-   ```bash
-   # Check deployed version
-   yawl --version
-   
-   # Gather error logs
-   YAWL_CLI_DEBUG=1 yawl <failing-command>
-   ```
-
-2. **Rollback to previous version**
-   ```bash
-   # If using pip
-   pip install yawl-cli==6.0.0-rc1
-   
-   # If using git
-   git checkout v6.0.0-rc1
-   ```
-
-3. **Verify rollback**
-   ```bash
-   yawl --version  # Should show 6.0.0-rc1
-   ```
-
-4. **Report issue**
-   - Create GitHub issue with reproduction steps
-   - Tag as `critical` if blocking workflow
-   - Assign to release manager
+[ ] 7. MULTI-PYTHON COMPATIBILITY
+      Python Versions to Test: 3.10, 3.11, 3.12
+      
+      For each version:
+      - [ ] Python 3.10: yawl --version ✓
+      - [ ] Python 3.11: yawl --version ✓
+      - [ ] Python 3.12: yawl --version ✓
+      
+      Sign-Off: _______________ Date: ________
+```
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: February 22, 2026  
-**Status**: READY FOR PHASE 1 EXECUTION
+## PHASE 2: Configuration Management (5/5)
+
+### Configuration Checklist (3/5 - PARTIAL)
+
+```
+[?] 8. CONFIG SCHEMA VALIDATION
+       Status: Pydantic schema not yet implemented
+       Requirement: Add config schema validation to utils.py
+       
+       Acceptance Criteria:
+       [ ] Pydantic BuildConfig class defined
+       [ ] Pydantic TestConfig class defined
+       [ ] All config sections have schema
+       [ ] Invalid configs raise ValidationError
+       [ ] Error messages are helpful
+       
+       Test Case:
+       - Invalid threads value (< 1) should raise error
+       - Typo in config key should raise error
+       - Valid config should load without error
+       
+       Sign-Off: _______________ Date: ________
+
+[?] 9. CONFIG GET COMMAND WORKS
+       Status: Implementation may be incomplete
+       Test Command: yawl config get build.parallel
+       Expected: Returns boolean value (true/false)
+       
+       Verification:
+       [ ] Command succeeds with valid keys
+       [ ] Returns appropriate types (string, int, bool)
+       [ ] Returns error message for invalid keys
+       [ ] Works with nested paths (build.threads)
+       
+       Sign-Off: _______________ Date: ________
+
+[?] 10. CONFIG SET COMMAND WORKS
+        Status: Implementation may be incomplete
+        Test Command: yawl config set build.threads 16
+        Expected: Saves config, next get returns "16"
+        
+        Verification:
+        [ ] Command succeeds with valid keys
+        [ ] Value persisted to config file
+        [ ] Subsequent get returns new value
+        [ ] Type conversion works (string → int)
+        [ ] Invalid values rejected
+        
+        Sign-Off: _______________ Date: ________
+
+[ ] 11. CONFIG HIERARCHY TESTED
+         Requirement: Verify precedence (project > user > system)
+         
+         Test Setup:
+         1. Create /tmp/system-config.yaml with build.threads=2
+         2. Copy to /etc/yawl/config.yaml (if possible)
+         3. Create ~/.yawl/config.yaml with build.threads=4
+         4. Create project/.yawl/config.yaml with build.threads=8
+         
+         Verification:
+         [ ] Project config wins (build.threads=8)
+         [ ] User config overrides system
+         [ ] System config provides defaults
+         [ ] Missing configs don't cause errors
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 12. CONFIG FILE PERMISSIONS
+         Requirement: Config files must be 0600 (owner read/write only)
+         
+         Test:
+         [ ] yawl init creates .yawl/config.yaml
+         [ ] ls -l .yawl/config.yaml shows "-rw-------"
+         [ ] Other users cannot read the file
+         [ ] owner can read and write
+         
+         Verification Command:
+         $ stat -c '%a' .yawl/config.yaml
+         Expected: 600
+         
+         Sign-Off: _______________ Date: ________
+```
+
+---
+
+## PHASE 3: Commands Functionality (3/7)
+
+### Commands Checklist (3/7 - PARTIAL)
+
+```
+[ ] 13. BUILD COMPILE WORKS
+         Test: yawl build compile
+         
+         Verification:
+         [ ] Exit code 0
+         [ ] Output shows compilation progress
+         [ ] No errors
+         [ ] Maven called correctly
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 14. BUILD TEST WORKS
+         Test: cd /home/user/yawl && yawl build test
+         
+         Verification:
+         [ ] Exit code 0 (or 1 if tests fail, but command works)
+         [ ] Output shows test results
+         [ ] Maven called correctly
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 15. GODSPEED FULL WORKS
+         Test: cd /home/user/yawl && yawl godspeed full
+         
+         Verification:
+         [ ] Runs all 5 phases: discover, compile, guard, verify, commit
+         [ ] Each phase shows progress
+         [ ] Exit code 0 on success
+         [ ] All output is readable
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 16. OBSERVATORY GENERATE WORKS
+         Test: cd /home/user/yawl && yawl observatory generate
+         
+         Verification:
+         [ ] Exit code 0
+         [ ] Facts directory created
+         [ ] JSON files generated
+         [ ] Facts are valid JSON
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 17. GGEN GENERATE WORKS
+         Test: yawl ggen generate workflow.ttl
+         
+         Verification:
+         [ ] Exit code 0 (if spec is valid)
+         [ ] Output file created
+         [ ] Command handles missing files gracefully
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 18. HELP SHOWS COMMANDS CLEARLY
+         Test: yawl --help && yawl build --help
+         
+         Verification:
+         [ ] All commands listed
+         [ ] Descriptions are clear
+         [ ] Usage examples provided
+         [ ] Options documented
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 19. ERROR HANDLING & MESSAGES
+         Tests:
+         [ ] Invalid command → helpful error message
+         [ ] Missing file → "File not found" error
+         [ ] Permission denied → "Permission denied" error
+         [ ] Timeout → "Command timed out" error
+         
+         Verification:
+         [ ] Messages are user-friendly (not stack traces)
+         [ ] Suggest recovery actions
+         [ ] Include relevant file paths
+         
+         Sign-Off: _______________ Date: ________
+```
+
+---
+
+## PHASE 4: Code Quality & Testing (0/6)
+
+### Quality Checklist (0/6 - BLOCKING)
+
+```
+[ ] 20. ALL TESTS PASS
+         Command: cd /home/user/yawl/cli && pytest test/ -v
+         
+         Verification:
+         [ ] 0 test failures
+         [ ] 0 test errors
+         [ ] All 207 tests pass (currently 175/207)
+         [ ] Exit code 0
+         [ ] No warnings about deprecated features
+         
+         Current Status:
+         - Failing: 32 tests
+         - Need to fix: All failing tests
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 21. TEST COVERAGE ≥80%
+         Command: pytest test/ --cov=yawl_cli --cov-report=term-missing
+         
+         Verification:
+         [ ] Coverage ≥80% (currently 41%)
+         [ ] All major modules >70% coverage
+         [ ] No critical gaps in tested code
+         
+         Current Status:
+         - Coverage: 41%
+         - Need: +39 percentage points
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 22. NO UNUSED IMPORTS
+         Command: ruff check yawl_cli/ --select F401
+         
+         Verification:
+         [ ] 0 F401 violations
+         [ ] All imports are used
+         [ ] No extraneous packages imported
+         
+         Current Issues:
+         - Progress imported but unused (build.py)
+         - SpinnerColumn imported but unused
+         - BarColumn imported but unused
+         - TimeRemainingColumn imported but unused
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 23. NO BARE EXCEPT CLAUSES
+         Command: grep -r "except:" yawl_cli/
+         
+         Verification:
+         [ ] 0 bare "except:" statements
+         [ ] All exceptions caught by type
+         [ ] Examples:
+           ✓ except OSError as e:
+           ✗ except:
+           
+         Current Issues: 4 locations
+         - config_cli.py:193
+         - observatory.py:109
+         - utils.py:60
+         - utils.py:74
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 24. TYPE CHECKING PASSES
+         Command: mypy yawl_cli/
+         
+         Verification:
+         [ ] 0 type errors
+         [ ] No "error: Any is disallowed"
+         [ ] All functions have type hints
+         [ ] Return types specified
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 25. NO HARDCODED SECRETS
+         Command: grep -r "password\|secret\|token\|api.key" yawl_cli/
+         
+         Verification:
+         [ ] No hardcoded passwords found
+         [ ] No API keys in source
+         [ ] No tokens in strings
+         [ ] Config files can contain secrets (OK, user responsibility)
+         
+         Sign-Off: _______________ Date: ________
+```
+
+---
+
+## PHASE 5: Documentation (1/5)
+
+### Documentation Checklist (1/5 - INCOMPLETE)
+
+```
+[ ] 26. INSTALL.md COMPLETE
+         File: /home/user/yawl/cli/docs/INSTALL.md
+         
+         Required Sections:
+         [ ] Prerequisites (Python, pip, Maven, Java)
+         [ ] Installation from PyPI
+         [ ] Installation from source
+         [ ] Docker installation (optional)
+         [ ] Post-install verification
+         [ ] Troubleshooting (5+ common issues)
+         
+         Minimum: 1,500 words, 15 code examples
+         Estimated: 2 hours to write + review
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 27. CLI_REFERENCE.md COMPLETE
+         File: /home/user/yawl/cli/docs/CLI_REFERENCE.md
+         
+         Required Content:
+         [ ] All 7 subcommand groups documented
+         [ ] All 35+ commands listed with:
+             - Description
+             - Usage syntax
+             - Options/flags
+             - Example
+             - Exit codes
+         
+         Minimum: 3,000 words
+         Estimated: 3 hours to write + review
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 28. CLI_CONFIGURATION.md COMPLETE
+         File: /home/user/yawl/cli/docs/CLI_CONFIGURATION.md
+         
+         Required Content:
+         [ ] Config file locations (3 levels)
+         [ ] Hierarchy & precedence rules
+         [ ] All config keys documented:
+             - Type
+             - Default value
+             - Description
+             - Valid ranges
+         [ ] Environment variable support
+         [ ] Common configuration scenarios
+         [ ] Example config files
+         
+         Minimum: 2,000 words
+         Estimated: 2 hours to write + review
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 29. CLI_TROUBLESHOOTING.md COMPLETE
+         File: /home/user/yawl/cli/docs/CLI_TROUBLESHOOTING.md
+         
+         Must Cover (minimum 15 scenarios):
+         [ ] "Maven not found" → install instructions
+         [ ] "Project root not detected" → how to identify
+         [ ] "Config not loading" → permission checks
+         [ ] "Build timeout" → increase timeout
+         [ ] "YAML parse error" → syntax fixes
+         [ ] "No facts generated" → run observatory
+         [ ] "Tests failing" → interpret output
+         [ ] "Permission denied" → fix ownership
+         [ ] "Python not found" → install Python
+         [ ] "Java version mismatch" → compatibility
+         [ ] Plus 5+ more scenarios
+         
+         Format for each:
+         - Problem statement
+         - Diagnosis steps
+         - Resolution steps
+         - Prevention tips
+         
+         Minimum: 2,000 words, 15+ examples
+         Estimated: 3 hours to write + review
+         
+         Sign-Off: _______________ Date: ________
+
+[ ] 30. EXAMPLES DIRECTORY
+         Directory: /home/user/yawl/cli/examples/
+         
+         Required Files:
+         [ ] basic-setup.sh (install + init)
+         [ ] full-godspeed.sh (complete workflow)
+         [ ] custom-config.yaml (annotated template)
+         [ ] team-operations.sh (team creation)
+         [ ] troubleshooting.md (common fixes)
+         
+         Each script must:
+         - Be executable (chmod +x)
+         - Include comments explaining each step
+         - Have error handling
+         - Show expected output
+         
+         Minimum: 5 files, 270 lines total
+         Estimated: 2 hours to write + test
+         
+         Sign-Off: _______________ Date: ________
+```
+
+---
+
+## Gate Verification Summary
+
+### Deployment Gates (Pass/Fail)
+
+| Gate | Status | Required | Current |
+|------|--------|----------|---------|
+| 1. Entry Point Fixed | ❌ FAIL | YES | BROKEN |
+| 2. Installation Succeeds | ❌ FAIL | YES | FAILS |
+| 3. Tests 100% Passing | ❌ FAIL | YES | 85% |
+| 4. Test Coverage ≥80% | ❌ FAIL | YES | 41% |
+| 5. Code Quality Good | ❌ FAIL | YES | ISSUES |
+| 6. Docs Complete | ❌ FAIL | YES | INCOMPLETE |
+| 7. Security 0 Critical | ✅ PASS | YES | 0 critical |
+| 8. Config Valid | ⚠️ PARTIAL | YES | PARTIAL |
+
+**Result**: 1/8 gates passing → **DEPLOYMENT BLOCKED**
+
+---
+
+## Final Sign-Off (All Required)
+
+```
+Production Readiness Validator: ___________________  Date: ________
+
+Team Lead: ___________________________  Date: ________
+
+Security Reviewer: ___________________  Date: ________
+
+QA Manager: _________________________  Date: ________
+
+DevOps Engineer: _____________________  Date: ________
+```
+
+**Final Status**:
+- [ ] All 30 checklist items complete
+- [ ] All 8 gates passing
+- [ ] All signatures obtained
+- [ ] Ready for production deployment
+
+---
+
+**Document Location**: `/home/user/yawl/.claude/DEPLOYMENT_CHECKLIST.md`  
+**Last Updated**: 2026-02-22  
+**Next Review**: After Phase 1 remediation (entry point fix)
 

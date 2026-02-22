@@ -22,14 +22,11 @@ License: Apache 2.0
 
 import os
 import sys
-import traceback
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
-from rich.syntax import Syntax
 from rich.prompt import Confirm, Prompt
 
 from yawl_cli.build import build_app
@@ -42,6 +39,7 @@ from yawl_cli import config_cli
 from yawl_cli.utils import ensure_project_root, Config, DEBUG
 
 console = Console()
+stderr_console = Console(stderr=True)
 
 # Create main app
 app = typer.Typer(
@@ -161,12 +159,12 @@ def init(
             console.print("\nRun [bold]yawl init --interactive[/bold] to customize settings.")
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
@@ -340,12 +338,12 @@ def status(
                         console.print(f"    {values}")
 
     except RuntimeError as e:
-        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
     except Exception as e:
-        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        stderr_console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}")
         if DEBUG:
             console.print_exception()
         raise typer.Exit(code=1)
