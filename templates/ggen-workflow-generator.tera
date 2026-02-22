@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated YAWL Agent Workflow -->
+<!-- Agent: {{ agentName }}, Role: {{ agentRole }}, Phase: {{ phase }} -->
+<workflow>
+  <agentSpecification>
+    <name>{{ agentName }}</name>
+    <role>{{ agentRole }}</role>
+    <phase>{{ phase }}</phase>
+    <metadata>
+      <description>Auto-generated workflow for {{ agentName }}</description>
+      <generated-timestamp>2026-02-22T01:43:00Z</generated-timestamp>
+      <generator>ggen v0.1.0</generator>
+    </metadata>
+  </agentSpecification>
+</workflow>

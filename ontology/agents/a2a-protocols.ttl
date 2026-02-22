@@ -1,0 +1,474 @@
+@prefix a2a: <http://yawl.io/a2a#> .
+@prefix mcp: <http://yawl.io/mcp#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ============================================================================
+# YAWL Agent-to-Agent (A2A) Protocol Definitions
+# ============================================================================
+# Protocol suite for agent collaboration in YAWL workflow execution
+# ============================================================================
+
+# --------------------------------------------------------------------------
+# AGENT 1: Orchestrator Agent (Lead Conductor)
+# --------------------------------------------------------------------------
+a2a:OrchestrationAgent a a2a:Agent ;
+  rdfs:label "Orchestrator Agent" ;
+  rdfs:comment "Coordinates multi-agent workflows and task distribution" ;
+
+  # A2A Protocol Capabilities
+  a2a:hasProtocol a2a:OrchestrationProtocol ;
+  a2a:messagingStyle a2a:RequestReply ;
+  a2a:concurrency a2a:Parallel ;
+
+  # MCP Capabilities
+  mcp:hasMCPServer mcp:OrchestrationMCPServer ;
+  mcp:handlesTools mcp:task_assign, mcp:status_poll, mcp:dependency_check ;
+  mcp:resourceQuota [
+    mcp:maxConcurrentTasks 16 ;
+    mcp:maxContextTokens 200000 ;
+    mcp:timeoutSeconds 3600
+  ] ;
+
+  # Protocol Endpoints
+  a2a:endpoint [
+    a2a:name "orchestration/tasks" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:TaskAssignment ;
+    a2a:responseTime 500 ;  # milliseconds
+  ] ;
+  a2a:endpoint [
+    a2a:name "orchestration/status" ;
+    a2a:method a2a:GET ;
+    a2a:messageType a2a:StatusQuery ;
+    a2a:responseTime 100 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "orchestration/dependencies" ;
+    a2a:method a2a:GET ;
+    a2a:messageType a2a:DependencyGraph ;
+    a2a:responseTime 200 ;
+  ] .
+
+a2a:OrchestrationProtocol a a2a:Protocol ;
+  rdfs:label "Orchestration Protocol" ;
+  a2a:messageFormat a2a:JSON ;
+  a2a:encryption a2a:TLS12 ;
+  a2a:retryPolicy [
+    a2a:maxRetries 3 ;
+    a2a:backoffMultiplier 2.0 ;
+    a2a:initialDelayMs 100
+  ] ;
+  a2a:circuitBreaker [
+    a2a:failureThreshold 5 ;
+    a2a:successThreshold 2 ;
+    a2a:timeoutMs 10000
+  ] .
+
+# --------------------------------------------------------------------------
+# AGENT 2: Task Executor Agent (Worker)
+# --------------------------------------------------------------------------
+a2a:ExecutorAgent a a2a:Agent ;
+  rdfs:label "Task Executor Agent" ;
+  rdfs:comment "Executes assigned tasks and reports progress" ;
+
+  # A2A Protocol Capabilities
+  a2a:hasProtocol a2a:ExecutionProtocol ;
+  a2a:messagingStyle a2a:PublishSubscribe ;
+  a2a:concurrency a2a:Sequential ;
+
+  # MCP Capabilities
+  mcp:hasMCPServer mcp:ExecutorMCPServer ;
+  mcp:handlesTools mcp:task_execute, mcp:progress_report, mcp:error_notify ;
+  mcp:resourceQuota [
+    mcp:maxConcurrentTasks 1 ;
+    mcp:maxContextTokens 50000 ;
+    mcp:timeoutSeconds 1800
+  ] ;
+
+  # Protocol Endpoints
+  a2a:endpoint [
+    a2a:name "executor/task/start" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:TaskStart ;
+    a2a:responseTime 200 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "executor/task/progress" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:ProgressUpdate ;
+    a2a:responseTime 100 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "executor/task/complete" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:TaskCompletion ;
+    a2a:responseTime 300 ;
+  ] .
+
+a2a:ExecutionProtocol a a2a:Protocol ;
+  rdfs:label "Execution Protocol" ;
+  a2a:messageFormat a2a:JSON ;
+  a2a:encryption a2a:TLS12 ;
+  a2a:queueing a2a:FIFO ;
+  a2a:ordering a2a:Ordered ;
+  a2a:deliveryGuarantee a2a:AtLeastOnce .
+
+# --------------------------------------------------------------------------
+# AGENT 3: Validator Agent (Quality Assurance)
+# --------------------------------------------------------------------------
+a2a:ValidatorAgent a a2a:Agent ;
+  rdfs:label "Validator Agent" ;
+  rdfs:comment "Validates task outputs and enforces quality gates" ;
+
+  # A2A Protocol Capabilities
+  a2a:hasProtocol a2a:ValidationProtocol ;
+  a2a:messagingStyle a2a:RequestReply ;
+  a2a:concurrency a2a:Parallel ;
+
+  # MCP Capabilities
+  mcp:hasMCPServer mcp:ValidatorMCPServer ;
+  mcp:handlesTools mcp:validate_output, mcp:check_gates, mcp:report_compliance ;
+  mcp:resourceQuota [
+    mcp:maxConcurrentTasks 8 ;
+    mcp:maxContextTokens 100000 ;
+    mcp:timeoutSeconds 600
+  ] ;
+
+  # Protocol Endpoints
+  a2a:endpoint [
+    a2a:name "validator/check" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:ValidationRequest ;
+    a2a:responseTime 1000 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "validator/gates" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:GateCheck ;
+    a2a:responseTime 500 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "validator/compliance" ;
+    a2a:method a2a:GET ;
+    a2a:messageType a2a:ComplianceReport ;
+    a2a:responseTime 2000 ;
+  ] .
+
+a2a:ValidationProtocol a a2a:Protocol ;
+  rdfs:label "Validation Protocol" ;
+  a2a:messageFormat a2a:JSON ;
+  a2a:encryption a2a:TLS12 ;
+  a2a:timeout [
+    a2a:connectionTimeout 5000 ;
+    a2a:requestTimeout 30000 ;
+    a2a:idleTimeout 60000
+  ] ;
+  a2a:logging a2a:Verbose .
+
+# --------------------------------------------------------------------------
+# AGENT 4: Observer Agent (Monitoring & Telemetry)
+# --------------------------------------------------------------------------
+a2a:ObserverAgent a a2a:Agent ;
+  rdfs:label "Observer Agent" ;
+  rdfs:comment "Monitors system state and collects observability metrics" ;
+
+  # A2A Protocol Capabilities
+  a2a:hasProtocol a2a:ObservationProtocol ;
+  a2a:messagingStyle a2a:PushBased ;
+  a2a:concurrency a2a:Parallel ;
+
+  # MCP Capabilities
+  mcp:hasMCPServer mcp:ObserverMCPServer ;
+  mcp:handlesTools mcp:emit_metric, mcp:emit_trace, mcp:emit_log ;
+  mcp:resourceQuota [
+    mcp:maxConcurrentTasks 32 ;
+    mcp:maxContextTokens 150000 ;
+    mcp:timeoutSeconds 300
+  ] ;
+
+  # Protocol Endpoints
+  a2a:endpoint [
+    a2a:name "observer/metrics" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:MetricEmission ;
+    a2a:responseTime 50 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "observer/traces" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:TraceSpan ;
+    a2a:responseTime 50 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "observer/logs" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:LogEntry ;
+    a2a:responseTime 25 ;
+  ] .
+
+a2a:ObservationProtocol a a2a:Protocol ;
+  rdfs:label "Observation Protocol" ;
+  a2a:messageFormat a2a:JSON ;
+  a2a:encryption a2a:TLS12 ;
+  a2a:buffering [
+    a2a:batchSize 100 ;
+    a2a:batchTimeoutMs 1000 ;
+    a2a:compressionEnabled true
+  ] ;
+  a2a:routing a2a:LoadBalanced .
+
+# --------------------------------------------------------------------------
+# AGENT 5: Resolver Agent (Error Handling & Recovery)
+# --------------------------------------------------------------------------
+a2a:ResolverAgent a a2a:Agent ;
+  rdfs:label "Resolver Agent" ;
+  rdfs:comment "Handles failures, conflicts, and recovery scenarios" ;
+
+  # A2A Protocol Capabilities
+  a2a:hasProtocol a2a:ResolutionProtocol ;
+  a2a:messagingStyle a2a:EventDriven ;
+  a2a:concurrency a2a:Parallel ;
+
+  # MCP Capabilities
+  mcp:hasMCPServer mcp:ResolverMCPServer ;
+  mcp:handlesTools mcp:handle_error, mcp:resolve_conflict, mcp:recovery_plan ;
+  mcp:resourceQuota [
+    mcp:maxConcurrentTasks 4 ;
+    mcp:maxContextTokens 75000 ;
+    mcp:timeoutSeconds 900
+  ] ;
+
+  # Protocol Endpoints
+  a2a:endpoint [
+    a2a:name "resolver/error" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:ErrorNotification ;
+    a2a:responseTime 500 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "resolver/conflict" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:ConflictResolution ;
+    a2a:responseTime 1000 ;
+  ] ;
+  a2a:endpoint [
+    a2a:name "resolver/recovery" ;
+    a2a:method a2a:POST ;
+    a2a:messageType a2a:RecoveryPlan ;
+    a2a:responseTime 2000 ;
+  ] .
+
+a2a:ResolutionProtocol a a2a:Protocol ;
+  rdfs:label "Resolution Protocol" ;
+  a2a:messageFormat a2a:JSON ;
+  a2a:encryption a2a:TLS12 ;
+  a2a:priority a2a:HighPriority ;
+  a2a:acknowledgement a2a:Required ;
+  a2a:deadLetterQueue a2a:Enabled .
+
+# ============================================================================
+# MCP Server Definitions
+# ============================================================================
+
+mcp:OrchestrationMCPServer a mcp:Server ;
+  rdfs:label "Orchestration MCP Server" ;
+  mcp:host "127.0.0.1" ;
+  mcp:port 9001 ;
+  mcp:protocol mcp:JSONRPCv2 ;
+  mcp:authentication mcp:JWTBearer ;
+  mcp:toolCount 3 .
+
+mcp:ExecutorMCPServer a mcp:Server ;
+  rdfs:label "Executor MCP Server" ;
+  mcp:host "127.0.0.1" ;
+  mcp:port 9002 ;
+  mcp:protocol mcp:JSONRPCv2 ;
+  mcp:authentication mcp:JWTBearer ;
+  mcp:toolCount 3 .
+
+mcp:ValidatorMCPServer a mcp:Server ;
+  rdfs:label "Validator MCP Server" ;
+  mcp:host "127.0.0.1" ;
+  mcp:port 9003 ;
+  mcp:protocol mcp:JSONRPCv2 ;
+  mcp:authentication mcp:JWTBearer ;
+  mcp:toolCount 3 .
+
+mcp:ObserverMCPServer a mcp:Server ;
+  rdfs:label "Observer MCP Server" ;
+  mcp:host "127.0.0.1" ;
+  mcp:port 9004 ;
+  mcp:protocol mcp:JSONRPCv2 ;
+  mcp:authentication mcp:JWTBearer ;
+  mcp:toolCount 3 .
+
+mcp:ResolverMCPServer a mcp:Server ;
+  rdfs:label "Resolver MCP Server" ;
+  mcp:host "127.0.0.1" ;
+  mcp:port 9005 ;
+  mcp:protocol mcp:JSONRPCv2 ;
+  mcp:authentication mcp:JWTBearer ;
+  mcp:toolCount 3 .
+
+# ============================================================================
+# Message Types (Used in Protocols)
+# ============================================================================
+
+a2a:TaskAssignment a a2a:MessageType ;
+  rdfs:label "Task Assignment" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "task_id" ; a2a:type xsd:string ]
+                               [ a2a:name "executor" ; a2a:type xsd:string ]
+                               [ a2a:name "deadline" ; a2a:type xsd:dateTime ] ) ] .
+
+a2a:StatusQuery a a2a:MessageType ;
+  rdfs:label "Status Query" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "task_id" ; a2a:type xsd:string ] ) ] .
+
+a2a:DependencyGraph a a2a:MessageType ;
+  rdfs:label "Dependency Graph" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "nodes" ; a2a:type xsd:string ]
+                               [ a2a:name "edges" ; a2a:type xsd:string ] ) ] .
+
+a2a:TaskStart a a2a:MessageType ;
+  rdfs:label "Task Start" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "task_id" ; a2a:type xsd:string ]
+                               [ a2a:name "start_time" ; a2a:type xsd:dateTime ] ) ] .
+
+a2a:ProgressUpdate a a2a:MessageType ;
+  rdfs:label "Progress Update" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "task_id" ; a2a:type xsd:string ]
+                               [ a2a:name "progress" ; a2a:type xsd:integer ]
+                               [ a2a:name "status" ; a2a:type xsd:string ] ) ] .
+
+a2a:TaskCompletion a a2a:MessageType ;
+  rdfs:label "Task Completion" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "task_id" ; a2a:type xsd:string ]
+                               [ a2a:name "result" ; a2a:type xsd:string ]
+                               [ a2a:name "end_time" ; a2a:type xsd:dateTime ] ) ] .
+
+a2a:ValidationRequest a a2a:MessageType ;
+  rdfs:label "Validation Request" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "artifact" ; a2a:type xsd:string ]
+                               [ a2a:name "rules" ; a2a:type xsd:string ] ) ] .
+
+a2a:GateCheck a a2a:MessageType ;
+  rdfs:label "Gate Check" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "gate_id" ; a2a:type xsd:string ]
+                               [ a2a:name "phase" ; a2a:type xsd:string ] ) ] .
+
+a2a:ComplianceReport a a2a:MessageType ;
+  rdfs:label "Compliance Report" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "passed" ; a2a:type xsd:boolean ]
+                               [ a2a:name "violations" ; a2a:type xsd:string ] ) ] .
+
+a2a:MetricEmission a a2a:MessageType ;
+  rdfs:label "Metric Emission" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "metric_name" ; a2a:type xsd:string ]
+                               [ a2a:name "value" ; a2a:type xsd:decimal ]
+                               [ a2a:name "timestamp" ; a2a:type xsd:dateTime ] ) ] .
+
+a2a:TraceSpan a a2a:MessageType ;
+  rdfs:label "Trace Span" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "span_id" ; a2a:type xsd:string ]
+                               [ a2a:name "trace_id" ; a2a:type xsd:string ]
+                               [ a2a:name "duration_ms" ; a2a:type xsd:long ] ) ] .
+
+a2a:LogEntry a a2a:MessageType ;
+  rdfs:label "Log Entry" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "level" ; a2a:type xsd:string ]
+                               [ a2a:name "message" ; a2a:type xsd:string ]
+                               [ a2a:name "timestamp" ; a2a:type xsd:dateTime ] ) ] .
+
+a2a:ErrorNotification a a2a:MessageType ;
+  rdfs:label "Error Notification" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "error_id" ; a2a:type xsd:string ]
+                               [ a2a:name "error_msg" ; a2a:type xsd:string ]
+                               [ a2a:name "severity" ; a2a:type xsd:string ] ) ] .
+
+a2a:ConflictResolution a a2a:MessageType ;
+  rdfs:label "Conflict Resolution" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "conflict_id" ; a2a:type xsd:string ]
+                               [ a2a:name "options" ; a2a:type xsd:string ] ) ] .
+
+a2a:RecoveryPlan a a2a:MessageType ;
+  rdfs:label "Recovery Plan" ;
+  a2a:schema [ a2a:fields ( [ a2a:name "failure_id" ; a2a:type xsd:string ]
+                               [ a2a:name "recovery_steps" ; a2a:type xsd:string ] ) ] .
+
+# ============================================================================
+# Protocol Properties and Enums
+# ============================================================================
+
+a2a:RequestReply a a2a:MessagingStyle ;
+  rdfs:label "Request-Reply" ;
+  rdfs:comment "Synchronous request-reply pattern" .
+
+a2a:PublishSubscribe a a2a:MessagingStyle ;
+  rdfs:label "Publish-Subscribe" ;
+  rdfs:comment "Asynchronous publish-subscribe pattern" .
+
+a2a:PushBased a a2a:MessagingStyle ;
+  rdfs:label "Push-Based" ;
+  rdfs:comment "Server-initiated push to clients" .
+
+a2a:EventDriven a a2a:MessagingStyle ;
+  rdfs:label "Event-Driven" ;
+  rdfs:comment "Event-driven reactive pattern" .
+
+a2a:Parallel a a2a:ConcurrencyModel ;
+  rdfs:label "Parallel" ;
+  rdfs:comment "Multiple concurrent operations" .
+
+a2a:Sequential a a2a:ConcurrencyModel ;
+  rdfs:label "Sequential" ;
+  rdfs:comment "Serial processing" .
+
+a2a:JSON a a2a:MessageFormat ;
+  rdfs:label "JSON" ;
+  rdfs:comment "JSON message format" .
+
+a2a:TLS12 a a2a:EncryptionLevel ;
+  rdfs:label "TLS 1.2" ;
+  rdfs:comment "TLS 1.2 encryption" .
+
+a2a:FIFO a a2a:QueueType ;
+  rdfs:label "FIFO" ;
+  rdfs:comment "First-In-First-Out queue" .
+
+a2a:Ordered a a2a:Ordering ;
+  rdfs:label "Ordered" ;
+  rdfs:comment "Message ordering guaranteed" .
+
+a2a:AtLeastOnce a a2a:DeliveryGuarantee ;
+  rdfs:label "At-Least-Once" ;
+  rdfs:comment "At-least-once delivery guarantee" .
+
+a2a:HighPriority a a2a:Priority ;
+  rdfs:label "High Priority" ;
+  rdfs:comment "High priority processing" .
+
+a2a:Required a a2a:Acknowledgement ;
+  rdfs:label "Required" ;
+  rdfs:comment "Acknowledgement required" .
+
+a2a:Enabled a a2a:Feature ;
+  rdfs:label "Enabled" ;
+  rdfs:comment "Feature enabled" .
+
+a2a:Verbose a a2a:LogLevel ;
+  rdfs:label "Verbose" ;
+  rdfs:comment "Verbose logging" .
+
+a2a:LoadBalanced a a2a:RoutingMode ;
+  rdfs:label "Load Balanced" ;
+  rdfs:comment "Load-balanced routing" .
+
+mcp:JSONRPCv2 a mcp:ProtocolType ;
+  rdfs:label "JSON-RPC 2.0" ;
+  rdfs:comment "JSON-RPC 2.0 protocol" .
+
+mcp:JWTBearer a mcp:AuthType ;
+  rdfs:label "JWT Bearer" ;
+  rdfs:comment "JWT Bearer token authentication" .

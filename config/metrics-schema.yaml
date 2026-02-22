@@ -1,0 +1,623 @@
+---
+# Data Marketplace Metrics Schema v1.0
+# YAWL Foundation - Anonymized Execution Metrics for Benchmarking
+#
+# This schema defines the structure of raw and anonymized execution metrics
+# collected from skill executions (MCP tools) and case executions (YAWL workflows).
+#
+# Privacy Model:
+# - Raw metrics (7-day retention): Includes PII (user_id, org_id, email)
+# - Anonymized metrics (90-day retention): PII replaced with hashes
+# - Aggregated metrics (2-year retention): Percentiles, averages (no raw data)
+#
+# Anonymization is applied per metric on a schedule (every 6 hours) using
+# deterministic salted hashing for org grouping, non-deterministic for user linking.
+
+schema_version: "1.0"
+schema_date: "2026-02-21"
+schema_author: "Data Marketplace Team"
+
+# ============================================================================
+# SKILL EXECUTION METRIC (MCP Tool Invocation)
+# ============================================================================
+
+skill_execution_metric:
+  description: >
+    Execution metrics for a single MCP tool invocation (e.g., calling OpenAI GPT-4).
+    Collected after every skill execution with success/failure and resource usage.
+
+  metric_type: "execution"
+  scope: "single tool call"
+  collection_point: "YawlMcpServer.executeTool()"
+  retention_raw_days: 7
+  retention_anonymized_days: 90
+
+  fields:
+    # ======== REQUIRED IDENTIFIERS ========
+    skill_id:
+      type: "string"
+      description: "Globally unique skill identifier"
+      example: "openai-gpt4-turbo"
+      pii_risk: "none"
+      anonymized: false
+      constraints:
+        - "non-empty"
+        - "max_length: 255"
+
+    skill_name:
+      type: "string"
+      description: "Human-readable skill name (used in dashboards)"
+      example: "OpenAI GPT-4 Turbo"
+      pii_risk: "none"
+      anonymized: false
+      constraints:
+        - "non-empty"
+        - "max_length: 255"
+
+    # ======== TIMING & DURATION ========
+    execution_timestamp:
+      type: "timestamp"
+      description: "Execution start time (UTC, microsecond precision)"
+      example: "2026-02-21T14:35:42.123456Z"
+      pii_risk: "none"
+      anonymized: false
+      precision: "microseconds"
+
+    duration_ms:
+      type: "integer"
+      description: "Wall-clock execution duration in milliseconds"
+      example: 1234
+      pii_risk: "none"
+      anonymized: false
+      constraints:
+        - "min: 0"
+        - "max: 3600000"  # 1 hour max
+
+    # ======== EXECUTION STATUS ========
+    success:
+      type: "boolean"
+      description: "Did execution succeed (no exceptions thrown)?"
+      example: true
+      pii_risk: "none"
+      anonymized: false
+
+    error_type:
+      type: "string"
+      description: "Java exception class name if failed (e.g., TimeoutException)"
+      example: "java.util.concurrent.TimeoutException"
+      pii_risk: "low"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "max_length: 255"
+
+    # ======== RESOURCE METRICS ========
+    input_tokens:
+      type: "integer"
+      description: "Tokens consumed by LLM (OpenAI, Anthropic, etc.)"
+      example: 500
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0"
+
+    output_tokens:
+      type: "integer"
+      description: "Tokens produced by LLM"
+      example: 200
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0"
+
+    memory_used_mb:
+      type: "float"
+      description: "Peak heap memory during execution (MB)"
+      example: 256.5
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0"
+
+    cpu_time_ms:
+      type: "integer"
+      description: "CPU time (not wall-clock) in milliseconds"
+      example: 800
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0"
+
+    # ======== CONTEXT (ANONYMIZE ME) ========
+    user_id:
+      type: "string"
+      description: "UUID of user who triggered execution"
+      example: "550e8400-e29b-41d4-a716-446655440000"
+      pii_risk: "high"
+      anonymized: true
+      anonymization_method: "sha256_hash"
+      deterministic: false
+      constraints:
+        - "pattern: '^[a-z0-9-]{36}$'"
+
+    organization_id:
+      type: "string"
+      description: "UUID of organization/tenant"
+      example: "550e8400-e29b-41d4-a716-446655440001"
+      pii_risk: "high"
+      anonymized: true
+      anonymization_method: "sha256_hash"
+      deterministic: true  # Same org → same hash (for org benchmarking)
+      constraints:
+        - "pattern: '^[a-z0-9-]{36}$'"
+
+    request_source:
+      type: "string"
+      description: "Source of tool invocation"
+      example: "mcp_client"
+      pii_risk: "none"
+      anonymized: false
+      enum:
+        - "mcp_client"      # Direct MCP client
+        - "a2a_agent"       # Via A2A protocol (autonomous agent)
+        - "direct_api"      # Via REST API
+        - "workflow_task"   # From YAWL task execution
+
+    region:
+      type: "string"
+      description: "Geographic region where execution occurred"
+      example: "us-west-2"
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+
+    # ======== OPTIONAL METADATA ========
+    model_version:
+      type: "string"
+      description: "LLM model version used (if applicable)"
+      example: "gpt-4-turbo-2024-04-09"
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+
+    retry_count:
+      type: "integer"
+      description: "Number of retries before success"
+      example: 2
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0"
+
+    # ======== AUDIT ========
+    created_at:
+      type: "timestamp"
+      description: "Record creation timestamp (internal)"
+      pii_risk: "none"
+      anonymized: false
+
+    anonymized_at:
+      type: "timestamp"
+      description: "When PII was anonymized (NULL until anonymization)"
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+
+    anonymization_rules_applied:
+      type: "array<string>"
+      description: "List of anonymization rules applied"
+      example: ["hash_user_id", "hash_organization_id"]
+      nullable: true
+
+
+# ============================================================================
+# CASE EXECUTION METRIC (YAWL Workflow)
+# ============================================================================
+
+case_execution_metric:
+  description: >
+    Execution metrics for a complete YAWL case (workflow instance).
+    Collected when case completes, including cycle time, work item count, errors.
+
+  metric_type: "workflow"
+  scope: "entire case"
+  collection_point: "YawlA2AServer.handleCaseCompletion()"
+  retention_raw_days: 7
+  retention_anonymized_days: 90
+
+  fields:
+    # ======== CASE IDENTIFIERS (ANONYMIZE ME) ========
+    case_id:
+      type: "string"
+      description: "Unique case identifier (YAWL CaseID)"
+      example: "ORD-2026-02-21-00001"
+      pii_risk: "high"
+      anonymized: true
+      anonymization_method: "sha256_hash"
+      deterministic: false
+      constraints:
+        - "pattern: '^[A-Z0-9-]{20,}$'"
+
+    case_type:
+      type: "string"
+      description: "Workflow type (e.g., 'order_processing', 'approval')"
+      example: "order_processing"
+      pii_risk: "none"
+      anonymized: false
+      constraints:
+        - "max_length: 255"
+
+    # ======== TIMING ========
+    case_started_at:
+      type: "timestamp"
+      description: "Case creation time"
+      example: "2026-02-21T14:30:00Z"
+      pii_risk: "none"
+      anonymized: false
+
+    case_completed_at:
+      type: "timestamp"
+      description: "Case completion time (NULL if still running)"
+      example: "2026-02-21T14:35:00Z"
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+
+    cycle_time_seconds:
+      type: "integer"
+      description: "Total case duration: completed_at - started_at"
+      example: 300
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0"
+        - "computed_field: true"  # Derived, not collected
+
+    # ======== WORK ITEM COUNTS ========
+    work_items_completed:
+      type: "integer"
+      description: "Number of work items executed successfully"
+      example: 5
+      pii_risk: "none"
+      anonymized: false
+      constraints:
+        - "min: 0"
+
+    work_items_failed:
+      type: "integer"
+      description: "Number of work items that failed/errored"
+      example: 1
+      pii_risk: "none"
+      anonymized: false
+      constraints:
+        - "min: 0"
+
+    work_items_skipped:
+      type: "integer"
+      description: "Number of work items skipped (conditional routing)"
+      example: 2
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0"
+
+    # ======== ERROR METRICS ========
+    error_rate:
+      type: "float"
+      description: "Fraction of work items failed: failed / (completed + failed)"
+      example: 0.16667
+      pii_risk: "none"
+      anonymized: false
+      constraints:
+        - "min: 0.0"
+        - "max: 1.0"
+        - "computed_field: true"  # Derived
+
+    exception_types:
+      type: "array<string>"
+      description: "List of unique exception types encountered"
+      example: ["TimeoutException", "NullPointerException"]
+      pii_risk: "low"
+      anonymized: false
+      nullable: true
+
+    # ======== THROUGHPUT ========
+    throughput_cases_per_hour:
+      type: "float"
+      description: "Aggregate throughput (all similar cases in period)"
+      example: 12.5
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      constraints:
+        - "min: 0.0"
+        - "note: 'Computed from event counts, not instance-level'"
+
+    # ======== CONTEXT (ANONYMIZE ME) ========
+    organization_id:
+      type: "string"
+      description: "Organization/tenant context"
+      example: "550e8400-e29b-41d4-a716-446655440001"
+      pii_risk: "high"
+      anonymized: true
+      anonymization_method: "sha256_hash"
+      deterministic: true
+      constraints:
+        - "pattern: '^[a-z0-9-]{36}$'"
+
+    assigned_user:
+      type: "string"
+      description: "User assigned primary work item (email or UUID)"
+      example: "alice@company.com"
+      pii_risk: "high"
+      anonymized: true
+      anonymization_method: "sha256_hash"
+      deterministic: false
+      nullable: true
+
+    priority:
+      type: "string"
+      description: "Case priority (low, normal, high, critical)"
+      example: "high"
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+      enum:
+        - "low"
+        - "normal"
+        - "high"
+        - "critical"
+
+    # ======== AUDIT ========
+    created_at:
+      type: "timestamp"
+      description: "Record creation timestamp"
+      pii_risk: "none"
+      anonymized: false
+
+    anonymized_at:
+      type: "timestamp"
+      description: "When PII was anonymized"
+      pii_risk: "none"
+      anonymized: false
+      nullable: true
+
+    anonymization_rules_applied:
+      type: "array<string>"
+      description: "List of anonymization rules applied"
+      example: ["hash_case_id", "hash_organization_id", "hash_assigned_user"]
+      nullable: true
+
+
+# ============================================================================
+# ANONYMIZATION RULES (Applied to raw metrics)
+# ============================================================================
+
+anonymization_rules:
+
+  - name: "hash_user_id"
+    description: "Hash user IDs (breaks cross-session linkability)"
+    trigger: "skill_execution_metric.user_id"
+    algorithm: "sha256"
+    salt: "${ANONYMIZATION_SALT}"
+    deterministic: false
+    output_field: "user_id_hash"
+    pattern: "^[a-z0-9-]{36}$"
+    run_schedule: "every 6 hours"
+
+  - name: "hash_organization_id"
+    description: "Hash org IDs (same org → same hash, for org benchmarking)"
+    trigger: ["skill_execution_metric.organization_id", "case_execution_metric.organization_id"]
+    algorithm: "sha256"
+    salt: "${ANONYMIZATION_SALT}"
+    deterministic: true
+    output_field: "organization_id_hash"
+    pattern: "^[a-z0-9-]{36}$"
+    run_schedule: "every 6 hours"
+
+  - name: "hash_case_id"
+    description: "Hash case IDs (prevents case linking)"
+    trigger: "case_execution_metric.case_id"
+    algorithm: "sha256"
+    salt: "${ANONYMIZATION_SALT}"
+    deterministic: false
+    output_field: "case_id_hash"
+    pattern: "^[A-Z0-9-]{20,}$"
+    run_schedule: "every 6 hours"
+
+  - name: "hash_assigned_user"
+    description: "Hash assigned_user field (email-like or UUID)"
+    trigger: "case_execution_metric.assigned_user"
+    algorithm: "sha256"
+    salt: "${ANONYMIZATION_SALT}"
+    deterministic: false
+    output_field: "assigned_user_hash"
+    pattern: "(^[a-z0-9-]{36}$|@)"  # UUID or email
+    run_schedule: "every 6 hours"
+
+  - name: "mask_ip_address"
+    description: "Mask last octet of IP addresses (if collected)"
+    trigger: "*.request_ip"
+    algorithm: "mask_last_octet"
+    output_field: "request_ip_masked"
+    pattern: "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$"
+    run_schedule: "every 6 hours"
+    note: "Optional field; only present if request_ip collected"
+
+
+# ============================================================================
+# DATA RETENTION POLICY
+# ============================================================================
+
+retention_policy:
+
+  raw_metrics:
+    duration_days: 7
+    reason: "Audit trail for anonymization verification"
+    deletion_method: "CASCADE (before anonymized deleted)"
+    gdpr_compliant: true
+
+  anonymized_metrics:
+    duration_days: 90
+    reason: "Benchmark aggregation, trend analysis, monthly reports"
+    deletion_method: "DELETE after aggregation complete"
+    gdpr_compliant: true
+
+  aggregated_metrics:
+    duration_days: 730  # 2 years
+    reason: "Historical benchmarks, YoY comparisons, industry trends"
+    deletion_method: "Archive to cold storage after 1 year"
+    gdpr_compliant: true
+
+  # Deletion jobs run daily at 02:00 UTC
+  cleanup_schedule: "daily at 02:00 UTC"
+
+
+# ============================================================================
+# BENCHMARK AGGREGATION RULES
+# ============================================================================
+
+benchmark_aggregation:
+
+  hourly_aggregates:
+    schedule: "every hour"
+    source: "anonymized metrics"
+    aggregations:
+      - "COUNT(*) AS n_samples"
+      - "PERCENTILE_CONT(0.5) AS p50_duration_ms"
+      - "PERCENTILE_CONT(0.95) AS p95_duration_ms"
+      - "PERCENTILE_CONT(0.99) AS p99_duration_ms"
+      - "AVG(duration_ms) AS avg_duration_ms"
+      - "SUM(success) / COUNT(*) AS success_rate"
+
+  daily_aggregates:
+    schedule: "every day at 01:00 UTC"
+    source: "hourly_aggregates"
+    dimension: ["skill_id", "case_type"]
+    retention_days: 365
+
+  industry_percentiles:
+    schedule: "weekly"
+    source: "daily_aggregates"
+    calculation: "NTILE(4) OVER (ORDER BY avg_duration_ms)"
+    dimension: ["skill_id"]
+    quartiles:
+      - "top_25%"        # Fastest performers
+      - "median_50%"     # Average
+      - "bottom_25%"     # Slowest performers
+
+
+# ============================================================================
+# EXAMPLE METRICS (for reference)
+# ============================================================================
+
+examples:
+
+  skill_execution:
+    skill_id: "openai-gpt4-turbo"
+    skill_name: "OpenAI GPT-4 Turbo"
+    execution_timestamp: "2026-02-21T14:35:42.123456Z"
+    duration_ms: 1234
+    success: true
+    error_type: null
+    input_tokens: 500
+    output_tokens: 250
+    memory_used_mb: 256.5
+    cpu_time_ms: 800
+    user_id: "550e8400-e29b-41d4-a716-446655440000"
+    organization_id: "550e8400-e29b-41d4-a716-446655440001"
+    request_source: "mcp_client"
+    region: "us-west-2"
+    model_version: "gpt-4-turbo-2024-04-09"
+    retry_count: 0
+
+  case_execution:
+    case_id: "ORD-2026-02-21-00001"
+    case_type: "order_processing"
+    case_started_at: "2026-02-21T14:30:00Z"
+    case_completed_at: "2026-02-21T14:35:00Z"
+    cycle_time_seconds: 300
+    work_items_completed: 5
+    work_items_failed: 0
+    work_items_skipped: 1
+    error_rate: 0.0
+    exception_types: []
+    throughput_cases_per_hour: 12.5
+    organization_id: "550e8400-e29b-41d4-a716-446655440001"
+    assigned_user: "alice@company.com"
+    priority: "high"
+
+  anonymized_skill:
+    skill_id: "openai-gpt4-turbo"
+    skill_name: "OpenAI GPT-4 Turbo"
+    user_id_hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    organization_id_hash: "a7f12345678901234567890123456789abcdef1234567890123456789abc"
+    # ... other fields unchanged from raw ...
+
+
+# ============================================================================
+# VALIDATION RULES (enforced in code)
+# ============================================================================
+
+validation:
+
+  skill_execution_metric:
+    required_fields: ["skill_id", "skill_name", "execution_timestamp", "duration_ms", "success", "user_id", "organization_id", "request_source"]
+    constraints:
+      - "duration_ms >= 0"
+      - "duration_ms <= 3600000"
+      - "success in [true, false]"
+      - "request_source in [mcp_client, a2a_agent, direct_api, workflow_task]"
+
+  case_execution_metric:
+    required_fields: ["case_id", "case_type", "case_started_at", "work_items_completed", "work_items_failed", "organization_id"]
+    constraints:
+      - "work_items_completed >= 0"
+      - "work_items_failed >= 0"
+      - "error_rate >= 0.0 and error_rate <= 1.0"
+      - "cycle_time_seconds is null OR cycle_time_seconds >= 0"
+
+  anonymization:
+    - "all user_id fields must be hashed (no raw UUIDs in anonymized tables)"
+    - "all organization_id fields must be hashed"
+    - "all case_id fields must be hashed"
+    - "no email addresses in anonymized tables"
+    - "no raw IP addresses (if present, must be masked)"
+
+
+# ============================================================================
+# VERSION HISTORY
+# ============================================================================
+
+versions:
+
+  "1.0":
+    date: "2026-02-21"
+    status: "PRODUCTION"
+    changes:
+      - "Initial schema: skill_execution_metric, case_execution_metric"
+      - "Anonymization rules: hash_user_id, hash_organization_id, hash_case_id"
+      - "Data retention: 7d raw, 90d anonymized, 2y aggregated"
+
+  "1.1":
+    date: "TBD (Phase 1.5)"
+    status: "PLANNED"
+    changes:
+      - "Add cost_usd field (LLM token pricing)"
+      - "Add reputation_score (for Phase 2 recommendations)"
+      - "Support deterministic hashing rotation (monthly salt change)"
+
+  "2.0":
+    date: "TBD (Phase 2)"
+    status: "PLANNED"
+    changes:
+      - "Add real-time streaming support (Kafka events)"
+      - "Add federated benchmarking (cross-instance)")
+      - "Add ML features (anomaly detection, failure prediction)"

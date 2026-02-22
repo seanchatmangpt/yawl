@@ -1,0 +1,57 @@
+========================================
+YAWL CLI Installation Verification
+========================================
+
+[1] Dependency Verification
+  pip check conflicts: 0
+0
+/tmp/cli-install-tests.sh: line 15: [: 0
+0: integer expression expected
+  ✗ Found conflicts:
+No broken requirements found.
+
+[2] Package Installation
+  ✓ yawl-cli version 6.0.0 installed
+
+[3] Required Dependencies
+  ✓ typer
+  ✓ pydantic
+  ✗ pyyaml missing
+  ✓ rich
+  ✓ requests
+  ✓ jinja2
+  ✗ python-dateutil missing
+
+[4] Optional (dev) Dependencies
+  ✓ pytest
+  ✓ black
+  ✓ ruff
+
+[5] CLI Module Imports
+  ✓ yawl_cli
+  ✓ yawl_cli.utils
+  ✓ yawl_cli.build
+  ✓ yawl_cli.godspeed
+  ✓ yawl_cli.ggen
+  ✓ yawl_cli.gregverse
+  ✓ yawl_cli.observatory
+  ✓ yawl_cli.team
+  ✓ yawl_cli.config_cli
+
+[6] Python Syntax
+  ✓ All Python files valid syntax
+
+[7] Subcommand Structure
+  ✓ build_app
+  ✓ observatory_app
+  ✓ godspeed_app
+  ✓ ggen_app
+  ✓ gregverse_app
+  ✓ team_app
+
+[8] Config Module
+  ✓ config_cli.app available
+
+========================================
+Installation Verification Complete
+========================================

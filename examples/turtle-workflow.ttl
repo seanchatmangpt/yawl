@@ -1,0 +1,116 @@
+@prefix : <http://example.org/yawl/workflow/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix yawl: <http://www.yawlfoundation.org/yawl/ontology#> .
+
+# YAWL Workflow in RDF/Turtle Format
+# Example: Order Processing Workflow
+#
+# This demonstrates how to represent a YAWL workflow using RDF Turtle syntax.
+# Can be converted to YAWL XML using the `ggen convert` command.
+
+# Workflow Definition
+:OrderProcessing
+  rdf:type yawl:Workflow ;
+  rdfs:label "Order Processing Workflow" ;
+  rdfs:comment "Processes customer orders from submission through fulfillment" ;
+  yawl:hasStartTask :ReceiveOrder ;
+  yawl:hasTask :ValidateOrder ;
+  yawl:hasTask :ProcessPayment ;
+  yawl:hasTask :ShipOrder ;
+  yawl:hasEndTask :CompleteOrder ;
+  yawl:version "1.0" .
+
+# Task: Receive Order
+:ReceiveOrder
+  rdf:type yawl:Task ;
+  rdfs:label "Receive Order" ;
+  yawl:isStartTask true ;
+  yawl:flowsTo :ValidateOrder ;
+  yawl:assignedTo :OrderClerk .
+
+# Task: Validate Order
+:ValidateOrder
+  rdf:type yawl:Task ;
+  rdfs:label "Validate Order" ;
+  yawl:flowsTo :ProcessPayment ;
+  yawl:flowsTo :RejectOrder ;
+  yawl:assignedTo :QualityControl ;
+  yawl:hasCondition :IsOrderValid .
+
+# Condition: Is Order Valid?
+:IsOrderValid
+  rdf:type yawl:Condition ;
+  rdfs:label "Is order valid?" ;
+  yawl:trueFlow :ProcessPayment ;
+  yawl:falseFlow :RejectOrder .
+
+# Task: Process Payment
+:ProcessPayment
+  rdf:type yawl:Task ;
+  rdfs:label "Process Payment" ;
+  yawl:flowsTo :ShipOrder ;
+  yawl:assignedTo :Accounting ;
+  yawl:splitType yawl:AND .
+
+# Task: Ship Order
+:ShipOrder
+  rdf:type yawl:Task ;
+  rdfs:label "Ship Order" ;
+  yawl:flowsTo :CompleteOrder ;
+  yawl:assignedTo :Warehouse ;
+  yawl:joinType yawl:AND .
+
+# Task: Complete Order
+:CompleteOrder
+  rdf:type yawl:Task ;
+  rdfs:label "Complete Order" ;
+  yawl:isEndTask true ;
+  yawl:assignedTo :OrderClerk .
+
+# Task: Reject Order
+:RejectOrder
+  rdf:type yawl:Task ;
+  rdfs:label "Reject Order" ;
+  yawl:flowsTo :NotifyCustomer ;
+  yawl:assignedTo :CustomerService .
+
+# Task: Notify Customer
+:NotifyCustomer
+  rdf:type yawl:Task ;
+  rdfs:label "Notify Customer" ;
+  yawl:isEndTask true ;
+  yawl:assignedTo :CustomerService .
+
+# Resource Definitions
+:OrderClerk
+  rdf:type yawl:Role ;
+  rdfs:label "Order Clerk" ;
+  yawl:hasParticipant "admin" .
+
+:QualityControl
+  rdf:type yawl:Role ;
+  rdfs:label "Quality Control" ;
+  yawl:hasParticipant "qa_team" .
+
+:Accounting
+  rdf:type yawl:Role ;
+  rdfs:label "Accounting Department" ;
+  yawl:hasParticipant "accounting" .
+
+:Warehouse
+  rdf:type yawl:Role ;
+  rdfs:label "Warehouse" ;
+  yawl:hasParticipant "warehouse_team" .
+
+:CustomerService
+  rdf:type yawl:Role ;
+  rdfs:label "Customer Service" ;
+  yawl:hasParticipant "customer_service" .
+
+# Metadata
+:OrderProcessing
+  rdfs:seeAlso <http://www.yawlfoundation.org/> ;
+  dct:created "2026-02-22"^^xsd:date ;
+  dct:creator "YAWL Team" .

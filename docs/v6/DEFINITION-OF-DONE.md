@@ -550,7 +550,75 @@ Evidence is stored in build logs, Observatory receipts, and CI/CD pipeline artif
 
 ---
 
-## 12. References
+## 12. Beta Release Gate
+
+**Version-Specific**: This gate applies to the Alpha → Beta transition for v6.0.0.
+
+```
+D(v6.0.0-Beta) = DONE  iff  all 6 conditions below = PASS
+```
+
+### 12.1 Beta Gate Criteria
+
+| # | Criterion | Command | Pass Condition |
+|---|-----------|---------|----------------|
+| B1 | Build health clean | `bash scripts/dx.sh all` | exits 0 |
+| B2 | Test suite passing | `mvn -T 1.5C clean test` | 100% pass, 0 errors |
+| B3 | Coverage targets met | `mvn -T 1.5C clean verify -P coverage` | line ≥ 65%, branch ≥ 55% |
+| B4 | HYPER_STANDARDS clean | `bash .claude/hooks/hyper-validate.sh src/` | exits 0 (0 violations) |
+| B5 | Performance measured | `bash scripts/compare-performance.sh` | startup ≤ 60s documented |
+| B6 | Beta documentation complete | `ls docs/v6/BETA-READINESS-REPORT.md` | all 6 Beta docs exist |
+
+### 12.2 Current Beta Status (as of 2026-02-22)
+
+| Gate | Status | Blocker |
+|------|--------|---------|
+| B1 Build health | 🟢 GREEN | None — static analysis score 100/100 |
+| B2 Test suite | 🟡 YELLOW | Coverage not yet measured (JaCoCo reports not generated) |
+| B3 Coverage | 🟡 YELLOW | Requires `mvn test` run to establish baseline |
+| B4 HYPER_STANDARDS | 🔴 RED | 61 violations (12 BLOCKER, 31 HIGH, 18 MEDIUM) |
+| B5 Performance | 🟡 YELLOW | Not yet measured against 60s target |
+| B6 Documentation | 🟡 YELLOW | Beta documentation set in progress |
+
+**Beta Release Decision: BLOCKED** — B4 (RED) prevents Beta tag. Resolve 61 HYPER_STANDARDS violations to proceed.
+
+### 12.3 Formal Beta Gate Function
+
+```
+G_beta(v6.0.0) = G_build(code) AND G_test(code) AND G_coverage(code)
+                 AND G_hyper(code) AND G_perf(engine) AND G_docs(v6)
+
+Where:
+  G_hyper(code) = violations(hyper-validate.sh, src/) = 0
+  G_coverage(code) = line_pct >= 0.65 AND branch_pct >= 0.55
+  G_perf(engine) = startup_time_seconds <= 60
+  G_docs(v6) = {BETA-READINESS-REPORT, HYPER-STANDARDS-VIOLATIONS-TRACKER,
+                V6-BETA-RELEASE-NOTES, PERFORMANCE-BASELINE-V6-BETA,
+                INTEGRATION-ARCHITECTURE-REFERENCE, TEST-COVERAGE-BASELINE}
+               are all non-empty files in docs/v6/
+```
+
+### 12.4 Beta → RC1 Gate
+
+After Beta is achieved, the RC1 gate adds:
+- All 31 HIGH violations resolved (0 remaining)
+- Integration tests passing: `mvn verify -P ci`
+- Performance regression test: within 10% of baseline
+- Security audit: `mvn verify -P security-audit` exits 0
+- Target: v6.0.0-RC1 by 2026-03-07
+
+### 12.5 RC1 → GA Gate
+
+After RC1, the GA gate adds:
+- All 18 MEDIUM violations resolved (0 remaining)
+- Full SBOM scan: CVSS score < 7 for all dependencies
+- Staged rollout: 48-hour stability test in staging environment
+- Stakeholder sign-off documented
+- Target: v6.0.0-GA by 2026-03-21
+
+---
+
+## 13. References
 
 | Document | Location | Purpose |
 |----------|----------|---------|

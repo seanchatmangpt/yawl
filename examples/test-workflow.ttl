@@ -1,0 +1,54 @@
+@prefix : <http://example.org/workflow/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix yawl: <http://yawl.org/yawl-specification/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Simple test workflow with basic tasks and control flow
+:TestWorkflow a yawl:Specification ;
+    yawl:specificationID "TestWorkflow"^^xsd:string ;
+    yawl:specificationVersion "1.0"^^xsd:string ;
+    yawl:specificationURI "http://example.org/workflow/TestWorkflow"^^xsd:anyURI ;
+    yawl:isNetType false ;
+    yawl:hasNet :TestNet .
+
+:TestNet a yawl:Net ;
+    yawl:netID "TestNet"^^xsd:string ;
+    yawl:hasElement :StartTask ;
+    yawl:hasElement :ProcessTask ;
+    yawl:hasElement :EndTask ;
+    yawl:hasFlow :Flow1 ;
+    yawl:hasFlow :Flow2 .
+
+# Tasks
+:StartTask a yawl:Task ;
+    yawl:taskID "Start"^^xsd:string ;
+    yawl:taskName "Start"^^xsd:string ;
+    yawl:isMultiInstance false ;
+    yawl:isSplit false ;
+    yawl:isJoin false .
+
+:ProcessTask a yawl:Task ;
+    yawl:taskID "Process"^^xsd:string ;
+    yawl:taskName "Process Data"^^xsd:string ;
+    yawl:isMultiInstance false ;
+    yawl:isSplit false ;
+    yawl:isJoin false .
+
+:EndTask a yawl:Task ;
+    yawl:taskID "End"^^xsd:string ;
+    yawl:taskName "End"^^xsd:string ;
+    yawl:isMultiInstance false ;
+    yawl:isSplit false ;
+    yawl:isJoin false .
+
+# Control flows
+:Flow1 a yawl:Flow ;
+    yawl:flowID "Flow1"^^xsd:string ;
+    yawl:fromElement :StartTask ;
+    yawl:toElement :ProcessTask .
+
+:Flow2 a yawl:Flow ;
+    yawl:flowID "Flow2"^^xsd:string ;
+    yawl:fromElement :ProcessTask ;
+    yawl:toElement :EndTask .

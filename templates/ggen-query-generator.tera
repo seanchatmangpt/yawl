@@ -1,0 +1,10 @@
+PREFIX ex: <http://yawl.org/agent/>
+
+SELECT ?agentName ?agentRole ?phase
+WHERE {
+  ?agent a ex:Agent ;
+    ex:name ?agentName ;
+    ex:role ?agentRole ;
+    ex:phase ?phase .
+}
+ORDER BY ?phase

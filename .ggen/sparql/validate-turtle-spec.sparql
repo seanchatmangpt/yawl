@@ -1,0 +1,35 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX yawl: <http://www.yawlfoundation.org/yawlschema#>
+
+# Validate YAWL specification completeness
+# Returns incomplete specifications with missing required properties
+
+SELECT ?spec ?issue ?missingProp
+WHERE {
+  ?spec a yawl:Specification .
+
+  {
+    # Check for specification ID
+    FILTER NOT EXISTS {
+      ?spec yawl:id ?id .
+    }
+    BIND("Missing specification ID" AS ?issue)
+    BIND("id" AS ?missingProp)
+  } UNION {
+    # Check for at least one decomposition
+    FILTER NOT EXISTS {
+      ?spec yawl:hasDecomposition ?decomp .
+    }
+    BIND("No decompositions found" AS ?issue)
+    BIND("decomposition" AS ?missingProp)
+  } UNION {
+    # Check for valid root net
+    FILTER NOT EXISTS {
+      ?spec yawl:rootNet ?rootNet .
+      ?rootNet a yawl:Net .
+    }
+    BIND("No valid root net" AS ?issue)
+    BIND("rootNet" AS ?missingProp)
+  }
+}
