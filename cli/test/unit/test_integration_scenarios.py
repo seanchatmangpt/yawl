@@ -325,13 +325,13 @@ class TestGitIntegration:
         )
         assert exit_code == 0
 
-        # Commit (may fail if no author configured, but that's OK for this test)
-        exit_code, stdout, stderr = run_shell_cmd(
-            ["git", "commit", "-m", "Initial commit"],
+        # Verify file was staged (git status should show it)
+        exit_code, stdout, _ = run_shell_cmd(
+            ["git", "status", "--short"],
             cwd=git_initialized_project,
         )
-        # Accept both success (0) and failure due to configuration issues
-        assert exit_code == 0 or "Please tell me who you are" in stderr
+        assert exit_code == 0
+        assert "test.txt" in stdout  # File should appear in status
 
     def test_git_branch_detection(self, git_initialized_project: Path) -> None:
         """Detect current git branch."""
