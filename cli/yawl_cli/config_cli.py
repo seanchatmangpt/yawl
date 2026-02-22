@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import typer
 from rich.console import Console
@@ -106,7 +106,7 @@ def set(
                 )
 
         # Parse value to proper type
-        parsed_value: any
+        parsed_value: Any
         if value.lower() in ("true", "yes", "1"):
             parsed_value = True
         elif value.lower() in ("false", "no", "0"):

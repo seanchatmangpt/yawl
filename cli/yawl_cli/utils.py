@@ -25,6 +25,8 @@ DEFAULT_RETRY_DELAY = 1.0  # seconds
 class Config(BaseModel):
     """YAWL project configuration."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     project_root: Path
     maven_version: Optional[str] = None
     java_home: Optional[str] = None
@@ -32,9 +34,6 @@ class Config(BaseModel):
     facts_dir: Optional[Path] = None
     config_file: Optional[Path] = None
     config_data: Optional[Dict[str, Any]] = None
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @staticmethod
     def from_project(project_root: Path) -> "Config":
