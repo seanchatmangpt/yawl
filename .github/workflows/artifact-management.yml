@@ -314,7 +314,7 @@ jobs:
             VCS_REF=${{ github.sha }}
 
       - name: Scan Image with Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ matrix.image.registry }}/${{ github.repository }}/${{ matrix.image.name }}:${{ github.sha }}
           format: 'sarif'

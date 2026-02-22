@@ -55,7 +55,7 @@ jobs:
           /tmp/validation-metrics/*.json
           validation-report-*.json
           validation-report-*.xml
-          
+
   parallel-validation:
     name: Parallel Validation
     runs-on: ubuntu-latest
@@ -66,7 +66,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -95,7 +95,7 @@ jobs:
           /tmp/parallel-metrics/*.json
           parallel-validation-report-*.json
           parallel-validation-report-*.xml
-          
+
   a2a-compliance:
     name: A2A Compliance Validation
     runs-on: ubuntu-latest
@@ -107,7 +107,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -151,7 +151,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -195,7 +195,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -240,7 +240,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -285,7 +285,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -354,7 +354,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -401,7 +401,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
@@ -445,14 +445,14 @@ jobs:
     strategy:
       matrix:
         test-suite: [mcp, a2a]
-        
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Set up JDK 21
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
         java-version: 25
