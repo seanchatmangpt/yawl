@@ -302,14 +302,16 @@
                         <!-- Claude integration - StructuredTaskScope API issue -->
                         <exclude>**/claude/**</exclude>
 
-                        <!-- MCP Server and tools - event/process-mining still need work -->
-                        <exclude>**/mcp/spec/YawlEventToolSpecifications.java</exclude>
+                        <!-- MCP Server and tools - process-mining still needs work -->
                         <exclude>**/mcp/spec/YawlProcessMiningToolSpecifications.java</exclude>
+                        <!-- MCP spec tools - depends on ZAI spec generator integration -->
+                        <exclude>**/mcp/spec/YawlSpecToolSpecifications.java</exclude>
 
                         <!-- A2A classes - HandoffProtocol API changes in SDK -->
                         <exclude>**/a2a/VirtualThreadYawlA2AServer.java</exclude>
                         <exclude>**/a2a/YawlA2AServer.java</exclude>
                         <exclude>**/a2a/skills/ProcessMiningSkill.java</exclude>
+                        <!-- HandoffTokenAuthenticationProvider missing from SDK -->
                         <exclude>**/a2a/auth/CompositeAuthenticationProvider.java</exclude>
 
                         <!-- MCP ZAI bridge - fully migrated to RC3 builder API, no exclusions needed -->
@@ -355,10 +357,6 @@
                         <exclude>**/eventsourcing/**</exclude>
 
 
-                        <!-- =====================================================================
-                             MCP Spec tools - depends on excluded ZAI classes
-                             ===================================================================== -->
-                        <exclude>**/mcp/spec/YawlSpecToolSpecifications.java</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/integration/mcp/**</testInclude>

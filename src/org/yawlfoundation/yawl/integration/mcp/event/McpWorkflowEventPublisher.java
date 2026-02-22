@@ -29,6 +29,8 @@ import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEventPublisher;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEventPublisher.EventPublishException;
 
+import io.modelcontextprotocol.server.McpSyncServer;
+
 
 /**
  * MCP-integrated workflow event publisher that hooks into YAWL engine
@@ -56,7 +58,7 @@ import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEventPublisher.E
 public final class McpWorkflowEventPublisher implements WorkflowEventPublisher {
 
     private final McpLoggingHandler loggingHandler;
-    private final McpServer mcpServer;
+    private final McpSyncServer mcpServer;
     private final Map<String, EventSubscription> subscriptions;
     private final AtomicInteger eventIdCounter;
     private final AtomicBoolean isClosed;
@@ -72,7 +74,7 @@ public final class McpWorkflowEventPublisher implements WorkflowEventPublisher {
      * @return the singleton publisher instance
      */
     public static synchronized McpWorkflowEventPublisher getInstance(
-            McpServer mcpServer, McpLoggingHandler loggingHandler) {
+            McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
         if (instance == null) {
             instance = new McpWorkflowEventPublisher(mcpServer, loggingHandler);
         }
@@ -82,7 +84,7 @@ public final class McpWorkflowEventPublisher implements WorkflowEventPublisher {
     /**
      * Private constructor to enforce singleton pattern.
      */
-    private McpWorkflowEventPublisher(McpServer mcpServer, McpLoggingHandler loggingHandler) {
+    private McpWorkflowEventPublisher(McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
         this.loggingHandler = loggingHandler;
         this.mcpServer = mcpServer;
         this.subscriptions = new ConcurrentHashMap<>();
@@ -223,7 +225,7 @@ public final class McpWorkflowEventPublisher implements WorkflowEventPublisher {
     private void notifySubscribers(WorkflowEvent event) {
         for (EventSubscription subscription : subscriptions.values()) {
             if (subscription.matches(event)) {
-                subscription.deliverEvent(event);
+                subscription.deliverEvent(event, mcpServer, loggingHandler);
             }
         }
     }
@@ -310,8 +312,10 @@ public final class McpWorkflowEventPublisher implements WorkflowEventPublisher {
          * Delivers an event to the subscriber.
          *
          * @param event the event to deliver
+         * @param mcpServer the MCP server for logging
+         * @param loggingHandler the logging handler
          */
-        public void deliverEvent(WorkflowEvent event) {
+        public void deliverEvent(WorkflowEvent event, McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
             if (!isActive.get()) {
                 return;
             }

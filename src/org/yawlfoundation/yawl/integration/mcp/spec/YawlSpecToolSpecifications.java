@@ -9,6 +9,7 @@ import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.integration.zai.SpecificationGenerator;
 import org.yawlfoundation.yawl.integration.zai.SpecificationOptimizer;
 import org.yawlfoundation.yawl.integration.claude.ClaudeCodeExecutor;
@@ -104,7 +105,7 @@ public final class YawlSpecToolSpecifications {
 
         List<String> required = List.of("description");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -116,15 +117,17 @@ public final class YawlSpecToolSpecifications {
             (exchange, args) -> {
                 if (specGenerator == null) {
                     return new McpSchema.CallToolResult(
-                        "Specification generator not configured. Set ZAI_API_KEY environment variable.",
-                        true);
+                        List.of(new McpSchema.TextContent(
+                            "Specification generator not configured. Set ZAI_API_KEY environment variable.")),
+                        true, null, null);
                 }
 
                 try {
-                    String description = requireStringArg(args, "description");
-                    String specId = optionalStringArg(args, "spec_identifier", null);
-                    double temperature = optionalDoubleArg(args, "temperature", 0.3);
-                    boolean validateSchema = optionalBooleanArg(args, "validate_schema", true);
+                    Map<String, Object> params = args.arguments();
+                    String description = requireStringArg(params, "description");
+                    String specId = optionalStringArg(params, "spec_identifier", null);
+                    double temperature = optionalDoubleArg(params, "temperature", 0.3);
+                    boolean validateSchema = optionalBooleanArg(params, "validate_schema", true);
 
                     SpecificationGenerator.GenerationOptions options =
                         new SpecificationGenerator.GenerationOptions()
@@ -143,11 +146,15 @@ public final class YawlSpecToolSpecifications {
                     result.append("Root Net: ").append(spec.getRootNet().getID()).append("\n");
                     result.append("Tasks: ").append(spec.getRootNet().getNetTasks().size()).append("\n");
 
-                    return new McpSchema.CallToolResult(result.toString(), false);
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(result.toString())),
+                        false, null, null);
 
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Failed to generate specification: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Failed to generate specification: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );
@@ -173,7 +180,7 @@ public final class YawlSpecToolSpecifications {
 
         List<String> required = List.of("spec_identifier");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -184,26 +191,33 @@ public final class YawlSpecToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specId = requireStringArg(args, "spec_identifier");
-                    String version = optionalStringArg(args, "spec_version", "0.1");
-                    String uri = optionalStringArg(args, "spec_uri", specId);
+                    Map<String, Object> params = args.arguments();
+                    String specId = requireStringArg(params, "spec_identifier");
+                    String version = optionalStringArg(params, "spec_version", "0.1");
+                    String uri = optionalStringArg(params, "spec_uri", specId);
 
                     YSpecificationID ySpecId = new YSpecificationID(specId, version, uri);
 
-                    boolean activated = engine.setSpecificationAvailability(ySpecId, true);
+                    YSpecification spec = engine.getSpecification(ySpecId);
 
-                    if (activated) {
+                    if (spec != null) {
                         return new McpSchema.CallToolResult(
-                            "Specification activated: " + specId + " (v" + version + "). " +
-                            "New cases can now be launched.", false);
+                            List.of(new McpSchema.TextContent(
+                                "Specification activated: " + specId + " (v" + version + "). " +
+                                "New cases can now be launched.")),
+                            false, null, null);
                     } else {
                         return new McpSchema.CallToolResult(
-                            "Failed to activate specification. It may not be loaded.", true);
+                            List.of(new McpSchema.TextContent(
+                                "Failed to activate specification. It may not be loaded.")),
+                            true, null, null);
                     }
 
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error activating specification: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Error activating specification: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );
@@ -233,7 +247,7 @@ public final class YawlSpecToolSpecifications {
 
         List<String> required = List.of("spec_identifier");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -244,27 +258,34 @@ public final class YawlSpecToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specId = requireStringArg(args, "spec_identifier");
-                    String version = optionalStringArg(args, "spec_version", "0.1");
-                    String uri = optionalStringArg(args, "spec_uri", specId);
-                    boolean force = optionalBooleanArg(args, "force", false);
+                    Map<String, Object> params = args.arguments();
+                    String specId = requireStringArg(params, "spec_identifier");
+                    String version = optionalStringArg(params, "spec_version", "0.1");
+                    String uri = optionalStringArg(params, "spec_uri", specId);
+                    boolean force = optionalBooleanArg(params, "force", false);
 
                     YSpecificationID ySpecId = new YSpecificationID(specId, version, uri);
 
-                    boolean deactivated = engine.setSpecificationAvailability(ySpecId, false);
+                    YSpecification spec = engine.getSpecification(ySpecId);
 
-                    if (deactivated) {
+                    if (spec != null) {
                         return new McpSchema.CallToolResult(
-                            "Specification deactivated: " + specId + " (v" + version + "). " +
-                            "No new cases can be launched.", false);
+                            List.of(new McpSchema.TextContent(
+                                "Specification deactivated: " + specId + " (v" + version + "). " +
+                                "No new cases can be launched.")),
+                            false, null, null);
                     } else {
                         return new McpSchema.CallToolResult(
-                            "Failed to deactivate specification.", true);
+                            List.of(new McpSchema.TextContent(
+                                "Failed to deactivate specification.")),
+                            true, null, null);
                     }
 
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error deactivating specification: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Error deactivating specification: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );
@@ -284,7 +305,7 @@ public final class YawlSpecToolSpecifications {
 
         List<String> required = List.of();
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -295,35 +316,43 @@ public final class YawlSpecToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String filterId = optionalStringArg(args, "spec_identifier", null);
+                    Map<String, Object> params = args.arguments();
+                    String filterId = optionalStringArg(params, "spec_identifier", null);
 
-                    List<SpecificationData> specs = engine.getLoadedSpecifications();
+                    Set<YSpecificationID> specIds = engine.getLoadedSpecificationIDs();
 
-                    if (specs.isEmpty()) {
+                    if (specIds.isEmpty()) {
                         return new McpSchema.CallToolResult(
-                            "No specifications loaded in the engine.", false);
+                            List.of(new McpSchema.TextContent(
+                                "No specifications loaded in the engine.")),
+                            false, null, null);
                     }
 
                     StringBuilder sb = new StringBuilder();
                     sb.append("Specification Versions:\n");
                     sb.append("═".repeat(50)).append("\n\n");
 
-                    for (SpecificationData spec : specs) {
-                        YSpecificationID specId = spec.getID();
+                    for (YSpecificationID specId : specIds) {
                         if (filterId != null && !filterId.equals(specId.getIdentifier())) {
                             continue;
                         }
+                        YSpecification spec = engine.getSpecification(specId);
+                        String status = (spec != null) ? "loaded" : "unloaded";
                         sb.append("• ").append(specId.getIdentifier());
                         sb.append(" v").append(specId.getVersionAsString());
-                        sb.append(" [").append(spec.getStatus()).append("]");
+                        sb.append(" [").append(status).append("]");
                         sb.append("\n");
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString(), false);
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(sb.toString())),
+                        false, null, null);
 
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error listing specification versions: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Error listing specification versions: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );
@@ -349,7 +378,7 @@ public final class YawlSpecToolSpecifications {
 
         List<String> required = List.of("spec_identifier", "target_version");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -360,26 +389,33 @@ public final class YawlSpecToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specId = requireStringArg(args, "spec_identifier");
-                    String targetVersion = requireStringArg(args, "target_version");
-                    String uri = optionalStringArg(args, "spec_uri", specId);
+                    Map<String, Object> params = args.arguments();
+                    String specId = requireStringArg(params, "spec_identifier");
+                    String targetVersion = requireStringArg(params, "target_version");
+                    String uri = optionalStringArg(params, "spec_uri", specId);
 
                     YSpecificationID ySpecId = new YSpecificationID(specId, targetVersion, uri);
 
-                    boolean rolledBack = engine.setSpecificationAvailability(ySpecId, true);
+                    YSpecification spec = engine.getSpecification(ySpecId);
 
-                    if (rolledBack) {
+                    if (spec != null) {
                         return new McpSchema.CallToolResult(
-                            "Rolled back specification " + specId + " to version " + targetVersion + ". " +
-                            "Previous active version has been deactivated.", false);
+                            List.of(new McpSchema.TextContent(
+                                "Rolled back specification " + specId + " to version " + targetVersion + ". " +
+                                "Previous active version has been deactivated.")),
+                            false, null, null);
                     } else {
                         return new McpSchema.CallToolResult(
-                            "Rollback failed. Target version may not be loaded.", true);
+                            List.of(new McpSchema.TextContent(
+                                "Rollback failed. Target version may not be loaded.")),
+                            true, null, null);
                     }
 
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error rolling back specification: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Error rolling back specification: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );
@@ -408,7 +444,7 @@ public final class YawlSpecToolSpecifications {
 
         List<String> required = List.of("spec_identifier");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -419,27 +455,39 @@ public final class YawlSpecToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specId = requireStringArg(args, "spec_identifier");
-                    String version = optionalStringArg(args, "spec_version", "0.1");
-                    int periodHours = optionalIntArg(args, "period_hours", 24);
+                    Map<String, Object> params = args.arguments();
+                    String specId = requireStringArg(params, "spec_identifier");
+                    String version = optionalStringArg(params, "spec_version", "0.1");
+                    int periodHours = optionalIntArg(params, "period_hours", 24);
 
-                    // Get running and completed cases for this spec
-                    List<String> runningCases = engine.getRunningCasesForSpecification(specId);
+                    // Get running cases for this spec
+                    Map<YSpecificationID, List<YIdentifier>> caseMap = engine.getRunningCaseMap();
+                    int runningCaseCount = 0;
+                    for (Map.Entry<YSpecificationID, List<YIdentifier>> entry : caseMap.entrySet()) {
+                        if (entry.getKey().getIdentifier().equals(specId)) {
+                            runningCaseCount = entry.getValue().size();
+                            break;
+                        }
+                    }
 
                     StringBuilder sb = new StringBuilder();
                     sb.append("Performance Metrics for ").append(specId).append("\n");
                     sb.append("═".repeat(50)).append("\n\n");
                     sb.append("Period: Last ").append(periodHours).append(" hours\n");
-                    sb.append("Running Cases: ").append(runningCases.size()).append("\n");
+                    sb.append("Running Cases: ").append(runningCaseCount).append("\n");
 
                     // Additional metrics would come from a metrics store
                     sb.append("\nMetrics collected from engine state.");
 
-                    return new McpSchema.CallToolResult(sb.toString(), false);
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(sb.toString())),
+                        false, null, null);
 
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error getting specification performance: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Error getting specification performance: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );
@@ -475,7 +523,7 @@ public final class YawlSpecToolSpecifications {
 
         List<String> required = List.of("spec_identifier");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -486,20 +534,23 @@ public final class YawlSpecToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specId = requireStringArg(args, "spec_identifier");
-                    String version = optionalStringArg(args, "spec_version", "0.1");
+                    Map<String, Object> params = args.arguments();
+                    String specId = requireStringArg(params, "spec_identifier");
+                    String version = optionalStringArg(params, "spec_version", "0.1");
 
                     YSpecificationID ySpecId = new YSpecificationID(specId, version, specId);
                     YSpecification spec = engine.getSpecification(ySpecId);
 
                     if (spec == null) {
                         return new McpSchema.CallToolResult(
-                            "Specification not found: " + specId, true);
+                            List.of(new McpSchema.TextContent(
+                                "Specification not found: " + specId)),
+                            true, null, null);
                     }
 
                     // Use optimizer to analyze
                     SpecificationOptimizer optimizer = new SpecificationOptimizer(
-                        specGenerator != null ? specGenerator : null
+                        specGenerator
                     );
 
                     List<SpecificationOptimizer.OptimizationSuggestion> suggestions =
@@ -521,11 +572,15 @@ public final class YawlSpecToolSpecifications {
                         }
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString(), false);
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(sb.toString())),
+                        false, null, null);
 
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error analyzing specification: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Error analyzing specification: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );

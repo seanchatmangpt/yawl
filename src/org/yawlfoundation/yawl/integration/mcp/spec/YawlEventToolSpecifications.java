@@ -10,8 +10,8 @@ import org.yawlfoundation.yawl.integration.mcp.event.McpWorkflowEventPublisher;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 
-import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpServerFeatures;
+import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
@@ -38,12 +38,12 @@ public final class YawlEventToolSpecifications {
     /**
      * Creates all YAWL event publishing MCP tool specifications.
      *
-     * @param mcpServer the MCP server instance
+     * @param mcpServer the MCP sync server instance
      * @param loggingHandler the MCP logging handler
      * @return list of all YAWL event tool specifications for MCP registration
      */
     public static List<McpServerFeatures.SyncToolSpecification> createAll(
-            McpServer mcpServer, McpLoggingHandler loggingHandler) {
+            McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
 
         List<McpServerFeatures.SyncToolSpecification> tools = new ArrayList<>();
 
@@ -60,7 +60,7 @@ public final class YawlEventToolSpecifications {
     // =========================================================================
 
     private static McpServerFeatures.SyncToolSpecification createSubscribeToEventsTool(
-            McpServer mcpServer, McpLoggingHandler loggingHandler) {
+            McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("subscriptionId", Map.of(
@@ -85,27 +85,21 @@ public final class YawlEventToolSpecifications {
             "type", "string",
             "description", "WebSocket URL for event delivery"));
 
-        Map<String, Object> inputSchema = Map.of(
-            "type", "object",
-            "properties", props,
-            "required", List.of("subscriptionId", "websocketUrl"));
+        List<String> required = List.of("subscriptionId", "websocketUrl");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, Map.of());
 
-        return McpServerFeatures.SyncToolSpecification.create(
-            "yawl_subscribe_to_events",
-            "Subscribe to YAWL workflow events with filtering criteria",
-            inputSchema,
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "subscriptionId", Map.of("type", "string", "description", "The subscription ID"),
-                    "status", Map.of("type", "string", "description", "Subscription status"),
-                    "message", Map.of("type", "string", "description", "Success or error message")
-                )
-            ),
-            request -> {
+        return new McpServerFeatures.SyncToolSpecification(
+            McpSchema.Tool.builder()
+                .name("yawl_subscribe_to_events")
+                .description("Subscribe to YAWL workflow events with filtering criteria")
+                .inputSchema(schema)
+                .build(),
+            (exchange, args) -> {
                 try {
-                    String subscriptionId = request.params().getString("subscriptionId");
-                    List<String> eventTypesList = request.params().getList("eventTypes");
+                    Map<String, Object> params = args.arguments();
+                    String subscriptionId = requireStringArg(params, "subscriptionId");
+                    List<String> eventTypesList = optionalListArg(params, "eventTypes");
                     WorkflowEvent.EventType[] eventTypes = null;
 
                     if (eventTypesList != null && !eventTypesList.isEmpty()) {
@@ -114,9 +108,9 @@ public final class YawlEventToolSpecifications {
                             .toArray(WorkflowEvent.EventType[]::new);
                     }
 
-                    String caseId = request.params().optString("caseId").orElse(null);
-                    String specId = request.params().optString("specId").orElse(null);
-                    String websocketUrl = request.params().getString("websocketUrl");
+                    String caseId = optionalStringArg(params, "caseId", null);
+                    String specId = optionalStringArg(params, "specId", null);
+                    String websocketUrl = requireStringArg(params, "websocketUrl");
 
                     // Get the event publisher instance
                     McpWorkflowEventPublisher publisher =
@@ -129,19 +123,15 @@ public final class YawlEventToolSpecifications {
                     loggingHandler.info(mcpServer,
                         "Created event subscription: " + subscriptionId);
 
-                    return Map.of(
-                        "subscriptionId", subscriptionId,
-                        "status", "created",
-                        "message", "Successfully subscribed to events"
-                    );
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent("Successfully subscribed to events. Subscription ID: " + subscriptionId)),
+                        false, null, null);
 
                 } catch (Exception e) {
                     loggingHandler.error(mcpServer, "Failed to create subscription: " + e.getMessage());
-                    return Map.of(
-                        "subscriptionId", request.params().optString("subscriptionId").orElse("unknown"),
-                        "status", "error",
-                        "message", "Failed to create subscription: " + e.getMessage()
-                    );
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent("Failed to create subscription: " + e.getMessage())),
+                        true, null, null);
                 }
             });
     }
@@ -151,33 +141,27 @@ public final class YawlEventToolSpecifications {
     // =========================================================================
 
     private static McpServerFeatures.SyncToolSpecification createUnsubscribeFromEventsTool(
-            McpServer mcpServer, McpLoggingHandler loggingHandler) {
+            McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("subscriptionId", Map.of(
             "type", "string",
             "description", "Unique identifier of the subscription to remove"));
 
-        Map<String, Object> inputSchema = Map.of(
-            "type", "object",
-            "properties", props,
-            "required", List.of("subscriptionId"));
+        List<String> required = List.of("subscriptionId");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, Map.of());
 
-        return McpServerFeatures.SyncToolSpecification.create(
-            "yawl_unsubscribe_from_events",
-            "Remove an existing event subscription",
-            inputSchema,
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "subscriptionId", Map.of("type", "string", "description", "The subscription ID"),
-                    "status", Map.of("type", "string", "description", "Removal status"),
-                    "message", Map.of("type", "string", "description", "Success or error message")
-                )
-            ),
-            request -> {
+        return new McpServerFeatures.SyncToolSpecification(
+            McpSchema.Tool.builder()
+                .name("yawl_unsubscribe_from_events")
+                .description("Remove an existing event subscription")
+                .inputSchema(schema)
+                .build(),
+            (exchange, args) -> {
                 try {
-                    String subscriptionId = request.params().getString("subscriptionId");
+                    Map<String, Object> params = args.arguments();
+                    String subscriptionId = requireStringArg(params, "subscriptionId");
 
                     // Get the event publisher instance
                     McpWorkflowEventPublisher publisher =
@@ -189,28 +173,22 @@ public final class YawlEventToolSpecifications {
                     if (removed) {
                         loggingHandler.info(mcpServer,
                             "Removed event subscription: " + subscriptionId);
-                        return Map.of(
-                            "subscriptionId", subscriptionId,
-                            "status", "removed",
-                            "message", "Successfully unsubscribed from events"
-                        );
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent("Successfully unsubscribed from events. Subscription ID: " + subscriptionId)),
+                            false, null, null);
                     } else {
                         loggingHandler.warning(mcpServer,
                             "Subscription not found: " + subscriptionId);
-                        return Map.of(
-                            "subscriptionId", subscriptionId,
-                            "status", "not_found",
-                            "message", "Subscription not found"
-                        );
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent("Subscription not found: " + subscriptionId)),
+                            true, null, null);
                     }
 
                 } catch (Exception e) {
                     loggingHandler.error(mcpServer, "Failed to remove subscription: " + e.getMessage());
-                    return Map.of(
-                        "subscriptionId", request.params().getString("subscriptionId"),
-                        "status", "error",
-                        "message", "Failed to remove subscription: " + e.getMessage()
-                    );
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent("Failed to remove subscription: " + e.getMessage())),
+                        true, null, null);
                 }
             });
     }
@@ -220,33 +198,20 @@ public final class YawlEventToolSpecifications {
     // =========================================================================
 
     private static McpServerFeatures.SyncToolSpecification createListSubscriptionsTool(
-            McpServer mcpServer, McpLoggingHandler loggingHandler) {
+            McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
 
-        Map<String, Object> inputSchema = Map.of(
-            "type", "object",
-            "properties", Map.of(),
-            "required", List.of());
+        Map<String, Object> props = new LinkedHashMap<>();
+        List<String> required = List.of();
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, Map.of());
 
-        return McpServerFeatures.SyncToolSpecification.create(
-            "yawl_list_subscriptions",
-            "List all active event subscriptions",
-            inputSchema,
-            Map.of(
-                "type", "array",
-                "items", Map.of(
-                    "type", "object",
-                    "properties", Map.of(
-                        "subscriptionId", Map.of("type", "string"),
-                        "eventTypes", Map.of("type", "array", "items", Map.of("type", "string")),
-                        "caseId", Map.of("type", new String[]{"null", "string"}),
-                        "specId", Map.of("type", new String[]{"null", "string"}),
-                        "websocketUrl", Map.of("type", "string"),
-                        "isActive", Map.of("type", "boolean"),
-                        "deliveredEventCount", Map.of("type", "number")
-                    )
-                )
-            ),
-            request -> {
+        return new McpServerFeatures.SyncToolSpecification(
+            McpSchema.Tool.builder()
+                .name("yawl_list_subscriptions")
+                .description("List all active event subscriptions")
+                .inputSchema(schema)
+                .build(),
+            (exchange, args) -> {
                 try {
                     // Get the event publisher instance
                     McpWorkflowEventPublisher publisher =
@@ -256,8 +221,10 @@ public final class YawlEventToolSpecifications {
                     Map<String, McpWorkflowEventPublisher.EventSubscription> subscriptions =
                         publisher.getSubscriptions();
 
-                    // Convert to list of subscription info
-                    List<Map<String, Object>> subscriptionList = new ArrayList<>();
+                    // Convert to text representation
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Active Event Subscriptions (").append(subscriptions.size()).append("):\n\n");
+
                     for (Map.Entry<String, McpWorkflowEventPublisher.EventSubscription> entry :
                         subscriptions.entrySet()) {
 
@@ -269,27 +236,28 @@ public final class YawlEventToolSpecifications {
                             }
                         }
 
-                        Map<String, Object> subInfo = new LinkedHashMap<>();
-                        subInfo.put("subscriptionId", sub.getSubscriptionId());
-                        subInfo.put("eventTypes", eventTypeStrings);
-                        subInfo.put("caseId", sub.getCaseId());
-                        subInfo.put("specId", sub.getSpecId());
-                        subInfo.put("websocketUrl", sub.getWebsocketUrl());
-                        subInfo.put("isActive", sub.isActive());
-                        subInfo.put("deliveredEventCount", sub.getDeliveredEventCount());
-
-                        subscriptionList.add(subInfo);
+                        sb.append("• Subscription ID: ").append(sub.getSubscriptionId()).append("\n");
+                        sb.append("  Event Types: ").append(eventTypeStrings.isEmpty() ? "all" : eventTypeStrings).append("\n");
+                        sb.append("  Case ID: ").append(sub.getCaseId() != null ? sub.getCaseId() : "all").append("\n");
+                        sb.append("  Spec ID: ").append(sub.getSpecId() != null ? sub.getSpecId() : "all").append("\n");
+                        sb.append("  WebSocket URL: ").append(sub.getWebsocketUrl()).append("\n");
+                        sb.append("  Active: ").append(sub.isActive()).append("\n");
+                        sb.append("  Events Delivered: ").append(sub.getDeliveredEventCount()).append("\n\n");
                     }
 
                     loggingHandler.info(mcpServer,
-                        "Listed " + subscriptionList.size() + " event subscriptions");
+                        "Listed " + subscriptions.size() + " event subscriptions");
 
-                    return subscriptionList;
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(sb.toString().trim())),
+                        false, null, null);
 
                 } catch (Exception e) {
                     loggingHandler.error(mcpServer,
                         "Failed to list subscriptions: " + e.getMessage());
-                    return List.of();
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent("Error listing subscriptions: " + e.getMessage())),
+                        true, null, null);
                 }
             });
     }
@@ -299,37 +267,27 @@ public final class YawlEventToolSpecifications {
     // =========================================================================
 
     private static McpServerFeatures.SyncToolSpecification createGetSubscriptionStatusTool(
-            McpServer mcpServer, McpLoggingHandler loggingHandler) {
+            McpSyncServer mcpServer, McpLoggingHandler loggingHandler) {
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("subscriptionId", Map.of(
             "type", "string",
             "description", "Unique identifier of the subscription to check"));
 
-        Map<String, Object> inputSchema = Map.of(
-            "type", "object",
-            "properties", props,
-            "required", List.of("subscriptionId"));
+        List<String> required = List.of("subscriptionId");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, Map.of());
 
-        return McpServerFeatures.SyncToolSpecification.create(
-            "yawl_get_subscription_status",
-            "Get detailed status information for a specific subscription",
-            inputSchema,
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "subscriptionId", Map.of("type", "string", "description", "The subscription ID"),
-                    "isActive", Map.of("type", "boolean", "description", "Whether the subscription is active"),
-                    "deliveredEventCount", Map.of("type", "number", "description", "Number of events delivered"),
-                    "eventTypes", Map.of("type", "array", "items", Map.of("type", "string"), "description", "Subscribed event types"),
-                    "caseId", Map.of("type", new String[]{"null", "string"}, "description", "Case ID filter"),
-                    "specId", Map.of("type", new String[]{"null", "string"}, "description", "Specification ID filter"),
-                    "message", Map.of("type", "string", "description", "Status message")
-                )
-            ),
-            request -> {
+        return new McpServerFeatures.SyncToolSpecification(
+            McpSchema.Tool.builder()
+                .name("yawl_get_subscription_status")
+                .description("Get detailed status information for a specific subscription")
+                .inputSchema(schema)
+                .build(),
+            (exchange, args) -> {
                 try {
-                    String subscriptionId = request.params().getString("subscriptionId");
+                    Map<String, Object> params = args.arguments();
+                    String subscriptionId = requireStringArg(params, "subscriptionId");
 
                     // Get the event publisher instance
                     McpWorkflowEventPublisher publisher =
@@ -347,48 +305,92 @@ public final class YawlEventToolSpecifications {
                             }
                         }
 
-                        Map<String, Object> status = new LinkedHashMap<>();
-                        status.put("subscriptionId", subscription.getSubscriptionId());
-                        status.put("isActive", subscription.isActive());
-                        status.put("deliveredEventCount", subscription.getDeliveredEventCount());
-                        status.put("eventTypes", eventTypeStrings);
-                        status.put("caseId", subscription.getCaseId());
-                        status.put("specId", subscription.getSpecId());
-                        status.put("message", "Subscription is active");
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("Subscription Status:\n");
+                        sb.append("  Subscription ID: ").append(subscription.getSubscriptionId()).append("\n");
+                        sb.append("  Active: ").append(subscription.isActive()).append("\n");
+                        sb.append("  Events Delivered: ").append(subscription.getDeliveredEventCount()).append("\n");
+                        sb.append("  Event Types: ").append(eventTypeStrings.isEmpty() ? "all" : eventTypeStrings).append("\n");
+                        sb.append("  Case ID: ").append(subscription.getCaseId() != null ? subscription.getCaseId() : "all").append("\n");
+                        sb.append("  Spec ID: ").append(subscription.getSpecId() != null ? subscription.getSpecId() : "all").append("\n");
+                        sb.append("  WebSocket URL: ").append(subscription.getWebsocketUrl()).append("\n");
 
                         loggingHandler.info(mcpServer,
                             "Retrieved status for subscription: " + subscriptionId);
 
-                        return status;
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent(sb.toString())),
+                            false, null, null);
                     } else {
                         loggingHandler.warning(mcpServer,
                             "Subscription not found: " + subscriptionId);
 
-                        return Map.of(
-                            "subscriptionId", subscriptionId,
-                            "isActive", false,
-                            "deliveredEventCount", 0,
-                            "eventTypes", List.of(),
-                            "caseId", null,
-                            "specId", null,
-                            "message", "Subscription not found"
-                        );
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent("Subscription not found: " + subscriptionId)),
+                            true, null, null);
                     }
 
                 } catch (Exception e) {
                     loggingHandler.error(mcpServer,
                         "Failed to get subscription status: " + e.getMessage());
 
-                    return Map.of(
-                        "subscriptionId", request.params().getString("subscriptionId"),
-                        "isActive", false,
-                        "deliveredEventCount", 0,
-                        "eventTypes", List.of(),
-                        "caseId", null,
-                        "specId", null,
-                        "message", "Error: " + e.getMessage()
-                    );
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent("Error retrieving subscription status: " + e.getMessage())),
+                        true, null, null);
                 }
             });
+    }
+
+    // =========================================================================
+    // Argument extraction utilities
+    // =========================================================================
+
+    /**
+     * Extract a required string argument from the tool arguments map.
+     *
+     * @param args the tool arguments
+     * @param name the argument name
+     * @return the string value
+     * @throws IllegalArgumentException if the argument is missing
+     */
+    private static String requireStringArg(Map<String, Object> args, String name) {
+        Object value = args.get(name);
+        if (value == null) {
+            throw new IllegalArgumentException("Required argument missing: " + name);
+        }
+        return value.toString();
+    }
+
+    /**
+     * Extract an optional string argument from the tool arguments map.
+     *
+     * @param args         the tool arguments
+     * @param name         the argument name
+     * @param defaultValue the default value if the argument is missing
+     * @return the string value or the default
+     */
+    private static String optionalStringArg(Map<String, Object> args, String name,
+                                            String defaultValue) {
+        Object value = args.get(name);
+        if (value != null) {
+            return value.toString();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Extract an optional list argument from the tool arguments map.
+     *
+     * @param args the tool arguments
+     * @param name the argument name
+     * @return the list value or null if missing
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> optionalListArg(Map<String, Object> args, String name) {
+        Object value = args.get(name);
+        if (value instanceof List<?>) {
+            return (List<String>) value;
+        }
+        return null;
     }
 }
