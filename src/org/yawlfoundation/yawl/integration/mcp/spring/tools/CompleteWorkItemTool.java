@@ -101,7 +101,7 @@ public class CompleteWorkItemTool implements YawlMcpTool {
 
             // Complete work item using injected InterfaceB client and session manager
             String sessionHandle = sessionManager.getSessionHandle();
-            String result = interfaceBClient.completeWorkItem(caseId, workItemId, data, sessionHandle);
+            String result = interfaceBClient.checkInWorkItem(workItemId, data, sessionHandle);
 
             // Check for YAWL engine errors
             if (result == null || result.contains("<failure>")) {

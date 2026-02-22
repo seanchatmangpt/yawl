@@ -177,6 +177,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
+                    Map<String, Object> params = args.arguments();
                     String caseId = requireStringArg(params, "caseId");
                     String state = interfaceBClient.getCaseState(caseId, sessionHandle);
 
@@ -224,6 +225,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
+                    Map<String, Object> params = args.arguments();
                     String caseId = requireStringArg(params, "caseId");
                     String result = interfaceBClient.cancelCase(caseId, sessionHandle);
 
@@ -504,6 +506,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
+                    Map<String, Object> params = args.arguments();
                     String caseId = requireStringArg(params, "caseId");
 
                     List<WorkItemRecord> items =
@@ -703,6 +706,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
+                    Map<String, Object> params = args.arguments();
                     String caseId = requireStringArg(params, "caseId");
                     String data = interfaceBClient.getCaseData(caseId, sessionHandle);
 
@@ -747,6 +751,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
+                    Map<String, Object> params = args.arguments();
                     String caseId = requireStringArg(params, "caseId");
 
                     List<WorkItemRecord> items =
@@ -813,6 +818,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
+                    Map<String, Object> params = args.arguments();
                     String caseId = requireStringArg(params, "caseId");
 
                     List<WorkItemRecord> items =
