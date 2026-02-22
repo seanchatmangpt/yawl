@@ -312,10 +312,6 @@
                         <exclude>**/a2a/skills/ProcessMiningSkill.java</exclude>
                         <exclude>**/a2a/auth/CompositeAuthenticationProvider.java</exclude>
 
-                        <!-- MCP Spring tools - InterfaceB API mismatches (methods don't exist on client) -->
-                        <exclude>**/mcp/spring/tools/CompleteWorkItemTool.java</exclude>
-                        <exclude>**/mcp/spring/tools/GetWorkItemsTool.java</exclude>
-
                         <!-- MCP ZAI bridge - interface changes in RC3 -->
                         <!-- All ZAI bridge files excluded due to API incompatibility -->
                         <exclude>**/mcp/zai/**</exclude>
