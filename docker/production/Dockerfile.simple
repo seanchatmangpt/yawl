@@ -1,8 +1,22 @@
-# Simple Dockerfile for testing
-FROM eclipse-temurin:25-jre-alpine
+# Simple Dockerfile for YAWL Engine
+FROM eclipse-temurin:25-jdk-alpine
 
-# Install curl for testing
-RUN apk add --no-cache curl
+# Install dependencies
+RUN apk add --no-cache curl bash maven
 
-# Test Java version
-CMD ["java", "-version"]
+# Copy project
+COPY . .
+
+# Build
+RUN mvn -T 1.5C clean package -pl yawl-engine -am -DskipTests -Dmaven.javadoc.skip
+
+# Create directories
+RUN mkdir -p /app/logs /app/data /app/temp /app/config /app/specifications
+
+# Expose ports
+EXPOSE 8080 9090
+
+# Run with all dependencies
+WORKDIR /app
+COPY --from=builder /build/yawl-engine/target /app/target
+ENTRYPOINT ["sh", "-c", "cd /app/target && java $JAVA_OPTS -jar yawl-engine-6.0.0-Alpha.jar"]

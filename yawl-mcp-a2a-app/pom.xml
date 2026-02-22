@@ -132,6 +132,7 @@
         <dependency>
             <groupId>io.modelcontextprotocol.sdk</groupId>
             <artifactId>mcp-spring-webmvc</artifactId>
+            <version>0.18.1</version>
         </dependency>
 
         <!-- ============================================================== -->

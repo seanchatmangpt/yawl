@@ -1,0 +1,173 @@
+# =============================================================================
+# YAWL v6.0.0-Alpha - Development Docker Compose Configuration
+# =============================================================================
+# Simplified configuration for development with H2 database
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down
+#
+# Log monitoring:
+#   docker compose -f docker-compose.dev.yml logs -f
+# =============================================================================
+
+services:
+  # =============================================================================
+  # YAWL Engine Service (Development)
+  # =============================================================================
+  yawl-engine:
+    build:
+      context: .
+      dockerfile: docker/production/Dockerfile.engine
+      args:
+        VERSION: 6.0.0-Alpha
+        BUILD_DATE: ${BUILD_DATE:-2026-02-21}
+        VCS_REF: ${VCS_REF:-}
+    image: yawl-engine:6.0.0-alpha
+    container_name: yawl-engine-dev
+    hostname: yawl-engine-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # Main application / Engine API
+      - "9090:9090"   # Management/Actuator / Prometheus metrics
+    environment:
+      # Development configuration
+      SPRING_PROFILES_ACTIVE: development
+      SPRING_APPLICATION_NAME: yawl-engine
+
+      # H2 database configuration
+      DB_TYPE: h2
+      DB_NAME: yawl_dev
+      H2_TCP_PORT: 9092
+      H2_WEB_PORT: 8082
+      H2_DATA_DIR: /app/data
+
+      # JVM options for development
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=50.0
+        -XX:InitialRAMPercentage=25.0
+        -XX:+UseZGC
+        -XX:+UseStringDeduplication
+        -Djava.security.egd=file:/dev/./urandom
+        -Djava.io.tmpdir=/app/temp
+        -Dfile.encoding=UTF-8
+        -Djdk.virtualThreadScheduler.parallelism=200
+        -Djdk.tracePinnedThreads=short
+
+      # Actuator configuration
+      MANAGEMENT_HEALTH_PROBES_ENABLED: "true"
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+
+      # Logging configuration for development
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_ORG_YAWLFOUNDATION: DEBUG
+
+      # Timezone
+      TZ: UTC
+
+    volumes:
+      # Development volumes
+      - yawl_dev_logs:/app/logs
+      - yawl_dev_data:/app/data
+      - yawl_dev_temp:/app/temp
+
+      # Mount healthcheck script
+      - ./docker/scripts/healthcheck.sh:/app/healthcheck.sh:ro
+
+      # Mount specifications from host for development
+      - ./specifications:/app/specifications/import:ro
+
+    networks:
+      - yawl-dev-network
+
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+    labels:
+      app: yawl
+      component: engine
+      version: "6.0.0-alpha"
+      environment: development
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # =============================================================================
+  # H2 Database Console (Development Only)
+  # =============================================================================
+  h2-console:
+    image: eclipse-temurin:25-jre-alpine
+    container_name: yawl-h2-console-dev
+    hostname: h2-console-dev
+    profiles:
+      - development
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    environment:
+      JAVA_OPTS: "-Xmx256m"
+    volumes:
+      - yawl_dev_data:/data
+    command: >
+      sh -c "
+        apk add --no-cache curl &&
+        java -cp /data/h2-*.jar org.h2.tools.Server
+        -web -webAllowOthers -webPort 8082
+        -tcp -tcpAllowOthers -tcpPort 9092
+        -baseDir /data
+      "
+    networks:
+      - yawl-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      app: yawl
+      component: h2-console
+    depends_on:
+      yawl-engine:
+        condition: service_healthy
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  yawl-dev-network:
+    driver: bridge
+    name: yawl-dev-network
+    labels:
+      app: yawl
+      description: "YAWL development network"
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  yawl_dev_logs:
+    name: yawl_dev_logs
+    labels:
+      app: yawl
+      description: "YAWL development logs"
+
+  yawl_dev_data:
+    name: yawl_dev_data
+    labels:
+      app: yawl
+      description: "YAWL development data (H2 database)"
+
+  yawl_dev_temp:
+    name: yawl_dev_temp
+    labels:
+      app: yawl
+      description: "YAWL development temporary files"
