@@ -157,7 +157,7 @@ class TestGodspeedPhases:
         result = runner.invoke(godspeed_app, ["guard"])
 
         assert result.exit_code == 0
-        assert "hyper-validate.sh" in captured_cmd[0]
+        assert "hyper-validate.sh" in " ".join(captured_cmd[0])
 
     # Q (Verify) Phase Tests
     def test_verify_phase_success(self, runner: CliRunner, monkeypatch) -> None:

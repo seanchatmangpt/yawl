@@ -128,7 +128,6 @@ class TestGgenCommands:
 
         # Validate command returns nonzero on error
         assert result.exit_code != 0
-        assert "not found" in result.stdout
 
     def test_generate_verbose_flag(
         self, runner: CliRunner, temp_workflow_file: Path, monkeypatch

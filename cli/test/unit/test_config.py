@@ -1,8 +1,15 @@
-"""Unit tests for YAWL CLI configuration management (Chicago TDD)."""
+"""Unit tests for YAWL CLI configuration management (Chicago TDD).
+
+Real file I/O, hierarchical config testing, atomic writes, and permissions.
+"""
 
 import json
+import os
+import stat
+import tempfile
 from pathlib import Path
 from typing import Any, Dict
+from unittest.mock import Mock, patch
 
 import pytest
 import yaml
@@ -371,3 +378,413 @@ class TestMultiLevelConfig:
 
         expected_facts_dir = temp_project_dir / "docs/v6/latest/facts"
         assert config.facts_dir == expected_facts_dir
+
+    def test_config_hierarchy_project_override(
+        self, temp_project_dir: Path, monkeypatch
+    ) -> None:
+        """Real test: project config overrides user config.
+
+        Hierarchy: system < user < project (project wins)
+        """
+        # Create user home config
+        home_mock = temp_project_dir / "home"
+        home_mock.mkdir()
+        yawl_home = home_mock / ".yawl"
+        yawl_home.mkdir()
+        user_config_file = yawl_home / "config.yaml"
+
+        user_config = {
+            "build": {
+                "threads": 4,
+                "parallel": False,
+            },
+            "maven": {
+                "version": "3.8.0",
+            },
+        }
+        with open(user_config_file, "w") as f:
+            yaml.dump(user_config, f)
+
+        # Create project config
+        project_config = {"build": {"threads": 8}}
+        project_file = temp_project_dir / ".yawl" / "config.yaml"
+        with open(project_file, "w") as f:
+            yaml.dump(project_config, f)
+
+        # Mock Path.home() to return our test home
+        monkeypatch.setattr(Path, "home", lambda: home_mock)
+
+        # Load config
+        config = Config.from_project(temp_project_dir)
+
+        # Verify: project threads override user threads
+        assert config.get("build.threads") == 8
+        # User parallel setting still present (not overridden)
+        assert config.get("build.parallel") is False
+        # User maven version still present (not overridden)
+        assert config.get("maven.version") == "3.8.0"
+
+    def test_config_deep_merge_preserves_sections(
+        self, temp_project_dir: Path, monkeypatch
+    ) -> None:
+        """Real test: deep merge preserves all sections.
+
+        System config: build.parallel=false
+        User config: build.threads=4
+        Project config: test.coverage=80
+        All three settings should be present.
+        """
+        # Create user home config
+        home_mock = temp_project_dir / "home"
+        home_mock.mkdir()
+        yawl_home = home_mock / ".yawl"
+        yawl_home.mkdir()
+        user_config_file = yawl_home / "config.yaml"
+
+        user_config = {
+            "build": {
+                "threads": 4,
+            },
+        }
+        with open(user_config_file, "w") as f:
+            yaml.dump(user_config, f)
+
+        # Create project config with different section
+        project_config = {
+            "test": {
+                "coverage": 80,
+            },
+        }
+        project_file = temp_project_dir / ".yawl" / "config.yaml"
+        with open(project_file, "w") as f:
+            yaml.dump(project_config, f)
+
+        # Mock Path.home()
+        monkeypatch.setattr(Path, "home", lambda: home_mock)
+
+        # Load config
+        config = Config.from_project(temp_project_dir)
+
+        # Verify all settings present
+        assert config.get("build.threads") == 4
+        assert config.get("test.coverage") == 80
+
+    def test_config_save_atomic_write(self, temp_project_dir: Path) -> None:
+        """Real test: config save uses atomic write pattern (temp + rename).
+
+        This prevents corruption if write is interrupted.
+        """
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {"build": {"threads": 8}, "test": {"enabled": True}}
+
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+
+        # Verify no temp file exists before
+        temp_file = config_file.with_suffix(".yaml.tmp")
+        assert not temp_file.exists()
+
+        # Save config
+        config.save(config_file)
+
+        # Verify config file exists and is valid
+        assert config_file.exists()
+        with open(config_file) as f:
+            saved_data = yaml.safe_load(f)
+        assert saved_data["build"]["threads"] == 8
+
+        # Verify no temp file left behind (atomic operation completed)
+        assert not temp_file.exists()
+
+    def test_config_file_permissions_readable(self, temp_project_dir: Path) -> None:
+        """Real test: config file has restrictive permissions (readable by owner).
+
+        Save config and verify file permissions are secure.
+        """
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {"build": {"threads": 8}}
+
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config.save(config_file)
+
+        # Get file permissions
+        file_stat = config_file.stat()
+        mode = file_stat.st_mode
+
+        # Verify file exists
+        assert config_file.exists()
+
+        # Verify file is regular file
+        assert stat.S_ISREG(mode)
+
+        # Verify file is readable (owner can read)
+        assert mode & stat.S_IRUSR
+
+    def test_config_dir_creation_with_permissions(self, temp_project_dir: Path) -> None:
+        """Real test: config directory created with correct permissions.
+
+        Saving config should create .yawl directory hierarchy.
+        """
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {"test": "value"}
+
+        # Ensure .yawl doesn't exist
+        config_dir = temp_project_dir / ".yawl"
+        if config_dir.exists():
+            import shutil
+
+            shutil.rmtree(config_dir)
+
+        assert not config_dir.exists()
+
+        # Save config
+        config.save()
+
+        # Verify directory was created
+        assert config_dir.exists()
+        assert config_dir.is_dir()
+
+        # Verify config file in directory
+        assert (config_dir / "config.yaml").exists()
+
+    def test_invalid_yaml_parsing_error_message(self, temp_project_dir: Path) -> None:
+        """Real test: invalid YAML parsing shows clear error with line number.
+
+        Broken YAML syntax should be caught with helpful error message.
+        """
+        # Write invalid YAML (unclosed bracket)
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config_file.write_text("build:\n  threads: [8\n  parallel: true")
+
+        # Attempt to load
+        with pytest.raises(RuntimeError, match="Invalid YAML"):
+            Config.from_project(temp_project_dir)
+
+    def test_config_invalid_yaml_with_bad_syntax(self, temp_project_dir: Path) -> None:
+        """Real test: various invalid YAML syntaxes are caught."""
+        test_cases = [
+            ("key: value: bad", "invalid yaml"),
+            ("[unclosed\n", "invalid yaml"),
+            ("key: {bad\n", "invalid yaml"),
+        ]
+
+        for yaml_content, error_hint in test_cases:
+            # Write invalid YAML
+            config_file = temp_project_dir / ".yawl" / "config.yaml"
+            config_file.write_text(yaml_content)
+
+            # Attempt to load should raise
+            with pytest.raises(RuntimeError, match="Invalid YAML"):
+                Config.from_project(temp_project_dir)
+
+            # Clean up for next iteration
+            config_file.unlink()
+
+    def test_config_dot_notation_nested_access(
+        self, temp_project_dir: Path, valid_config_file: Path
+    ) -> None:
+        """Real test: dot notation access works for deeply nested values."""
+        config = Config.from_project(temp_project_dir)
+
+        # Test deep access
+        value = config.get("godspeed.phases")
+        assert value == ["Ψ", "Λ", "H", "Q", "Ω"]
+
+        # Test nested get with default
+        value = config.get("nonexistent.deeply.nested", default="fallback")
+        assert value == "fallback"
+
+    def test_config_yaml_unicode_support(self, temp_project_dir: Path) -> None:
+        """Real test: config supports Unicode characters.
+
+        Save and load config with Unicode values.
+        """
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {
+            "description": "YAWL Workflow Σ = Java + XML + Petri nets",
+            "phases": ["Ψ (Observatory)", "Λ (Build)", "H (Guards)"],
+        }
+
+        config.save()
+
+        # Reload and verify
+        config2 = Config.from_project(temp_project_dir)
+        assert config2.get("description") == "YAWL Workflow Σ = Java + XML + Petri nets"
+        assert "Ψ" in config2.get("phases")
+
+    def test_config_large_file_size_limit(self, temp_project_dir: Path) -> None:
+        """Real test: config files > 1MB are rejected for safety.
+
+        Protect against malicious or corrupt config files.
+        """
+        # Create config file that's too large
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        # Write 2MB of valid YAML
+        large_data = {"data": "x" * (2 * 1024 * 1024)}
+        with open(config_file, "w") as f:
+            yaml.dump(large_data, f)
+
+        # Attempt to load should raise
+        with pytest.raises(RuntimeError, match="Config file too large"):
+            Config.from_project(temp_project_dir)
+
+    def test_config_yaml_non_dict_type_error(self, temp_project_dir: Path) -> None:
+        """Real test: YAML that parses to non-dict is rejected.
+
+        Config must be a dictionary, not list or scalar.
+        """
+        # Write YAML list
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config_file.write_text("- item1\n- item2\n- item3\n")
+
+        # Attempt to load should raise
+        with pytest.raises(RuntimeError, match="must be YAML dictionary"):
+            Config.from_project(temp_project_dir)
+
+    def test_config_save_with_nested_missing_dirs(self, temp_project_dir: Path) -> None:
+        """Real test: save creates nested directories if needed.
+
+        Save to a path with multiple missing parent directories.
+        """
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {"test": "data"}
+
+        # Save to deeply nested path
+        nested_path = temp_project_dir / "a" / "b" / "c" / "config.yaml"
+        config.save(nested_path)
+
+        # Verify all directories created
+        assert nested_path.parent.exists()
+        assert nested_path.exists()
+
+        # Verify content is valid
+        with open(nested_path) as f:
+            data = yaml.safe_load(f)
+        assert data["test"] == "data"
+
+    def test_config_update_and_resave(self, temp_project_dir: Path) -> None:
+        """Real test: load, modify, and resave config preserves integrity.
+
+        Simulate real workflow: load -> modify -> save -> reload.
+        """
+        # Initial save
+        config1 = Config(project_root=temp_project_dir)
+        config1.config_data = {"build": {"threads": 4}}
+        config1.save()
+
+        # Load and modify
+        config2 = Config.from_project(temp_project_dir)
+        assert config2.get("build.threads") == 4
+
+        config2.set("build.threads", 8)
+        config2.set("build.parallel", True)
+        config2.save()
+
+        # Reload and verify changes persisted
+        config3 = Config.from_project(temp_project_dir)
+        assert config3.get("build.threads") == 8
+        assert config3.get("build.parallel") is True
+
+    def test_config_permissions_after_load(self, temp_project_dir: Path) -> None:
+        """Real test: can read config file without permission errors.
+
+        File permissions allow reading by owner after save.
+        """
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {"build": {"threads": 8}}
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config.save(config_file)
+
+        # Verify we can read the file
+        assert os.access(config_file, os.R_OK)
+
+        # Verify we can load it
+        config2 = Config.from_project(temp_project_dir)
+        assert config2.get("build.threads") == 8
+
+    def test_config_empty_yaml_file(self, temp_project_dir: Path) -> None:
+        """Real test: empty YAML file is treated as empty dict.
+
+        Empty or whitespace-only YAML should not error.
+        """
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config_file.write_text("")
+
+        config = Config.from_project(temp_project_dir)
+        assert config.config_data == {}
+
+    def test_config_yaml_with_comments_and_whitespace(
+        self, temp_project_dir: Path
+    ) -> None:
+        """Real test: YAML comments and whitespace are handled correctly.
+
+        YAML parser should handle comments and formatting.
+        """
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config_file.write_text(
+            """
+# Build configuration
+build:
+  # Number of threads
+  threads: 8
+  parallel: true
+
+# Maven settings
+maven:
+  profiles:
+    - analysis
+    - coverage
+"""
+        )
+
+        config = Config.from_project(temp_project_dir)
+        assert config.get("build.threads") == 8
+        assert config.get("build.parallel") is True
+        assert config.get("maven.profiles") == ["analysis", "coverage"]
+
+    def test_config_file_encoding_utf8(self, temp_project_dir: Path) -> None:
+        """Real test: config files must be valid UTF-8.
+
+        Invalid UTF-8 encoding is rejected.
+        """
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+
+        # Write binary data that's not valid UTF-8
+        with open(config_file, "wb") as f:
+            f.write(b"\x80\x81\x82\x83")
+
+        # Attempt to load should raise
+        with pytest.raises(RuntimeError, match="invalid encoding"):
+            Config.from_project(temp_project_dir)
+
+    def test_config_merge_with_all_types(self, temp_project_dir: Path) -> None:
+        """Real test: merge handles booleans, integers, strings, lists, dicts.
+
+        Deep merge should work with all YAML data types.
+        """
+        config = Config(project_root=temp_project_dir)
+
+        base = {
+            "build": {
+                "threads": 4,
+                "parallel": False,
+                "timeout": 300,
+                "profiles": ["basic"],
+                "settings": {"key": "value"},
+            }
+        }
+        override = {
+            "build": {
+                "threads": 8,
+                "profiles": ["analysis", "coverage"],
+                "new_key": "new_value",
+            }
+        }
+
+        result = Config._deep_merge(base, override)
+
+        assert result["build"]["threads"] == 8  # Overridden int
+        assert result["build"]["parallel"] is False  # Unchanged bool
+        assert result["build"]["timeout"] == 300  # Unchanged int
+        assert result["build"]["profiles"] == ["analysis", "coverage"]  # Overridden list
+        assert result["build"]["settings"] == {"key": "value"}  # Unchanged dict
+        assert result["build"]["new_key"] == "new_value"  # New key

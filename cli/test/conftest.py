@@ -1,9 +1,11 @@
 """Pytest configuration and shared fixtures for YAWL CLI tests."""
 
 import json
+import os
+import subprocess
 import tempfile
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Dict, Any
 
 import pytest
 import yaml
@@ -13,18 +15,24 @@ from yawl_cli.utils import Config
 
 @pytest.fixture
 def temp_project_dir() -> Generator[Path, None, None]:
-    """Create a temporary YAWL project directory with minimal structure."""
+    """Create a temporary YAWL project directory with complete structure.
+
+    This fixture creates a real project directory with all necessary files
+    and subdirectories for testing. All paths are real file system objects.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         project_root = Path(tmpdir)
 
-        # Create project structure
+        # Create project structure with real directories
         (project_root / ".yawl").mkdir(parents=True, exist_ok=True)
         (project_root / "docs" / "v6" / "latest" / "facts").mkdir(
             parents=True, exist_ok=True
         )
         (project_root / ".claude" / "hooks").mkdir(parents=True, exist_ok=True)
+        (project_root / ".claude" / "rules").mkdir(parents=True, exist_ok=True)
+        (project_root / ".claude" / "reports").mkdir(parents=True, exist_ok=True)
 
-        # Create pom.xml marker
+        # Create pom.xml marker (real Maven file)
         (project_root / "pom.xml").write_text(
             """<?xml version="1.0"?>
 <project>
@@ -33,17 +41,31 @@ def temp_project_dir() -> Generator[Path, None, None]:
   <artifactId>yawl-core</artifactId>
   <version>6.0.0</version>
 </project>
-"""
+""",
+            encoding="utf-8"
         )
 
         # Create CLAUDE.md marker
-        (project_root / "CLAUDE.md").write_text("# YAWL v6.0.0\n")
+        (project_root / "CLAUDE.md").write_text("# YAWL v6.0.0\n", encoding="utf-8")
 
-        # Create basic scripts directory structure
+        # Create basic scripts directory structure (real executable scripts)
         (project_root / "scripts").mkdir(exist_ok=True)
-        (project_root / "scripts" / "dx.sh").touch()
-        (project_root / "scripts" / "observatory").mkdir(exist_ok=True)
-        (project_root / "scripts" / "observatory" / "observatory.sh").touch()
+        dx_script = project_root / "scripts" / "dx.sh"
+        dx_script.write_text("#!/bin/bash\nexit 0\n", encoding="utf-8")
+        dx_script.chmod(0o755)
+
+        observatory_dir = project_root / "scripts" / "observatory"
+        observatory_dir.mkdir(exist_ok=True)
+        observatory_script = observatory_dir / "observatory.sh"
+        observatory_script.write_text("#!/bin/bash\nexit 0\n", encoding="utf-8")
+        observatory_script.chmod(0o755)
+
+        # Create src directory structure
+        (project_root / "src" / "main" / "java").mkdir(parents=True, exist_ok=True)
+        (project_root / "src" / "test" / "java").mkdir(parents=True, exist_ok=True)
+
+        # Create .git directory for git operations
+        (project_root / ".git").mkdir(exist_ok=True)
 
         yield project_root
 
