@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yawl-cli"
+version = "6.0.0"
+description = "YAWL v6 Unified CLI - Maven, Observatory, GODSPEED, ggen, gregverse"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "YAWL Team", email = "yawl@anthropic.com"}]
+
+dependencies = [
+    "typer[all]>=0.9.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "requests>=2.31.0",
+    "rich>=13.0.0",
+    "python-dateutil>=2.8.0",
+    "jinja2>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+yawl = "godspeed_cli:app"
+
+[tool.setuptools]
+packages = ["yawl_cli"]
+py-modules = ["godspeed_cli"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W", "C"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+markers = [
+    "performance: Performance and resource usage tests (real execution)",
+    "integration: Integration tests requiring full CLI stack",
+    "unit: Unit tests (fast feedback)",
+]

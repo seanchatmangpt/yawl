@@ -1,0 +1,301 @@
+// GGEN Template: Generate Agent A2A Protocols from Turtle RDF
+// Input: ontology/agents/a2a-protocols.ttl
+// Output: Implementation classes for agent protocols and communication
+
+{%- macro generate_agent(agent_data) -%}
+// Generated A2A Protocol Handler for {{ agent_data.name }}
+// Role: {{ agent_data.description }}
+// MCP Port: {{ agent_data.port }}
+
+package org.yawl.integration.a2a.agents;
+
+import org.yawl.integration.a2a.*;
+import org.yawl.integration.mcp.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class {{ agent_data.classname }}ProtocolHandler implements A2AProtocolHandler {
+
+    private static final Logger log = LoggerFactory.getLogger({{ agent_data.classname }}ProtocolHandler.class);
+
+    private final String agentId = "{{ agent_data.id }}";
+    private final A2AProtocol protocol;
+    private final MCPServer mcpServer;
+    private final ExecutorService executor;
+    private final MessageQueue inbound;
+    private final MessageQueue outbound;
+    private final Map<String, A2AEndpoint> endpoints;
+
+    public {{ agent_data.classname }}ProtocolHandler() {
+        this.protocol = new A2AProtocol("{{ agent_data.protocol_name }}");
+        this.mcpServer = new MCPServer("{{ agent_data.mcp_server }}", {{ agent_data.port }});
+        this.executor = Executors.newFixedThreadPool({{ agent_data.threads }});
+        this.inbound = new BlockingQueue<>(1000);
+        this.outbound = new BlockingQueue<>(1000);
+        this.endpoints = initializeEndpoints();
+
+        configureProtocol();
+    }
+
+    private Map<String, A2AEndpoint> initializeEndpoints() {
+        Map<String, A2AEndpoint> eps = new LinkedHashMap<>();
+        {%- for endpoint in agent_data.endpoints %}
+        eps.put("{{ endpoint.name }}", new A2AEndpoint(
+            "{{ endpoint.name }}",
+            A2AMethod.{{ endpoint.method }},
+            MessageType.{{ endpoint.message_type }},
+            {{ endpoint.response_time_ms }}
+        ));
+        {%- endfor %}
+        return eps;
+    }
+
+    private void configureProtocol() {
+        protocol.setMessagingStyle(MessagingStyle.{{ agent_data.messaging_style }});
+        protocol.setConcurrency(Concurrency.{{ agent_data.concurrency }});
+        protocol.setMessageFormat(MessageFormat.{{ agent_data.message_format }});
+        protocol.setEncryption(Encryption.{{ agent_data.encryption }});
+
+        {%- if agent_data.retry_policy %}
+        protocol.setRetryPolicy(new RetryPolicy(
+            {{ agent_data.retry_policy.max_retries }},
+            {{ agent_data.retry_policy.backoff_multiplier }}f,
+            {{ agent_data.retry_policy.initial_delay_ms }}
+        ));
+        {%- endif %}
+
+        {%- if agent_data.circuit_breaker %}
+        protocol.setCircuitBreaker(new CircuitBreaker(
+            {{ agent_data.circuit_breaker.failure_threshold }},
+            {{ agent_data.circuit_breaker.success_threshold }},
+            {{ agent_data.circuit_breaker.timeout_ms }}
+        ));
+        {%- endif %}
+
+        log.info("Protocol configured for agent: {}", agentId);
+    }
+
+    @Override
+    public void start() throws Exception {
+        mcpServer.start();
+        executor.submit(this::messageProcessingLoop);
+        log.info("{{ agent_data.name }} started (port {})", mcpServer.getPort());
+    }
+
+    @Override
+    public void stop() throws Exception {
+        mcpServer.stop();
+        executor.shutdown();
+        executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+        log.info("{{ agent_data.name }} stopped");
+    }
+
+    @Override
+    public Message sendMessage(Message msg) throws Exception {
+        // Validate message against protocol
+        validateMessage(msg);
+
+        // Find and execute appropriate endpoint handler
+        A2AEndpoint endpoint = findEndpoint(msg);
+        if (endpoint == null) {
+            throw new IllegalArgumentException("No endpoint for message type: " + msg.getType());
+        }
+
+        // Send via MCP
+        Message response = mcpServer.call(endpoint.getName(), msg);
+        log.debug("Message sent via {}: {}", endpoint.getName(), msg.getId());
+
+        return response;
+    }
+
+    @Override
+    public void receiveMessage(Message msg) throws Exception {
+        validateMessage(msg);
+        inbound.put(msg);
+        log.debug("Message received: {}", msg.getId());
+    }
+
+    private void messageProcessingLoop() {
+        while (Thread.currentThread().isAlive()) {
+            try {
+                Message msg = inbound.poll(1, java.util.concurrent.TimeUnit.SECONDS);
+                if (msg != null) {
+                    processMessage(msg);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private void processMessage(Message msg) {
+        try {
+            A2AEndpoint endpoint = findEndpoint(msg);
+            if (endpoint != null) {
+                Message response = executeEndpoint(endpoint, msg);
+                outbound.put(response);
+            }
+        } catch (Exception e) {
+            log.error("Error processing message: {}", msg.getId(), e);
+        }
+    }
+
+    private A2AEndpoint findEndpoint(Message msg) {
+        for (A2AEndpoint ep : endpoints.values()) {
+            if (ep.getMessageType() == msg.getType()) {
+                return ep;
+            }
+        }
+        return null;
+    }
+
+    private Message executeEndpoint(A2AEndpoint endpoint, Message request) throws Exception {
+        long startTime = System.currentTimeMillis();
+
+        // Execute with timeout
+        Message response = executor.submit(() -> {
+            try {
+                return mcpServer.call(endpoint.getName(), request);
+            } catch (Exception e) {
+                return Message.error(request.getId(), "Execution failed: " + e.getMessage());
+            }
+        }).get(endpoint.getResponseTimeMs(), java.util.concurrent.TimeUnit.MILLISECONDS);
+
+        long duration = System.currentTimeMillis() - startTime;
+        log.debug("Endpoint {} executed in {}ms", endpoint.getName(), duration);
+
+        return response;
+    }
+
+    private void validateMessage(Message msg) throws ProtocolException {
+        if (msg == null) {
+            throw new ProtocolException("Message cannot be null");
+        }
+        if (msg.getId() == null || msg.getId().isEmpty()) {
+            throw new ProtocolException("Message ID is required");
+        }
+        if (msg.getTimestamp() == null) {
+            throw new ProtocolException("Message timestamp is required");
+        }
+    }
+
+    @Override
+    public A2AProtocol getProtocol() {
+        return protocol;
+    }
+
+    @Override
+    public MCPServer getMCPServer() {
+        return mcpServer;
+    }
+
+    @Override
+    public String getAgentId() {
+        return agentId;
+    }
+
+    @Override
+    public Map<String, A2AEndpoint> getEndpoints() {
+        return Collections.unmodifiableMap(endpoints);
+    }
+
+    @Override
+    public boolean isRunning() {
+        return mcpServer.isRunning();
+    }
+
+    @Override
+    public String getStatus() {
+        return String.format(
+            "{{ agent_data.name }}[%s] - MCP: %s, Inbound: %d, Outbound: %d, Uptime: %s",
+            agentId,
+            mcpServer.isRunning() ? "RUNNING" : "STOPPED",
+            inbound.size(),
+            outbound.size(),
+            System.currentTimeMillis() - startTime
+        );
+    }
+
+    private long startTime = System.currentTimeMillis();
+}
+{%- endmacro %}
+
+// ============================================================================
+// ORCHESTRATION AGENT
+// ============================================================================
+{{ generate_agent({
+    name: "Orchestration Agent",
+    classname: "Orchestration",
+    id: "a2a:OrchestrationAgent",
+    description: "Coordinates multi-agent workflows and task distribution",
+    protocol_name: "OrchestrationProtocol",
+    mcp_server: "OrchestrationMCPServer",
+    port: 9001,
+    threads: 16,
+    messaging_style: "REQUEST_REPLY",
+    concurrency: "PARALLEL",
+    message_format: "JSON",
+    encryption: "TLS12",
+    retry_policy: { max_retries: 3, backoff_multiplier: 2.0, initial_delay_ms: 100 },
+    circuit_breaker: { failure_threshold: 5, success_threshold: 2, timeout_ms: 10000 },
+    endpoints: [
+        { name: "orchestration/tasks", method: "POST", message_type: "TASK_ASSIGNMENT", response_time_ms: 500 },
+        { name: "orchestration/status", method: "GET", message_type: "STATUS_QUERY", response_time_ms: 100 },
+        { name: "orchestration/dependencies", method: "GET", message_type: "DEPENDENCY_GRAPH", response_time_ms: 200 }
+    ]
+}) }}
+
+// ============================================================================
+// EXECUTOR AGENT
+// ============================================================================
+package org.yawl.integration.a2a.agents;
+
+public class ExecutorProtocolHandler implements A2AProtocolHandler {
+    // See AgentFactory.createExecutorAgent() for implementation
+    // Role: Executes assigned tasks and reports progress
+    // Protocol: ExecutionProtocol (FIFO ordered, At-Least-Once delivery)
+    // Port: 9002
+    // Tools: task_execute, progress_report, error_notify
+}
+
+// ============================================================================
+// VALIDATOR AGENT
+// ============================================================================
+package org.yawl.integration.a2a.agents;
+
+public class ValidatorProtocolHandler implements A2AProtocolHandler {
+    // See AgentFactory.createValidatorAgent() for implementation
+    // Role: Validates task outputs and enforces quality gates
+    // Protocol: ValidationProtocol (Verbose logging, custom timeouts)
+    // Port: 9003
+    // Tools: validate_output, check_gates, report_compliance
+}
+
+// ============================================================================
+// OBSERVER AGENT
+// ============================================================================
+package org.yawl.integration.a2a.agents;
+
+public class ObserverProtocolHandler implements A2AProtocolHandler {
+    // See AgentFactory.createObserverAgent() for implementation
+    // Role: Monitors system state and collects observability metrics
+    // Protocol: ObservationProtocol (Push-based, load-balanced, buffered)
+    // Port: 9004
+    // Tools: emit_metric, emit_trace, emit_log
+}
+
+// ============================================================================
+// RESOLVER AGENT
+// ============================================================================
+package org.yawl.integration.a2a.agents;
+
+public class ResolverProtocolHandler implements A2AProtocolHandler {
+    // See AgentFactory.createResolverAgent() for implementation
+    // Role: Handles failures, conflicts, and recovery scenarios
+    // Protocol: ResolutionProtocol (Event-driven, high-priority, DLQ enabled)
+    // Port: 9005
+    // Tools: handle_error, resolve_conflict, recovery_plan
+}

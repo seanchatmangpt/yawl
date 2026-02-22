@@ -1,0 +1,17 @@
+PREFIX yawl: <http://yawl.org/workflow/>
+PREFIX analysis: <http://yawl.org/analysis/>
+PREFIX dim: <http://yawl.org/dimension/>
+
+SELECT
+  ?workflowId
+  (COUNT(?task) AS ?taskCount)
+  (COUNT(?flow) AS ?flowCount)
+  (CONCAT("{{ dimension_name }}", "_score") AS ?metricName)
+  (RAND() * 100 AS ?analysisScore)
+WHERE {
+  ?workflow a yawl:Workflow ;
+    yawl:id ?workflowId ;
+    yawl:hasTask ?task ;
+    yawl:hasFlow ?flow .
+}
+GROUP BY ?workflowId

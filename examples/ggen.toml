@@ -1,0 +1,146 @@
+# ggen Code Generation Configuration
+# =====================================
+#
+# This file demonstrates how to configure the YAWL XML Generator (ggen)
+# for converting RDF/Turtle workflows to YAWL XML specifications.
+#
+# Usage: yawl ggen generate --config examples/ggen.toml
+
+[generation]
+# Workflow generation settings
+
+# Source: Path to RDF/Turtle workflow definition
+source = "examples/turtle-workflow.ttl"
+
+# Output: Directory for generated YAWL XML
+output_dir = "generated/"
+
+# Template: Template engine for code generation
+# Options: "jinja2" (default), "tera"
+template_engine = "jinja2"
+
+# Template file to use (if not using Tera.template)
+# Leave empty to use default template
+template = ""
+
+# Format: Output format
+# Options: "yawl-2.3" (default), "yawl-2.2", "bpmn", "xpdl"
+format = "yawl-2.3"
+
+[schema]
+# Schema validation settings
+
+# Validate output against XSD schema
+validate = true
+
+# XSD schema path
+schema_path = "schema/YAWL_Schema2.3.xsd"
+
+# Strict mode: Fail on schema warnings (not just errors)
+strict = false
+
+[conversion]
+# RDF/Turtle to YAWL conversion settings
+
+# Namespace prefix for YAWL ontology
+yawl_namespace = "http://www.yawlfoundation.org/yawl/ontology#"
+
+# Namespace prefix for domain ontology
+domain_namespace = "http://example.org/yawl/workflow/"
+
+# Auto-flatten nested workflows
+flatten_subnets = false
+
+# Generate subprocess definitions
+generate_subprocesses = true
+
+[workflow_defaults]
+# Default values for generated workflows
+
+# Default resource pool
+resource_pool = "admin"
+
+# Default join/split semantics
+join_type = "AND"
+split_type = "XOR"
+
+# Enable explicit task completion
+explicit_completion = true
+
+# Timeout for long-running tasks (seconds)
+task_timeout = 3600
+
+[optimization]
+# Code generation optimization
+
+# Minimize redundant elements
+minimize = false
+
+# Remove unreachable tasks
+remove_dead_code = true
+
+# Inline small subnets
+inline_subnets = false
+
+[logging]
+# Generation logging
+
+# Log level: "debug", "info", "warn", "error"
+level = "info"
+
+# Write generation log to file
+log_file = "generated/generation.log"
+
+# Verbose output
+verbose = false
+
+[metadata]
+# Metadata to embed in generated workflow
+
+# Workflow title (overrides source)
+title = "Order Processing Workflow"
+
+# Workflow description
+description = "Demonstrates RDF-to-YAWL conversion using ggen"
+
+# Workflow version
+version = "1.0"
+
+# Creator/author
+author = "YAWL Team"
+
+# Creation date (ISO 8601)
+created = "2026-02-22"
+
+# Contact email
+contact = "yawl@anthropic.com"
+
+[exports]
+# Export settings for generated artifacts
+
+# Also generate BPMN diagram
+export_bpmn = false
+
+# Also generate process documentation
+export_docs = true
+
+# Export format for docs
+docs_format = "markdown"
+
+# Also generate test cases
+export_tests = true
+
+[advanced]
+# Advanced generation options
+
+# Use RDF inference to expand ontology relationships
+use_inference = true
+
+# Reasoner to use: "owlrl" (default), "hermit", "pellet"
+reasoner = "owlrl"
+
+# Merge multiple RDF files
+merge_inputs = false
+
+# Custom SPARQL query file (for complex extractions)
+sparql_query = ""

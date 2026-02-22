@@ -1,0 +1,213 @@
+{
+  "apiVersion": "orchestration/v1",
+  "kind": "OrchestrationTemplate",
+  "metadata": {
+    "id": "approval-workflow",
+    "name": "Approval Workflow",
+    "version": "1.0.0",
+    "description": "Sequential workflow: validate expense → approve → notify requestor",
+    "author": "integration-team",
+    "created": "2026-02-21T00:00:00Z"
+  },
+  "spec": {
+    "pattern": "sequential",
+    "description": "A simple sequential workflow where agents validate, approve, and notify about expense requests.",
+
+    "agents": [
+      {
+        "id": "validator",
+        "agentId": "validation-agent",
+        "capability": "validate-expense",
+        "description": "Validates expense request format and data",
+        "timeout": "10s",
+        "retries": 2,
+        "dependsOn": [],
+        "input": {
+          "amount": "$.request.amount",
+          "category": "$.request.category",
+          "requestor": "$.request.requestor",
+          "description": "$.request.description"
+        },
+        "output": {
+          "isValid": "$.valid",
+          "validationErrors": "$.errors",
+          "validatedData": "$.data"
+        }
+      },
+      {
+        "id": "approver",
+        "agentId": "approval-agent",
+        "capability": "approve-expense",
+        "description": "Approves expense if under delegation limit",
+        "timeout": "30s",
+        "retries": 1,
+        "dependsOn": ["validator"],
+        "input": {
+          "amount": "$.validator.validatedData.amount",
+          "requestor": "$.validator.validatedData.requestor",
+          "category": "$.validator.validatedData.category",
+          "manager_approval": "$.request.manager_approval"
+        },
+        "output": {
+          "approved": "$.approved",
+          "confidence": "$.confidence",
+          "reason": "$.reason",
+          "approval_tier": "$.approval_tier"
+        },
+        "errorHandling": {
+          "onTimeout": "escalate",
+          "onFailure": "escalate",
+          "escalateToAgent": "escalation-agent"
+        }
+      },
+      {
+        "id": "notifier",
+        "agentId": "notification-agent",
+        "capability": "send-notification",
+        "description": "Sends approval/rejection notification to requestor",
+        "timeout": "5s",
+        "retries": 2,
+        "dependsOn": ["approver"],
+        "input": {
+          "requestor_email": "$.request.requestor_email",
+          "status": "$.approver.approved",
+          "reason": "$.approver.reason",
+          "approval_tier": "$.approver.approval_tier"
+        },
+        "output": {
+          "notificationSent": "$.sent",
+          "delivery_time": "$.timestamp"
+        },
+        "optional": true,
+        "failureMode": "log"
+      }
+    ],
+
+    "errorHandling": {
+      "strategy": "escalate-on-first-failure",
+      "validationFailure": {
+        "action": "escalate",
+        "escalateToAgent": "escalation-agent",
+        "reason": "Invalid expense data"
+      },
+      "approvalFailure": {
+        "action": "retry",
+        "maxRetries": 3,
+        "retryBackoff": "exponential",
+        "fallback": "escalate"
+      },
+      "notificationFailure": {
+        "action": "log",
+        "severity": "warning",
+        "continueWorkflow": true
+      }
+    },
+
+    "dataFlow": {
+      "inputSchema": {
+        "type": "object",
+        "required": ["request"],
+        "properties": {
+          "request": {
+            "type": "object",
+            "required": ["amount", "category", "requestor", "requestor_email"],
+            "properties": {
+              "amount": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 999999
+              },
+              "category": {
+                "type": "string",
+                "enum": ["travel", "meals", "supplies", "training", "equipment", "other"]
+              },
+              "requestor": {
+                "type": "string",
+                "description": "Employee ID"
+              },
+              "requestor_email": {
+                "type": "string",
+                "format": "email"
+              },
+              "description": {
+                "type": "string"
+              },
+              "manager_approval": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "validator": {
+            "type": "object",
+            "properties": {
+              "isValid": { "type": "boolean" },
+              "validationErrors": { "type": "array" },
+              "validatedData": { "type": "object" }
+            }
+          },
+          "approver": {
+            "type": "object",
+            "properties": {
+              "approved": { "type": "boolean" },
+              "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+              "reason": { "type": "string" },
+              "approval_tier": { "type": "integer" }
+            }
+          },
+          "notifier": {
+            "type": "object",
+            "properties": {
+              "notificationSent": { "type": "boolean" },
+              "delivery_time": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+
+    "monitoring": {
+      "trackMetrics": [
+        "validation_latency",
+        "approval_latency",
+        "notification_latency",
+        "success_rate",
+        "escalation_count"
+      ],
+      "alertThresholds": {
+        "avgLatency": 5000,
+        "p99Latency": 15000,
+        "failureRate": 0.05,
+        "escalationRate": 0.20
+      },
+      "tracingEnabled": true,
+      "samplingRate": 0.1
+    },
+
+    "deployment": {
+      "minReplicas": 2,
+      "maxReplicas": 10,
+      "resources": {
+        "requests": {
+          "memory": "512Mi",
+          "cpu": "250m"
+        },
+        "limits": {
+          "memory": "1Gi",
+          "cpu": "500m"
+        }
+      },
+      "affinity": {
+        "preferSameZone": true
+      }
+    },
+
+    "version": "1.0.0",
+    "releaseNotes": "Initial release of sequential approval workflow"
+  }
+}

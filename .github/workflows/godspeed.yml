@@ -1,0 +1,186 @@
+name: GODSPEED Pipeline
+
+on:
+  push:
+    branches:
+      - claude/*
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  JAVA_VERSION: 25
+  MAVEN_OPTS: -Xmx2g
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Observatory (Ψ Phase)
+        run: |
+          echo "Gathering codebase facts..."
+          bash scripts/observatory/observatory.sh --facts
+          ls -la docs/v6/latest/facts/
+
+      - name: Build & Test (Λ Phase)
+        run: |
+          echo "Running DX pipeline..."
+          bash scripts/dx.sh all || exit 1
+
+      - name: Collect Metrics
+        if: always()
+        run: |
+          bash scripts/observability-dashboard.sh --export
+          ls -la .yawl/metrics/
+
+      - name: Integration Tests
+        if: always()
+        run: |
+          bash test/integration/phase-integration-test.sh
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            .yawl/metrics/
+            .yawl/test-results/
+            .yawl/pipeline/reports/
+
+      - name: Generate Report
+        if: always()
+        run: |
+          echo "# GODSPEED Pipeline Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
+          if [[ -f .yawl/pipeline/reports/pipeline-report.json ]]; then
+            jq '.summary' .yawl/pipeline/reports/pipeline-report.json >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Slack Notification (on failure)
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "YAWL GODSPEED Pipeline Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Pipeline failed on branch `${{ github.ref_name }}`\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Static Analysis
+        continue-on-error: true
+        run: |
+          bash scripts/observatory/run-static-analysis.sh
+
+      - name: Upload Coverage
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./target/site/jacoco/jacoco.xml
+          fail_ci_if_error: false
+
+  validation:
+    name: Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: [build, quality]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Validate Docker Build
+        continue-on-error: true
+        run: |
+          if [[ -f Dockerfile ]]; then
+            docker build . -t yawl:latest --no-cache
+            echo "Docker validation passed"
+          else
+            echo "No Dockerfile found"
+          fi
+
+      - name: Pre-Deployment Checks
+        run: |
+          echo "Checking deployment readiness..."
+          bash scripts/dx.sh all
+          echo "✓ Build is green"
+
+  report:
+    name: Generate Report
+    runs-on: ubuntu-latest
+    needs: [build, quality, validation]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: .yawl/
+
+      - name: Create Summary Report
+        run: |
+          echo "# YAWL GODSPEED Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          if [[ -f .yawl/metrics/dashboard-snapshot.json ]]; then
+            echo "**Build Status**: ✓ Complete" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [[ -f .yawl/test-results/integration-tests.log ]]; then
+            echo "**Integration Tests**: $(jq -r '.success_rate' .yawl/test-results/integration-tests.log)%" >> $GITHUB_STEP_SUMMARY
+          fi
+

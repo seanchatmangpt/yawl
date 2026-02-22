@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YAWL_Specification>
+  <SpecificationSet>
+    <Specification name="{{ dimension_name }}_Analysis_Report">
+      {% for result in analysis_results %}
+      <Task id="analyze_{{ result.workflow_id }}">
+        <Name>{{ result.workflow_id }} - {{ dimension_name }} Analysis</Name>
+        <Documentation>
+          Task Count: {{ result.task_count }}
+          Flow Count: {{ result.flow_count }}
+          Analysis Score: {{ result.score }}
+        </Documentation>
+      </Task>
+      {% endfor %}
+    </Specification>
+  </SpecificationSet>
+</YAWL_Specification>

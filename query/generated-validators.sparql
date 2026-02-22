@@ -1,0 +1,20 @@
+PREFIX yawl: <http://yawl.org/workflow/>
+
+# Validator 1: Has tasks
+ASK {
+  ?workflow a yawl:Workflow ;
+    yawl:hasTask ?task .
+}
+
+# Validator 2: Has flows
+ASK {
+  ?workflow a yawl:Workflow ;
+    yawl:hasFlow ?flow .
+}
+
+# Validator 3: Valid structure
+ASK {
+  ?task a yawl:Task ;
+    yawl:name ?name ;
+    yawl:id ?id .
+}
