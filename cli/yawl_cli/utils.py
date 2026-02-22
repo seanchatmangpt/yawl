@@ -130,8 +130,10 @@ class Config(BaseModel):
 
             except yaml.YAMLError as e:
                 error_msg = f"Invalid YAML in {config_path}: {e}"
-                if hasattr(e, 'problem_mark'):
-                    error_msg += f"\nLine {e.problem_mark.line + 1}: {e.problem}"
+                problem_mark = getattr(e, 'problem_mark', None)
+                problem = getattr(e, 'problem', None)
+                if problem_mark is not None and problem is not None:
+                    error_msg += f"\nLine {problem_mark.line + 1}: {problem}"
                 error_msg += "\nPlease fix the YAML syntax or delete the file to regenerate."
                 raise RuntimeError(error_msg)
             except (OSError, IOError, PermissionError) as e:
@@ -363,7 +365,19 @@ def load_facts(facts_dir: Path, fact_name: str) -> Dict[str, Any]:
             f"Check directory permissions."
         )
 
-    fact_file = facts_dir / fact_name
+    fact_file = (facts_dir / fact_name).resolve()
+
+    # Validate resolved path stays within facts directory (prevent path traversal)
+    facts_dir_resolved = facts_dir.resolve()
+    try:
+        fact_file.relative_to(facts_dir_resolved)
+    except ValueError:
+        raise RuntimeError(
+            f"Path traversal detected: {fact_name!r} resolves outside facts directory.\n"
+            f"Resolved path: {fact_file}\n"
+            f"Facts directory: {facts_dir_resolved}\n"
+            f"Fact names must not contain '..' or escape the facts directory."
+        )
 
     if not fact_file.exists():
         available = list(facts_dir.glob("*.json"))

@@ -399,12 +399,14 @@ class TestDirectoryOperations:
 
     def test_recursive_glob(self, temp_project_dir: Path) -> None:
         """Recursive glob pattern."""
-        (temp_project_dir / "src" / "main").mkdir(parents=True)
-        (temp_project_dir / "src" / "main" / "Code.java").write_text("code")
-        (temp_project_dir / "src" / "test").mkdir(parents=True)
-        (temp_project_dir / "src" / "test" / "Test.java").write_text("test")
+        # Create custom directory for this test
+        glob_dir = temp_project_dir / "glob_test"
+        (glob_dir / "src" / "main").mkdir(parents=True, exist_ok=True)
+        (glob_dir / "src" / "main" / "Code.java").write_text("code")
+        (glob_dir / "src" / "test").mkdir(parents=True, exist_ok=True)
+        (glob_dir / "src" / "test" / "Test.java").write_text("test")
 
-        java_files = list(temp_project_dir.glob("**/*.java"))
+        java_files = list(glob_dir.glob("**/*.java"))
 
         assert len(java_files) >= 2
         names = [f.name for f in java_files]
