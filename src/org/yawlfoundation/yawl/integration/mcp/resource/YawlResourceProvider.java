@@ -111,7 +111,10 @@ public class YawlResourceProvider {
             "Loaded Specifications",
             "All workflow specifications currently loaded in the YAWL engine",
             "application/json",
-            null
+            null,  // encoding
+            0L,    // comment
+            null,  // annotations
+            Map.of()  // metadata
         );
 
         return new McpServerFeatures.SyncResourceSpecification(resource, (exchange, request) -> {
@@ -161,7 +164,10 @@ public class YawlResourceProvider {
             "Running Cases",
             "All currently running workflow cases in the YAWL engine",
             "application/json",
-            null
+            null,  // encoding
+            0L,    // comment
+            null,  // annotations
+            Map.of()  // metadata
         );
 
         return new McpServerFeatures.SyncResourceSpecification(resource, (exchange, request) -> {
@@ -196,7 +202,10 @@ public class YawlResourceProvider {
             "Live Work Items",
             "All live work items across all running cases in the YAWL engine",
             "application/json",
-            null
+            null,  // encoding
+            0L,    // comment
+            null,  // annotations
+            Map.of()  // metadata
         );
 
         return new McpServerFeatures.SyncResourceSpecification(resource, (exchange, request) -> {
@@ -258,7 +267,8 @@ public class YawlResourceProvider {
             null,
             "Case state and work items for a specific running case",
             "application/json",
-            null
+            null,  // metadata
+            null   // comment
         );
 
         return new McpServerFeatures.SyncResourceTemplateSpecification(template, (exchange, request) -> {
@@ -326,7 +336,8 @@ public class YawlResourceProvider {
             null,
             "Case variable data for a specific running case",
             "application/json",
-            null
+            null,  // metadata
+            null   // comment
         );
 
         return new McpServerFeatures.SyncResourceTemplateSpecification(template, (exchange, request) -> {
@@ -370,7 +381,8 @@ public class YawlResourceProvider {
             null,
             "Detailed information about a specific work item",
             "application/json",
-            null
+            null,  // metadata
+            null   // comment
         );
 
         return new McpServerFeatures.SyncResourceTemplateSpecification(template, (exchange, request) -> {

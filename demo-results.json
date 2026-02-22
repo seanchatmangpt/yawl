@@ -1,0 +1,1 @@
+{"version": "1.0.0","timestamp": "2026-02-22T08:38:16Z","totalPatterns": 2,"successfulPatterns": 1,"failedPatterns": 1,"executionTimeSeconds": 2,"results": [{"patternId": "WCP-1","status": "SUCCESS"},{"patternId": "WCP-2","status": "FAILED"}],"successRate": 50}

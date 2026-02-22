@@ -137,32 +137,45 @@ public class LaunchCaseTool implements YawlMcpTool {
             // Check for YAWL engine errors
             if (caseId == null || caseId.contains("<failure>")) {
                 return new McpSchema.CallToolResult(
-                    "Failed to launch case. YAWL engine response: " + caseId,
-                    true  // isError
+                    List.of(new McpSchema.TextContent("Failed to launch case. YAWL engine response: " + caseId)),
+                    false,  // isError
+                    null,   // structuredContent
+                    null    // meta
                 );
             }
 
             // Return success result
             String result = formatSuccessResult(caseId, specId, specVersion, specUri);
-            return new McpSchema.CallToolResult(result, false);
+            return new McpSchema.CallToolResult(
+                List.of(new McpSchema.TextContent(result)),
+                false,  // isError
+                null,   // structuredContent
+                null    // meta
+            );
 
         } catch (IllegalArgumentException e) {
             // Parameter validation errors
             return new McpSchema.CallToolResult(
-                "Invalid parameters: " + e.getMessage(),
-                true
+                List.of(new McpSchema.TextContent("Invalid parameters: " + e.getMessage())),
+                true,  // isError
+                null,   // structuredContent
+                null    // meta
             );
         } catch (IllegalStateException e) {
             // Session/connection errors
             return new McpSchema.CallToolResult(
-                "YAWL connection error: " + e.getMessage(),
-                true
+                List.of(new McpSchema.TextContent("YAWL connection error: " + e.getMessage())),
+                true,  // isError
+                null,   // structuredContent
+                null    // meta
             );
         } catch (Exception e) {
             // Unexpected errors
             return new McpSchema.CallToolResult(
-                "Error launching case: " + e.getMessage(),
-                true
+                List.of(new McpSchema.TextContent("Error launching case: " + e.getMessage())),
+                true,  // isError
+                null,   // structuredContent
+                null    // meta
             );
         }
     }

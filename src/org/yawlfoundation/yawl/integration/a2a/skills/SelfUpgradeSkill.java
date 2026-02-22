@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.integration.a2a.skills;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;

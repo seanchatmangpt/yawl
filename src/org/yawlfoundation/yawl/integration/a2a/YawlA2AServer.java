@@ -29,7 +29,8 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+// ZaiFunctionService is optional - loaded via reflection when available
+// import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
@@ -89,7 +90,8 @@ public class YawlA2AServer {
     private final String yawlUsername;
     private final String yawlPassword;
     private final int port;
-    private final ZaiFunctionService zaiFunctionService;
+    private final Object zaiFunctionService;  // ZaiFunctionService via reflection
+    private final java.lang.reflect.Method zaiProcessMethod;  // Cached method
     private final A2AAuthenticationProvider authProvider;
 
     // Handoff services
@@ -141,12 +143,27 @@ public class YawlA2AServer {
         this.port = port;
         this.authProvider = authProvider;
 
+        // Load ZaiFunctionService via reflection since it may not be available
         String zaiApiKey = System.getenv("ZAI_API_KEY");
         if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
-            this.zaiFunctionService = new ZaiFunctionService(
-                zaiApiKey, yawlEngineUrl, username, password);
+            Object service = null;
+            java.lang.reflect.Method method = null;
+            try {
+                Class<?> zaiClass = Class.forName("org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService");
+                service = zaiClass.getConstructor(String.class, String.class, String.class, String.class)
+                    .newInstance(zaiApiKey, yawlEngineUrl, username, password);
+                method = zaiClass.getMethod("processWithFunctions", String.class);
+                _logger.info("ZaiFunctionService loaded successfully");
+            } catch (ClassNotFoundException e) {
+                _logger.warn("ZaiFunctionService not available - ZAI features disabled");
+            } catch (ReflectiveOperationException e) {
+                _logger.warn("Failed to instantiate ZaiFunctionService: {}", e.getMessage());
+            }
+            this.zaiFunctionService = service;
+            this.zaiProcessMethod = method;
         } else {
             this.zaiFunctionService = null;
+            this.zaiProcessMethod = null;
         }
     }
 

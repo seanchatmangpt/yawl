@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -21,7 +22,6 @@ import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import io.modelcontextprotocol.client.transport.ServerParameters;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
-import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.spec.McpSchema;
 
 /**
@@ -101,7 +101,9 @@ public class ResilientMcpClientWrapper implements AutoCloseable {
             properties.fallback() != null
                 ? properties.fallback()
                 : CircuitBreakerProperties.FallbackConfig.defaults());
-        this.jsonMapper = new JacksonMcpJsonMapper(new ObjectMapper());
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        this.jsonMapper = new JacksonMcpJsonMapper(mapper);
 
         LOGGER.info("Initialized resilient MCP client wrapper with circuit breaker enabled: {}",
                    properties.enabled());

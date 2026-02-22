@@ -13,6 +13,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.CallToolRequest;
 
 /**
  * Static factory class that creates all YAWL workflow tool specifications for the
@@ -107,7 +108,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("specIdentifier");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -118,10 +119,11 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specId = requireStringArg(args, "specIdentifier");
-                    String specVersion = optionalStringArg(args, "specVersion", "0.1");
-                    String specUri = optionalStringArg(args, "specUri", specId);
-                    String caseData = optionalStringArg(args, "caseData", null);
+                    Map<String, Object> params = args.arguments();
+                    String specId = requireStringArg(params, "specIdentifier");
+                    String specVersion = optionalStringArg(params, "specVersion", "0.1");
+                    String specUri = optionalStringArg(params, "specUri", specId);
+                    String caseData = optionalStringArg(params, "caseData", null);
 
                     YSpecificationID ySpecId = new YSpecificationID(
                         specId, specVersion, specUri);
@@ -131,17 +133,20 @@ public final class YawlToolSpecifications {
 
                     if (caseId == null || caseId.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
-                            "Failed to launch case: " + caseId, true);
+                            List.of(new McpSchema.TextContent("Failed to launch case: " + caseId)),
+                            true, null, Map.of());
                     }
 
                     return new McpSchema.CallToolResult(
-                        "Case launched successfully. Case ID: " + caseId +
-                        " | Specification: " + specId +
-                        " (version " + specVersion + ", URI: " + specUri + ")",
-                        false);
+                        List.of(new McpSchema.TextContent(
+                            "Case launched successfully. Case ID: " + caseId +
+                            " | Specification: " + specId +
+                            " (version " + specVersion + ", URI: " + specUri + ")")),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error launching case: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent("Error launching case: " + e.getMessage())),
+                        true, null, Map.of());
                 }
             }
         );
@@ -162,7 +167,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("caseId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -172,20 +177,22 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String caseId = requireStringArg(args, "caseId");
+                    String caseId = requireStringArg(params, "caseId");
                     String state = interfaceBClient.getCaseState(caseId, sessionHandle);
 
                     if (state == null || state.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
-                            "Failed to get case status for case " + caseId + ": " + state,
-                            true);
+                            List.of(new McpSchema.TextContent("Failed to get case status for case " + caseId + ": " + state)),
+                            true, null, Map.of());
                     }
 
                     return new McpSchema.CallToolResult(
-                        "Case ID: " + caseId + "\nState:\n" + state, false);
+                        List.of(new McpSchema.TextContent("Case ID: " + caseId + "\nState:\n" + state)),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error getting case status: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent("Error launching case: " + e.getMessage())),
+                        true, null, Map.of());
                 }
             }
         );
@@ -206,7 +213,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("caseId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -217,17 +224,18 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String caseId = requireStringArg(args, "caseId");
+                    String caseId = requireStringArg(params, "caseId");
                     String result = interfaceBClient.cancelCase(caseId, sessionHandle);
 
                     if (result == null || result.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
-                            "Failed to cancel case " + caseId + ": " + result, true);
+                            List.of(new McpSchema.TextContent("Failed to cancel case " + caseId + ": " + result)),
+                            true, null, Map.of());
                     }
 
                     return new McpSchema.CallToolResult(
-                        "Case " + caseId + " cancelled successfully. Engine response: " + result,
-                        false);
+                        List.of(new McpSchema.TextContent("Case " + caseId + " cancelled successfully. Engine response: " + result)),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         "Error cancelling case: " + e.getMessage(), true);
@@ -247,7 +255,7 @@ public final class YawlToolSpecifications {
         Map<String, Object> props = new LinkedHashMap<>();
         List<String> required = List.of();
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -264,7 +272,8 @@ public final class YawlToolSpecifications {
 
                     if (specs == null || specs.isEmpty()) {
                         return new McpSchema.CallToolResult(
-                            "No specifications currently loaded in the YAWL engine.", false);
+                            List.of(new McpSchema.TextContent("No specifications currently loaded in the YAWL engine.")),
+                            false, null, Map.of());
                     }
 
                     StringBuilder sb = new StringBuilder();
@@ -292,7 +301,9 @@ public final class YawlToolSpecifications {
                         sb.append("\n");
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString().trim(), false);
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(sb.toString().trim())),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         "Error listing specifications: " + e.getMessage(), true);
@@ -322,7 +333,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("specIdentifier");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -333,9 +344,10 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specId = requireStringArg(args, "specIdentifier");
-                    String specVersion = optionalStringArg(args, "specVersion", "0.1");
-                    String specUri = optionalStringArg(args, "specUri", specId);
+                    Map<String, Object> params = args.arguments();
+                    String specId = requireStringArg(params, "specIdentifier");
+                    String specVersion = optionalStringArg(params, "specVersion", "0.1");
+                    String specUri = optionalStringArg(params, "specUri", specId);
 
                     YSpecificationID ySpecId = new YSpecificationID(
                         specId, specVersion, specUri);
@@ -348,11 +360,12 @@ public final class YawlToolSpecifications {
                     }
 
                     return new McpSchema.CallToolResult(
-                        "Specification (" + specId + " v" + specVersion + "):\n\n" + spec,
-                        false);
+                        List.of(new McpSchema.TextContent("Specification (" + specId + " v" + specVersion + "):\n\n" + spec)),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error getting specification: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent("Error launching case: " + e.getMessage())),
+                        true, null, Map.of());
                 }
             }
         );
@@ -373,7 +386,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("specXml");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -384,22 +397,24 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String specXml = requireStringArg(args, "specXml");
+                    String specXml = requireStringArg(params, "specXml");
 
                     String result = interfaceAClient.uploadSpecification(
                         specXml, sessionHandle);
 
                     if (result == null || result.contains("<failure>")) {
                         return new McpSchema.CallToolResult(
-                            "Failed to upload specification: " + result, true);
+                            List.of(new McpSchema.TextContent("Failed to upload specification: " + result)),
+                            true, null, Map.of());
                     }
 
                     return new McpSchema.CallToolResult(
-                        "Specification uploaded successfully. Engine response: " + result,
-                        false);
+                        List.of(new McpSchema.TextContent("Specification uploaded successfully. Engine response: " + result)),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
-                        "Error uploading specification: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent("Error launching case: " + e.getMessage())),
+                        true, null, Map.of());
                 }
             }
         );
@@ -416,7 +431,7 @@ public final class YawlToolSpecifications {
         Map<String, Object> props = new LinkedHashMap<>();
         List<String> required = List.of();
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -453,7 +468,9 @@ public final class YawlToolSpecifications {
                         sb.append("\n");
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString().trim(), false);
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(sb.toString().trim())),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         "Error getting work items: " + e.getMessage(), true);
@@ -477,7 +494,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("caseId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -487,7 +504,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String caseId = requireStringArg(args, "caseId");
+                    String caseId = requireStringArg(params, "caseId");
 
                     List<WorkItemRecord> items =
                         interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
@@ -510,7 +527,9 @@ public final class YawlToolSpecifications {
                         sb.append("\n");
                     }
 
-                    return new McpSchema.CallToolResult(sb.toString().trim(), false);
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(sb.toString().trim())),
+                        false, null, Map.of());
                 } catch (Exception e) {
                     return new McpSchema.CallToolResult(
                         "Error getting work items for case: " + e.getMessage(), true);
@@ -534,7 +553,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("workItemId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -545,7 +564,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String workItemId = requireStringArg(args, "workItemId");
+                    String workItemId = requireStringArg(params, "workItemId");
 
                     String result = interfaceBClient.checkOutWorkItem(
                         workItemId, sessionHandle);
@@ -586,7 +605,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("workItemId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -597,8 +616,8 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String workItemId = requireStringArg(args, "workItemId");
-                    String outputData = optionalStringArg(args, "outputData", null);
+                    String workItemId = requireStringArg(params, "workItemId");
+                    String outputData = optionalStringArg(params, "outputData", null);
 
                     String result = interfaceBClient.checkInWorkItem(
                         workItemId, outputData, null, sessionHandle);
@@ -631,7 +650,7 @@ public final class YawlToolSpecifications {
         Map<String, Object> props = new LinkedHashMap<>();
         List<String> required = List.of();
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -673,7 +692,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("caseId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -684,7 +703,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String caseId = requireStringArg(args, "caseId");
+                    String caseId = requireStringArg(params, "caseId");
                     String data = interfaceBClient.getCaseData(caseId, sessionHandle);
 
                     if (data == null || data.contains("<failure>")) {
@@ -717,7 +736,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("caseId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -728,7 +747,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String caseId = requireStringArg(args, "caseId");
+                    String caseId = requireStringArg(params, "caseId");
 
                     List<WorkItemRecord> items =
                         interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
@@ -783,7 +802,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("caseId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -794,7 +813,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String caseId = requireStringArg(args, "caseId");
+                    String caseId = requireStringArg(params, "caseId");
 
                     List<WorkItemRecord> items =
                         interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
@@ -849,7 +868,7 @@ public final class YawlToolSpecifications {
 
         List<String> required = List.of("workItemId");
         McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
-            "object", props, required, false, null, null);
+            "object", props, required, false, null, Map.of());
 
         return new McpServerFeatures.SyncToolSpecification(
             McpSchema.Tool.builder()
@@ -860,7 +879,7 @@ public final class YawlToolSpecifications {
                 .build(),
             (exchange, args) -> {
                 try {
-                    String workItemId = requireStringArg(args, "workItemId");
+                    String workItemId = requireStringArg(params, "workItemId");
 
                     String result = interfaceBClient.skipWorkItem(
                         workItemId, sessionHandle);

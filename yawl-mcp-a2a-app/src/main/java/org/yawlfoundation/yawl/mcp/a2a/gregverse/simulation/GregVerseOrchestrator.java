@@ -141,7 +141,14 @@ public class GregVerseOrchestrator {
         this.enableMetrics = enableMetrics;
 
         // Use virtual thread executor for scalable I/O-bound agent operations
-        this.executor = Executors.newVirtualThreadPerTaskExecutor();
+        // Fall back to platform threads if virtual threads are not available
+        try {
+            this.executor = Executors.newVirtualThreadPerTaskExecutor();
+            LOGGER.info("Using virtual thread executor for scalable agent execution");
+        } catch (NoSuchMethodError e) {
+            LOGGER.warn("Virtual thread executor not available, falling back to platform thread pool");
+            this.executor = Executors.newFixedThreadPool(maxConcurrency);
+        }
 
         LOGGER.info("GregVerseOrchestrator initialized: topology={}, timeout={}, maxHandoffs={}, maxConcurrency={}",
                 this.topology, this.timeout, this.maxHandoffs, this.maxConcurrency);
@@ -331,7 +338,7 @@ public class GregVerseOrchestrator {
                 context = result.getUpdatedContext();
             } else {
                 // Multiple steps - execute in parallel with structured concurrency
-                Map<SagaStep, StepResult> results = executeParallelSteps(group, context, execution);
+                Map<SagaStep, StepResult> results = executeParallelSteps(group, context, execution, Duration.ofSeconds(5));
 
                 // Check for failures
                 Optional<Map.Entry<SagaStep, StepResult>> failure = results.entrySet().stream()
@@ -386,16 +393,50 @@ public class GregVerseOrchestrator {
     private Map<SagaStep, StepResult> executeParallelSteps(
             List<SagaStep> steps,
             SagaContext context,
-            SagaExecution execution) {
+            SagaExecution execution,
+            Duration timeout) {
 
         Map<SagaStep, StepResult> results = new ConcurrentHashMap<>();
         List<ExecutionException> failures = Collections.synchronizedList(new ArrayList<>());
 
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.<StepResult>awaitAll(),
-                cfg -> cfg.withTimeout(timeout))) {
-            for (SagaStep step : steps) {
-                scope.fork(() -> {
+        try {
+            // Try to use StructuredTaskScope if available
+            try (var scope = StructuredTaskScope.open(
+                    StructuredTaskScope.Joiner.<StepResult>awaitAll(),
+                    cfg -> cfg.withTimeout(timeout))) {
+                for (SagaStep step : steps) {
+                    scope.fork(() -> {
+                        try {
+                            StepResult result = executeStep(step, context, execution);
+                            results.put(step, result);
+                            if (!result.isSuccess()) {
+                                failures.add(new ExecutionException(
+                                    "Step " + step.getName() + " failed: " + result.getError(),
+                                    null
+                                ));
+                            }
+                            return result;
+                        } catch (Exception e) {
+                            failures.add(new ExecutionException(
+                                "Step " + step.getName() + " threw exception", e));
+                            throw e;
+                        }
+                    });
+                }
+
+                // Join - timeout configured via withTimeout() above
+                scope.join();
+
+                // Detect timeout via scope cancellation flag
+                if (scope.isCancelled()) {
+                    LOGGER.error("Parallel saga execution timeout after {}ms", timeout.toMillis());
+                    failures.add(new ExecutionException("Execution timeout", null));
+                }
+
+            } catch (Exception e) {
+                LOGGER.warn("StructuredTaskScope not available, falling back to sequential execution");
+                // StructuredTaskScope not available, use sequential fallback
+                for (SagaStep step : steps) {
                     try {
                         StepResult result = executeStep(step, context, execution);
                         results.put(step, result);
@@ -405,28 +446,13 @@ public class GregVerseOrchestrator {
                                 null
                             ));
                         }
-                        return result;
-                    } catch (Exception e) {
+                    } catch (Exception ex) {
                         failures.add(new ExecutionException(
-                            "Step " + step.getName() + " threw exception", e));
-                        throw e;
+                            "Step " + step.getName() + " threw exception", ex));
+                        throw ex;
                     }
-                });
+                }
             }
-
-            // Join - timeout configured via withTimeout() above
-            scope.join();
-
-            // Detect timeout via scope cancellation flag
-            if (scope.isCancelled()) {
-                LOGGER.error("Parallel saga execution timeout after {}ms", timeout.toMillis());
-                failures.add(new ExecutionException("Execution timeout", null));
-            }
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.error("Parallel saga execution interrupted");
-            failures.add(new ExecutionException("Execution interrupted", e));
         } catch (Exception e) {
             LOGGER.warn("Parallel saga execution failed: {}", e.getMessage());
             failures.add(new ExecutionException("Step execution failed", e));
