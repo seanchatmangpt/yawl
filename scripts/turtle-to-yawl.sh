@@ -264,27 +264,27 @@ step_copy_to_ontology() {
 # ── Step 3: Run ggen synchronization ─────────────────────────────────────────
 
 step_ggen_sync() {
-    log_section "STEP 3: Run ggen Synchronization"
+    log_section "STEP 3: Generate YAWL from Turtle"
 
-    # Pass verbose flag to ggen if enabled
-    local ggen_args=()
+    # Pass verbose flag if enabled
+    local gen_args=()
     if [[ "$VERBOSE" == "1" ]]; then
-        ggen_args+=(--verbose)
+        gen_args+=(--verbose)
     fi
 
-    log_info "Generating YAWL from Turtle specification..."
-    log_debug "Running: bash ${SCRIPT_DIR}/ggen-sync.sh ${ggen_args[*]}"
+    log_info "Generating YAWL XML from Turtle specification..."
+    log_debug "Running: bash ${SCRIPT_DIR}/generate-yawl.sh ${TURTLE_SPEC} ${YAWL_OUTPUT} ${gen_args[*]}"
 
-    if ! bash "${SCRIPT_DIR}/ggen-sync.sh" "${ggen_args[@]}"; then
-        GGEN_EXIT=$?
-        log_error "ggen synchronization failed with exit code: $GGEN_EXIT"
+    if ! bash "${SCRIPT_DIR}/generate-yawl.sh" "$TURTLE_SPEC" "$YAWL_OUTPUT" "${gen_args[@]}"; then
+        GEN_EXIT=$?
+        log_error "YAWL generation failed with exit code: $GEN_EXIT"
 
         # Determine if this is a transient or fatal error
-        if [[ $GGEN_EXIT -eq 1 ]]; then
+        if [[ $GEN_EXIT -eq 1 ]]; then
             log_warn "Transient error (may be retryable)"
             exit 1
         else
-            log_error "Fatal error (check ggen configuration and inputs)"
+            log_error "Fatal error (check Turtle spec and templates)"
             exit 2
         fi
     fi

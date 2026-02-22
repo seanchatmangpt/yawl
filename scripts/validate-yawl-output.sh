@@ -104,10 +104,13 @@ validate_yawl_elements() {
     # Check for proper closing tags (basic sanity)
     local open_tags
     local close_tags
-    open_tags=$(grep -o "<[^/>]*>" "$yawl_file" | wc -l)
-    close_tags=$(grep -o "</[^>]*>" "$yawl_file" | wc -l)
+    open_tags=$(grep -o "<[^/>]*>" "$yawl_file" | wc -l | awk '{print $1}')
+    close_tags=$(grep -o "</[^>]*>" "$yawl_file" | wc -l | awk '{print $1}')
 
-    if [[ $open_tags -lt $close_tags ]]; then
+    open_tags="${open_tags:-0}"
+    close_tags="${close_tags:-0}"
+
+    if (( open_tags < close_tags )); then
         echo "FAIL: Unmatched closing tags (open: $open_tags, close: $close_tags)"
         ((errors++))
     else
@@ -123,18 +126,23 @@ validate_yawl_structure() {
 
     info "Validating YAWL workflow structure..."
 
-    # Count critical workflow elements (using tr to strip whitespace safely)
+    # Count critical workflow elements using awk for clean numeric output
     local spec_count net_count task_count condition_count
 
-    spec_count=$(grep -c "<specification\|<Specification" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
-    net_count=$(grep -c "<net\|<Net" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
-    task_count=$(grep -c "<task\|<Task" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
-    condition_count=$(grep -c "<condition\|<Condition" "$yawl_file" 2>/dev/null | tr -d ' \n' || echo "0")
+    spec_count=$(grep -c "<specification\|<Specification" "$yawl_file" 2>/dev/null | awk '{print $1}' || echo "0")
+    net_count=$(grep -c "<net\|<Net" "$yawl_file" 2>/dev/null | awk '{print $1}' || echo "0")
+    task_count=$(grep -c "<task\|<Task" "$yawl_file" 2>/dev/null | awk '{print $1}' || echo "0")
+    condition_count=$(grep -c "<condition\|<Condition" "$yawl_file" 2>/dev/null | awk '{print $1}' || echo "0")
+
+    spec_count="${spec_count:-0}"
+    net_count="${net_count:-0}"
+    task_count="${task_count:-0}"
+    condition_count="${condition_count:-0}"
 
     info "Found: $spec_count specification(s), $net_count net(s), $task_count task(s), $condition_count condition(s)"
 
     # A minimal YAWL spec should have at least a specification or net
-    if [[ $spec_count -eq 0 ]] && [[ $net_count -eq 0 ]]; then
+    if (( spec_count == 0 )) && (( net_count == 0 )); then
         echo "FAIL: No specification or net elements found"
         ((errors++))
     else
@@ -142,11 +150,12 @@ validate_yawl_structure() {
     fi
 
     # If we have tasks, validate they have required attributes
-    if [[ $task_count -gt 0 ]]; then
+    if (( task_count > 0 )); then
         local task_ids_missing
-        task_ids_missing=$(grep "<task\|<Task" "$yawl_file" 2>/dev/null | grep -v "id=" | wc -l | tr -d ' \n' || echo "0")
+        task_ids_missing=$(grep "<task\|<Task" "$yawl_file" 2>/dev/null | grep -v "id=" | wc -l | awk '{print $1}' || echo "0")
+        task_ids_missing="${task_ids_missing:-0}"
 
-        if [[ $task_ids_missing -gt 0 ]]; then
+        if (( task_ids_missing > 0 )); then
             echo "WARN: Found $task_ids_missing task(s) without id attribute"
         fi
         success "Tasks present with identifiers"
