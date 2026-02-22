@@ -8,6 +8,10 @@ description = "YAWL V6 Code Analysis Observatory — fast, parallel, incremental
 name = "observatory"
 path = "src/main.rs"
 
+[[bin]]
+name = "yawl-hooks"
+path = "src/bin/yawl-hooks.rs"
+
 [profile.release]
 opt-level = 3
 lto = true

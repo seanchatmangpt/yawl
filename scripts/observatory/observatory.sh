@@ -16,21 +16,23 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BINARY="$SCRIPT_DIR/target/release/observatory"
+HOOKS_BINARY="$SCRIPT_DIR/target/release/yawl-hooks"
 
-# Detect if binary needs rebuilding
+# Detect if either binary needs rebuilding
 needs_build() {
-    [[ ! -f "$BINARY" ]] || [[ "$SCRIPT_DIR/Cargo.toml" -nt "$BINARY" ]]
+    [[ ! -f "$BINARY" ]] || [[ ! -f "$HOOKS_BINARY" ]] || [[ "$SCRIPT_DIR/Cargo.toml" -nt "$BINARY" ]]
 }
 
 if needs_build; then
-    echo "[observatory] Building Rust observatory binary (first run — ~30s)..."
+    echo "[observatory] Building Rust binaries (first run — ~30s)..."
+    echo "[observatory] Builds: observatory (facts) + yawl-hooks (Claude Code hooks)"
     echo "[observatory] Subsequent runs: <4s cold, <0.5s cached"
     cd "$SCRIPT_DIR"
     if ! cargo build --release --quiet 2>&1 | grep -v "^$" | sed 's/^/  /'; then
         echo "[observatory] ❌ Build failed" >&2
         exit 1
     fi
-    echo "[observatory] ✅ Binary built: $BINARY"
+    echo "[observatory] ✅ Binaries built: $BINARY + $HOOKS_BINARY"
 fi
 
 exec "$BINARY" --repo-root "$REPO_ROOT" "$@"
