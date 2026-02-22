@@ -267,7 +267,7 @@ jobs:
 
       - name: Build PM4Py MCP Server Container
         id: build-mcp
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: scripts/pm4py
           file: scripts/pm4py/Dockerfile.mcp
@@ -292,7 +292,7 @@ jobs:
 
       - name: Build PM4Py A2A Server Container
         id: build-a2a
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: scripts/pm4py
           file: scripts/pm4py/Dockerfile.a2a
@@ -339,7 +339,7 @@ jobs:
 
       - name: Build YAWL MCP Server Container
         id: build-mcp
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.mcp-server
@@ -355,7 +355,7 @@ jobs:
 
       - name: Build YAWL A2A Server Container
         id: build-a2a
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.a2a-server
@@ -371,7 +371,7 @@ jobs:
 
       - name: Build Agent Registry Container
         id: build-registry
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.agent-registry
