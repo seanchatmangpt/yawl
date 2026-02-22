@@ -25,8 +25,9 @@
   },
   "notes": {
     "environment": "Dual-track: Docker/DevContainer (local) + Claude Code Web (remote)",
-    "hooks": "Hyper-validation enabled: PostToolUse validates all Write/Edit operations",
-    "webSessions": "Supported via SessionStart hook (Ant install + H2 database)"
+    "hooks": "Omnipresent Rust hook system: Ψ facts injected at every prompt (65ms)",
+    "webSessions": "Supported via SessionStart hook (Maven proxy + H2 database)",
+    "hookArchitecture": "yawl-hooks binary handles UserPromptSubmit/PreToolUse/PostToolUse/Stop/PreCompact"
   },
   "hooks": {
     "SessionStart": [
@@ -41,6 +42,31 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 5,
+            "statusMessage": "Ψ refreshing facts..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 5,
+            "statusMessage": "Checking shared-src blast radius..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -50,6 +76,13 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hyper-validate.sh",
             "timeout": 30,
             "statusMessage": "Validating H (Guards) - checking for anti-patterns..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 30,
+            "async": true,
+            "statusMessage": "Refreshing Ψ facts in background..."
           }
         ]
       }
@@ -62,6 +95,24 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-hook-git-check.sh",
             "timeout": 10,
             "statusMessage": "Verifying git state..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 5,
+            "statusMessage": "Ψ quality gate..."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 5,
+            "statusMessage": "Preserving Ψ facts across context compression..."
           }
         ]
       }

@@ -10,6 +10,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -340,26 +341,25 @@ public class ZaiHttpClient {
      * @throws IOException if any request fails
      */
     public List<String> createChatCompletionsBatch(List<ChatRequest> requests) throws IOException {
+        List<Callable<String>> tasks = requests.stream()
+                .<Callable<String>>map(req -> () -> executeWithRetry(req))
+                .toList();
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<String>> futures = requests.stream()
-                    .map(req -> executor.submit(() -> executeWithRetry(req)))
-                    .toList();
-
+            List<Future<String>> futures = executor.invokeAll(tasks);
             List<String> results = new java.util.ArrayList<>(futures.size());
-            for (Future<String> f : futures) {
-                results.add(f.get());
+            for (Future<String> future : futures) {
+                try {
+                    results.add(future.get());
+                } catch (ExecutionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof IOException ioe) throw ioe;
+                    throw new IOException("Batch Z.AI request failed: " + cause.getMessage(), cause);
+                }
             }
             return results;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Batch Z.AI request interrupted", e);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException ioe) throw ioe;
-            throw new IOException("Batch Z.AI request failed", cause);
-        } catch (Exception e) {
-            if (e instanceof IOException ioe) throw ioe;
-            throw new IOException("Batch Z.AI request failed", e);
         }
     }
 

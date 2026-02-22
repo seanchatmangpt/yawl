@@ -116,7 +116,6 @@ jobs:
           mvn clean compile \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -P${{ matrix.profile }} \
             -T 1.5C \
             -DskipTests=${{ github.event.inputs.skip_tests || 'false' }}
@@ -173,7 +172,6 @@ jobs:
           mvn test \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -Pjava25 \
             -T 1.5C \
             -Ddatabase.type=h2 \
@@ -306,7 +304,6 @@ jobs:
           mvn verify \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -Pjava25 \
             -Ddatabase.type=postgresql \
             -Dhibernate.dialect=org.hibernate.dialect.PostgreSQLDialect \
@@ -422,7 +419,6 @@ jobs:
           mvn clean verify \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -Pjava25 \
             jacoco:report jacoco:report-aggregate
 
@@ -627,7 +623,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Trivy Vulnerability Scanner (SARIF)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
           format: 'sarif'
@@ -645,7 +641,7 @@ jobs:
           category: 'trivy-container-scan'
 
       - name: Run Trivy Vulnerability Scanner (JSON Report)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
           format: 'json'
@@ -656,7 +652,7 @@ jobs:
         continue-on-error: ${{ github.event_name == 'pull_request' }}
 
       - name: Run Trivy Vulnerability Scanner (Table Summary)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Alpha' }}
           format: 'table'

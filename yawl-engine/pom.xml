@@ -144,6 +144,12 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
+        <!-- JSON Processing - Gson for BuildReceipt serialization -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+
         <!-- OpenTelemetry for observability -->
         <dependency>
             <groupId>io.opentelemetry</groupId>

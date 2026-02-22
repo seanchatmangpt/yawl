@@ -220,11 +220,16 @@ public class YXESBuilder {
 
 
     private XNode eventNode(String timestamp, String taskName, String transition, String instanceID) {
+        return eventNode(timestamp, taskName, transition, instanceID, "UNKNOWN");
+    }
+
+    private XNode eventNode(String timestamp, String taskName, String transition, String instanceID, String resource) {
         XNode eventNode = new XNode("event");
         eventNode.addChild(dateNode("time:timestamp", timestamp));
         eventNode.addChild(stringNode("concept:name", taskName));
         eventNode.addChild(stringNode("lifecycle:transition", transition));
         eventNode.addChild(stringNode("concept:instance", instanceID));
+        eventNode.addChild(stringNode("org:resource", resource != null ? resource : "UNKNOWN"));
         return eventNode;
     }
 

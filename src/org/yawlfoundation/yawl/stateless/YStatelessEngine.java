@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.stateless;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -383,22 +384,17 @@ public class YStatelessEngine {
 
 
     /**
-     * Launch multiple case instances in parallel using Java 25 StructuredTaskScope.
+     * Launch multiple case instances in parallel using virtual threads.
      *
-     * <p>All cases are started concurrently on virtual threads. If any single case launch
-     * fails, the scope shuts down immediately (via {@code ShutdownOnFailure}) and the
-     * first exception is re-thrown after all in-flight launches have been cancelled or
-     * completed. Callers receive the full list of runners only when every case has
-     * successfully started.</p>
-     *
-     * <h2>Thread naming</h2>
-     * <p>Each subtask virtual thread is named {@code yawl-case-launch-<caseID>} so that
-     * thread dumps and profilers can correlate threads to cases.</p>
+     * <p>All cases are started concurrently on virtual threads via a virtual-thread
+     * executor. If any single case launch fails, the first exception is re-thrown after
+     * all launches have been awaited. Callers receive the full list of runners only
+     * when every case has successfully started.</p>
      *
      * <h2>Failure semantics</h2>
-     * <p>Failure of one case does not silently skip the others. The scope's
-     * {@code ShutdownOnFailure} policy cancels the remaining subtasks and the exception
-     * propagates to the caller wrapped in {@link YStateException}.</p>
+     * <p>Failure of one case does not silently skip the others. After {@code invokeAll}
+     * completes, each Future is inspected in submission order and the first
+     * {@link ExecutionException} cause is re-thrown wrapped in {@link YStateException}.</p>
      *
      * @param spec       the YAWL specification common to all cases
      * @param caseParams list of per-case parameter strings (use {@code null} entries for defaults)
@@ -418,42 +414,47 @@ public class YStatelessEngine {
             throw new IllegalArgumentException("caseParams list must not be null or empty");
         }
 
-        // Allocate a unique case ID per entry before entering the scope
+        // Allocate a unique case ID per entry before submitting tasks
         List<String> caseIDs = new ArrayList<>(caseParams.size());
         for (int i = 0; i < caseParams.size(); i++) {
             caseIDs.add(UUID.randomUUID().toString());
         }
 
-        List<YNetRunner> runners = new ArrayList<>(caseParams.size());
-
-        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            // Submit one task per case; each runs on a virtual thread
-            List<Future<YNetRunner>> futures = new ArrayList<>(caseParams.size());
-            for (int i = 0; i < caseParams.size(); i++) {
-                final String caseID = caseIDs.get(i);
-                final String params  = caseParams.get(i);
-                futures.add(executor.submit(() -> _engine.launchCase(spec, caseID, params, null)));
-            }
-
-            // Collect results in submission order; propagate first failure
-            for (Future<YNetRunner> future : futures) {
-                try {
-                    runners.add(future.get());
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new YStateException("Parallel case launch interrupted", ie);
-                } catch (ExecutionException ee) {
-                    Throwable cause = ee.getCause();
-                    throw new YStateException("Case launch failed: " + cause.getMessage(), cause);
-                }
-            }
-
-        } catch (YStateException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new YStateException("Unexpected error in parallel case launch: " + ex.getMessage(), ex);
+        // Build callable list — each launches one case on a virtual thread
+        List<Callable<YNetRunner>> tasks = new ArrayList<>(caseParams.size());
+        for (int i = 0; i < caseParams.size(); i++) {
+            final String caseID = caseIDs.get(i);
+            final String params = caseParams.get(i);
+            tasks.add(() -> _engine.launchCase(spec, caseID, params, null));
         }
 
+        List<Future<YNetRunner>> futures;
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
+                futures = executor.invokeAll(tasks);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new YStateException("Parallel case launch interrupted", ie);
+            }
+        }
+
+        // Collect results in submission order; rethrow first failure as YStateException
+        List<YNetRunner> runners = new ArrayList<>(futures.size());
+        for (Future<YNetRunner> future : futures) {
+            try {
+                runners.add(future.get());
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new YStateException("Parallel case launch interrupted during result collection", ie);
+            } catch (ExecutionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof YStateException yse) throw yse;
+                if (cause instanceof YDataStateException ydse) throw ydse;
+                if (cause instanceof YEngineStateException yese) throw yese;
+                if (cause instanceof YQueryException yqe) throw yqe;
+                throw new YStateException("Case launch failed: " + cause.getMessage(), cause);
+            }
+        }
         return runners;
     }
 

@@ -162,18 +162,16 @@ public class ZaiService {
                 ChatRequest req = new ChatRequest(model, buildMessageList(message2));
                 return httpClient.createChatCompletionRecord(req).content();
             });
-
-            return new String[]{ future1.get(), future2.get() };
+            try {
+                return new String[]{ future1.get(), future2.get() };
+            } catch (ExecutionException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof IOException ioe) throw ioe;
+                throw new IOException("Parallel Z.AI call failed: " + cause.getMessage(), cause);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Parallel chat interrupted", e);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException ioe) throw ioe;
-            throw new IOException("Parallel Z.AI call failed", cause);
-        } catch (Exception e) {
-            if (e instanceof IOException ioe) throw ioe;
-            throw new IOException("Parallel Z.AI call failed", e);
         }
     }
 
