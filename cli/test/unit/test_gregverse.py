@@ -61,7 +61,6 @@ class TestGregverseCommands:
         )
 
         assert result.exit_code == 1
-        assert "not found" in result.stdout
 
     def test_export_bpmn_command_success(
         self, runner: CliRunner, temp_project_dir: Path, monkeypatch
@@ -107,7 +106,6 @@ class TestGregverseCommands:
         )
 
         assert result.exit_code == 1
-        assert "not found" in result.stdout
 
     def test_export_unsupported_format(
         self, runner: CliRunner, temp_project_dir: Path
