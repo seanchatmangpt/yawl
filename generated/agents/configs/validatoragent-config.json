@@ -1,0 +1,27 @@
+{
+  "id": "ValidatorAgent",
+  "name": "Validator Agent",
+  "description": "Validates task outputs and enforces quality gates",
+  "protocol": "http://yawl.io/a2a#ValidationProtocol",
+  "mcp_server": "",
+  "endpoints": [
+    {
+      "name": "validator/check",
+      "method": "POST",
+      "message_type": "ValidationRequest",
+      "response_time": 1000
+    },
+    {
+      "name": "validator/gates",
+      "method": "POST",
+      "message_type": "GateCheck",
+      "response_time": 500
+    },
+    {
+      "name": "validator/compliance",
+      "method": "GET",
+      "message_type": "ComplianceReport",
+      "response_time": 2000
+    }
+  ]
+}
