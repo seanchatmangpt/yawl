@@ -15,23 +15,23 @@
 #}
 {% set processed_decomps = [] %}
 {% for task in tasks %}
-  {% set decomp_id = task['?decomposesTo'] | default(value=task.decomposesTo) | default(value=task['?taskId'] | default(value=task.taskId)) %}
+  {% set decomp_id = task.get('?decomposesTo') or task.get('decomposesTo') or task.get('?taskId') or task.get('taskId') %}
   {% if decomp_id not in processed_decomps %}
     {% set _ = processed_decomps.append(decomp_id) %}
 
     {# Simple Task Decomposition (WebServiceGatewayFactsType) #}
     <decomposition id="{{ decomp_id }}" xsi:type="WebServiceGatewayFactsType">
-      {% if task['?taskName'] or task.taskName %}
-      <name>{{ task['?taskName'] | default(value=task.taskName) }}</name>
+      {% if task.get('?taskName') or task.get('taskName') %}
+      <name>{{ task.get('?taskName') or task.get('taskName') }}</name>
       {% endif %}
 
       {# Input Parameters (from task's incoming data mappings) #}
       {% set param_index = 0 %}
-      {% for variable in variables | default(value=[]) %}
+      {% for variable in (variables or []) %}
       <inputParam>
         <index>{{ param_index }}</index>
-        <name>{{ variable['?varName'] | default(value=variable.varName) }}</name>
-        <type>{{ variable['?varType'] | default(value=variable.varType) | default(value="string") }}</type>
+        <name>{{ variable.get('?varName') or variable.get('varName') }}</name>
+        <type>{{ variable.get('?varType') or variable.get('varType') or "string" }}</type>
         <namespace>http://www.w3.org/2001/XMLSchema</namespace>
       </inputParam>
       {% set param_index = param_index + 1 %}
@@ -39,11 +39,11 @@
 
       {# Output Parameters (from task's outgoing data mappings) #}
       {% set out_param_index = 0 %}
-      {% for variable in variables | default(value=[]) %}
+      {% for variable in (variables or []) %}
       <outputParam>
         <index>{{ out_param_index }}</index>
-        <name>{{ variable['?varName'] | default(value=variable.varName) }}</name>
-        <type>{{ variable['?varType'] | default(value=variable.varType) | default(value="string") }}</type>
+        <name>{{ variable.get('?varName') or variable.get('varName') }}</name>
+        <type>{{ variable.get('?varType') or variable.get('varType') or "string" }}</type>
         <namespace>http://www.w3.org/2001/XMLSchema</namespace>
       </outputParam>
       {% set out_param_index = out_param_index + 1 %}
