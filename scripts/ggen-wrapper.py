@@ -200,11 +200,12 @@ class Generator:
     """Main orchestrator for Turtle → Template → Output generation."""
 
     def __init__(self, template_file: str, input_file: str, output_file: str,
-                 verbose: bool = False) -> None:
+                 sparql_file: Optional[str] = None, verbose: bool = False) -> None:
         """Initialize generator with input/output configuration."""
         self.template_file = template_file
         self.input_file = input_file
         self.output_file = output_file
+        self.sparql_file = sparql_file
         self.verbose = verbose
 
         if verbose:
@@ -215,6 +216,8 @@ class Generator:
             raise FileNotFoundError(f"Input file not found: {input_file}")
         if not Path(template_file).exists():
             raise FileNotFoundError(f"Template file not found: {template_file}")
+        if sparql_file and not Path(sparql_file).exists():
+            raise FileNotFoundError(f"SPARQL query file not found: {sparql_file}")
 
     def generate(self) -> None:
         """Execute generation pipeline."""
@@ -226,22 +229,79 @@ class Generator:
         # Step 2: Load template
         template_renderer = TemplateRenderer(str(Path(self.template_file).parent))
 
-        # Step 3: Prepare context
-        # For now, extract basic statistics from graph
-        context = self._prepare_context(rdf_handler)
+        # Step 3a: If SPARQL query provided, use looped generation
+        if self.sparql_file:
+            self._generate_with_sparql_loop(rdf_handler, template_renderer)
+        else:
+            # Step 3b: Prepare context for single generation
+            context = self._prepare_context(rdf_handler)
 
-        # Step 4: Render template
-        output_content = template_renderer.render(self.template_file, context)
+            # Step 4: Render template
+            output_content = template_renderer.render(self.template_file, context)
 
-        # Step 5: Write output
-        output_path = Path(self.output_file)
+            # Step 5: Write output
+            self._write_output(self.output_file, output_content)
+
+    def _generate_with_sparql_loop(self, rdf_handler: RDFGraphHandler,
+                                    template_renderer: TemplateRenderer) -> None:
+        """Generate multiple outputs using SPARQL query looping."""
+        log.info(f"SPARQL-driven generation mode")
+
+        # Load SPARQL query
+        sparql_query = SPARQLQueryLoader.load_query_file(self.sparql_file)
+        log.info(f"Loaded SPARQL query ({len(sparql_query)} bytes)")
+
+        # Execute SPARQL query
+        query_results = rdf_handler.query_select(sparql_query)
+        log.info(f"SPARQL query returned {len(query_results)} result rows")
+
+        if not query_results:
+            log.warning("SPARQL query returned no results")
+            return
+
+        # Ensure output is a directory
+        output_dir = Path(self.output_file)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # For each result row, render template
+        for idx, row in enumerate(query_results):
+            # Prepare context from this row
+            context = self._prepare_sparql_context(row)
+
+            # Render template
+            output_content = template_renderer.render(self.template_file, context)
+
+            # Determine output filename from context
+            filename = context.get("agent_name", f"agent_{idx}").replace(" ", "_").lower()
+            output_file = output_dir / f"{filename}_workflow.yawl"
+
+            # Write output
+            self._write_output(str(output_file), output_content)
+
+    def _prepare_sparql_context(self, sparql_row: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare template context from SPARQL result row."""
+        # Remove '?' prefix from SPARQL variable names
+        context = {}
+        for key, value in sparql_row.items():
+            clean_key = key.lstrip('?')
+            context[clean_key] = value
+
+        # Add standard metadata
+        context["generator"] = "ggen-wrapper"
+        context["version"] = VERSION
+
+        return context
+
+    def _write_output(self, output_file: str, content: str) -> None:
+        """Write content to output file."""
+        output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            log.info(f"Writing output to: {self.output_file}")
+            log.info(f"Writing output to: {output_file}")
             with open(output_path, 'w') as f:
-                f.write(output_content)
-            log.info(f"Output written successfully ({len(output_content)} bytes)")
+                f.write(content)
+            log.info(f"Output written successfully ({len(content)} bytes)")
         except Exception as e:
             log.error(f"Failed to write output: {e}")
             raise
@@ -311,6 +371,7 @@ def main() -> int:
                 template_file=args.template,
                 input_file=args.input,
                 output_file=args.output,
+                sparql_file=getattr(args, 'sparql', None),
                 verbose=args.verbose
             )
             gen.generate()
