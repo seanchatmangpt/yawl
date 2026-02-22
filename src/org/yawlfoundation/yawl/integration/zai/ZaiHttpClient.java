@@ -10,7 +10,10 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
@@ -337,18 +340,23 @@ public class ZaiHttpClient {
      * @throws IOException if any request fails
      */
     public List<String> createChatCompletionsBatch(List<ChatRequest> requests) throws IOException {
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.<String>awaitAllSuccessfulOrThrow())) {
-            List<StructuredTaskScope.Subtask<String>> tasks = requests.stream()
-                    .map(req -> scope.fork(() -> executeWithRetry(req)))
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<String>> futures = requests.stream()
+                    .map(req -> executor.submit(() -> executeWithRetry(req)))
                     .toList();
 
-            scope.join();
-
-            return tasks.stream().map(StructuredTaskScope.Subtask::get).toList();
+            List<String> results = new java.util.ArrayList<>(futures.size());
+            for (Future<String> f : futures) {
+                results.add(f.get());
+            }
+            return results;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Batch Z.AI request interrupted", e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException ioe) throw ioe;
+            throw new IOException("Batch Z.AI request failed", cause);
         } catch (Exception e) {
             if (e instanceof IOException ioe) throw ioe;
             throw new IOException("Batch Z.AI request failed", e);

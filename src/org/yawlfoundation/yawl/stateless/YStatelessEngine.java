@@ -3,7 +3,10 @@ package org.yawlfoundation.yawl.stateless;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.yawlfoundation.yawl.engine.WorkItemCompletion;
@@ -423,32 +426,26 @@ public class YStatelessEngine {
 
         List<YNetRunner> runners = new ArrayList<>(caseParams.size());
 
-        try (StructuredTaskScope<YNetRunner, Void> scope =
-                     StructuredTaskScope.open(StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow(),
-                             cfg -> cfg.withName("yawl-parallel-launch")
-                                       .withThreadFactory(Thread.ofVirtual().factory()))) {
-
-            // Fork one subtask per case; each runs on a named virtual thread
-            List<StructuredTaskScope.Subtask<YNetRunner>> subtasks = new ArrayList<>(caseParams.size());
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            // Submit one task per case; each runs on a virtual thread
+            List<Future<YNetRunner>> futures = new ArrayList<>(caseParams.size());
             for (int i = 0; i < caseParams.size(); i++) {
                 final String caseID = caseIDs.get(i);
                 final String params  = caseParams.get(i);
-                StructuredTaskScope.Subtask<YNetRunner> subtask = scope.fork(() ->
-                        _engine.launchCase(spec, caseID, params, null));
-                subtasks.add(subtask);
+                futures.add(executor.submit(() -> _engine.launchCase(spec, caseID, params, null)));
             }
 
-            // Wait for all subtasks; propagate first failure if any
-            try {
-                scope.join(); // awaitAllSuccessfulOrThrow: throws if any subtask failed
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                throw new YStateException("Parallel case launch interrupted", ie);
-            }
-
-            // All subtasks succeeded — collect results in submission order
-            for (StructuredTaskScope.Subtask<YNetRunner> subtask : subtasks) {
-                runners.add(subtask.get());
+            // Collect results in submission order; propagate first failure
+            for (Future<YNetRunner> future : futures) {
+                try {
+                    runners.add(future.get());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new YStateException("Parallel case launch interrupted", ie);
+                } catch (ExecutionException ee) {
+                    Throwable cause = ee.getCause();
+                    throw new YStateException("Case launch failed: " + cause.getMessage(), cause);
+                }
             }
 
         } catch (YStateException ex) {

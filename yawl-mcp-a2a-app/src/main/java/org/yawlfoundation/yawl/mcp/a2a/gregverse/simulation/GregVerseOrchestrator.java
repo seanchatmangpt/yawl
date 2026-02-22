@@ -391,11 +391,10 @@ public class GregVerseOrchestrator {
         Map<SagaStep, StepResult> results = new ConcurrentHashMap<>();
         List<ExecutionException> failures = Collections.synchronizedList(new ArrayList<>());
 
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.<StepResult>awaitAll(),
-                cfg -> cfg.withTimeout(timeout))) {
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Callable<StepResult>> callables = new ArrayList<>();
             for (SagaStep step : steps) {
-                scope.fork(() -> {
+                callables.add(() -> {
                     try {
                         StepResult result = executeStep(step, context, execution);
                         results.put(step, result);
@@ -414,11 +413,13 @@ public class GregVerseOrchestrator {
                 });
             }
 
-            // Join - timeout configured via withTimeout() above
-            scope.join();
+            // invokeAll waits for all tasks or until timeout expires
+            List<Future<StepResult>> futures = executor.invokeAll(
+                    callables, timeout.toMillis(), TimeUnit.MILLISECONDS);
 
-            // Detect timeout via scope cancellation flag
-            if (scope.isCancelled()) {
+            // Detect timeout via cancelled futures
+            boolean timedOut = futures.stream().anyMatch(f -> !f.isDone() || f.isCancelled());
+            if (timedOut) {
                 LOGGER.error("Parallel saga execution timeout after {}ms", timeout.toMillis());
                 failures.add(new ExecutionException("Execution timeout", null));
             }

@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatMessage;
 import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatRequest;
@@ -150,23 +153,24 @@ public class ZaiService {
         ensureInitialized();
         String model = defaultModel();
 
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.<String>awaitAllSuccessfulOrThrow())) {
-            var task1 = scope.fork(() -> {
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            Future<String> future1 = executor.submit(() -> {
                 ChatRequest req = new ChatRequest(model, buildMessageList(message1));
                 return httpClient.createChatCompletionRecord(req).content();
             });
-            var task2 = scope.fork(() -> {
+            Future<String> future2 = executor.submit(() -> {
                 ChatRequest req = new ChatRequest(model, buildMessageList(message2));
                 return httpClient.createChatCompletionRecord(req).content();
             });
 
-            scope.join();
-
-            return new String[]{ task1.get(), task2.get() };
+            return new String[]{ future1.get(), future2.get() };
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException("Parallel chat interrupted", e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException ioe) throw ioe;
+            throw new IOException("Parallel Z.AI call failed", cause);
         } catch (Exception e) {
             if (e instanceof IOException ioe) throw ioe;
             throw new IOException("Parallel Z.AI call failed", e);
