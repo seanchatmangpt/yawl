@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<YAWL_Specification>
-  <SpecificationSet>
-    <Specification name="{{ agent_name|replace(' ', '_') }}_Workflow">
-      <Task id="task_{{ agent_name|replace(' ', '_')|lower }}">
-        <Name>{{ agent_name }} - Phase {{ phase }}</Name>
-        <Documentation>Role: {{ agent_role }}</Documentation>
-      </Task>
-    </Specification>
-  </SpecificationSet>
-</YAWL_Specification>
+<specificationSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.yawlfoundation.org/yawlschema">
+  <specification name="{{ agent_name|replace(' ', '_') }}_Workflow">
+    <task id="task_{{ agent_name|replace(' ', '_')|lower }}">
+      <name>{{ agent_name }} - Phase {{ phase }}</name>
+      <documentation>Role: {{ agent_role }}</documentation>
+    </task>
+  </specification>
+</specificationSet>
