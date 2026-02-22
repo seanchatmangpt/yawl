@@ -44,10 +44,16 @@ public class Transition extends PnmlElement {
     }
 
     /**
-     * Check if this is a start transition (no incoming arcs).
+     * Check if this is a start transition.
+     * A transition is a start transition if it has no incoming arcs, OR if all its
+     * incoming places are initial places (have initial marking and no incoming arcs).
+     * This handles both pure-source transitions and workflow-start transitions
+     * preceded by the initial place.
      */
     public boolean isStartTransition() {
-        return incomingArcs.isEmpty();
+        if (incomingArcs.isEmpty()) return true;
+        return incomingArcs.stream()
+            .allMatch(arc -> arc.getSource() instanceof Place p && p.isInitialPlace());
     }
 
     /**

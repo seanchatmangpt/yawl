@@ -32,6 +32,10 @@ public class PetriNet {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Map<String, Place> getPlaces() {
         return places;
     }
@@ -123,13 +127,16 @@ public class PetriNet {
      * @return true if the net is valid (all arcs connect valid elements)
      */
     public boolean isValid() {
-        return arcs.stream().allMatch(arc ->
-            places.containsValue((Place) arc.getSource()) ||
-            transitions.containsValue((Transition) arc.getSource())
-        ) && arcs.stream().allMatch(arc ->
-            places.containsValue((Place) arc.getTarget()) ||
-            transitions.containsValue((Transition) arc.getTarget())
-        );
+        for (Arc arc : arcs) {
+            PnmlElement source = arc.getSource();
+            PnmlElement target = arc.getTarget();
+            boolean sourceValid = (source instanceof Place p && places.containsValue(p))
+                || (source instanceof Transition t && transitions.containsValue(t));
+            boolean targetValid = (target instanceof Place p && places.containsValue(p))
+                || (target instanceof Transition t && transitions.containsValue(t));
+            if (!sourceValid || !targetValid) return false;
+        }
+        return true;
     }
 
     @Override

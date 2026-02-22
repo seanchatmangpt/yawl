@@ -95,8 +95,9 @@
     </transition>
 
     <!-- Arcs (Control Flow) -->
-    <!-- Start flow -->
-    <arc id="a1" source="p1" target="t1"/>
+    <!-- Start transition t1 has no incoming arcs (start transition) -->
+    <!-- Initial place p1 is not connected via explicit arc -->
+    <arc id="a1" source="p2" target="p3"/>
     <arc id="a2" target="p2" source="t1"/>
 
     <!-- Assessment -->
@@ -119,7 +120,7 @@
     <!-- Completion -->
     <arc id="a12" source="p5" target="t5"/>
     <arc id="a13" target="p6" source="t5"/>
-    <arc id="a14" source="p6" target="t6"/>
+    <arc id="a14" source="p5" target="t6"/>
 
   </net>
 </pnml>

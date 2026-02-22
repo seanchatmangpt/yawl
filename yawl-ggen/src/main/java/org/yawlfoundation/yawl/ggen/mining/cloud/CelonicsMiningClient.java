@@ -35,14 +35,27 @@ public class CelonicsMiningClient implements CloudMiningClient {
     private String apiKey;
     private String teamId;
 
+    /** Construct using direct API key (simplest auth mode). */
     public CelonicsMiningClient(String apiKey, String teamId) {
         this.apiKey = apiKey;
         this.teamId = teamId;
     }
 
-    public CelonicsMiningClient(String clientId, String clientSecret) {
+    /** Construct using OAuth 2.0 client credentials (enterprise auth mode). */
+    public CelonicsMiningClient(String clientId, String clientSecret, String scope) {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
+        // scope is recorded but not stored separately; clientId/Secret presence signals OAuth
+    }
+
+    /** Factory: create from API key. */
+    public static CelonicsMiningClient forApiKey(String apiKey, String teamId) {
+        return new CelonicsMiningClient(apiKey, teamId);
+    }
+
+    /** Factory: create from OAuth client credentials. */
+    public static CelonicsMiningClient forOAuth(String clientId, String clientSecret) {
+        return new CelonicsMiningClient(clientId, clientSecret, "api");
     }
 
     /**

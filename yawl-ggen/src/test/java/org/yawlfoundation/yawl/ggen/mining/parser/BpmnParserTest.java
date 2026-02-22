@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
  */
 public class BpmnParserTest {
     private BpmnParser parser;
-    private static final String FIXTURES_PATH = "yawl-ggen/src/test/resources/fixtures/";
+    private static final String FIXTURES_PATH = "src/test/resources/fixtures/";
 
     @Before
     public void setUp() {

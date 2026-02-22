@@ -46,6 +46,9 @@ public class PnmlParser {
         private String currentElementName;
         private String currentPlaceId;
         private int currentInitialMarking;
+        private boolean insideInitialMarking = false;
+        private boolean insideName = false;
+        private boolean inNetScope = true;
 
         @Override
         public void startDocument() throws SAXException {
@@ -66,14 +69,17 @@ public class PnmlParser {
                     String netName = attributes.getValue("name");
                     petriNet = new PetriNet(netId, netName != null ? netName : netId);
                     currentNetId = netId;
+                    inNetScope = true;
                     break;
                 case "place":
                     currentElementId = attributes.getValue("id");
                     currentPlaceId = currentElementId;
                     currentInitialMarking = 0;
+                    inNetScope = false;
                     break;
                 case "transition":
                     currentElementId = attributes.getValue("id");
+                    inNetScope = false;
                     break;
                 case "arc":
                     String arcId = attributes.getValue("id");
@@ -82,7 +88,10 @@ public class PnmlParser {
                     createArc(arcId, source, target);
                     break;
                 case "initialMarking":
-                    // Token count for place initial marking
+                    insideInitialMarking = true;
+                    break;
+                case "name":
+                    insideName = true;
                     break;
                 case "text":
                     textBuffer.setLength(0);
@@ -102,22 +111,28 @@ public class PnmlParser {
 
             switch (tagName) {
                 case "name":
+                    insideName = false;
                     if (currentElementId != null) {
                         currentElementName = content;
                     }
                     break;
                 case "text":
-                    if (currentElementName == null && content.length() > 0) {
-                        currentElementName = content;
+                    if (insideInitialMarking) {
+                        try {
+                            currentInitialMarking = Integer.parseInt(content);
+                        } catch (NumberFormatException e) {
+                            currentInitialMarking = 0;
+                        }
+                    } else if (insideName && inNetScope && petriNet != null) {
+                        petriNet.setName(content);
+                    } else if (insideName && !inNetScope) {
+                        if (currentElementName == null && content.length() > 0) {
+                            currentElementName = content;
+                        }
                     }
                     break;
-                case "value":
-                    // Extract initial marking value
-                    try {
-                        currentInitialMarking = Integer.parseInt(content);
-                    } catch (NumberFormatException e) {
-                        currentInitialMarking = 0;
-                    }
+                case "initialMarking":
+                    insideInitialMarking = false;
                     break;
                 case "place":
                     if (currentElementId != null && petriNet != null) {
@@ -128,6 +143,7 @@ public class PnmlParser {
                     currentElementId = null;
                     currentElementName = null;
                     currentInitialMarking = 0;
+                    inNetScope = true;
                     break;
                 case "transition":
                     if (currentElementId != null && petriNet != null) {
@@ -137,6 +153,7 @@ public class PnmlParser {
                     }
                     currentElementId = null;
                     currentElementName = null;
+                    inNetScope = true;
                     break;
             }
         }
