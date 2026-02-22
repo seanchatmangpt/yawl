@@ -302,11 +302,7 @@
                         <!-- Claude integration - StructuredTaskScope API issue -->
                         <exclude>**/claude/**</exclude>
 
-                        <!-- MCP Server and tools - API incompatibilities with MCP SDK 1.0.0-RC3 -->
-                        <!-- These need migration to RC3 API: McpSyncServer, CallToolResult builder pattern -->
-                        <exclude>**/mcp/YawlMcpServer.java</exclude>
-                        <exclude>**/mcp/YawlMcpClient.java</exclude>
-                        <exclude>**/mcp/spec/YawlToolSpecifications.java</exclude>
+                        <!-- MCP Server and tools - event/process-mining still need work -->
                         <exclude>**/mcp/spec/YawlEventToolSpecifications.java</exclude>
                         <exclude>**/mcp/spec/YawlProcessMiningToolSpecifications.java</exclude>
 
@@ -316,7 +312,7 @@
                         <exclude>**/a2a/skills/ProcessMiningSkill.java</exclude>
                         <exclude>**/a2a/auth/CompositeAuthenticationProvider.java</exclude>
 
-                        <!-- MCP Spring tools - CallToolResult API changes in RC3 -->
+                        <!-- MCP Spring tools - InterfaceB API mismatches (methods don't exist on client) -->
                         <exclude>**/mcp/spring/tools/CompleteWorkItemTool.java</exclude>
                         <exclude>**/mcp/spring/tools/GetWorkItemsTool.java</exclude>
 
@@ -377,14 +373,6 @@
                              Note: ZaiFunctionService is NOT excluded - it's a YAWL-specific adapter
                              that throws UnsupportedOperationException when ZAI SDK is not available.
                              ===================================================================== -->
-
-                        <!-- =====================================================================
-                             MCP Spring classes - still have MCP SDK 1.0.0-RC3 API drift
-                             (CallToolResult constructor changed, cannot find symbol errors)
-                             ===================================================================== -->
-                        <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
-                        <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
-                        <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
 
                         <!-- =====================================================================
                              Packages that depend on zai.ZaiFunctionService (excluded above)

@@ -7,7 +7,6 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_Environment
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spring.resources.SpecificationsResource;
 import org.yawlfoundation.yawl.integration.mcp.spring.tools.LaunchCaseTool;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 
 /**
  * Spring Boot application for YAWL MCP Server.
@@ -93,15 +92,11 @@ public class YawlMcpSpringApplication {
             // Create session manager (connects to YAWL engine)
             YawlMcpSessionManager sessionManager = config.sessionManager(interfaceBClient);
 
-            // Create Z.AI service (if enabled)
-            ZaiFunctionService zaiFunctionService = config.zaiFunctionService();
-
             // Create tool registry and register core + custom tools
             YawlMcpToolRegistry toolRegistry = config.toolRegistry(
                 interfaceBClient,
                 interfaceAClient,
-                sessionManager,
-                zaiFunctionService
+                sessionManager
             );
 
             // Register custom example tool
