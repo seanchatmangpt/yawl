@@ -125,20 +125,20 @@
   {# Layout Information (minimal, for visualization) #}
   <layout>
     <locale language="en" country="US"/>
-    <specification id="{{ rootNetId | default(value=specId) }}" defaultBgColor="-526351">
+    <specification id="{{ rootNetId or specId }}" defaultBgColor="-526351">
       <size w="100" h="50"/>
-      <net id="{{ rootNetId | default(value=specId) }}" bgColor="-526351">
+      <net id="{{ rootNetId or specId }}" bgColor="-526351">
         <bounds x="0" y="0" w="1000" h="600"/>
         <frame x="0" y="0" w="1000" h="600"/>
         <viewport x="0" y="0" w="1000" h="600"/>
         {# Layout vertices for input/output conditions #}
-        <vertex id="{{ inputCondition | default(value='InputCondition') }}">
+        <vertex id="{{ inputCondition or 'InputCondition' }}">
           <attributes>
             <bounds x="50" y="250" w="32" h="32"/>
             <backgroundColor>-197913</backgroundColor>
           </attributes>
         </vertex>
-        <vertex id="{{ outputCondition | default(value='OutputCondition') }}">
+        <vertex id="{{ outputCondition or 'OutputCondition' }}">
           <attributes>
             <bounds x="920" y="250" w="32" h="32"/>
             <backgroundColor>-197913</backgroundColor>
@@ -147,7 +147,7 @@
         {# Layout vertices for tasks #}
         {% set task_x = 150 %}
         {% for task in tasks %}
-        <container id="{{ task['?taskId'] | default(value=task.taskId) }}">
+        <container id="{{ task.get('?taskId') or task.get('taskId') }}">
           <vertex>
             <attributes>
               <bounds x="{{ task_x }}" y="250" w="32" h="32"/>
