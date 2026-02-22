@@ -1,0 +1,27 @@
+{
+  "id": "OrchestrationAgent",
+  "name": "Orchestrator Agent",
+  "description": "Coordinates multi-agent workflows and task distribution",
+  "protocol": "http://yawl.io/a2a#OrchestrationProtocol",
+  "mcp_server": "",
+  "endpoints": [
+    {
+      "name": "orchestration/tasks",
+      "method": "POST",
+      "message_type": "TaskAssignment",
+      "response_time": 500
+    },
+    {
+      "name": "orchestration/status",
+      "method": "GET",
+      "message_type": "StatusQuery",
+      "response_time": 100
+    },
+    {
+      "name": "orchestration/dependencies",
+      "method": "GET",
+      "message_type": "DependencyGraph",
+      "response_time": 200
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-02-22T02:29:03.319524",
+  "agents": [
+    {
+      "uri": "http://yawl.io/a2a#OrchestrationAgent",
+      "id": "OrchestrationAgent",
+      "name": "Orchestrator Agent",
+      "description": "Coordinates multi-agent workflows and task distribution",
+      "protocol": "http://yawl.io/a2a#OrchestrationProtocol",
+      "messaging_style": "http://yawl.io/a2a#RequestReply",
+      "concurrency": "http://yawl.io/a2a#Parallel",
+      "mcp_server": "",
+      "endpoints": [
+        {
+          "name": "orchestration/tasks",
+          "method": "POST",
+          "message_type": "TaskAssignment",
+          "response_time": 500
+        },
+        {
+          "name": "orchestration/status",
+          "method": "GET",
+          "message_type": "StatusQuery",
+          "response_time": 100
+        },
+        {
+          "name": "orchestration/dependencies",
+          "method": "GET",
+          "message_type": "DependencyGraph",
+          "response_time": 200
+        }
+      ]
+    },
+    {
+      "uri": "http://yawl.io/a2a#ExecutorAgent",
+      "id": "ExecutorAgent",
+      "name": "Task Executor Agent",
+      "description": "Executes assigned tasks and reports progress",
+      "protocol": "http://yawl.io/a2a#ExecutionProtocol",
+      "messaging_style": "http://yawl.io/a2a#PublishSubscribe",
+      "concurrency": "http://yawl.io/a2a#Sequential",
+      "mcp_server": "",
+      "endpoints": [
+        {
+          "name": "executor/task/start",
+          "method": "POST",
+          "message_type": "TaskStart",
+          "response_time": 200
+        },
+        {
+          "name": "executor/task/progress",
+          "method": "POST",
+          "message_type": "ProgressUpdate",
+          "response_time": 100
+        },
+        {
+          "name": "executor/task/complete",
+          "method": "POST",
+          "message_type": "TaskCompletion",
+          "response_time": 300
+        }
+      ]
+    },
+    {
+      "uri": "http://yawl.io/a2a#ValidatorAgent",
+      "id": "ValidatorAgent",
+      "name": "Validator Agent",
+      "description": "Validates task outputs and enforces quality gates",
+      "protocol": "http://yawl.io/a2a#ValidationProtocol",
+      "messaging_style": "http://yawl.io/a2a#RequestReply",
+      "concurrency": "http://yawl.io/a2a#Parallel",
+      "mcp_server": "",
+      "endpoints": [
+        {
+          "name": "validator/check",
+          "method": "POST",
+          "message_type": "ValidationRequest",
+          "response_time": 1000
+        },
+        {
+          "name": "validator/gates",
+          "method": "POST",
+          "message_type": "GateCheck",
+          "response_time": 500
+        },
+        {
+          "name": "validator/compliance",
+          "method": "GET",
+          "message_type": "ComplianceReport",
+          "response_time": 2000
+        }
+      ]
+    },
+    {
+      "uri": "http://yawl.io/a2a#ObserverAgent",
+      "id": "ObserverAgent",
+      "name": "Observer Agent",
+      "description": "Monitors system state and collects observability metrics",
+      "protocol": "http://yawl.io/a2a#ObservationProtocol",
+      "messaging_style": "http://yawl.io/a2a#PushBased",
+      "concurrency": "http://yawl.io/a2a#Parallel",
+      "mcp_server": "",
+      "endpoints": [
+        {
+          "name": "observer/metrics",
+          "method": "POST",
+          "message_type": "MetricEmission",
+          "response_time": 50
+        },
+        {
+          "name": "observer/traces",
+          "method": "POST",
+          "message_type": "TraceSpan",
+          "response_time": 50
+        },
+        {
+          "name": "observer/logs",
+          "method": "POST",
+          "message_type": "LogEntry",
+          "response_time": 25
+        }
+      ]
+    },
+    {
+      "uri": "http://yawl.io/a2a#ResolverAgent",
+      "id": "ResolverAgent",
+      "name": "Resolver Agent",
+      "description": "Handles failures, conflicts, and recovery scenarios",
+      "protocol": "http://yawl.io/a2a#ResolutionProtocol",
+      "messaging_style": "http://yawl.io/a2a#EventDriven",
+      "concurrency": "http://yawl.io/a2a#Parallel",
+      "mcp_server": "",
+      "endpoints": [
+        {
+          "name": "resolver/error",
+          "method": "POST",
+          "message_type": "ErrorNotification",
+          "response_time": 500
+        },
+        {
+          "name": "resolver/conflict",
+          "method": "POST",
+          "message_type": "ConflictResolution",
+          "response_time": 1000
+        },
+        {
+          "name": "resolver/recovery",
+          "method": "POST",
+          "message_type": "RecoveryPlan",
+          "response_time": 2000
+        }
+      ]
+    }
+  ]
+}

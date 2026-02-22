@@ -1,0 +1,27 @@
+{
+  "id": "ObserverAgent",
+  "name": "Observer Agent",
+  "description": "Monitors system state and collects observability metrics",
+  "protocol": "http://yawl.io/a2a#ObservationProtocol",
+  "mcp_server": "",
+  "endpoints": [
+    {
+      "name": "observer/metrics",
+      "method": "POST",
+      "message_type": "MetricEmission",
+      "response_time": 50
+    },
+    {
+      "name": "observer/traces",
+      "method": "POST",
+      "message_type": "TraceSpan",
+      "response_time": 50
+    },
+    {
+      "name": "observer/logs",
+      "method": "POST",
+      "message_type": "LogEntry",
+      "response_time": 25
+    }
+  ]
+}

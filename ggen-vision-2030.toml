@@ -1,0 +1,425 @@
+# ============================================================================
+# GGEN VISION 2030 CONFIGURATION
+# Generates White Paper PDF from RDF + Tera Templates
+# ============================================================================
+
+[metadata]
+project_name = "INVERSE GODSPEED 2030 White Paper"
+version = "1.0.0"
+description = "50-page white paper authored collaboratively by 5 inverse agents"
+author = "Inverse GODSPEED Team"
+publication_date = "2026-02-22"
+vision_year = "2030"
+output_format = "PDF"
+
+# ============================================================================
+# INPUT SOURCES: TURTLE (RDF) + TERA (Templates)
+# ============================================================================
+
+[[sources]]
+type = "rdf_turtle"
+path = "ontology/godspeed/vision-2030-collaboration.ttl"
+namespace = "http://yawl.io/godspeed/vision2030#"
+description = "Complete collaborative white paper structure in RDF"
+required = true
+
+[[sources]]
+type = "rdf_turtle"
+path = "ontology/godspeed/inverse-godspeed-protocol.ttl"
+namespace = "http://yawl.io/godspeed/inverse#"
+description = "Inverse agents and protocols definition"
+required = true
+
+[[sources]]
+type = "template_tera"
+path = "templates/vision-2030-paper.tera"
+format = "latex"
+description = "LaTeX document template with Tera variable interpolation"
+required = true
+
+# ============================================================================
+# RDF EXTRACTION: Define what data to pull from Turtle
+# ============================================================================
+
+[rdf_extraction]
+enabled = true
+query_engine = "SPARQL"
+
+[[rdf_extraction.queries]]
+name = "extract_sections"
+sparql = """
+PREFIX vision: <http://yawl.io/godspeed/vision2030#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?section ?label ?sectionNumber ?pageRange ?wordCount ?narrative ?latexSection
+WHERE {
+  ?section a vision:PaperSection ;
+    rdfs:label ?label ;
+    vision:sectionNumber ?sectionNumber ;
+    vision:pageRange ?pageRange ;
+    vision:wordCount ?wordCount ;
+    vision:narrative ?narrative ;
+    vision:latexSection ?latexSection .
+}
+ORDER BY ?sectionNumber
+"""
+output_var = "sections"
+description = "Extract all paper sections with metadata"
+
+[[rdf_extraction.queries]]
+name = "extract_contributors"
+sparql = """
+PREFIX vision: <http://yawl.io/godspeed/vision2030#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX inverse: <http://yawl.io/godspeed/inverse#>
+
+SELECT ?contributor ?name ?expertise ?contributedWords ?tone ?perspective ?futureFocus
+WHERE {
+  ?contributor a vision:AgentContributor ;
+    foaf:name ?name ;
+    vision:expertise ?expertise ;
+    vision:contributedWords ?contributedWords ;
+    vision:tone ?tone ;
+    vision:perspective ?perspective ;
+    vision:futureFocus ?futureFocus .
+}
+"""
+output_var = "contributors"
+description = "Extract all agent contributors with their metadata"
+
+[[rdf_extraction.queries]]
+name = "extract_agent_evolution"
+sparql = """
+PREFIX vision: <http://yawl.io/godspeed/vision2030#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?agentSection ?label ?agent ?evolution2026 ?evolution2028 ?evolution2030
+       ?maturityScore ?adoptionRate ?narrative ?blueOceanPosition ?competitiveAdvantage
+WHERE {
+  ?agentSection a vision:AgentEvolutionSection ;
+    rdfs:label ?label ;
+    vision:agent ?agent ;
+    vision:evolution2026 ?evolution2026 ;
+    vision:evolution2028 ?evolution2028 ;
+    vision:evolution2030 ?evolution2030 ;
+    vision:maturityScore ?maturityScore ;
+    vision:adoptionRate ?adoptionRate ;
+    vision:narrative ?narrative ;
+    vision:blueOceanPosition ?blueOceanPosition ;
+    vision:competitiveAdvantage ?competitiveAdvantage .
+}
+"""
+output_var = "agent_evolution"
+description = "Extract agent evolution details with milestones"
+
+[[rdf_extraction.queries]]
+name = "extract_subsections"
+sparql = """
+PREFIX vision: <http://yawl.io/godspeed/vision2030#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?subsection ?label ?storyArc ?agent ?solution ?impact ?lesson ?narrative
+WHERE {
+  ?subsection a vision:Subsection ;
+    rdfs:label ?label ;
+    vision:storyArc ?storyArc ;
+    vision:agent ?agent ;
+    vision:solution ?solution ;
+    vision:impact ?impact ;
+    vision:lesson ?lesson ;
+    vision:narrative ?narrative .
+}
+ORDER BY ?label
+"""
+output_var = "retrospective_subsections"
+description = "Extract retrospective case studies with narratives"
+
+# ============================================================================
+# TEMPLATE RENDERING: Tera interpolation and filters
+# ============================================================================
+
+[template_rendering]
+engine = "tera"
+template_path = "templates/vision-2030-paper.tera"
+output_mime_type = "application/x-latex"
+
+[[template_rendering.filters]]
+name = "slugify"
+function = "regex::replace"
+pattern = "[^a-z0-9]+"
+replacement = "-"
+description = "Convert strings to URL-safe slugs"
+
+[[template_rendering.filters]]
+name = "number_format"
+function = "numfmt"
+locale = "en_US"
+description = "Format numbers with thousands separators"
+
+[[template_rendering.filters]]
+name = "truncate"
+function = "string::truncate"
+description = "Truncate text to specified length with ellipsis"
+
+[[template_rendering.filters]]
+name = "find"
+function = "collection::find_by_attr"
+description = "Find item in collection by attribute value"
+
+# ============================================================================
+# LATEX COMPILATION: Convert .tex to PDF
+# ============================================================================
+
+[latex_compilation]
+enabled = true
+compiler = "xelatex"
+compiler_version = "3.141592653"
+output_format = "pdf"
+max_iterations = 3
+
+[[latex_compilation.passes]]
+pass_number = 1
+description = "Initial pass: compile document structure"
+
+[[latex_compilation.passes]]
+pass_number = 2
+description = "Second pass: resolve cross-references and table of contents"
+
+[[latex_compilation.passes]]
+pass_number = 3
+description = "Final pass: generate page numbers and index"
+
+[latex_compilation.options]
+halt_on_error = true
+interaction = "nonstopmode"
+output_directory = "build/latex"
+aux_directory = "build/latex/.aux"
+
+[latex_compilation.packages]
+required = [
+  "hyperref",
+  "geometry",
+  "listings",
+  "tikz",
+  "pgfplots",
+  "xcolor",
+  "booktabs",
+  "fancyhdr"
+]
+
+# ============================================================================
+# OUTPUTS: Define generated artifacts
+# ============================================================================
+
+[[outputs]]
+name = "latex_source"
+path = "build/vision-2030-paper.tex"
+format = "latex"
+description = "Generated LaTeX source code"
+stage = "post_template_render"
+
+[[outputs]]
+name = "pdf_final"
+path = "build/vision-2030-paper.pdf"
+format = "pdf"
+description = "Final white paper PDF (50 pages)"
+stage = "post_latex_compile"
+mime_type = "application/pdf"
+
+[[outputs]]
+name = "metadata_json"
+path = "build/vision-2030-metadata.json"
+format = "json"
+description = "Paper metadata: sections, contributors, word counts"
+stage = "post_rdf_extract"
+
+# ============================================================================
+# GENERATION WORKFLOW: Sequential phases
+# ============================================================================
+
+[workflow]
+name = "vision_2030_whitepaper_generation"
+description = "5-phase workflow: RDF → Extract → Template → LaTeX → PDF"
+phases = [
+  "rdf_load",
+  "rdf_extract",
+  "template_prepare",
+  "template_render",
+  "latex_compile"
+]
+
+[[workflow.phase]]
+name = "rdf_load"
+description = "Load and validate Turtle source files"
+duration_estimate = "2 seconds"
+tasks = [
+  "load_turtle_vision_2030",
+  "load_turtle_inverse_agents",
+  "validate_rdf_syntax",
+  "merge_rdf_graphs"
+]
+
+[[workflow.phase]]
+name = "rdf_extract"
+description = "Execute SPARQL queries to extract structured data"
+duration_estimate = "5 seconds"
+tasks = [
+  "sparql_extract_sections",
+  "sparql_extract_contributors",
+  "sparql_extract_agent_evolution",
+  "sparql_extract_subsections",
+  "serialize_to_json_context"
+]
+
+[[workflow.phase]]
+name = "template_prepare"
+description = "Prepare Tera template environment"
+duration_estimate = "1 second"
+tasks = [
+  "load_tera_template",
+  "register_custom_filters",
+  "validate_template_syntax"
+]
+
+[[workflow.phase]]
+name = "template_render"
+description = "Interpolate SPARQL results into Tera template"
+duration_estimate = "3 seconds"
+tasks = [
+  "render_tera_template_with_context",
+  "validate_latex_syntax",
+  "emit_latex_source"
+]
+
+[[workflow.phase]]
+name = "latex_compile"
+description = "Compile LaTeX to PDF (3 passes)"
+duration_estimate = "30 seconds"
+tasks = [
+  "xelatex_pass_1",
+  "xelatex_pass_2",
+  "xelatex_pass_3",
+  "verify_pdf_output"
+]
+
+# ============================================================================
+# PERFORMANCE & PARALLELIZATION
+# ============================================================================
+
+[performance]
+enable_parallel = false
+note = "White paper generation is sequential (RDF → Extract → Template → LaTeX → PDF)"
+
+[performance.estimated_times]
+rdf_load = 2000
+rdf_extract = 5000
+template_prepare = 1000
+template_render = 3000
+latex_compile = 30000
+total_seconds = 41
+
+# ============================================================================
+# QUALITY ASSURANCE: Validation gates
+# ============================================================================
+
+[quality_gates]
+
+[[quality_gates.gate]]
+name = "rdf_syntax_valid"
+description = "Validate Turtle syntax is correct"
+stage = "rdf_load"
+fail_behavior = "halt_with_error"
+
+[[quality_gates.gate]]
+name = "sparql_queries_valid"
+description = "Validate SPARQL queries return expected results"
+stage = "rdf_extract"
+fail_behavior = "halt_with_error"
+
+[[quality_gates.gate]]
+name = "tera_template_valid"
+description = "Validate Tera template syntax is correct"
+stage = "template_prepare"
+fail_behavior = "halt_with_error"
+
+[[quality_gates.gate]]
+name = "latex_syntax_valid"
+description = "Validate generated LaTeX has no syntax errors"
+stage = "template_render"
+fail_behavior = "halt_with_error"
+
+[[quality_gates.gate]]
+name = "pdf_generation_success"
+description = "Verify PDF was generated successfully"
+stage = "latex_compile"
+fail_behavior = "halt_with_error"
+
+[[quality_gates.gate]]
+name = "pdf_page_count_correct"
+description = "Verify PDF has exactly 50 pages"
+stage = "latex_compile"
+pass_criteria = "page_count == 50"
+fail_behavior = "warning"
+
+[[quality_gates.gate]]
+name = "section_count_correct"
+description = "Verify all 7 sections are present"
+stage = "template_render"
+pass_criteria = "section_count == 7"
+fail_behavior = "warning"
+
+# ============================================================================
+# CONFIGURATION: Semantic preferences
+# ============================================================================
+
+[semantic_config]
+rdf_namespace_prefix = "vision"
+rdf_namespace_uri = "http://yawl.io/godspeed/vision2030#"
+template_context_root = "root"
+latex_document_class = "report"
+latex_font_size = "11pt"
+
+[semantic_config.language]
+code = "en"
+name = "English (US)"
+locale = "en_US"
+
+[semantic_config.styling]
+title_color = "darkblue"
+accent_color = "forestgreen"
+code_background = "lightblue"
+latex_geometry = "1in"
+
+# ============================================================================
+# LOGGING & DIAGNOSTICS
+# ============================================================================
+
+[logging]
+level = "info"
+format = "structured_json"
+output = "build/logs/vision-2030-generation.log"
+
+[[logging.events]]
+name = "phase_start"
+log_template = "Phase {{ phase }} starting (est. {{ duration }}ms)"
+
+[[logging.events]]
+name = "task_complete"
+log_template = "Task {{ task }} completed in {{ elapsed }}ms"
+
+[[logging.events]]
+name = "sparql_query_executed"
+log_template = "SPARQL query '{{ query }}' returned {{ result_count }} results"
+
+[[logging.events]]
+name = "template_rendered"
+log_template = "Rendered Tera template, produced {{ line_count }} LaTeX lines"
+
+[[logging.events]]
+name = "latex_compiled"
+log_template = "LaTeX compilation pass {{ pass }} completed in {{ elapsed }}ms"
+
+# ============================================================================
+# END ggen-vision-2030.toml
+# ============================================================================
