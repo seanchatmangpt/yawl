@@ -1,9 +1,6 @@
 package org.yawlfoundation.yawl.integration.zai;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,9 +14,12 @@ import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
-import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatMessage;
-import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatRequest;
-import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatResponse;
+
+import ai.z.openapi.ZaiClient;
+import ai.z.openapi.service.model.ChatCompletionCreateParams;
+import ai.z.openapi.service.model.ChatCompletionResponse;
+import ai.z.openapi.service.model.ChatMessage;
+import ai.z.openapi.service.model.ChatMessageRole;
 
 /**
  * Z.AI Function Calling Service for YAWL — Java 25 Edition.
@@ -31,9 +31,8 @@ import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatResponse;
  * <ul>
  *   <li>{@link FunctionCall} is now a record (immutable, auto-equals/hashCode)</li>
  *   <li>JSON parsing uses Jackson's {@link ObjectMapper} instead of hand-rolled string splitting</li>
- *   <li>Uses {@link ZaiHttpClient.ChatMessage} and {@link ZaiHttpClient.ChatRequest} records</li>
+ *   <li>Uses official {@link ai.z.openapi.ZaiClient} from ai.z.openapi SDK</li>
  *   <li>Pattern matching in switch for function dispatch classification</li>
- *   <li>Retry with exponential backoff is delegated to {@link ZaiHttpClient}</li>
  * </ul>
  *
  * @author YAWL Foundation
@@ -77,7 +76,7 @@ public class ZaiFunctionService {
         }
     }
 
-    private final ZaiHttpClient httpClient;
+    private final ZaiClient zaiClient;
     private final Map<String, YawlFunctionHandler> functionHandlers;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final InterfaceA_EnvironmentBasedClient interfaceAClient;
@@ -126,7 +125,7 @@ public class ZaiFunctionService {
             throw new IllegalArgumentException("YAWL_PASSWORD is required");
         }
 
-        this.httpClient = new ZaiHttpClient(zaiApiKey);
+        this.zaiClient = ZaiClientFactory.withApiKey(zaiApiKey);
         this.yawlEngineUrl = yawlEngineUrl;
         this.yawlUsername = username;
         this.yawlPassword = password;
@@ -195,75 +194,6 @@ public class ZaiFunctionService {
         });
 
         registerFunction("list_workflows", args -> listWorkflows());
-
-        registerFunction("process_mining_analyze", args -> {
-            String specId = (String) args.get("spec_identifier");
-            String xesPath = (String) args.get("xes_path");
-            String skill = args.get("skill") instanceof String s && !s.isEmpty() ? s : "performance";
-
-            try {
-                if (specId != null && !specId.isEmpty()) {
-                    return executeProcessMiningWithSpec(specId, skill);
-                }
-                if (xesPath != null && !xesPath.isEmpty()) {
-                    return executeProcessMiningWithXes(xesPath, skill);
-                }
-            } catch (ClassNotFoundException e) {
-                return "{\"error\":\"Process mining requires Pm4Py library. "
-                    + "Install Pm4Py and ensure processmining package is available.\"}";
-            } catch (Exception e) {
-                return "{\"error\":\"Process mining failed: "
-                    + e.getMessage().replace("\"", "\\\"") + "\"}";
-            }
-            return "{\"error\":\"Provide spec_identifier or xes_path\"}";
-        });
-    }
-
-    /**
-     * Execute process mining analysis with a specification ID.
-     * Uses reflection to avoid compile-time dependency on EventLogExporter and Pm4PyClient.
-     */
-    private String executeProcessMiningWithSpec(String specId, String skill) throws Exception {
-        Class<?> exporterClass = Class.forName(
-            "org.yawlfoundation.yawl.integration.processmining.EventLogExporter");
-        Object exporter = exporterClass
-            .getConstructor(String.class, String.class, String.class)
-            .newInstance(yawlEngineUrl, yawlUsername, yawlPassword);
-
-        try {
-            YSpecificationID sid = parseSpecificationID(specId);
-            Path tmp = Files.createTempFile("yawl-xes-", ".xes");
-            try {
-                Method exportMethod = exporterClass.getMethod(
-                    "exportToFile", YSpecificationID.class, boolean.class, Path.class);
-                exportMethod.invoke(exporter, sid, false, tmp);
-                return callPm4Py(skill, tmp.toString());
-            } finally {
-                Files.deleteIfExists(tmp);
-            }
-        } finally {
-            Method closeMethod = exporterClass.getMethod("close");
-            closeMethod.invoke(exporter);
-        }
-    }
-
-    /**
-     * Execute process mining analysis with a XES file path.
-     */
-    private String executeProcessMiningWithXes(String xesPath, String skill) throws Exception {
-        return callPm4Py(skill, xesPath);
-    }
-
-    /**
-     * Call Pm4Py using reflection to avoid compile-time dependency.
-     */
-    private String callPm4Py(String skill, String path) throws Exception {
-        Class<?> pm4pyClass = Class.forName(
-            "org.yawlfoundation.yawl.integration.orderfulfillment.Pm4PyClient");
-        Method fromEnvMethod = pm4pyClass.getMethod("fromEnvironment");
-        Object client = fromEnvMethod.invoke(null);
-        Method callMethod = pm4pyClass.getMethod("call", String.class, String.class);
-        return (String) callMethod.invoke(client, skill, path);
     }
 
     /**
@@ -300,17 +230,32 @@ public class ZaiFunctionService {
 
         String functionPrompt = buildFunctionSelectionPrompt(userMessage);
 
-        ChatRequest request = new ChatRequest(
-            model,
-            List.of(
-                ChatMessage.system(getSystemPrompt()),
-                ChatMessage.user(functionPrompt)
-            )
+        List<ChatMessage> messages = List.of(
+                ChatMessage.builder()
+                        .role(ChatMessageRole.SYSTEM.value())
+                        .content(getSystemPrompt())
+                        .build(),
+                ChatMessage.builder()
+                        .role(ChatMessageRole.USER.value())
+                        .content(functionPrompt)
+                        .build()
         );
 
         try {
-            ChatResponse response = httpClient.createChatCompletionRecord(request);
-            String content = response.content();
+            ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+                    .model(model)
+                    .messages(messages)
+                    .temperature(0.7f)
+                    .maxTokens(2048)
+                    .build();
+
+            ChatCompletionResponse response = zaiClient.chat().createChatCompletion(params);
+
+            if (!response.isSuccess()) {
+                throw new RuntimeException("Chat API call failed: " + response.getMsg());
+            }
+
+            String content = response.getData().getChoices().get(0).getMessage().getContent().toString();
 
             FunctionCall functionCall = parseFunctionCall(content);
 

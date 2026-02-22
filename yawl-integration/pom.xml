@@ -106,6 +106,28 @@
             <version>${a2a.version}</version>
         </dependency>
 
+        <!-- Z.AI Official SDK -->
+        <dependency>
+            <groupId>ai.z.openapi</groupId>
+            <artifactId>zai-sdk</artifactId>
+            <version>0.3.0</version>
+            <exclusions>
+                <!-- Use parent pom managed versions instead -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -320,16 +342,9 @@
                              ===================================================================== -->
                         <exclude>**/conflict/**</exclude>
 
-                        <!-- =====================================================================
-                             ZAI integration - ZaiFunctionService depends on Pm4Py Python library
-                             ===================================================================== -->
-                        <exclude>**/zai/ZaiFunctionService.java</exclude>
+                        <!-- ZAI integration - now using official SDK, no longer excluded -->
+                        <!-- processmining - removed dependency on pm4py -->
                         <exclude>**/processmining/**</exclude>
-
-                        <!-- Exclude classes that depend on ZaiFunctionService -->
-                        <exclude>**/mcp/spring/YawlMcpToolRegistry.java</exclude>
-                        <exclude>**/mcp/spring/YawlMcpSpringApplication.java</exclude>
-                        <exclude>**/mcp/spring/YawlMcpConfiguration.java</exclude>
 
                         <!-- Exclude event-related classes that need MCP SDK 1.0.0-RC3 API updates -->
                         <exclude>**/mcp/event/**</exclude>
@@ -390,11 +405,6 @@
                              ===================================================================== -->
                         <exclude>**/eventsourcing/**</exclude>
 
-                        <!-- =====================================================================
-                             ZAI integration - SpecificationGenerator/Optimizer have API mismatches
-                             ===================================================================== -->
-                        <exclude>**/zai/SpecificationGenerator.java</exclude>
-                        <exclude>**/zai/SpecificationOptimizer.java</exclude>
 
                         <!-- =====================================================================
                              MCP Spec tools - depends on excluded ZAI classes
@@ -417,9 +427,6 @@
                         <!-- A2A tests enabled for handoff testing -->
                         <!-- ZaiFunctionService tests depend on Pm4Py; ZaiService and ZaiDecisionReasoner tests allowed -->
                         <testExclude>**/zai/ZaiFunctionServiceTest.java</testExclude>
-                        <!-- SpecificationGenerator/Optimizer tests depend on excluded sources -->
-                        <testExclude>**/zai/SpecificationGeneratorTest.java</testExclude>
-                        <testExclude>**/zai/SpecificationOptimizerTest.java</testExclude>
                         <!-- ZaiDecisionReasoner tests require external Z.AI API (rate-limited in CI) -->
                         <testExclude>**/zai/ZaiDecisionReasonerTest.java</testExclude>
                         <testExclude>**/processmining/**</testExclude>

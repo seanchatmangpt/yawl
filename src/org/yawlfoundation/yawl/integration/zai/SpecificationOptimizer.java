@@ -79,6 +79,15 @@ public class SpecificationOptimizer {
     }
 
     /**
+     * Creates a SpecificationOptimizer using the official Z.AI SDK (reads ZAI_API_KEY from env).
+     *
+     * @return a SpecificationOptimizer with official SDK backend
+     */
+    public static SpecificationOptimizer create() {
+        return new SpecificationOptimizer(SpecificationGenerator.officialSdkClient());
+    }
+
+    /**
      * Analyzes a specification and returns optimization suggestions.
      *
      * @param spec the specification to analyze
