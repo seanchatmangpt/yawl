@@ -1,0 +1,30 @@
+{
+  "branch": "claude/run-validation-tests-osh3r",
+  "commit": "593a8fc",
+  "facts_dir": "docs/v6/latest/facts",
+  "generated_at": "2026-02-22T08:16:09Z",
+  "outputs": {
+    "diagrams": [],
+    "facts": [
+      "facts/modules.json",
+      "facts/reactor.json",
+      "facts/shared-src.json",
+      "facts/dual-family.json",
+      "facts/duplicates.json",
+      "facts/tests.json",
+      "facts/integration.json",
+      "facts/docker-testing.json",
+      "facts/coverage.json",
+      "facts/static-analysis.json",
+      "facts/deps-conflicts.json"
+    ]
+  },
+  "refusals": [],
+  "run_id": "run-20260222-081609",
+  "schema_version": "1.0",
+  "status": "RED",
+  "timing_ms": 0,
+  "warnings": [
+    "Missing fact: gates.json"
+  ]
+}
