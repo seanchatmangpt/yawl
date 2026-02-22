@@ -302,9 +302,6 @@
                         <!-- Claude integration - StructuredTaskScope API issue -->
                         <exclude>**/claude/**</exclude>
 
-                        <!-- MCP spec tools - depends on ZAI spec generator integration -->
-                        <exclude>**/mcp/spec/YawlSpecToolSpecifications.java</exclude>
-
                         <!-- A2A classes - HandoffProtocol API changes in SDK -->
                         <exclude>**/a2a/VirtualThreadYawlA2AServer.java</exclude>
                         <exclude>**/a2a/YawlA2AServer.java</exclude>
