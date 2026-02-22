@@ -195,7 +195,6 @@ jobs:
           mvn clean package \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -Pprod \
             -DskipTests=false
 
