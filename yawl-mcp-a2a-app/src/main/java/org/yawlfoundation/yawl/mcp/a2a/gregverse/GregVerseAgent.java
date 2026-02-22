@@ -142,4 +142,9 @@ public interface GregVerseAgent {
      * @return description of response format (e.g., "Bullet points with action items")
      */
     String getResponseFormat();
+
+    /**
+     * Clears the conversation history for this agent.
+     */
+    void clearHistory();
 }

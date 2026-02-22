@@ -30,7 +30,7 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.skills.ProcessMiningSkill;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+// ZaiFunctionService is dynamically loaded via reflection to avoid dependency conflicts
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
@@ -481,9 +481,9 @@ public class YawlA2AServer {
         }
 
         private String processWorkflowRequest(String userText) throws IOException {
-            if (zaiFunctionService != null) {
+            if (zaiFunctionService != null && zaiProcessMethod != null) {
                 try {
-                    return zaiFunctionService.processWithFunctions(userText);
+                    return (String) zaiProcessMethod.invoke(zaiFunctionService, userText);
                 } catch (Exception e) {
                     return "Z.AI processing error: " + e.getMessage();
                 }
@@ -863,14 +863,26 @@ public class YawlA2AServer {
     private void handleHandoffMessage(HttpExchange exchange, ServerCallContext callContext, String body) {
         try {
             // Parse the incoming A2A message
-            io.a2a.spec.Message message = io.a2a.spec.Message.fromJson(body);
+            io.a2a.spec.Message message;
+            try {
+                message = io.a2a.spec.Message.fromJson(body);
+            } catch (Exception e) {
+                sendHandoffError(exchange, 400, "Invalid message format: " + e.getMessage());
+                return;
+            }
 
             // Extract text content to check for handoff prefix
-            String messageText = message.parts().stream()
-                .filter(part -> part instanceof io.a2a.spec.TextPart)
-                .map(part -> ((io.a2a.spec.TextPart) part).text())
-                .findFirst()
-                .orElse("");
+            String messageText;
+            try {
+                messageText = message.parts().stream()
+                    .filter(part -> part instanceof io.a2a.spec.TextPart)
+                    .map(part -> ((io.a2a.spec.TextPart) part).text())
+                    .findFirst()
+                    .orElse("");
+            } catch (Exception e) {
+                sendHandoffError(exchange, 400, "Message has no text parts");
+                return;
+            }
 
             if (!messageText.startsWith("YAWL_HANDOFF:")) {
                 sendHandoffError(exchange, 400, "Not a handoff message");
@@ -880,10 +892,21 @@ public class YawlA2AServer {
             // Extract work item ID from handoff message
             String workItemId = extractWorkItemIdFromHandoff(messageText);
 
-            // Validate permissions
-            if (!callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_WORKITEM_MANAGE) &&
-                !callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
-                sendHandoffError(exchange, 403, "Insufficient permissions");
+            // Validate permissions - using reflection for compatibility with different A2A SDK versions
+            try {
+                java.lang.reflect.Method getPrincipalMethod = callContext.getClass().getMethod("getPrincipal");
+                Object principal = getPrincipalMethod.invoke(callContext);
+                java.lang.reflect.Method hasPermissionMethod = principal.getClass().getMethod("hasPermission", String.class);
+
+                boolean hasManagePermission = (Boolean) hasPermissionMethod.invoke(principal, AuthenticatedPrincipal.PERM_WORKITEM_MANAGE);
+                boolean hasAllPermission = (Boolean) hasPermissionMethod.invoke(principal, AuthenticatedPrincipal.PERM_ALL);
+
+                if (!hasManagePermission && !hasAllPermission) {
+                    sendHandoffError(exchange, 403, "Insufficient permissions");
+                    return;
+                }
+            } catch (Exception e) {
+                sendHandoffError(exchange, 500, "Permission validation failed: " + e.getMessage());
                 return;
             }
 

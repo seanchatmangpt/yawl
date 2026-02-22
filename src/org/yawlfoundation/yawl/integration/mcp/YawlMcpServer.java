@@ -6,21 +6,22 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
-import io.modelcontextprotocol.server.McpServer;
-import io.modelcontextprotocol.server.McpSyncServer;
+import io.modelcontextprotocol.server.McpStatelessSyncServer;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
+import io.modelcontextprotocol.server.McpServerFeatures;
+import io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
+import org.yawlfoundation.yawl.integration.mcp.resource.YawlEventResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlEventToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlProcessMiningToolSpecifications;
-
-import io.modelcontextprotocol.server.McpServerFeatures;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
@@ -69,7 +70,7 @@ public class YawlMcpServer {
     private final String yawlUsername;
     private final String yawlPassword;
     private final McpLoggingHandler loggingHandler;
-    private McpSyncServer mcpServer;
+    private McpStatelessSyncServer mcpServer;
     private String sessionHandle;
 
     /**
@@ -119,7 +120,7 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
-        mcpServer = McpServer.sync(transportProvider)
+        mcpServer = McpStatelessSyncServer.server(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
             .instructions("""
@@ -130,13 +131,24 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 20 tools (15 workflow + 5 process mining), 3 resources,
-                3 resource templates, 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
+                Event Publishing: Subscribe to workflow lifecycle events in real-time,
+                including case start/complete/terminate, task enable/start/complete/fail,
+                state transitions, resource allocation, and data changes. Stream events
+                via WebSocket connections or monitor through event resources.
+
+                Capabilities: 24 tools (15 workflow + 5 process mining + 4 event publishing),
+                6 resources (3 static + 3 event streaming), 6 resource templates (3 standard + 3 event),
+                4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
             .tools(combinedTools(interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(YawlEventToolSpecifications.createAll(mcpServer, loggingHandler))
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
+                interfaceBClient, sessionHandle))
+            .resources(YawlEventResourceProvider.createAllResources(
+                interfaceBClient, sessionHandle))
+            .resourceTemplates(YawlEventResourceProvider.createAllResourceTemplates(
                 interfaceBClient, sessionHandle))
             .prompts(YawlPromptSpecifications.createAll(
                 interfaceBClient, () -> sessionHandle))
@@ -146,8 +158,9 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 20 tools (15 workflow + 5 process mining), " +
-            "3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
+        System.err.println("Capabilities: 24 tools (15 workflow + 5 process mining + 4 event publishing), " +
+            "6 resources (3 static + 3 event), 6 resource templates (3 standard + 3 event), " +
+            "4 prompts, 3 completions, logging");
     }
 
     /**
@@ -177,7 +190,7 @@ public class YawlMcpServer {
      *
      * @return the MCP sync server, or null if not started
      */
-    public McpSyncServer getMcpServer() {
+    public McpStatelessSyncServer getMcpServer() {
         return mcpServer;
     }
 

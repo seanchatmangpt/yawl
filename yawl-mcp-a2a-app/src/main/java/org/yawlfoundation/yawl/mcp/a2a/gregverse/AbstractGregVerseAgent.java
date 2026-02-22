@@ -138,6 +138,7 @@ public abstract class AbstractGregVerseAgent implements GregVerseAgent {
     /**
      * Clears the conversation history for this agent.
      */
+    @Override
     public void clearHistory() {
         zaiService.clearHistory();
         logger.debug("{} conversation history cleared", getDisplayName());

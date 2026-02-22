@@ -142,13 +142,15 @@ public class GregVerseOrchestrator {
 
         // Use virtual thread executor for scalable I/O-bound agent operations
         // Fall back to platform threads if virtual threads are not available
+        ExecutorService localExecutor;
         try {
-            this.executor = Executors.newVirtualThreadPerTaskExecutor();
+            localExecutor = Executors.newVirtualThreadPerTaskExecutor();
             LOGGER.info("Using virtual thread executor for scalable agent execution");
         } catch (NoSuchMethodError e) {
             LOGGER.warn("Virtual thread executor not available, falling back to platform thread pool");
-            this.executor = Executors.newFixedThreadPool(maxConcurrency);
+            localExecutor = Executors.newFixedThreadPool(maxConcurrency);
         }
+        this.executor = localExecutor;
 
         LOGGER.info("GregVerseOrchestrator initialized: topology={}, timeout={}, maxHandoffs={}, maxConcurrency={}",
                 this.topology, this.timeout, this.maxHandoffs, this.maxConcurrency);
@@ -527,7 +529,7 @@ public class GregVerseOrchestrator {
     /**
      * Build task prompt for agent execution.
      */
-    private String buildTaskPrompt(SagaStep step, SagaContext context) {
+    public String buildTaskPrompt(SagaStep step, SagaContext context) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Task: ").append(step.getDescription()).append("\n\n");
         prompt.append("Workflow Context:\n");

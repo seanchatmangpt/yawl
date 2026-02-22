@@ -473,6 +473,8 @@
                                 <exclude>**/*Tests.java</exclude>
                                 <exclude>**/benchmarks/**/*.java</exclude>
                                 <exclude>**/jmh/**/*.java</exclude>
+                                <!-- MCP SDK 1.0.0-RC3: Depends on excluded YawlToolSpecifications -->
+                                <exclude>**/mcp/a2a/mcp/*.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
