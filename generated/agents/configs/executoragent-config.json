@@ -1,0 +1,27 @@
+{
+  "id": "ExecutorAgent",
+  "name": "Task Executor Agent",
+  "description": "Executes assigned tasks and reports progress",
+  "protocol": "http://yawl.io/a2a#ExecutionProtocol",
+  "mcp_server": "",
+  "endpoints": [
+    {
+      "name": "executor/task/start",
+      "method": "POST",
+      "message_type": "TaskStart",
+      "response_time": 200
+    },
+    {
+      "name": "executor/task/progress",
+      "method": "POST",
+      "message_type": "ProgressUpdate",
+      "response_time": 100
+    },
+    {
+      "name": "executor/task/complete",
+      "method": "POST",
+      "message_type": "TaskCompletion",
+      "response_time": 300
+    }
+  ]
+}

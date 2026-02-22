@@ -1,0 +1,83 @@
+[0;34m============================================[0m
+[0;34mYAWL CLI Comprehensive Smoke Tests[0m
+[0;34m============================================[0m
+
+[0;34m[1] Basic CLI Functionality[0m
+[0;32m✓[0m Main app imports successfully
+[0;32m✓[0m version command shows 6.0.0
+[0;32m✓[0m help command works
+
+[0;34m[2] Subcommand Availability[0m
+[0;32m✓[0m subcommand: build
+[0;32m✓[0m subcommand: observatory
+[0;32m✓[0m subcommand: godspeed
+[0;32m✓[0m subcommand: ggen
+[0;32m✓[0m subcommand: gregverse
+[0;32m✓[0m subcommand: team
+[0;32m✓[0m subcommand: config
+
+[0;34m[3] Build Subcommands[0m
+[0;32m✓[0m build compile
+[0;32m✓[0m build test
+[0;32m✓[0m build validate
+[0;32m✓[0m build all
+[0;32m✓[0m build clean
+
+[0;34m[4] GODSPEED Phases[0m
+[0;32m✓[0m godspeed discover
+[0;32m✓[0m godspeed compile
+[0;32m✓[0m godspeed guard
+[0;32m✓[0m godspeed verify
+[0;32m✓[0m godspeed full
+
+[0;34m[5] ggen Commands[0m
+[0;32m✓[0m ggen init
+[0;32m✓[0m ggen generate
+[0;32m✓[0m ggen validate
+[0;32m✓[0m ggen export
+
+[0;34m[6] gregverse Commands[0m
+[0;32m✓[0m gregverse import
+[0;32m✓[0m gregverse export
+[0;32m✓[0m gregverse convert
+
+[0;34m[7] Error Handling[0m
+[0;31m✗[0m invalid command handling
+[0;31m✗[0m invalid flag handling
+
+[0;34m[8] Module Imports[0m
+[0;32m✓[0m import yawl_cli
+[0;32m✓[0m import yawl_cli.utils
+[0;32m✓[0m import yawl_cli.build
+[0;32m✓[0m import yawl_cli.godspeed
+[0;32m✓[0m import yawl_cli.ggen
+[0;32m✓[0m import yawl_cli.gregverse
+[0;32m✓[0m import yawl_cli.observatory
+[0;32m✓[0m import yawl_cli.team
+[0;32m✓[0m import yawl_cli.config_cli
+
+[0;34m[9] Dependencies[0m
+[0;32m✓[0m dependency: typer
+[0;32m✓[0m dependency: pydantic
+[0;32m✓[0m dependency: yaml
+[0;32m✓[0m dependency: rich
+[0;32m✓[0m dependency: requests
+[0;32m✓[0m dependency: jinja2
+
+[0;34m[10] Python Code Quality[0m
+[0;32m✓[0m all Python files have valid syntax
+
+[0;34m[11] Configuration Module[0m
+[0;32m✓[0m config_cli.app available
+
+[0;34m[12] Utils Module[0m
+[0;32m✓[0m utils module has all required functions
+
+[0;34m============================================[0m
+[0;34mTest Summary[0m
+[0;34m============================================[0m
+[0;32mPassed: 45[0m
+[0;31mFailed: 2[0m
+Total:  47
+
+[0;31m✗ Some tests failed. See above for details.[0m

@@ -1,0 +1,31 @@
+PREFIX yawls: <http://www.yawlfoundation.org/yawlschema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?fromTaskId ?toTaskId ?predicate ?isDefault ?evaluationOrder
+WHERE {
+  ?fromElement a ?fromType ;
+               yawls:id ?fromTaskId ;
+               yawls:hasFlowInto ?flowInto .
+
+  ?flowInto yawls:nextElement ?toElement .
+  ?toElement yawls:id ?toTaskId .
+
+  OPTIONAL {
+    ?flowInto yawls:hasPredicate ?predicateObj .
+    ?predicateObj yawls:xpathExpression ?predicate
+  }
+
+  OPTIONAL {
+    ?flowInto yawls:isDefaultFlow ?isDefault
+  }
+
+  OPTIONAL {
+    ?flowInto yawls:ordering ?evaluationOrder
+  }
+
+  FILTER(
+    (?fromType = yawls:Task || ?fromType = yawls:Condition) &&
+    EXISTS { ?toElement a yawls:NetElement }
+  )
+}
+ORDER BY ?fromTaskId ?evaluationOrder ?toTaskId

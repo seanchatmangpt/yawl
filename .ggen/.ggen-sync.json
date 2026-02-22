@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "synced_at": "2026-02-22T05:48:00Z",
+  "synced_by": "ggen-sync.sh",
+  "components": {
+    "templates": {
+      "count": 3,
+      "status": "synced"
+    },
+    "sparql_queries": {
+      "count": 7,
+      "status": "loaded"
+    },
+    "ontology": {
+      "status": "missing"
+    },
+    "template_cache": {
+      "count": 3,
+      "status": "ready"
+    }
+  }
+}

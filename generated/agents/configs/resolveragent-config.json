@@ -1,0 +1,27 @@
+{
+  "id": "ResolverAgent",
+  "name": "Resolver Agent",
+  "description": "Handles failures, conflicts, and recovery scenarios",
+  "protocol": "http://yawl.io/a2a#ResolutionProtocol",
+  "mcp_server": "",
+  "endpoints": [
+    {
+      "name": "resolver/error",
+      "method": "POST",
+      "message_type": "ErrorNotification",
+      "response_time": 500
+    },
+    {
+      "name": "resolver/conflict",
+      "method": "POST",
+      "message_type": "ConflictResolution",
+      "response_time": 1000
+    },
+    {
+      "name": "resolver/recovery",
+      "method": "POST",
+      "message_type": "RecoveryPlan",
+      "response_time": 2000
+    }
+  ]
+}

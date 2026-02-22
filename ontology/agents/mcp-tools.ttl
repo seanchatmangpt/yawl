@@ -1,0 +1,761 @@
+@prefix mcp: <http://yawl.io/mcp#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+
+# ============================================================================
+# MCP Tool Definitions for YAWL Agent Ecosystem
+# ============================================================================
+# Comprehensive MCP tool catalog for agent communication and control
+# ============================================================================
+
+# --------------------------------------------------------------------------
+# Orchestrator Agent Tools (Port 9001)
+# --------------------------------------------------------------------------
+
+mcp:task_assign a mcp:Tool ;
+  rdfs:label "Task Assign" ;
+  rdfs:comment "Assign a task to an executor agent" ;
+  mcp:server mcp:OrchestrationMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "task_id" ;
+      schema:description "Unique task identifier" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "executor_id" ;
+      schema:description "ID of target executor agent" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "workflow_spec" ;
+      schema:description "YAWL workflow specification" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "deadline" ;
+      schema:description "Task deadline (ISO 8601)" ;
+      schema:valueType xsd:dateTime ;
+      schema:required false
+    ] ;
+    schema:property [
+      schema:name "priority" ;
+      schema:description "Task priority (HIGH, NORMAL, LOW)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "assignment_id" ;
+      schema:description "Assignment confirmation ID" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "status" ;
+      schema:description "Assignment status (ACCEPTED, REJECTED, PENDING)" ;
+      schema:valueType xsd:string
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 100 ; mcp:burstSize 10 ] .
+
+mcp:status_poll a mcp:Tool ;
+  rdfs:label "Status Poll" ;
+  rdfs:comment "Poll status of assigned tasks" ;
+  mcp:server mcp:OrchestrationMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "task_id" ;
+      schema:description "Task to query" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "executor_id" ;
+      schema:description "Executor to query" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "task_id" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "state" ;
+      schema:description "Task state (PENDING, RUNNING, COMPLETE, FAILED)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "progress" ;
+      schema:description "Progress percentage (0-100)" ;
+      schema:valueType xsd:integer
+    ] ;
+    schema:property [
+      schema:name "last_update" ;
+      schema:valueType xsd:dateTime
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 1000 ; mcp:burstSize 50 ] .
+
+mcp:dependency_check a mcp:Tool ;
+  rdfs:label "Dependency Check" ;
+  rdfs:comment "Check task dependencies and sequencing" ;
+  mcp:server mcp:OrchestrationMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "task_ids" ;
+      schema:description "List of task IDs" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "dependency_graph" ;
+      schema:description "Task dependency DAG" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "can_parallelize" ;
+      schema:description "Whether tasks can run in parallel" ;
+      schema:valueType xsd:boolean
+    ] ;
+    schema:property [
+      schema:name "critical_path" ;
+      schema:description "Critical path duration" ;
+      schema:valueType xsd:long
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 100 ] .
+
+# --------------------------------------------------------------------------
+# Executor Agent Tools (Port 9002)
+# --------------------------------------------------------------------------
+
+mcp:task_execute a mcp:Tool ;
+  rdfs:label "Task Execute" ;
+  rdfs:comment "Execute a workflow task" ;
+  mcp:server mcp:ExecutorMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "task_id" ;
+      schema:description "Task to execute" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "case_id" ;
+      schema:description "Case identifier" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "workflow_data" ;
+      schema:description "Case data (JSON)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "timeout_ms" ;
+      schema:description "Execution timeout (milliseconds)" ;
+      schema:valueType xsd:long ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "execution_id" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "result" ;
+      schema:description "Execution result (JSON)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "duration_ms" ;
+      schema:valueType xsd:long
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 50 ] .
+
+mcp:progress_report a mcp:Tool ;
+  rdfs:label "Progress Report" ;
+  rdfs:comment "Report execution progress" ;
+  mcp:server mcp:ExecutorMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "execution_id" ;
+      schema:description "Execution ID" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "progress_percent" ;
+      schema:description "Progress (0-100)" ;
+      schema:valueType xsd:integer ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "status_message" ;
+      schema:description "Status description" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ] ;
+    schema:property [
+      schema:name "checkpoint_data" ;
+      schema:description "Checkpoint data (JSON)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "ack_id" ;
+      schema:description "Acknowledgement ID" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "continue" ;
+      schema:description "Continue execution?" ;
+      schema:valueType xsd:boolean
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 500 ] .
+
+mcp:error_notify a mcp:Tool ;
+  rdfs:label "Error Notify" ;
+  rdfs:comment "Notify of execution errors" ;
+  mcp:server mcp:ExecutorMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "execution_id" ;
+      schema:description "Execution ID" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "error_code" ;
+      schema:description "Error code" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "error_message" ;
+      schema:description "Error description" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "stack_trace" ;
+      schema:description "Stack trace (optional)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "response" ;
+      schema:description "Response action (RETRY, ABORT, ESCALATE)" ;
+      schema:valueType xsd:string
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 100 ] .
+
+# --------------------------------------------------------------------------
+# Validator Agent Tools (Port 9003)
+# --------------------------------------------------------------------------
+
+mcp:validate_output a mcp:Tool ;
+  rdfs:label "Validate Output" ;
+  rdfs:comment "Validate task output against rules" ;
+  mcp:server mcp:ValidatorMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "artifact_id" ;
+      schema:description "Artifact to validate" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "artifact_content" ;
+      schema:description "Artifact content" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "validation_rules" ;
+      schema:description "Validation rule set" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "rule_version" ;
+      schema:description "Rule set version" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "valid" ;
+      schema:description "Validation result (true/false)" ;
+      schema:valueType xsd:boolean
+    ] ;
+    schema:property [
+      schema:name "violations" ;
+      schema:description "List of violations (JSON array)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "severity" ;
+      schema:description "Highest severity (ERROR, WARNING, INFO)" ;
+      schema:valueType xsd:string
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 200 ] .
+
+mcp:check_gates a mcp:Tool ;
+  rdfs:label "Check Gates" ;
+  rdfs:comment "Check YAWL validation gates (H, Q, Λ)" ;
+  mcp:server mcp:ValidatorMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "gate_id" ;
+      schema:description "Gate to check (H, Q, Λ, Ψ, etc.)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "artifact_path" ;
+      schema:description "Path to artifact" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "phase" ;
+      schema:description "Phase name" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "gate_status" ;
+      schema:description "Gate status (GREEN, RED, YELLOW)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "blocking_issues" ;
+      schema:description "Blocking issues found" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "warnings" ;
+      schema:description "Non-blocking warnings" ;
+      schema:valueType xsd:string
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 100 ] .
+
+mcp:report_compliance a mcp:Tool ;
+  rdfs:label "Report Compliance" ;
+  rdfs:comment "Generate compliance report" ;
+  mcp:server mcp:ValidatorMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "case_id" ;
+      schema:description "Case to report on" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "compliance_framework" ;
+      schema:description "Framework (HYPER_STANDARDS, ISO, etc.)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "include_audit_trail" ;
+      schema:description "Include full audit trail?" ;
+      schema:valueType xsd:boolean ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "compliance_report" ;
+      schema:description "Compliance report (JSON)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "score" ;
+      schema:description "Compliance score (0-100)" ;
+      schema:valueType xsd:integer
+    ] ;
+    schema:property [
+      schema:name "audit_trail" ;
+      schema:description "Audit trail (optional)" ;
+      schema:valueType xsd:string
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 50 ] .
+
+# --------------------------------------------------------------------------
+# Observer Agent Tools (Port 9004)
+# --------------------------------------------------------------------------
+
+mcp:emit_metric a mcp:Tool ;
+  rdfs:label "Emit Metric" ;
+  rdfs:comment "Emit observability metric" ;
+  mcp:server mcp:ObserverMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "metric_name" ;
+      schema:description "Metric name (e.g., task_duration_ms)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "metric_value" ;
+      schema:description "Metric value" ;
+      schema:valueType xsd:decimal ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "tags" ;
+      schema:description "Tags (JSON object)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ] ;
+    schema:property [
+      schema:name "timestamp_ms" ;
+      schema:description "Timestamp (Unix ms)" ;
+      schema:valueType xsd:long ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "ack" ;
+      schema:description "Acknowledgement" ;
+      schema:valueType xsd:boolean
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 10000 ; mcp:burstSize 1000 ] .
+
+mcp:emit_trace a mcp:Tool ;
+  rdfs:label "Emit Trace" ;
+  rdfs:comment "Emit distributed trace span" ;
+  mcp:server mcp:ObserverMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "trace_id" ;
+      schema:description "Trace ID (OpenTelemetry format)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "span_id" ;
+      schema:description "Span ID" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "span_name" ;
+      schema:description "Span name" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "duration_ms" ;
+      schema:description "Span duration (ms)" ;
+      schema:valueType xsd:long ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "attributes" ;
+      schema:description "Span attributes (JSON)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "ack" ;
+      schema:valueType xsd:boolean
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 5000 ] .
+
+mcp:emit_log a mcp:Tool ;
+  rdfs:label "Emit Log" ;
+  rdfs:comment "Emit structured log entry" ;
+  mcp:server mcp:ObserverMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "level" ;
+      schema:description "Log level (DEBUG, INFO, WARN, ERROR)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "message" ;
+      schema:description "Log message" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "fields" ;
+      schema:description "Structured fields (JSON)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ] ;
+    schema:property [
+      schema:name "trace_id" ;
+      schema:description "Trace context ID" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "ack" ;
+      schema:valueType xsd:boolean
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 10000 ] .
+
+# --------------------------------------------------------------------------
+# Resolver Agent Tools (Port 9005)
+# --------------------------------------------------------------------------
+
+mcp:handle_error a mcp:Tool ;
+  rdfs:label "Handle Error" ;
+  rdfs:comment "Handle execution error with recovery" ;
+  mcp:server mcp:ResolverMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "error_id" ;
+      schema:description "Unique error ID" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "error_type" ;
+      schema:description "Error type (TIMEOUT, VALIDATION, EXECUTION)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "context" ;
+      schema:description "Error context (JSON)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "affected_task_id" ;
+      schema:description "Affected task ID" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "action" ;
+      schema:description "Recommended action (RETRY, SKIP, ABORT, ESCALATE)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "retry_count" ;
+      schema:description "Retry count (if applicable)" ;
+      schema:valueType xsd:integer
+    ] ;
+    schema:property [
+      schema:name "backoff_ms" ;
+      schema:description "Backoff delay (ms)" ;
+      schema:valueType xsd:long
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 100 ] .
+
+mcp:resolve_conflict a mcp:Tool ;
+  rdfs:label "Resolve Conflict" ;
+  rdfs:comment "Resolve task or data conflicts" ;
+  mcp:server mcp:ResolverMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "conflict_id" ;
+      schema:description "Unique conflict ID" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "conflict_type" ;
+      schema:description "Type (DATA_CONFLICT, RESOURCE_CONFLICT, ORDERING)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "involved_entities" ;
+      schema:description "IDs of involved tasks/agents" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "proposed_resolutions" ;
+      schema:description "Proposed resolution options (JSON array)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "chosen_resolution" ;
+      schema:description "Selected resolution strategy" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "implementation_steps" ;
+      schema:description "Steps to implement (JSON array)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "affected_entities" ;
+      schema:description "Entities affected by resolution" ;
+      schema:valueType xsd:string
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 50 ] .
+
+mcp:recovery_plan a mcp:Tool ;
+  rdfs:label "Recovery Plan" ;
+  rdfs:comment "Generate recovery plan for failure" ;
+  mcp:server mcp:ResolverMCPServer ;
+  mcp:inputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "failure_id" ;
+      schema:description "Unique failure ID" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "failure_scope" ;
+      schema:description "Scope (TASK, CASE, WORKFLOW, SYSTEM)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "failure_analysis" ;
+      schema:description "Analysis of failure (JSON)" ;
+      schema:valueType xsd:string ;
+      schema:required true
+    ] ;
+    schema:property [
+      schema:name "constraints" ;
+      schema:description "Recovery constraints (JSON)" ;
+      schema:valueType xsd:string ;
+      schema:required false
+    ]
+  ] ;
+  mcp:outputSchema [
+    a schema:Thing ;
+    schema:property [
+      schema:name "recovery_plan" ;
+      schema:description "Detailed recovery plan (JSON)" ;
+      schema:valueType xsd:string
+    ] ;
+    schema:property [
+      schema:name "estimated_duration_ms" ;
+      schema:description "Estimated recovery time" ;
+      schema:valueType xsd:long
+    ] ;
+    schema:property [
+      schema:name "risk_assessment" ;
+      schema:description "Recovery risk assessment" ;
+      schema:valueType xsd:string
+    ]
+  ] ;
+  mcp:rateLimit [ mcp:requestsPerSecond 20 ] .
+
+# ============================================================================
+# MCP Resource Quotas and Global Settings
+# ============================================================================
+
+mcp:GlobalSettings a mcp:Settings ;
+  rdfs:label "Global MCP Settings" ;
+  mcp:maxConcurrentConnections 1000 ;
+  mcp:maxConnectionPoolSize 5000 ;
+  mcp:connectionTimeoutSeconds 30 ;
+  mcp:idleTimeoutSeconds 300 ;
+  mcp:messageBufferSize 10485760 ;  # 10 MB
+  mcp:enableCompression true ;
+  mcp:compressionLevel 6 ;
+  mcp:enablePipelining true ;
+  mcp:maxPipelineDepth 100 ;
+  mcp:enableMetrics true ;
+  mcp:metricsInterval 60 ;  # seconds
+  mcp:enableTracing true ;
+  mcp:tracingSamplingRate 0.1 .
+
+# ============================================================================
+# Tool Availability Matrix (Agent × Tool)
+# ============================================================================
+
+[] a mcp:ToolAvailabilityMatrix ;
+  rdfs:label "MCP Tool Availability" ;
+  mcp:entry [
+    mcp:agent "Orchestrator" ;
+    mcp:tools (mcp:task_assign mcp:status_poll mcp:dependency_check)
+  ] ;
+  mcp:entry [
+    mcp:agent "Executor" ;
+    mcp:tools (mcp:task_execute mcp:progress_report mcp:error_notify)
+  ] ;
+  mcp:entry [
+    mcp:agent "Validator" ;
+    mcp:tools (mcp:validate_output mcp:check_gates mcp:report_compliance)
+  ] ;
+  mcp:entry [
+    mcp:agent "Observer" ;
+    mcp:tools (mcp:emit_metric mcp:emit_trace mcp:emit_log)
+  ] ;
+  mcp:entry [
+    mcp:agent "Resolver" ;
+    mcp:tools (mcp:handle_error mcp:resolve_conflict mcp:recovery_plan)
+  ] .

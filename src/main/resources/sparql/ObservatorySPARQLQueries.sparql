@@ -1,0 +1,236 @@
+PREFIX ex: <http://yawlfoundation.org/facts#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# ============================================================================
+# Observatory SPARQL Queries — Observe codebase structure via RDF facts
+#
+# These queries enable ggen templates to inspect:
+#   - All modules and their properties
+#   - Cross-module dependencies and build order
+#   - Shared source analysis and architecture pattern
+#   - Test coverage and quality metrics
+#   - Integration points (MCP, A2A, ZAI)
+#   - Build profiles and plugin configuration
+#
+# Usage (from ggen Tera templates):
+#   {% for module in sparql("SELECT ?moduleName WHERE { ?m ex:moduleName ?moduleName }") %}
+#   // Module: {{ module.moduleName }}
+#   {% endfor %}
+# ============================================================================
+
+# Query 1: List all modules with key metrics
+#
+# Returns: moduleName, srcFiles, testFiles, testCount, lineCoverage, strategy
+# Use case: Generate module overview, understand source code distribution
+#
+QUERY allModules AS:
+  SELECT ?moduleName ?srcFiles ?testFiles ?testCount ?lineCoverage ?strategy
+  WHERE {
+    ?module ex:moduleName ?moduleName ;
+            ex:srcFiles ?srcFiles ;
+            ex:testFiles ?testFiles ;
+            ex:strategy ?strategy .
+    OPTIONAL { ?module ex:testCount ?testCount . }
+    OPTIONAL { ?module ex:lineCoverage ?lineCoverage . }
+  }
+  ORDER BY ?moduleName
+
+# Query 2: Find cross-module dependencies
+#
+# Returns: from, to, buildOrder
+# Use case: Generate dependency graphs, detect circular deps, plan build order
+#
+QUERY moduleDependencies AS:
+  SELECT ?from ?to ?buildOrderFrom ?buildOrderTo
+  WHERE {
+    ?fromModule ex:moduleName ?from ;
+                ex:buildOrder ?buildOrderFrom ;
+                ex:dependsOn ?toModule .
+    ?toModule ex:moduleName ?to ;
+              ex:buildOrder ?buildOrderTo .
+  }
+  ORDER BY ?buildOrderFrom
+
+# Query 3: Detect circular dependencies (graph cycles)
+#
+# Returns: cycleModules (comma-separated path)
+# Use case: Identify architectural issues, prevent build deadlocks
+#
+QUERY circularDependencies AS:
+  SELECT ?module1 ?module2 ?module3
+  WHERE {
+    ?m1 ex:moduleName ?module1 ;
+        ex:dependsOn ?m2 .
+    ?m2 ex:moduleName ?module2 ;
+        ex:dependsOn ?m3 .
+    ?m3 ex:moduleName ?module3 ;
+        ex:dependsOn ?m1 .
+  }
+  LIMIT 10
+
+# Query 4: Find shared source modules (architecture pattern)
+#
+# Returns: moduleName, sharingStrategy
+# Use case: Identify modules sharing source, plan isolation/refactoring
+#
+QUERY sharedSourceModules AS:
+  SELECT ?moduleName ?sharingStrategy
+  WHERE {
+    ?module ex:moduleName ?moduleName ;
+            ex:sharingStrategy ?sharingStrategy .
+  }
+  ORDER BY ?sharingStrategy
+
+# Query 5: Modules with low test coverage (below target)
+#
+# Returns: moduleName, lineCoverage, targetCoverage, gap
+# Use case: Identify test gaps, prioritize testing efforts
+#
+QUERY lowCoverageModules AS:
+  SELECT ?moduleName ?lineCoverage
+  WHERE {
+    ?module ex:moduleName ?moduleName ;
+            ex:lineCoverage ?lineCoverage .
+    FILTER (?lineCoverage < 65)
+  }
+  ORDER BY ?lineCoverage
+
+# Query 6: Integration points (MCP tools, A2A skills, ZAI)
+#
+# Returns: integrationType, server, toolCount/skillCount
+# Use case: Generate integration documentation, expose available services
+#
+QUERY integrationPoints AS:
+  SELECT ?integrationType ?server ?resourceCount
+  WHERE {
+    ?integration rdf:type ex:IntegrationPoint ;
+                 ex:integrationType ?integrationType ;
+                 ex:server ?server ;
+                 (ex:toolCount | ex:skillCount) ?resourceCount .
+  }
+
+# Query 7: Build profile configuration
+#
+# Returns: profileName
+# Use case: Generate build documentation, enforce profile constraints
+#
+QUERY buildProfiles AS:
+  SELECT ?profileName
+  WHERE {
+    ?profile rdf:type ex:BuildProfile ;
+             ex:profileName ?profileName .
+  }
+  ORDER BY ?profileName
+
+# Query 8: Build plugins with enablement status
+#
+# Returns: pluginName, enabled, buildPhase
+# Use case: Generate plugin documentation, enforce quality gates
+#
+QUERY buildPlugins AS:
+  SELECT ?pluginName ?enabled ?buildPhase
+  WHERE {
+    ?plugin rdf:type ex:BuildPlugin ;
+            ex:pluginName ?pluginName ;
+            ex:enabled ?enabled .
+    OPTIONAL { ?plugin ex:buildPhase ?buildPhase . }
+  }
+  ORDER BY ?pluginName
+
+# Query 9: Module dependencies by build order
+#
+# Returns: moduleName, buildOrder, upstreamCount
+# Use case: Plan parallel build stages, optimize CI/CD
+#
+QUERY moduleBuildOrder AS:
+  SELECT ?moduleName ?buildOrder
+  WHERE {
+    ?module ex:moduleName ?moduleName ;
+            ex:buildOrder ?buildOrder .
+  }
+  ORDER BY ?buildOrder
+
+# Query 10: Test count distribution (modules with tests)
+#
+# Returns: moduleName, testCount
+# Use case: Understand testing investment, track test growth
+#
+QUERY testDistribution AS:
+  SELECT ?moduleName ?testCount
+  WHERE {
+    ?module ex:moduleName ?moduleName ;
+            ex:testCount ?testCount .
+    FILTER (?testCount > 0)
+  }
+  ORDER BY DESC(?testCount)
+
+# Query 11: MCP tools available
+#
+# Returns: tool
+# Use case: List available MCP tools for autonomous agents
+#
+QUERY mcpTools AS:
+  SELECT ?tool
+  WHERE {
+    ?integration ex:integrationType "MCP" ;
+                 ex:tool ?tool .
+  }
+  ORDER BY ?tool
+
+# Query 12: A2A skills available
+#
+# Returns: skill
+# Use case: List available A2A skills for agent-to-agent communication
+#
+QUERY a2aSkills AS:
+  SELECT ?skill
+  WHERE {
+    ?integration ex:integrationType "A2A" ;
+                 ex:skill ?skill .
+  }
+  ORDER BY ?skill
+
+# Query 13: Architecture pattern details
+#
+# Returns: pattern
+# Use case: Validate module organization matches intended pattern
+#
+QUERY architecturePattern AS:
+  SELECT ?pattern
+  WHERE {
+    ?arch rdf:type ex:ArchitecturePattern ;
+          ex:pattern ?pattern .
+  }
+  LIMIT 1
+
+# Query 14: Module properties for code generation context
+#
+# Returns: moduleName, hasPom, springConfig, hibernateConfig, strategy
+# Use case: ggen templates select code generation strategy per module
+#
+QUERY moduleCodeGenContext AS:
+  SELECT ?moduleName ?hasPom ?springConfig ?hibernateConfig ?strategy
+  WHERE {
+    ?module ex:moduleName ?moduleName ;
+            ex:hasPom ?hasPom ;
+            ex:springConfig ?springConfig ;
+            ex:hibernateConfig ?hibernateConfig ;
+            ex:strategy ?strategy .
+  }
+  ORDER BY ?moduleName
+
+# Query 15: Coverage metrics summary
+#
+# Returns: lineCoverage, branchCoverage, meetsTarget
+# Use case: Dashboard/reporting, enforce coverage gates
+#
+QUERY coverageSummary AS:
+  SELECT ?lineCoverage ?branchCoverage ?meetsLineTarget
+  WHERE {
+    ?coverage rdf:type ex:Coverage ;
+              ex:lineCoverage ?lineCoverage ;
+              ex:branchCoverage ?branchCoverage ;
+              ex:meetsLineTarget ?meetsLineTarget .
+  }
+  LIMIT 1

@@ -1,0 +1,13 @@
+@prefix opt: <http://yawl.org/optimization/>.
+
+opt:Improvement_1 a opt:Improvement ;
+  opt:issue "Task naming inconsistency" ;
+  opt:severity "low" ;
+  opt:recommendation "Standardize task name format" ;
+  opt:priority 2 .
+
+opt:Improvement_2 a opt:Improvement ;
+  opt:issue "Missing documentation" ;
+  opt:severity "medium" ;
+  opt:recommendation "Add task documentation" ;
+  opt:priority 1 .

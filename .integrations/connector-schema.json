@@ -1,0 +1,249 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yawlfoundation.org/schema/connector.json",
+  "title": "YAWL Connector Manifest Schema",
+  "description": "Schema for connector YAML files in the Integrations Marketplace",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "type",
+    "version",
+    "description",
+    "skill"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Unique connector identifier (lowercase, alphanumeric + underscore)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Human-readable connector name"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "z-ai",
+        "a2a",
+        "mcp"
+      ],
+      "description": "Connector type: Z.AI tool, A2A adapter, or MCP tool"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version (e.g., 1.0.0, 1.2.3-beta)"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1024,
+      "description": "Detailed description of what this connector does"
+    },
+    "skill": {
+      "type": "object",
+      "required": [
+        "class"
+      ],
+      "properties": {
+        "class": {
+          "type": "string",
+          "pattern": "^([a-zA-Z_][a-zA-Z0-9_]*\\.)*[a-zA-Z_][a-zA-Z0-9_]*$",
+          "description": "Canonical Java class name (implements A2ASkill)"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9:_-]+$"
+          },
+          "description": "Required permissions to execute this skill",
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "config": {
+      "type": "object",
+      "description": "Connector-specific configuration",
+      "properties": {
+        "handoff_protocol": {
+          "type": "string",
+          "enum": [
+            "v1"
+          ],
+          "description": "A2A handoff protocol version (for a2a type)"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "default": 300,
+          "description": "Maximum execution time in seconds"
+        },
+        "correlation_id_header": {
+          "type": "string",
+          "default": "X-Correlation-ID",
+          "description": "HTTP header for correlation ID (for a2a type)"
+        },
+        "idempotency_key_header": {
+          "type": "string",
+          "default": "X-Idempotency-Key",
+          "description": "HTTP header for idempotency key"
+        },
+        "retry_policy": {
+          "type": "object",
+          "properties": {
+            "max_retries": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10,
+              "default": 3
+            },
+            "backoff_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 60000,
+              "default": 1000
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "description": "How external systems invoke this skill",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "skill_method"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Capability name (e.g., 'Approve PO')"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this capability does"
+          },
+          "skill_method": {
+            "type": "string",
+            "enum": [
+              "execute"
+            ],
+            "description": "Which skill method to call"
+          },
+          "input_mapping": {
+            "type": "object",
+            "description": "JSONPath mappings: external message -> SkillRequest parameter",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "output_mapping": {
+            "type": "object",
+            "description": "JSONPath mappings: SkillResult -> external response",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Connector metadata for marketplace ranking",
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Team or person responsible for this connector"
+        },
+        "sla_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 600000,
+          "description": "Service level agreement (target execution time in milliseconds)"
+        },
+        "success_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Historical success rate (0-1)"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp (ISO 8601)"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Search tags for marketplace discovery"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "id": "approval_skill",
+      "name": "Approval Skill",
+      "type": "a2a",
+      "version": "1.0.0",
+      "description": "Handles approval workflows for purchase orders and invoices",
+      "skill": {
+        "class": "org.yawlfoundation.yawl.integration.a2a.skills.ApprovalSkill",
+        "permissions": [
+          "approvals:read",
+          "approvals:write"
+        ]
+      },
+      "config": {
+        "handoff_protocol": "v1",
+        "timeout_seconds": 300,
+        "correlation_id_header": "X-Correlation-ID",
+        "idempotency_key_header": "X-Idempotency-Key"
+      },
+      "capabilities": [
+        {
+          "name": "Approve PO",
+          "description": "Approve a purchase order",
+          "skill_method": "execute",
+          "input_mapping": {
+            "po_number": "$.parts[0].content.po_number",
+            "approver_id": "$.context.agent_id"
+          },
+          "output_mapping": {
+            "status": "$.status",
+            "case_id": "$.parameters.case_id"
+          }
+        }
+      ],
+      "metadata": {
+        "owner": "procurement-team",
+        "sla_ms": 5000,
+        "success_rate": 0.99,
+        "last_updated": "2026-02-21T10:30:00Z",
+        "tags": [
+          "approval",
+          "procurement",
+          "workflow"
+        ]
+      }
+    }
+  ]
+}

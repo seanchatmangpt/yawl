@@ -1,0 +1,31 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX yawl: <http://www.yawlfoundation.org/yawlschema#>
+
+# Validate decomposition definitions
+# Ensures all referenced decompositions exist and are properly defined
+
+SELECT ?task ?decompId ?issue
+WHERE {
+  ?task a yawl:Task ;
+        yawl:id ?taskId ;
+        yawl:decomposesTo ?decomp .
+  ?decomp yawl:id ?decompId .
+
+  {
+    # Decomposition not found
+    FILTER NOT EXISTS {
+      ?decomp a yawl:Decomposition .
+    }
+    BIND("Referenced decomposition does not exist" AS ?issue)
+  } UNION {
+    # Decomposition has no content
+    FILTER NOT EXISTS {
+      ?decomp yawl:hasElement ?elem .
+    }
+    FILTER NOT EXISTS {
+      ?decomp yawl:code ?code .
+    }
+    BIND("Decomposition has no implementation" AS ?issue)
+  }
+}
