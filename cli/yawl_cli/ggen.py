@@ -1,12 +1,13 @@
-"""YAWL XML Generator (ggen) operations."""
+"""YAWL XML Generator (ggen) operations with error handling."""
 
+import sys
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
 
-from yawl_cli.utils import ensure_project_root, run_shell_cmd
+from yawl_cli.utils import ensure_project_root, run_shell_cmd, DEBUG
 
 console = Console()
 ggen_app = typer.Typer(no_args_is_help=True)
@@ -17,20 +18,34 @@ def init(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Initialize ggen for YAWL XML generation."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    console.print("[bold cyan]Initializing ggen[/bold cyan]")
-    console.print("[dim]Setting up templates, SPARQL queries, and converters...[/dim]")
+        console.print("[bold cyan]Initializing ggen[/bold cyan]")
+        console.print("[dim]Setting up templates, SPARQL queries, and converters...[/dim]")
 
-    # Run ggen-init.sh
-    cmd = ["bash", "scripts/ggen-init.sh"]
-    exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose)
+        # Run ggen-init.sh
+        cmd = ["bash", "scripts/ggen-init.sh"]
+        exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose, timeout=120)
 
-    if exit_code == 0:
-        console.print("[bold green]✓ ggen initialized successfully[/bold green]")
-    else:
-        console.print("[bold red]✗ ggen initialization failed[/bold red]")
-        raise typer.Exit(code=exit_code)
+        if exit_code == 0:
+            console.print("[bold green]✓ ggen initialized successfully[/bold green]")
+        else:
+            console.print("[bold red]✗ ggen initialization failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=exit_code)
+
+    except RuntimeError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
 
 
 @ggen_app.command()
@@ -40,31 +55,64 @@ def generate(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Generate YAWL XML from Turtle RDF specification."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    if not spec.exists():
-        console.print(f"[bold red]✗ Error:[/bold red] Spec file not found: {spec}")
+        # Validate spec file
+        spec = spec.resolve()
+        if not spec.exists():
+            raise FileNotFoundError(f"Spec file not found: {spec}")
+
+        if not spec.is_file():
+            raise RuntimeError(f"Spec path is not a file: {spec}")
+
+        if not spec.suffix.lower() == ".ttl":
+            console.print(f"[yellow]Warning:[/yellow] Spec file does not have .ttl extension")
+
+        # Default output filename based on input
+        if output is None:
+            output = spec.with_suffix(".yawl")
+        else:
+            output = output.resolve()
+
+        # Check output directory exists
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+        console.print(f"[bold cyan]Generating YAWL XML[/bold cyan]")
+        console.print(f"[dim]Input:  {spec}[/dim]")
+        console.print(f"[dim]Output: {output}[/dim]")
+
+        # Run ggen generate script
+        cmd = ["bash", "scripts/turtle-to-yawl.sh", str(spec), str(output)]
+        exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose, timeout=300)
+
+        if exit_code == 0:
+            if output.exists():
+                size = output.stat().st_size
+                console.print(f"[bold green]✓ Generated:[/bold green] {output} ({size} bytes)")
+            else:
+                console.print(f"[bold green]✓ Generation completed[/bold green]")
+        else:
+            console.print("[bold red]✗ Generation failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=exit_code)
+
+    except FileNotFoundError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
-
-    # Default output filename based on input
-    if output is None:
-        output = spec.with_suffix(".yawl")
-
-    console.print(f"[bold cyan]Generating YAWL XML[/bold cyan]")
-    console.print(f"[dim]Input:  {spec}[/dim]")
-    console.print(f"[dim]Output: {output}[/dim]")
-
-    # Run ggen generate script
-    cmd = ["bash", "scripts/turtle-to-yawl.sh", str(spec), str(output)]
-    exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose)
-
-    if exit_code == 0:
-        console.print(f"[bold green]✓ Generated:[/bold green] {output}")
-    else:
-        console.print("[bold red]✗ Generation failed[/bold red]")
-        if stderr:
-            console.print(f"[red]{stderr}[/red]")
-        raise typer.Exit(code=exit_code)
+    except RuntimeError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
 
 
 @ggen_app.command()
@@ -73,26 +121,47 @@ def validate(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Validate Turtle RDF specification against YAWL schema."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    if not spec.exists():
-        console.print(f"[bold red]✗ Error:[/bold red] Spec file not found: {spec}")
+        # Validate spec file
+        spec = spec.resolve()
+        if not spec.exists():
+            raise FileNotFoundError(f"Spec file not found: {spec}")
+
+        if not spec.is_file():
+            raise RuntimeError(f"Spec path is not a file: {spec}")
+
+        console.print(f"[bold cyan]Validating specification[/bold cyan]")
+        console.print(f"[dim]File: {spec}[/dim]")
+
+        # Run validation script
+        cmd = ["bash", "scripts/validate-turtle-spec.sh", str(spec)]
+        exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose, timeout=120)
+
+        if exit_code == 0:
+            console.print("[bold green]✓ Specification is valid[/bold green]")
+        else:
+            console.print("[bold red]✗ Specification validation failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=exit_code)
+
+    except FileNotFoundError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
-
-    console.print(f"[bold cyan]Validating specification[/bold cyan]")
-    console.print(f"[dim]File: {spec}[/dim]")
-
-    # Run validation script
-    cmd = ["bash", "scripts/validate-turtle-spec.sh", str(spec)]
-    exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose)
-
-    if exit_code == 0:
-        console.print("[bold green]✓ Specification is valid[/bold green]")
-    else:
-        console.print("[bold red]✗ Specification validation failed[/bold red]")
-        if stderr:
-            console.print(f"[red]{stderr}[/red]")
-        raise typer.Exit(code=exit_code)
+    except RuntimeError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
 
 
 @ggen_app.command()
@@ -102,27 +171,60 @@ def export(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Export YAWL XML to other formats (Turtle, JSON, YAML)."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    if not yawl_file.exists():
-        console.print(f"[bold red]✗ Error:[/bold red] YAWL file not found: {yawl_file}")
+        # Validate YAWL file
+        yawl_file = yawl_file.resolve()
+        if not yawl_file.exists():
+            raise FileNotFoundError(f"YAWL file not found: {yawl_file}")
+
+        if not yawl_file.is_file():
+            raise RuntimeError(f"YAWL path is not a file: {yawl_file}")
+
+        # Validate format
+        valid_formats = ["turtle", "json", "yaml"]
+        format_lower = format.lower()
+        if format_lower not in valid_formats:
+            raise ValueError(f"Invalid format: {format}. Supported: {', '.join(valid_formats)}")
+
+        output = yawl_file.with_suffix(f".{format_lower}")
+
+        console.print(f"[bold cyan]Exporting to {format_lower.upper()}[/bold cyan]")
+        console.print(f"[dim]Input:  {yawl_file}[/dim]")
+        console.print(f"[dim]Output: {output}[/dim]")
+
+        # Run export script
+        cmd = ["bash", "scripts/ggen-export.sh", str(yawl_file), format_lower, str(output)]
+        exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose, timeout=300)
+
+        if exit_code == 0:
+            if output.exists():
+                size = output.stat().st_size
+                console.print(f"[bold green]✓ Exported:[/bold green] {output} ({size} bytes)")
+            else:
+                console.print(f"[bold green]✓ Export completed[/bold green]")
+        else:
+            console.print("[bold red]✗ Export failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=exit_code)
+
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
-
-    output = yawl_file.with_suffix(f".{format}")
-
-    console.print(f"[bold cyan]Exporting to {format.upper()}[/bold cyan]")
-    console.print(f"[dim]Input:  {yawl_file}[/dim]")
-    console.print(f"[dim]Output: {output}[/dim]")
-
-    # Run export script
-    cmd = ["bash", "scripts/ggen-export.sh", str(yawl_file), format, str(output)]
-    exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose)
-
-    if exit_code == 0:
-        console.print(f"[bold green]✓ Exported:[/bold green] {output}")
-    else:
-        console.print("[bold red]✗ Export failed[/bold red]")
-        raise typer.Exit(code=exit_code)
+    except RuntimeError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
 
 
 @ggen_app.command()

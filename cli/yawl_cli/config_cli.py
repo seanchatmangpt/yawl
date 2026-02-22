@@ -1,5 +1,6 @@
 """Configuration management commands."""
 
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -8,8 +9,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
+from rich.prompt import Confirm, Prompt
 
-from yawl_cli.utils import ensure_project_root, Config
+from yawl_cli.utils import ensure_project_root, Config, DEBUG
 
 console = Console()
 app = typer.Typer(no_args_is_help=True)
@@ -38,8 +40,15 @@ def show(
         else:
             console.print("[yellow]No configuration data loaded[/yellow]")
 
-    except Exception as e:
+    except RuntimeError as e:
         console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
 
 
@@ -55,12 +64,21 @@ def get(
         value = config.get(key)
         if value is None:
             console.print(f"[yellow]Key not found:[/yellow] {key}")
+            if config.config_data:
+                console.print("[yellow]Run 'yawl config show' to see available keys[/yellow]")
             raise typer.Exit(code=1)
 
         console.print(f"[bold]{key}:[/bold] {value}")
 
-    except Exception as e:
+    except RuntimeError as e:
         console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
 
 
@@ -78,13 +96,21 @@ def set(
         project_root = ensure_project_root()
         config = Config.from_project(project_root)
 
+        # Validate key format
+        if not key or "." not in key and not key.isidentifier():
+            if not key.isidentifier():
+                raise ValueError(
+                    f"Invalid config key: {key}\n"
+                    f"Keys must be alphanumeric with dots (e.g., 'build.threads')"
+                )
+
         # Parse value to proper type
         parsed_value: any
         if value.lower() in ("true", "yes", "1"):
             parsed_value = True
         elif value.lower() in ("false", "no", "0"):
             parsed_value = False
-        elif value.isdigit():
+        elif value.lstrip('-').isdigit():
             parsed_value = int(value)
         else:
             parsed_value = value
@@ -101,8 +127,18 @@ def set(
         console.print(f"[bold green]✓[/bold green] Set {key} = {parsed_value}")
         console.print(f"  Saved to: {config_file}")
 
-    except Exception as e:
+    except RuntimeError as e:
         console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except ValueError as e:
+        console.print(f"[bold red]✗ Validation error:[/bold red] {e}", file=sys.stderr)
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
 
 
@@ -115,17 +151,36 @@ def reset() -> None:
         # Remove project config
         config_file = project_root / ".yawl" / "config.yaml"
         if config_file.exists():
-            from rich.prompt import Confirm
-            if Confirm.ask(f"Remove {config_file}?"):
-                config_file.unlink()
-                console.print(f"[bold green]✓[/bold green] Removed {config_file}")
+            if Confirm.ask(f"Remove {config_file}?", default=False):
+                try:
+                    config_file.unlink()
+                    console.print(f"[bold green]✓[/bold green] Removed {config_file}")
+                except PermissionError as e:
+                    raise RuntimeError(
+                        f"Permission denied removing {config_file}: {e}\n"
+                        f"Check file permissions."
+                    )
+                except OSError as e:
+                    raise RuntimeError(
+                        f"Cannot remove config file {config_file}: {e}"
+                    )
+            else:
+                console.print("[yellow]Configuration reset cancelled[/yellow]")
+                return
         else:
             console.print(f"[yellow]No config file at[/yellow] {config_file}")
 
         console.print("[bold green]✓ Configuration reset to defaults[/bold green]")
 
-    except Exception as e:
+    except RuntimeError as e:
         console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
 
 
