@@ -346,11 +346,6 @@
                              ===================================================================== -->
                         <exclude>**/*.properties</exclude>
 
-                        <!-- =====================================================================
-                             Event sourcing - incomplete switch expression (pre-existing issue)
-                             ===================================================================== -->
-                        <exclude>**/eventsourcing/**</exclude>
-
 
                     </excludes>
                     <testIncludes>
