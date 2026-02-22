@@ -233,34 +233,67 @@ def round_trip(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Test round-trip: Turtle → YAWL XML → Turtle (verify fidelity)."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    if not spec.exists():
-        console.print(f"[bold red]✗ Error:[/bold red] Spec file not found: {spec}")
+        # Validate spec file
+        spec = spec.resolve()
+        if not spec.exists():
+            raise FileNotFoundError(f"Spec file not found: {spec}")
+
+        if not spec.is_file():
+            raise RuntimeError(f"Spec path is not a file: {spec}")
+
+        console.print("[bold cyan]Testing round-trip conversion[/bold cyan]")
+        console.print(f"[dim]Spec: {spec}[/dim]")
+
+        # Generate XML from Turtle
+        yawl_file = spec.with_suffix(".yawl")
+        cmd_gen = ["bash", "scripts/turtle-to-yawl.sh", str(spec), str(yawl_file)]
+        console.print("[dim]  Phase 1: Turtle → YAWL XML[/dim]")
+        exit_code, _, stderr = run_shell_cmd(cmd_gen, cwd=project_root, verbose=verbose, timeout=300)
+
+        if exit_code != 0:
+            console.print("[bold red]✗ Generation phase failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=1)
+
+        if not yawl_file.exists():
+            raise RuntimeError(f"Generated YAWL file not found: {yawl_file}")
+
+        console.print("[dim]  ✓ Generated YAWL XML[/dim]")
+
+        # Export back to Turtle
+        turtle_rt = spec.with_stem(spec.stem + "_rt")
+        cmd_export = ["bash", "scripts/ggen-export.sh", str(yawl_file), "turtle", str(turtle_rt)]
+        console.print("[dim]  Phase 2: YAWL XML → Turtle[/dim]")
+        exit_code, _, stderr = run_shell_cmd(cmd_export, cwd=project_root, verbose=verbose, timeout=300)
+
+        if exit_code != 0:
+            console.print("[bold red]✗ Round-trip phase failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=1)
+
+        if not turtle_rt.exists():
+            raise RuntimeError(f"Round-trip output file not found: {turtle_rt}")
+
+        console.print("[dim]  ✓ Round-tripped back to Turtle[/dim]")
+        console.print("[bold green]✓ Round-trip test successful[/bold green]")
+
+    except FileNotFoundError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
-
-    console.print("[bold cyan]Testing round-trip conversion[/bold cyan]")
-    console.print(f"[dim]Spec: {spec}[/dim]")
-
-    # Generate XML from Turtle
-    yawl_file = spec.with_suffix(".yawl")
-    cmd_gen = ["bash", "scripts/turtle-to-yawl.sh", str(spec), str(yawl_file)]
-    exit_code, _, _ = run_shell_cmd(cmd_gen, cwd=project_root, verbose=verbose)
-
-    if exit_code != 0:
-        console.print("[bold red]✗ Generation phase failed[/bold red]")
+    except RuntimeError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
-
-    console.print("[dim]  ✓ Generated YAWL XML[/dim]")
-
-    # Export back to Turtle
-    turtle_rt = spec.with_stem(spec.stem + "_rt")
-    cmd_export = ["bash", "scripts/ggen-export.sh", str(yawl_file), "turtle", str(turtle_rt)]
-    exit_code, _, _ = run_shell_cmd(cmd_export, cwd=project_root, verbose=verbose)
-
-    if exit_code != 0:
-        console.print("[bold red]✗ Round-trip phase failed[/bold red]")
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
         raise typer.Exit(code=1)
-
-    console.print("[dim]  ✓ Round-tripped back to Turtle[/dim]")
-    console.print("[bold green]✓ Round-trip test successful[/bold green]")

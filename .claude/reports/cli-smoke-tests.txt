@@ -1,0 +1,6 @@
+[0;34m======================================[0m
+[0;34mYAWL CLI Smoke Tests[0m
+[0;34m======================================[0m
+
+[0;34m[1] Entry Points[0m
+[0;31m✗[0m yawl version command works (substring not found: 6.0.0)

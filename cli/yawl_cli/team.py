@@ -1,12 +1,14 @@
 """Team operations (experimental) - coordinate multi-agent work."""
 
+import sys
+from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
-from yawl_cli.utils import ensure_project_root, run_shell_cmd
+from yawl_cli.utils import ensure_project_root, run_shell_cmd, DEBUG
 
 console = Console()
 team_app = typer.Typer(no_args_is_help=True)
@@ -20,69 +22,118 @@ def create(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Create a new team for parallel multi-quantum work."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    if agents < 2 or agents > 5:
-        console.print("[bold red]✗ Error:[/bold red] Agent count must be 2-5")
+        # Validate agent count
+        if agents < 2 or agents > 5:
+            raise ValueError("Agent count must be between 2 and 5")
+
+        # Validate team name
+        if not name or not name.replace("-", "").replace("_", "").isalnum():
+            raise ValueError(
+                f"Invalid team name: {name}\n"
+                f"Team name must contain only alphanumeric characters, hyphens, and underscores"
+            )
+
+        quantum_list = [q.strip() for q in quantums.split(",") if q.strip()]
+        if not quantum_list:
+            raise ValueError("At least one quantum must be specified")
+
+        if len(quantum_list) > 5:
+            raise ValueError(
+                f"Too many quantums ({len(quantum_list)}). Maximum 5 allowed."
+            )
+
+        console.print(f"[bold cyan]Creating team: {name}[/bold cyan]")
+        console.print(f"[dim]Quantums: {len(quantum_list)} ({', '.join(quantum_list)})[/dim]")
+        console.print(f"[dim]Agents: {agents}[/dim]")
+
+        # Run team creation script
+        cmd = [
+            "bash",
+            ".claude/hooks/team-create.sh",
+            name,
+            ",".join(quantum_list),
+            str(agents),
+        ]
+
+        exit_code, stdout, stderr = run_shell_cmd(cmd, cwd=project_root, verbose=verbose, timeout=120)
+
+        if exit_code == 0:
+            console.print("[bold green]✓ Team created[/bold green]")
+            if stdout:
+                console.print(f"[dim]{stdout}[/dim]")
+        else:
+            console.print("[bold red]✗ Team creation failed[/bold red]")
+            if stderr:
+                console.print(f"[red]{stderr}[/red]")
+            raise typer.Exit(code=exit_code)
+
+    except ValueError as e:
+        console.print(f"[bold red]✗ Validation error:[/bold red] {e}", file=sys.stderr)
         raise typer.Exit(code=1)
-
-    quantum_list = [q.strip() for q in quantums.split(",")]
-
-    console.print(f"[bold cyan]Creating team: {name}[/bold cyan]")
-    console.print(f"[dim]Quantums: {', '.join(quantum_list)}[/dim]")
-    console.print(f"[dim]Agents: {agents}[/dim]")
-
-    # Run team creation script
-    cmd = [
-        "bash",
-        ".claude/hooks/team-create.sh",
-        name,
-        ",".join(quantum_list),
-        str(agents),
-    ]
-
-    exit_code, stdout, _ = run_shell_cmd(cmd, cwd=project_root, verbose=verbose)
-
-    if exit_code == 0:
-        console.print("[bold green]✓ Team created[/bold green]")
-        if stdout:
-            console.print(f"[dim]{stdout}[/dim]")
-    else:
-        console.print("[bold red]✗ Team creation failed[/bold red]")
-        raise typer.Exit(code=exit_code)
+    except RuntimeError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
 
 
 @team_app.command()
 def list() -> None:
     """List active and completed teams."""
-    project_root = ensure_project_root()
+    try:
+        project_root = ensure_project_root()
 
-    # Check for team state directory
-    team_dir = project_root / ".team-state"
+        # Check for team state directory
+        team_dir = project_root / ".team-state"
 
-    if not team_dir.exists():
-        console.print("[yellow]No teams created yet[/yellow]")
-        return
+        if not team_dir.exists():
+            console.print("[yellow]No teams created yet[/yellow]")
+            return
 
-    # List team directories
-    teams = sorted([d for d in team_dir.iterdir() if d.is_dir()])
+        # List team directories
+        try:
+            teams = sorted([d for d in team_dir.iterdir() if d.is_dir()])
+        except (OSError, PermissionError) as e:
+            raise RuntimeError(
+                f"Cannot read team state directory {team_dir}: {e}\n"
+                f"Check directory permissions."
+            )
 
-    if not teams:
-        console.print("[yellow]No teams found[/yellow]")
-        return
+        if not teams:
+            console.print("[yellow]No teams found in .team-state[/yellow]")
+            return
 
-    table = Table(title="Teams")
-    table.add_column("Team ID", style="cyan")
-    table.add_column("Status", style="green")
-    table.add_column("Agents", style="yellow")
-    table.add_column("Tasks", style="magenta")
+        table = Table(title="Teams")
+        table.add_column("Team ID", style="cyan")
+        table.add_column("Status", style="green")
+        table.add_column("Agents", style="yellow")
+        table.add_column("Tasks", style="magenta")
 
-    for team_path in teams:
-        team_id = team_path.name
-        # Would read metadata.json here
-        table.add_row(team_id, "active", "3", "5")
+        for team_path in teams:
+            team_id = team_path.name
+            # Would read metadata.json here
+            table.add_row(team_id, "active", "3", "5")
 
-    console.print(table)
+        console.print(table)
+
+    except RuntimeError as e:
+        console.print(f"[bold red]✗ Error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[bold red]✗ Unexpected error:[/bold red] {e}", file=sys.stderr)
+        if DEBUG:
+            console.print_exception()
+        raise typer.Exit(code=1)
 
 
 @team_app.command()

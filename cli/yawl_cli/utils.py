@@ -346,8 +346,7 @@ def load_facts(facts_dir: Path, fact_name: str) -> dict:
     # Validate facts directory exists and is accessible
     if not facts_dir.exists():
         raise FileNotFoundError(
-            f"Facts directory not found: {facts_dir}\n"
-            f"Run: yawl observatory generate"
+            f"Facts directory not found: {facts_dir} - Run: yawl observatory generate"
         )
 
     if not facts_dir.is_dir():
@@ -370,13 +369,11 @@ def load_facts(facts_dir: Path, fact_name: str) -> dict:
         if available:
             available_names = ", ".join(f.stem for f in sorted(available))
             raise FileNotFoundError(
-                f"Fact file not found: {fact_file}\n"
-                f"Available facts: {available_names}"
+                f"Fact file not found: {fact_file} - Available facts: {available_names}"
             )
         else:
             raise FileNotFoundError(
-                f"Fact file not found: {fact_file}\n"
-                f"No facts generated yet. Run: yawl observatory generate"
+                f"Fact file not found: {fact_file} - No facts generated yet. Run: yawl observatory generate"
             )
 
     if not fact_file.is_file():
@@ -407,9 +404,7 @@ def load_facts(facts_dir: Path, fact_name: str) -> dict:
             return content
     except json.JSONDecodeError as e:
         raise RuntimeError(
-            f"Malformed JSON in {fact_file}: {e}\n"
-            f"Line {e.lineno}: {e.msg}\n"
-            f"Try regenerating facts: yawl observatory generate"
+            f"Malformed JSON in {fact_file} at line {e.lineno}: {e.msg} - Try regenerating facts: yawl observatory generate"
         )
     except (OSError, IOError, PermissionError) as e:
         raise RuntimeError(
