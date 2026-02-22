@@ -22,7 +22,7 @@ class TestTeamCommands:
         import yawl_cli.team
         monkeypatch.setattr(yawl_cli.team, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(team_app, ["create", "engine", "schema", "test"])
+        result = runner.invoke(team_app, ["create", "my-team", "--quantums", "engine,schema,test"])
 
         assert result.exit_code == 0
 
@@ -37,7 +37,7 @@ class TestTeamCommands:
         import yawl_cli.team
         monkeypatch.setattr(yawl_cli.team, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(team_app, ["create", "engine", "schema"])
+        result = runner.invoke(team_app, ["create", "my-team", "--quantums", "engine,schema"])
 
         assert result.exit_code == 0
 
@@ -53,8 +53,12 @@ class TestTeamCommands:
 
         assert result.exit_code == 0
 
-    def test_resume_team_command_success(self, runner: CliRunner, monkeypatch) -> None:
+    def test_resume_team_command_success(self, runner: CliRunner, monkeypatch, temp_project_dir) -> None:
         """Resume team command succeeds."""
+        # Create team state directory so resume check passes
+        team_state = temp_project_dir / ".team-state" / "team-id-123"
+        team_state.mkdir(parents=True, exist_ok=True)
+
         def mock_run_shell_cmd(cmd, **kwargs):
             return (0, "Team resumed", "")
 
@@ -65,14 +69,8 @@ class TestTeamCommands:
 
         assert result.exit_code == 0
 
-    def test_resume_team_not_found(self, runner: CliRunner, monkeypatch) -> None:
-        """Resume team fails when team not found."""
-        def mock_run_shell_cmd(cmd, **kwargs):
-            return (1, "", "Team not found")
-
-        import yawl_cli.team
-        monkeypatch.setattr(yawl_cli.team, "run_shell_cmd", mock_run_shell_cmd)
-
+    def test_resume_team_not_found(self, runner: CliRunner) -> None:
+        """Resume team fails when team directory does not exist."""
         result = runner.invoke(team_app, ["resume", "nonexistent-team"])
 
         assert result.exit_code == 1
@@ -112,7 +110,7 @@ class TestTeamCommands:
         import yawl_cli.team
         monkeypatch.setattr(yawl_cli.team, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(team_app, ["consolidate", "team-id-123"])
+        result = runner.invoke(team_app, ["consolidate", "team-id-123", "--message", "Consolidation commit"])
 
         assert result.exit_code == 0
 
@@ -137,14 +135,14 @@ class TestTeamErrorHandling:
 
         assert result.exit_code != 0
 
-    def test_status_requires_team_id(self, runner: CliRunner) -> None:
-        """Status command requires team ID argument."""
+    def test_status_without_team_id(self, runner: CliRunner) -> None:
+        """Status command works without team ID argument (it is optional)."""
         result = runner.invoke(team_app, ["status"])
 
-        assert result.exit_code != 0
+        assert result.exit_code == 0
 
-    def test_consolidate_requires_team_id(self, runner: CliRunner) -> None:
-        """Consolidate command requires team ID argument."""
+    def test_consolidate_requires_arguments(self, runner: CliRunner) -> None:
+        """Consolidate command requires team ID and message arguments."""
         result = runner.invoke(team_app, ["consolidate"])
 
         assert result.exit_code != 0
@@ -193,7 +191,7 @@ class TestTeamWorkflows:
         monkeypatch.setattr(yawl_cli.team, "run_shell_cmd", mock_run_shell_cmd)
 
         # Create team
-        result1 = runner.invoke(team_app, ["create", "engine", "schema"])
+        result1 = runner.invoke(team_app, ["create", "my-team", "--quantums", "engine,schema"])
         assert result1.exit_code == 0
 
         # List teams
@@ -201,9 +199,13 @@ class TestTeamWorkflows:
         assert result2.exit_code == 0
 
     def test_create_resume_and_consolidate(
-        self, runner: CliRunner, monkeypatch
+        self, runner: CliRunner, monkeypatch, temp_project_dir
     ) -> None:
         """Create, resume, and consolidate team workflow."""
+        # Create team state directory so resume check passes
+        team_state = temp_project_dir / ".team-state" / "team-123"
+        team_state.mkdir(parents=True, exist_ok=True)
+
         def mock_run_shell_cmd(cmd, **kwargs):
             return (0, "", "")
 
@@ -211,7 +213,7 @@ class TestTeamWorkflows:
         monkeypatch.setattr(yawl_cli.team, "run_shell_cmd", mock_run_shell_cmd)
 
         # Create team
-        result1 = runner.invoke(team_app, ["create", "engine"])
+        result1 = runner.invoke(team_app, ["create", "my-team", "--quantums", "engine"])
         assert result1.exit_code == 0
 
         # Resume team
@@ -219,7 +221,7 @@ class TestTeamWorkflows:
         assert result2.exit_code == 0
 
         # Consolidate team
-        result3 = runner.invoke(team_app, ["consolidate", "team-123"])
+        result3 = runner.invoke(team_app, ["consolidate", "team-123", "--message", "Test consolidation"])
         assert result3.exit_code == 0
 
     def test_send_message_in_team(self, runner: CliRunner, monkeypatch) -> None:
