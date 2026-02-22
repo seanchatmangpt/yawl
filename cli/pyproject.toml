@@ -34,6 +34,7 @@ yawl = "godspeed_cli:app"
 
 [tool.setuptools]
 packages = ["yawl_cli"]
+py-modules = ["godspeed_cli"]
 
 [tool.black]
 line-length = 100
