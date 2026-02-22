@@ -20,6 +20,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/emit-coverage.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/emit-static-analysis.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/emit-architecture-facts.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/emit-yawl-analysis.sh"
 
 # Source dependency registry for incremental emission (already sourced by observatory.sh)
 # But ensure it's available if emit-facts.sh is sourced standalone
@@ -261,6 +262,9 @@ emit_all_facts() {
     # Coverage and static analysis
     emit_coverage
     emit_static_analysis_facts
+
+    # Van der Aalst GODSPEED: WFP coverage + soundness (80/20 invariants)
+    emit_all_yawl_analysis
 
     FACTS_ELAPSED=$(timer_elapsed_ms)
     record_phase_timing "facts" "$FACTS_ELAPSED"

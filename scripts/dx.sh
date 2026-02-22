@@ -176,6 +176,74 @@ else
     MVN_ARGS+=("--fail-at-end")
 fi
 
+# ── Van der Aalst Soundness Gate ─────────────────────────────────────────────
+# Structural soundness check on YAWL XML specs (exampleSpecs/).
+# Soundness property (van der Aalst 2003):
+#   option_to_complete: every case can reach the end place
+#   proper_completion:  end place is uniquely marked at case end
+#   no_dead_tasks:      every task reachable in some execution
+# This is a fast grep/sed structural check, not full Woflan model checking.
+# Runs only after all-scope builds (pre-commit gate).
+_dx_soundness_gate() {
+    local specs_dir="${REPO_ROOT}/exampleSpecs"
+    [[ -d "$specs_dir" ]] || return 0
+
+    local -a xml_files=()
+    while IFS= read -r f; do
+        [[ -n "$f" ]] && xml_files+=("$f")
+    done < <(find "$specs_dir" -maxdepth 2 -name "*.xml" -type f 2>/dev/null | sort)
+    [[ ${#xml_files[@]} -eq 0 ]] && return 0
+
+    local spec_count=${#xml_files[@]}
+    local sound_count=0
+    local -a issues=()
+
+    for spec in "${xml_files[@]}"; do
+        local spec_name
+        spec_name=$(basename "$spec")
+        local -a spec_issues=()
+
+        # Check start place
+        grep -q '<inputCondition' "$spec" 2>/dev/null \
+            || spec_issues+=("no_start_place")
+
+        # Check end place
+        grep -q '<outputCondition' "$spec" 2>/dev/null \
+            || spec_issues+=("no_end_place")
+
+        # Check dead tasks (tasks with id not referenced by any nextElementRef)
+        local task_ids
+        task_ids=$(sed -n 's/.*<task id="\([^"]*\)".*/\1/p' "$spec" 2>/dev/null)
+        local referenced_ids
+        referenced_ids=$(sed -n 's/.*<nextElementRef id="\([^"]*\)".*/\1/p' "$spec" 2>/dev/null)
+
+        while IFS= read -r tid; do
+            [[ -z "$tid" ]] && continue
+            echo "$referenced_ids" | grep -qF "$tid" \
+                || spec_issues+=("dead_task:${tid}")
+        done <<< "$task_ids"
+
+        if [[ ${#spec_issues[@]} -eq 0 ]]; then
+            (( sound_count++ )) || true
+        else
+            issues+=("${spec_name}: ${spec_issues[*]}")
+        fi
+    done
+
+    echo ""
+    if [[ ${#issues[@]} -eq 0 ]]; then
+        printf "${C_GREEN}${E_OK} Soundness gate: GREEN${C_RESET} | %d/%d specs structurally sound\n" \
+               "$sound_count" "$spec_count"
+    else
+        printf "${C_YELLOW}⚠  Soundness gate: ISSUES${C_RESET} | %d/%d specs sound\n" \
+               "$sound_count" "$spec_count"
+        for issue in "${issues[@]}"; do
+            printf "${C_YELLOW}   → %s${C_RESET}\n" "$issue"
+        done
+        printf "${C_YELLOW}   Fix: remove dead tasks or add missing start/end places${C_RESET}\n"
+    fi
+}
+
 # ── Color codes for enhanced output ─────────────────────────────────────────
 readonly C_RESET='\033[0m'
 readonly C_GREEN='\033[92m'
@@ -222,6 +290,8 @@ echo ""
 if [[ $EXIT_CODE -eq 0 ]]; then
     printf "${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_S}s | modules: %d | tests: %d\n" \
         "$MODULES_COUNT" "$TEST_COUNT"
+    # Soundness gate: verify YAWL XML specs are structurally sound (all-scope only)
+    [[ "$SCOPE" == "all" ]] && _dx_soundness_gate
 else
     printf "${C_RED}${E_FAIL} FAILED${C_RESET} | time: ${ELAPSED_S}s (exit ${EXIT_CODE}) | failures: %d\n" \
         "$TEST_FAILED"

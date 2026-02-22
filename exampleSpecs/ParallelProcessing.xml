@@ -18,6 +18,12 @@
           <flowsInto>
             <nextElementRef id="ParallelTask1"/>
           </flowsInto>
+          <flowsInto>
+            <nextElementRef id="ParallelTask2"/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="ParallelTask3"/>
+          </flowsInto>
           <join code="xor"/>
           <split code="and"/>
         </task>
