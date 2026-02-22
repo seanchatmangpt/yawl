@@ -1,17 +1,17 @@
 package org.yawlfoundation.yawl.integration.zai;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatMessage;
-import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatRequest;
-import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatResponse;
+import ai.z.openapi.ZaiClient;
+import ai.z.openapi.service.model.ChatCompletionCreateParams;
+import ai.z.openapi.service.model.ChatCompletionResponse;
+import ai.z.openapi.service.model.ChatMessage;
+import ai.z.openapi.service.model.ChatMessageRole;
 
 /**
  * Z.AI Intelligence Service for YAWL — Java 25 Edition.
@@ -19,11 +19,10 @@ import org.yawlfoundation.yawl.integration.zai.ZaiHttpClient.ChatResponse;
  * <p>Provides AI-powered capabilities for MCP and A2A integrations.
  * Upgraded for Java 25 best practices:
  * <ul>
- *   <li>Uses {@link ChatMessage} and {@link ChatRequest} records from {@link ZaiHttpClient}</li>
+ *   <li>Uses official {@link ai.z.openapi.ZaiClient} from ai.z.openapi SDK</li>
  *   <li>{@link ScopedValue} for thread-safe context propagation across virtual threads</li>
- *   <li>Virtual threads for concurrent chat operations via {@link StructuredTaskScope}</li>
+ *   <li>Virtual threads for concurrent chat operations via {@link ExecutorService}</li>
  *   <li>Pattern matching in switch for model selection and error classification</li>
- *   <li>Exponential backoff retry is delegated to {@link ZaiHttpClient}</li>
  * </ul>
  *
  * <p>API key always read from {@code ZAI_API_KEY} environment variable. Fail fast if missing.
@@ -54,7 +53,7 @@ public class ZaiService {
         return (env != null && !env.isEmpty()) ? env : DEFAULT_MODEL;
     }
 
-    private final ZaiHttpClient httpClient;
+    private final ZaiClient zaiClient;
     private final List<ChatMessage> conversationHistory;
     private String systemPrompt;
     private volatile boolean initialized;
@@ -71,7 +70,7 @@ public class ZaiService {
                 + "Obtain your key from https://open.bigmodel.cn and set: "
                 + "export ZAI_API_KEY=<your-key>");
         }
-        this.httpClient = new ZaiHttpClient(apiKey);
+        this.zaiClient = ZaiClientFactory.withApiKey(apiKey);
         this.conversationHistory = new ArrayList<>();
         this.initialized = true;
     }
@@ -86,7 +85,7 @@ public class ZaiService {
             throw new IllegalArgumentException(
                 "apiKey is required. Set ZAI_API_KEY environment variable.");
         }
-        this.httpClient = new ZaiHttpClient(apiKey);
+        this.zaiClient = ZaiClientFactory.withApiKey(apiKey);
         this.conversationHistory = new ArrayList<>();
         this.initialized = true;
     }
@@ -125,53 +124,91 @@ public class ZaiService {
         ensureInitialized();
 
         List<ChatMessage> messages = buildMessageList(message);
-        ChatRequest request = new ChatRequest(model, messages);
 
         try {
-            ChatResponse response = httpClient.createChatCompletionRecord(request);
-            String content = response.content();
-            conversationHistory.add(ChatMessage.user(message));
-            conversationHistory.add(ChatMessage.assistant(content));
+            ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+                    .model(model)
+                    .messages(messages)
+                    .temperature(0.7f)
+                    .maxTokens(2048)
+                    .build();
+
+            ChatCompletionResponse response = zaiClient.chat().createChatCompletion(params);
+
+            if (!response.isSuccess()) {
+                throw new RuntimeException("Chat API call failed: " + response.getMsg());
+            }
+
+            String content = response.getData().getChoices().get(0).getMessage().getContent().toString();
+            conversationHistory.add(ChatMessage.builder()
+                    .role(ChatMessageRole.USER.value())
+                    .content(message)
+                    .build());
+            conversationHistory.add(ChatMessage.builder()
+                    .role(ChatMessageRole.ASSISTANT.value())
+                    .content(content)
+                    .build());
             return content;
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException("Chat request failed: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Execute two independent Z.AI calls in parallel using structured concurrency.
+     * Execute two independent Z.AI calls in parallel using virtual threads.
      *
-     * <p>Both tasks run on virtual threads inside a {@link StructuredTaskScope.ShutdownOnFailure}.
+     * <p>Both tasks run on virtual threads inside an executor.
      * If either fails the other is cancelled immediately.
      *
      * @param message1 first user message
      * @param message2 second user message
      * @return array of two responses: [response1, response2]
-     * @throws IOException if either call fails
+     * @throws RuntimeException if either call fails
      */
-    public String[] chatParallel(String message1, String message2) throws IOException {
+    public String[] chatParallel(String message1, String message2) {
         ensureInitialized();
         String model = defaultModel();
 
-        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             Future<String> future1 = executor.submit(() -> {
-                ChatRequest req = new ChatRequest(model, buildMessageList(message1));
-                return httpClient.createChatCompletionRecord(req).content();
+                List<ChatMessage> messages = buildMessageList(message1);
+                ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+                        .model(model)
+                        .messages(messages)
+                        .temperature(0.7f)
+                        .maxTokens(2048)
+                        .build();
+                ChatCompletionResponse resp = zaiClient.chat().createChatCompletion(params);
+                if (!resp.isSuccess()) {
+                    throw new RuntimeException("Chat API call failed: " + resp.getMsg());
+                }
+                return resp.getData().getChoices().get(0).getMessage().getContent().toString();
             });
+
             Future<String> future2 = executor.submit(() -> {
-                ChatRequest req = new ChatRequest(model, buildMessageList(message2));
-                return httpClient.createChatCompletionRecord(req).content();
+                List<ChatMessage> messages = buildMessageList(message2);
+                ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+                        .model(model)
+                        .messages(messages)
+                        .temperature(0.7f)
+                        .maxTokens(2048)
+                        .build();
+                ChatCompletionResponse resp = zaiClient.chat().createChatCompletion(params);
+                if (!resp.isSuccess()) {
+                    throw new RuntimeException("Chat API call failed: " + resp.getMsg());
+                }
+                return resp.getData().getChoices().get(0).getMessage().getContent().toString();
             });
+
             try {
                 return new String[]{ future1.get(), future2.get() };
             } catch (ExecutionException ex) {
                 Throwable cause = ex.getCause();
-                if (cause instanceof IOException ioe) throw ioe;
-                throw new IOException("Parallel Z.AI call failed: " + cause.getMessage(), cause);
+                throw new RuntimeException("Parallel Z.AI call failed: " + (cause != null ? cause.getMessage() : "unknown error"), cause);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IOException("Parallel chat interrupted", e);
+            throw new RuntimeException("Parallel chat interrupted", e);
         }
     }
 
@@ -319,9 +356,29 @@ public class ZaiService {
 
     /**
      * Test the connection to the Z.AI API.
+     * Attempts a simple chat request to verify API connectivity.
+     *
+     * @return true if connection succeeds, false on error
      */
     public boolean verifyConnection() {
-        return httpClient.verifyConnection();
+        try {
+            ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+                    .model(defaultModel())
+                    .messages(List.of(
+                            ChatMessage.builder()
+                                    .role(ChatMessageRole.USER.value())
+                                    .content("Hello")
+                                    .build()
+                    ))
+                    .temperature(0.3f)
+                    .maxTokens(10)
+                    .build();
+
+            ChatCompletionResponse response = zaiClient.chat().createChatCompletion(params);
+            return response.isSuccess();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -344,17 +401,10 @@ public class ZaiService {
     }
 
     /**
-     * Get the conversation history as a list of {@link ChatMessage} records.
+     * Get the conversation history as a list of ChatMessage records.
      */
     public List<ChatMessage> getConversationHistoryRecords() {
         return List.copyOf(conversationHistory);
-    }
-
-    /**
-     * Get the underlying HTTP client.
-     */
-    public ZaiHttpClient getHttpClient() {
-        return httpClient;
     }
 
     /**
@@ -391,11 +441,17 @@ public class ZaiService {
                 : systemPrompt;
 
         if (effectiveSystemPrompt != null && !effectiveSystemPrompt.isEmpty()) {
-            messages.add(ChatMessage.system(effectiveSystemPrompt));
+            messages.add(ChatMessage.builder()
+                    .role(ChatMessageRole.SYSTEM.value())
+                    .content(effectiveSystemPrompt)
+                    .build());
         }
 
         messages.addAll(conversationHistory);
-        messages.add(ChatMessage.user(userMessage));
+        messages.add(ChatMessage.builder()
+                .role(ChatMessageRole.USER.value())
+                .content(userMessage)
+                .build());
         return messages;
     }
 

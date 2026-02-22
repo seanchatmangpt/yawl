@@ -19,6 +19,11 @@ import org.xml.sax.InputSource;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 
+import ai.z.openapi.ZaiClient;
+import ai.z.openapi.service.model.ChatCompletionCreateParams;
+import ai.z.openapi.service.model.ChatCompletionResponse;
+import ai.z.openapi.service.model.ChatMessage;
+
 /**
  * Generates YAWL specifications from natural language descriptions using Z.AI.
  *
@@ -312,6 +317,58 @@ public class SpecificationGenerator {
     private String truncate(String s, int maxLength) {
         if (s == null) return "[null]";
         return s.length() > maxLength ? s.substring(0, maxLength) + "..." : s;
+    }
+
+    // -------------------------------------------------------------------------
+    // Static factory methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a SpecificationGenerator using the official Z.AI SDK (reads ZAI_API_KEY from env).
+     *
+     * @return a SpecificationGenerator with official SDK backend
+     */
+    public static SpecificationGenerator create() {
+        return new SpecificationGenerator(officialSdkClient());
+    }
+
+    /**
+     * Creates a ZaiHttpClient implementation backed by the official ai.z.openapi SDK.
+     *
+     * @return a ZaiHttpClient that delegates to the official SDK
+     */
+    public static ZaiHttpClient officialSdkClient() {
+        ZaiClient sdkClient = ZaiClientFactory.getInstance();
+        return (request, timeout) -> {
+            String model = (String) request.get("model");
+            @SuppressWarnings("unchecked")
+            List<Map<String, String>> messages = (List<Map<String, String>>) request.get("messages");
+            Number maxTokensNum = (Number) request.get("max_tokens");
+            int maxTokens = maxTokensNum != null ? maxTokensNum.intValue() : 8192;
+            Number tempNum = (Number) request.get("temperature");
+            float temperature = tempNum != null ? tempNum.floatValue() : 0.3f;
+
+            List<ChatMessage> sdkMessages = new ArrayList<>();
+            for (Map<String, String> msg : messages) {
+                sdkMessages.add(ChatMessage.builder()
+                    .role(msg.get("role"))
+                    .content(msg.get("content"))
+                    .build());
+            }
+
+            ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+                .model(model)
+                .messages(sdkMessages)
+                .temperature(temperature)
+                .maxTokens(maxTokens)
+                .build();
+
+            ChatCompletionResponse resp = sdkClient.chat().createChatCompletion(params);
+            if (!resp.isSuccess()) {
+                throw new RuntimeException("Z.AI API call failed: " + resp.getMsg());
+            }
+            return resp.getData().getChoices().get(0).getMessage().getContent().toString();
+        };
     }
 
     // -------------------------------------------------------------------------

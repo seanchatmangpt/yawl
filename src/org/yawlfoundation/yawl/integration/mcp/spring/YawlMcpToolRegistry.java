@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -47,7 +46,6 @@ public class YawlMcpToolRegistry {
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final InterfaceA_EnvironmentBasedClient interfaceAClient;
     private final YawlMcpSessionManager sessionManager;
-    private final ZaiFunctionService zaiFunctionService;
 
     private final Map<String, YawlMcpTool> customTools = new ConcurrentHashMap<>();
     private volatile List<McpServerFeatures.SyncToolSpecification> allToolSpecs;
@@ -58,13 +56,11 @@ public class YawlMcpToolRegistry {
      * @param interfaceBClient YAWL InterfaceB client
      * @param interfaceAClient YAWL InterfaceA client
      * @param sessionManager session manager
-     * @param zaiFunctionService Z.AI service (optional)
      */
     public YawlMcpToolRegistry(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
             InterfaceA_EnvironmentBasedClient interfaceAClient,
-            YawlMcpSessionManager sessionManager,
-            ZaiFunctionService zaiFunctionService) {
+            YawlMcpSessionManager sessionManager) {
 
         if (interfaceBClient == null) {
             throw new IllegalArgumentException("interfaceBClient is required");
@@ -79,7 +75,6 @@ public class YawlMcpToolRegistry {
         this.interfaceBClient = interfaceBClient;
         this.interfaceAClient = interfaceAClient;
         this.sessionManager = sessionManager;
-        this.zaiFunctionService = zaiFunctionService;
 
         initializeCoreTools();
     }
@@ -151,8 +146,7 @@ public class YawlMcpToolRegistry {
         specs.addAll(YawlToolSpecifications.createAll(
             interfaceBClient,
             interfaceAClient,
-            sessionManager.getSessionHandle(),
-            zaiFunctionService
+            sessionManager.getSessionHandle()
         ));
 
         // Add custom Spring-managed tools
@@ -205,8 +199,7 @@ public class YawlMcpToolRegistry {
      * Called automatically during construction.
      */
     private void initializeCoreTools() {
-        int coreToolCount = zaiFunctionService != null ? 16 : 15;
-        LOGGER.info("Initializing " + coreToolCount + " core YAWL MCP tools");
+        LOGGER.info("Initializing 15 core YAWL MCP tools");
     }
 
     /**
@@ -224,14 +217,16 @@ public class YawlMcpToolRegistry {
 
         return new McpServerFeatures.SyncToolSpecification(
             mcpTool,
-            (exchange, args) -> {
+            (exchange, request) -> {
                 try {
-                    return tool.execute(args);
+                    return tool.execute(request.arguments());
                 } catch (Exception e) {
                     LOGGER.severe("Error executing tool " + tool.getName() + ": " + e.getMessage());
                     return new McpSchema.CallToolResult(
-                        "Tool execution error: " + e.getMessage(),
-                        true
+                        List.of(new McpSchema.TextContent("Tool execution error: " + e.getMessage())),
+                        true,
+                        null,
+                        null
                     );
                 }
             }

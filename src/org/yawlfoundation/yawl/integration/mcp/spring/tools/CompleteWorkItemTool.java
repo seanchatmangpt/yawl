@@ -64,11 +64,6 @@ public class CompleteWorkItemTool implements YawlMcpTool {
     public McpSchema.JsonSchema getInputSchema() {
         Map<String, Object> props = new LinkedHashMap<>();
 
-        props.put("caseId", Map.of(
-            "type", "string",
-            "description", "Workflow case identifier containing the work item (required)"
-        ));
-
         props.put("workItemId", Map.of(
             "type", "string",
             "description", "Work item identifier to complete (required)"
@@ -79,7 +74,7 @@ public class CompleteWorkItemTool implements YawlMcpTool {
             "description", "XML data to be passed to the work item completion (optional)"
         ));
 
-        List<String> required = List.of("caseId", "workItemId");
+        List<String> required = List.of("workItemId");
 
         return new McpSchema.JsonSchema(
             "object",
@@ -95,13 +90,12 @@ public class CompleteWorkItemTool implements YawlMcpTool {
     public McpSchema.CallToolResult execute(Map<String, Object> params) {
         try {
             // Extract and validate parameters
-            String caseId = getRequiredParam(params, "caseId");
             String workItemId = getRequiredParam(params, "workItemId");
             String data = getOptionalParam(params, "data", "");
 
             // Complete work item using injected InterfaceB client and session manager
             String sessionHandle = sessionManager.getSessionHandle();
-            String result = interfaceBClient.completeWorkItem(caseId, workItemId, data, sessionHandle);
+            String result = interfaceBClient.checkInWorkItem(workItemId, data, sessionHandle);
 
             // Check for YAWL engine errors
             if (result == null || result.contains("<failure>")) {
@@ -114,7 +108,7 @@ public class CompleteWorkItemTool implements YawlMcpTool {
             }
 
             // Return success result
-            String successMsg = String.format("Work item %s in case %s has been completed successfully.", workItemId, caseId);
+            String successMsg = String.format("Work item %s has been completed successfully.", workItemId);
             return new McpSchema.CallToolResult(
                 List.of(new McpSchema.TextContent(successMsg)),
                 false,  // isError

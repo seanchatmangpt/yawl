@@ -71,12 +71,22 @@ public class GetWorkItemsTool implements YawlMcpTool {
 
         props.put("filter", Map.of(
             "type", "string",
-            "description", "Filter for work items: 'offered', 'allocated', 'started', 'completed', 'aborted' (optional)"
+            "description", "Filter for work items: 'live', 'all_live', 'for_spec', 'for_task', 'for_service' (optional, default: 'live')"
         ));
 
-        props.put("participantId", Map.of(
+        props.put("specName", Map.of(
             "type", "string",
-            "description", "Get work items allocated to specific participant (optional)"
+            "description", "Specification name when filter='for_spec' (optional)"
+        ));
+
+        props.put("taskId", Map.of(
+            "type", "string",
+            "description", "Task ID when filter='for_task' (optional)"
+        ));
+
+        props.put("serviceUri", Map.of(
+            "type", "string",
+            "description", "Service URI when filter='for_service' (optional)"
         ));
 
         List<String> required = List.of("caseId");
@@ -96,36 +106,46 @@ public class GetWorkItemsTool implements YawlMcpTool {
         try {
             // Extract and validate parameters
             String caseId = getRequiredParam(params, "caseId");
-            String filter = getOptionalParam(params, "filter", "all");
-            String participantId = getOptionalParam(params, "participantId", null);
+            String filter = getOptionalParam(params, "filter", "live");
+            String specName = getOptionalParam(params, "specName", null);
+            String taskId = getOptionalParam(params, "taskId", null);
+            String serviceUri = getOptionalParam(params, "serviceUri", null);
 
             // Get work items using injected InterfaceB client and session manager
             String sessionHandle = sessionManager.getSessionHandle();
             List<WorkItemRecord> workItems;
 
             switch (filter.toLowerCase()) {
-                case "offered":
-                    workItems = interfaceBClient.getOfferedWorkItems(sessionHandle);
+                case "live":
+                case "for_case":
+                    // Get live work items for the specific case
+                    workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
                     break;
-                case "allocated":
-                    workItems = interfaceBClient.getAllocatedWorkItems(sessionHandle);
+                case "all_live":
+                    // Get all live work items across all cases
+                    workItems = interfaceBClient.getCompleteListOfLiveWorkItems(sessionHandle);
                     break;
-                case "started":
-                    workItems = interfaceBClient.getStartedWorkItems(sessionHandle);
-                    break;
-                case "completed":
-                    workItems = interfaceBClient.getCompletedWorkItems(sessionHandle);
-                    break;
-                case "aborted":
-                    workItems = interfaceBClient.getAbortedWorkItems(sessionHandle);
-                    break;
-                case "allocated_to_participant":
-                    if (participantId == null) {
-                        throw new IllegalArgumentException("participantId is required when filter is 'allocated_to_participant'");
+                case "for_spec":
+                    // Get work items for a specification
+                    if (specName == null) {
+                        throw new IllegalArgumentException("specName is required when filter is 'for_spec'");
                     }
-                    workItems = interfaceBClient.getWorkItemsForParticipant(caseId, participantId, sessionHandle);
+                    workItems = interfaceBClient.getWorkItemsForSpecification(specName, sessionHandle);
                     break;
-                case "all":
+                case "for_task":
+                    // Get work items for a specific task
+                    if (taskId == null) {
+                        throw new IllegalArgumentException("taskId is required when filter is 'for_task'");
+                    }
+                    workItems = interfaceBClient.getWorkItemsForTask(taskId, sessionHandle);
+                    break;
+                case "for_service":
+                    // Get work items associated with a service
+                    if (serviceUri == null) {
+                        throw new IllegalArgumentException("serviceUri is required when filter is 'for_service'");
+                    }
+                    workItems = interfaceBClient.getWorkItemsForService(serviceUri, sessionHandle);
+                    break;
                 default:
                     workItems = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
                     break;
@@ -234,11 +254,12 @@ public class GetWorkItemsTool implements YawlMcpTool {
         for (WorkItemRecord item : workItems) {
             xml.append("    <workItem>\n");
             xml.append("      <id>").append(item.getID()).append("</id>\n");
-            xml.append("      <processId>").append(item.getProcessID()).append("</processId>\n");
+            xml.append("      <caseId>").append(item.getCaseID()).append("</caseId>\n");
             xml.append("      <taskId>").append(item.getTaskID()).append("</taskId>\n");
             xml.append("      <status>").append(item.getStatus()).append("</status>\n");
-            xml.append("      <participant>").append(item.getParticipantID()).append("</participant>\n");
-            xml.append("      <allocatedAt>").append(item.getTimestampAsString()).append("</allocatedAt>\n");
+            xml.append("      <startedBy>").append(item.getStartedBy()).append("</startedBy>\n");
+            xml.append("      <firingTime>").append(item.getFiringTime()).append("</firingTime>\n");
+            xml.append("      <startTime>").append(item.getStartTime()).append("</startTime>\n");
             xml.append("    </workItem>\n");
         }
 
