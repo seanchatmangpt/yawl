@@ -8,13 +8,9 @@ import java.util.Set;
 
 import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.integration.zai.SpecificationGenerator;
-import org.yawlfoundation.yawl.integration.zai.SpecificationOptimizer;
-import org.yawlfoundation.yawl.integration.claude.ClaudeCodeExecutor;
-import org.yawlfoundation.yawl.integration.claude.ExecuteClaudeTool;
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -54,8 +50,7 @@ public final class YawlSpecToolSpecifications {
      */
     public static List<McpServerFeatures.SyncToolSpecification> createAll(
             YEngine engine,
-            SpecificationGenerator specGenerator,
-            ClaudeCodeExecutor claudeExecutor) {
+            SpecificationGenerator specGenerator) {
 
         if (engine == null) {
             throw new IllegalArgumentException("engine is required");
@@ -70,11 +65,6 @@ public final class YawlSpecToolSpecifications {
         tools.add(createRollbackSpecificationTool(engine));
         tools.add(createGetSpecPerformanceTool(engine));
         tools.add(createSuggestOptimizationTool(engine, specGenerator));
-
-        // Add Claude CLI tool if executor is available
-        if (claudeExecutor != null) {
-            tools.add(new ExecuteClaudeTool(claudeExecutor).createSpecification());
-        }
 
         return tools;
     }
