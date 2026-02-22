@@ -1,6 +1,8 @@
 package org.yawlfoundation.yawl.integration.mcp.zai;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,174 +65,180 @@ public class ZaiBridgeToolRegistry {
     }
 
     private McpSchema.Tool createGenerateWorkflowFromUiTool() {
-        return new McpSchema.Tool(
-            "zai_generate_workflow_from_ui",
-            "Generate YAWL XML workflow specification from a UI screenshot. " +
-            "Uses Z.AI vision capabilities to analyze the UI and create a corresponding YAWL workflow.",
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "image_source", Map.of(
-                        "type", "string",
-                        "description", "Path or URL to the UI screenshot image"
-                    ),
-                    "workflow_name", Map.of(
-                        "type", "string",
-                        "description", "Name for the generated workflow"
-                    ),
-                    "output_format", Map.of(
-                        "type", "string",
-                        "enum", List.of("xml", "json", "description"),
-                        "description", "Output format for the specification (default: xml)"
-                    ),
-                    "include_data_fields", Map.of(
-                        "type", "boolean",
-                        "description", "Include data field definitions (default: true)"
-                    )
-                ),
-                "required", List.of("image_source")
-            )
-        );
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("image_source", Map.of(
+            "type", "string",
+            "description", "Path or URL to the UI screenshot image"
+        ));
+        props.put("workflow_name", Map.of(
+            "type", "string",
+            "description", "Name for the generated workflow"
+        ));
+        props.put("output_format", Map.of(
+            "type", "string",
+            "enum", List.of("xml", "json", "description"),
+            "description", "Output format for the specification (default: xml)"
+        ));
+        props.put("include_data_fields", Map.of(
+            "type", "boolean",
+            "description", "Include data field definitions (default: true)"
+        ));
+
+        List<String> required = List.of("image_source");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, null);
+
+        return McpSchema.Tool.builder()
+            .name("zai_generate_workflow_from_ui")
+            .description("Generate YAWL XML workflow specification from a UI screenshot. " +
+                "Uses Z.AI vision capabilities to analyze the UI and create a corresponding YAWL workflow.")
+            .inputSchema(schema)
+            .build();
     }
 
     private McpSchema.Tool createAnalyzeWorkflowDiagramTool() {
-        return new McpSchema.Tool(
-            "zai_analyze_workflow_diagram",
-            "Analyze a workflow diagram (flowchart, BPMN, UML) and generate YAWL specification. " +
-            "Supports multiple diagram types and extracts tasks, flows, and conditions.",
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "image_source", Map.of(
-                        "type", "string",
-                        "description", "Path or URL to the workflow diagram image"
-                    ),
-                    "diagram_type", Map.of(
-                        "type", "string",
-                        "enum", List.of("flowchart", "bpmn", "uml", "auto"),
-                        "description", "Type of diagram for optimized parsing (default: auto)"
-                    ),
-                    "extract_conditions", Map.of(
-                        "type", "boolean",
-                        "description", "Extract conditional logic from diagram (default: true)"
-                    ),
-                    "target_spec_version", Map.of(
-                        "type", "string",
-                        "description", "YAWL specification version (default: 4.0)"
-                    )
-                ),
-                "required", List.of("image_source")
-            )
-        );
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("image_source", Map.of(
+            "type", "string",
+            "description", "Path or URL to the workflow diagram image"
+        ));
+        props.put("diagram_type", Map.of(
+            "type", "string",
+            "enum", List.of("flowchart", "bpmn", "uml", "auto"),
+            "description", "Type of diagram for optimized parsing (default: auto)"
+        ));
+        props.put("extract_conditions", Map.of(
+            "type", "boolean",
+            "description", "Extract conditional logic from diagram (default: true)"
+        ));
+        props.put("target_spec_version", Map.of(
+            "type", "string",
+            "description", "YAWL specification version (default: 4.0)"
+        ));
+
+        List<String> required = List.of("image_source");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, null);
+
+        return McpSchema.Tool.builder()
+            .name("zai_analyze_workflow_diagram")
+            .description("Analyze a workflow diagram (flowchart, BPMN, UML) and generate YAWL specification. " +
+                "Supports multiple diagram types and extracts tasks, flows, and conditions.")
+            .inputSchema(schema)
+            .build();
     }
 
     private McpSchema.Tool createFetchWorkflowDocsTool() {
-        return new McpSchema.Tool(
-            "zai_fetch_workflow_docs",
-            "Fetch web documentation and convert to YAWL workflow specification. " +
-            "Extracts workflow patterns from process documentation.",
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "url", Map.of(
-                        "type", "string",
-                        "description", "URL of the workflow documentation"
-                    ),
-                    "spec_name", Map.of(
-                        "type", "string",
-                        "description", "Name for the generated specification"
-                    ),
-                    "extract_patterns", Map.of(
-                        "type", "boolean",
-                        "description", "Extract YAWL patterns from documentation (default: true)"
-                    ),
-                    "timeout_seconds", Map.of(
-                        "type", "integer",
-                        "description", "Fetch timeout in seconds (default: 30)"
-                    )
-                ),
-                "required", List.of("url")
-            )
-        );
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("url", Map.of(
+            "type", "string",
+            "description", "URL of the workflow documentation"
+        ));
+        props.put("spec_name", Map.of(
+            "type", "string",
+            "description", "Name for the generated specification"
+        ));
+        props.put("extract_patterns", Map.of(
+            "type", "boolean",
+            "description", "Extract YAWL patterns from documentation (default: true)"
+        ));
+        props.put("timeout_seconds", Map.of(
+            "type", "integer",
+            "description", "Fetch timeout in seconds (default: 30)"
+        ));
+
+        List<String> required = List.of("url");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, null);
+
+        return McpSchema.Tool.builder()
+            .name("zai_fetch_workflow_docs")
+            .description("Fetch web documentation and convert to YAWL workflow specification. " +
+                "Extracts workflow patterns from process documentation.")
+            .inputSchema(schema)
+            .build();
     }
 
     private McpSchema.Tool createSearchWorkflowPatternsTool() {
-        return new McpSchema.Tool(
-            "zai_search_workflow_patterns",
-            "Search the web for YAWL workflow patterns and best practices. " +
-            "Returns relevant documentation and code examples.",
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "query", Map.of(
-                        "type", "string",
-                        "description", "Search query for workflow patterns"
-                    ),
-                    "max_results", Map.of(
-                        "type", "integer",
-                        "description", "Maximum results to return (default: 5)"
-                    ),
-                    "include_code_examples", Map.of(
-                        "type", "boolean",
-                        "description", "Include code examples in results (default: true)"
-                    )
-                ),
-                "required", List.of("query")
-            )
-        );
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("query", Map.of(
+            "type", "string",
+            "description", "Search query for workflow patterns"
+        ));
+        props.put("max_results", Map.of(
+            "type", "integer",
+            "description", "Maximum results to return (default: 5)"
+        ));
+        props.put("include_code_examples", Map.of(
+            "type", "boolean",
+            "description", "Include code examples in results (default: true)"
+        ));
+
+        List<String> required = List.of("query");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, null);
+
+        return McpSchema.Tool.builder()
+            .name("zai_search_workflow_patterns")
+            .description("Search the web for YAWL workflow patterns and best practices. " +
+                "Returns relevant documentation and code examples.")
+            .inputSchema(schema)
+            .build();
     }
 
     private McpSchema.Tool createAnalyzeDataVisualizationTool() {
-        return new McpSchema.Tool(
-            "zai_analyze_data_visualization",
-            "Analyze data visualizations (charts, graphs, dashboards) from monitoring data. " +
-            "Extracts metrics and trends for workflow decision support.",
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "image_source", Map.of(
-                        "type", "string",
-                        "description", "Path or URL to the visualization image"
-                    ),
-                    "analysis_focus", Map.of(
-                        "type", "string",
-                        "enum", List.of("trends", "anomalies", "comparisons", "metrics", "comprehensive"),
-                        "description", "Focus area for analysis (default: comprehensive)"
-                    ),
-                    "extract_thresholds", Map.of(
-                        "type", "boolean",
-                        "description", "Extract threshold values for alerts (default: true)"
-                    )
-                ),
-                "required", List.of("image_source")
-            )
-        );
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("image_source", Map.of(
+            "type", "string",
+            "description", "Path or URL to the visualization image"
+        ));
+        props.put("analysis_focus", Map.of(
+            "type", "string",
+            "enum", List.of("trends", "anomalies", "comparisons", "metrics", "comprehensive"),
+            "description", "Focus area for analysis (default: comprehensive)"
+        ));
+        props.put("extract_thresholds", Map.of(
+            "type", "boolean",
+            "description", "Extract threshold values for alerts (default: true)"
+        ));
+
+        List<String> required = List.of("image_source");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, null);
+
+        return McpSchema.Tool.builder()
+            .name("zai_analyze_data_visualization")
+            .description("Analyze data visualizations (charts, graphs, dashboards) from monitoring data. " +
+                "Extracts metrics and trends for workflow decision support.")
+            .inputSchema(schema)
+            .build();
     }
 
     private McpSchema.Tool createExtractTextTool() {
-        return new McpSchema.Tool(
-            "zai_extract_text",
-            "Extract text from screenshots using OCR. Useful for reading error messages, " +
-            "terminal output, or documentation images.",
-            Map.of(
-                "type", "object",
-                "properties", Map.of(
-                    "image_source", Map.of(
-                        "type", "string",
-                        "description", "Path or URL to the screenshot image"
-                    ),
-                    "programming_language", Map.of(
-                        "type", "string",
-                        "description", "Expected programming language if code (optional)"
-                    ),
-                    "format_output", Map.of(
-                        "type", "boolean",
-                        "description", "Format extracted text (default: true)"
-                    )
-                ),
-                "required", List.of("image_source")
-            )
-        );
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("image_source", Map.of(
+            "type", "string",
+            "description", "Path or URL to the screenshot image"
+        ));
+        props.put("programming_language", Map.of(
+            "type", "string",
+            "description", "Expected programming language if code (optional)"
+        ));
+        props.put("format_output", Map.of(
+            "type", "boolean",
+            "description", "Format extracted text (default: true)"
+        ));
+
+        List<String> required = List.of("image_source");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, null);
+
+        return McpSchema.Tool.builder()
+            .name("zai_extract_text")
+            .description("Extract text from screenshots using OCR. Useful for reading error messages, " +
+                "terminal output, or documentation images.")
+            .inputSchema(schema)
+            .build();
     }
 
     /**
@@ -239,8 +247,9 @@ public class ZaiBridgeToolRegistry {
      * @param toolName   name of the tool to execute
      * @param parameters tool parameters
      * @return tool result
+     * @throws IOException if Z.AI bridge communication fails
      */
-    public Map<String, Object> executeTool(String toolName, Map<String, Object> parameters) {
+    public Map<String, Object> executeTool(String toolName, Map<String, Object> parameters) throws IOException {
         _logger.info("Executing Z.AI bridge tool: {}", toolName);
 
         String zaiTool = mapToZaiTool(toolName);

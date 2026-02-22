@@ -312,9 +312,7 @@
                         <exclude>**/a2a/skills/ProcessMiningSkill.java</exclude>
                         <exclude>**/a2a/auth/CompositeAuthenticationProvider.java</exclude>
 
-                        <!-- MCP ZAI bridge - interface changes in RC3 -->
-                        <!-- All ZAI bridge files excluded due to API incompatibility -->
-                        <exclude>**/mcp/zai/**</exclude>
+                        <!-- MCP ZAI bridge - fully migrated to RC3 builder API, no exclusions needed -->
 
                         <!-- MCP Transport - HTTP API issues -->
                         <exclude>**/mcp/transport/**</exclude>
