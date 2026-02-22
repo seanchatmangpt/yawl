@@ -145,7 +145,7 @@ public class GregVerseOrchestrator {
         try {
             this.executor = Executors.newVirtualThreadPerTaskExecutor();
             LOGGER.info("Using virtual thread executor for scalable agent execution");
-        } catch (NoSuchMethodError e) {
+        } catch (NoSuchMethodError | IncompatibleClassChangeError e) {
             LOGGER.warn("Virtual thread executor not available, falling back to platform thread pool");
             this.executor = Executors.newFixedThreadPool(maxConcurrency);
         }

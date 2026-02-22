@@ -178,8 +178,9 @@ build_maven_args() {
         exec_args+=("--fail-fast")
     fi
 
-    # Join arguments
-    args+=("-Dexec.args=${exec_args[*]}")
+    # Join arguments as a single string
+    local args_str="${exec_args[*]}"
+    args+=("-Dexec.args=$args_str")
 
     echo "${args[@]}"
 }
