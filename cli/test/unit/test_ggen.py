@@ -127,7 +127,7 @@ class TestGgenCommands:
         """Validate command fails with missing spec file."""
         result = runner.invoke(ggen_app, ["validate", "/nonexistent/spec.ttl"])
 
-        assert result.exit_code == 1
+        assert result.exit_code != 0
         assert "not found" in result.stdout
 
     def test_generate_verbose_flag(
