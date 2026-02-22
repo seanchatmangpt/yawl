@@ -85,15 +85,17 @@ class Config(BaseModel):
         """Load YAML configuration from project and user home.
 
         Loads configuration files from multiple locations and merges them.
-        Later files override earlier ones (project > user > system).
+        Hierarchy (highest priority first): project > user > system.
 
         Raises:
             RuntimeError: If YAML is invalid or files cannot be read
         """
+        # Load in reverse priority order (lowest priority first)
+        # so higher priority files override lower priority files
         config_paths = [
-            project_root / ".yawl" / "config.yaml",
-            Path.home() / ".yawl" / "config.yaml",
             Path("/etc/yawl/config.yaml"),
+            Path.home() / ".yawl" / "config.yaml",
+            project_root / ".yawl" / "config.yaml",
         ]
 
         merged_config = {}
@@ -122,7 +124,7 @@ class Config(BaseModel):
                         raise ValueError(
                             f"Config file must be YAML dictionary, got {type(file_config).__name__}"
                         )
-                    # Deep merge configs (later files override earlier)
+                    # Deep merge configs: file_config overrides merged_config
                     merged_config = self._deep_merge(merged_config, file_config)
                 self.config_file = config_path
 

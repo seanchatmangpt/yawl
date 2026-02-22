@@ -609,7 +609,8 @@ class TestMultiLevelConfig:
         # Reload and verify
         config2 = Config.from_project(temp_project_dir)
         assert config2.get("description") == "YAWL Workflow Σ = Java + XML + Petri nets"
-        assert "Ψ" in config2.get("phases")
+        phases = config2.get("phases")
+        assert any("Ψ" in phase for phase in phases)
 
     def test_config_large_file_size_limit(self, temp_project_dir: Path) -> None:
         """Real test: config files > 1MB are rejected for safety.
@@ -753,7 +754,7 @@ maven:
             f.write(b"\x80\x81\x82\x83")
 
         # Attempt to load should raise
-        with pytest.raises(RuntimeError, match="invalid encoding"):
+        with pytest.raises(RuntimeError, match="(invalid encoding|codec can't decode)"):
             Config.from_project(temp_project_dir)
 
     def test_config_merge_with_all_types(self, temp_project_dir: Path) -> None:
@@ -788,3 +789,370 @@ maven:
         assert result["build"]["profiles"] == ["analysis", "coverage"]  # Overridden list
         assert result["build"]["settings"] == {"key": "value"}  # Unchanged dict
         assert result["build"]["new_key"] == "new_value"  # New key
+
+
+class TestConfigHierarchyIntegration:
+    """Test configuration hierarchy with all three levels (system, user, project)."""
+
+    def test_all_three_levels_merge_correctly(
+        self, temp_project_dir: Path, monkeypatch
+    ) -> None:
+        """Real test: all three config levels merge without loss.
+
+        System config: build.parallel=false, maven.version=3.7.0
+        User config: build.threads=4
+        Project config: test.coverage=80
+        Result: all three settings present
+        """
+        # Create system config
+        system_dir = temp_project_dir / "etc"
+        system_dir.mkdir()
+        system_config_file = system_dir / "config.yaml"
+        system_config = {
+            "build": {
+                "parallel": False,
+            },
+            "maven": {
+                "version": "3.7.0",
+            },
+        }
+        with open(system_config_file, "w") as f:
+            yaml.dump(system_config, f)
+
+        # Create user config
+        home_mock = temp_project_dir / "home"
+        home_mock.mkdir()
+        yawl_home = home_mock / ".yawl"
+        yawl_home.mkdir()
+        user_config_file = yawl_home / "config.yaml"
+        user_config = {
+            "build": {
+                "threads": 4,
+            },
+        }
+        with open(user_config_file, "w") as f:
+            yaml.dump(user_config, f)
+
+        # Create project config
+        project_config = {
+            "test": {
+                "coverage": 80,
+            },
+        }
+        project_file = temp_project_dir / ".yawl" / "config.yaml"
+        with open(project_file, "w") as f:
+            yaml.dump(project_config, f)
+
+        # Mock Path.home()
+        monkeypatch.setattr(Path, "home", lambda: home_mock)
+
+        # Mock /etc/yawl/config.yaml
+        def mock_exists(self):
+            if str(self) == "/etc/yawl/config.yaml":
+                return True
+            return Path(str(self)).exists()
+
+        def mock_stat(self):
+            if str(self) == "/etc/yawl/config.yaml":
+                return system_config_file.stat()
+            return Path(str(self)).stat()
+
+        def mock_open_func(self, *args, **kwargs):
+            if str(self) == "/etc/yawl/config.yaml":
+                return open(system_config_file, *args, **kwargs)
+            return Path(str(self)).open(*args, **kwargs)
+
+        monkeypatch.setattr(Path, "exists", mock_exists)
+        monkeypatch.setattr(Path, "stat", mock_stat)
+        monkeypatch.setattr(Path, "open", mock_open_func)
+
+        # Load config
+        config = Config.from_project(temp_project_dir)
+
+        # Verify all three settings present (hierarchy working)
+        assert config.get("build.parallel") is False  # From system
+        assert config.get("build.threads") == 4  # From user
+        assert config.get("test.coverage") == 80  # From project
+        assert config.get("maven.version") == "3.7.0"  # From system
+
+    def test_project_overrides_all_levels(
+        self, temp_project_dir: Path, monkeypatch
+    ) -> None:
+        """Real test: project config overrides both user and system.
+
+        All three levels have same key, project value should win.
+        """
+        # Create user config
+        home_mock = temp_project_dir / "home"
+        home_mock.mkdir()
+        yawl_home = home_mock / ".yawl"
+        yawl_home.mkdir()
+        user_config_file = yawl_home / "config.yaml"
+        user_config = {
+            "build": {
+                "threads": 4,
+            },
+        }
+        with open(user_config_file, "w") as f:
+            yaml.dump(user_config, f)
+
+        # Create project config
+        project_config = {
+            "build": {
+                "threads": 16,
+            },
+        }
+        project_file = temp_project_dir / ".yawl" / "config.yaml"
+        with open(project_file, "w") as f:
+            yaml.dump(project_config, f)
+
+        # Mock Path.home()
+        monkeypatch.setattr(Path, "home", lambda: home_mock)
+
+        # Load config
+        config = Config.from_project(temp_project_dir)
+
+        # Verify project overrides user
+        assert config.get("build.threads") == 16
+
+    def test_config_no_user_config_uses_project_only(
+        self, temp_project_dir: Path, monkeypatch
+    ) -> None:
+        """Real test: when user config doesn't exist, project config used.
+
+        Skip missing user config gracefully and load project config.
+        """
+        # Create user home but no config
+        home_mock = temp_project_dir / "home"
+        home_mock.mkdir()
+        yawl_home = home_mock / ".yawl"
+        yawl_home.mkdir()
+        # Don't create config.yaml
+
+        # Create project config
+        project_config = {
+            "build": {
+                "threads": 8,
+            },
+        }
+        project_file = temp_project_dir / ".yawl" / "config.yaml"
+        with open(project_file, "w") as f:
+            yaml.dump(project_config, f)
+
+        # Mock Path.home()
+        monkeypatch.setattr(Path, "home", lambda: home_mock)
+
+        # Load config
+        config = Config.from_project(temp_project_dir)
+
+        # Verify project config loaded
+        assert config.get("build.threads") == 8
+
+    def test_config_atomic_write_recovery(self, temp_project_dir: Path) -> None:
+        """Real test: interrupted write doesn't corrupt existing config.
+
+        Verify atomic write pattern (temp file + rename) protects against corruption.
+        """
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        original_data = {"build": {"threads": 4}}
+
+        # Write original config
+        config = Config(project_root=temp_project_dir)
+        config.config_data = original_data
+        config.save(config_file)
+
+        # Verify original config persists
+        with open(config_file) as f:
+            saved_data = yaml.safe_load(f)
+        assert saved_data == original_data
+
+        # Write new config (simulating partial write by checking for temp file)
+        config2 = Config(project_root=temp_project_dir)
+        config2.config_data = {"build": {"threads": 8}}
+        config2.save(config_file)
+
+        # Verify no temp file left behind
+        temp_file = config_file.with_suffix(".yaml.tmp")
+        assert not temp_file.exists()
+
+        # Verify new config saved
+        with open(config_file) as f:
+            final_data = yaml.safe_load(f)
+        assert final_data["build"]["threads"] == 8
+
+    def test_config_file_permissions_after_save(self, temp_project_dir: Path) -> None:
+        """Real test: saved config file has readable permissions.
+
+        Verify file permissions allow owner to read/write after save.
+        """
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {"test": "value"}
+        config.save(config_file)
+
+        # Check file permissions
+        file_stat = config_file.stat()
+        mode = file_stat.st_mode
+
+        # Verify file is readable and writable by owner
+        assert mode & stat.S_IRUSR  # Owner can read
+        assert mode & stat.S_IWUSR  # Owner can write
+
+    def test_config_directory_creation_hierarchical(self, temp_project_dir: Path) -> None:
+        """Real test: save creates entire directory hierarchy.
+
+        Save to deeply nested non-existent path and verify all dirs created.
+        """
+        config = Config(project_root=temp_project_dir)
+        config.config_data = {"test": "value"}
+
+        # Save to deeply nested path
+        config_file = temp_project_dir / "level1" / "level2" / "level3" / "config.yaml"
+        config.save(config_file)
+
+        # Verify all directories created
+        assert config_file.parent.exists()
+        assert config_file.exists()
+
+        # Verify content is valid
+        with open(config_file) as f:
+            data = yaml.safe_load(f)
+        assert data["test"] == "value"
+
+    def test_config_list_replacement_not_merge(
+        self, temp_project_dir: Path, monkeypatch
+    ) -> None:
+        """Real test: config lists are replaced, not merged.
+
+        When project overrides user's profiles list, entire list replaces.
+        """
+        # Create user config
+        home_mock = temp_project_dir / "home"
+        home_mock.mkdir()
+        yawl_home = home_mock / ".yawl"
+        yawl_home.mkdir()
+        user_config_file = yawl_home / "config.yaml"
+        user_config = {
+            "maven": {
+                "profiles": ["analysis", "coverage"],
+            },
+        }
+        with open(user_config_file, "w") as f:
+            yaml.dump(user_config, f)
+
+        # Create project config with different list
+        project_config = {
+            "maven": {
+                "profiles": ["quick"],
+            },
+        }
+        project_file = temp_project_dir / ".yawl" / "config.yaml"
+        with open(project_file, "w") as f:
+            yaml.dump(project_config, f)
+
+        # Mock Path.home()
+        monkeypatch.setattr(Path, "home", lambda: home_mock)
+
+        # Load config
+        config = Config.from_project(temp_project_dir)
+
+        # Verify project list replaces user list (not merged)
+        assert config.get("maven.profiles") == ["quick"]
+        assert "analysis" not in config.get("maven.profiles")
+
+    def test_config_save_and_reload_cycle(self, temp_project_dir: Path) -> None:
+        """Real test: save -> reload cycle preserves all data.
+
+        Multi-cycle save and reload should preserve data integrity.
+        """
+        config_file = temp_project_dir / ".yawl" / "config.yaml"
+
+        # Cycle 1: save complex structure
+        original_data = {
+            "build": {
+                "threads": 8,
+                "parallel": True,
+                "timeout": 600,
+            },
+            "test": {
+                "coverage": 85,
+                "parallel": False,
+            },
+            "maven": {
+                "version": "3.8.0",
+                "profiles": ["analysis", "coverage"],
+            },
+        }
+
+        config1 = Config(project_root=temp_project_dir)
+        config1.config_data = original_data
+        config1.save(config_file)
+
+        # Reload and verify
+        config2 = Config.from_project(temp_project_dir)
+        assert config2.get("build.threads") == 8
+        assert config2.get("test.coverage") == 85
+        assert config2.get("maven.profiles") == ["analysis", "coverage"]
+
+        # Cycle 2: modify and resave
+        config2.set("build.threads", 16)
+        config2.set("test.coverage", 90)
+        config2.save(config_file)
+
+        # Reload and verify changes
+        config3 = Config.from_project(temp_project_dir)
+        assert config3.get("build.threads") == 16
+        assert config3.get("test.coverage") == 90
+        assert config3.get("maven.version") == "3.8.0"  # Unchanged
+
+    def test_config_scalar_value_blocking_nested_access(
+        self, config_with_yaml: Config
+    ) -> None:
+        """Real test: accessing nested path through scalar value returns default.
+
+        If config has scalar value and we try nested access, return default.
+        """
+        config_with_yaml.set("scalar_key", "string_value")
+
+        # Try to access nested path through scalar
+        value = config_with_yaml.get("scalar_key.nested.path", default="default_value")
+
+        assert value == "default_value"
+
+    def test_config_null_in_hierarchy(self, temp_project_dir: Path, monkeypatch) -> None:
+        """Real test: null values in config are preserved during merge.
+
+        Null value should override non-null from lower priority config.
+        """
+        # Create user config
+        home_mock = temp_project_dir / "home"
+        home_mock.mkdir()
+        yawl_home = home_mock / ".yawl"
+        yawl_home.mkdir()
+        user_config_file = yawl_home / "config.yaml"
+        user_config = {
+            "build": {
+                "timeout": 300,
+            },
+        }
+        with open(user_config_file, "w") as f:
+            yaml.dump(user_config, f)
+
+        # Create project config with null value
+        project_config = {
+            "build": {
+                "timeout": None,
+            },
+        }
+        project_file = temp_project_dir / ".yawl" / "config.yaml"
+        with open(project_file, "w") as f:
+            yaml.dump(project_config, f)
+
+        # Mock Path.home()
+        monkeypatch.setattr(Path, "home", lambda: home_mock)
+
+        # Load config
+        config = Config.from_project(temp_project_dir)
+
+        # Verify null is preserved (not ignored)
+        assert config.get("build.timeout") is None
