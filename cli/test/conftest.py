@@ -170,11 +170,44 @@ def reset_project_root(monkeypatch, temp_project_dir: Path) -> None:
 
 
 @pytest.fixture(autouse=True)
-def mock_console(monkeypatch) -> None:
+def mock_console_for_tests(monkeypatch) -> None:
     """Mock Rich console to avoid 'file' parameter issues in test environment."""
     from unittest.mock import MagicMock
-    from yawl_cli import utils
+    from rich.console import Console
 
-    # Create a mock console that accepts 'file' parameter but ignores it
-    mock_console = MagicMock()
-    monkeypatch.setattr(utils, "console", mock_console)
+    # Create a real console object but intercept calls to handle 'file' parameter
+    real_console = Console()
+
+    class MockConsole:
+        def __init__(self):
+            self._console = real_console
+
+        def print(self, *args, **kwargs):
+            # Remove 'file' parameter if present (Rich doesn't support it in tests)
+            kwargs.pop('file', None)
+            return self._console.print(*args, **kwargs)
+
+        def __getattr__(self, name):
+            # Forward other attributes to real console
+            return getattr(self._console, name)
+
+    mock_console = MockConsole()
+
+    # Patch all modules that import console
+    for module_name in [
+        'yawl_cli.utils',
+        'yawl_cli.build',
+        'yawl_cli.config_cli',
+        'yawl_cli.ggen',
+        'yawl_cli.godspeed',
+        'yawl_cli.gregverse',
+        'yawl_cli.observatory',
+        'yawl_cli.team',
+        'yawl_cli.godspeed_cli',
+    ]:
+        try:
+            module = __import__(module_name, fromlist=['console'])
+            if hasattr(module, 'console'):
+                monkeypatch.setattr(f'{module_name}.console', mock_console)
+        except (ImportError, AttributeError):
+            pass
