@@ -49,7 +49,7 @@ class TestGregverseCommands:
         import yawl_cli.gregverse
         monkeypatch.setattr(yawl_cli.gregverse, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(gregverse_app, ["import", "xpdl", str(xpdl_file)])
+        result = runner.invoke(gregverse_app, ["import-workflow", str(xpdl_file), "--format", "xpdl"])
 
         assert result.exit_code == 0
 
@@ -57,7 +57,7 @@ class TestGregverseCommands:
         """Import fails with missing file."""
         result = runner.invoke(
             gregverse_app,
-            ["import", "bpmn", "/nonexistent/file.bpmn"]
+            ["import-workflow", "/nonexistent/file.bpmn"]
         )
 
         assert result.exit_code == 1
@@ -77,7 +77,7 @@ class TestGregverseCommands:
         import yawl_cli.gregverse
         monkeypatch.setattr(yawl_cli.gregverse, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(gregverse_app, ["export", "bpmn", str(yawl_file)])
+        result = runner.invoke(gregverse_app, ["export-workflow", str(yawl_file), "--format", "bpmn"])
 
         assert result.exit_code == 0
 
@@ -95,7 +95,7 @@ class TestGregverseCommands:
         import yawl_cli.gregverse
         monkeypatch.setattr(yawl_cli.gregverse, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(gregverse_app, ["export", "xpdl", str(yawl_file)])
+        result = runner.invoke(gregverse_app, ["export-workflow", str(yawl_file), "--format", "xpdl"])
 
         assert result.exit_code == 0
 
@@ -103,7 +103,7 @@ class TestGregverseCommands:
         """Export fails with missing file."""
         result = runner.invoke(
             gregverse_app,
-            ["export", "bpmn", "/nonexistent/file.yawl"]
+            ["export-workflow", "/nonexistent/file.yawl"]
         )
 
         assert result.exit_code == 1
@@ -118,7 +118,7 @@ class TestGregverseCommands:
 
         result = runner.invoke(
             gregverse_app,
-            ["export", "unknown_format", str(yawl_file)]
+            ["export-workflow", str(yawl_file), "--format", "unknown_format"]
         )
 
         assert result.exit_code != 0
@@ -142,7 +142,7 @@ class TestGregverseCommands:
         output_file = temp_project_dir / "output.yawl"
         result = runner.invoke(
             gregverse_app,
-            ["import", "bpmn", str(bpmn_file), "--output", str(output_file)]
+            ["import-workflow", str(bpmn_file), "--format", "bpmn", "--output", str(output_file)]
         )
 
         assert result.exit_code == 0
@@ -156,27 +156,15 @@ class TestGregverseErrorHandling:
         """Create a Typer CLI runner."""
         return CliRunner()
 
-    def test_import_requires_format_argument(self, runner: CliRunner) -> None:
-        """Import requires format argument."""
-        result = runner.invoke(gregverse_app, ["import"])
-
-        assert result.exit_code != 0
-
     def test_import_requires_file_argument(self, runner: CliRunner) -> None:
         """Import requires file argument."""
-        result = runner.invoke(gregverse_app, ["import", "bpmn"])
-
-        assert result.exit_code != 0
-
-    def test_export_requires_format_argument(self, runner: CliRunner) -> None:
-        """Export requires format argument."""
-        result = runner.invoke(gregverse_app, ["export"])
+        result = runner.invoke(gregverse_app, ["import-workflow"])
 
         assert result.exit_code != 0
 
     def test_export_requires_file_argument(self, runner: CliRunner) -> None:
         """Export requires file argument."""
-        result = runner.invoke(gregverse_app, ["export", "bpmn"])
+        result = runner.invoke(gregverse_app, ["export-workflow"])
 
         assert result.exit_code != 0
 
@@ -193,6 +181,6 @@ class TestGregverseErrorHandling:
         import yawl_cli.gregverse
         monkeypatch.setattr(yawl_cli.gregverse, "run_shell_cmd", mock_run_shell_cmd)
 
-        result = runner.invoke(gregverse_app, ["import", "bpmn", str(invalid_file)])
+        result = runner.invoke(gregverse_app, ["import-workflow", str(invalid_file), "--format", "bpmn"])
 
         assert result.exit_code == 1

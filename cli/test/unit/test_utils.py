@@ -265,13 +265,13 @@ class TestPromptYesNo:
 
         assert result is True
 
-    def test_prompt_yes_no_invalid_input_uses_default(self, monkeypatch) -> None:
-        """Invalid input uses default."""
+    def test_prompt_yes_no_invalid_input_returns_false(self, monkeypatch) -> None:
+        """Invalid input returns False (not recognized as yes)."""
         monkeypatch.setattr("builtins.input", lambda x: "maybe")
 
         result = prompt_yes_no("Continue?", default=True)
 
-        assert result is True
+        assert result is False
 
 
 class TestPromptChoice:
