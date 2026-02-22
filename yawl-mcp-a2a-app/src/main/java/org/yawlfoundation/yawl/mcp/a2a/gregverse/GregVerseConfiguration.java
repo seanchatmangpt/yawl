@@ -19,6 +19,8 @@ package org.yawlfoundation.yawl.mcp.a2a.gregverse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Configuration
 @ConditionalOnProperty(prefix = "gregverse.agents", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnClass({GregVerseAgent.class})
 public class GregVerseConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GregVerseConfiguration.class);
@@ -91,9 +94,23 @@ public class GregVerseConfiguration {
      * @return the scenario runner
      */
     @Bean
+    @ConditionalOnClass({GregVerseScenarioRunner.class})
     public GregVerseScenarioRunner gregVerseScenarioRunner(GregVerseAgentRegistry registry) {
         LOGGER.info("Initializing Greg-Verse Scenario Runner");
         return new GregVerseScenarioRunner(registry, defaultTimeoutMs);
+    }
+
+    /**
+     * Creates a fallback executor service that doesn't require Java 25 features.
+     * This bean is only created when virtual thread support is not available.
+     *
+     * @return the executor service
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "gregVerseVirtualThreadExecutor")
+    public java.util.concurrent.ExecutorService gregVerseFallbackExecutor() {
+        LOGGER.info("Initializing Greg-Verse fallback executor (platform threads)");
+        return java.util.concurrent.Executors.newFixedThreadPool(4);
     }
 
     /**

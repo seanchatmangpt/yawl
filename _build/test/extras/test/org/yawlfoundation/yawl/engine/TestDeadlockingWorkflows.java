@@ -1,0 +1,73 @@
+package org.yawlfoundation.yawl.engine;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.Set;
+
+import org.jdom2.JDOMException;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.StringUtil;
+
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
+/**
+ *
+ * @author Lachlan Aldred
+ * Date: 3/03/2004
+ * Time: 12:08:48
+ *
+ */
+@Tag("integration")
+@Execution(ExecutionMode.SAME_THREAD)
+class TestDeadlockingWorkflows{
+    private YIdentifier _idForTopNet;
+
+    @BeforeEach
+    void setUp(){
+
+    }
+
+    @Test
+    void testDeadlockingSpecification()
+            throws YSchemaBuildingException, YSyntaxException,
+            JDOMException, IOException, YStateException, YPersistenceException, YEngineStateException, YQueryException, YDataStateException {
+        URL fileURL = getClass().getResource("DeadlockingSpecification.xml");
+        File yawlXMLFile = new File(fileURL.getFile());
+
+        YSpecification specification = YMarshal.
+                        unmarshalSpecifications(StringUtil.fileToString(yawlXMLFile.getAbsolutePath())).get(0);
+
+        YEngine engine = YEngine.getInstance();
+        EngineClearer.clear(engine);
+        engine.loadSpecification(specification);
+        _idForTopNet = engine.startCase(specification.getSpecificationID(), null, null,
+                 null, null, null, false);
+        YNetRunnerRepository repository = engine.getNetRunnerRepository();
+        YNetRunner runner = repository.get(_idForTopNet);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Set items = engine.getAllWorkItems();
+        assertTrue(items.size() == 1);
+        for (Iterator iterator = items.iterator(); iterator.hasNext();) {
+            YWorkItem item = (YWorkItem) iterator.next();
+            assertTrue(item.getStatus() == YWorkItemStatus.statusDeadlocked);
+//System.out.println("TestDeadlockingWorkflows::..." + item.toXML());
+        }
+        assertTrue(runner.isCompleted());
+        assertFalse(runner.isAlive());
+    }
+}

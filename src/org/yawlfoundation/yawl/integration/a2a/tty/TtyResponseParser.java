@@ -334,7 +334,29 @@ public final class TtyResponseParser {
      * @param title the section title
      * @param content the section content
      */
-    public record Section(String title, String content) {}
+    public interface Section {
+        /**
+         * Get the section title.
+         *
+         * @return the title
+         */
+        String title();
+
+        /**
+         * Get the section content.
+         *
+         * @return the content
+         */
+        String content();
+    }
+
+    /**
+     * Represents a plain text section.
+     *
+     * @param title the section title
+     * @param content the section content
+     */
+    public record TextSection(String title, String content) implements Section {}
 
     /**
      * Represents a code block in markdown.
@@ -637,7 +659,7 @@ public final class TtyResponseParser {
             }
 
             String sectionContent = content.substring(start, end).trim();
-            sections.add(new Section(title, sectionContent));
+            sections.add(new TextSection(title, sectionContent));
         }
 
         return new TextResponse(content, sections, content, Instant.now());

@@ -275,7 +275,10 @@ public class YawlMcpResourceRegistry {
             resource.getName(),
             resource.getDescription(),
             resource.getMimeType(),
-            null
+            null,  // encoding
+            0L,    // comment
+            null,  // annotations
+            Map.of()  // metadata
         );
 
         return new McpServerFeatures.SyncResourceSpecification(
@@ -307,7 +310,8 @@ public class YawlMcpResourceRegistry {
             null,  // annotations
             resource.getDescription(),
             resource.getMimeType(),
-            null   // metadata
+            null,  // metadata
+            null   // comment
         );
 
         return new McpServerFeatures.SyncResourceTemplateSpecification(

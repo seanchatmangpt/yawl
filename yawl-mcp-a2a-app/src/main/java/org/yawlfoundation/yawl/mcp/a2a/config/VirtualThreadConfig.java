@@ -18,8 +18,8 @@
 
 package org.yawlfoundation.yawl.mcp.a2a.config;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -80,7 +80,7 @@ import java.util.concurrent.Executors;
 @EnableConfigurationProperties(VirtualThreadConfig.VirtualThreadProperties.class)
 public class VirtualThreadConfig implements AsyncConfigurer {
 
-    private static final Logger _logger = LogManager.getLogger(VirtualThreadConfig.class);
+    private static final Logger _logger = LoggerFactory.getLogger(VirtualThreadConfig.class);
 
     private final VirtualThreadProperties properties;
 
