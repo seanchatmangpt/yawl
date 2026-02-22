@@ -299,9 +299,6 @@
                         <include>**/org/yawlfoundation/yawl/integration/**</include>
                     </includes>
                     <excludes>
-                        <!-- Claude integration - StructuredTaskScope API issue -->
-                        <exclude>**/claude/**</exclude>
-
                         <!-- A2A classes - HandoffProtocol API changes in SDK -->
                         <exclude>**/a2a/VirtualThreadYawlA2AServer.java</exclude>
                         <exclude>**/a2a/YawlA2AServer.java</exclude>
