@@ -375,11 +375,6 @@
                     </testIncludes>
                     <testExcludes>
                         <!-- Exclude test files for packages with excluded sources -->
-                        <!-- A2A tests enabled for handoff testing -->
-                        <!-- ZaiFunctionService tests depend on Pm4Py; ZaiService and ZaiDecisionReasoner tests allowed -->
-                        <testExclude>**/zai/ZaiFunctionServiceTest.java</testExclude>
-                        <!-- ZaiDecisionReasoner tests require external Z.AI API (rate-limited in CI) -->
-                        <testExclude>**/zai/ZaiDecisionReasonerTest.java</testExclude>
                         <testExclude>**/processmining/**</testExclude>
                         <testExclude>**/SelfPlayTest.java</testExclude>
                         <!-- IntegrationTestSuite references excluded classes -->
@@ -389,12 +384,6 @@
                         <testExclude>**/V6EndToEndIntegrationTest.java</testExclude>
                         <!-- EnterpriseIntegrationPatternsTest references excluded classes -->
                         <testExclude>**/EnterpriseIntegrationPatternsTest.java</testExclude>
-                        <!-- SpiffeWorkloadIdentityTest uses sun.security.x509 (Java 21+ module restriction) -->
-                        <testExclude>**/spiffe/SpiffeWorkloadIdentityTest.java</testExclude>
-                        <!-- SpiffeExceptionTest references excluded SpiffeException source -->
-                        <testExclude>**/spiffe/SpiffeExceptionTest.java</testExclude>
-                        <!-- OpenTelemetryConfigTest uses internal API that changed in OTEL -->
-                        <testExclude>**/observability/OpenTelemetryConfigTest.java</testExclude>
                         <!-- IT tests require failsafe plugin not available offline -->
                         <testExclude>**/*IT.java</testExclude>
                                             </testExcludes>
@@ -410,12 +399,8 @@
                     </includes>
                     <!-- A2A-dependent packages now included since A2A sources are compiled -->
                     <excludes>
-                        <!-- ZaiFunctionService tests depend on Pm4Py; ZaiService and ZaiDecisionReasoner tests allowed -->
-                        <exclude>**/zai/ZaiFunctionServiceTest.java</exclude>
                         <exclude>**/processmining/**</exclude>
                         <exclude>**/test/SelfPlayTest.java</exclude>
-                        <!-- ZaiDecisionReasoner tests require external Z.AI API (rate-limited in CI) -->
-                        <exclude>**/zai/ZaiDecisionReasonerTest.java</exclude>
 
                         <!-- IntegrationTestSuite references excluded classes -->
                         <exclude>**/IntegrationTestSuite.java</exclude>
@@ -427,19 +412,9 @@
                         <!-- EnterpriseIntegrationPatternsTest references excluded classes -->
                         <exclude>**/EnterpriseIntegrationPatternsTest.java</exclude>
 
-                        <!-- SpiffeWorkloadIdentityTest uses sun.security.x509 (Java 21+ module restriction) -->
-                        <exclude>**/spiffe/SpiffeWorkloadIdentityTest.java</exclude>
-                        <!-- SpiffeExceptionTest references excluded SpiffeException -->
-                        <exclude>**/spiffe/SpiffeExceptionTest.java</exclude>
-
-                        <!-- OpenTelemetryConfigTest uses internal API that changed in OTEL 1.52.0 -->
-                        <exclude>**/observability/OpenTelemetryConfigTest.java</exclude>
-
-                        <!-- MCP event tests that need API updates -->
+                        <!-- MCP event tests depend on excluded mcp/event sources -->
                         <exclude>**/mcp/event/**</exclude>
                         <exclude>**/mcp/resource/YawlEventResourceProviderTest.java</exclude>
-
-                        <!-- ZAI MCP tests that need API updates -->
                       </excludes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
