@@ -37,6 +37,7 @@ from yawl_cli.godspeed import godspeed_app
 from yawl_cli.ggen import ggen_app
 from yawl_cli.gregverse import gregverse_app
 from yawl_cli.team import team_app
+from yawl_cli import config_cli
 from yawl_cli.utils import ensure_project_root, Config
 
 console = Console()
@@ -56,6 +57,7 @@ app.add_typer(godspeed_app, name="godspeed", help="GODSPEED workflow (Ψ→Λ→
 app.add_typer(ggen_app, name="ggen", help="YAWL XML Generator")
 app.add_typer(gregverse_app, name="gregverse", help="Workflow conversion & export")
 app.add_typer(team_app, name="team", help="Team operations (experimental)")
+app.add_typer(config_cli.app, name="config", help="Configuration management")
 
 
 @app.command()
@@ -200,7 +202,7 @@ def _init_interactive(config: Config, yawl_dir: Path, force: bool = False) -> No
     )
 
     # Output section
-    output_format = typer.prompt(
+    output_format = Prompt.ask(
         "Output format (table, json, yaml)",
         default=config.get("output.format", "table"),
     )

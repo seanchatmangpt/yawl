@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-02-22T05:47:59Z",
+  "line_pct": 0,
+  "branch_pct": 0,
+  "target_line_pct": 65,
+  "target_branch_pct": 55,
+  "meets_line_target": false,
+  "meets_branch_target": false
+}

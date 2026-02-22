@@ -68,6 +68,7 @@ log = logging.getLogger(__name__)
 
 VERSION = "0.1.0"
 YAWL_NS = rdflib.Namespace("http://yawlfoundation.org/yawl#")
+YAWL_SPEC_NS = rdflib.Namespace("http://yawl.org/yawl-specification/")
 YAWL_API_NS = rdflib.Namespace("http://yawlfoundation.org/yawl/api#")
 YAWL_PATTERN_NS = rdflib.Namespace("http://yawlfoundation.org/yawl/pattern#")
 
@@ -319,19 +320,87 @@ class Generator:
             "graph_size": len(rdf_handler.graph),
             "tasks": [],
             "flows": [],
+            "variables": [],
+            "specId": "GeneratedSpec",
+            "specName": "Generated Workflow",
+            "specVersion": "1.0",
+            "specUri": "http://example.org/generated-workflow",
+            "rootNetId": "RootNet",
+            "inputCondition": "InputCondition",
+            "outputCondition": "OutputCondition",
+            "documentation": "YAWL workflow generated from RDF specification",
         }
 
-        # Extract YAWL tasks
+        # Extract Specification metadata
         try:
-            for task in rdf_handler.graph.subjects(RDF.type, YAWL_NS.Task):
-                task_info = {
-                    "id": str(task),
-                    "name": str(rdf_handler.graph.value(task, RDFS.label) or ""),
-                }
-                context["tasks"].append(task_info)
+            for spec in rdf_handler.graph.subjects(RDF.type, YAWL_SPEC_NS.Specification):
+                spec_id = rdf_handler.graph.value(spec, YAWL_SPEC_NS.specificationID)
+                spec_name = rdf_handler.graph.value(spec, YAWL_SPEC_NS.specificationVersion)
+                spec_uri = rdf_handler.graph.value(spec, YAWL_SPEC_NS.specificationURI)
+                doc = rdf_handler.graph.value(spec, RDFS.comment)
+
+                if spec_id:
+                    context["specId"] = str(spec_id)
+                if spec_name:
+                    context["specVersion"] = str(spec_name)
+                if spec_uri:
+                    context["specUri"] = str(spec_uri)
+                if doc:
+                    context["documentation"] = str(doc)
+            log.info(f"Extracted specification metadata: {context['specId']}")
+        except Exception as e:
+            log.warning(f"Failed to extract specification metadata: {e}")
+
+        # Extract YAWL tasks (try multiple namespace patterns)
+        try:
+            task_types = [YAWL_NS.Task, YAWL_SPEC_NS.Task, rdflib.term.URIRef("http://yawl.org/yawl-specification/Task")]
+            for task_type in task_types:
+                for task in rdf_handler.graph.subjects(RDF.type, task_type):
+                    task_id_prop = rdflib.term.URIRef("http://yawl.org/yawl-specification/taskID")
+                    task_name_prop = rdflib.term.URIRef("http://yawl.org/yawl-specification/taskName")
+                    split_prop = rdflib.term.URIRef("http://yawl.org/yawl-specification/splitType")
+                    join_prop = rdflib.term.URIRef("http://yawl.org/yawl-specification/joinType")
+
+                    task_id = rdf_handler.graph.value(task, task_id_prop)
+                    task_name = rdf_handler.graph.value(task, task_name_prop)
+                    split_type = rdf_handler.graph.value(task, split_prop) or "xor"
+                    join_type = rdf_handler.graph.value(task, join_prop) or "xor"
+                    doc = rdf_handler.graph.value(task, RDFS.comment)
+
+                    if task_id:
+                        task_info = {
+                            "taskId": str(task_id),
+                            "taskName": str(task_name) if task_name else str(task_id),
+                            "splitType": str(split_type).upper(),
+                            "joinType": str(join_type).upper(),
+                            "documentation": str(doc) if doc else "",
+                        }
+                        context["tasks"].append(task_info)
+
             log.info(f"Extracted {len(context['tasks'])} tasks from graph")
         except Exception as e:
             log.warning(f"Failed to extract tasks: {e}")
+
+        # Extract flows
+        try:
+            flow_prop = rdflib.term.URIRef("http://yawl.org/yawl-specification/hasFlow")
+            for flow_src in rdf_handler.graph.objects(None, flow_prop):
+                from_prop = rdflib.term.URIRef("http://yawl.org/yawl-specification/from")
+                to_prop = rdflib.term.URIRef("http://yawl.org/yawl-specification/to")
+
+                from_task = rdf_handler.graph.value(flow_src, from_prop)
+                to_task = rdf_handler.graph.value(flow_src, to_prop)
+
+                if from_task and to_task:
+                    flow_info = {
+                        "fromTaskId": str(from_task),
+                        "toTaskId": str(to_task),
+                    }
+                    context["flows"].append(flow_info)
+
+            log.info(f"Extracted {len(context['flows'])} flows from graph")
+        except Exception as e:
+            log.warning(f"Failed to extract flows: {e}")
 
         return context
 

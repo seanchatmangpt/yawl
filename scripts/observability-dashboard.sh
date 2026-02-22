@@ -2,16 +2,8 @@
 # ==========================================================================
 # observability-dashboard.sh — Real-Time Project Observability Dashboard
 #
-# Collects and displays project health metrics:
-# - Build performance, Test coverage, Code metrics, Quality gates
-#
-# Usage:
-#   bash scripts/observability-dashboard.sh              # Show health
-#   bash scripts/observability-dashboard.sh --export     # Export JSON
-#
-# Output:
-#   - Terminal display (colored)
-#   - .yawl/metrics/*.json (machine-readable)
+# Collects and displays project health metrics
+# Output: Terminal display + .yawl/metrics/*.json
 # ==========================================================================
 set -euo pipefail
 
@@ -19,11 +11,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
-# Configuration
 METRICS_DIR=".yawl/metrics"
 FACTS_DIR="docs/v6/latest/facts"
 
-# Color codes
+# Colors
 readonly C_RESET='\033[0m'
 readonly C_BOLD='\033[1m'
 readonly C_GREEN='\033[92m'
@@ -32,15 +23,12 @@ readonly C_YELLOW='\033[93m'
 readonly C_BLUE='\033[94m'
 readonly C_CYAN='\033[96m'
 readonly C_GRAY='\033[90m'
-
-# Symbols
 readonly SYM_CHECK='✓'
 readonly SYM_CROSS='✗'
 
-# ── Initialize ────────────────────────────────────────────────────────
 mkdir -p "${METRICS_DIR}"
 
-# ── Utility functions ─────────────────────────────────────────────────
+# ── Utility functions
 print_header() {
     printf "\n${C_BOLD}${C_CYAN}YAWL v6.0 Project Observability Dashboard${C_RESET}\n"
     printf "${C_CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}\n"
@@ -62,15 +50,15 @@ print_status() {
     local msg="${3:-}"
 
     if [[ "$status" == "GREEN" ]]; then
-        printf "  ${C_GREEN}${SYM_CHECK}${C_RESET} %-30s GREEN  $msg\n" "$label"
+        printf "  ${C_GREEN}${SYM_CHECK}${C_RESET} %-30s GREEN  %s\n" "$label" "$msg"
     elif [[ "$status" == "YELLOW" ]]; then
-        printf "  ${C_YELLOW}⚠${C_RESET} %-30s YELLOW $msg\n" "$label"
+        printf "  ${C_YELLOW}⚠${C_RESET} %-30s YELLOW %s\n" "$label" "$msg"
     else
-        printf "  ${C_RED}${SYM_CROSS}${C_RESET} %-30s RED    $msg\n" "$label"
+        printf "  ${C_RED}${SYM_CROSS}${C_RESET} %-30s RED    %s\n" "$label" "$msg"
     fi
 }
 
-# ── Data collection ──────────────────────────────────────────────────
+# ── Data collection
 collect_build_metrics() {
     local build_log="/tmp/dx-build-log.txt"
     local build_json="${METRICS_DIR}/build-metrics.json"
@@ -88,7 +76,7 @@ collect_build_metrics() {
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "test_count": $test_count,
   "failures": $failures,
-  "success": $([ $failures -eq 0 ] && echo "true" || echo "false")
+  "success": $([ "$failures" -eq 0 ] && echo "true" || echo "false")
 }
 EOF
 }
@@ -110,7 +98,7 @@ collect_coverage_metrics() {
         target_branch_pct: .aggregate.target_branch_pct,
         meets_line_target: .aggregate.meets_line_target,
         meets_branch_target: .aggregate.meets_branch_target
-    }' "$coverage_json" > "$metrics_json"
+    }' "$coverage_json" > "$metrics_json" 2>/dev/null || echo '{}' > "$metrics_json"
 }
 
 collect_test_metrics() {
@@ -128,7 +116,7 @@ collect_test_metrics() {
         modules_with_tests: .summary.modules_with_tests,
         junit5_count: .summary.junit5_count,
         junit4_count: .summary.junit4_count
-    }' "$tests_json" > "$metrics_json"
+    }' "$tests_json" > "$metrics_json" 2>/dev/null || echo '{}' > "$metrics_json"
 }
 
 collect_code_metrics() {
@@ -145,8 +133,12 @@ collect_code_metrics() {
     local module_count=$(jq '.modules | length' "$modules_json" 2>/dev/null || echo 0)
 
     while IFS= read -r line; do
-        [[ $line =~ \"src_files\":[[:space:]]*([0-9]+) ]] && total_src=$((total_src + ${BASH_REMATCH[1]}))
-        [[ $line =~ \"test_files\":[[:space:]]*([0-9]+) ]] && total_test=$((total_test + ${BASH_REMATCH[1]}))
+        if [[ $line =~ \"src_files\":[[:space:]]*([0-9]+) ]]; then
+            total_src=$((total_src + ${BASH_REMATCH[1]}))
+        fi
+        if [[ $line =~ \"test_files\":[[:space:]]*([0-9]+) ]]; then
+            total_test=$((total_test + ${BASH_REMATCH[1]}))
+        fi
     done < "$modules_json"
 
     cat > "$metrics_json" << EOF
@@ -178,12 +170,12 @@ collect_quality_metrics() {
 EOF
 }
 
-# ── Display functions ─────────────────────────────────────────────────
+# ── Display functions
 display_build_health() {
     local json="${METRICS_DIR}/build-metrics.json"
     print_section "Build Health"
 
-    [[ -f "$json" ]] || { echo "  No data"; return; }
+    [[ ! -f "$json" ]] && { echo "  No data"; return; }
 
     local count=$(jq -r '.test_count // 0' "$json" 2>/dev/null || echo 0)
     local fail=$(jq -r '.failures // 0' "$json" 2>/dev/null || echo 0)
@@ -203,7 +195,7 @@ display_coverage_health() {
     local json="${METRICS_DIR}/coverage-metrics.json"
     print_section "Code Coverage"
 
-    [[ -f "$json" ]] || { echo "  No data"; return; }
+    [[ ! -f "$json" ]] && { echo "  No data"; return; }
 
     local line=$(jq -r '.line_pct // 0' "$json" 2>/dev/null || echo 0)
     local branch=$(jq -r '.branch_pct // 0' "$json" 2>/dev/null || echo 0)
@@ -212,17 +204,24 @@ display_coverage_health() {
     local mline=$(jq -r '.meets_line_target // false' "$json" 2>/dev/null || echo false)
     local mbranch=$(jq -r '.meets_branch_target // false' "$json" 2>/dev/null || echo false)
 
-    [[ "$mline" == "true" ]] && print_status "Line Coverage" "GREEN" "$line% (target: $tline%)" || \
-        print_status "Line Coverage" "RED" "$line% (target: $tline%)"
-    [[ "$mbranch" == "true" ]] && print_status "Branch Coverage" "GREEN" "$branch% (target: $tbranch%)" || \
-        print_status "Branch Coverage" "RED" "$branch% (target: $tbranch%)"
+    if [[ "$mline" == "true" ]]; then
+        print_status "Line Coverage" "GREEN" "${line}% (target: ${tline}%)"
+    else
+        print_status "Line Coverage" "RED" "${line}% (target: ${tline}%)"
+    fi
+
+    if [[ "$mbranch" == "true" ]]; then
+        print_status "Branch Coverage" "GREEN" "${branch}% (target: ${tbranch}%)"
+    else
+        print_status "Branch Coverage" "RED" "${branch}% (target: ${tbranch}%)"
+    fi
 }
 
 display_test_health() {
     local json="${METRICS_DIR}/test-metrics.json"
     print_section "Test Inventory"
 
-    [[ -f "$json" ]] || { echo "  No data"; return; }
+    [[ ! -f "$json" ]] && { echo "  No data"; return; }
 
     print_metric "Test Files" "$(jq -r '.total_test_files // 0' "$json" 2>/dev/null || echo 0)"
     print_metric "Modules with Tests" "$(jq -r '.modules_with_tests // 0' "$json" 2>/dev/null || echo 0)"
@@ -234,7 +233,7 @@ display_code_health() {
     local json="${METRICS_DIR}/code-metrics.json"
     print_section "Code Metrics"
 
-    [[ -f "$json" ]] || { echo "  No data"; return; }
+    [[ ! -f "$json" ]] && { echo "  No data"; return; }
 
     print_metric "Modules" "$(jq -r '.module_count // 0' "$json" 2>/dev/null || echo 0)"
     print_metric "Source Files" "$(jq -r '.total_src_files // 0' "$json" 2>/dev/null || echo 0)"
@@ -246,27 +245,20 @@ display_quality_health() {
     local json="${METRICS_DIR}/quality-metrics.json"
     print_section "Code Quality"
 
-    [[ -f "$json" ]] || { echo "  No data"; return; }
+    [[ ! -f "$json" ]] && { echo "  No data"; return; }
 
     local total=$(jq -r '.total_quality_issues // 0' "$json" 2>/dev/null || echo 0)
 
-    if [[ $total -eq 0 ]]; then
+    if [[ "$total" -eq 0 ]]; then
         print_status "Quality Issues" "GREEN" "No issues detected"
-    elif [[ $total -lt 5 ]]; then
+    elif [[ "$total" -lt 5 ]]; then
         print_status "Quality Issues" "YELLOW" "$total minor issues"
     else
         print_status "Quality Issues" "RED" "$total issues found"
     fi
-
-    [[ $(jq -r '.spotbugs_findings // 0' "$json" 2>/dev/null || echo 0) -gt 0 ]] && \
-        print_metric "SpotBugs Findings" "$(jq -r '.spotbugs_findings' "$json")"
-    [[ $(jq -r '.pmd_violations // 0' "$json" 2>/dev/null || echo 0) -gt 0 ]] && \
-        print_metric "PMD Violations" "$(jq -r '.pmd_violations' "$json")"
-    [[ $(jq -r '.checkstyle_warnings // 0' "$json" 2>/dev/null || echo 0) -gt 0 ]] && \
-        print_metric "Checkstyle Warnings" "$(jq -r '.checkstyle_warnings' "$json")"
 }
 
-# ── Export function ───────────────────────────────────────────────────
+# ── Export function
 export_json() {
     local export_file="${METRICS_DIR}/dashboard-snapshot.json"
 
@@ -288,7 +280,7 @@ export_json() {
     echo "Exported to: $export_file"
 }
 
-# ── Main ──────────────────────────────────────────────────────────────
+# ── Main
 main() {
     case "${1:-}" in
         --export)

@@ -1,0 +1,45 @@
+{
+  "pipeline_run": {
+    "timestamp_start": "2026-02-22T05:48:00Z",
+    "timestamp_end": "2026-02-22T05:48:01Z",
+    "total_duration_seconds": 1,
+    "commit": "a7203dc",
+    "branch": "claude/setup-yawl-xml-generator-ZViYB"
+  },
+  "phases": {"build": {
+  "phase": "build",
+  "status": "DRY_RUN",
+  "timestamp": "2026-02-22T05:48:00Z",
+  "duration_seconds": 0,
+  "commit": "a7203dc"
+},"git": {
+  "phase": "git",
+  "status": "SUCCESS",
+  "timestamp": "2026-02-22T05:48:01Z",
+  "duration_seconds": 1,
+  "commit": "a7203dc"
+},"guards": {
+  "phase": "guards",
+  "status": "SUCCESS",
+  "timestamp": "2026-02-22T05:48:00Z",
+  "duration_seconds": 0,
+  "commit": "a7203dc"
+},"invariants": {
+  "phase": "invariants",
+  "status": "SUCCESS",
+  "timestamp": "2026-02-22T05:48:00Z",
+  "duration_seconds": 0,
+  "commit": "a7203dc"
+},"observatory": {
+  "phase": "observatory",
+  "status": "SUCCESS",
+  "timestamp": "2026-02-22T05:48:00Z",
+  "duration_seconds": 6,
+  "commit": "a7203dc"
+}},
+  "summary": {
+    "total_phases": 5,
+    "phases_successful": 4,
+    "phases_failed": 0
+  }
+}
