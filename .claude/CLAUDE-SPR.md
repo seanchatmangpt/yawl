@@ -48,7 +48,8 @@ teams/ | build/ | schema/ | engine/ | integration/ | java25/ | elements/ | testi
 Quantum→Rule: schema→schema/xsd-validation.md | engine→engine/workflow-patterns.md | MCP→integration/mcp-a2a-conventions.md
 
 [μ(O) Subagent Types — .claude/agents/]
-engineer | validator | architect | integrator | reviewer | tester | prod-val | perf-bench
+Generic: engineer | reviewer | validator
+YAWL: yawl-architect | yawl-engineer | yawl-integrator | yawl-reviewer | yawl-tester | yawl-validator | yawl-production-validator | yawl-performance-benchmarker
 Task(a₁..aₙ) in single_message | max 5 parallel | results summarized back to lead
 
 [PreToolUse Checklist — run before ANY tool call]
