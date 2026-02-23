@@ -28,6 +28,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.Executors;
 
 /**
  * Unified HTTP client for all Java-to-Rust calls against the {@code yawl-native} service.
@@ -56,13 +57,14 @@ public final class YawlNativeClient {
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
 
     private final String baseUrl;
+    private final Duration timeout;
     private final HttpClient http;
 
     /**
      * Creates a client pointing at the default yawl-native URL ({@value DEFAULT_BASE_URL}).
      */
     public YawlNativeClient() {
-        this(DEFAULT_BASE_URL);
+        this(DEFAULT_BASE_URL, DEFAULT_TIMEOUT);
     }
 
     /**
@@ -71,10 +73,22 @@ public final class YawlNativeClient {
      * @param baseUrl base URL of the yawl-native service, e.g. {@code "http://localhost:8083"}
      */
     public YawlNativeClient(String baseUrl) {
+        this(baseUrl, DEFAULT_TIMEOUT);
+    }
+
+    /**
+     * Creates a client pointing at the given base URL with a custom request timeout.
+     *
+     * @param baseUrl base URL of the yawl-native service, e.g. {@code "http://localhost:8083"}
+     * @param timeout per-request timeout; null defaults to 30 seconds
+     */
+    public YawlNativeClient(String baseUrl, Duration timeout) {
         this.baseUrl = Objects.requireNonNull(baseUrl, "baseUrl must not be null")
                               .replaceAll("/+$", ""); // strip trailing slashes
+        this.timeout = timeout != null ? timeout : DEFAULT_TIMEOUT;
         this.http = HttpClient.newBuilder()
-                .connectTimeout(DEFAULT_TIMEOUT)
+                .connectTimeout(this.timeout)
+                .executor(Executors.newVirtualThreadPerTaskExecutor())
                 .build();
     }
 
@@ -89,7 +103,7 @@ public final class YawlNativeClient {
      */
     public boolean isAvailable() {
         try {
-            HttpRequest req = get("/health");
+            HttpRequest req = buildGet("/health");
             HttpResponse<Void> resp = http.send(req, HttpResponse.BodyHandlers.discarding());
             return resp.statusCode() / 100 == 2;
         } catch (ConnectException e) {
@@ -111,7 +125,7 @@ public final class YawlNativeClient {
      */
     public boolean isSparqlAvailable() {
         try {
-            HttpRequest req = get("/sparql/health");
+            HttpRequest req = buildGet("/sparql/health");
             HttpResponse<Void> resp = http.send(req, HttpResponse.BodyHandlers.discarding());
             return resp.statusCode() / 100 == 2;
         } catch (ConnectException e) {
@@ -131,13 +145,8 @@ public final class YawlNativeClient {
      */
     public String constructToTurtle(String sparqlQuery) throws YawlNativeException {
         Objects.requireNonNull(sparqlQuery, "sparqlQuery must not be null");
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/sparql/query"))
-                .header("Content-Type", "application/sparql-query")
-                .header("Accept", "text/turtle")
-                .POST(HttpRequest.BodyPublishers.ofString(sparqlQuery, StandardCharsets.UTF_8))
-                .timeout(DEFAULT_TIMEOUT)
-                .build();
+        HttpRequest req = buildPost("/sparql/query", sparqlQuery,
+                "application/sparql-query", "text/turtle");
         return sendForString(req, "CONSTRUCT query");
     }
 
@@ -164,12 +173,7 @@ public final class YawlNativeClient {
         if (graphName != null && !graphName.isBlank()) {
             path += "?graph=" + URLEncoder.encode(graphName, StandardCharsets.UTF_8);
         }
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
-                .header("Content-Type", "text/turtle")
-                .POST(HttpRequest.BodyPublishers.ofString(turtle, StandardCharsets.UTF_8))
-                .timeout(DEFAULT_TIMEOUT)
-                .build();
+        HttpRequest req = buildPost(path, turtle, "text/turtle", null);
         sendExpecting204(req, "load Turtle");
     }
 
@@ -181,12 +185,8 @@ public final class YawlNativeClient {
      */
     public void sparqlUpdate(String updateQuery) throws YawlNativeException {
         Objects.requireNonNull(updateQuery, "updateQuery must not be null");
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/sparql/update"))
-                .header("Content-Type", "application/sparql-update")
-                .POST(HttpRequest.BodyPublishers.ofString(updateQuery, StandardCharsets.UTF_8))
-                .timeout(DEFAULT_TIMEOUT)
-                .build();
+        HttpRequest req = buildPost("/sparql/update", updateQuery,
+                "application/sparql-update", null);
         sendExpecting204(req, "SPARQL update");
     }
 
@@ -195,51 +195,108 @@ public final class YawlNativeClient {
     // -----------------------------------------------------------------------
 
     /**
-     * Run token replay conformance checking on an XES event log.
+     * Run token replay conformance checking.
      *
-     * @param xesJson JSON-encoded XES event log
+     * <p>The {@code json} body must match the Rust handler's {@code ReplayRequest}:
+     * {@code {"pnml": "<pnml-xml>", "xes": "<xes-xml>"}}.</p>
+     *
+     * @param json serialised JSON request body
      * @return JSON conformance result
      * @throws YawlNativeException on network failure or non-2xx response
      */
-    public String tokenReplay(String xesJson) throws YawlNativeException {
-        Objects.requireNonNull(xesJson, "xesJson must not be null");
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/conformance/token-replay"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(xesJson, StandardCharsets.UTF_8))
-                .timeout(DEFAULT_TIMEOUT)
-                .build();
-        return sendForString(req, "token replay");
+    public String tokenReplay(String json) throws YawlNativeException {
+        Objects.requireNonNull(json, "json must not be null");
+        return sendForString(buildPost("/conformance/token-replay", json,
+                "application/json", null), "token replay");
     }
 
     /**
-     * Discover a directly-follows graph from an XES event log.
+     * Discover a Directly-Follows Graph from an XES event log.
      *
-     * @param xesJson JSON-encoded XES event log
+     * <p>The {@code json} body must match the Rust handler's {@code DiscoveryRequest}:
+     * {@code {"xes": "<xes-xml>"}}.</p>
+     *
+     * @param json serialised JSON request body
      * @return JSON DFG result
      * @throws YawlNativeException on network failure or non-2xx response
      */
-    public String discoverDfg(String xesJson) throws YawlNativeException {
-        Objects.requireNonNull(xesJson, "xesJson must not be null");
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/discovery/dfg"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(xesJson, StandardCharsets.UTF_8))
-                .timeout(DEFAULT_TIMEOUT)
-                .build();
-        return sendForString(req, "discover DFG");
+    public String discoverDfg(String json) throws YawlNativeException {
+        Objects.requireNonNull(json, "json must not be null");
+        return sendForString(buildPost("/discovery/dfg", json,
+                "application/json", null), "discover DFG");
+    }
+
+    /**
+     * Discover a Petri net using the Alpha+++ algorithm.
+     *
+     * <p>The {@code json} body must match the Rust handler's {@code DiscoveryRequest}:
+     * {@code {"xes": "<xes-xml>"}}.</p>
+     *
+     * @param json serialised JSON request body
+     * @return PNML XML of the discovered net
+     * @throws YawlNativeException on network failure or non-2xx response
+     */
+    public String discoverAlphaPpp(String json) throws YawlNativeException {
+        Objects.requireNonNull(json, "json must not be null");
+        return sendForString(buildPost("/discovery/alpha-ppp", json,
+                "application/json", null), "discover Alpha+++");
+    }
+
+    /**
+     * Compute performance statistics from an XES event log.
+     *
+     * <p>The {@code json} body must match the Rust handler's {@code DiscoveryRequest}:
+     * {@code {"xes": "<xes-xml>"}}.</p>
+     *
+     * @param json serialised JSON request body
+     * @return JSON performance metrics
+     * @throws YawlNativeException on network failure or non-2xx response
+     */
+    public String performanceAnalysis(String json) throws YawlNativeException {
+        Objects.requireNonNull(json, "json must not be null");
+        return sendForString(buildPost("/analysis/performance", json,
+                "application/json", null), "performance analysis");
+    }
+
+    /**
+     * Convert an XES event log to OCEL 2.0 format.
+     *
+     * <p>The {@code json} body must match the Rust handler's {@code DiscoveryRequest}:
+     * {@code {"xes": "<xes-xml>"}}.</p>
+     *
+     * @param json serialised JSON request body
+     * @return OCEL 2.0 JSON string
+     * @throws YawlNativeException on network failure or non-2xx response
+     */
+    public String xesToOcel(String json) throws YawlNativeException {
+        Objects.requireNonNull(json, "json must not be null");
+        return sendForString(buildPost("/ocel/convert", json,
+                "application/json", null), "XES to OCEL");
     }
 
     // -----------------------------------------------------------------------
     // Internal HTTP helpers
     // -----------------------------------------------------------------------
 
-    private HttpRequest get(String path) {
+    private HttpRequest buildGet(String path) {
         return HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + path))
                 .GET()
-                .timeout(DEFAULT_TIMEOUT)
+                .timeout(timeout)
                 .build();
+    }
+
+    private HttpRequest buildPost(String path, String body,
+                                  String contentType, String accept) {
+        HttpRequest.Builder b = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + path))
+                .header("Content-Type", contentType)
+                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+                .timeout(timeout);
+        if (accept != null) {
+            b.header("Accept", accept);
+        }
+        return b.build();
     }
 
     private String sendForString(HttpRequest req, String opName) throws YawlNativeException {

@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
  *
  * This file is part of YAWL. YAWL is free software: you can
  * redistribute it and/or modify it under the terms of the GNU Lesser
@@ -9,248 +11,193 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
  * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.processmining;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.integration.autonomous.YawlNativeClient;
+import org.yawlfoundation.yawl.integration.autonomous.YawlNativeException;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.concurrent.Executors;
 
 /**
- * HTTP client implementation of ProcessMiningService targeting rust4pm or pm4py.
+ * HTTP client implementation of {@link ProcessMiningService} backed by the
+ * {@code yawl-native} Rust service (default port 8083).
  *
- * Communicates with an external process mining microservice via HTTP POST requests.
- * Handles JSON request/response serialization and provides clean error messages
- * with status codes and response bodies for debugging.
+ * <p>All HTTP transport is delegated to {@link YawlNativeClient}, which is the
+ * single entry point for all Java-to-Rust calls. This class is responsible only
+ * for serialising XML payloads into the JSON bodies expected by the Rust
+ * handlers and surfacing {@link YawlNativeException} as {@link IOException} to
+ * honour the {@link ProcessMiningService} contract.</p>
  *
- * Request payloads are large (MB-scale XES/PNML files), so proper JSON string
- * escaping is applied to avoid injection vulnerabilities.
- *
- * Supports configurable base URL and timeout. Uses virtual threads for efficient
- * network I/O handling.
+ * <p>Request payloads are large (MB-scale XES/PNML files). JSON string escaping
+ * is applied to avoid injection vulnerabilities when embedding XML in JSON.</p>
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0
  */
 public final class ProcessMiningServiceClient implements ProcessMiningService {
 
-    private static final Logger logger = LogManager.getLogger(ProcessMiningServiceClient.class);
-
-    private final String baseUrl;
-    private final HttpClient httpClient;
-    private final Duration timeout;
+    private final YawlNativeClient client;
 
     /**
-     * Create a client targeting a process mining service at the specified URL.
-     *
-     * Uses a default timeout of 30 seconds for all requests.
-     *
-     * @param baseUrl the base URL of the process mining service (e.g., "http://localhost:8082")
-     *                Must not include a trailing slash.
+     * Create a client targeting the default {@code yawl-native} URL
+     * ({@value YawlNativeClient#DEFAULT_BASE_URL}).
      */
-    public ProcessMiningServiceClient(String baseUrl) {
-        this(baseUrl, Duration.ofSeconds(30));
+    public ProcessMiningServiceClient() {
+        this(YawlNativeClient.DEFAULT_BASE_URL);
     }
 
     /**
-     * Create a client with a custom timeout.
+     * Create a client targeting the given base URL.
      *
-     * @param baseUrl the base URL of the process mining service (e.g., "http://localhost:8082")
-     *                Must not include a trailing slash.
-     * @param timeout duration to wait for each request to complete
+     * @param baseUrl base URL of the {@code yawl-native} service,
+     *                e.g. {@code "http://localhost:8083"}
+     */
+    public ProcessMiningServiceClient(String baseUrl) {
+        this.client = new YawlNativeClient(
+                baseUrl != null ? baseUrl : YawlNativeClient.DEFAULT_BASE_URL);
+    }
+
+    /**
+     * Create a client with a custom request timeout.
+     *
+     * @param baseUrl base URL of the {@code yawl-native} service
+     * @param timeout per-request timeout
      */
     public ProcessMiningServiceClient(String baseUrl, Duration timeout) {
-        this.baseUrl = baseUrl != null ? baseUrl : "http://localhost:8082";
-        this.timeout = timeout != null ? timeout : Duration.ofSeconds(30);
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(this.timeout)
-                .executor(Executors.newVirtualThreadPerTaskExecutor())
-                .build();
+        this.client = new YawlNativeClient(
+                baseUrl != null ? baseUrl : YawlNativeClient.DEFAULT_BASE_URL,
+                timeout);
     }
 
     @Override
     public String tokenReplay(String pnmlXml, String xesXml) throws IOException {
-        return postJson("/conformance/token-replay", pnmlXml, xesXml, "pnml", "xes");
+        String json = buildTwoFieldJson("pnml", pnmlXml, "xes", xesXml);
+        try {
+            return client.tokenReplay(json);
+        } catch (YawlNativeException e) {
+            throw new IOException("Token replay failed: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String discoverDfg(String xesXml) throws IOException {
-        return postJson("/discovery/dfg", xesXml, null, "xes", null);
+        String json = buildOneFieldJson("xes", xesXml);
+        try {
+            return client.discoverDfg(json);
+        } catch (YawlNativeException e) {
+            throw new IOException("DFG discovery failed: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String discoverAlphaPpp(String xesXml) throws IOException {
-        return postJson("/discovery/alpha-ppp", xesXml, null, "xes", null);
+        String json = buildOneFieldJson("xes", xesXml);
+        try {
+            return client.discoverAlphaPpp(json);
+        } catch (YawlNativeException e) {
+            throw new IOException("Alpha+++ discovery failed: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String performanceAnalysis(String xesXml) throws IOException {
-        return postJson("/analysis/performance", xesXml, null, "xes", null);
+        String json = buildOneFieldJson("xes", xesXml);
+        try {
+            return client.performanceAnalysis(json);
+        } catch (YawlNativeException e) {
+            throw new IOException("Performance analysis failed: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String xesToOcel(String xesXml) throws IOException {
-        return postJson("/ocel/convert", xesXml, null, "xes", null);
+        String json = buildOneFieldJson("xes", xesXml);
+        try {
+            return client.xesToOcel(json);
+        } catch (YawlNativeException e) {
+            throw new IOException("XES to OCEL conversion failed: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public boolean isHealthy() {
-        try {
-            String url = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url + "health"))
-                    .timeout(timeout)
-                    .GET()
-                    .build();
+        return client.isAvailable();
+    }
 
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
+    // -----------------------------------------------------------------------
+    // JSON serialisation helpers
+    // -----------------------------------------------------------------------
 
-            boolean isHealthy = response.statusCode() >= 200 && response.statusCode() < 300;
-            if (!isHealthy) {
-                logger.debug("Process mining service health check failed with status {}", response.statusCode());
-            }
-            return isHealthy;
-        } catch (IOException ioe) {
-            logger.debug("Process mining service health check failed: {}", ioe.getMessage());
-            return false;
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            logger.debug("Process mining service health check interrupted");
-            return false;
+    /**
+     * Build a one-field JSON object: {@code {"field": "value"}}.
+     * The value is JSON-string-escaped to handle MB-scale XML payloads safely.
+     *
+     * @param field field name
+     * @param value string value (must not be null)
+     * @return compact JSON string
+     */
+    private static String buildOneFieldJson(String field, String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("value for field '" + field + "' must not be null");
         }
+        return "{\"" + field + "\":\"" + escapeJson(value) + "\"}";
     }
 
     /**
-     * POST a JSON request to the service with two payload fields.
+     * Build a two-field JSON object:
+     * {@code {"field1": "value1", "field2": "value2"}}.
+     * Both values are JSON-string-escaped.
      *
-     * Constructs a JSON request body with properly escaped payloads and sends it
-     * to the specified endpoint. Throws IOException if the service returns a non-2xx
-     * status code.
-     *
-     * @param endpoint the API endpoint (e.g., "/conformance/token-replay")
-     * @param payload1 first XML/payload content (may be null)
-     * @param payload2 second XML/payload content (may be null)
-     * @param field1Name name of first field in JSON request
-     * @param field2Name name of second field in JSON request (may be null)
-     * @return response body as string (JSON or XML)
-     * @throws IOException if request fails or service returns non-2xx status
+     * @param field1 first field name
+     * @param value1 first value (must not be null)
+     * @param field2 second field name
+     * @param value2 second value (must not be null)
+     * @return compact JSON string
      */
-    private String postJson(String endpoint, String payload1, String payload2,
-                            String field1Name, String field2Name) throws IOException {
-        try {
-            String json = buildJsonRequest(payload1, payload2, field1Name, field2Name);
-            String url = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url + endpoint.substring(1))) // Remove leading slash, add via URL
-                    .timeout(timeout)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                String errorMsg = String.format(
-                        "Process mining service error (HTTP %d): %s",
-                        response.statusCode(),
-                        truncateForLog(response.body(), 500)
-                );
-                logger.error("Request to {} failed: {}", endpoint, errorMsg);
-                throw new IOException(errorMsg);
-            }
-
-            return response.body();
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Request to " + endpoint + " was interrupted", ie);
+    private static String buildTwoFieldJson(String field1, String value1,
+                                            String field2, String value2) {
+        if (value1 == null) {
+            throw new IllegalArgumentException("value for field '" + field1 + "' must not be null");
         }
-    }
-
-    /**
-     * Build a JSON request body with escaped payloads.
-     *
-     * @param payload1 first XML/payload (must not be null)
-     * @param payload2 second XML/payload (may be null)
-     * @param field1Name first field name
-     * @param field2Name second field name (may be null if payload2 is null)
-     * @return JSON string
-     * @throws IllegalArgumentException if payload1 is null
-     */
-    private String buildJsonRequest(String payload1, String payload2,
-                                    String field1Name, String field2Name) {
-        if (payload1 == null) {
-            throw new IllegalArgumentException("First payload must not be null");
+        if (value2 == null) {
+            throw new IllegalArgumentException("value for field '" + field2 + "' must not be null");
         }
-
-        StringBuilder sb = new StringBuilder("{");
-        sb.append("\"").append(field1Name).append("\":\"")
-                .append(escapeJson(payload1)).append("\"");
-
-        if (payload2 != null) {
-            if (field2Name == null) {
-                throw new IllegalArgumentException("Field2Name must not be null when payload2 is present");
-            }
-            sb.append(",");
-            sb.append("\"").append(field2Name).append("\":\"")
-                    .append(escapeJson(payload2)).append("\"");
-        }
-
-        sb.append("}");
-        return sb.toString();
+        return "{\"" + field1 + "\":\"" + escapeJson(value1)
+                + "\",\"" + field2 + "\":\"" + escapeJson(value2) + "\"}";
     }
 
     /**
      * Escape a string for safe inclusion in a JSON string literal.
      *
-     * Handles backslashes, quotes, newlines, carriage returns, and tabs.
-     * This prevents JSON injection vulnerabilities when embedding large XML payloads.
+     * Handles backslashes, quotes, newlines, carriage returns, tabs, and all
+     * other control characters. Prevents JSON injection when embedding large
+     * XML payloads.
      *
      * @param s the string to escape (must not be null)
-     * @return escaped string safe for JSON
-     * @throws IllegalArgumentException if s is null
+     * @return escaped string safe for use inside a JSON string literal
      */
-    private static String escapeJson(String s) {
+    static String escapeJson(String s) {
         if (s == null) {
             throw new IllegalArgumentException("String to escape must not be null");
         }
-        StringBuilder sb = new StringBuilder(s.length() + 100);
+        StringBuilder sb = new StringBuilder(s.length() + 64);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             switch (c) {
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
+                case '\\': sb.append("\\\\"); break;
+                case '"':  sb.append("\\\""); break;
+                case '\n': sb.append("\\n");  break;
+                case '\r': sb.append("\\r");  break;
+                case '\t': sb.append("\\t");  break;
+                case '\b': sb.append("\\b");  break;
+                case '\f': sb.append("\\f");  break;
                 default:
-                    // Control characters (0x00-0x1F excluding those handled above)
                     if (c < 0x20) {
                         sb.append(String.format("\\u%04x", (int) c));
                     } else {
@@ -259,22 +206,5 @@ public final class ProcessMiningServiceClient implements ProcessMiningService {
             }
         }
         return sb.toString();
-    }
-
-    /**
-     * Truncate a string for log output to avoid overwhelming logs with large payloads.
-     *
-     * @param s the string to truncate
-     * @param maxLength maximum length before truncation
-     * @return truncated string with ellipsis if needed
-     */
-    private static String truncateForLog(String s, int maxLength) {
-        if (s == null) {
-            return "(null)";
-        }
-        if (s.length() <= maxLength) {
-            return s;
-        }
-        return s.substring(0, maxLength) + "... (truncated)";
     }
 }
