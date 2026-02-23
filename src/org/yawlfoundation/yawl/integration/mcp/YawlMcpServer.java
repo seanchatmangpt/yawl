@@ -117,6 +117,11 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
+        var allTools = buildAllTools();
+        int workflowToolCount = YawlToolSpecifications.createAll(
+            interfaceBClient, interfaceAClient, sessionHandle).size();
+        int constructToolCount = allTools.size() - workflowToolCount;
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -133,11 +138,11 @@ public class YawlMcpServer {
                 semantics, not LLM inference. Tool schemas are SPARQL CONSTRUCT outputs
                 derived from the workflow specification, not hand-authored.
 
-                Capabilities: 20 workflow tools (15 workflow + 5 CONSTRUCT coordination),
+                Capabilities: %d workflow tools (%d workflow + %d CONSTRUCT coordination),
                 3 static resources, 3 resource templates, 4 prompts, 3 completions,
                 logging (MCP 2025-11-25 compliant).
-                """)
-            .tools(buildAllTools())
+                """.formatted(allTools.size(), workflowToolCount, constructToolCount))
+            .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -150,8 +155,9 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 20 workflow tools (15 workflow + 5 CONSTRUCT coordination), " +
-            "3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
+        System.err.println("Capabilities: " + allTools.size() + " workflow tools ("
+            + workflowToolCount + " workflow + " + constructToolCount + " CONSTRUCT coordination), "
+            + "3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
     }
 
     /**
