@@ -4,7 +4,9 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
+use crate::ontology;
 use crate::pm::{self, *};
 
 /// Health check response
@@ -261,6 +263,54 @@ pub async fn performance_analysis(
         activity_stats: serde_json::to_value(&stats.activity_stats)
             .unwrap_or(serde_json::Value::Object(Default::default())),
     }))
+}
+
+/// GET /ontology/mcp-tools
+///
+/// Loads yawl-public-roots.ttl into Oxigraph, executes the CONSTRUCT query
+/// that derives mcp:Tool descriptors, and returns them as JSON.
+///
+/// Used by OntologyDrivenToolFactory.java (Jena replaced with this endpoint).
+pub async fn ontology_mcp_tools() -> impl IntoResponse {
+    tracing::info!("Ontology MCP tools derivation requested");
+    match ontology::build_mcp_tools() {
+        Ok(tools) => {
+            tracing::info!("Returning {} ontology-derived MCP tool descriptors", tools.len());
+            (StatusCode::OK, Json(tools)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("Ontology MCP tools derivation failed: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": e })),
+            )
+                .into_response()
+        }
+    }
+}
+
+/// GET /ontology/a2a-skills
+///
+/// Loads yawl-public-roots.ttl into Oxigraph, executes the CONSTRUCT query
+/// that derives a2a:Skill descriptors, and returns them as JSON.
+///
+/// Used by OntologyDrivenSkillFactory.java (Jena replaced with this endpoint).
+pub async fn ontology_a2a_skills() -> impl IntoResponse {
+    tracing::info!("Ontology A2A skills derivation requested");
+    match ontology::build_a2a_skills() {
+        Ok(skills) => {
+            tracing::info!("Returning {} ontology-derived A2A skill descriptors", skills.len());
+            (StatusCode::OK, Json(skills)).into_response()
+        }
+        Err(e) => {
+            tracing::error!("Ontology A2A skills derivation failed: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": e })),
+            )
+                .into_response()
+        }
+    }
 }
 
 /// Convert event log (XES) to OCEL 2.0 format

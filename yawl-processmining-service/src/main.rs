@@ -6,7 +6,9 @@ use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
+mod graph;
 mod handlers;
+mod ontology;
 mod pm;
 
 #[tokio::main]
@@ -27,6 +29,8 @@ async fn main() {
         .route("/discovery/alpha-ppp", post(handlers::discover_alpha_ppp))
         .route("/analysis/performance", post(handlers::performance_analysis))
         .route("/ocel/convert", post(handlers::xes_to_ocel))
+        .route("/ontology/mcp-tools", get(handlers::ontology_mcp_tools))
+        .route("/ontology/a2a-skills", get(handlers::ontology_a2a_skills))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http());
 
