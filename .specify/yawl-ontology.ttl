@@ -29,6 +29,8 @@
     rdfs:comment "OWL 2 DL ontology for YAWL workflow specifications based on Petri net semantics" ;
     owl:versionInfo "4.0" ;
     owl:imports <http://purl.org/dc/terms/> ;
+    owl:imports <https://schema.org/> ;
+    owl:imports <http://www.w3.org/ns/prov#> ;
     dcterms:created "2026-02-16"^^xsd:date ;
     dcterms:creator "YAWL Foundation" ;
     dcterms:license <https://www.gnu.org/licenses/lgpl-3.0.html> ;
@@ -42,7 +44,17 @@
         - Data flow (parameters, variables, mappings)
         - Timers and temporal constraints
         - Configuration and layout information
-    """ .
+
+        YAWL is an extension-only architecture: it extends public RDF ontologies
+        (Schema.org, W3C PROV-O) rather than creating proprietary roots. See
+        alignment profiles for formal semantic bridges to public domain standards.
+    """ ;
+    rdfs:seeAlso <http://www.yawlfoundation.org/yawlschema/schema-org-alignment> ;
+    rdfs:seeAlso <http://www.yawlfoundation.org/yawlschema/prov-alignment> ;
+    rdfs:seeAlso <http://www.yawlfoundation.org/yawlschema/fibo-alignment> ;
+    rdfs:seeAlso <https://schema.org/documentation> ;
+    rdfs:seeAlso <https://www.w3.org/TR/prov-o/> ;
+    rdfs:seeAlso <https://spec.edmcouncil.org/fibo/ontology/> .
 
 #################################################################
 # ANNOTATION PROPERTIES (Dublin Core Alignment)
