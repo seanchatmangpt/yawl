@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +17,7 @@ import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.ConstructCoordinationTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 
 /**
@@ -126,10 +128,16 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 15 workflow tools, 3 static resources, 3 resource templates,
-                4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
+                CONSTRUCT coordination tools expose the Petri net token-marking model directly:
+                routing decisions cost 0 inference tokens — answered by formal workflow
+                semantics, not LLM inference. Tool schemas are SPARQL CONSTRUCT outputs
+                derived from the workflow specification, not hand-authored.
+
+                Capabilities: 20 workflow tools (15 workflow + 5 CONSTRUCT coordination),
+                3 static resources, 3 resource templates, 4 prompts, 3 completions,
+                logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(buildAllTools())
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -142,8 +150,8 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 15 workflow tools, 3 resources, 3 resource templates, " +
-            "4 prompts, 3 completions, logging");
+        System.err.println("Capabilities: 20 workflow tools (15 workflow + 5 CONSTRUCT coordination), " +
+            "3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
     }
 
     /**
@@ -184,6 +192,18 @@ public class YawlMcpServer {
      */
     public McpLoggingHandler getLoggingHandler() {
         return loggingHandler;
+    }
+
+    // =========================================================================
+    // Tool registration
+    // =========================================================================
+
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> buildAllTools() {
+        List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> all =
+            new ArrayList<>();
+        all.addAll(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle));
+        all.addAll(ConstructCoordinationTools.createAll(interfaceBClient, sessionHandle));
+        return all;
     }
 
     // =========================================================================
