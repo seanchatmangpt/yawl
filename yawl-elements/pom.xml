@@ -179,8 +179,8 @@
                         <exclude>**/*.properties</exclude>
                     </excludes>
                     <testIncludes>
-                        <include>**/org/yawlfoundation/yawl/elements/**</include>
-                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
+                        <testInclude>**/org/yawlfoundation/yawl/elements/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <exclude>**/*.xsd</exclude>
