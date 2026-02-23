@@ -1,0 +1,67 @@
+name: OccupationalTherapyLifestyleRedesign
+uri: OTSwarm.xml
+first: PatientIntake
+
+variables:
+  - name: patientId
+    type: xs:string
+  - name: progressScore
+    type: xs:double
+    default: "0.0"
+  - name: adaptationCycle
+    type: xs:integer
+    default: "0"
+  - name: caseStartTime
+    type: xs:string
+    default: ""
+
+tasks:
+  - id: PatientIntake
+    flows: [OccupationalAssessment]
+    split: xor
+    join: xor
+    description: "Agent 1: Patient intake and clinical risk stratification"
+
+  - id: OccupationalAssessment
+    flows: [GoalSetting]
+    split: xor
+    join: xor
+    description: "Agent 2: COPM occupational performance assessment"
+
+  - id: GoalSetting
+    flows: [InterventionPlanning]
+    split: xor
+    join: xor
+    description: "Agent 3: Collaborative SMART lifestyle goal identification"
+
+  - id: InterventionPlanning
+    flows: [SessionScheduling]
+    split: xor
+    join: xor
+    description: "Agent 4: Evidence-based intervention selection"
+
+  - id: SessionScheduling
+    flows: [ProgressMonitoring]
+    split: xor
+    join: xor
+    description: "Agent 5: Therapy session scheduling and resource allocation"
+
+  - id: ProgressMonitoring
+    flows: [OutcomeEvaluation, PlanAdaptation]
+    condition: "/root/progressScore >= 85.0 -> OutcomeEvaluation"
+    default: PlanAdaptation
+    split: xor
+    join: xor
+    description: "Agent 6: Goal attainment scaling and progress evaluation"
+
+  - id: PlanAdaptation
+    flows: [InterventionPlanning]
+    split: xor
+    join: xor
+    description: "Agent 7: Dynamic therapy plan adaptation"
+
+  - id: OutcomeEvaluation
+    flows: [end]
+    split: xor
+    join: xor
+    description: "Agent 8: Final COPM re-assessment and discharge planning"
