@@ -28,6 +28,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
+# ── Java 25 enforcement ────────────────────────────────────────────────────
+# JAVA_HOME may point to Java 21 (system default) even when Temurin 25 is
+# installed. Maven uses JAVA_HOME to locate javac, so we correct it here.
+# This is authoritative for every dx.sh invocation regardless of shell env.
+_TEMURIN25="/usr/lib/jvm/temurin-25-jdk-amd64"
+if [ -d "${_TEMURIN25}" ]; then
+    _current_major=$(java -version 2>&1 | grep 'version "' | cut -d'"' -f2 | cut -d'.' -f1)
+    if [ "${_current_major}" != "25" ] || [ "${JAVA_HOME:-}" != "${_TEMURIN25}" ]; then
+        export JAVA_HOME="${_TEMURIN25}"
+        export PATH="${JAVA_HOME}/bin:${PATH}"
+    fi
+fi
+
 # ── Parse arguments ───────────────────────────────────────────────────────
 PHASE="compile-test"
 SCOPE="changed"
