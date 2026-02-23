@@ -118,9 +118,8 @@ public final class YawlProcessMiningToolSpecifications {
                     "Returns the complete XES XML event log.")
                 .inputSchema(schema)
                 .build(),
-            (exchange, args) -> {
-                throw new UnsupportedOperationException(PM_UNAVAILABLE);
-            }
+            (exchange, args) -> new McpSchema.CallToolResult(
+                List.of(new McpSchema.TextContent(PM_UNAVAILABLE)), true, null, null)
         );
     }
 
@@ -155,9 +154,8 @@ public final class YawlProcessMiningToolSpecifications {
                     "Returns a formatted text summary of execution insights.")
                 .inputSchema(schema)
                 .build(),
-            (exchange, args) -> {
-                throw new UnsupportedOperationException(PM_UNAVAILABLE);
-            }
+            (exchange, args) -> new McpSchema.CallToolResult(
+                List.of(new McpSchema.TextContent(PM_UNAVAILABLE)), true, null, null)
         );
     }
 
@@ -192,9 +190,8 @@ public final class YawlProcessMiningToolSpecifications {
                     "Returns formatted performance statistics.")
                 .inputSchema(schema)
                 .build(),
-            (exchange, args) -> {
-                throw new UnsupportedOperationException(PM_UNAVAILABLE);
-            }
+            (exchange, args) -> new McpSchema.CallToolResult(
+                List.of(new McpSchema.TextContent(PM_UNAVAILABLE)), true, null, null)
         );
     }
 
@@ -229,9 +226,8 @@ public final class YawlProcessMiningToolSpecifications {
                     "ranked by frequency.")
                 .inputSchema(schema)
                 .build(),
-            (exchange, args) -> {
-                throw new UnsupportedOperationException(PM_UNAVAILABLE);
-            }
+            (exchange, args) -> new McpSchema.CallToolResult(
+                List.of(new McpSchema.TextContent(PM_UNAVAILABLE)), true, null, null)
         );
     }
 
@@ -266,9 +262,8 @@ public final class YawlProcessMiningToolSpecifications {
                     "and most central resources. Returns formatted social network metrics.")
                 .inputSchema(schema)
                 .build(),
-            (exchange, args) -> {
-                throw new UnsupportedOperationException(PM_UNAVAILABLE);
-            }
+            (exchange, args) -> new McpSchema.CallToolResult(
+                List.of(new McpSchema.TextContent(PM_UNAVAILABLE)), true, null, null)
         );
     }
 }
