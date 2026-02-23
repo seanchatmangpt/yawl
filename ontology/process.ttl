@@ -106,7 +106,7 @@
     schema:object :OrderAmountVariable ;
     rdfs:comment "Task extending schema:PayAction — YAWL adds transactional semantics, retry logic, and payment status tracking to Schema.org's payment action model"^^xsd:string .
 
-:BackorderProcessingTask a yawl:Task ;
+:BackorderProcessingTask a yawl:Task, schema:OrderAction ;
     yawl:taskID "backorder_processing"^^xsd:string ;
     yawl:taskName "Backorder Processing"^^xsd:string ;
     yawl:isMultiInstance false ;
@@ -114,9 +114,11 @@
     yawl:splitType "XOR"^^xsd:string ;
     rdfs:comment "Process out-of-stock order for future fulfillment. XOR split handles backorder creation or customer notification."^^xsd:string ;
     yawl:hasInputSet :BackorderInputSet ;
-    yawl:hasOutputSet :BackorderOutputSet .
+    yawl:hasOutputSet :BackorderOutputSet ;
+    schema:object :ProductIDVariable ;
+    rdfs:comment "Task extending schema:OrderAction — YAWL adds backorder-specific control flow (deferred fulfillment) to Schema.org's generic order action semantics"^^xsd:string .
 
-:ShipOrderTask a yawl:Task ;
+:ShipOrderTask a yawl:Task, schema:DeliveryEvent ;
     yawl:taskID "ship_order"^^xsd:string ;
     yawl:taskName "Ship Order"^^xsd:string ;
     yawl:isMultiInstance false ;
@@ -124,9 +126,12 @@
     yawl:splitType "XOR"^^xsd:string ;
     rdfs:comment "Synchronize paid orders and backorder processing, then ship available inventory. AND join waits for both payment and backorder paths."^^xsd:string ;
     yawl:hasInputSet :ShipOrderInputSet ;
-    yawl:hasOutputSet :ShipOrderOutputSet .
+    yawl:hasOutputSet :ShipOrderOutputSet ;
+    schema:hasDeliveryMethod "Carrier" ;
+    schema:date :ShipDateVariable ;
+    rdfs:comment "Task extending schema:DeliveryEvent — YAWL adds AND-join synchronization (awaits both payment and backorder completion) to Schema.org's delivery semantics"^^xsd:string .
 
-:NotifyCustomerTask a yawl:Task ;
+:NotifyCustomerTask a yawl:Task, schema:CommunicateAction ;
     yawl:taskID "notify_customer"^^xsd:string ;
     yawl:taskName "Notify Customer"^^xsd:string ;
     yawl:isMultiInstance false ;
@@ -134,7 +139,10 @@
     yawl:splitType "XOR"^^xsd:string ;
     rdfs:comment "Send shipment confirmation or backorder notification to customer. XOR split handles different notification types."^^xsd:string ;
     yawl:hasInputSet :NotifyCustomerInputSet ;
-    yawl:hasOutputSet :NotifyCustomerOutputSet .
+    yawl:hasOutputSet :NotifyCustomerOutputSet ;
+    schema:object :CustomerIDVariable ;
+    schema:about "Order Status Update" ;
+    rdfs:comment "Task extending schema:CommunicateAction — YAWL adds multi-path conditional routing (XOR split) for different notification types to Schema.org's generic communication model"^^xsd:string .
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Input/Output Sets (Data Flow)

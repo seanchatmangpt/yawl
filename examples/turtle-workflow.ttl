@@ -3,6 +3,9 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix yawl: <http://www.yawlfoundation.org/yawl/ontology#> .
+@prefix schema: <https://schema.org/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dct: <http://purl.org/dc/terms/> .
 
 # YAWL Workflow in RDF/Turtle Format
 # Example: Order Processing Workflow
@@ -12,7 +15,7 @@
 
 # Workflow Definition
 :OrderProcessing
-  rdf:type yawl:Workflow ;
+  rdf:type yawl:Workflow, schema:CreativeWork ;
   rdfs:label "Order Processing Workflow" ;
   rdfs:comment "Processes customer orders from submission through fulfillment" ;
   yawl:hasStartTask :ReceiveOrder ;
@@ -20,24 +23,28 @@
   yawl:hasTask :ProcessPayment ;
   yawl:hasTask :ShipOrder ;
   yawl:hasEndTask :CompleteOrder ;
-  yawl:version "1.0" .
+  yawl:version "1.0" ;
+  schema:about "Order Processing" ;
+  rdfs:comment "Workflow extending schema:CreativeWork — YAWL adds task sequencing, control flow, and resource management to Schema.org's generic creative work model"^^xsd:string .
 
 # Task: Receive Order
 :ReceiveOrder
-  rdf:type yawl:Task ;
+  rdf:type yawl:Task, schema:Action ;
   rdfs:label "Receive Order" ;
   yawl:isStartTask true ;
   yawl:flowsTo :ValidateOrder ;
-  yawl:assignedTo :OrderClerk .
+  yawl:assignedTo :OrderClerk ;
+  rdfs:comment "Task extending schema:Action — YAWL provides entry-point semantics and task enablement to Schema.org's generic action model"^^xsd:string .
 
 # Task: Validate Order
 :ValidateOrder
-  rdf:type yawl:Task ;
+  rdf:type yawl:Task, schema:CheckAction ;
   rdfs:label "Validate Order" ;
   yawl:flowsTo :ProcessPayment ;
   yawl:flowsTo :RejectOrder ;
   yawl:assignedTo :QualityControl ;
-  yawl:hasCondition :IsOrderValid .
+  yawl:hasCondition :IsOrderValid ;
+  rdfs:comment "Task extending schema:CheckAction — YAWL adds conditional routing (XOR-split) and validation state tracking to Schema.org's check action semantics"^^xsd:string .
 
 # Condition: Is Order Valid?
 :IsOrderValid
@@ -48,40 +55,45 @@
 
 # Task: Process Payment
 :ProcessPayment
-  rdf:type yawl:Task ;
+  rdf:type yawl:Task, schema:PayAction ;
   rdfs:label "Process Payment" ;
   yawl:flowsTo :ShipOrder ;
   yawl:assignedTo :Accounting ;
-  yawl:splitType yawl:AND .
+  yawl:splitType yawl:AND ;
+  rdfs:comment "Task extending schema:PayAction — YAWL adds AND-split synchronization and payment transaction semantics to Schema.org's payment action model"^^xsd:string .
 
 # Task: Ship Order
 :ShipOrder
-  rdf:type yawl:Task ;
+  rdf:type yawl:Task, schema:DeliveryEvent ;
   rdfs:label "Ship Order" ;
   yawl:flowsTo :CompleteOrder ;
   yawl:assignedTo :Warehouse ;
-  yawl:joinType yawl:AND .
+  yawl:joinType yawl:AND ;
+  rdfs:comment "Task extending schema:DeliveryEvent — YAWL adds AND-join synchronization (waits for payment) to Schema.org's delivery event semantics"^^xsd:string .
 
 # Task: Complete Order
 :CompleteOrder
-  rdf:type yawl:Task ;
+  rdf:type yawl:Task, schema:Action ;
   rdfs:label "Complete Order" ;
   yawl:isEndTask true ;
-  yawl:assignedTo :OrderClerk .
+  yawl:assignedTo :OrderClerk ;
+  rdfs:comment "Task extending schema:Action — YAWL provides exit-point semantics and completion state tracking to Schema.org's generic action model"^^xsd:string .
 
 # Task: Reject Order
 :RejectOrder
-  rdf:type yawl:Task ;
+  rdf:type yawl:Task, schema:RejectAction ;
   rdfs:label "Reject Order" ;
   yawl:flowsTo :NotifyCustomer ;
-  yawl:assignedTo :CustomerService .
+  yawl:assignedTo :CustomerService ;
+  rdfs:comment "Task extending schema:RejectAction — YAWL integrates rejection logic into conditional routing paths to Schema.org's rejection semantics"^^xsd:string .
 
 # Task: Notify Customer
 :NotifyCustomer
-  rdf:type yawl:Task ;
+  rdf:type yawl:Task, schema:CommunicateAction ;
   rdfs:label "Notify Customer" ;
   yawl:isEndTask true ;
-  yawl:assignedTo :CustomerService .
+  yawl:assignedTo :CustomerService ;
+  rdfs:comment "Task extending schema:CommunicateAction — YAWL encodes communication workflows (rejection/status notifications) to Schema.org's generic communication model"^^xsd:string .
 
 # Resource Definitions
 :OrderClerk
