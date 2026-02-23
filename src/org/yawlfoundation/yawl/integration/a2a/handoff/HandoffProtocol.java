@@ -131,7 +131,8 @@ public final class HandoffProtocol {
                 fromAgent,
                 toAgent,
                 engineSession,
-                expiresAt
+                expiresAt,
+                jwt
             );
         } catch (Exception e) {
             throw new HandoffException("Failed to generate handoff token", e);
