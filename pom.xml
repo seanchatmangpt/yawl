@@ -232,8 +232,11 @@
         <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
         <versions.maven.plugin.version>2.18.0</versions.maven.plugin.version>
-        <jacoco.plugin.version>0.8.15</jacoco.plugin.version>
-        <jacoco.version>0.8.15</jacoco.version>
+        <!-- JaCoCo 0.8.12 does not support Java 25 class files (major version 69) -->
+        <!-- TODO: Update to 0.8.13+ when released for Java 25 support -->
+        <jacoco.plugin.version>0.8.12</jacoco.plugin.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <jacoco.skip>true</jacoco.skip>
         <jacoco.line.coverage>0.80</jacoco.line.coverage>
         <jacoco.branch.coverage>0.70</jacoco.branch.coverage>
         <maven.javadoc.version>3.11.1</maven.javadoc.version>
