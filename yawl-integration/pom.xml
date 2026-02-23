@@ -364,6 +364,8 @@
                         <testExclude>**/EnterpriseIntegrationPatternsTest.java</testExclude>
                         <!-- IT tests require failsafe plugin not available offline -->
                         <testExclude>**/*IT.java</testExclude>
+                        <!-- PinnedTrustManagerTest references deleted PinnedTrustManager class -->
+                        <testExclude>**/zai/PinnedTrustManagerTest.java</testExclude>
                                             </testExcludes>
                 </configuration>
             </plugin>
@@ -392,6 +394,8 @@
                         <!-- MCP event tests depend on excluded mcp/event sources -->
                         <exclude>**/mcp/event/**</exclude>
                         <exclude>**/mcp/resource/YawlEventResourceProviderTest.java</exclude>
+                        <!-- PinnedTrustManagerTest references deleted PinnedTrustManager class -->
+                        <exclude>**/zai/PinnedTrustManagerTest.java</exclude>
                       </excludes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
