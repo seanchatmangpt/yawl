@@ -1,0 +1,71 @@
+{# ============================================================================
+   record.tera
+   Renders Java 25 record declaration replacing a getter/setter POJO.
+
+   Variables:
+     - class_name: simple class name (e.g., "WorkItemData")
+     - package_name: package declaration (e.g., "org.yawlfoundation.yawl.engine")
+     - fields: list of {name, type, description} — the record components
+     - implements: list of interface names the class implements (if any)
+     - has_validation: boolean — whether to include compact constructor validation
+     - validation_checks: list of {field, condition, message} for compact constructor
+     - extra_methods: list of {name, body} — non-getter/setter methods to preserve
+     - original_imports: list of imports from original class
+   ============================================================================ #}
+
+package {{ package_name }};
+
+{% for import in original_imports %}
+{% if not import | starts_with("java.util.Objects") and not import | starts_with("lombok") %}
+import {{ import }};
+{% endif %}
+{% endfor %}
+
+/**
+ * Immutable data carrier (Java 25 record).
+ * Migrated from getter/setter POJO by the Java 11 → 25 migration pipeline.
+ *
+ * <p>Record components are final and accessible via accessor methods
+ * (same names as fields, no {@code get} prefix).</p>
+ *
+{% for field in fields %}
+ * @param {{ field.name }} {{ field.description | default(value="") }}
+{% endfor %}
+ */
+public record {{ class_name }}(
+{% for field in fields %}
+        {{ field.type }} {{ field.name }}{% if not loop.last %},{% endif %}
+
+{% endfor %}
+){% if implements %} implements {% for iface in implements %}{{ iface }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %} {
+
+{% if has_validation %}
+    /** Compact constructor — validates record components on construction. */
+    {{ class_name }} {
+{% for check in validation_checks %}
+        {% if check.condition == "not_null" %}
+        java.util.Objects.requireNonNull({{ check.field }}, "{{ check.field }} must not be null");
+        {% elif check.condition == "not_blank" %}
+        if ({{ check.field }} == null || {{ check.field }}.isBlank()) {
+            throw new IllegalArgumentException("{{ check.field }} must not be blank");
+        }
+        {% elif check.condition == "positive" %}
+        if ({{ check.field }} <= 0) {
+            throw new IllegalArgumentException("{{ check.field }} must be positive, got: " + {{ check.field }});
+        }
+        {% endif %}
+{% endfor %}
+    }
+{% endif %}
+
+{% if extra_methods %}
+    // -------------------------------------------------------------------------
+    // Preserved business methods (non-getter/setter)
+    // -------------------------------------------------------------------------
+{% for method in extra_methods %}
+
+    {{ method.body }}
+{% endfor %}
+{% endif %}
+
+}

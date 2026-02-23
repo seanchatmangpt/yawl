@@ -1,0 +1,89 @@
+{# ============================================================================
+   scoped-value.tera
+   Renders Java 21+ ScopedValue replacing ThreadLocal for context propagation.
+
+   Variables:
+     - field_name: the ThreadLocal field name being replaced
+     - value_type: the generic type parameter (e.g., "UserContext", "CaseId")
+     - scope_entry_method: method that establishes the binding scope
+     - scope_exit_method: cleanup method (optional)
+     - set_call_sites: list of {location, body} — ThreadLocal.set() call sites
+     - get_call_sites: list of {location, expr} — ThreadLocal.get() call sites
+   ============================================================================ #}
+
+// =============================================================================
+// ScopedValue migration (HIGH COMPLEXITY — requires manual review)
+// Original ThreadLocal: {{ field_name }}
+// =============================================================================
+// REVIEW REQUIRED:
+//   ThreadLocal.set() has no direct ScopedValue equivalent.
+//   ScopedValue creates an immutable binding for a specific scope.
+//   All code paths that read {{ field_name }} must be inside the binding scope.
+// =============================================================================
+
+// 1. Field declaration: ThreadLocal<{{ value_type }}> → ScopedValue<{{ value_type }}>
+private static final ScopedValue<{{ value_type }}> {{ field_name | upper }} =
+        ScopedValue.newInstance();
+
+// 2. Establish binding scope (replaces ThreadLocal.set() at entry point)
+//    Original: {{ field_name }}.set(value)
+//    Replacement: call the method that does the work inside ScopedValue.where(...)
+{% if scope_entry_method is defined %}
+ScopedValue.where({{ field_name | upper }}, contextValue)
+           .run(() -> {{ scope_entry_method }}(/* args */));
+{% else %}
+// In the entry point method (e.g., request handler, case start):
+ScopedValue.where({{ field_name | upper }}, value)
+           .run(() -> {
+               // All code that reads {{ field_name | upper }} goes here
+               {{ scope_entry_method | default(value="doWork()") }};
+           });
+{% endif %}
+
+// 3. Read binding (replaces ThreadLocal.get())
+//    Must be called within the ScopedValue.where(...).run(...) scope
+{{ value_type }} value = {{ field_name | upper }}.get();
+//    Safe check (isBound() returns false if called outside scope):
+// Optional<{{ value_type }}> maybeValue = {{ field_name | upper }}.orElse(null);
+
+{% if set_call_sites %}
+// =============================================================================
+// IDENTIFIED ThreadLocal.set() call sites requiring structural change:
+{% for site in set_call_sites %}
+// Location: {{ site.location }}
+//   Original: {{ field_name }}.set(...)
+//   Action: Wrap calling method in ScopedValue.where({{ field_name | upper }}, value).run(...)
+{% endfor %}
+// =============================================================================
+{% endif %}
+
+{% if get_call_sites %}
+// =============================================================================
+// IDENTIFIED ThreadLocal.get() call sites (these become {{ field_name | upper }}.get()):
+{% for site in get_call_sites %}
+// Location: {{ site.location }}
+//   Replace: {{ site.expr }}
+//   With:    {{ field_name | upper }}.get()  // must be inside binding scope
+{% endfor %}
+// =============================================================================
+{% endif %}
+
+{#
+   Required imports:
+     import java.lang.ScopedValue;
+
+   Key differences from ThreadLocal:
+     ThreadLocal: mutable, inherited by child threads (InheritableThreadLocal),
+                  requires explicit remove() to avoid memory leaks
+     ScopedValue: immutable binding, safely inherited by virtual threads via fork,
+                  automatically cleaned up when scope exits, no set/remove
+
+   Common pattern for YAWL case context:
+     private static final ScopedValue<CaseId> CURRENT_CASE = ScopedValue.newInstance();
+
+     public void executeCase(CaseId caseId, YNet net) {
+         ScopedValue.where(CURRENT_CASE, caseId).run(() -> {
+             fireEnabledTasks(net);  // all tasks see CURRENT_CASE via .get()
+         });
+     }
+#}

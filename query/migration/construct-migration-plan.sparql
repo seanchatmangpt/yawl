@@ -1,0 +1,83 @@
+# CONSTRUCT: Full Migration Plan Summary
+# Aggregates all migration pattern instances into a comprehensive MigrationPlan.
+# Run after all individual construct-*.sparql queries have populated the graph.
+# Produces the top-level MigrationPlan resource linked to all migration nodes.
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX dct:  <http://purl.org/dc/terms/> .
+
+CONSTRUCT {
+  # Top-level migration plan
+  <http://yawl.io/migration/plan/current> a rule:MigrationPlan ;
+    dct:title "Java 11 → Java 25 Migration Plan" ;
+    dct:created ?now ;
+    rule:totalMigrations ?total ;
+    rule:automaticMigrations ?automatic ;
+    rule:requiresReviewCount ?reviewCount ;
+    rule:lowComplexityCount ?lowCount ;
+    rule:mediumComplexityCount ?mediumCount ;
+    rule:highComplexityCount ?highCount ;
+    rule:hasMigration ?migration .
+
+  # Per-file summary
+  ?fileSummary a rule:FileMigrationSummary ;
+    java:filePath ?file ;
+    rule:migrationCount ?fileMigrationCount .
+}
+WHERE {
+  {
+    SELECT (COUNT(?migration) AS ?total)
+           (COUNT(?autoMigration) AS ?automatic)
+           (COUNT(?reviewMigration) AS ?reviewCount)
+           (COUNT(?lowMigration) AS ?lowCount)
+           (COUNT(?medMigration) AS ?mediumCount)
+           (COUNT(?highMigration) AS ?highCount)
+    WHERE {
+      ?migration a j25:Pattern .
+      OPTIONAL {
+        ?autoMigration a j25:Pattern .
+        FILTER NOT EXISTS { ?autoMigration rule:requiresReview true }
+      }
+      OPTIONAL {
+        ?reviewMigration a j25:Pattern ;
+          rule:requiresReview true .
+      }
+      OPTIONAL {
+        ?lowMigration a j25:Pattern .
+        ?lowMigration rule:appliedRule ?lr .
+        ?lr rule:complexity "LOW" .
+      }
+      OPTIONAL {
+        ?medMigration a j25:Pattern .
+        ?medMigration rule:appliedRule ?mr .
+        ?mr rule:complexity "MEDIUM" .
+      }
+      OPTIONAL {
+        ?highMigration a j25:Pattern .
+        ?highMigration rule:appliedRule ?hr .
+        ?hr rule:complexity "HIGH" .
+      }
+    }
+  }
+
+  ?migration a j25:Pattern .
+  BIND(NOW() AS ?now)
+
+  # Per-file summary
+  ?migration j25:targetFile ?file .
+  {
+    SELECT ?file (COUNT(?m) AS ?fileMigrationCount)
+    WHERE {
+      ?m a j25:Pattern ;
+         j25:targetFile ?file .
+    }
+    GROUP BY ?file
+  }
+
+  BIND(IRI(CONCAT("http://yawl.io/migration/file-summary/",
+                  ENCODE_FOR_URI(?file))) AS ?fileSummary)
+}

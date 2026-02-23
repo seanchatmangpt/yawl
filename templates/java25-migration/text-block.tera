@@ -1,0 +1,56 @@
+{# ============================================================================
+   text-block.tera
+   Renders Java 15+ text block replacing multi-line String.format() or concatenation.
+
+   Variables:
+     - content_type: "xml" | "json" | "sql" | "html" | "plain"
+     - format_args: list of {position, name, value_expr} for .formatted() args
+     - raw_content: the multi-line string content with %s/%d placeholders
+     - var_name: variable name to assign the text block to (optional)
+     - var_type: type of the variable (default: String)
+     - trailing_newline: boolean — whether to keep trailing newline in block
+   ============================================================================ #}
+
+{% if var_name is defined %}
+{{ var_type | default(value="String") }} {{ var_name }} = """
+{% else %}
+"""
+{% endif %}
+{{ raw_content }}
+{% if trailing_newline %}
+"""
+{% else %}
+    """.stripTrailing()
+{% endif %}
+{% if format_args %}
+    .formatted(
+{% for arg in format_args %}
+        {{ arg.value_expr }}{% if not loop.last %},{% endif %}  // {{ arg.name }}
+{% endfor %}
+    ){% if var_name is defined %};{% endif %}
+{% else %}
+{% if var_name is defined %};{% endif %}
+{% endif %}
+
+{#
+   Migration notes:
+   - Text block opening """ must be followed by a newline.
+   - Indentation is stripped based on the least-indented non-blank line.
+   - Use .stripIndent() for dynamic indentation control.
+   - Use .stripTrailing() to remove trailing whitespace from each line.
+   - Use .translateEscapes() if the original string had \n, \t, etc.
+   - .formatted() is equivalent to String.format(textBlock, args).
+   - For XML/HTML content, consider escaping: replace %s with %s in template.
+
+   Before (multi-line concatenation):
+     String xml = "<spec uri=\"" + uri + "\">\n" +
+                  "  <name>" + name + "</name>\n" +
+                  "</spec>";
+
+   After (text block):
+     String xml = """
+         <spec uri="%s">
+           <name>%s</name>
+         </spec>
+         """.formatted(uri, name);
+#}

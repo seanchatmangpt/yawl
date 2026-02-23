@@ -1,0 +1,71 @@
+# Detect Java 11 Date/Calendar Pattern
+# Finds java.util.Date and java.util.Calendar usage — candidates for java.time migration.
+# Rule: R10_DateToInstant
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?line ?usageType ?snippet
+WHERE {
+  {
+    # new Date() or new Calendar() construction
+    ?expr a java:ObjectCreationExpression ;
+          java:constructedType ?usageType ;
+          java:lineNumber ?line .
+
+    FILTER(?usageType IN (
+      "java.util.Date",
+      "java.util.GregorianCalendar",
+      "java.text.SimpleDateFormat"
+    ))
+
+    OPTIONAL { ?expr java:sourceText ?snippet }
+
+    ?method a java:MethodDeclaration ;
+            java:containsExpression ?expr .
+  }
+  UNION
+  {
+    # Calendar.getInstance() static factory call
+    ?call a java:MethodCallExpression ;
+          java:calleeType "java.util.Calendar" ;
+          java:calleeName "getInstance" ;
+          java:lineNumber ?line .
+
+    BIND("java.util.Calendar" AS ?usageType)
+    OPTIONAL { ?call java:sourceText ?snippet }
+
+    ?method a java:MethodDeclaration ;
+            java:containsExpression ?call .
+  }
+  UNION
+  {
+    # Field declarations typed as Date or Calendar
+    ?field a java:FieldDeclaration ;
+           java:lineNumber ?line .
+
+    ?fieldType a java:TypeRef ;
+               java:name ?typeName .
+
+    ?field java:fieldType ?fieldType .
+
+    FILTER(?typeName IN (
+      "Date", "java.util.Date",
+      "Calendar", "java.util.Calendar",
+      "SimpleDateFormat", "java.text.SimpleDateFormat"
+    ))
+
+    BIND(?typeName AS ?usageType)
+
+    ?class a java:ClassDeclaration ;
+           java:hasField ?field .
+
+    BIND(?class AS ?method)  # reuse binding for file lookup
+
+    OPTIONAL { ?field java:sourceText ?snippet }
+  }
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+}
+ORDER BY ?file ?line
