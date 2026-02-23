@@ -20,7 +20,6 @@ package org.yawlfoundation.yawl.integration.processmining.discovery;
 
 import org.yawlfoundation.yawl.integration.processmining.Ocel2Exporter.Ocel2EventLog;
 import org.yawlfoundation.yawl.integration.processmining.Ocel2Exporter.Ocel2Event;
-import org.yawlfoundation.yawl.integration.processmining.ProcessMiningResult;
 import org.yawlfoundation.yawl.integration.processmining.ProcessDiscoveryResult;
 
 import java.time.Instant;
@@ -145,7 +144,6 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
             );
 
             long duration = System.currentTimeMillis() - startTime;
-            result.setDiscoveryTimeMillis(duration);
 
             return result;
 
@@ -268,7 +266,7 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
     private void filterNoise(DirectlyFollowsGraph dfg, DependencyMatrix dependencies) {
         // Remove edges below frequency threshold
         Set<DFGEdge> edgesToRemove = dfg.getEdges().stream()
-            .filter(edge -> edge.getFrequency() < frequencyThreshold)
+            .filter(edge -> dfg.getEdgeWeight(edge.getFrom(), edge.getTo()) < frequencyThreshold)
             .collect(Collectors.toSet());
 
         edgesToRemove.forEach(dfg::removeEdge);
@@ -278,7 +276,7 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
             .filter(dep -> Math.abs(dep.getValue()) < dependencyThreshold)
             .collect(Collectors.toSet());
 
-        depsToRemove.forEach(dependencies::removeDependency);
+        depsToRemove.forEach(dep -> dependencies.removeDependency(dep.getFrom(), dep.getTo()));
 
         // Remove isolated nodes
         Set<String> isolatedNodes = dfg.getNodes().stream()
@@ -309,10 +307,11 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
         for (DFGEdge edge : dfg.getEdges()) {
             String fromPlace = edge.getFrom() + "_end";
             String toTransition = edge.getTo();
-            petriNet.addArc(fromPlace, toTransition, edge.getFrequency());
+            int weight = dfg.getEdgeWeight(edge.getFrom(), edge.getTo());
+            petriNet.addArc(fromPlace, toTransition, weight);
 
             String toPlace = edge.getTo() + "_start";
-            petriNet.addArc(toTransition, toPlace, edge.getFrequency());
+            petriNet.addArc(toTransition, toPlace, weight);
         }
 
         // Add start and end markers
@@ -351,15 +350,10 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
             .collect(Collectors.toSet());
         metrics.setCaseCount(cases.size());
 
-        // Calculate activity frequencies
-        Map<String, Integer> activityCounts = events.stream()
+        // Calculate activity frequencies (counts)
+        Map<String, Long> activityCounts = events.stream()
             .collect(Collectors.groupingBy(ProcessEvent::getActivity, Collectors.counting()));
-        Map<String, Double> activityFrequencies = activityCounts.entrySet().stream()
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                e -> (double) e.getValue() / events.size()
-            ));
-        metrics.setActivityFrequencies(activityFrequencies);
+        metrics.setActivityFrequencies(activityCounts);
 
         // Calculate fitness and precision (simplified)
         double fitness = calculateFitness(events, petriNet);
@@ -400,7 +394,7 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
             .map(ProcessEvent::getActivity)
             .collect(Collectors.toSet());
 
-        Set<String> modelActivities = petriNet.getTransitions().keySet();
+        Set<String> modelActivities = petriNet.getTransitions();
 
         return modelActivities.containsAll(traceActivities);
     }
@@ -672,7 +666,7 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
         private int activityCount;
         private double fitness;
         private double precision;
-        private Map<String, Double> activityFrequencies;
+        private Map<String, Long> activityFrequencies;
 
         // Getters and setters
         public int getCaseCount() { return caseCount; }
@@ -687,8 +681,8 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
         public double getPrecision() { return precision; }
         public void setPrecision(double precision) { this.precision = precision; }
 
-        public Map<String, Double> getActivityFrequencies() { return activityFrequencies; }
-        public void setActivityFrequencies(Map<String, Double> activityFrequencies) {
+        public Map<String, Long> getActivityFrequencies() { return activityFrequencies; }
+        public void setActivityFrequencies(Map<String, Long> activityFrequencies) {
             this.activityFrequencies = activityFrequencies;
         }
     }

@@ -20,6 +20,9 @@ package org.yawlfoundation.yawl.integration.processmining.performance;
 
 import org.yawlfoundation.yawl.integration.processmining.Ocel2Exporter.Ocel2EventLog;
 import org.yawlfoundation.yawl.integration.processmining.Ocel2Exporter.Ocel2Event;
+import org.yawlfoundation.yawl.observability.BottleneckDetector;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -92,6 +95,7 @@ public final class PerformanceAnalyzer {
     private boolean includeWaitingTime = true;
     private boolean includeQueueAnalysis = true;
     private BottleneckDetector bottleneckDetector;
+    private MeterRegistry meterRegistry;
 
     /**
      * Analyze overall case performance from event log.
@@ -205,16 +209,35 @@ public final class PerformanceAnalyzer {
      * @param eventLog the event log to analyze
      * @return list of detected bottlenecks
      */
-    public List<Bottleneck> detectBottlenecks(Ocel2EventLog eventLog) {
+    public List<BottleneckDetector.BottleneckAlert> detectBottlenecks(Ocel2EventLog eventLog) {
         if (bottleneckDetector == null) {
-            bottleneckDetector = new BottleneckDetector();
+            if (meterRegistry == null) {
+                meterRegistry = new SimpleMeterRegistry();
+            }
+            bottleneckDetector = new BottleneckDetector(meterRegistry);
         }
 
         // Get activity performance metrics
         Map<String, ActivityPerformanceMetrics> activityMetrics = analyzeActivityPerformance(eventLog);
 
-        // Detect bottlenecks
-        return bottleneckDetector.detect(activityMetrics);
+        // Detect bottlenecks from activity metrics
+        List<BottleneckDetector.BottleneckAlert> bottlenecks = new ArrayList<>();
+        for (Map.Entry<String, ActivityPerformanceMetrics> entry : activityMetrics.entrySet()) {
+            ActivityPerformanceMetrics metrics = entry.getValue();
+            // Record task execution to bottleneck detector
+            if (metrics.getTotalDuration() != null) {
+                bottleneckDetector.recordTaskExecution(
+                    "default",
+                    entry.getKey(),
+                    metrics.getTotalDuration().toMillis(),
+                    metrics.getTotalWaitingTime() != null ? metrics.getTotalWaitingTime().toMillis() : 0
+                );
+            }
+        }
+
+        // Get detected bottlenecks from the detector
+        bottlenecks.addAll(bottleneckDetector.getCurrentBottlenecks().values());
+        return bottlenecks;
     }
 
     /**
@@ -543,6 +566,10 @@ public final class PerformanceAnalyzer {
 
     public void setBottleneckDetector(BottleneckDetector detector) {
         this.bottleneckDetector = detector;
+    }
+
+    public void setMeterRegistry(MeterRegistry registry) {
+        this.meterRegistry = registry;
     }
 
     // Data classes

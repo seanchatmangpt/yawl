@@ -326,9 +326,6 @@
                              ===================================================================== -->
                         <exclude>**/conflict/**</exclude>
 
-                        <!-- processmining - 4 files still reference pm4py Python bridge (not yet migrated) -->
-                        <exclude>**/processmining/**</exclude>
-
                         <!-- Exclude event-related classes that need MCP SDK 1.0.0-RC3 API updates -->
                         <exclude>**/mcp/event/**</exclude>
                         <exclude>**/mcp/resource/YawlEventResourceProvider.java</exclude>
@@ -357,8 +354,6 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/YawlMcpA2aEndToEndIntegrationTest.java</testInclude>
                     </testIncludes>
                     <testExcludes>
-                        <!-- Exclude test files for packages with excluded sources -->
-                        <testExclude>**/processmining/**</testExclude>
                         <testExclude>**/SelfPlayTest.java</testExclude>
                         <!-- IntegrationTestSuite references excluded classes -->
                         <testExclude>**/IntegrationTestSuite.java</testExclude>
@@ -382,7 +377,6 @@
                     </includes>
                     <!-- A2A-dependent packages now included since A2A sources are compiled -->
                     <excludes>
-                        <exclude>**/processmining/**</exclude>
                         <exclude>**/test/SelfPlayTest.java</exclude>
 
                         <!-- IntegrationTestSuite references excluded classes -->
