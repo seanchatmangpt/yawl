@@ -1,0 +1,37 @@
+PREFIX yawl-mined: <http://ggen.io/yawl-mined#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Query 1: Extract all activities (transitions) from a discovered process
+# Returns: activity ID, name, and type annotations
+
+SELECT ?activity ?id ?name ?type (COUNT(?incoming) AS ?incomingCount) (COUNT(?outgoing) AS ?outgoingCount)
+WHERE {
+  ?process a yawl-mined:Process ;
+           yawl-mined:hasTransition ?activity .
+
+  ?activity yawl-mined:id ?id ;
+            yawl-mined:name ?name ;
+            rdf:type ?type .
+
+  # Count incoming and outgoing arcs
+  OPTIONAL {
+    ?incomingArc yawl-mined:target ?activity .
+  }
+  OPTIONAL {
+    ?outgoingArc yawl-mined:source ?activity .
+  }
+
+  # Filter to get transition types
+  FILTER(?type IN (
+    yawl-mined:Transition,
+    yawl-mined:StartTransition,
+    yawl-mined:EndTransition,
+    yawl-mined:SplitGateway,
+    yawl-mined:JoinGateway,
+    yawl-mined:XorGateway,
+    yawl-mined:AndGateway
+  ))
+}
+GROUP BY ?activity ?id ?name ?type
+ORDER BY ?id

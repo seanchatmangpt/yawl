@@ -2,45 +2,53 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix yawl: <http://yawl.org/yawl-specification/> .
+@prefix schema: <https://schema.org/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 # Simple test workflow with basic tasks and control flow
-:TestWorkflow a yawl:Specification ;
+:TestWorkflow a yawl:Specification, schema:CreativeWork ;
     yawl:specificationID "TestWorkflow"^^xsd:string ;
     yawl:specificationVersion "1.0"^^xsd:string ;
     yawl:specificationURI "http://example.org/workflow/TestWorkflow"^^xsd:anyURI ;
     yawl:isNetType false ;
-    yawl:hasNet :TestNet .
+    yawl:hasNet :TestNet ;
+    schema:about "Test Workflow" ;
+    rdfs:comment "Specification extending schema:CreativeWork — YAWL adds task sequencing and control-flow semantics to Schema.org's generic creative work model"^^xsd:string .
 
-:TestNet a yawl:Net ;
+:TestNet a yawl:Net, schema:DataFeed ;
     yawl:netID "TestNet"^^xsd:string ;
     yawl:hasElement :StartTask ;
     yawl:hasElement :ProcessTask ;
     yawl:hasElement :EndTask ;
     yawl:hasFlow :Flow1 ;
-    yawl:hasFlow :Flow2 .
+    yawl:hasFlow :Flow2 ;
+    rdfs:comment "Net extending schema:DataFeed — YAWL provides ordered, directed task sequencing where Schema.org provides generic data feed semantics"^^xsd:string .
 
 # Tasks
-:StartTask a yawl:Task ;
+:StartTask a yawl:Task, schema:Action ;
     yawl:taskID "Start"^^xsd:string ;
     yawl:taskName "Start"^^xsd:string ;
     yawl:isMultiInstance false ;
     yawl:isSplit false ;
-    yawl:isJoin false .
+    yawl:isJoin false ;
+    rdfs:comment "Task extending schema:Action — YAWL provides entry-point semantics and task lifecycle management to Schema.org's generic action model"^^xsd:string .
 
-:ProcessTask a yawl:Task ;
+:ProcessTask a yawl:Task, schema:Action ;
     yawl:taskID "Process"^^xsd:string ;
     yawl:taskName "Process Data"^^xsd:string ;
     yawl:isMultiInstance false ;
     yawl:isSplit false ;
-    yawl:isJoin false .
+    yawl:isJoin false ;
+    rdfs:comment "Task extending schema:Action — YAWL encodes data processing with control-flow coordination to Schema.org's generic action semantics"^^xsd:string .
 
-:EndTask a yawl:Task ;
+:EndTask a yawl:Task, schema:Action ;
     yawl:taskID "End"^^xsd:string ;
     yawl:taskName "End"^^xsd:string ;
     yawl:isMultiInstance false ;
     yawl:isSplit false ;
-    yawl:isJoin false .
+    yawl:isJoin false ;
+    rdfs:comment "Task extending schema:Action — YAWL provides exit-point semantics and completion state tracking to Schema.org's action model"^^xsd:string .
 
 # Control flows
 :Flow1 a yawl:Flow ;

@@ -70,6 +70,7 @@
         <module>yawl-security</module>
         <module>yawl-integration</module>
         <module>yawl-monitoring</module>
+        <module>yawl-ggen</module>
         <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>

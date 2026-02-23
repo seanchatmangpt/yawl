@@ -1,0 +1,37 @@
+PREFIX yawl-mined: <http://ggen.io/yawl-mined#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Query 3: Identify all gateway points (split/join) in the process
+# Returns: gateway ID, name, type (XOR/AND), branch count
+
+SELECT ?gateway ?id ?name ?gatewayType (COUNT(DISTINCT ?outgoingArc) AS ?outgoingCount) (COUNT(DISTINCT ?incomingArc) AS ?incomingCount)
+WHERE {
+  ?process a yawl-mined:Process ;
+           yawl-mined:hasTransition ?gateway .
+
+  ?gateway yawl-mined:id ?id ;
+           yawl-mined:name ?name ;
+           rdf:type ?gatewayType .
+
+  # Get all outgoing arcs for split gateways
+  OPTIONAL {
+    ?outgoingArc yawl-mined:source ?gateway .
+  }
+
+  # Get all incoming arcs for join gateways
+  OPTIONAL {
+    ?incomingArc yawl-mined:target ?gateway .
+  }
+
+  # Filter for gateway types only
+  FILTER(?gatewayType IN (
+    yawl-mined:SplitGateway,
+    yawl-mined:JoinGateway,
+    yawl-mined:XorGateway,
+    yawl-mined:AndGateway
+  ))
+}
+GROUP BY ?gateway ?id ?name ?gatewayType
+HAVING (COUNT(DISTINCT ?outgoingArc) > 1 || COUNT(DISTINCT ?incomingArc) > 1)
+ORDER BY ?gatewayType ?id
