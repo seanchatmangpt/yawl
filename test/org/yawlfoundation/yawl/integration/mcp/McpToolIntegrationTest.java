@@ -910,7 +910,7 @@ class McpToolIntegrationTest {
     @DisplayName("All tools have handlers")
     void testAllToolsHaveHandlers() {
         for (McpServerFeatures.SyncToolSpecification spec : tools) {
-            assertNotNull(spec.handler(), "Tool handler must not be null");
+            assertNotNull(spec.callHandler(), "Tool handler must not be null");
         }
     }
 
@@ -932,10 +932,13 @@ class McpToolIntegrationTest {
             Map<String, Object> args) {
 
         try {
-            return tool.handler().handle(null, args != null ? args : new HashMap<>());
+            return tool.callHandler().apply(null, new McpSchema.CallToolRequest(
+                    tool.tool().name(), args != null ? args : new HashMap<>()));
         } catch (Exception e) {
-            return new McpSchema.CallToolResult(
-                "Error executing tool: " + e.getMessage(), true);
+            return McpSchema.CallToolResult.builder()
+                    .addTextContent("Error executing tool: " + e.getMessage())
+                    .isError(true)
+                    .build();
         }
     }
 
@@ -990,7 +993,7 @@ class McpToolIntegrationTest {
         YWorkItemID wid = new YWorkItemID(caseId, "process");
         WorkflowDataFactory.seedWorkItem(db, wid.toString(), runnerId, "process", "Enabled");
 
-        String caseIdStr = caseId.get_id();
+        String caseIdStr = caseId.get_idString();
         launchedCases.put(caseIdStr, specId);
 
         return caseIdStr;
@@ -1077,8 +1080,9 @@ class McpToolIntegrationTest {
             McpServerFeatures.SyncToolSpecification spec =
                 new McpServerFeatures.SyncToolSpecification(
                     tool,
-                    (exchange, args) -> new McpSchema.CallToolResult(
-                        "Tool " + name + " executed (local mode)", false)
+                    (exchange, request) -> McpSchema.CallToolResult.builder()
+                        .addTextContent("Tool " + name + " executed (local mode)")
+                        .build()
                 );
 
             localTools.add(spec);

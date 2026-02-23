@@ -55,6 +55,7 @@ public class ZaiService {
 
     private final ZaiClient zaiClient;
     private final List<ChatMessage> conversationHistory;
+    private final java.net.http.HttpClient httpClient;
     private String systemPrompt;
     private volatile boolean initialized;
 
@@ -72,6 +73,7 @@ public class ZaiService {
         }
         this.zaiClient = ZaiClientFactory.withApiKey(apiKey);
         this.conversationHistory = new ArrayList<>();
+        this.httpClient = java.net.http.HttpClient.newHttpClient();
         this.initialized = true;
     }
 
@@ -87,6 +89,7 @@ public class ZaiService {
         }
         this.zaiClient = ZaiClientFactory.withApiKey(apiKey);
         this.conversationHistory = new ArrayList<>();
+        this.httpClient = java.net.http.HttpClient.newHttpClient();
         this.initialized = true;
     }
 
@@ -412,6 +415,20 @@ public class ZaiService {
      */
     public String getDefaultModel() {
         return defaultModel();
+    }
+
+    /**
+     * Get the conversation history as a list of messages.
+     */
+    public List<ChatMessage> getConversationHistory() {
+        return getConversationHistoryRecords();
+    }
+
+    /**
+     * Get the underlying HTTP client used for API calls.
+     */
+    public java.net.http.HttpClient getHttpClient() {
+        return httpClient;
     }
 
     /**
