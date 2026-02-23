@@ -2,7 +2,6 @@ package org.yawlfoundation.yawl.integration.mcp;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
@@ -25,10 +24,10 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
  *
  * Implements MCP 2025-11-25 specification with full capabilities over STDIO transport.
  *
- * Tools (20): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
+ * Tools: Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
  *   work items, get specification data/XML/schema, get running cases, upload/unload specifications,
- *   suspend/resume cases, skip work items. Process mining tools: export XES, analyze performance,
- *   discover variants, analyze resource networks.
+ *   suspend/resume cases, skip work items (YawlToolSpecifications). Plus SPARQL CONSTRUCT
+ *   coordination tools for Petri-net token routing at zero inference cost (ConstructCoordinationTools).
  *
  * Resources (3 static):
  *   - yawl://specifications - All loaded specifications
@@ -117,10 +116,13 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
-        var allTools = buildAllTools();
-        int workflowToolCount = YawlToolSpecifications.createAll(
-            interfaceBClient, interfaceAClient, sessionHandle).size();
-        int constructToolCount = allTools.size() - workflowToolCount;
+        var workflowTools = YawlToolSpecifications.createAll(
+            interfaceBClient, interfaceAClient, sessionHandle);
+        var constructTools = ConstructCoordinationTools.createAll(interfaceBClient, sessionHandle);
+        var allTools = new ArrayList<>(workflowTools);
+        allTools.addAll(constructTools);
+        int workflowToolCount = workflowTools.size();
+        int constructToolCount = constructTools.size();
 
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
@@ -198,18 +200,6 @@ public class YawlMcpServer {
      */
     public McpLoggingHandler getLoggingHandler() {
         return loggingHandler;
-    }
-
-    // =========================================================================
-    // Tool registration
-    // =========================================================================
-
-    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> buildAllTools() {
-        List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> all =
-            new ArrayList<>();
-        all.addAll(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle));
-        all.addAll(ConstructCoordinationTools.createAll(interfaceBClient, sessionHandle));
-        return all;
     }
 
     // =========================================================================
