@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +15,7 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
+import org.yawlfoundation.yawl.integration.mcp.spec.OntologyDrivenToolFactory;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
@@ -115,6 +117,21 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
+        // Build tool list: static YAWL tools + ontology-derived tools (if Rust service up)
+        List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> allTools =
+            new ArrayList<>(YawlToolSpecifications.createAll(
+                interfaceBClient, interfaceAClient, sessionHandle));
+        int ontologyToolCount = 0;
+        try {
+            List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> ontologyTools =
+                OntologyDrivenToolFactory.createAll(interfaceBClient, interfaceAClient, sessionHandle);
+            allTools.addAll(ontologyTools);
+            ontologyToolCount = ontologyTools.size();
+        } catch (Exception e) {
+            System.err.println("WARN [YawlMcpServer] Ontology service unavailable — "
+                + "ontology-derived tools not loaded: " + e.getMessage());
+        }
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -129,7 +146,7 @@ public class YawlMcpServer {
                 Capabilities: 15 workflow tools, 3 static resources, 3 resource templates,
                 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -142,8 +159,10 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 15 workflow tools, 3 resources, 3 resource templates, " +
-            "4 prompts, 3 completions, logging");
+        System.err.println("Capabilities: " + allTools.size() + " tools ("
+            + (allTools.size() - ontologyToolCount) + " static + "
+            + ontologyToolCount + " ontology-derived)"
+            + ", 3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
     }
 
     /**

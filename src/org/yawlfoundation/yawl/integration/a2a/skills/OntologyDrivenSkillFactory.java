@@ -395,10 +395,11 @@ public final class OntologyDrivenSkillFactory {
             this.executor    = executor;
         }
 
-        @Override public String      getId()          { return id; }
-        @Override public String      getName()        { return name; }
-        @Override public String      getDescription() { return description; }
-        @Override public Set<String> getRequiredPermissions() { return Set.of(permission); }
+        @Override public String       getId()                  { return id; }
+        @Override public String       getName()                { return name; }
+        @Override public String       getDescription()         { return description; }
+        @Override public Set<String>  getRequiredPermissions() { return Set.of(permission); }
+        @Override public List<String> getTags()                { return List.copyOf(tags); }
 
         @Override
         public SkillResult execute(SkillRequest request) {

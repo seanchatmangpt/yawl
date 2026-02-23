@@ -29,7 +29,11 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.a2a.skills.A2ASkill;
+import org.yawlfoundation.yawl.integration.a2a.skills.OntologyDrivenSkillFactory;
 import org.yawlfoundation.yawl.integration.a2a.skills.ProcessMiningSkill;
+import org.yawlfoundation.yawl.integration.a2a.skills.SkillRequest;
+import org.yawlfoundation.yawl.integration.a2a.skills.SkillResult;
 // ZaiFunctionService is dynamically loaded via reflection to avoid dependency conflicts
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
@@ -38,6 +42,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -94,6 +99,9 @@ public class YawlA2AServer {
     private final java.lang.reflect.Method zaiProcessMethod;  // Cached method
     private final A2AAuthenticationProvider authProvider;
     private final ProcessMiningSkill processMiningSkill;
+
+    // Ontology-derived skills (populated at start, empty if Rust service unavailable)
+    private volatile List<A2ASkill> ontologySkills = List.of();
 
     // Handoff services
     private HandoffProtocol handoffProtocol;
@@ -180,6 +188,18 @@ public class YawlA2AServer {
      * @throws IOException if the HTTP server cannot bind to the port
      */
     public void start() throws IOException {
+        // Attempt eager engine connection to populate ontology skills for agent card.
+        // If engine or Rust service is unavailable at startup, server proceeds without
+        // ontology-derived skills — they will not be present in the agent card.
+        try {
+            ensureEngineConnection();
+            ontologySkills = OntologyDrivenSkillFactory.createAll(interfaceBClient, sessionHandle);
+            _logger.info("Loaded {} ontology-derived A2A skills", ontologySkills.size());
+        } catch (Exception e) {
+            _logger.warn("Ontology skills not loaded at startup (engine or ontology service "
+                + "unavailable): {}", e.getMessage());
+        }
+
         AgentCard agentCard = buildAgentCard();
         executorService = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -349,7 +369,13 @@ public class YawlA2AServer {
                 .build())
             .defaultInputModes(List.of("text"))
             .defaultOutputModes(List.of("text"))
-            .skills(List.of(
+            .skills(buildSkillList())
+            .build();
+    }
+
+    /** Merge hardcoded YAWL skills with ontology-derived skills from the Rust service. */
+    private List<AgentSkill> buildSkillList() {
+        List<AgentSkill> skills = new ArrayList<>(List.of(
                 AgentSkill.builder()
                     .id("launch_workflow")
                     .name("Launch Workflow")
@@ -429,8 +455,19 @@ public class YawlA2AServer {
                     .inputModes(List.of("text"))
                     .outputModes(List.of("text"))
                     .build()
-            ))
-            .build();
+        ));
+        // Append ontology-derived skills (populated at startup if Rust service available)
+        for (A2ASkill s : ontologySkills) {
+            skills.add(AgentSkill.builder()
+                .id(s.getId())
+                .name(s.getName())
+                .description(s.getDescription())
+                .tags(s.getTags())
+                .inputModes(List.of("text"))
+                .outputModes(List.of("text"))
+                .build());
+        }
+        return skills;
     }
 
     // =========================================================================
@@ -489,6 +526,22 @@ public class YawlA2AServer {
                 }
             }
             ensureEngineConnection();
+            // Route to ontology-derived skill if user text matches skill ID or name
+            String lower = userText.toLowerCase().trim();
+            for (A2ASkill skill : ontologySkills) {
+                String idNorm = skill.getId().replace('_', ' ').toLowerCase();
+                if (lower.contains(idNorm) || lower.contains(skill.getName().toLowerCase())) {
+                    SkillResult result = skill.execute(
+                        SkillRequest.builder(skill.getId())
+                            .parameter("userText", userText)
+                            .build());
+                    if (result.isSuccess()) {
+                        Object msg = result.get("message");
+                        return msg != null ? msg.toString() : "Skill completed successfully.";
+                    }
+                    return "Skill error: " + result.getError();
+                }
+            }
             String lower = userText.toLowerCase().trim();
 
             if (lower.contains("list") && (lower.contains("spec")
