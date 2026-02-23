@@ -197,10 +197,19 @@ export MAVEN_OPTS="${MAVEN_OPTS} -Dhibernate.dialect=org.hibernate.dialect.H2Dia
 
 echo "✅ H2 database configured (in-memory, ephemeral)"
 
-# Export environment variable for runtime detection
+# Export environment variables for runtime detection and correct Java toolchain.
+# Variables written here are sourced into Claude Code's process environment so
+# that every subsequent Bash tool call inherits JAVA_HOME and PATH correctly.
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   echo 'export YAWL_REMOTE_ENVIRONMENT=true' >> "$CLAUDE_ENV_FILE"
   echo 'export YAWL_DATABASE_TYPE=h2' >> "$CLAUDE_ENV_FILE"
+  # Persist Java 25 JAVA_HOME so Maven uses the right javac in every tool call.
+  # Without this, JAVA_HOME stays at the system default (Java 21) even though
+  # the hook exports it inside its own subprocess.
+  echo "export JAVA_HOME=${TEMURIN_25_HOME}" >> "$CLAUDE_ENV_FILE"
+  echo "export PATH=${TEMURIN_25_HOME}/bin:\$PATH" >> "$CLAUDE_ENV_FILE"
+  # H2 database properties for Hibernate during tests
+  echo "export MAVEN_OPTS=\"-Dspring.datasource.url=jdbc:h2:mem:yawl;DB_CLOSE_DELAY=-1 -Dspring.datasource.username=sa -Dspring.datasource.password= -Dhibernate.dialect=org.hibernate.dialect.H2Dialect\"" >> "$CLAUDE_ENV_FILE"
 fi
 
 # ============================================================================

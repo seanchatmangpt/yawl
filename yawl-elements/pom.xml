@@ -179,18 +179,13 @@
                         <exclude>**/*.properties</exclude>
                     </excludes>
                     <testIncludes>
-                        <include>**/org/yawlfoundation/yawl/elements/**</include>
-                        <include>**/org/yawlfoundation/yawl/unmarshal/**</include>
+                        <testInclude>**/org/yawlfoundation/yawl/elements/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/unmarshal/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
-                        <!-- All element tests use JUnit 5 which is not available for test
-                             execution in this offline environment; excluded from compilation
-                             to avoid dependency on surefire-junit-platform -->
-                        <exclude>**/org/yawlfoundation/yawl/elements/**</exclude>
-                        <exclude>**/org/yawlfoundation/yawl/schema/**</exclude>
                         <!-- Exclude tests from other modules -->
                         <exclude>**/org/yawlfoundation/yawl/engine/**</exclude>
                         <exclude>**/org/yawlfoundation/yawl/integration/**</exclude>

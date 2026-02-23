@@ -181,12 +181,6 @@
             <artifactId>opentelemetry-exporter-logging</artifactId>
         </dependency>
 
-        <!-- JSON serialization for ggen build receipts -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>
