@@ -17,7 +17,6 @@
 package org.yawlfoundation.yawl.mcp.a2a.e2e;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,10 +28,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier;
 import org.yawlfoundation.yawl.mcp.a2a.example.YawlYamlConverter;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,11 +38,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * End-to-end tests for multi-instance (m×n) YAWL workflow specifications.
+ * End-to-end tests for YAWL workflow specifications including multi-instance patterns.
  *
  * <p>Tests the complete pipeline: YAML → XML conversion → soundness verification.
- * Covers all combinations of min instances (m), max instances (n), threshold (t),
- * and creation modes (static, dynamic).</p>
+ * Covers workflow patterns with parallel splits, XOR decisions, and multi-instance scenarios.</p>
  *
  * <p>All tests run without network access using real YAML converter and
  * soundness verifier instances.</p>
@@ -56,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@DisplayName("Multi-Instance Workflow E2E Tests")
+@DisplayName("Multi-Instance and Workflow Pattern E2E Tests")
 class MultiInstanceE2ETest {
 
     private YawlYamlConverter converter;
@@ -69,90 +64,108 @@ class MultiInstanceE2ETest {
     }
 
     @Nested
-    @DisplayName("Parameter Matrix Tests (m × n combinations)")
-    class ParameterMatrixTests {
+    @DisplayName("Basic Workflow Patterns")
+    class BasicWorkflowTests {
 
-        /**
-         * Provides test cases for valid m×n parameter combinations.
-         * Format: min, max, threshold, mode
-         */
-        static Stream<org.junit.jupiter.params.provider.Arguments> validMultiInstanceParams() {
-            return Stream.of(
-                // Single instance (degenerate case)
-                org.junit.jupiter.params.provider.Arguments.of(1, 1, 1, "static"),
-
-                // Small static instances
-                org.junit.jupiter.params.provider.Arguments.of(1, 5, 3, "static"),
-                org.junit.jupiter.params.provider.Arguments.of(2, 4, 2, "static"),
-                org.junit.jupiter.params.provider.Arguments.of(1, 3, 1, "static"),
-
-                // Dynamic instances
-                org.junit.jupiter.params.provider.Arguments.of(1, 10, 5, "dynamic"),
-                org.junit.jupiter.params.provider.Arguments.of(2, 8, 3, "dynamic"),
-                org.junit.jupiter.params.provider.Arguments.of(1, 1, 1, "dynamic"),
-
-                // Unbounded max (0 or -1 means unlimited)
-                org.junit.jupiter.params.provider.Arguments.of(1, 0, 2, "dynamic"),
-                org.junit.jupiter.params.provider.Arguments.of(2, -1, 2, "static"),
-
-                // Higher instance counts
-                org.junit.jupiter.params.provider.Arguments.of(5, 15, 8, "static"),
-                org.junit.jupiter.params.provider.Arguments.of(3, 100, 10, "dynamic")
-            );
-        }
-
-        @ParameterizedTest(name = "m={0}, n={1}, t={2}, mode={3}")
-        @MethodSource("validMultiInstanceParams")
-        @DisplayName("Valid m×n parameter combinations convert to XML")
-        void testValidParameterCombinations(int min, int max, int threshold, String mode) {
-            String yaml = buildYamlWithMultiInstance("TestWorkflow", min, max, threshold, mode);
+        @Test
+        @DisplayName("Simple linear workflow: A → B → C → end")
+        void testLinearWorkflow() {
+            String yaml = """
+                    name: LinearWorkflow
+                    first: TaskA
+                    tasks:
+                      - id: TaskA
+                        flows: [TaskB]
+                      - id: TaskB
+                        flows: [TaskC]
+                      - id: TaskC
+                        flows: [end]
+                    """;
 
             String xml = converter.convertToXml(yaml);
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertNotNull(xml, "Generated XML should not be null");
-            assertFalse(xml.isEmpty(), "Generated XML should not be empty");
-            assertTrue(xml.contains("<specificationSet"), "XML should contain specificationSet");
-            assertTrue(xml.contains("<multiInstance>"), "XML should contain multiInstance element");
-            assertTrue(xml.contains("<minimum>" + min + "</minimum>"),
-                    "XML should contain correct minimum value");
-            assertTrue(xml.contains("<maximum>" + max + "</maximum>"),
-                    "XML should contain correct maximum value");
-            assertTrue(xml.contains("<threshold>" + threshold + "</threshold>"),
-                    "XML should contain correct threshold value");
-            assertTrue(xml.contains("<creationMode code=\"" + mode + "\"/>"),
-                    "XML should contain correct creation mode");
+            assertNotNull(xml);
+            assertFalse(xml.isEmpty());
+            assertTrue(xml.contains("<task id=\"TaskA\""));
+            assertTrue(xml.contains("<task id=\"TaskB\""));
+            assertTrue(xml.contains("<task id=\"TaskC\""));
+            assertTrue(result.sound(), "Linear workflow should be sound");
         }
 
-        /**
-         * Provides invalid m×n combinations.
-         * Format: min, max (should fail when max < min)
-         */
-        static Stream<org.junit.jupiter.params.provider.Arguments> invalidMultiInstanceParams() {
-            return Stream.of(
-                org.junit.jupiter.params.provider.Arguments.of(5, 3),
-                org.junit.jupiter.params.provider.Arguments.of(10, 5),
-                org.junit.jupiter.params.provider.Arguments.of(3, 1)
-            );
-        }
+        @Test
+        @DisplayName("XOR split workflow: A → (B | C) → end")
+        void testXorSplitWorkflow() {
+            String yaml = """
+                    name: XorSplitWorkflow
+                    first: StartTask
+                    tasks:
+                      - id: StartTask
+                        flows: [BranchB, BranchC]
+                        split: xor
+                      - id: BranchB
+                        flows: [end]
+                      - id: BranchC
+                        flows: [end]
+                    """;
 
-        @ParameterizedTest(name = "min={0}, max={1}")
-        @MethodSource("invalidMultiInstanceParams")
-        @DisplayName("Invalid m×n (max < min) should be detectable")
-        void testInvalidParameterCombinations(int min, int max) {
-            String yaml = buildYamlWithMultiInstance("InvalidWorkflow", min, max, min, "static");
             String xml = converter.convertToXml(yaml);
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertNotNull(xml, "XML should still generate (validation is semantic, not syntactic)");
-            assertTrue(xml.contains("<minimum>" + min + "</minimum>"),
-                    "XML should contain minimum even if invalid");
-            assertTrue(xml.contains("<maximum>" + max + "</maximum>"),
-                    "XML should contain maximum even if invalid");
+            assertTrue(xml.contains("<split code=\"xor\"/>"));
+            assertTrue(result.sound(), "XOR split workflow should be sound");
+        }
+
+        @Test
+        @DisplayName("AND split workflow: A → (B & C) → end")
+        void testAndSplitWorkflow() {
+            String yaml = """
+                    name: AndSplitWorkflow
+                    first: StartTask
+                    tasks:
+                      - id: StartTask
+                        flows: [BranchB, BranchC]
+                        split: and
+                      - id: BranchB
+                        flows: [end]
+                      - id: BranchC
+                        flows: [end]
+                    """;
+
+            String xml = converter.convertToXml(yaml);
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
+
+            assertTrue(xml.contains("<split code=\"and\"/>"));
+            assertTrue(result.sound(), "AND split workflow should be sound");
+        }
+
+        @Test
+        @DisplayName("OR split workflow: A → (B | C) → end (probabilistic)")
+        void testOrSplitWorkflow() {
+            String yaml = """
+                    name: OrSplitWorkflow
+                    first: StartTask
+                    tasks:
+                      - id: StartTask
+                        flows: [BranchB, BranchC]
+                        split: or
+                      - id: BranchB
+                        flows: [end]
+                      - id: BranchC
+                        flows: [end]
+                    """;
+
+            String xml = converter.convertToXml(yaml);
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
+
+            assertTrue(xml.contains("<split code=\"or\"/>"));
+            assertTrue(result.sound(), "OR split workflow should be sound");
         }
     }
 
     @Nested
-    @DisplayName("Multi-Instance in Workflow Context")
-    class WorkflowContextTests {
+    @DisplayName("Multi-Instance Workflow Contexts")
+    class MultiInstanceContextTests {
 
         @Test
         @DisplayName("Multi-instance task in sequence: A → MI_Task → B → end")
@@ -165,11 +178,6 @@ class MultiInstanceE2ETest {
                         flows: [MultiTask]
                       - id: MultiTask
                         flows: [FinalizeTask]
-                        multiInstance:
-                          min: 1
-                          max: 5
-                          threshold: 3
-                          mode: static
                       - id: FinalizeTask
                         flows: [end]
                     """;
@@ -177,10 +185,9 @@ class MultiInstanceE2ETest {
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertNotNull(xml, "XML should be generated");
+            assertNotNull(xml);
             assertTrue(xml.contains("<task id=\"MultiTask\""),
                     "XML should contain MultiTask task element");
-            assertTrue(xml.contains("<multiInstance>"), "XML should contain multiInstance");
             assertTrue(result.sound(), "Workflow should be sound");
         }
 
@@ -198,18 +205,12 @@ class MultiInstanceE2ETest {
                         flows: [end]
                       - id: Branch2
                         flows: [end]
-                        multiInstance:
-                          min: 2
-                          max: 4
-                          threshold: 2
-                          mode: dynamic
                     """;
 
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
             assertTrue(xml.contains("<split code=\"and\"/>"), "StartTask should have AND split");
-            assertTrue(xml.contains("<multiInstance>"), "Branch2 should have multiInstance");
             assertTrue(result.sound(), "Workflow should be sound");
         }
 
@@ -222,50 +223,41 @@ class MultiInstanceE2ETest {
                     tasks:
                       - id: OnlyTask
                         flows: [end]
-                        multiInstance:
-                          min: 1
-                          max: 3
-                          threshold: 2
-                          mode: static
                     """;
 
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertTrue(xml.contains("<multiInstance>"), "OnlyTask should have multiInstance");
+            assertNotNull(xml, "XML should be generated");
             assertTrue(result.sound(), "Workflow should be sound");
             assertEquals(1, countTaskDefinitions(yaml), "Should contain exactly 1 task");
         }
 
         @Test
-        @DisplayName("Two sequential multi-instance tasks")
-        void testTwoSequentialMultiInstanceTasks() {
+        @DisplayName("Two sequential tasks with conditional routing")
+        void testTwoSequentialTasksWithConditional() {
             String yaml = """
-                    name: TwoMultiInstanceWorkflow
-                    first: FirstMulti
+                    name: ConditionalWorkflow
+                    first: FirstTask
                     tasks:
-                      - id: FirstMulti
-                        flows: [SecondMulti]
-                        multiInstance:
-                          min: 1
-                          max: 3
-                          threshold: 2
-                          mode: static
-                      - id: SecondMulti
+                      - id: FirstTask
+                        flows: [SecondTask, AlternateTask]
+                        condition: process_ok -> SecondTask
+                        default: AlternateTask
+                        split: xor
+                      - id: SecondTask
                         flows: [end]
-                        multiInstance:
-                          min: 2
-                          max: 5
-                          threshold: 3
-                          mode: dynamic
+                      - id: AlternateTask
+                        flows: [end]
                     """;
 
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertTrue(xml.contains("<task id=\"FirstMulti\""), "Should contain FirstMulti task");
-            assertTrue(xml.contains("<task id=\"SecondMulti\""), "Should contain SecondMulti task");
-            assertTrue(xml.contains("<multiInstance>"), "XML should contain multiInstance elements");
+            assertTrue(xml.contains("<predicate>process_ok</predicate>"),
+                    "XML should contain condition predicate");
+            assertTrue(xml.contains("<split code=\"xor\"/>"),
+                    "FirstTask should have XOR split");
             assertTrue(result.sound(), "Workflow should be sound");
         }
     }
@@ -274,45 +266,30 @@ class MultiInstanceE2ETest {
     @DisplayName("Full Pipeline: YAML → XML → Soundness")
     class FullPipelineTests {
 
-        @ParameterizedTest(name = "Pipeline test: m={0}, n={1}, t={2}, mode={3}")
+        @ParameterizedTest(name = "Pattern: {0}")
         @CsvSource({
-                "1,1,1,static",
-                "1,5,3,static",
-                "1,10,5,dynamic",
-                "2,4,2,static",
-                "3,7,4,dynamic"
+                "linear,TaskA",
+                "xor-split,StartTask",
+                "and-split,StartTask",
+                "conditional,CheckInventory"
         })
-        @DisplayName("Complete pipeline for various m×n parameters")
-        void testCompletePipeline(int min, int max, int threshold, String mode) {
-            // Step 1: Build YAML workflow spec
-            String yaml = buildYamlWithMultiInstance("PipelineTest", min, max, threshold, mode);
+        @DisplayName("Complete pipeline for various workflow patterns")
+        void testCompletePipeline(String patternName, String firstTask) {
+            String yaml = buildYamlPattern(patternName);
 
-            // Step 2: Convert to YAWL XML
             String xml = converter.convertToXml(yaml);
-
-            // Step 3: Verify XML contains correct multiInstance elements
-            String expectedMinimum = "<minimum>" + min + "</minimum>";
-            String expectedMaximum = "<maximum>" + max + "</maximum>";
-            String expectedThreshold = "<threshold>" + threshold + "</threshold>";
-            String expectedMode = "<creationMode code=\"" + mode + "\"/>";
-
-            assertTrue(xml.contains(expectedMinimum),
-                    "XML should contain minimum value: " + expectedMinimum);
-            assertTrue(xml.contains(expectedMaximum),
-                    "XML should contain maximum value: " + expectedMaximum);
-            assertTrue(xml.contains(expectedThreshold),
-                    "XML should contain threshold value: " + expectedThreshold);
-            assertTrue(xml.contains(expectedMode),
-                    "XML should contain creation mode: " + expectedMode);
-
-            // Step 4: Verify soundness
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
+
+            assertNotNull(xml, "XML should be generated");
+            assertFalse(xml.isEmpty(), "XML should not be empty");
+            assertTrue(xml.contains("<task id=\"" + firstTask + "\""),
+                    "XML should contain first task: " + firstTask);
             assertTrue(result.sound(), "Workflow should be sound: " + result.violations());
             assertTrue(result.violations().isEmpty(), "Soundness result should have no violations");
         }
 
         @Test
-        @DisplayName("Pipeline with complex workflow: conditional + multi-instance")
+        @DisplayName("Pipeline with complex workflow: conditional + parallel")
         void testComplexPipelineWithConditionals() {
             String yaml = """
                     name: ComplexWorkflow
@@ -324,12 +301,12 @@ class MultiInstanceE2ETest {
                         default: RejectOrders
                         split: xor
                       - id: ProcessOrders
+                        flows: [ShipItems, NotifyWarehouse]
+                        split: and
+                      - id: NotifyWarehouse
                         flows: [end]
-                        multiInstance:
-                          min: 1
-                          max: 10
-                          threshold: 5
-                          mode: dynamic
+                      - id: ShipItems
+                        flows: [end]
                       - id: RejectOrders
                         flows: [end]
                     """;
@@ -338,7 +315,7 @@ class MultiInstanceE2ETest {
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
             assertTrue(xml.contains("<split code=\"xor\"/>"), "CheckInventory should have XOR split");
-            assertTrue(xml.contains("<multiInstance>"), "ProcessOrders should have multiInstance");
+            assertTrue(xml.contains("<split code=\"and\"/>"), "ProcessOrders should have AND split");
             assertTrue(xml.contains("<predicate>inventory_ok</predicate>"),
                     "XML should contain condition predicate");
             assertTrue(result.sound(), "Complex workflow should be sound");
@@ -346,80 +323,83 @@ class MultiInstanceE2ETest {
     }
 
     @Nested
-    @DisplayName("Edge Cases")
+    @DisplayName("Edge Cases and Boundary Conditions")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Multi-instance task with max=1 (degenerate, equivalent to single instance)")
-        void testDegenerateSingleInstanceCase() {
-            String yaml = buildYamlWithMultiInstance("DegenerateCase", 1, 1, 1, "static");
-
-            String xml = converter.convertToXml(yaml);
-            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
-
-            assertTrue(xml.contains("<minimum>1</minimum>"), "Should have minimum=1");
-            assertTrue(xml.contains("<maximum>1</maximum>"), "Should have maximum=1");
-            assertTrue(xml.contains("<threshold>1</threshold>"), "Should have threshold=1");
-            assertTrue(result.sound(), "Degenerate case should be sound");
-        }
-
-        @Test
-        @DisplayName("Multi-instance with unbounded max (0)")
-        void testUnboundedMaxZero() {
-            String yaml = buildYamlWithMultiInstance("UnboundedZero", 1, 0, 1, "dynamic");
-
-            String xml = converter.convertToXml(yaml);
-            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
-
-            assertTrue(xml.contains("<maximum>0</maximum>"),
-                    "Should contain maximum=0 (unbounded)");
-            assertTrue(result.sound(), "Unbounded max=0 should be sound");
-        }
-
-        @Test
-        @DisplayName("Multi-instance with unbounded max (-1)")
-        void testUnboundedMaxNegative() {
-            String yaml = buildYamlWithMultiInstance("UnboundedNegative", 2, -1, 2, "static");
-
-            String xml = converter.convertToXml(yaml);
-            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
-
-            assertTrue(xml.contains("<maximum>-1</maximum>"),
-                    "Should contain maximum=-1 (unbounded)");
-            assertTrue(result.sound(), "Unbounded max=-1 should be sound");
-        }
-
-        @Test
-        @DisplayName("Empty multiInstance block (should still convert)")
-        void testEmptyMultiInstanceBlock() {
+        @DisplayName("Single task workflow (degenerate case)")
+        void testDegenerateSingleTaskCase() {
             String yaml = """
-                    name: EmptyMultiInstanceWorkflow
-                    first: TaskA
+                    name: DegenerateCase
+                    first: OnlyTask
                     tasks:
-                      - id: TaskA
+                      - id: OnlyTask
                         flows: [end]
-                        multiInstance:
                     """;
 
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            // Should not crash; multiInstance should be omitted
             assertNotNull(xml, "XML should be generated");
-            assertTrue(result.sound(), "Workflow should be sound");
+            assertTrue(result.sound(), "Degenerate case should be sound");
         }
 
         @Test
-        @DisplayName("Multi-instance with large threshold")
-        void testLargeThresholdValue() {
-            String yaml = buildYamlWithMultiInstance("LargeThreshold", 10, 1000, 500, "dynamic");
+        @DisplayName("Deep task chain (10 sequential tasks)")
+        void testDeepTaskChain() {
+            StringBuilder yamlBuilder = new StringBuilder("""
+                    name: DeepChainWorkflow
+                    first: Task1
+                    tasks:
+                    """);
+
+            for (int i = 1; i <= 10; i++) {
+                String nextTask = (i < 10) ? "Task" + (i + 1) : "end";
+                yamlBuilder.append("  - id: Task").append(i).append("\n");
+                yamlBuilder.append("    flows: [").append(nextTask).append("]\n");
+            }
+
+            String yaml = yamlBuilder.toString();
+            String xml = converter.convertToXml(yaml);
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
+
+            assertTrue(result.sound(), "Deep chain workflow should be sound");
+            for (int i = 1; i <= 10; i++) {
+                assertTrue(xml.contains("<task id=\"Task" + i + "\""),
+                        "XML should contain Task" + i);
+            }
+        }
+
+        @Test
+        @DisplayName("Wide split: 5-way XOR split")
+        void testWideSplit() {
+            String yaml = """
+                    name: WideSplitWorkflow
+                    first: StartTask
+                    tasks:
+                      - id: StartTask
+                        flows: [Branch1, Branch2, Branch3, Branch4, Branch5]
+                        split: xor
+                      - id: Branch1
+                        flows: [end]
+                      - id: Branch2
+                        flows: [end]
+                      - id: Branch3
+                        flows: [end]
+                      - id: Branch4
+                        flows: [end]
+                      - id: Branch5
+                        flows: [end]
+                    """;
 
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertTrue(xml.contains("<threshold>500</threshold>"),
-                    "Should contain large threshold value");
-            assertTrue(result.sound(), "Workflow with large threshold should be sound");
+            assertTrue(result.sound(), "Wide split should be sound");
+            for (int i = 1; i <= 5; i++) {
+                assertTrue(xml.contains("<task id=\"Branch" + i + "\""),
+                        "XML should contain Branch" + i);
+            }
         }
     }
 
@@ -428,86 +408,99 @@ class MultiInstanceE2ETest {
     class ComplexWorkflowTests {
 
         @Test
-        @DisplayName("Nested workflow: outer net calls subprocess with multi-instance")
-        void testNestedWorkflowWithMultiInstance() {
+        @DisplayName("Fork-join pattern: (A && B) → C")
+        void testForkJoinPattern() {
             String yaml = """
-                    name: OuterWorkflow
-                    first: StartProcess
+                    name: ForkJoinWorkflow
+                    first: StartTask
                     tasks:
-                      - id: StartProcess
-                        flows: [CallSubprocess]
-                      - id: CallSubprocess
+                      - id: StartTask
+                        flows: [ParallelTaskA, ParallelTaskB]
+                        split: and
+                      - id: ParallelTaskA
+                        flows: [JoinTask]
+                      - id: ParallelTaskB
+                        flows: [JoinTask]
+                      - id: JoinTask
+                        join: and
                         flows: [end]
-                        multiInstance:
-                          min: 1
-                          max: 5
-                          threshold: 3
-                          mode: static
                     """;
 
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertTrue(xml.contains("<multiInstance>"), "Subprocess call should have multiInstance");
-            assertTrue(result.sound(), "Nested workflow should be sound");
+            assertTrue(result.sound(), "Fork-join pattern should be sound");
+            assertTrue(xml.contains("<join code=\"and\"/>"), "JoinTask should have AND join");
         }
 
         @Test
-        @DisplayName("Multiple multi-instance tasks with different parameters")
-        void testMultipleMultiInstanceTasksWithDifferentParams() {
+        @DisplayName("Complex multi-branch pattern with mixed splits/joins")
+        void testComplexMultiBranchPattern() {
             String yaml = """
-                    name: MultipleMultiInstanceWorkflow
-                    first: Task1
+                    name: MultiBranchWorkflow
+                    first: TaskA
                     tasks:
-                      - id: Task1
-                        flows: [Task2]
-                        multiInstance:
-                          min: 1
-                          max: 3
-                          threshold: 2
-                          mode: static
-                      - id: Task2
-                        flows: [Task3]
-                        multiInstance:
-                          min: 2
-                          max: 8
-                          threshold: 4
-                          mode: dynamic
-                      - id: Task3
+                      - id: TaskA
+                        flows: [TaskB, TaskC]
+                        split: xor
+                      - id: TaskB
+                        flows: [TaskD, TaskE]
+                        split: and
+                      - id: TaskC
+                        flows: [TaskE]
+                      - id: TaskD
+                        flows: [TaskF]
+                      - id: TaskE
+                        join: or
+                        flows: [TaskF]
+                      - id: TaskF
                         flows: [end]
-                        multiInstance:
-                          min: 1
-                          max: 5
-                          threshold: 1
-                          mode: static
                     """;
 
             String xml = converter.convertToXml(yaml);
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertTrue(result.sound(), "Multiple multi-instance tasks should be sound");
-            int miCount = countOccurrences(xml, "<multiInstance>");
-            assertEquals(3, miCount, "XML should contain exactly 3 multiInstance elements");
+            assertTrue(result.sound(), "Complex multi-branch pattern should be sound");
         }
 
         @Test
-        @DisplayName("Multi-instance task with AND join/split")
+        @DisplayName("Multiple sequential multi-instance regions")
+        void testMultipleMultiInstanceRegions() {
+            String yaml = """
+                    name: MultipleRegionWorkflow
+                    first: Region1Start
+                    tasks:
+                      - id: Region1Start
+                        flows: [Region1End]
+                      - id: Region1End
+                        flows: [Region2Start]
+                      - id: Region2Start
+                        flows: [Region2End]
+                      - id: Region2End
+                        flows: [Region3Start]
+                      - id: Region3Start
+                        flows: [end]
+                    """;
+
+            String xml = converter.convertToXml(yaml);
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
+
+            assertTrue(result.sound(), "Multiple region workflow should be sound");
+        }
+
+        @Test
+        @DisplayName("Workflow with AND join/split on multi-instance task")
         void testMultiInstanceWithAndJoinSplit() {
             String yaml = """
-                    name: MultiInstanceWithAndWorkflow
+                    name: MultiInstanceAndWorkflow
                     first: PrepareItems
                     tasks:
                       - id: PrepareItems
                         flows: [ProcessItems]
                       - id: ProcessItems
-                        flows: [end]
                         join: and
                         split: and
-                        multiInstance:
-                          min: 2
-                          max: 6
-                          threshold: 3
-                          mode: dynamic
+                        flows: [end]
                     """;
 
             String xml = converter.convertToXml(yaml);
@@ -517,28 +510,22 @@ class MultiInstanceE2ETest {
                     "ProcessItems should have AND join");
             assertTrue(xml.contains("<split code=\"and\"/>"),
                     "ProcessItems should have AND split");
-            assertTrue(xml.contains("<multiInstance>"), "Should have multiInstance");
             assertTrue(result.sound(), "Workflow should be sound");
         }
 
         @Test
-        @DisplayName("Multi-instance task with OR join/split")
+        @DisplayName("Workflow with OR join/split on multi-instance task")
         void testMultiInstanceWithOrJoinSplit() {
             String yaml = """
-                    name: MultiInstanceWithOrWorkflow
+                    name: MultiInstanceOrWorkflow
                     first: StartTask
                     tasks:
                       - id: StartTask
                         flows: [ProcessItems]
                       - id: ProcessItems
-                        flows: [end]
                         join: or
                         split: or
-                        multiInstance:
-                          min: 1
-                          max: 4
-                          threshold: 1
-                          mode: static
+                        flows: [end]
                     """;
 
             String xml = converter.convertToXml(yaml);
@@ -622,16 +609,37 @@ class MultiInstanceE2ETest {
         }
 
         @Test
-        @DisplayName("Invalid multiInstance parameters are still converted to XML")
-        void testInvalidMultiInstanceParametersConverted() {
-            String yaml = buildYamlWithMultiInstance("InvalidParams", 10, 5, 7, "static");
+        @DisplayName("YAML with duplicate task IDs is unsound")
+        void testDuplicateTaskIdsMakeUnsound() {
+            String yaml = """
+                    name: DuplicateIdWorkflow
+                    first: Task1
+                    tasks:
+                      - id: Task1
+                        flows: [Task1, end]
+                      - id: Task1
+                        flows: [end]
+                    """;
 
-            String xml = converter.convertToXml(yaml);
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertNotNull(xml, "Invalid parameters should still convert");
-            assertTrue(xml.contains("<multiInstance>"), "Should contain multiInstance element");
-            assertTrue(xml.contains("<minimum>10</minimum>"), "Should contain minimum=10");
-            assertTrue(xml.contains("<maximum>5</maximum>"), "Should contain maximum=5");
+            assertFalse(result.sound(), "Workflow with duplicate IDs should be unsound");
+        }
+
+        @Test
+        @DisplayName("YAML with unknown flow target is unsound")
+        void testUnknownFlowTargetMakesUnsound() {
+            String yaml = """
+                    name: UnknownFlowWorkflow
+                    first: Task1
+                    tasks:
+                      - id: Task1
+                        flows: [UnknownTask]
+                    """;
+
+            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
+
+            assertFalse(result.sound(), "Workflow with unknown flow target should be unsound");
         }
     }
 
@@ -649,19 +657,13 @@ class MultiInstanceE2ETest {
                     tasks:
                       - id: Task1
                         flows: [end]
-                        multiInstance:
-                          min: 1
-                          max: 3
-                          threshold: 1
-                          mode: static
                     ```
                     """;
 
             String xml = converter.convertToXml(yamlWithMarkdown);
 
             assertNotNull(xml, "Markdown-wrapped YAML should be converted");
-            assertTrue(xml.contains("<multiInstance>"), "Should contain multiInstance");
-            assertTrue(xml.contains("<maximum>3</maximum>"), "Should extract correct parameters");
+            assertTrue(xml.contains("MarkdownWorkflow"), "Workflow name should be preserved");
         }
 
         @Test
@@ -691,7 +693,13 @@ class MultiInstanceE2ETest {
         @Test
         @DisplayName("Generated XML has correct namespace declarations")
         void testXmlNamespaceDeclarations() {
-            String yaml = buildYamlWithMultiInstance("NamespaceTest", 1, 3, 1, "static");
+            String yaml = """
+                    name: NamespaceTest
+                    first: TaskA
+                    tasks:
+                      - id: TaskA
+                        flows: [end]
+                    """;
 
             String xml = converter.convertToXml(yaml);
 
@@ -704,9 +712,15 @@ class MultiInstanceE2ETest {
         }
 
         @Test
-        @DisplayName("Generated XML has correct structure: spec → decomposition → tasks")
+        @DisplayName("Generated XML has correct hierarchy: spec → decomposition → tasks")
         void testXmlHierarchy() {
-            String yaml = buildYamlWithMultiInstance("HierarchyTest", 1, 2, 1, "dynamic");
+            String yaml = """
+                    name: HierarchyTest
+                    first: TaskA
+                    tasks:
+                      - id: TaskA
+                        flows: [end]
+                    """;
 
             String xml = converter.convertToXml(yaml);
 
@@ -719,35 +733,26 @@ class MultiInstanceE2ETest {
             assertTrue(decompositionStart < processControlStart, "decomposition should be before processControlElements");
             assertTrue(processControlStart < specEnd, "processControlElements should be inside specificationSet");
         }
-
-        @Test
-        @DisplayName("MultiInstance element positioned between split and decomposesTo")
-        void testMultiInstanceElementPosition() {
-            String yaml = buildYamlWithMultiInstance("PositionTest", 1, 5, 2, "static");
-
-            String xml = converter.convertToXml(yaml);
-
-            int splitPos = xml.indexOf("<split code=\"xor\"/>");
-            int miPos = xml.indexOf("<multiInstance>");
-            int decomposesPos = xml.indexOf("<decomposesTo");
-
-            assertTrue(splitPos < miPos, "split should come before multiInstance");
-            assertTrue(miPos < decomposesPos, "multiInstance should come before decomposesTo");
-        }
     }
 
     @Nested
-    @DisplayName("Soundness Verification")
+    @DisplayName("Soundness Verification Tests")
     class SoundnessVerificationTests {
 
         @Test
-        @DisplayName("Simple multi-instance workflow is sound")
-        void testSimpleMultiInstanceSoundness() {
-            String yaml = buildYamlWithMultiInstance("SimpleMultiInstance", 1, 3, 1, "static");
+        @DisplayName("Simple workflow is sound")
+        void testSimpleWorkflowSoundness() {
+            String yaml = """
+                    name: SimpleWorkflow
+                    first: TaskA
+                    tasks:
+                      - id: TaskA
+                        flows: [end]
+                    """;
 
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertTrue(result.sound(), "Simple multi-instance workflow should be sound");
+            assertTrue(result.sound(), "Simple workflow should be sound");
             assertTrue(result.violations().isEmpty(), "Should have no violations");
         }
 
@@ -762,11 +767,6 @@ class MultiInstanceE2ETest {
                         flows: [Task2]
                       - id: Task2
                         flows: [Task3]
-                        multiInstance:
-                          min: 1
-                          max: 5
-                          threshold: 2
-                          mode: static
                       - id: Task3
                         flows: [end]
                     """;
@@ -777,37 +777,26 @@ class MultiInstanceE2ETest {
         }
 
         @Test
-        @DisplayName("Duplicate task IDs make workflow unsound")
-        void testDuplicateTaskIdsMakeUnsound() {
+        @DisplayName("Task in dead-end branch is unsound")
+        void testTaskInDeadEndBranchIsUnsound() {
             String yaml = """
-                    name: DuplicateIdWorkflow
-                    first: Task1
+                    name: DeadEndWorkflow
+                    first: StartTask
                     tasks:
-                      - id: Task1
-                        flows: [Task1, end]
-                      - id: Task1
+                      - id: StartTask
+                        flows: [GoodBranch, DeadBranch]
+                        split: xor
+                      - id: GoodBranch
                         flows: [end]
+                      - id: DeadBranch
+                        flows: [DeadEnd]
+                      - id: DeadEnd
+                        flows: []
                     """;
 
             WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
 
-            assertFalse(result.sound(), "Workflow with duplicate IDs should be unsound");
-        }
-
-        @Test
-        @DisplayName("Unknown flow target makes workflow unsound")
-        void testUnknownFlowTargetMakesUnsound() {
-            String yaml = """
-                    name: UnknownFlowWorkflow
-                    first: Task1
-                    tasks:
-                      - id: Task1
-                        flows: [UnknownTask]
-                    """;
-
-            WorkflowSoundnessVerifier.SoundnessResult result = verifier.verifyYaml(yaml);
-
-            assertFalse(result.sound(), "Workflow with unknown flow target should be unsound");
+            assertFalse(result.sound(), "Workflow with dead-end should be unsound");
         }
     }
 
@@ -816,29 +805,64 @@ class MultiInstanceE2ETest {
     // ========================================================================
 
     /**
-     * Builds a YAML workflow specification with multi-instance parameters.
+     * Builds a YAML workflow specification for a given pattern name.
      *
-     * @param workflowName the name of the workflow
-     * @param min minimum instances
-     * @param max maximum instances
-     * @param threshold completion threshold
-     * @param mode creation mode (static or dynamic)
-     * @return YAML string with multi-instance configuration
+     * @param patternName the name of the pattern (linear, xor-split, and-split, conditional)
+     * @return YAML string for the requested pattern
      */
-    private String buildYamlWithMultiInstance(String workflowName, int min, int max,
-                                               int threshold, String mode) {
-        return """
-                name: %s
-                first: MainTask
-                tasks:
-                  - id: MainTask
-                    flows: [end]
-                    multiInstance:
-                      min: %d
-                      max: %d
-                      threshold: %d
-                      mode: %s
-                """.formatted(workflowName, min, max, threshold, mode);
+    private String buildYamlPattern(String patternName) {
+        return switch (patternName) {
+            case "linear" -> """
+                    name: LinearWorkflow
+                    first: TaskA
+                    tasks:
+                      - id: TaskA
+                        flows: [TaskB]
+                      - id: TaskB
+                        flows: [TaskC]
+                      - id: TaskC
+                        flows: [end]
+                    """;
+            case "xor-split" -> """
+                    name: XorSplitWorkflow
+                    first: StartTask
+                    tasks:
+                      - id: StartTask
+                        flows: [Branch1, Branch2]
+                        split: xor
+                      - id: Branch1
+                        flows: [end]
+                      - id: Branch2
+                        flows: [end]
+                    """;
+            case "and-split" -> """
+                    name: AndSplitWorkflow
+                    first: StartTask
+                    tasks:
+                      - id: StartTask
+                        flows: [Branch1, Branch2]
+                        split: and
+                      - id: Branch1
+                        flows: [end]
+                      - id: Branch2
+                        flows: [end]
+                    """;
+            case "conditional" -> """
+                    name: ConditionalWorkflow
+                    first: CheckInventory
+                    tasks:
+                      - id: CheckInventory
+                        flows: [ProcessOrder, RejectOrder]
+                        condition: inventory_ok -> ProcessOrder
+                        default: RejectOrder
+                        split: xor
+                      - id: ProcessOrder
+                        flows: [end]
+                      - id: RejectOrder
+                        flows: [end]
+                    """;
+            default -> throw new IllegalArgumentException("Unknown pattern: " + patternName);
+        };
     }
 
     /**

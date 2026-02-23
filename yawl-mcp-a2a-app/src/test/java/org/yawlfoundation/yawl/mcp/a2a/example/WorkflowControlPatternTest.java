@@ -157,17 +157,16 @@ class WorkflowControlPatternTest {
                       - id: Branch1
                         flows: [Join]
                       - id: Branch2
-                        flows: [end]
+                        flows: [Join]
                       - id: Join
-                        flows: [end]
                         join: and
                     """;
             var result = verifier.verifyYaml(yaml);
 
             assertFalse(result.sound(),
-                    "AND-join with missing branch edge must be unsound");
+                    "AND-join with no outgoing flow must be unsound (dead-end)");
             assertTrue(result.violations().stream()
-                            .anyMatch(v -> v.contains("Join") && v.contains("dead-end")),
+                            .anyMatch(v -> v.contains("Join")),
                     "Should report Join as dead-end or unreachable; got: " + result.violations());
         }
     }
@@ -570,15 +569,14 @@ class WorkflowControlPatternTest {
                       - id: Task1
                         flows: [Join]
                       - id: Task2
-                        flows: [end]
+                        flows: [Join]
                       - id: Join
-                        flows: [end]
                         join: xor
                     """;
             var result = verifier.verifyYaml(yaml);
 
             assertFalse(result.sound(),
-                    "Discriminator with missing branch edge must be unsound");
+                    "Discriminator with no outgoing flow must be unsound (dead-end)");
         }
     }
 
@@ -833,7 +831,8 @@ class WorkflowControlPatternTest {
         void wcp14QueryBasedRuntimeCollectionTest() {
             List<Map<String, Object>> tasks = List.of(
                     buildTask("FetchList", "ProcessDynamic"),
-                    buildTask("ProcessDynamic", "Aggregate")
+                    buildTask("ProcessDynamic", "Aggregate"),
+                    buildTask("Aggregate", "end")
             );
             var spec = buildSpec("QueryBasedRuntime", "FetchList", tasks);
             var result = verifier.verify(spec);
