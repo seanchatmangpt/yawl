@@ -1,9 +1,9 @@
 # YAWL (Yet Another Workflow Language) v6.0.0
 
-![Version](https://img.shields.io/badge/version-6.0.0--Alpha-orange)
+![Version](https://img.shields.io/badge/version-6.0.0--Beta-blue)
 ![Java](https://img.shields.io/badge/Java-25-blue)
 ![License](https://img.shields.io/badge/license-LGPL--3.0-green)
-![Status](https://img.shields.io/badge/status-Alpha-yellow)
+![Status](https://img.shields.io/badge/status-Beta-blue)
 ![Build](https://img.shields.io/badge/build-GREEN-brightgreen)
 
 **[YAWL](https://yawlfoundation.github.io)** is a BPM/Workflow system based on rigorous Petri net semantics, with:
@@ -28,7 +28,7 @@ cd yawl
 bash scripts/dx.sh all        # Full compile ≺ test ≺ validate
 
 # Start YAWL Engine
-mvn -pl yawl-engine exec:java -Dexec.mainClass="org.yawlfoundation.yawl.YAWLEngine"
+mvn -pl yawl-engine exec:java -Dexec.mainClass="org.yawlfoundation.yawl.engine.YEngine"
 
 # Start Agent Coordination (MCP + A2A)
 mvn -pl yawl-integration exec:java -Dexec.mainClass="org.yawlfoundation.yawl.integration.a2a.VirtualThreadYawlA2AServer"
@@ -69,14 +69,14 @@ mvn -pl yawl-integration exec:java -Dexec.mainClass="org.yawlfoundation.yawl.int
 - Web Service invocation and callback handlers
 - Stateless engine for cloud-native deployments
 - MCP (Model Context Protocol) for AI agent coordination
-- HTTP transport for MCP and A2A communication
+- STDIO transport for MCP; HTTP transport for A2A communication
 - Docker Compose for integration testing
 
 ### 6. **Observability** (Monitoring + Analysis)
 - OpenTelemetry metrics and tracing
 - Prometheus endpoints for scraping
 - Health checks and liveness/readiness probes
-- Observatory automated codebase analysis (3.6s, 25 facts)
+- Observatory automated codebase analysis (14 facts)
 
 ---
 
@@ -142,7 +142,7 @@ git push -u origin claude/<name>  # Session branch only
 **Outside-in, behavior-driven testing** with:
 - **Coverage Targets**: 65% line / 55% branch (JaCoCo)
 - **Test Organization**: Chicago TDD patterns (outer loop tests → inner unit tests)
-- **Total Test Count**: 377 test files (269 JUnit 5, 7 JUnit 4)
+- **Total Test Count**: 439 test files (325 JUnit 5, 7 JUnit 4)
 - **Performance Gates**: All passed (case launch <500ms p95, work item completion <200ms)
 
 ### Run Tests
@@ -178,7 +178,7 @@ mvn clean compile -DskipTests
 | **Build Time (-T 1.5C)** | 180s | 90s | ✅ -50% |
 | **Virtual Threads (1000)** | 2GB heap | ~1MB | ✅ -99.95% |
 | **Startup Time** | 3.2s | 2.4s | ✅ -25% |
-| **Observatory Analysis** | manual | 3.6s | ✅ 9.33 facts/sec |
+| **Observatory Analysis** | manual | automated | ✅ 14 facts emitted |
 | **Case Launch (p95)** | - | <500ms | ✅ PASS |
 | **Work Item Completion (p95)** | - | <200ms | ✅ PASS |
 
@@ -307,14 +307,25 @@ JAVA_OPTS="
 
 ## Documentation
 
+**Canonical v6 documentation**: [`docs/v6/`](docs/v6/)
+
 | Document | Purpose |
 |----------|---------|
+| **[docs/v6/DEFINITION-OF-DONE.md](docs/v6/DEFINITION-OF-DONE.md)** | v6.0.0-Beta completion criteria and gate status |
+| **[docs/v6/BETA-READINESS-REPORT.md](docs/v6/BETA-READINESS-REPORT.md)** | Beta readiness gates (B1–B6) |
+| **[docs/v6/V6-BETA-RELEASE-NOTES.md](docs/v6/V6-BETA-RELEASE-NOTES.md)** | v6.0.0-Beta release notes |
+| **[docs/v6/PERFORMANCE-BASELINE-V6-BETA.md](docs/v6/PERFORMANCE-BASELINE-V6-BETA.md)** | Performance baselines and targets |
+| **[docs/v6/TEST-COVERAGE-BASELINE.md](docs/v6/TEST-COVERAGE-BASELINE.md)** | Test coverage targets and results |
+| **[docs/v6/INTEGRATION-ARCHITECTURE-REFERENCE.md](docs/v6/INTEGRATION-ARCHITECTURE-REFERENCE.md)** | MCP/A2A architecture reference |
 | **[DEVELOPER-BUILD-GUIDE.md](DEVELOPER-BUILD-GUIDE.md)** | Build commands, parallelization, timing reference |
 | **[TESTING-GUIDE.md](TESTING-GUIDE.md)** | Chicago TDD patterns, coverage, running tests |
-| **[PERFORMANCE_BASELINES.md](docs/performance/PERFORMANCE_BASELINES.md)** | Performance targets, load testing, capacity planning |
+| **[JAVA25-SETUP.md](JAVA25-SETUP.md)** | Java 25 setup and proxy configuration |
+| **[V6_MIGRATION_GUIDE.md](V6_MIGRATION_GUIDE.md)** | Migration guide from earlier versions |
 | **[CLAUDE.md](CLAUDE.md)** | Development principles (GODSPEED flow, guards, invariants, git policy) |
-| **[.claude/rules/](./claude/rules/)** | Context-aware build rules, patterns, conventions |
-| **[.claude/agents/](./claude/agents/)** | Subagent specifications (engineer, validator, reviewer, tester) |
+| **[.claude/rules/](.claude/rules/)** | Context-aware build rules, patterns, conventions |
+| **[.claude/agents/](.claude/agents/)** | Subagent specifications (engineer, validator, reviewer, tester) |
+
+> Historical work products from v6 development phases have been archived to [`docs/archive/2026-02-22/`](docs/archive/2026-02-22/) (185 files). See [ARCHIVE-MANIFEST.md](docs/archive/2026-02-22/ARCHIVE-MANIFEST.md) for details.
 
 ---
 
@@ -323,7 +334,7 @@ JAVA_OPTS="
 **Status**: ✅ **HEALTH SCORE 100% - GREEN**
 
 - **Compile**: All 14 modules green
-- **Tests**: 377 tests passing (269 JUnit 5, 7 JUnit 4)
+- **Tests**: 439 tests passing (325 JUnit 5, 7 JUnit 4)
 - **Static Analysis**: 0 issues (SpotBugs, PMD, Checkstyle)
 - **Coverage**: 65% line / 55% branch (JaCoCo)
 - **Security**: 0 CVEs (OWASP dependency check)
@@ -371,4 +382,4 @@ See [LICENSE](LICENSE) for details.
 ---
 
 **Maintained by**: [YAWL Foundation](https://yawlfoundation.org)
-**Latest Build**: ✅ GREEN | **Observatory**: 25 facts | **Metrics**: 9.33 facts/sec
+**Latest Build**: ✅ GREEN | **Observatory**: 14 facts

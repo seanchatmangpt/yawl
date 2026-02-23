@@ -158,18 +158,34 @@ jobs:
 
       - name: Verify Secret Management Setup
         id: secrets
+        env:
+          HAS_DATABASE_URL: ${{ secrets.DATABASE_URL != '' }}
+          HAS_ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY != '' }}
+          HAS_API_SIGNING_KEY: ${{ secrets.API_SIGNING_KEY != '' }}
         run: |
           echo "Verifying secret management..."
 
-          # Check for required secrets in GitHub
-          SECRETS_REQUIRED="DATABASE_URL ENCRYPTION_KEY API_SIGNING_KEY"
+          MISSING_SECRETS=0
 
-          for secret in $SECRETS_REQUIRED; do
-            if [ -z "$(eval echo \${{ secrets[$secret] }})" ] && [ "${{ github.event.inputs.deployment_env }}" = "production" ]; then
-              echo "ERROR: Required secret not found: $secret"
-              exit 1
-            fi
-          done
+          if [ "$HAS_DATABASE_URL" != "true" ] && [ "${{ github.event.inputs.deployment_env }}" = "production" ]; then
+            echo "ERROR: Required secret not found: DATABASE_URL"
+            MISSING_SECRETS=$((MISSING_SECRETS + 1))
+          fi
+
+          if [ "$HAS_ENCRYPTION_KEY" != "true" ] && [ "${{ github.event.inputs.deployment_env }}" = "production" ]; then
+            echo "ERROR: Required secret not found: ENCRYPTION_KEY"
+            MISSING_SECRETS=$((MISSING_SECRETS + 1))
+          fi
+
+          if [ "$HAS_API_SIGNING_KEY" != "true" ] && [ "${{ github.event.inputs.deployment_env }}" = "production" ]; then
+            echo "ERROR: Required secret not found: API_SIGNING_KEY"
+            MISSING_SECRETS=$((MISSING_SECRETS + 1))
+          fi
+
+          if [ $MISSING_SECRETS -gt 0 ]; then
+            echo "ERROR: $MISSING_SECRETS required secrets are missing"
+            exit 1
+          fi
 
           echo "secrets_ok=true" >> $GITHUB_OUTPUT
           echo "All required secrets verified"
@@ -179,7 +195,6 @@ jobs:
           mvn clean package \
             --batch-mode \
             --no-transfer-progress \
-            --enable-preview \
             -Pprod \
             -DskipTests=false
 

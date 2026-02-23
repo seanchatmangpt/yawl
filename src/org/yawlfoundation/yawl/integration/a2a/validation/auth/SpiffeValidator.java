@@ -15,12 +15,15 @@ package org.yawlfoundation.yawl.integration.a2a.validation.auth;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.integration.a2a.validation.SchemaValidator;
+import org.yawlfoundation.yawl.integration.a2a.validation.SchemaValidator.ValidationResult;
 
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.*;
 import java.time.Duration;
 import java.time.Instant;

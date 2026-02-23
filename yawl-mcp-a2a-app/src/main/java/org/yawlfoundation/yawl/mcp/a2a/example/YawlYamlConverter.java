@@ -209,6 +209,9 @@ public class YawlYamlConverter {
             xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
             xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
 
+            // Multi-instance configuration (if present)
+            appendMultiInstanceIfPresent(xml, task);
+
             // Decomposition
             xml.append("          <decomposesTo id=\"").append(escapeXml(taskId))
                .append("Decomposition\"/>\n");
@@ -285,6 +288,56 @@ public class YawlYamlConverter {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&apos;");
+    }
+
+    /**
+     * Appends a multiInstance element to the XML if the task has multiInstance configuration.
+     *
+     * @param xml the XML builder
+     * @param task the task map that may contain a multiInstance key
+     */
+    @SuppressWarnings("unchecked")
+    private void appendMultiInstanceIfPresent(StringBuilder xml, Map<String, Object> task) {
+        Object multiInstanceObj = task.get("multiInstance");
+        if (!(multiInstanceObj instanceof Map)) {
+            return;
+        }
+
+        Map<String, Object> mi = (Map<String, Object>) multiInstanceObj;
+        Object minObj = mi.get("min");
+        Object maxObj = mi.get("max");
+        Object thresholdObj = mi.get("threshold");
+        Object modeObj = mi.get("mode");
+
+        // Only generate multiInstance element if at least one parameter is present
+        if (minObj == null && maxObj == null && thresholdObj == null && modeObj == null) {
+            return;
+        }
+
+        xml.append("          <multiInstance>\n");
+
+        if (minObj != null) {
+            xml.append("            <minimum>").append(escapeXml(minObj.toString()))
+               .append("</minimum>\n");
+        }
+
+        if (maxObj != null) {
+            xml.append("            <maximum>").append(escapeXml(maxObj.toString()))
+               .append("</maximum>\n");
+        }
+
+        if (thresholdObj != null) {
+            xml.append("            <threshold>").append(escapeXml(thresholdObj.toString()))
+               .append("</threshold>\n");
+        }
+
+        if (modeObj != null) {
+            String mode = modeObj.toString();
+            xml.append("            <creationMode code=\"").append(escapeXml(mode))
+               .append("\"/>\n");
+        }
+
+        xml.append("          </multiInstance>\n");
     }
 
     /**

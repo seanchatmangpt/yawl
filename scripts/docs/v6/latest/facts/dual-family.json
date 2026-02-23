@@ -1,0 +1,26 @@
+{
+  "commit": "593a8fc",
+  "duplication_analysis": {
+    "note": "Stateful and stateless families share some code paths through ../src mechanism",
+    "status": "requires_review"
+  },
+  "families": {
+    "stateful": {
+      "class_count": 0,
+      "package": "org.yawlfoundation.yawl.engine",
+      "primary_classes": []
+    },
+    "stateless": {
+      "class_count": 0,
+      "package": "org.yawlfoundation.yawl.stateless",
+      "primary_classes": []
+    }
+  },
+  "generated_at": "2026-02-22T08:15:58Z",
+  "migration_notes": [
+    "Stateful engine (YEngine) is the original implementation",
+    "Stateless engine (YStatelessEngine) is designed for cloud-native deployments",
+    "Both share domain model via full_shared source strategy"
+  ],
+  "shared_interfaces": []
+}

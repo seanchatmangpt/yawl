@@ -79,6 +79,15 @@ public class SpecificationOptimizer {
     }
 
     /**
+     * Creates a SpecificationOptimizer using the official Z.AI SDK (reads ZAI_API_KEY from env).
+     *
+     * @return a SpecificationOptimizer with official SDK backend
+     */
+    public static SpecificationOptimizer create() {
+        return new SpecificationOptimizer(SpecificationGenerator.officialSdkClient());
+    }
+
+    /**
      * Analyzes a specification and returns optimization suggestions.
      *
      * @param spec the specification to analyze
@@ -234,7 +243,7 @@ public class SpecificationOptimizer {
 
     private String serializeSpecFull(YSpecification spec) {
         try {
-            return org.yawlfoundation.yawl.marshal.YMarshal.marshal(spec);
+            return org.yawlfoundation.yawl.unmarshal.YMarshal.marshal(spec);
         } catch (Exception e) {
             LOGGER.warning("Failed to marshal spec, using simplified format: " + e.getMessage());
             return "<specification id=\"" + spec.getURI() + "\">...</specification>";

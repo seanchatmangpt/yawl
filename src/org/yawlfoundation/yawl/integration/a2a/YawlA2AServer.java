@@ -29,7 +29,8 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.a2a.skills.ProcessMiningSkill;
+// ZaiFunctionService is dynamically loaded via reflection to avoid dependency conflicts
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
@@ -89,8 +90,10 @@ public class YawlA2AServer {
     private final String yawlUsername;
     private final String yawlPassword;
     private final int port;
-    private final ZaiFunctionService zaiFunctionService;
+    private final Object zaiFunctionService;  // ZaiFunctionService via reflection
+    private final java.lang.reflect.Method zaiProcessMethod;  // Cached method
     private final A2AAuthenticationProvider authProvider;
+    private final ProcessMiningSkill processMiningSkill;
 
     // Handoff services
     private HandoffProtocol handoffProtocol;
@@ -141,13 +144,30 @@ public class YawlA2AServer {
         this.port = port;
         this.authProvider = authProvider;
 
+        // Load ZaiFunctionService via reflection since it may not be available
         String zaiApiKey = System.getenv("ZAI_API_KEY");
         if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
-            this.zaiFunctionService = new ZaiFunctionService(
-                zaiApiKey, yawlEngineUrl, username, password);
+            Object service = null;
+            java.lang.reflect.Method method = null;
+            try {
+                Class<?> zaiClass = Class.forName("org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService");
+                service = zaiClass.getConstructor(String.class, String.class, String.class, String.class)
+                    .newInstance(zaiApiKey, yawlEngineUrl, username, password);
+                method = zaiClass.getMethod("processWithFunctions", String.class);
+                _logger.info("ZaiFunctionService loaded successfully");
+            } catch (ClassNotFoundException e) {
+                _logger.warn("ZaiFunctionService not available - ZAI features disabled");
+            } catch (ReflectiveOperationException e) {
+                _logger.warn("Failed to instantiate ZaiFunctionService: {}", e.getMessage());
+            }
+            this.zaiFunctionService = service;
+            this.zaiProcessMethod = method;
         } else {
             this.zaiFunctionService = null;
+            this.zaiProcessMethod = null;
         }
+
+        this.processMiningSkill = new ProcessMiningSkill(yawlEngineUrl, username, password);
     }
 
     /**
@@ -393,6 +413,21 @@ public class YawlA2AServer {
                     ))
                     .inputModes(List.of("text"))
                     .outputModes(List.of("text"))
+                    .build(),
+                AgentSkill.builder()
+                    .id("process_mining_analyze")
+                    .name("Process Mining Analyze")
+                    .description("Analyze YAWL workflow event logs for performance, variants, conformance, "
+                        + "and social network patterns. Supports XES export, performance metrics, "
+                        + "variant discovery, and handover-of-work analysis.")
+                    .tags(List.of("process-mining", "analytics", "xes", "performance", "variants"))
+                    .examples(List.of(
+                        "Analyze performance of specification 'OrderProcessing'",
+                        "Show top variants for workflow 'InvoiceApproval'",
+                        "Export XES event log for specification 'Procurement'"
+                    ))
+                    .inputModes(List.of("text"))
+                    .outputModes(List.of("text"))
                     .build()
             ))
             .build();
@@ -446,9 +481,9 @@ public class YawlA2AServer {
         }
 
         private String processWorkflowRequest(String userText) throws IOException {
-            if (zaiFunctionService != null) {
+            if (zaiFunctionService != null && zaiProcessMethod != null) {
                 try {
-                    return zaiFunctionService.processWithFunctions(userText);
+                    return (String) zaiProcessMethod.invoke(zaiFunctionService, userText);
                 } catch (Exception e) {
                     return "Z.AI processing error: " + e.getMessage();
                 }
@@ -476,6 +511,12 @@ public class YawlA2AServer {
 
             if (lower.contains("cancel") || lower.contains("stop")) {
                 return handleCancelCase(userText);
+            }
+
+            if (lower.contains("mine") || lower.contains("analyze") || lower.contains("analyse")
+                    || lower.contains("xes") || lower.contains("variant") || lower.contains("performance")
+                    || lower.contains("social network") || lower.contains("handover")) {
+                return handleProcessMiningRequest(userText);
             }
 
             return handleListSpecifications();
@@ -600,6 +641,54 @@ public class YawlA2AServer {
             return "Case " + caseId + " cancelled successfully.";
         }
 
+        private String handleProcessMiningRequest(String userText) {
+            String lower = userText.toLowerCase();
+            String specIdentifier = extractSpecIdentifier(userText);
+
+            if (specIdentifier == null) {
+                return "Please specify a workflow specification identifier to analyze. " +
+                    "Example: 'Analyze OrderProcessing' or 'Mine InvoiceApproval'";
+            }
+
+            String analysisType = "performance";
+            if (lower.contains("xes")) {
+                analysisType = "xes";
+            } else if (lower.contains("variant")) {
+                analysisType = "variants";
+            } else if (lower.contains("social") || lower.contains("handover")) {
+                analysisType = "social_network";
+            } else if (lower.contains("full") || (lower.contains("mine") && lower.contains("all"))) {
+                analysisType = "full";
+            }
+
+            Map<String, String> params = new HashMap<>();
+            params.put("specIdentifier", specIdentifier);
+            params.put("specVersion", "0.1");
+            params.put("specUri", specIdentifier);
+            params.put("analysisType", analysisType);
+            params.put("withData", "false");
+
+            SkillRequest skillRequest = new SkillRequest(
+                processMiningSkill.getId(),
+                params
+            );
+
+            SkillResult result = processMiningSkill.execute(skillRequest);
+
+            if (result.isSuccess()) {
+                Object message = result.get("message");
+                if (message != null) {
+                    return message.toString();
+                }
+                return result.getData().values().stream()
+                    .findFirst()
+                    .map(Object::toString)
+                    .orElse("Analysis completed");
+            } else {
+                return "Process mining analysis failed: " + result.getError();
+            }
+        }
+
         private String extractTextFromMessage(Message message) {
             if (message == null || message.parts() == null) {
                 throw new IllegalArgumentException("Message has no content parts");
@@ -646,6 +735,32 @@ public class YawlA2AServer {
             if (m.find()) {
                 return m.group(1);
             }
+            return null;
+        }
+
+        private String extractSpecIdentifier(String text) {
+            String[] quoted = text.split("'");
+            if (quoted.length >= 2) {
+                return quoted[1];
+            }
+
+            String lower = text.toLowerCase();
+            String[] parts = text.split("\\s+");
+
+            for (int i = 0; i < parts.length; i++) {
+                String part = parts[i].toLowerCase();
+                if (("analyze".equals(part) || "analyse".equals(part) ||
+                     "mine".equals(part) || "export".equals(part)) && i + 1 < parts.length) {
+                    String candidate = parts[i + 1];
+                    if (!candidate.toLowerCase().matches("(performance|variant|social|xes|full|network|all)")) {
+                        return candidate;
+                    }
+                    if (i + 2 < parts.length) {
+                        return parts[i + 2];
+                    }
+                }
+            }
+
             return null;
         }
     }
@@ -748,14 +863,26 @@ public class YawlA2AServer {
     private void handleHandoffMessage(HttpExchange exchange, ServerCallContext callContext, String body) {
         try {
             // Parse the incoming A2A message
-            io.a2a.spec.Message message = io.a2a.spec.Message.fromJson(body);
+            io.a2a.spec.Message message;
+            try {
+                message = io.a2a.spec.Message.fromJson(body);
+            } catch (Exception e) {
+                sendHandoffError(exchange, 400, "Invalid message format: " + e.getMessage());
+                return;
+            }
 
             // Extract text content to check for handoff prefix
-            String messageText = message.parts().stream()
-                .filter(part -> part instanceof io.a2a.spec.TextPart)
-                .map(part -> ((io.a2a.spec.TextPart) part).text())
-                .findFirst()
-                .orElse("");
+            String messageText;
+            try {
+                messageText = message.parts().stream()
+                    .filter(part -> part instanceof io.a2a.spec.TextPart)
+                    .map(part -> ((io.a2a.spec.TextPart) part).text())
+                    .findFirst()
+                    .orElse("");
+            } catch (Exception e) {
+                sendHandoffError(exchange, 400, "Message has no text parts");
+                return;
+            }
 
             if (!messageText.startsWith("YAWL_HANDOFF:")) {
                 sendHandoffError(exchange, 400, "Not a handoff message");
@@ -765,10 +892,21 @@ public class YawlA2AServer {
             // Extract work item ID from handoff message
             String workItemId = extractWorkItemIdFromHandoff(messageText);
 
-            // Validate permissions
-            if (!callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_WORKITEM_MANAGE) &&
-                !callContext.getPrincipal().hasPermission(AuthenticatedPrincipal.PERM_ALL)) {
-                sendHandoffError(exchange, 403, "Insufficient permissions");
+            // Validate permissions - using reflection for compatibility with different A2A SDK versions
+            try {
+                java.lang.reflect.Method getPrincipalMethod = callContext.getClass().getMethod("getPrincipal");
+                Object principal = getPrincipalMethod.invoke(callContext);
+                java.lang.reflect.Method hasPermissionMethod = principal.getClass().getMethod("hasPermission", String.class);
+
+                boolean hasManagePermission = (Boolean) hasPermissionMethod.invoke(principal, AuthenticatedPrincipal.PERM_WORKITEM_MANAGE);
+                boolean hasAllPermission = (Boolean) hasPermissionMethod.invoke(principal, AuthenticatedPrincipal.PERM_ALL);
+
+                if (!hasManagePermission && !hasAllPermission) {
+                    sendHandoffError(exchange, 403, "Insufficient permissions");
+                    return;
+                }
+            } catch (Exception e) {
+                sendHandoffError(exchange, 500, "Permission validation failed: " + e.getMessage());
                 return;
             }
 

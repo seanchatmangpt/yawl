@@ -201,10 +201,6 @@ public class ClaudeCodeExecutor {
             Thread.currentThread().interrupt();
             return ClaudeExecutionResult.failure("Execution interrupted", -1);
 
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to execute Claude CLI", e);
-            return ClaudeExecutionResult.failure("Failed to start Claude CLI: " + e.getMessage(), -1);
-
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Execution failed", e);
             return ClaudeExecutionResult.failure(e.getMessage(), -1);

@@ -799,6 +799,10 @@ class TestMypyStrictCompliance:
 
     def test_mypy_strict_zero_errors(self) -> None:
         """mypy --strict reports 0 errors on yawl_cli/ package."""
+        import importlib.util
+        if importlib.util.find_spec("mypy") is None:
+            pytest.skip("mypy not installed in this environment")
+
         result = subprocess.run(
             ["python3", "-m", "mypy", "yawl_cli/", "--strict"],
             capture_output=True,

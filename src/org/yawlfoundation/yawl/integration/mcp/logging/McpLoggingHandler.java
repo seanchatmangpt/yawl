@@ -11,14 +11,14 @@ import io.modelcontextprotocol.spec.McpSchema;
 /**
  * MCP Logging Handler for YAWL.
  *
- * Provides structured logging with MCP notification support.
- * Log messages can be sent to connected MCP clients for debugging
- * and monitoring purposes via the MCP logging/message notification.
+ * Provides structured logging with support for local logging only.
+ * Log messages are processed locally using java.util.logging.
  *
- * Uses McpSyncServer.loggingNotification() to push log messages
- * to all connected clients in real time.
+ * Note: MCP SDK 1.0.0-RC3 does not provide server-side logging notification API.
+ * The McpSyncServer.loggingNotification() method is not available in this version.
+ * Only local logging is supported in this SDK version.
  *
- * Implements MCP 2025-11-25 specification (SDK v1 0.18.0+).
+ * Implements MCP 2025-11-25 specification (SDK v1 1.0.0-RC3).
  *
  * @author YAWL Foundation
  * @version 6.0.0
@@ -85,16 +85,15 @@ public class McpLoggingHandler {
         }
 
         try {
-            McpSchema.LoggingMessageNotification notification =
-                McpSchema.LoggingMessageNotification.builder()
-                    .level(level)
-                    .logger(loggerName)
-                    .data(message)
-                    .build();
-
-            server.loggingNotification(notification);
+            // MCP SDK 1.0.0-RC3 does not provide logging notification API
+            // The server.loggingNotification() method is not available in this version
+            // We log locally and optionally could implement custom notification if needed
 
             logLocally(level, loggerName, message);
+
+            // MCP SDK 1.0.0-RC3 does not provide logging notification API
+            // The server.loggingNotification() method is not available in this version
+            // Logging notifications are not supported - only local logging is available
         } catch (Exception e) {
             LOGGER.warning("Failed to send log notification: " + e.getMessage());
         }

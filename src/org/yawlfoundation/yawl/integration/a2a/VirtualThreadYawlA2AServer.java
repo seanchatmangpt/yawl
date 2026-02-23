@@ -48,7 +48,7 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.metrics.VirtualThreadMetrics;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
+// import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
 import java.io.IOException;
@@ -150,7 +150,8 @@ public class VirtualThreadYawlA2AServer {
     private final int gracefulShutdownSeconds;
     private final int httpClientTimeoutSeconds;
     private final A2AAuthenticationProvider authProvider;
-    private final ZaiFunctionService zaiFunctionService;
+      private final Object zaiFunctionService;
+    private final Method processWithFunctionsMethod;
 
     // HTTP server and executor
     private HttpServer httpServer;
@@ -205,10 +206,22 @@ public class VirtualThreadYawlA2AServer {
 
         String zaiApiKey = System.getenv("ZAI_API_KEY");
         if (zaiApiKey != null && !zaiApiKey.isEmpty()) {
-            this.zaiFunctionService = new ZaiFunctionService(
-                zaiApiKey, yawlEngineUrl, username, password);
+            try {
+                Class<?> zaiFunctionServiceClass = Class.forName("org.yawlfoundation.yawl.integration.zai.ZaiFunctionService");
+                this.zaiFunctionService = zaiFunctionServiceClass.getConstructor(
+                    String.class, String.class, String.class, String.class)
+                    .newInstance(zaiApiKey, yawlEngineUrl, username, password);
+
+                this.processWithFunctionsMethod = zaiFunctionServiceClass.getMethod(
+                    "processWithFunctions", String.class);
+            } catch (Exception e) {
+                _logger.warn("Failed to initialize ZaiFunctionService via reflection: {}", e.getMessage());
+                this.zaiFunctionService = null;
+                this.processWithFunctionsMethod = null;
+            }
         } else {
             this.zaiFunctionService = null;
+            this.processWithFunctionsMethod = null;
         }
 
         _logger.info("VirtualThreadYawlA2AServer configured: port={}, shutdownTimeout={}s, httpTimeout={}s",
@@ -746,9 +759,9 @@ public class VirtualThreadYawlA2AServer {
         }
 
         private String processWorkflowRequest(String userText) throws IOException {
-            if (zaiFunctionService != null) {
+            if (zaiFunctionService != null && processWithFunctionsMethod != null) {
                 try {
-                    return zaiFunctionService.processWithFunctions(userText);
+                    return (String) processWithFunctionsMethod.invoke(zaiFunctionService, userText);
                 } catch (Exception e) {
                     return "Z.AI processing error: " + e.getMessage();
                 }

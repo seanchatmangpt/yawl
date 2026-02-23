@@ -174,7 +174,7 @@
         <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
         <!-- ================================================================ -->
-        <mcp.version>0.18.1</mcp.version>
+        <mcp.version>1.0.0-RC3</mcp.version>
         <a2a.version>1.0.0.Alpha2</a2a.version>
 
         <!-- ================================================================ -->
@@ -1272,6 +1272,13 @@
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-ratelimiter</artifactId>
         </dependency>
+
+        <!-- Gson - JSON serialisation used by ggen BuildReceipt and JSONL receipt chain -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
     </dependencies>
 
     <!-- ======================================================================
@@ -1280,8 +1287,9 @@
     <build>
         <!-- Default goal when running `mvn` without arguments -->
         <defaultGoal>clean compile</defaultGoal>
-        <sourceDirectory>src</sourceDirectory>
-        <testSourceDirectory>test</testSourceDirectory>
+        <!-- Removed: Parent aggregator POM should not compile sources.
+             Each module has its own <sourceDirectory>../src</sourceDirectory>
+             with package-specific <includes> filtering. -->
 
         <!-- Test resources: include schema files in test classpath -->
         <testResources>
@@ -1938,10 +1946,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <release>21</release>
+                            <release>${maven.compiler.release}</release>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>
+                                <arg>-parameters</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>

@@ -73,6 +73,42 @@ yawl:
         enabled: ${A2A_JSONRPC_ENABLED:false}
         port: ${A2A_JSONRPC_PORT:8083}
 
+  # Greg-Verse Multi-Agent Configuration
+  gregverse:
+    enabled: ${GREGVERSE_ENABLED:true}
+    api-key: ${ZAI_API_KEY:}
+    default-timeout-ms: 30000
+    max-handoffs: 5
+    max-concurrency: 4
+    topology: ${GREGVERSE_TOPOLOGY:hierarchical}
+    tracing-enabled: true
+    metrics-enabled: true
+    agents:
+      greg-isenberg:
+        enabled: true
+        skills: ai-skills-strategy,product-vision,startup-advisory,idea-generation
+      james:
+        enabled: true
+        skills: seo-analysis,vibe-marketing,positioning,conversion-copy
+      nicolas-cole:
+        enabled: true
+        skills: skill-creation,digital-writing,personal-brand,content-systems
+      dickie-bush:
+        enabled: true
+        skills: newsletter-strategy,cohort-courses,creator-monetization,audience-building
+      leo-leojrr:
+        enabled: true
+        skills: rapid-prototyping,screenshot-first,filtering-strategy,app-development
+      justin-welsh:
+        enabled: true
+        skills: solopreneurship,b2b-consulting,linkedin-strategy,financial-independence
+      dan-romero:
+        enabled: true
+        skills: api-first-design,agent-internet,protocol-design,infrastructure-scaling
+      blake-anderson:
+        enabled: true
+        skills: gamification-design,quest-design,life-philosophy,enjoyment-mindset
+
   # YAWL Metrics Configuration
   metrics:
     enabled: ${YAWL_METRICS_ENABLED:true}

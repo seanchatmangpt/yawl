@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.mcp;
 
 import java.io.IOException;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
@@ -22,9 +23,10 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
  *
  * Implements MCP 2025-11-25 specification with full capabilities over STDIO transport.
  *
- * Tools (15): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
+ * Tools (20): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
  *   work items, get specification data/XML/schema, get running cases, upload/unload specifications,
- *   suspend/resume cases, skip work items.
+ *   suspend/resume cases, skip work items. Process mining tools: export XES, analyze performance,
+ *   discover variants, analyze resource networks.
  *
  * Resources (3 static):
  *   - yawl://specifications - All loaded specifications
@@ -124,11 +126,10 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 15 tools, 3 resources, 3 resource templates, 4 prompts,
-                3 completions, logging (MCP 2025-11-25 compliant).
+                Capabilities: 15 workflow tools, 3 static resources, 3 resource templates,
+                4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(
-                interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle))
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -139,9 +140,9 @@ public class YawlMcpServer {
                 interfaceBClient, sessionHandle))
             .build();
 
-        loggingHandler.info(mcpServer, "YAWL MCP Server started with full capabilities");
+        loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 15 tools, 3 resources, 3 resource templates, " +
+        System.err.println("Capabilities: 15 workflow tools, 3 resources, 3 resource templates, " +
             "4 prompts, 3 completions, logging");
     }
 
@@ -212,6 +213,7 @@ public class YawlMcpServer {
             sessionHandle = null;
         }
     }
+
 
     /**
      * Entry point for running the YAWL MCP Server.

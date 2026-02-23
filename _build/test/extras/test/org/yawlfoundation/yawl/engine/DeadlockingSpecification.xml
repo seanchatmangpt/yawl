@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl d:/yawl/schema/YAWL_Schema4.0.xsd">
+	<specification uri="DeadlockingSpecification.xml">
+		<metaData/>
+		<rootNet id="top">
+			<processControlElements>
+				<inputCondition id="i-top">
+					<name>i</name>
+					<flowsInto>
+						<nextElementRef id="a-top"/>
+					</flowsInto>
+				</inputCondition>
+				<task id="a-top">
+					<flowsInto>
+						<nextElementRef id="c1-top"/>
+					</flowsInto>
+					<flowsInto>
+						<nextElementRef id="c2-top"/>
+					</flowsInto>
+					<join code="xor"/>
+					<split code="xor"/>
+					<decomposesTo id="A"/>
+				</task>
+				<condition id="c1-top">
+					<name>c1</name>
+					<flowsInto>
+						<nextElementRef id="b-top"/>
+					</flowsInto>
+				</condition>
+				<condition id="c2-top">
+					<name>c2</name>
+					<flowsInto>
+						<nextElementRef id="b-top"/>
+					</flowsInto>
+				</condition>
+				<task id="b-top">
+					<flowsInto>
+						<nextElementRef id="o-top"/>
+					</flowsInto>
+					<join code="and"/>
+					<split code="and"/>
+					<decomposesTo id="B"/>
+				</task>
+				<outputCondition id="o-top">
+					<name>o</name>
+				</outputCondition>
+			</processControlElements>
+		</rootNet>
+		<decomposition id="A" xsi:type="WebServiceGatewayFactsType">
+		</decomposition>
+		<decomposition id="B" xsi:type="WebServiceGatewayFactsType">
+		</decomposition>
+	</specification>
+</specificationSet>

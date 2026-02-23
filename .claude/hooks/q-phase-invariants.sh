@@ -57,9 +57,8 @@ echo "[Q] Found $java_files Java files to validate"
 echo ""
 
 # ============================================================================
-# STEP 2: Manual Validation via grep (SPARQL/SHACL not available yet)
-# For MVP: Use regex to detect 4 invariant violations
-# TODO: Replace with full SHACL validator when RDF4J+Topbraid integrated
+# STEP 2: Manual Validation via grep (regex MVP)
+# Production path: SHACL validator via RDF4J+Topbraid (see ggen-h-guards-phase-design.md)
 # ============================================================================
 
 echo "[Q] Step 1/3: Scanning for empty methods (invariant Q1: real_impl ∨ throw)..."

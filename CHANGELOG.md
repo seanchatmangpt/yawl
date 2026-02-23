@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.0.0-Beta] - 2026-02-22
+
+### Beta Release: Documentation Consolidation & Archive
+
+**Contributors:** Sean Chatman & Claude Code Agent Team
+
+This beta release consolidates the YAWL v6 documentation set, archiving 185 intermediate work products accumulated during active development phases. Authoritative documentation is now in `docs/v6/` (46 files).
+
+### Changed
+
+#### Documentation Consolidation
+- **Archived 185 markdown files** from root directory to `docs/archive/2026-02-22/`
+  - Pre-v6 research: GREGVERSE, Z.AI integration, PhD thesis
+  - Marketplace MVP designs (not in v6 scope)
+  - Execution summaries and completion reports from development phases
+  - Historical test, validation, and performance run snapshots
+  - Java 25 migration artifacts (migration complete)
+  - Security audit artifacts (audit complete)
+  - Observability and one-time fix work products
+  - A2A/autonomy protocol research reports
+- **Root markdown reduced**: 217 files → 32 essential reference files
+- **Canonical docs**: `docs/v6/` (46 files, all current as of 2026-02-22)
+- **Archive manifest**: `docs/archive/2026-02-22/ARCHIVE-MANIFEST.md` (category breakdown)
+
+#### README Updates
+- Version badge updated: Alpha → Beta
+- Documentation section now points to `docs/v6/` as canonical source
+- Links added to all key v6 documentation files
+
+---
+
 ## [6.0.0-Alpha] - 2026-02-16
 
 ### Alpha Release: Library Modernization & Quality Improvements

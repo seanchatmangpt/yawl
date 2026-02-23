@@ -7,11 +7,10 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_Environment
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
-import org.yawlfoundation.yawl.integration.mcp.zai.ZaiFunctionService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
+import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
@@ -138,46 +137,6 @@ public class YawlMcpConfiguration {
     }
 
     /**
-     * Create Z.AI function service bean (if enabled and API key is provided).
-     *
-     * @return Z.AI service or null if disabled
-     */
-    public ZaiFunctionService zaiFunctionService() {
-        if (!properties.getZai().isEnabled()) {
-            LOGGER.info("Z.AI integration disabled");
-            return null;
-        }
-
-        String apiKey = properties.getZai().getApiKey();
-        if (apiKey == null || apiKey.isEmpty()) {
-            // Try environment variables
-            apiKey = System.getenv("ZAI_API_KEY");
-            if (apiKey == null || apiKey.isEmpty()) {
-                apiKey = System.getenv("ZHIPU_API_KEY");
-            }
-        }
-
-        if (apiKey == null || apiKey.isEmpty()) {
-            LOGGER.warning("Z.AI integration enabled but no API key provided. " +
-                          "Set yawl.mcp.zai.api-key or ZAI_API_KEY environment variable.");
-            return null;
-        }
-
-        try {
-            LOGGER.info("Creating Z.AI function service");
-            return new ZaiFunctionService(
-                apiKey,
-                properties.getEngineUrl(),
-                properties.getUsername(),
-                properties.getPassword()
-            );
-        } catch (Exception e) {
-            LOGGER.warning("Failed to initialize Z.AI service: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
      * Create MCP logging handler bean.
      *
      * @return logging handler for MCP notifications
@@ -192,21 +151,18 @@ public class YawlMcpConfiguration {
      * @param interfaceBClient InterfaceB client
      * @param interfaceAClient InterfaceA client
      * @param sessionManager session manager
-     * @param zaiFunctionService Z.AI service (optional)
      * @return configured tool registry
      */
     public YawlMcpToolRegistry toolRegistry(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
             InterfaceA_EnvironmentBasedClient interfaceAClient,
-            YawlMcpSessionManager sessionManager,
-            ZaiFunctionService zaiFunctionService) {
+            YawlMcpSessionManager sessionManager) {
 
         LOGGER.info("Creating YAWL MCP tool registry");
         return new YawlMcpToolRegistry(
             interfaceBClient,
             interfaceAClient,
-            sessionManager,
-            zaiFunctionService
+            sessionManager
         );
     }
 
@@ -245,42 +201,24 @@ public class YawlMcpConfiguration {
         mapper.findAndRegisterModules();
         JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(mapper);
 
-        if (properties.getTransport() == YawlMcpProperties.Transport.STDIO) {
-            StdioServerTransportProvider transportProvider =
-                new StdioServerTransportProvider(jsonMapper);
+        StdioServerTransportProvider transportProvider =
+            new StdioServerTransportProvider(jsonMapper);
 
-            McpSyncServer server = McpServer.sync(transportProvider)
-                .serverInfo(SERVER_NAME, SERVER_VERSION)
-                .capabilities(YawlServerCapabilities.full())
-                .instructions(buildInstructions())
-                .tools(toolRegistry.getAllToolSpecifications())
-                .resources(resourceRegistry.getAllResourceSpecifications())
-                .resourceTemplates(resourceRegistry.getAllResourceTemplateSpecifications())
-                .build();
+        McpSyncServer server = McpServer.sync(transportProvider)
+            .serverInfo(SERVER_NAME, SERVER_VERSION)
+            .capabilities(YawlServerCapabilities.full())
+            .instructions(buildInstructions())
+            .tools(toolRegistry.getAllToolSpecifications())
+            .resources(resourceRegistry.getAllResourceSpecifications())
+            .resourceTemplates(resourceRegistry.getAllResourceTemplateSpecifications())
+            .build();
 
-            loggingHandler.info(server, "YAWL MCP Server (Spring) started with STDIO transport");
-            LOGGER.info("YAWL MCP Server started: " + toolRegistry.getToolCount() + " tools, " +
-                       resourceRegistry.getResourceCount() + " resources, " +
-                       resourceRegistry.getTemplateCount() + " resource templates");
+        loggingHandler.info(server, "YAWL MCP Server (Spring) started with STDIO transport");
+        LOGGER.info("YAWL MCP Server started: " + toolRegistry.getToolCount() + " tools, " +
+                   resourceRegistry.getResourceCount() + " resources, " +
+                   resourceRegistry.getTemplateCount() + " resource templates");
 
-            return server;
-
-        } else if (properties.getTransport() == YawlMcpProperties.Transport.HTTP) {
-            HttpTransportProvider httpTransport = new HttpTransportProvider(
-                properties.getHttpPort(),
-                jsonMapper
-            );
-            McpSyncServer server = McpServer.sync(httpTransport)
-                .serverInfo(SERVER_NAME, SERVER_VERSION)
-                .capabilities(YawlServerCapabilities.full())
-                .tools(toolRegistry.getAllToolSpecifications())
-                .resources(resourceRegistry.getAllResourceSpecifications())
-                .build();
-            loggingHandler.info(server, "YAWL MCP Server started with HTTP transport on port " + properties.getHttpPort());
-            return server;
-        } else {
-            throw new IllegalStateException("Unknown transport type: " + properties.getTransport());
-        }
+        return server;
     }
 
     /**
