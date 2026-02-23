@@ -2,6 +2,8 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix yawl: <http://yawl.org/yawl-specification/> .
+@prefix schema: <https://schema.org/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -17,19 +19,22 @@
 #   6. Order Complete (output)
 # ─────────────────────────────────────────────────────────────────────────────
 
-:OrderFulfillmentSpecification a yawl:Specification ;
+:OrderFulfillmentSpecification a yawl:Specification, schema:CreativeWork ;
     yawl:specificationID "OrderFulfillment"^^xsd:string ;
     yawl:specificationVersion "1.0"^^xsd:string ;
     yawl:specificationURI "http://example.org/orderfulfillment/spec"^^xsd:anyURI ;
     yawl:isNetType false ;
     yawl:hasNet :OrderFulfillmentNet ;
-    rdfs:comment "Complete order fulfillment workflow with inventory checking and payment processing"^^xsd:string .
+    rdfs:comment "Complete order fulfillment workflow with inventory checking and payment processing"^^xsd:string ;
+    schema:about "Order Fulfillment Process" ;
+    schema:inLanguage "en" ;
+    rdfs:comment "Specification extending schema:CreativeWork — YAWL adds temporal, control-flow, and data-flow semantics to Schema.org's generic creative work model"^^xsd:string .
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Main Net Definition
 # ─────────────────────────────────────────────────────────────────────────────
 
-:OrderFulfillmentNet a yawl:Net ;
+:OrderFulfillmentNet a yawl:Net, schema:DataFeed ;
     yawl:netID "OrderFulfillmentNet"^^xsd:string ;
     yawl:netName "Order Fulfillment Process"^^xsd:string ;
     yawl:hasElement :OrderReceivedCondition ;
@@ -46,31 +51,37 @@
     yawl:hasFlow :Flow_Backorder_to_ShipOrder ;
     yawl:hasFlow :Flow_ShipOrder_to_NotifyCustomer ;
     yawl:hasFlow :Flow_NotifyCustomer_to_OrderComplete ;
-    rdfs:comment "Net containing all tasks and flows for order fulfillment"^^xsd:string .
+    rdfs:comment "Net containing all tasks and flows for order fulfillment"^^xsd:string ;
+    schema:dateModified "2026-02-23"^^xsd:date ;
+    rdfs:comment "Net extending schema:DataFeed — YAWL provides ordered, directed task sequencing where Schema.org provides generic data feed semantics"^^xsd:string .
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Input/Output Conditions
 # ─────────────────────────────────────────────────────────────────────────────
 
-:OrderReceivedCondition a yawl:Condition ;
+:OrderReceivedCondition a yawl:Condition, schema:OrderStatus ;
     yawl:elementID "order_received"^^xsd:string ;
     yawl:elementName "Order Received"^^xsd:string ;
     yawl:isInputCondition true ;
     yawl:isOutputCondition false ;
-    rdfs:comment "Start condition: order received from customer"^^xsd:string .
+    rdfs:comment "Start condition: order received from customer"^^xsd:string ;
+    schema:name "Order Received" ;
+    rdfs:comment "Condition extending schema:OrderStatus — YAWL adds entry-point semantics and token-flow semantics to Schema.org's order status vocabulary"^^xsd:string .
 
-:OrderCompleteCondition a yawl:Condition ;
+:OrderCompleteCondition a yawl:Condition, schema:OrderStatus ;
     yawl:elementID "order_complete"^^xsd:string ;
     yawl:elementName "Order Complete"^^xsd:string ;
     yawl:isInputCondition false ;
     yawl:isOutputCondition true ;
-    rdfs:comment "End condition: order processing complete"^^xsd:string .
+    rdfs:comment "End condition: order processing complete"^^xsd:string ;
+    schema:name "Order Complete" ;
+    rdfs:comment "Condition extending schema:OrderStatus — YAWL adds exit-point semantics and completion state tracking to Schema.org's order status model"^^xsd:string .
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Core Tasks
 # ─────────────────────────────────────────────────────────────────────────────
 
-:CheckInventoryTask a yawl:Task ;
+:CheckInventoryTask a yawl:Task, schema:CheckAction ;
     yawl:taskID "check_inventory"^^xsd:string ;
     yawl:taskName "Check Inventory"^^xsd:string ;
     yawl:isMultiInstance false ;
@@ -78,9 +89,11 @@
     yawl:splitType "XOR"^^xsd:string ;
     rdfs:comment "Verify product availability in inventory system. XOR split routes to either payment processing or backorder handling."^^xsd:string ;
     yawl:hasInputSet :CheckInventoryInputSet ;
-    yawl:hasOutputSet :CheckInventoryOutputSet .
+    yawl:hasOutputSet :CheckInventoryOutputSet ;
+    schema:object :ProductIDVariable ;
+    rdfs:comment "Task extending schema:CheckAction — YAWL adds XOR-split branching logic and multi-path routing to Schema.org's generic check action semantics"^^xsd:string .
 
-:ProcessPaymentTask a yawl:Task ;
+:ProcessPaymentTask a yawl:Task, schema:PayAction ;
     yawl:taskID "process_payment"^^xsd:string ;
     yawl:taskName "Process Payment"^^xsd:string ;
     yawl:isMultiInstance false ;
@@ -88,7 +101,10 @@
     yawl:splitType "XOR"^^xsd:string ;
     rdfs:comment "Charge customer payment method for in-stock orders. XOR split determines if payment succeeds or requires retry."^^xsd:string ;
     yawl:hasInputSet :ProcessPaymentInputSet ;
-    yawl:hasOutputSet :ProcessPaymentOutputSet .
+    yawl:hasOutputSet :ProcessPaymentOutputSet ;
+    schema:instrument :CustomerIDVariable ;
+    schema:object :OrderAmountVariable ;
+    rdfs:comment "Task extending schema:PayAction — YAWL adds transactional semantics, retry logic, and payment status tracking to Schema.org's payment action model"^^xsd:string .
 
 :BackorderProcessingTask a yawl:Task ;
     yawl:taskID "backorder_processing"^^xsd:string ;

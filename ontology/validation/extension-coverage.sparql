@@ -1,0 +1,84 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX yawl: <http://www.yawlfoundation.org/yawlschema#>
+PREFIX schema: <https://schema.org/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+# Extension-Only Coverage Report
+# ================================
+#
+# Measures compliance of YAWL ontology classes with extension-only constraint.
+# Reports both absolute counts and coverage percentage.
+#
+# Aligned classes: YAWL classes with rdfs:subClassOf to public ontologies
+#                  OR defined via owl:unionOf/intersectionOf with public types
+#
+# Unaligned classes: YAWL classes with NO public ontology superclass
+#                    AND no complex definition linking to public types
+#
+# Coverage Ratio = alignedCount / (alignedCount + unalignedCount)
+# Target: 100% (all YAWL classes properly extended)
+
+SELECT
+  (COUNT(?alignedClass) AS ?alignedCount)
+  (COUNT(?unalignedClass) AS ?unalignedCount)
+  (COUNT(?allClasses) AS ?totalCount)
+  (xsd:decimal(COUNT(?alignedClass)) / xsd:decimal(COUNT(?allClasses)) AS ?coverageRatio)
+  (xsd:integer(100.0 * COUNT(?alignedClass) / COUNT(?allClasses)) AS ?coveragePercentage)
+WHERE {
+  # Find all YAWL class definitions
+  ?allClasses a owl:Class .
+  FILTER(STRSTARTS(STR(?allClasses), STR(yawl:)))
+
+  # Classify: does this class align to public ontology?
+  {
+    # Branch 1: Class with rdfs:subClassOf to public ontology
+    ?alignedClass a owl:Class ;
+                  rdfs:subClassOf ?publicParent .
+    FILTER(STRSTARTS(STR(?alignedClass), STR(yawl:)))
+    FILTER(!STRSTARTS(STR(?publicParent), STR(yawl:)))
+    BIND(?alignedClass AS ?alignedClass)
+  } UNION {
+    # Branch 2: Class defined via owl:unionOf with public types
+    ?alignedClass a owl:Class ;
+                  owl:unionOf ?unionList .
+    FILTER(STRSTARTS(STR(?alignedClass), STR(yawl:)))
+    # Check that at least one member is public
+    FILTER EXISTS {
+      ?unionList rdf:rest* ?member .
+      ?member rdf:first ?memberClass .
+      FILTER(!STRSTARTS(STR(?memberClass), STR(yawl:)))
+    }
+    BIND(?alignedClass AS ?alignedClass)
+  } UNION {
+    # Branch 3: Class defined via owl:intersectionOf with public types
+    ?alignedClass a owl:Class ;
+                  owl:intersectionOf ?intersectionList .
+    FILTER(STRSTARTS(STR(?alignedClass), STR(yawl:)))
+    # Check that at least one member is public
+    FILTER EXISTS {
+      ?intersectionList rdf:rest* ?member .
+      ?member rdf:first ?memberClass .
+      FILTER(!STRSTARTS(STR(?memberClass), STR(yawl:)))
+    }
+    BIND(?alignedClass AS ?alignedClass)
+  } UNION {
+    # Branch 4: Unaligned classes (no public parent, no complex definition)
+    ?unalignedClass a owl:Class .
+    FILTER(STRSTARTS(STR(?unalignedClass), STR(yawl:)))
+    FILTER NOT EXISTS {
+      ?unalignedClass rdfs:subClassOf ?publicParent .
+      FILTER(!STRSTARTS(STR(?publicParent), STR(yawl:)))
+    }
+    FILTER NOT EXISTS {
+      ?unalignedClass owl:unionOf ?u .
+    }
+    FILTER NOT EXISTS {
+      ?unalignedClass owl:intersectionOf ?i .
+    }
+    BIND(?unalignedClass AS ?unalignedClass)
+  }
+}

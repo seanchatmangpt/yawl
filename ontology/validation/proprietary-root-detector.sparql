@@ -1,0 +1,60 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX yawl: <http://www.yawlfoundation.org/yawlschema#>
+PREFIX schema: <https://schema.org/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+# Proprietary Root Detector (TBox Analysis)
+# ==========================================
+#
+# Checks that YAWL ontology classes (TBox) declare proper superclass relationships
+# to public ontologies. This prevents creation of isolated class hierarchies that
+# don't align with standard reference models.
+#
+# Looks for:
+#   1. YAWL classes with rdfs:subClassOf (direct parent declaration)
+#   2. YAWL classes with owl:unionOf or owl:intersectionOf (complex definitions)
+#   3. YAWL classes with no explicit superclass (roots)
+#
+# Violation: A YAWL class has no rdfs:subClassOf and no union/intersection,
+#            meaning it has no connection to any public ontology root.
+#
+# Expected: All YAWL classes should have at least one rdfs:subClassOf pointing
+#           to a public ontology class, OR be defined via owl:unionOf/intersectionOf
+#           that includes public types.
+
+SELECT ?yawlClass ?hasExplicitParent
+WHERE {
+  # Find all YAWL class definitions (TBox)
+  ?yawlClass a owl:Class .
+  FILTER(STRSTARTS(STR(?yawlClass), STR(yawl:)))
+
+  # Check if class has rdfs:subClassOf pointing to public ontology
+  OPTIONAL {
+    ?yawlClass rdfs:subClassOf ?parent .
+    # Parent is NOT yawl: (it's external/public)
+    FILTER(!STRSTARTS(STR(?parent), STR(yawl:)))
+    BIND(true AS ?hasPublicParent)
+  }
+
+  # Check for owl:unionOf or owl:intersectionOf (complex class definitions)
+  OPTIONAL {
+    {
+      ?yawlClass owl:unionOf ?unionList .
+    } UNION {
+      ?yawlClass owl:intersectionOf ?intersectionList .
+    }
+    BIND(true AS ?hasComplexDefinition)
+  }
+
+  # Determine if this class has a legitimate parent relationship
+  BIND(COALESCE(?hasPublicParent, ?hasComplexDefinition, false) AS ?hasExplicitParent)
+
+  # Return ONLY those classes that violate extension-only
+  # (i.e., have no public parent and no complex definition)
+  FILTER(?hasExplicitParent = false)
+}
+ORDER BY ?yawlClass
