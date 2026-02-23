@@ -17,11 +17,11 @@
 //! to `SparqlStore::open`.
 
 use oxigraph::io::{RdfFormat, RdfParser, RdfSerializer};
-use oxigraph::model::GraphName;
+use oxigraph::model::{GraphName, Triple};
 use oxigraph::sparql::{QueryResults, Update};
 use oxigraph::store::Store;
 use serde::{Deserialize, Serialize};
-use std::io::{BufWriter, Cursor};
+use std::io::Cursor;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc,
@@ -132,18 +132,17 @@ impl SparqlStore {
 
         match results {
             QueryResults::Graph(triples) => {
-                let mut buf = BufWriter::new(Vec::new());
+                let mut buf = Vec::new();
                 let mut serializer = RdfSerializer::from_format(RdfFormat::Turtle)
-                    .serialize_to_write(&mut buf);
+                    .for_writer(&mut buf);
                 for triple_result in triples {
-                    let triple = triple_result.map_err(|e| SparqlError(e.to_string()))?;
+                    let triple: Triple = triple_result.map_err(|e| SparqlError(e.to_string()))?;
                     serializer
                         .serialize_triple(triple.as_ref())
                         .map_err(|e| SparqlError(e.to_string()))?;
                 }
                 serializer.finish().map_err(|e| SparqlError(e.to_string()))?;
-                let bytes = buf.into_inner().map_err(|e| SparqlError(e.to_string()))?;
-                String::from_utf8(bytes)
+                String::from_utf8(buf)
                     .map_err(|e| SparqlError(format!("UTF-8 error in Turtle output: {}", e)))
             }
             _ => Err(SparqlError(
@@ -174,14 +173,14 @@ impl SparqlStore {
         match graph_name {
             None => {
                 self.inner
-                    .clear_graph(GraphName::DefaultGraph)
+                    .clear_graph(&GraphName::DefaultGraph)
                     .map_err(|e| SparqlError(e.to_string()))?;
             }
             Some(iri) => {
                 let named = oxigraph::model::NamedNode::new(iri)
                     .map_err(|e| SparqlError(format!("Invalid graph IRI '{}': {}", iri, e)))?;
                 self.inner
-                    .clear_graph(named)
+                    .clear_graph(&named)
                     .map_err(|e| SparqlError(e.to_string()))?;
             }
         }
