@@ -13,18 +13,10 @@
 
 package org.yawlfoundation.yawl.integration.mcp.spec;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.yawlfoundation.yawl.engine.YSpecificationID;
-import org.yawlfoundation.yawl.integration.processmining.EventLogExporter;
-import org.yawlfoundation.yawl.integration.processmining.PerformanceAnalyzer;
-import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
-import org.yawlfoundation.yawl.integration.processmining.ProcessVariantAnalyzer;
-import org.yawlfoundation.yawl.integration.processmining.SocialNetworkAnalyzer;
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -32,7 +24,7 @@ import io.modelcontextprotocol.spec.McpSchema;
 /**
  * Process mining tool specifications for YAWL MCP server.
  *
- * Provides 5 tools for analyzing workflow execution logs using process mining techniques:
+ * <p>Provides 5 tools for analyzing workflow execution logs using process mining techniques:
  * <ul>
  *   <li>yawl_pm_export_xes - Export specification event log to XES format</li>
  *   <li>yawl_pm_analyze - Comprehensive process mining analysis (performance + variants)</li>
@@ -41,13 +33,18 @@ import io.modelcontextprotocol.spec.McpSchema;
  *   <li>yawl_pm_social_network - Social network analysis of resource interactions</li>
  * </ul>
  *
- * All tools are stateless HTTP operations that create fresh facades/exporters per call,
- * implementing production-grade error handling with real implementations (no mocks/stubs).
+ * <p><b>Note:</b> Process mining operations require the pm4py Python bridge which is not
+ * included in the default YAWL Java distribution. All tools throw
+ * {@link UnsupportedOperationException} until the Python process mining bridge is configured.
  *
  * @author YAWL Foundation
  * @version 6.0.0
  */
 public final class YawlProcessMiningToolSpecifications {
+
+    private static final String PM_UNAVAILABLE =
+        "Process mining requires the pm4py Python bridge which is not available " +
+        "in this deployment. Contact your YAWL administrator to enable process mining.";
 
     private final String engineUrl;
     private final String username;
@@ -70,7 +67,6 @@ public final class YawlProcessMiningToolSpecifications {
         if (password == null || password.isEmpty()) {
             throw new IllegalArgumentException("password is required");
         }
-
         this.engineUrl = engineUrl;
         this.username = username;
         this.password = password;
@@ -83,13 +79,11 @@ public final class YawlProcessMiningToolSpecifications {
      */
     public List<McpServerFeatures.SyncToolSpecification> createAll() {
         List<McpServerFeatures.SyncToolSpecification> tools = new ArrayList<>();
-
         tools.add(createExportXesTool());
         tools.add(createAnalyzeTool());
         tools.add(createPerformanceTool());
         tools.add(createVariantsTool());
         tools.add(createSocialNetworkTool());
-
         return tools;
     }
 
@@ -125,48 +119,7 @@ public final class YawlProcessMiningToolSpecifications {
                 .inputSchema(schema)
                 .build(),
             (exchange, args) -> {
-                try {
-                    String specId = (String) args.getOrDefault("specIdentifier", null);
-                    if (specId == null || specId.isEmpty()) {
-                        return new McpSchema.CallToolResult(
-                            "Required argument specIdentifier is missing", true);
-                    }
-
-                    String specVersion = (String) args.getOrDefault("specVersion", "0.1");
-                    String specUri = (String) args.getOrDefault("specUri", specId);
-                    String withDataStr = (String) args.getOrDefault("withData", "false");
-                    boolean withData = "true".equalsIgnoreCase(withDataStr);
-
-                    YSpecificationID ySpecId = new YSpecificationID(
-                        specId, specVersion, specUri);
-
-                    EventLogExporter exporter = null;
-                    try {
-                        exporter = new EventLogExporter(engineUrl, username, password);
-                        String xesXml = exporter.exportSpecificationToXes(ySpecId, withData);
-
-                        if (xesXml == null || xesXml.isEmpty()) {
-                            return new McpSchema.CallToolResult(
-                                "Failed to export XES: empty response from engine", true);
-                        }
-
-                        return new McpSchema.CallToolResult(xesXml, false);
-                    } finally {
-                        if (exporter != null) {
-                            try {
-                                exporter.close();
-                            } catch (IOException e) {
-                                // Log and continue
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    return new McpSchema.CallToolResult(
-                        "Failed to export XES: " + e.getMessage(), true);
-                } catch (Exception e) {
-                    return new McpSchema.CallToolResult(
-                        "Error exporting XES: " + e.getMessage(), true);
-                }
+                throw new UnsupportedOperationException(PM_UNAVAILABLE);
             }
         );
     }
@@ -203,67 +156,7 @@ public final class YawlProcessMiningToolSpecifications {
                 .inputSchema(schema)
                 .build(),
             (exchange, args) -> {
-                try {
-                    String specId = (String) args.getOrDefault("specIdentifier", null);
-                    if (specId == null || specId.isEmpty()) {
-                        return new McpSchema.CallToolResult(
-                            "Required argument specIdentifier is missing", true);
-                    }
-
-                    String specVersion = (String) args.getOrDefault("specVersion", "0.1");
-                    String specUri = (String) args.getOrDefault("specUri", specId);
-                    String withDataStr = (String) args.getOrDefault("withData", "false");
-                    boolean withData = "true".equalsIgnoreCase(withDataStr);
-
-                    YSpecificationID ySpecId = new YSpecificationID(
-                        specId, specVersion, specUri);
-
-                    ProcessMiningFacade facade = null;
-                    try {
-                        facade = new ProcessMiningFacade(engineUrl, username, password);
-                        ProcessMiningFacade.ProcessMiningReport report =
-                            facade.analyzePerformance(ySpecId, withData);
-
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("=== Process Mining Analysis ===\n\n");
-                        sb.append("Specification: ").append(specId).append(" v").append(specVersion).append("\n");
-                        sb.append("Analysis Time: ").append(report.analysisTime).append("\n\n");
-
-                        sb.append("--- Performance Metrics ---\n");
-                        sb.append("Traces (Cases): ").append(report.traceCount).append("\n");
-                        sb.append("Average Flow Time: ").append(String.format("%.2f ms", report.performance.avgFlowTimeMs)).append("\n");
-                        sb.append("Throughput: ").append(String.format("%.2f cases/hour", report.performance.throughputPerHour)).append("\n\n");
-
-                        sb.append("--- Process Variants ---\n");
-                        sb.append("Unique Variants: ").append(report.variantCount).append("\n");
-                        if (!report.variantFrequencies.isEmpty()) {
-                            sb.append("Top 5 Variants:\n");
-                            int count = 0;
-                            for (Map.Entry<String, Long> entry : report.variantFrequencies.entrySet()) {
-                                if (count >= 5) break;
-                                sb.append("  ").append(count + 1).append(". ");
-                                sb.append(entry.getKey()).append(" (").append(entry.getValue()).append(" occurrences)\n");
-                                count++;
-                            }
-                        }
-
-                        return new McpSchema.CallToolResult(sb.toString().trim(), false);
-                    } finally {
-                        if (facade != null) {
-                            try {
-                                facade.close();
-                            } catch (IOException e) {
-                                // Log and continue
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    return new McpSchema.CallToolResult(
-                        "Failed to analyze specification: " + e.getMessage(), true);
-                } catch (Exception e) {
-                    return new McpSchema.CallToolResult(
-                        "Error during analysis: " + e.getMessage(), true);
-                }
+                throw new UnsupportedOperationException(PM_UNAVAILABLE);
             }
         );
     }
@@ -300,64 +193,7 @@ public final class YawlProcessMiningToolSpecifications {
                 .inputSchema(schema)
                 .build(),
             (exchange, args) -> {
-                try {
-                    String specId = (String) args.getOrDefault("specIdentifier", null);
-                    if (specId == null || specId.isEmpty()) {
-                        return new McpSchema.CallToolResult(
-                            "Required argument specIdentifier is missing", true);
-                    }
-
-                    String specVersion = (String) args.getOrDefault("specVersion", "0.1");
-                    String specUri = (String) args.getOrDefault("specUri", specId);
-                    String withDataStr = (String) args.getOrDefault("withData", "false");
-                    boolean withData = "true".equalsIgnoreCase(withDataStr);
-
-                    YSpecificationID ySpecId = new YSpecificationID(
-                        specId, specVersion, specUri);
-
-                    ProcessMiningFacade facade = null;
-                    try {
-                        facade = new ProcessMiningFacade(engineUrl, username, password);
-                        ProcessMiningFacade.ProcessMiningReport report =
-                            facade.analyzePerformance(ySpecId, withData);
-
-                        PerformanceAnalyzer.PerformanceResult perf = report.performance;
-
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("=== Performance Analysis ===\n\n");
-                        sb.append("Specification: ").append(specId).append(" v").append(specVersion).append("\n\n");
-
-                        sb.append("--- Execution Statistics ---\n");
-                        sb.append("Total Cases: ").append(perf.traceCount).append("\n");
-                        sb.append("Average Flow Time: ").append(String.format("%.2f ms", perf.avgFlowTimeMs)).append(" (");
-                        sb.append(String.format("%.2f seconds", perf.avgFlowTimeMs / 1000)).append(")\n");
-                        sb.append("Throughput: ").append(String.format("%.2f cases/hour", perf.throughputPerHour)).append("\n\n");
-
-                        sb.append("--- Activity Execution Counts ---\n");
-                        if (!perf.activityCounts.isEmpty()) {
-                            perf.activityCounts.entrySet().stream()
-                                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
-                                .forEach(e -> sb.append("  ").append(e.getKey()).append(": ")
-                                    .append(e.getValue()).append(" executions\n"));
-                        }
-
-                        return new McpSchema.CallToolResult(sb.toString().trim(), false);
-                    } finally {
-                        if (facade != null) {
-                            try {
-                                facade.close();
-                            } catch (IOException e) {
-                                // Log and continue
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    return new McpSchema.CallToolResult(
-                        "Failed to analyze performance: " + e.getMessage(), true);
-                } catch (Exception e) {
-                    return new McpSchema.CallToolResult(
-                        "Error during performance analysis: " + e.getMessage(), true);
-                }
+                throw new UnsupportedOperationException(PM_UNAVAILABLE);
             }
         );
     }
@@ -394,65 +230,7 @@ public final class YawlProcessMiningToolSpecifications {
                 .inputSchema(schema)
                 .build(),
             (exchange, args) -> {
-                try {
-                    String specId = (String) args.getOrDefault("specIdentifier", null);
-                    if (specId == null || specId.isEmpty()) {
-                        return new McpSchema.CallToolResult(
-                            "Required argument specIdentifier is missing", true);
-                    }
-
-                    String specVersion = (String) args.getOrDefault("specVersion", "0.1");
-                    String specUri = (String) args.getOrDefault("specUri", specId);
-                    String topNStr = (String) args.getOrDefault("topN", "10");
-                    int topN = 10;
-                    try {
-                        topN = Integer.parseInt(topNStr);
-                        if (topN <= 0) topN = 10;
-                    } catch (NumberFormatException e) {
-                        topN = 10;
-                    }
-
-                    YSpecificationID ySpecId = new YSpecificationID(
-                        specId, specVersion, specUri);
-
-                    ProcessMiningFacade facade = null;
-                    try {
-                        facade = new ProcessMiningFacade(engineUrl, username, password);
-                        ProcessMiningFacade.ProcessMiningReport report =
-                            facade.analyzePerformance(ySpecId, false);
-
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("=== Process Variants ===\n\n");
-                        sb.append("Specification: ").append(specId).append(" v").append(specVersion).append("\n");
-                        sb.append("Total Variants: ").append(report.variantCount).append("\n\n");
-
-                        sb.append("--- Top ").append(topN).append(" Variants ---\n");
-                        int rank = 0;
-                        for (Map.Entry<String, Long> entry : report.variantFrequencies.entrySet()) {
-                            if (rank >= topN) break;
-                            double percentage = (100.0 * entry.getValue()) / report.traceCount;
-                            sb.append(String.format("%d. %s (%d cases, %.1f%%)\n",
-                                rank + 1, entry.getKey(), entry.getValue(), percentage));
-                            rank++;
-                        }
-
-                        return new McpSchema.CallToolResult(sb.toString().trim(), false);
-                    } finally {
-                        if (facade != null) {
-                            try {
-                                facade.close();
-                            } catch (IOException e) {
-                                // Log and continue
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    return new McpSchema.CallToolResult(
-                        "Failed to analyze variants: " + e.getMessage(), true);
-                } catch (Exception e) {
-                    return new McpSchema.CallToolResult(
-                        "Error during variant analysis: " + e.getMessage(), true);
-                }
+                throw new UnsupportedOperationException(PM_UNAVAILABLE);
             }
         );
     }
@@ -489,85 +267,7 @@ public final class YawlProcessMiningToolSpecifications {
                 .inputSchema(schema)
                 .build(),
             (exchange, args) -> {
-                try {
-                    String specId = (String) args.getOrDefault("specIdentifier", null);
-                    if (specId == null || specId.isEmpty()) {
-                        return new McpSchema.CallToolResult(
-                            "Required argument specIdentifier is missing", true);
-                    }
-
-                    String specVersion = (String) args.getOrDefault("specVersion", "0.1");
-                    String specUri = (String) args.getOrDefault("specUri", specId);
-                    String withDataStr = (String) args.getOrDefault("withData", "false");
-                    boolean withData = "true".equalsIgnoreCase(withDataStr);
-
-                    YSpecificationID ySpecId = new YSpecificationID(
-                        specId, specVersion, specUri);
-
-                    ProcessMiningFacade facade = null;
-                    try {
-                        facade = new ProcessMiningFacade(engineUrl, username, password);
-                        ProcessMiningFacade.ProcessMiningReport report =
-                            facade.analyzePerformance(ySpecId, withData);
-
-                        SocialNetworkAnalyzer socialAnalyzer = new SocialNetworkAnalyzer();
-                        SocialNetworkAnalyzer.SocialNetworkResult sn =
-                            socialAnalyzer.analyze(report.xesXml);
-
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("=== Social Network Analysis ===\n\n");
-                        sb.append("Specification: ").append(specId).append(" v").append(specVersion).append("\n\n");
-
-                        sb.append("--- Resources ---\n");
-                        sb.append("Total Resources: ").append(sn.resources.size()).append("\n");
-                        if (!sn.resources.isEmpty()) {
-                            sn.resources.forEach(r -> sb.append("  - ").append(r).append("\n"));
-                        }
-
-                        sb.append("\n--- Workload Distribution ---\n");
-                        if (!sn.workloadByResource.isEmpty()) {
-                            sn.workloadByResource.entrySet().stream()
-                                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
-                                .forEach(e -> sb.append("  ").append(e.getKey()).append(": ")
-                                    .append(e.getValue()).append(" activities\n"));
-                        }
-
-                        sb.append("\n--- Handover of Work ---\n");
-                        if (sn.mostCentralResource != null) {
-                            sb.append("Most Central Resource: ").append(sn.mostCentralResource).append("\n");
-                        }
-                        if (!sn.handoverMatrix.isEmpty()) {
-                            sb.append("Top Handover Pairs (Source -> Target):\n");
-                            int count = 0;
-                            for (Map.Entry<String, Map<String, Long>> fromEntry : sn.handoverMatrix.entrySet()) {
-                                for (Map.Entry<String, Long> toEntry : fromEntry.getValue().entrySet()) {
-                                    if (count >= 5) break;
-                                    sb.append("  ").append(fromEntry.getKey()).append(" -> ")
-                                        .append(toEntry.getKey()).append(" (")
-                                        .append(toEntry.getValue()).append(" transitions)\n");
-                                    count++;
-                                }
-                                if (count >= 5) break;
-                            }
-                        }
-
-                        return new McpSchema.CallToolResult(sb.toString().trim(), false);
-                    } finally {
-                        if (facade != null) {
-                            try {
-                                facade.close();
-                            } catch (IOException e) {
-                                // Log and continue
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    return new McpSchema.CallToolResult(
-                        "Failed to analyze social network: " + e.getMessage(), true);
-                } catch (Exception e) {
-                    return new McpSchema.CallToolResult(
-                        "Error during social network analysis: " + e.getMessage(), true);
-                }
+                throw new UnsupportedOperationException(PM_UNAVAILABLE);
             }
         );
     }

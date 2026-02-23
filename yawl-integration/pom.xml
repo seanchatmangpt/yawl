@@ -299,22 +299,14 @@
                         <include>**/org/yawlfoundation/yawl/integration/**</include>
                     </includes>
                     <excludes>
-                        <!-- Claude integration - StructuredTaskScope API issue -->
-                        <exclude>**/claude/**</exclude>
-
-                        <!-- MCP Server and tools - event/process-mining still need work -->
-                        <exclude>**/mcp/spec/YawlEventToolSpecifications.java</exclude>
-                        <exclude>**/mcp/spec/YawlProcessMiningToolSpecifications.java</exclude>
-
                         <!-- A2A classes - HandoffProtocol API changes in SDK -->
                         <exclude>**/a2a/VirtualThreadYawlA2AServer.java</exclude>
                         <exclude>**/a2a/YawlA2AServer.java</exclude>
                         <exclude>**/a2a/skills/ProcessMiningSkill.java</exclude>
+                        <!-- HandoffTokenAuthenticationProvider missing from SDK -->
                         <exclude>**/a2a/auth/CompositeAuthenticationProvider.java</exclude>
 
-                        <!-- MCP ZAI bridge - interface changes in RC3 -->
-                        <!-- All ZAI bridge files excluded due to API incompatibility -->
-                        <exclude>**/mcp/zai/**</exclude>
+                        <!-- MCP ZAI bridge - fully migrated to RC3 builder API, no exclusions needed -->
 
                         <!-- MCP Transport - HTTP API issues -->
                         <exclude>**/mcp/transport/**</exclude>
@@ -334,9 +326,6 @@
                              ===================================================================== -->
                         <exclude>**/conflict/**</exclude>
 
-                        <!-- processmining - 4 files still reference pm4py Python bridge (not yet migrated) -->
-                        <exclude>**/processmining/**</exclude>
-
                         <!-- Exclude event-related classes that need MCP SDK 1.0.0-RC3 API updates -->
                         <exclude>**/mcp/event/**</exclude>
                         <exclude>**/mcp/resource/YawlEventResourceProvider.java</exclude>
@@ -351,16 +340,7 @@
                              ===================================================================== -->
                         <exclude>**/*.properties</exclude>
 
-                        <!-- =====================================================================
-                             Event sourcing - incomplete switch expression (pre-existing issue)
-                             ===================================================================== -->
-                        <exclude>**/eventsourcing/**</exclude>
 
-
-                        <!-- =====================================================================
-                             MCP Spec tools - depends on excluded ZAI classes
-                             ===================================================================== -->
-                        <exclude>**/mcp/spec/YawlSpecToolSpecifications.java</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/integration/mcp/**</testInclude>
@@ -374,8 +354,6 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/YawlMcpA2aEndToEndIntegrationTest.java</testInclude>
                     </testIncludes>
                     <testExcludes>
-                        <!-- Exclude test files for packages with excluded sources -->
-                        <testExclude>**/processmining/**</testExclude>
                         <testExclude>**/SelfPlayTest.java</testExclude>
                         <!-- IntegrationTestSuite references excluded classes -->
                         <testExclude>**/IntegrationTestSuite.java</testExclude>
@@ -399,7 +377,6 @@
                     </includes>
                     <!-- A2A-dependent packages now included since A2A sources are compiled -->
                     <excludes>
-                        <exclude>**/processmining/**</exclude>
                         <exclude>**/test/SelfPlayTest.java</exclude>
 
                         <!-- IntegrationTestSuite references excluded classes -->

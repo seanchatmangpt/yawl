@@ -21,8 +21,11 @@ package org.yawlfoundation.yawl.integration.processmining.discovery;
 import org.yawlfoundation.yawl.integration.processmining.Ocel2Exporter.Ocel2EventLog;
 import org.yawlfoundation.yawl.integration.processmining.ProcessDiscoveryResult;
 
+import java.time.Instant;
 import java.util.Set;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Interface for process discovery algorithms.

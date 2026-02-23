@@ -114,11 +114,13 @@ public final class ExecuteClaudeTool {
                 .build(),
             (exchange, args) -> {
                 try {
-                    return executeTool(args);
+                    return executeTool(args.arguments());
                 } catch (Exception e) {
                     LOGGER.severe("ExecuteClaudeTool failed: " + e.getMessage());
                     return new McpSchema.CallToolResult(
-                        "Claude execution failed: " + e.getMessage(), true);
+                        List.of(new McpSchema.TextContent(
+                            "Claude execution failed: " + e.getMessage())),
+                        true, null, null);
                 }
             }
         );
@@ -140,7 +142,9 @@ public final class ExecuteClaudeTool {
         // Validate timeout
         if (timeoutSeconds > MAX_TIMEOUT_SECONDS) {
             return new McpSchema.CallToolResult(
-                "Timeout " + timeoutSeconds + "s exceeds maximum " + MAX_TIMEOUT_SECONDS + "s", true);
+                List.of(new McpSchema.TextContent(
+                    "Timeout " + timeoutSeconds + "s exceeds maximum " + MAX_TIMEOUT_SECONDS + "s")),
+                true, null, null);
         }
 
         // Build working directory path
@@ -186,7 +190,9 @@ public final class ExecuteClaudeTool {
             }
         }
 
-        return new McpSchema.CallToolResult(response.toString(), !result.success());
+        return new McpSchema.CallToolResult(
+            List.of(new McpSchema.TextContent(response.toString())),
+            !result.success(), null, null);
     }
 
     /**

@@ -21,12 +21,13 @@ package org.yawlfoundation.yawl.integration.processmining.streaming;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.YWorkItemID;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
-import org.yawlfoundation.yawl.stateless.elements.YSpecificationID;
 
 import java.time.Instant;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Real-time event streaming interface for YAWL workflow execution.
@@ -414,11 +415,11 @@ class YAWLEventStreamImpl implements YAWLEventStream {
         while (isRunning) {
             try {
                 if (isPaused) {
-                    java.time.TimeUnit.MILLISECONDS.sleep(100);
+                    Thread.sleep(100);
                     continue;
                 }
 
-                YWorkItemEvent event = eventQueue.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                YWorkItemEvent event = eventQueue.poll(100, TimeUnit.MILLISECONDS);
                 if (event != null) {
                     // Apply filters
                     boolean passesFilters = filters.isEmpty() ||
@@ -443,13 +444,13 @@ class YAWLEventStreamImpl implements YAWLEventStream {
         while (isRunning) {
             try {
                 if (isPaused) {
-                    java.time.TimeUnit.MILLISECONDS.sleep(100);
+                    Thread.sleep(100);
                     continue;
                 }
 
                 // In a real implementation, we would track trace completion here
                 // For now, this is a placeholder
-                java.time.TimeUnit.MILLISECONDS.sleep(batchInterval.toMillis());
+                Thread.sleep(batchInterval.toMillis());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.integration.processmining.synthesis;
 
 import org.yawlfoundation.yawl.integration.processmining.pnml.PnmlProcess;
+import org.yawlfoundation.yawl.integration.processmining.pnml.PnmlPlace;
 
 /**
  * Conformance metrics for process mining quality assessment.
@@ -174,7 +175,9 @@ public record ConformanceScore(
 
         // Check if end places have no outgoing arcs (sink)
         for (PnmlPlace end : process.endPlaces()) {
-            balancedNodes++;
+            if (process.outgoingArcs(end.id()).isEmpty()) {
+                balancedNodes++;
+            }
         }
 
         // Simple fitness: proportion of well-formed boundary nodes

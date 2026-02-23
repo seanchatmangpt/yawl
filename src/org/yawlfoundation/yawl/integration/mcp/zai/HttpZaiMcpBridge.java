@@ -29,6 +29,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,11 +89,14 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
         this.activeSessions = new ConcurrentHashMap<>();
     }
 
-    @Override
+    /**
+     * Connects to the Z.AI service by performing a health check.
+     *
+     * @throws IOException if connection fails
+     */
     public void connect() throws IOException {
         try {
-            // Test the connection to Z.AI
-            String healthCheckUrl = config.getBaseUrl() + "/health";
+            String healthCheckUrl = config.getHttpEndpoint() + "/health";
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(healthCheckUrl))
                 .header("Authorization", "Bearer " + config.getApiKey())
@@ -103,7 +107,7 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
 
             if (response.statusCode() == 200) {
                 isConnected = true;
-                _logger.info("Connected to Z.AI at {}", config.getBaseUrl());
+                _logger.info("Connected to Z.AI at {}", config.getHttpEndpoint());
             } else {
                 throw new IOException("Failed to connect to Z.AI: HTTP " + response.statusCode());
             }
@@ -113,7 +117,9 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
         }
     }
 
-    @Override
+    /**
+     * Disconnects from the Z.AI service.
+     */
     public void disconnect() {
         isConnected = false;
         activeSessions.clear();
@@ -131,7 +137,7 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return callToolSync(toolName, parameters);
+                return callToolInternal(toolName, parameters);
             } catch (Exception e) {
                 throw new RuntimeException("Tool call failed", e);
             }
@@ -141,13 +147,11 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
     /**
      * Synchronously calls a Z.AI tool.
      */
-    private Map<String, Object> callToolSync(String toolName, Map<String, Object> parameters) throws IOException {
-        String url = config.getBaseUrl() + "/tools/" + toolName + "/call";
+    private Map<String, Object> callToolInternal(String toolName, Map<String, Object> parameters) throws IOException {
+        String url = config.getHttpEndpoint() + "/tools/" + toolName + "/call";
 
-        // Build the request body
         Map<String, Object> requestBody = new ConcurrentHashMap<>();
         requestBody.put("parameters", parameters);
-        requestBody.put("session_id", config.getSessionId());
 
         String jsonBody = jsonMapper.writeValueAsString(requestBody);
 
@@ -158,23 +162,35 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
             .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Tool call was interrupted", e);
+        }
 
         if (response.statusCode() == 200) {
-            try {
-                JsonNode responseNode = jsonMapper.readTree(response.body());
-                return convertJsonToMap(responseNode);
-            } catch (IOException e) {
-                throw new IOException("Failed to parse Z.AI response: " + e.getMessage(), e);
-            }
+            JsonNode responseNode = jsonMapper.readTree(response.body());
+            return convertJsonToObjectMap(responseNode);
         } else {
             throw new IOException("Z.AI tool call failed with status " + response.statusCode() + ": " + response.body());
         }
     }
 
     @Override
-    public boolean isConnected() {
+    public boolean isHealthy() {
         return isConnected;
+    }
+
+    @Override
+    public boolean isToolAvailable(String toolName) {
+        try {
+            return listTools().containsKey(toolName);
+        } catch (Exception e) {
+            _logger.debug("Tool availability check failed for {}: {}", toolName, e.getMessage());
+            return false;
+        }
     }
 
     @Override
@@ -183,20 +199,72 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
     }
 
     @Override
+    public Map<String, String> listTools() {
+        String url = config.getHttpEndpoint() + "/tools";
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("Authorization", "Bearer " + config.getApiKey())
+            .GET()
+            .build();
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                JsonNode responseNode = jsonMapper.readTree(response.body());
+                return convertJsonToStringMap(responseNode);
+            } else {
+                _logger.warn("Failed to list Z.AI tools: HTTP {}", response.statusCode());
+                return Map.of();
+            }
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            _logger.warn("Failed to list Z.AI tools: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    /**
+     * Returns whether this bridge has an active connection.
+     *
+     * @return true if connected
+     */
+    public boolean isConnected() {
+        return isConnected;
+    }
+
+    /**
+     * Creates a new session identifier.
+     *
+     * @return session ID
+     */
     public String createSession() {
         String sessionId = "zai_session_" + System.currentTimeMillis();
         activeSessions.put(sessionId, sessionId);
         return sessionId;
     }
 
-    @Override
+    /**
+     * Closes the specified session.
+     *
+     * @param sessionId the session to close
+     */
     public void closeSession(String sessionId) {
         activeSessions.remove(sessionId);
     }
 
-    @Override
+    /**
+     * Gets information about a specific tool.
+     *
+     * @param toolName the tool name
+     * @return tool information
+     * @throws IOException if the request fails
+     */
     public Map<String, Object> getToolInfo(String toolName) throws IOException {
-        String url = config.getBaseUrl() + "/tools/" + toolName;
+        String url = config.getHttpEndpoint() + "/tools/" + toolName;
 
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(url))
@@ -204,50 +272,39 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
             .GET()
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() == 200) {
-            try {
+            if (response.statusCode() == 200) {
                 JsonNode responseNode = jsonMapper.readTree(response.body());
-                return convertJsonToMap(responseNode);
-            } catch (IOException e) {
-                throw new IOException("Failed to parse tool info: " + e.getMessage(), e);
+                return convertJsonToObjectMap(responseNode);
+            } else {
+                throw new IOException("Failed to get tool info for " + toolName + ": HTTP " + response.statusCode());
             }
-        } else {
-            throw new IOException("Failed to get tool info for " + toolName + ": HTTP " + response.statusCode());
-        }
-    }
-
-    @Override
-    public Map<String, Object> listTools() throws IOException {
-        String url = config.getBaseUrl() + "/tools";
-
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Authorization", "Bearer " + config.getApiKey())
-            .GET()
-            .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() == 200) {
-            try {
-                JsonNode responseNode = jsonMapper.readTree(response.body());
-                return convertJsonToMap(responseNode);
-            } catch (IOException e) {
-                throw new IOException("Failed to parse tools list: " + e.getMessage(), e);
-            }
-        } else {
-            throw new IOException("Failed to list tools: HTTP " + response.statusCode());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Tool info request was interrupted", e);
         }
     }
 
     /**
-     * Converts a JsonNode to a Map<String, Object>.
+     * Converts a JsonNode to a Map with String values (for listTools).
      */
-    private Map<String, Object> convertJsonToMap(JsonNode node) {
-        Map<String, Object> result = new ConcurrentHashMap<>();
+    private Map<String, String> convertJsonToStringMap(JsonNode node) {
+        Map<String, String> result = new HashMap<>();
+        node.fields().forEachRemaining(entry -> {
+            String key = entry.getKey();
+            JsonNode value = entry.getValue();
+            result.put(key, value.isValueNode() ? value.asText() : value.toString());
+        });
+        return result;
+    }
 
+    /**
+     * Converts a JsonNode to a Map with Object values (for tool calls).
+     */
+    private Map<String, Object> convertJsonToObjectMap(JsonNode node) {
+        Map<String, Object> result = new ConcurrentHashMap<>();
         node.fields().forEachRemaining(entry -> {
             String key = entry.getKey();
             JsonNode value = entry.getValue();
@@ -257,12 +314,11 @@ public class HttpZaiMcpBridge implements ZaiMcpBridge {
             } else if (value.isArray()) {
                 result.put(key, jsonMapper.convertValue(value, Object.class));
             } else if (value.isObject()) {
-                result.put(key, convertJsonToMap(value));
+                result.put(key, convertJsonToObjectMap(value));
             } else {
                 result.put(key, value.toString());
             }
         });
-
         return result;
     }
 

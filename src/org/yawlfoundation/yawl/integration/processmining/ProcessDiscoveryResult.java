@@ -56,6 +56,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author YAWL Foundation
  */
 public record ProcessDiscoveryResult(
+        @JsonProperty("algorithmName") String algorithmName,
         @JsonProperty("processModelJson") String processModelJson,
         @JsonProperty("fitness") double fitness,
         @JsonProperty("precision") double precision,
@@ -104,6 +105,7 @@ public record ProcessDiscoveryResult(
      */
     public static ProcessDiscoveryResult empty() {
         return new ProcessDiscoveryResult(
+                "",
                 "{}",
                 0.0,
                 0.0,
@@ -128,6 +130,8 @@ public record ProcessDiscoveryResult(
     public String toJson() {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
+
+        node.put("algorithmName", algorithmName);
 
         // Embed processModelJson as parsed JSON object (not string)
         try {

@@ -20,8 +20,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -200,5 +205,90 @@ public final class Ocel2Exporter {
             Instant timestamp,
             String eventType
     ) {
+    }
+
+    /**
+     * Container for an OCEL2 (Object-Centric Event Log v2.0) event log.
+     * Holds an ordered list of {@link Ocel2Event} instances for analysis.
+     */
+    public static final class Ocel2EventLog {
+
+        private final List<Ocel2Event> events;
+
+        /**
+         * Construct an event log from an ordered list of events.
+         *
+         * @param events ordered list of events (must not be null)
+         */
+        public Ocel2EventLog(List<Ocel2Event> events) {
+            this.events = Collections.unmodifiableList(
+                    new ArrayList<>(Objects.requireNonNull(events, "events must not be null")));
+        }
+
+        /**
+         * Returns all events in this log in the order they were added.
+         *
+         * @return unmodifiable ordered list of events
+         */
+        public List<Ocel2Event> getEvents() {
+            return events;
+        }
+    }
+
+    /**
+     * A single event within an OCEL2 event log.
+     * Captures the activity name, timestamp, and object bindings (omap) of the event.
+     */
+    public static final class Ocel2Event {
+
+        private final String id;
+        private final String activity;
+        private final Instant time;
+        private final Map<String, List<String>> objects;
+        private final Map<String, Object> properties;
+
+        /**
+         * Construct an OCEL2 event.
+         *
+         * @param id        event identifier; must not be null
+         * @param activity activity name (ocel:activity); must not be null
+         * @param time     event timestamp (ocel:timestamp); must not be null
+         * @param objects  map of object-type to list of object IDs (ocel:omap); must not be null
+         * @param properties event properties; must not be null
+         */
+        public Ocel2Event(String id, String activity, Instant time, Map<String, List<String>> objects, Map<String, Object> properties) {
+            this.id        = Objects.requireNonNull(id, "id must not be null");
+            this.activity = Objects.requireNonNull(activity, "activity must not be null");
+            this.time     = Objects.requireNonNull(time, "time must not be null");
+            this.objects  = Collections.unmodifiableMap(
+                    new LinkedHashMap<>(Objects.requireNonNull(objects, "objects must not be null")));
+            this.properties = Collections.unmodifiableMap(
+                    new LinkedHashMap<>(Objects.requireNonNull(properties, "properties must not be null")));
+        }
+
+        /** Returns the event identifier. */
+        public String getId() { return id; }
+
+        /** Returns the activity name for this event. */
+        public String getActivity() { return activity; }
+
+        /** Returns the event timestamp. */
+        public Instant getTime() { return time; }
+
+        /**
+         * Returns the object map (omap): each entry maps an object type
+         * (e.g. {@code "case"}, {@code "resource"}) to the list of
+         * object IDs of that type associated with this event.
+         *
+         * @return unmodifiable map of object-type to object-ID lists
+         */
+        public Map<String, List<String>> getObjects() { return objects; }
+
+        /**
+         * Returns the event properties.
+         *
+         * @return unmodifiable map of event properties
+         */
+        public Map<String, Object> getProperties() { return properties; }
     }
 }
