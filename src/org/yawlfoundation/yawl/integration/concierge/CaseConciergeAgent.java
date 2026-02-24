@@ -151,7 +151,7 @@ public final class CaseConciergeAgent implements YCaseEventListener {
         slaThresholdsMs.put(caseId, defaultSlaThresholdMs);
 
         // Start tracking
-        String specUri = event.getSpecID() != null ? event.getSpecID().getSpecUri() : "unknown";
+        String specUri = event.getSpecID() != null ? event.getSpecID().getUri() : "unknown";
         slaMonitor.startTracking(caseId, caseId, Map.of("specUri", specUri));
 
         LOGGER.info("Case lifecycle initialized: caseId={}, slaThresholdMs={}", caseId, defaultSlaThresholdMs);

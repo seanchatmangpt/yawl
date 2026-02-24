@@ -14,7 +14,9 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
+import org.yawlfoundation.yawl.integration.factory.ConversationalWorkflowFactory;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlFactoryToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 
@@ -115,6 +117,22 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
+        // Create ConversationalWorkflowFactory for NL-to-workflow tools
+        ConversationalWorkflowFactory workflowFactory = new ConversationalWorkflowFactory(
+            org.yawlfoundation.yawl.integration.zai.SpecificationGenerator.create(),
+            interfaceAClient,
+            interfaceBClient,
+            new org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade(
+                yawlEngineUrl, yawlUsername, yawlPassword),
+            sessionHandle
+        );
+
+        // Combine workflow tools and factory tools
+        java.util.List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> allTools =
+            new java.util.ArrayList<>();
+        allTools.addAll(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle));
+        allTools.addAll(YawlFactoryToolSpecifications.createAll(workflowFactory));
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -126,10 +144,10 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 15 workflow tools, 3 static resources, 3 resource templates,
-                4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
+                Capabilities: 18 workflow tools (15 standard + 3 NL-to-workflow), 3 static resources,
+                3 resource templates, 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(

@@ -96,8 +96,8 @@ public record PaymentEvent(
      * @throws IllegalArgumentException if required fields are missing or invalid
      */
     public PaymentEvent {
-        // Validate base fields
-        new MarketplaceEvent(eventType, agentId, idempotencyToken, timestamp, version, metadata);
+        // Validate base fields (delegated to sealed interface static helper)
+        MarketplaceEvent.validateBaseFields(eventType, agentId, idempotencyToken, timestamp, version);
 
         // Validate payment-specific fields
         if (transactionId == null || transactionId.isBlank()) {

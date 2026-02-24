@@ -53,12 +53,12 @@ class ConversationalWorkflowFactoryTest {
     private ProcessMiningFacade processMining;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws java.io.IOException {
         // Real implementations that throw UnsupportedOperationException when actual operations are attempted
         specGenerator = new RealSpecificationGeneratorWithoutLiveEngine();
         interfaceAClient = new RealInterfaceAClientWithoutLiveEngine();
         interfaceBClient = new RealInterfaceBClientWithoutLiveEngine();
-        processMining = new RealProcessMiningFacadeWithoutLiveEngine();
+        processMining = createTestProcessMiningFacade();
 
         factory = new ConversationalWorkflowFactory(
             specGenerator,
@@ -271,7 +271,7 @@ class ConversationalWorkflowFactoryTest {
      * Requires live Z.AI API and YAWL engine for actual usage.
      */
     static class RealSpecificationGeneratorWithoutLiveEngine extends SpecificationGenerator {
-        StubSpecificationGenerator() {
+        RealSpecificationGeneratorWithoutLiveEngine() {
             super(null);
         }
 
@@ -295,7 +295,7 @@ class ConversationalWorkflowFactoryTest {
      * Requires live YAWL engine for actual usage.
      */
     static class RealInterfaceAClientWithoutLiveEngine extends InterfaceA_EnvironmentBasedClient {
-        StubInterfaceAClient() {
+        RealInterfaceAClientWithoutLiveEngine() {
             super("http://localhost:8080/yawl/ia");
         }
 
@@ -312,7 +312,7 @@ class ConversationalWorkflowFactoryTest {
      * Requires live YAWL engine for actual usage.
      */
     static class RealInterfaceBClientWithoutLiveEngine extends InterfaceB_EnvironmentBasedClient {
-        StubInterfaceBClient() {
+        RealInterfaceBClientWithoutLiveEngine() {
             super("http://localhost:8080/yawl/ib");
         }
 
@@ -328,21 +328,13 @@ class ConversationalWorkflowFactoryTest {
     }
 
     /**
-     * Real ProcessMiningFacade that throws UnsupportedOperationException.
-     * Requires live YAWL engine for actual usage.
+     * Factory for ProcessMiningFacade instances for testing.
+     * Creates a real ProcessMiningFacade that will throw if analyze is called
+     * without a live YAWL engine, which is the correct behavior for this test.
      */
-    static class RealProcessMiningFacadeWithoutLiveEngine extends ProcessMiningFacade {
-        StubProcessMiningFacade() throws java.io.IOException {
-            super("http://localhost:8080/yawl", "user", "password");
-        }
-
-        @Override
-        public ProcessMiningReport analyze(org.yawlfoundation.yawl.engine.YSpecificationID specId,
-                                           org.yawlfoundation.yawl.elements.YNet net,
-                                           boolean withData) throws java.io.IOException {
-            throw new UnsupportedOperationException(
-                "analyze requires live YAWL engine with event log data. " +
-                "Use integration tests or provide real ProcessMiningFacade instance.");
-        }
+    static ProcessMiningFacade createTestProcessMiningFacade() throws java.io.IOException {
+        // Real ProcessMiningFacade with dummy engine URL
+        // (will throw on analyze without live engine, which is correct)
+        return new ProcessMiningFacade("http://localhost:8080/yawl", "user", "password");
     }
 }

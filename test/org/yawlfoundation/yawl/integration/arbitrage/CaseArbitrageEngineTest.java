@@ -56,12 +56,12 @@ class CaseArbitrageEngineTest {
     private CaseArbitrageEngine engine;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Use real components with test doubles
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
-        // Create a test event replayer backed by an empty store
-        WorkflowEventStore eventStore = new TestEventStore();
+        // Create a test event replayer backed by a real H2 in-memory store
+        WorkflowEventStore eventStore = createTestEventStore();
         eventReplayer = new EventReplayer(eventStore);
 
         // Create a test stateless engine
@@ -309,45 +309,21 @@ class CaseArbitrageEngineTest {
     // =========================================================================
 
     /**
-     * Test event store backed by in-memory map. Empty by design for testing
-     * replay failure scenarios.
+     * Test event store factory that creates a real WorkflowEventStore
+     * backed by H2 in-memory database with no events for testing
+     * replay failure scenarios. Uses the real store with empty data.
      */
-    static class TestEventStore implements WorkflowEventStore {
+    static WorkflowEventStore createTestEventStore() throws Exception {
+        // Create H2 in-memory datasource
+        javax.sql.DataSource ds = new org.h2.jdbcx.JdbcDataSource();
+        ((org.h2.jdbcx.JdbcDataSource) ds).setURL("jdbc:h2:mem:test-event-store");
+        ((org.h2.jdbcx.JdbcDataSource) ds).setUser("sa");
+        ((org.h2.jdbcx.JdbcDataSource) ds).setPassword("");
 
-        @Override
-        public void appendEvent(org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent event,
-                                 long expectedSeqNum)
-                throws WorkflowEventStore.EventStoreException, WorkflowEventStore.ConcurrentModificationException {
-            // No-op for testing
-        }
+        // Create real store (it initializes its own schema on first use)
+        WorkflowEventStore store = new WorkflowEventStore(ds);
 
-        @Override
-        public java.util.List<org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent> loadEvents(String caseId)
-                throws WorkflowEventStore.EventStoreException {
-            // Always return empty list, triggering ReplayException on empty case
-            throw new WorkflowEventStore.EventStoreException("Test store: no events found for case " + caseId);
-        }
-
-        @Override
-        public java.util.List<org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent> loadEventsAsOf(String caseId,
-                                                                                                               Instant asOf)
-                throws WorkflowEventStore.EventStoreException {
-            // Always throw to simulate missing data
-            throw new WorkflowEventStore.EventStoreException(
-                "Test store: no events found for case " + caseId + " asOf " + asOf
-            );
-        }
-
-        @Override
-        public java.util.List<org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent> loadEventsSince(String caseId,
-                                                                                                                long afterSeqNum)
-                throws WorkflowEventStore.EventStoreException {
-            return new java.util.ArrayList<>();
-        }
-
-        @Override
-        public long getNextSequenceNumber(String caseId) throws WorkflowEventStore.EventStoreException {
-            return 1;
-        }
+        // Store is now ready with empty event table
+        return store;
     }
 }

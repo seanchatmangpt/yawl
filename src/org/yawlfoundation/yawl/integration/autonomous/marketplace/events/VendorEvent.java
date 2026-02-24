@@ -72,8 +72,8 @@ public record VendorEvent(
      * @throws IllegalArgumentException if required fields are missing or invalid
      */
     public VendorEvent {
-        // Validate base fields
-        new MarketplaceEvent(eventType, agentId, idempotencyToken, timestamp, version, metadata);
+        // Validate base fields (delegated to sealed interface static helper)
+        MarketplaceEvent.validateBaseFields(eventType, agentId, idempotencyToken, timestamp, version);
 
         // Validate vendor-specific fields
         if (vendorId == null || vendorId.isBlank()) {

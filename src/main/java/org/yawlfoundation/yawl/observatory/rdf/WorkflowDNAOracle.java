@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.jena.rdf.model.ResIterator;
 
 /**
  * Innovation 4: WorkflowDNAOracle — Cross-workflow semantic intelligence engine.
@@ -442,23 +443,37 @@ public final class WorkflowDNAOracle {
 
         Instant cutoff = Instant.now().minus(maxAge);
 
-        String deleteQueryString = """
+        // Iterate through all case executions and remove old ones
+        String queryString = """
                 PREFIX exec: <http://yawlfoundation.org/execution#>
 
-                DELETE {
-                    ?c ?p ?o .
-                }
+                SELECT ?caseUri ?absorbedAtStr
                 WHERE {
-                    ?c a exec:CaseExecution ;
-                       exec:absorbedAt ?absorbedAtStr ;
-                       ?p ?o .
-                    BIND (xsd:dateTime(?absorbedAtStr) AS ?absorbedAt)
-                    FILTER (?absorbedAt < "%s"^^xsd:dateTime)
+                    ?caseUri a exec:CaseExecution ;
+                             exec:absorbedAt ?absorbedAtStr .
                 }
-                """.formatted(cutoff.toString());
+                """;
 
-        try (var queryExecution = QueryExecutionFactory.create(deleteQueryString, dnaGraph)) {
-            queryExecution.execUpdate();
+        List<Resource> resourcesToRemove = new ArrayList<>();
+        try (var queryExecution = QueryExecutionFactory.create(queryString, dnaGraph)) {
+            ResultSet results = queryExecution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution solution = results.nextSolution();
+                String absorbedAtStr = solution.getLiteral("absorbedAtStr").getString();
+                try {
+                    Instant absorbed = Instant.parse(absorbedAtStr);
+                    if (absorbed.isBefore(cutoff)) {
+                        resourcesToRemove.add(solution.getResource("caseUri"));
+                    }
+                } catch (Exception e) {
+                    // Ignore malformed timestamps
+                }
+            }
+        }
+
+        // Remove identified resources
+        for (Resource resource : resourcesToRemove) {
+            resource.removeProperties();
         }
     }
 

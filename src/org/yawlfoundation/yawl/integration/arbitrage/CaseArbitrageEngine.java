@@ -398,7 +398,7 @@ public final class CaseArbitrageEngine {
         if (winnerResult != null) {
             // Record winner's performance with predictive router
             // Use variant ID as task name for routing tracking
-            predictiveRouter.recordCompletion(
+            predictiveRouter.recordTaskCompletion(
                 "arbitrage-variant-" + winner.variantIndex(),
                 "case_execution",
                 winnerResult.durationMs()

@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.integration.evolution;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.elements.YSpecification;
@@ -111,12 +112,14 @@ public final class WorkflowEvolutionEngine {
         this.maxEvolutionsPerTask = maxEvolutionsPerTask;
 
         // Try to get MeterRegistry if available; if not, create a no-op instance
+        MeterRegistry reg;
         try {
-            this.meterRegistry = io.micrometer.core.instrument.Metrics.globalRegistry;
+            reg = io.micrometer.core.instrument.Metrics.globalRegistry;
         } catch (Exception e) {
             // Fallback: create a silent no-op registry (Micrometer does support this)
-            this.meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+            reg = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
         }
+        this.meterRegistry = reg;
 
         this.evolutionTrees = new ConcurrentHashMap<>();
         this.evolutionCount = new ConcurrentHashMap<>();
@@ -274,7 +277,7 @@ public final class WorkflowEvolutionEngine {
             installInRdrTree(taskName, spec);
 
             // Register with PredictiveRouter
-            predictiveRouter.registerTask(taskName, spec.getURI());
+            predictiveRouter.registerAgent(taskName);
 
             // Record success
             long duration = System.currentTimeMillis() - startTime;
@@ -293,7 +296,7 @@ public final class WorkflowEvolutionEngine {
             meterRegistry.counter("yawl.evolution.success", "task", taskName).increment();
             meterRegistry.timer("yawl.evolution.generation_time_ms", "task", taskName)
                 .record(duration, java.util.concurrent.TimeUnit.MILLISECONDS);
-            meterRegistry.gauge("yawl.evolution.speedup_factor", "task", taskName, speedupFactor);
+            meterRegistry.gauge("yawl.evolution.speedup_factor", Tags.of("task", taskName), speedupFactor);
 
             LOGGER.info("Successfully evolved task {} with {:.1f}x speedup (generated in {}ms)",
                 taskName, speedupFactor, duration);
