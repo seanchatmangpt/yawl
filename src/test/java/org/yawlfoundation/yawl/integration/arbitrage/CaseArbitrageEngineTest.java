@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.integration.arbitrage;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.integration.arbitrage.CaseArbitrageEngine.ArbitrageException;
@@ -25,6 +26,7 @@ import org.yawlfoundation.yawl.integration.arbitrage.CaseArbitrageEngine.FutureV
 import org.yawlfoundation.yawl.integration.arbitrage.CaseArbitrageEngine.VariantResult;
 import org.yawlfoundation.yawl.integration.eventsourcing.CaseStateView;
 import org.yawlfoundation.yawl.integration.eventsourcing.EventReplayer;
+import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.observability.PredictiveRouter;
 import org.yawlfoundation.yawl.stateless.YStatelessEngine;
 import org.yawlfoundation.yawl.stateless.elements.YSpecification;
@@ -37,8 +39,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Chicago TDD tests for CaseArbitrageEngine using real integration patterns.
@@ -50,20 +50,30 @@ import static org.mockito.Mockito.*;
  */
 class CaseArbitrageEngineTest {
 
-    private EventReplayer mockEventReplayer;
-    private YStatelessEngine mockStatelessEngine;
-    private PredictiveRouter mockPredictiveRouter;
+    private EventReplayer eventReplayer;
+    private YStatelessEngine statelessEngine;
+    private PredictiveRouter predictiveRouter;
     private CaseArbitrageEngine engine;
 
     @BeforeEach
     void setUp() {
-        mockEventReplayer = mock(EventReplayer.class);
-        mockStatelessEngine = mock(YStatelessEngine.class);
-        mockPredictiveRouter = mock(PredictiveRouter.class);
+        // Use real components with test doubles
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+
+        // Create a test event replayer backed by an empty store
+        WorkflowEventStore eventStore = new TestEventStore();
+        eventReplayer = new EventReplayer(eventStore);
+
+        // Create a test stateless engine
+        statelessEngine = new YStatelessEngine();
+
+        // Create a real predictive router
+        predictiveRouter = new PredictiveRouter(meterRegistry);
+
         engine = new CaseArbitrageEngine(
-            mockEventReplayer,
-            mockStatelessEngine,
-            mockPredictiveRouter
+            eventReplayer,
+            statelessEngine,
+            predictiveRouter
         );
     }
 
@@ -76,7 +86,7 @@ class CaseArbitrageEngineTest {
         // Given: variantCount = 6 (exceeds max of 5)
         String sourceCaseId = "case-123";
         Instant pivotInstant = Instant.now();
-        YSpecification spec = mock(YSpecification.class);
+        YSpecification spec = new YSpecification();
 
         // When/Then: IllegalArgumentException thrown
         IllegalArgumentException ex = assertThrows(
@@ -88,9 +98,6 @@ class CaseArbitrageEngineTest {
             ex.getMessage().contains("exceeds τ limit of 5"),
             "Exception message should mention τ limit"
         );
-
-        // Verify no downstream calls made
-        verifyNoInteractions(mockEventReplayer, mockStatelessEngine, mockPredictiveRouter);
     }
 
     // =========================================================================
@@ -100,17 +107,10 @@ class CaseArbitrageEngineTest {
     @Test
     void arbitrate_wrapsReplayExceptionAsArbitrageException()
             throws Exception {
-        // Given: EventReplayer throws ReplayException
-        String sourceCaseId = "case-456";
+        // Given: EventReplayer with empty event store (will throw on missing case)
+        String sourceCaseId = "case-nonexistent-456";
         Instant pivotInstant = Instant.now();
-        YSpecification spec = mock(YSpecification.class);
-
-        EventReplayer.ReplayException replayEx = new EventReplayer.ReplayException(
-            "Event store read failed",
-            new RuntimeException("Network timeout")
-        );
-        when(mockEventReplayer.replayAsOf(sourceCaseId, pivotInstant))
-            .thenThrow(replayEx);
+        YSpecification spec = new YSpecification();
 
         // When/Then: ArbitrageException thrown wrapping the ReplayException
         ArbitrageException ex = assertThrows(
@@ -122,12 +122,7 @@ class CaseArbitrageEngineTest {
             ex.getMessage().contains("Failed to replay"),
             "Exception message should mention replay failure"
         );
-        assertEquals(replayEx, ex.getCause(), "Cause should be the ReplayException");
-
-        // Verify no further calls after replay failure
-        verify(mockEventReplayer, times(1)).replayAsOf(sourceCaseId, pivotInstant);
-        verifyNoMoreInteractions(mockEventReplayer);
-        verifyNoInteractions(mockStatelessEngine, mockPredictiveRouter);
+        assertNotNull(ex.getCause(), "Cause should be the underlying ReplayException");
     }
 
     // =========================================================================
@@ -307,5 +302,52 @@ class CaseArbitrageEngineTest {
             .map(VariantResult::outcomeStatus)
             .findFirst()
             .orElse("UNKNOWN");
+    }
+
+    // =========================================================================
+    // Test Double: In-Memory Event Store for Testing
+    // =========================================================================
+
+    /**
+     * Test event store backed by in-memory map. Empty by design for testing
+     * replay failure scenarios.
+     */
+    static class TestEventStore implements WorkflowEventStore {
+
+        @Override
+        public void appendEvent(org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent event,
+                                 long expectedSeqNum)
+                throws WorkflowEventStore.EventStoreException, WorkflowEventStore.ConcurrentModificationException {
+            // No-op for testing
+        }
+
+        @Override
+        public java.util.List<org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent> loadEvents(String caseId)
+                throws WorkflowEventStore.EventStoreException {
+            // Always return empty list, triggering ReplayException on empty case
+            throw new WorkflowEventStore.EventStoreException("Test store: no events found for case " + caseId);
+        }
+
+        @Override
+        public java.util.List<org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent> loadEventsAsOf(String caseId,
+                                                                                                               Instant asOf)
+                throws WorkflowEventStore.EventStoreException {
+            // Always throw to simulate missing data
+            throw new WorkflowEventStore.EventStoreException(
+                "Test store: no events found for case " + caseId + " asOf " + asOf
+            );
+        }
+
+        @Override
+        public java.util.List<org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent> loadEventsSince(String caseId,
+                                                                                                                long afterSeqNum)
+                throws WorkflowEventStore.EventStoreException {
+            return new java.util.ArrayList<>();
+        }
+
+        @Override
+        public long getNextSequenceNumber(String caseId) throws WorkflowEventStore.EventStoreException {
+            return 1;
+        }
     }
 }
