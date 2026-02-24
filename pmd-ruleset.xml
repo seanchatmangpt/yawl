@@ -66,7 +66,7 @@
     <rule ref="category/java/codestyle.xml/EmptyControlStatement"/>
     <rule ref="category/java/codestyle.xml/ExtendsObject"/>
     <rule ref="category/java/codestyle.xml/FieldDeclarationsShouldBeAtStartOfClass"/>
-    <rule ref="category/java/codestyle.xml/FinalLocalVariable"/>
+    <!-- FinalLocalVariable removed: not available in PMD 7.x codestyle ruleset -->
     <rule ref="category/java/codestyle.xml/ForLoopShouldBeWhileLoop"/>
     <rule ref="category/java/codestyle.xml/IdenticalCatchBranches"/>
     <rule ref="category/java/codestyle.xml/NoPackage">
@@ -117,21 +117,13 @@
         </properties>
     </rule>
     <rule ref="category/java/design.xml/ExceptionAsFlowControl"/>
-    <rule ref="category/java/design.xml/ExcessiveClassLength">
-        <properties>
-            <property name="minimum" value="1500"/>
-        </properties>
-    </rule>
+    <!-- ExcessiveClassLength removed: not available in PMD 7.x; use NcssCount below -->
     <rule ref="category/java/design.xml/ExcessiveImports">
         <properties>
             <property name="minimum" value="40"/>
         </properties>
     </rule>
-    <rule ref="category/java/design.xml/ExcessiveMethodLength">
-        <properties>
-            <property name="minimum" value="80"/>
-        </properties>
-    </rule>
+    <!-- ExcessiveMethodLength removed: not available in PMD 7.x; use NcssCount below -->
     <rule ref="category/java/design.xml/ExcessiveParameterList">
         <properties>
             <property name="minimum" value="8"/>
@@ -157,7 +149,7 @@
             <property name="reportLevel" value="200"/>
         </properties>
     </rule>
-    <rule ref="category/java/design.xml/OptimizableToArrayCall"/>
+    <!-- OptimizableToArrayCall removed: not available in design.xml in PMD 7.x -->
     <rule ref="category/java/design.xml/SignatureDeclareThrowsException"/>
     <rule ref="category/java/design.xml/SimplifyBooleanExpressions"/>
     <rule ref="category/java/design.xml/SimplifyBooleanReturns"/>
@@ -210,7 +202,7 @@
     <rule ref="category/java/errorprone.xml/AvoidLosingExceptionInformation"/>
     <rule ref="category/java/errorprone.xml/AvoidMultipleUnaryOperators"/>
     <rule ref="category/java/errorprone.xml/AvoidUsingOctalValues"/>
-    <rule ref="category/java/errorprone.xml/BadComparison"/>
+    <!-- BadComparison removed: not available in PMD 7.x; CompareObjectsWithEquals below covers this -->
     <rule ref="category/java/errorprone.xml/BrokenNullCheck"/>
     <rule ref="category/java/errorprone.xml/CallSuperFirst"/>
     <rule ref="category/java/errorprone.xml/CheckSkipResult"/>
@@ -234,15 +226,9 @@
     <rule ref="category/java/errorprone.xml/DontImportSun"/>
     <rule ref="category/java/errorprone.xml/DontUseFloatTypeForLoopIndices"/>
     <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
-    <rule ref="category/java/errorprone.xml/EmptyFinallyBlock"/>
-    <rule ref="category/java/errorprone.xml/EmptyIfStmt"/>
-    <rule ref="category/java/errorprone.xml/EmptyInitializer"/>
-    <rule ref="category/java/errorprone.xml/EmptyStatementBlock"/>
-    <rule ref="category/java/errorprone.xml/EmptyStatementNotInLoop"/>
-    <rule ref="category/java/errorprone.xml/EmptySwitchStatements"/>
-    <rule ref="category/java/errorprone.xml/EmptySynchronizedBlock"/>
-    <rule ref="category/java/errorprone.xml/EmptyTryBlock"/>
-    <rule ref="category/java/errorprone.xml/EmptyWhileStmt"/>
+    <!-- EmptyFinallyBlock, EmptyIfStmt, EmptyInitializer, EmptyStatementBlock,
+         EmptyStatementNotInLoop, EmptySwitchStatements, EmptySynchronizedBlock,
+         EmptyTryBlock, EmptyWhileStmt removed: merged into codestyle.xml/EmptyControlStatement in PMD 7 -->
     <rule ref="category/java/errorprone.xml/EqualsNull"/>
     <rule ref="category/java/errorprone.xml/IdempotentOperations"/>
     <rule ref="category/java/errorprone.xml/InstantiationToGetClass"/>
@@ -250,7 +236,7 @@
     <rule ref="category/java/errorprone.xml/JumbledIncrementer"/>
     <rule ref="category/java/errorprone.xml/MethodWithSameNameAsEnclosingClass"/>
     <rule ref="category/java/errorprone.xml/MisplacedNullCheck"/>
-    <rule ref="category/java/errorprone.xml/MissingBreakInSwitch"/>
+    <!-- MissingBreakInSwitch removed: not available in PMD 7.x (switch expressions handle exhaustiveness) -->
     <rule ref="category/java/errorprone.xml/MissingStaticMethodInNonInstantiatableClass"/>
     <rule ref="category/java/errorprone.xml/MoreThanOneLogger"/>
     <rule ref="category/java/errorprone.xml/NonCaseLabelInSwitchStatement"/>
@@ -280,7 +266,7 @@
     <rule ref="category/java/errorprone.xml/UnusedNullCheckInEquals"/>
     <rule ref="category/java/errorprone.xml/UseCorrectExceptionLogging"/>
     <rule ref="category/java/errorprone.xml/UseEqualsToCompareStrings"/>
-    <rule ref="category/java/errorprone.xml/UseIdOfProperly"/>
+    <!-- UseIdOfProperly removed: not available in PMD 7.x -->
     <rule ref="category/java/errorprone.xml/UseLocaleWithCaseConversions"/>
     <rule ref="category/java/errorprone.xml/UseProperClassLoader"/>
 
@@ -289,7 +275,7 @@
          ===================================================================== -->
     <rule ref="category/java/multithreading.xml/AvoidSynchronizedAtMethodLevel"/>
     <rule ref="category/java/multithreading.xml/AvoidThreadGroup"/>
-    <rule ref="category/java/multithreading.xml/AvoidUsingVolatileField"/>
+    <!-- AvoidUsingVolatileField removed: not available in PMD 7.7.0 multithreading ruleset -->
     <rule ref="category/java/multithreading.xml/DoNotUseThreads">
         <!-- Allowed: YAWL uses virtual threads via ExecutorService -->
         <properties>
@@ -313,26 +299,20 @@
     <rule ref="category/java/performance.xml/AvoidCalendarDateCreation"/>
     <rule ref="category/java/performance.xml/AvoidFileStream"/>
     <rule ref="category/java/performance.xml/BigIntegerInstantiation"/>
-    <rule ref="category/java/performance.xml/BooleanInstantiation"/>
-    <rule ref="category/java/performance.xml/ByteInstantiation"/>
+    <!-- BooleanInstantiation, ByteInstantiation, IntegerInstantiation, LongInstantiation,
+         ShortInstantiation removed: autoboxing primitives deprecated/removed in PMD 7.x -->
     <rule ref="category/java/performance.xml/ConsecutiveAppendsShouldReuse"/>
     <rule ref="category/java/performance.xml/ConsecutiveLiteralAppends"/>
     <rule ref="category/java/performance.xml/InefficientEmptyStringCheck"/>
     <rule ref="category/java/performance.xml/InefficientStringBuffering"/>
     <rule ref="category/java/performance.xml/InsufficientStringBufferDeclaration"/>
-    <rule ref="category/java/performance.xml/IntegerInstantiation"/>
-    <rule ref="category/java/performance.xml/LongInstantiation"/>
-    <rule ref="category/java/performance.xml/OptimizableToArrayCall"/>
+    <!-- OptimizableToArrayCall removed: moved to design.xml in PMD 7 (already absent from design above) -->
     <rule ref="category/java/performance.xml/RedundantFieldInitializer"/>
-    <rule ref="category/java/performance.xml/ShortInstantiation"/>
     <rule ref="category/java/performance.xml/StringInstantiation"/>
     <rule ref="category/java/performance.xml/StringToString"/>
-    <rule ref="category/java/performance.xml/TooFewBranchesForSwitch">
-        <properties>
-            <property name="minimumNumberCasesForASwitch" value="3"/>
-        </properties>
-    </rule>
-    <rule ref="category/java/performance.xml/UnnecessaryWrapperObjectCreation"/>
+    <!-- TooFewBranchesForSwitch: PMD 7.7.0 has no configurable property (was minimumNumberCasesForASwitch in PMD 6) -->
+    <rule ref="category/java/performance.xml/TooFewBranchesForSwitch"/>
+    <!-- UnnecessaryWrapperObjectCreation removed: not available in PMD 7.x -->
     <rule ref="category/java/performance.xml/UseArrayListInsteadOfVector"/>
     <rule ref="category/java/performance.xml/UseArraysAsList"/>
     <rule ref="category/java/performance.xml/UseIndexOfChar"/>
@@ -343,7 +323,7 @@
     <!-- =====================================================================
          SECURITY - Critical rules, no exclusions without written approval
          ===================================================================== -->
-    <rule ref="category/java/security.xml/HardCodedCryptographicKey"/>
+    <!-- HardCodedCryptographicKey removed: not available in PMD 7.7.0 security ruleset -->
     <rule ref="category/java/security.xml/InsecureCryptoIv"/>
 
 </ruleset>

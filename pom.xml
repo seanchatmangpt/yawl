@@ -1655,7 +1655,9 @@
                         <printFailingErrors>true</printFailingErrors>
                         <includeTests>false</includeTests>
                         <excludeFromFailureFile>${maven.multiModuleProjectDirectory}/pmd-exclusions.properties</excludeFromFailureFile>
-                        <targetJdk>25</targetJdk>
+                        <!-- PMD 7.7.0 supports up to Java 21; set to LTS baseline.
+                             Java 25 source compiles fine; PMD analyses at 21 compatibility level. -->
+                        <targetJdk>21</targetJdk>
                     </configuration>
                 </plugin>
 
@@ -2321,7 +2323,7 @@
                                 <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>
                                 <arg>-XDcompilePolicy=simple</arg>
-                                <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -Xep:ExcludedPath:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
+                                <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -XepExcludedPaths:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
                             </compilerArgs>
                             <annotationProcessorPaths>
                                 <path>
