@@ -1,4 +1,4 @@
-# YAWL v5.2 - Pull Request Quality Gates
+# YAWL v6 - Pull Request Quality Gates
 #
 # Runs on every pull request and push to main/master/develop.
 # All jobs must pass for the PR to be mergeable.
@@ -239,6 +239,7 @@ jobs:
         run: |
           mvn spotbugs:check \
             ${{ env.MAVEN_BATCH_FLAGS }} \
+            -Panalysis \
             2>&1 | tee /tmp/spotbugs-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
@@ -292,6 +293,7 @@ jobs:
         run: |
           mvn checkstyle:check \
             ${{ env.MAVEN_BATCH_FLAGS }} \
+            -Panalysis \
             2>&1 | tee /tmp/checkstyle-output.txt
 
       - name: Parse Checkstyle results
@@ -344,6 +346,7 @@ jobs:
         run: |
           mvn pmd:check pmd:cpd-check \
             ${{ env.MAVEN_BATCH_FLAGS }} \
+            -Panalysis \
             2>&1 | tee /tmp/pmd-output.txt
 
       - name: Parse PMD results
