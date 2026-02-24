@@ -19,46 +19,40 @@ if [ ! -f "${COVERAGE_JSON}" ]; then
     exit 1
 fi
 
-python3 - "${COVERAGE_JSON}" << 'PYEOF'
-import sys, json
+line_pct=$(jq -r '.aggregate.line_pct // 0' "${COVERAGE_JSON}")
+branch_pct=$(jq -r '.aggregate.branch_pct // 0' "${COVERAGE_JSON}")
+target_line=$(jq -r '.aggregate.target_line_pct // 50' "${COVERAGE_JSON}")
+target_branch=$(jq -r '.aggregate.target_branch_pct // 40' "${COVERAGE_JSON}")
+generated_at=$(jq -r '.generated_at // "unknown"' "${COVERAGE_JSON}")
 
-data = json.load(open(sys.argv[1]))
-agg = data.get("aggregate", {})
-modules = data.get("modules", [])
+meets_line=$(awk "BEGIN {print ($line_pct >= $target_line) ? \"OK\" : \"NO\"}")
+meets_branch=$(awk "BEGIN {print ($branch_pct >= $target_branch) ? \"OK\" : \"NO\"}")
 
-print()
-print("╔══════════════════════════════════════════════════════════════╗")
-print("║          YAWL Coverage Dashboard — Q2 2026 Targets          ║")
-print("╠══════════════════════════════════════════════════════════════╣")
+echo ""
+echo "╔══════════════════════════════════════════════════════════════╗"
+echo "║          YAWL Coverage Dashboard — Q2 2026 Targets          ║"
+echo "╠══════════════════════════════════════════════════════════════╣"
+printf "║  AGGREGATE  Line: %5s%% [%s] (target %s%%)  Branch: %5s%% [%s] (target %s%%)\n" \
+    "$line_pct" "$meets_line" "$target_line" "$branch_pct" "$meets_branch" "$target_branch"
+echo "╠═══════════════════════════════╦══════════╦══════════════════╣"
+echo "║ Module                        ║  Line %  ║  Status          ║"
+echo "╠═══════════════════════════════╬══════════╬══════════════════╣"
 
-# Aggregate row
-line_pct = agg.get("line_pct", 0)
-branch_pct = agg.get("branch_pct", 0)
-target_line = agg.get("target_line_pct", 50)
-target_branch = agg.get("target_branch_pct", 40)
+jq -r '.modules[] | [.module, (.line_pct // "0"), (.status // "?")] | @tsv' "${COVERAGE_JSON}" | \
+while IFS=$'\t' read -r name lp status; do
+    name_short="${name:0:29}"
+    if [[ "$status" == "no_report" ]]; then
+        printf "║ %-29s ║   N/A    ║  not measured    ║\n" "$name_short"
+    else
+        bar_len=$(awk "BEGIN {print int($lp/10)}")
+        bar=$(printf '%0.s#' $(seq 1 "$bar_len") 2>/dev/null || true)
+        dots=$(printf '%0.s.' $(seq 1 $((10 - bar_len))) 2>/dev/null || true)
+        printf "║ %-29s ║ %6.1f%%  ║ %s%s  ║\n" "$name_short" "$lp" "$bar" "$dots"
+    fi
+done
 
-meets_line = "OK" if float(line_pct) >= target_line else "NO"
-meets_branch = "OK" if float(branch_pct) >= target_branch else "NO"
-
-print(f"║  AGGREGATE  Line: {line_pct:>5}% [{meets_line}] (target {target_line}%)  Branch: {branch_pct:>5}% [{meets_branch}] (target {target_branch}%)")
-print("╠═══════════════════════════════╦══════════╦══════════════════╣")
-print("║ Module                        ║  Line %  ║  Status          ║")
-print("╠═══════════════════════════════╬══════════╬══════════════════╣")
-
-for m in modules:
-    name = m["module"][:29].ljust(29)
-    status = m.get("status", "?")
-    if status == "no_report":
-        print(f"║ {name} ║   N/A    ║  not measured    ║")
-    else:
-        lp = float(m.get("line_pct", 0))
-        bar_len = int(lp / 10)
-        bar = "#" * bar_len + "." * (10 - bar_len)
-        print(f"║ {name} ║ {lp:>6.1f}%  ║ {bar}  ║")
-
-print("╚═══════════════════════════════╩══════════╩══════════════════╝")
-print()
-print(f"Generated: {data.get('generated_at', 'unknown')}")
-print("Update: mvn test && bash scripts/observatory/observatory.sh --facts")
-print()
-PYEOF
+echo "╚═══════════════════════════════╩══════════╩══════════════════╝"
+echo ""
+echo "Generated: ${generated_at}"
+echo "Update: mvn test && bash scripts/observatory/observatory.sh --facts"
+echo ""

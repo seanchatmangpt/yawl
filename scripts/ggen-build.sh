@@ -109,17 +109,17 @@ parse_maven_metrics() {
 # ──────────────────────────────────────────────────────────────────────────
 phase_generate() {
     log_info "Phase 0: Generate (ggen)"
-    local start_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+    local start_ms=$(date +%s%3N)
 
     if ! bash "${SCRIPT_DIR}/ggen-sync.sh"; then
-        local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+        local end_ms=$(date +%s%3N)
         local elapsed=$((end_ms - start_ms))
         log_error "ggen generation failed"
         emit_receipt "generate" "FAIL" "$elapsed" '{"error":"ggen-sync failed"}'
         return 4
     fi
 
-    local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+    local end_ms=$(date +%s%3N)
     local elapsed=$((end_ms - start_ms))
     log_success "ggen generation completed in ${elapsed}ms"
     emit_receipt "generate" "GREEN" "$elapsed" '{"status":"generated"}'
@@ -131,7 +131,7 @@ phase_generate() {
 # ──────────────────────────────────────────────────────────────────────────
 phase_compile() {
     log_info "Phase 1: Compile"
-    local start_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+    local start_ms=$(date +%s%3N)
 
     # Build Maven command
     local mvn_cmd="mvn"
@@ -149,7 +149,7 @@ phase_compile() {
     local log_file="/tmp/ggen-compile.log"
 
     if timeout "$GGEN_BUILD_TIMEOUT" "$mvn_cmd" "${mvn_args[@]}" > "$log_file" 2>&1; then
-        local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+        local end_ms=$(date +%s%3N)
         local elapsed=$((end_ms - start_ms))
         local metrics=$(parse_maven_metrics "$log_file")
 
@@ -157,7 +157,7 @@ phase_compile() {
         emit_receipt "compile" "GREEN" "$elapsed" "$metrics"
         return 0
     else
-        local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+        local end_ms=$(date +%s%3N)
         local elapsed=$((end_ms - start_ms))
 
         log_error "Compilation failed in ${elapsed}ms"
@@ -173,7 +173,7 @@ phase_compile() {
 # ──────────────────────────────────────────────────────────────────────────
 phase_test() {
     log_info "Phase 2: Test"
-    local start_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+    local start_ms=$(date +%s%3N)
 
     local mvn_cmd="mvn"
     if command -v mvnd >/dev/null 2>&1; then
@@ -189,7 +189,7 @@ phase_test() {
     local log_file="/tmp/ggen-test.log"
 
     if timeout "$GGEN_BUILD_TIMEOUT" "$mvn_cmd" "${mvn_args[@]}" > "$log_file" 2>&1; then
-        local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+        local end_ms=$(date +%s%3N)
         local elapsed=$((end_ms - start_ms))
         local metrics=$(parse_maven_metrics "$log_file")
 
@@ -197,7 +197,7 @@ phase_test() {
         emit_receipt "test" "GREEN" "$elapsed" "$metrics"
         return 0
     else
-        local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+        local end_ms=$(date +%s%3N)
         local elapsed=$((end_ms - start_ms))
 
         log_error "Tests failed in ${elapsed}ms"
@@ -213,7 +213,7 @@ phase_test() {
 # ──────────────────────────────────────────────────────────────────────────
 phase_validate() {
     log_info "Phase 3: Validate (Static Analysis)"
-    local start_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+    local start_ms=$(date +%s%3N)
 
     local mvn_cmd="mvn"
     if command -v mvnd >/dev/null 2>&1; then
@@ -230,7 +230,7 @@ phase_validate() {
     local log_file="/tmp/ggen-validate.log"
 
     if timeout "$GGEN_BUILD_TIMEOUT" "$mvn_cmd" "${mvn_args[@]}" > "$log_file" 2>&1; then
-        local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+        local end_ms=$(date +%s%3N)
         local elapsed=$((end_ms - start_ms))
 
         # Parse analysis results (if files exist)
@@ -259,7 +259,7 @@ phase_validate() {
         fi
         return 0
     else
-        local end_ms=$(python3 -c "import time; print(int(time.time() * 1000))")
+        local end_ms=$(date +%s%3N)
         local elapsed=$((end_ms - start_ms))
 
         log_error "Validation failed in ${elapsed}ms"

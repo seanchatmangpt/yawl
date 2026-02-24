@@ -192,7 +192,7 @@ mcp_stdio_roundtrip() {
     fi
 
     # Validate JSON
-    if ! echo "$message" | python3 -c "import json,sys; json.loads(sys.stdin.read())" 2>/dev/null; then
+    if ! echo "$message" | jq . >/dev/null 2>&1; then
         log_error "Invalid JSON message"
         return 1
     fi
@@ -231,7 +231,7 @@ mcp_stdio_send() {
     local input_file="${MCP_STDIO_WORK_DIR}/input"
 
     # Validate JSON
-    if ! echo "$message" | python3 -c "import json,sys; json.loads(sys.stdin.read())" 2>/dev/null; then
+    if ! echo "$message" | jq . >/dev/null 2>&1; then
         log_error "Invalid JSON message: ${message:0:100}..."
         return 1
     fi
@@ -410,15 +410,8 @@ mcp_stdio_validate_framing() {
 mcp_stdio_validate_utf8() {
     local message="$1"
 
-    # Use Python for robust UTF-8 validation
-    if ! echo -n "$message" | python3 -c "
-import sys
-try:
-    sys.stdin.buffer.read().decode('utf-8')
-    sys.exit(0)
-except UnicodeDecodeError:
-    sys.exit(1)
-" 2>/dev/null; then
+    # Validate UTF-8 encoding
+    if ! printf '%s' "$message" | iconv -f utf-8 -t utf-8 >/dev/null 2>&1; then
         log_error "Message is not valid UTF-8"
         return 1
     fi
@@ -432,37 +425,11 @@ except UnicodeDecodeError:
 mcp_stdio_validate_jsonrpc() {
     local message="$1"
 
-    if ! echo "$message" | python3 -c "
-import json
-import sys
-
-try:
-    data = json.loads(sys.stdin.read())
-
-    # Check required fields
-    if data.get('jsonrpc') != '2.0':
-        sys.exit(1)
-
-    # Must have either id (request/response) or just method (notification)
-    has_id = 'id' in data
-    has_method = 'method' in data
-    has_result = 'result' in data
-    has_error = 'error' in data
-
-    # Response must have id and result/error
-    if has_result or has_error:
-        if not has_id:
-            sys.exit(1)
-    # Request must have method and id (notification has no id)
-    elif has_method:
-        pass  # Valid request or notification
-    else:
-        sys.exit(1)
-
-    sys.exit(0)
-except (json.JSONDecodeError, KeyError):
-    sys.exit(1)
-" 2>/dev/null; then
+    if ! echo "$message" | jq -e '
+        .jsonrpc == "2.0" and
+        (if (.result != null or .error != null) then (.id != null) else true end) and
+        ((.method != null) or (.result != null) or (.error != null))
+    ' >/dev/null 2>&1; then
         log_error "Invalid JSON-RPC 2.0 message structure"
         return 1
     fi
@@ -478,24 +445,11 @@ mcp_stdio_generate_large_message() {
     local request_id="${2:-999}"
 
     # Create a JSON message with large padding
-    python3 << PYTHON_EOF
-import json
-
-# Create a message with large params
-padding_size = $size - 100  # Account for JSON structure
-padding = "x" * padding_size
-
-message = {
-    "jsonrpc": "2.0",
-    "id": $request_id,
-    "method": "test/large",
-    "params": {
-        "data": padding
-    }
-}
-
-print(json.dumps(message))
-PYTHON_EOF
+    local padding_size=$(( size - 100 ))
+    local padding
+    padding=$(printf '%0.s x' $(seq 1 "$padding_size") | tr -d ' ')
+    printf '{"jsonrpc":"2.0","id":%d,"method":"test/large","params":{"data":"%s"}}\n' \
+        "$request_id" "$padding"
 }
 
 # Generate binary-safe test data
@@ -503,26 +457,10 @@ PYTHON_EOF
 # Outputs: Base64-encoded binary data
 mcp_stdio_generate_binary_test() {
     # Generate test binary data with all byte values
-    python3 << 'PYTHON_EOF'
-import base64
-import json
-
-# Create binary data with all possible byte values (0-255)
-binary_data = bytes(range(256))
-encoded = base64.b64encode(binary_data).decode('ascii')
-
-message = {
-    "jsonrpc": "2.0",
-    "id": 888,
-    "method": "test/binary",
-    "params": {
-        "binary": encoded,
-        "encoding": "base64"
-    }
-}
-
-print(json.dumps(message))
-PYTHON_EOF
+    local encoded
+    encoded=$(printf '%b' "$(printf '\\%03o' $(seq 0 255))" | base64 | tr -d '\n')
+    printf '{"jsonrpc":"2.0","id":888,"method":"test/binary","params":{"binary":"%s","encoding":"base64"}}\n' \
+        "$encoded"
 }
 
 # ── Test Helper Functions ───────────────────────────────────────────────────
