@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnml xmlns="http://www.pnml.org/version-2009-12-16">
+  <net id="LoanProcessing" type="http://www.pnml.org/version-2009-12-16/PT">
+    <name>
+      <text>Loan Processing Workflow</text>
+    </name>
+
+    <!-- Places (States) -->
+    <place id="p1">
+      <name>
+        <text>Start</text>
+      </name>
+      <initialMarking>
+        <text>1</text>
+      </initialMarking>
+    </place>
+
+    <place id="p2">
+      <name>
+        <text>Application Received</text>
+      </name>
+    </place>
+
+    <place id="p3">
+      <name>
+        <text>Assessment Pending</text>
+      </name>
+    </place>
+
+    <place id="p4a">
+      <name>
+        <text>Low Risk Decision</text>
+      </name>
+    </place>
+
+    <place id="p4b">
+      <name>
+        <text>High Risk Decision</text>
+      </name>
+    </place>
+
+    <place id="p5">
+      <name>
+        <text>Processing Complete</text>
+      </name>
+    </place>
+
+    <place id="p6">
+      <name>
+        <text>End</text>
+      </name>
+    </place>
+
+    <!-- Transitions (Activities) -->
+    <transition id="t1">
+      <name>
+        <text>Receive Application</text>
+      </name>
+    </transition>
+
+    <transition id="t2">
+      <name>
+        <text>Assess Risk</text>
+      </name>
+    </transition>
+
+    <transition id="t3">
+      <name>
+        <text>Risk Split</text>
+      </name>
+    </transition>
+
+    <transition id="t4a">
+      <name>
+        <text>Approve Low Risk</text>
+      </name>
+    </transition>
+
+    <transition id="t4b">
+      <name>
+        <text>Send for Review High Risk</text>
+      </name>
+    </transition>
+
+    <transition id="t5">
+      <name>
+        <text>Send Notification</text>
+      </name>
+    </transition>
+
+    <transition id="t6">
+      <name>
+        <text>Process Complete</text>
+      </name>
+    </transition>
+
+    <!-- Arcs (Control Flow) -->
+    <!-- Start transition t1 has no incoming arcs (start transition) -->
+    <!-- Initial place p1 is not connected via explicit arc -->
+    <arc id="a1" source="p2" target="p3"/>
+    <arc id="a2" target="p2" source="t1"/>
+
+    <!-- Assessment -->
+    <arc id="a3" source="p2" target="t2"/>
+    <arc id="a4" target="p3" source="t2"/>
+
+    <!-- Risk split -->
+    <arc id="a5" source="p3" target="t3"/>
+    <arc id="a6" target="p4a" source="t3"/>
+    <arc id="a7" target="p4b" source="t3"/>
+
+    <!-- Low risk path -->
+    <arc id="a8" source="p4a" target="t4a"/>
+    <arc id="a9" target="p5" source="t4a"/>
+
+    <!-- High risk path -->
+    <arc id="a10" source="p4b" target="t4b"/>
+    <arc id="a11" target="p5" source="t4b"/>
+
+    <!-- Completion -->
+    <arc id="a12" source="p5" target="t5"/>
+    <arc id="a13" target="p6" source="t5"/>
+    <arc id="a14" source="p5" target="t6"/>
+
+  </net>
+</pnml>

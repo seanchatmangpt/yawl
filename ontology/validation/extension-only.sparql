@@ -1,0 +1,53 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX yawl: <http://www.yawlfoundation.org/yawlschema#>
+PREFIX schema: <https://schema.org/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+# Extension-Only Constraint Validator
+# ====================================
+#
+# Checks that YAWL workflow instances (ABox facts) extend at least one public ontology type.
+# This enforces the architectural principle: all YAWL instances must have semantic alignment
+# to standard ontologies (Schema.org, PROV-O, Dublin Core, etc.), not proprietary types alone.
+#
+# Violation: Instance has only yawl: namespace types, no public ontology types.
+# Expected result: Empty (zero violations = compliant)
+
+SELECT ?instance ?yawlType ?rdfTypesCount
+WHERE {
+  # Find all individuals with at least one YAWL type
+  ?instance rdf:type ?yawlType .
+  FILTER(STRSTARTS(STR(?yawlType), STR(yawl:)))
+
+  # Count total rdf:type declarations for this instance
+  {
+    SELECT ?instance (COUNT(?allTypes) AS ?rdfTypesCount)
+    WHERE {
+      ?instance rdf:type ?allTypes .
+    }
+    GROUP BY ?instance
+  }
+
+  # Violation condition: MUST NOT have only YAWL types
+  # i.e., if instance has >0 types AND all are YAWL types, it's a violation
+  FILTER NOT EXISTS {
+    ?instance rdf:type ?publicType .
+    # Filter for public ontology namespaces (non-YAWL)
+    FILTER(
+      !STRSTARTS(STR(?publicType), STR(yawl:)) &&
+      (
+        STRSTARTS(STR(?publicType), "https://schema.org/") ||
+        STRSTARTS(STR(?publicType), "http://schema.org/") ||
+        STRSTARTS(STR(?publicType), STR(prov:)) ||
+        STRSTARTS(STR(?publicType), STR(dcterms:)) ||
+        STRSTARTS(STR(?publicType), "http://www.w3.org/ns/") ||
+        STRSTARTS(STR(?publicType), "http://purl.org/")
+      )
+    )
+  }
+}
+ORDER BY ?instance

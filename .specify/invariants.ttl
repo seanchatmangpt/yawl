@@ -3,10 +3,16 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix yawl: <http://www.yawlfoundation.org/yawlschema#> .
+@prefix schema: <https://schema.org/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
 
 # ============================================================================
-# INVARIANT SHAPE DEFINITIONS FOR YAWL CODE GENERATION
-# Validates: real_impl ∨ throw, ¬mock, ¬silent_fallback, ¬lie
+# INVARIANT SHAPE DEFINITIONS FOR YAWL CODE GENERATION & ONTOLOGY
+# Validates: real_impl ∨ throw, ¬mock, ¬silent_fallback, ¬lie, extension-only
 # ============================================================================
 
 # Namespace aliases for clarity
@@ -266,4 +272,107 @@ code:AllInvariantShapes a rdf:Bag ;
     rdf:_5 code:NoLieShape ;
     rdf:_6 code:MethodReturnTypeMatchesDocShape ;
     rdf:_7 code:MethodMetadataShape ;
-    rdf:_8 code:ClassMetadataShape .
+    rdf:_8 code:ClassMetadataShape ;
+    rdf:_9 yawl:ExtensionOnlyConstraintShape .
+
+# ============================================================================
+# SHAPE 9: Extension-Only Architectural Constraint (Ontology Alignment)
+# ============================================================================
+# Invariant O1: Every YAWL workflow specification instance must extend at
+# least one public ontology type (Schema.org, PROV-O, Dublin Core, etc.).
+# No proprietary-only instances allowed.
+#
+# Rationale: YAWL is middleware. Workflow data must be semantically grounded
+# in standard reference models to enable interoperability, integration, and
+# automated reasoning. Proprietary types impede knowledge sharing.
+#
+# Compliance: All rdf:type triples on YAWL instances must include at least
+# one type from: schema:, prov:, dcterms:, http://www.w3.org/ namespaces
+# ============================================================================
+
+yawl:ExtensionOnlyConstraintShape a sh:NodeShape ;
+    sh:name "Extension-Only Ontology Alignment" ;
+    sh:description
+        "Every YAWL workflow instance must have at least one rdf:type " ;
+        "from a public ontology namespace (Schema.org, PROV-O, Dublin Core, etc.). " ;
+        "This enforces semantic grounding and interoperability." ;
+    sh:severity sh:Violation ;
+
+    sh:sparql [
+        a sh:SPARQLSelectValidator ;
+        sh:message "Instance {$this}: has only proprietary YAWL types, no public ontology alignment. " ;
+                   "Add rdf:type from schema:, prov:, dcterms:, or other public ontology." ;
+        sh:prefixes yawl: ;
+        sh:select """
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX yawl: <http://www.yawlfoundation.org/yawlschema#>
+            PREFIX schema: <https://schema.org/>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+            PREFIX dcterms: <http://purl.org/dc/terms/>
+
+            SELECT $this
+            WHERE {
+              # Find YAWL instances (has at least one yawl: type)
+              $this rdf:type ?yawlType .
+              FILTER(STRSTARTS(STR(?yawlType), STR(yawl:)))
+
+              # Violation: MUST have at least one non-YAWL public type
+              # If NOT EXISTS, then all types are yawl: (violation)
+              FILTER NOT EXISTS {
+                $this rdf:type ?publicType .
+                FILTER(
+                  !STRSTARTS(STR(?publicType), STR(yawl:)) &&
+                  (
+                    STRSTARTS(STR(?publicType), "https://schema.org/") ||
+                    STRSTARTS(STR(?publicType), "http://schema.org/") ||
+                    STRSTARTS(STR(?publicType), STR(prov:)) ||
+                    STRSTARTS(STR(?publicType), STR(dcterms:)) ||
+                    STRSTARTS(STR(?publicType), "http://www.w3.org/ns/") ||
+                    STRSTARTS(STR(?publicType), "http://purl.org/")
+                  )
+                )
+              }
+            }
+        """
+    ] .
+
+# TBox Alignment: All YAWL classes must declare rdfs:subClassOf to public ontology
+yawl:ExtensionOnlyTBoxShape a sh:NodeShape ;
+    sh:name "Extension-Only TBox Alignment" ;
+    sh:description
+        "Every YAWL ontology class must declare rdfs:subClassOf to a public " ;
+        "ontology class, or be defined via owl:unionOf/intersectionOf with public types." ;
+    sh:severity sh:Warning ;
+
+    sh:sparql [
+        a sh:SPARQLSelectValidator ;
+        sh:message "Class {$this}: proprietary root (no public superclass). " ;
+                   "Add rdfs:subClassOf pointing to schema.org or other public ontology class." ;
+        sh:prefixes yawl: ;
+        sh:select """
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            PREFIX yawl: <http://www.yawlfoundation.org/yawlschema#>
+            PREFIX schema: <https://schema.org/>
+            PREFIX prov: <http://www.w3.org/ns/prov#>
+
+            SELECT $this
+            WHERE {
+              # YAWL class definition in TBox
+              $this a owl:Class .
+              FILTER(STRSTARTS(STR($this), STR(yawl:)))
+
+              # Check: has rdfs:subClassOf to public ontology?
+              FILTER NOT EXISTS {
+                $this rdfs:subClassOf ?publicParent .
+                FILTER(!STRSTARTS(STR(?publicParent), STR(yawl:)))
+              }
+
+              # Check: has owl:unionOf or owl:intersectionOf with public types?
+              FILTER NOT EXISTS {
+                { $this owl:unionOf ?u . } UNION { $this owl:intersectionOf ?i . }
+              }
+            }
+        """
+    ] .

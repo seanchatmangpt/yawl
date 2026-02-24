@@ -668,7 +668,7 @@ public class XNode implements Comparable<XNode> {
 
     private String getIndent(int offset, int tabSize) {
         int tabCount = _depth - offset;
-        if (tabCount < 1) return "";
+        if (tabCount < 1) return ""; // empty string is a valid default when node is at root depth
         char[] tabs = new char[tabCount * tabSize];
         for (int i=0; i<(tabCount * tabSize); i++) {
             tabs[i] = ' ';
@@ -705,7 +705,7 @@ public class XNode implements Comparable<XNode> {
             }
             return s.toString();
         }
-        return "";
+        return ""; // empty string is a valid default for nodes with no comment content
     }
 
 

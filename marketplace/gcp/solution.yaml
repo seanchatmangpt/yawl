@@ -62,7 +62,7 @@ application:
     - Process monitoring and scheduling
     - REST API interfaces (A, B, E, X)
 
-  version: "5.2.0"
+  version: "6.0.0"
 
   components:
     - name: yawl-engine

@@ -94,22 +94,13 @@ public class ProcletPort {
 	}
 	
 	public static String getShortSignature (Signature sign) {
-		if (sign.equals(Signature.ZERO)) {
-			return "0";
-		}
-		if (sign.equals(Signature.ONE)) {
-			return "1";
-		}
-		if (sign.equals(Signature.PLUS)) {
-			return "+";
-		}
-		if (sign.equals(Signature.STAR)) {
-			return "*";
-		}
-		if (sign.equals(Signature.QUEST)) {
-			return "?";
-		}
-		return "";
+		return switch (sign) {
+			case ZERO  -> "0";
+			case ONE   -> "1";
+			case PLUS  -> "+";
+			case STAR  -> "*";
+			case QUEST -> "?";
+		};
 	}
 	
 	/**

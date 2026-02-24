@@ -1,0 +1,39 @@
+PREFIX yawl-mined: <http://ggen.io/yawl-mined#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Query 2: Extract all control flows (arcs) and their connectivity
+# Returns: arc ID, source (place/transition), target (place/transition), and flow types
+
+SELECT ?arc ?arcId ?source ?sourceId ?sourceType ?target ?targetId ?targetType ?multiplicity
+WHERE {
+  ?process a yawl-mined:Process ;
+           yawl-mined:hasArc ?arc .
+
+  ?arc yawl-mined:id ?arcId ;
+       yawl-mined:source ?source ;
+       yawl-mined:target ?target .
+
+  ?source yawl-mined:id ?sourceId ;
+          rdf:type ?sourceType .
+
+  ?target yawl-mined:id ?targetId ;
+          rdf:type ?targetType .
+
+  # Optional multiplicity (defaults to 1)
+  OPTIONAL {
+    ?arc yawl-mined:multiplicity ?multiplicity .
+  }
+
+  # Ensure valid Petri net flow (place->transition or transition->place)
+  FILTER(
+    (?sourceType IN (yawl-mined:Place, yawl-mined:InitialPlace, yawl-mined:FinalPlace) &&
+     ?targetType IN (yawl-mined:Transition, yawl-mined:StartTransition, yawl-mined:EndTransition,
+                     yawl-mined:SplitGateway, yawl-mined:JoinGateway, yawl-mined:XorGateway, yawl-mined:AndGateway))
+    ||
+    (?sourceType IN (yawl-mined:Transition, yawl-mined:StartTransition, yawl-mined:EndTransition,
+                     yawl-mined:SplitGateway, yawl-mined:JoinGateway, yawl-mined:XorGateway, yawl-mined:AndGateway) &&
+     ?targetType IN (yawl-mined:Place, yawl-mined:InitialPlace, yawl-mined:FinalPlace))
+  )
+}
+ORDER BY ?arcId

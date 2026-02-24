@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.0.0">
+  <bpmn:process id="LoanProcessingBpmn" name="Loan Processing" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Task_ReceiveApp" name="Receive Application">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_ReceiveApp"/>
+    <bpmn:task id="Task_AssessRisk" name="Assess Risk">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_ReceiveApp" targetRef="Task_AssessRisk"/>
+    <bpmn:exclusiveGateway id="Gateway_RiskSplit" name="Risk Assessment">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4a</bpmn:outgoing>
+      <bpmn:outgoing>Flow_4b</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_AssessRisk" targetRef="Gateway_RiskSplit"/>
+    <bpmn:task id="Task_ApproveLow" name="Approve Low Risk">
+      <bpmn:incoming>Flow_4a</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_4a" name="Low Risk" sourceRef="Gateway_RiskSplit" targetRef="Task_ApproveLow"/>
+    <bpmn:task id="Task_ReviewHigh" name="Send for Review">
+      <bpmn:incoming>Flow_4b</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_4b" name="High Risk" sourceRef="Gateway_RiskSplit" targetRef="Task_ReviewHigh"/>
+    <bpmn:parallelGateway id="Gateway_Merge">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_ApproveLow" targetRef="Gateway_Merge"/>
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_ReviewHigh" targetRef="Gateway_Merge"/>
+    <bpmn:task id="Task_Notify" name="Send Notification">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Gateway_Merge" targetRef="Task_Notify"/>
+    <bpmn:endEvent id="EndEvent_1" name="End">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_Notify" targetRef="EndEvent_1"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="LoanProcessingBpmn">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="100" y="100" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="106" y="143" width="24" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ReceiveApp_di" bpmnElement="Task_ReceiveApp">
+        <dc:Bounds x="190" y="77" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="136" y="118"/>
+        <di:waypoint x="190" y="117"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Task_AssessRisk_di" bpmnElement="Task_AssessRisk">
+        <dc:Bounds x="340" y="77" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="290" y="117"/>
+        <di:waypoint x="340" y="117"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Gateway_RiskSplit_di" bpmnElement="Gateway_RiskSplit" isMarkerVisible="true">
+        <dc:Bounds x="490" y="92" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="440" y="117"/>
+        <di:waypoint x="490" y="117"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
