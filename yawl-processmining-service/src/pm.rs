@@ -630,7 +630,7 @@ pub fn compute_performance_stats(log: &EventLog) -> PerformanceStats {
                 if dur_ms >= 0 {
                     activity_durations
                         .entry(curr.activity.clone())
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(dur_ms);
                 }
             }
