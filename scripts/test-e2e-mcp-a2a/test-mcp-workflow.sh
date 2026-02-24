@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # test-mcp-workflow.sh — MCP E2E Workflow Test
 #

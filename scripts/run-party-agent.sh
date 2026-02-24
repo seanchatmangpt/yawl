@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # Run an autonomous party agent for order fulfillment simulation
 # =============================================================================
@@ -13,7 +13,7 @@
 # Run inside: docker compose run --rm yawl-dev bash scripts/run-party-agent.sh
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

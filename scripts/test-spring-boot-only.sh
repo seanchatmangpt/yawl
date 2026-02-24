@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test script for Spring Boot MCP-A2A application only
 
 set -euo pipefail

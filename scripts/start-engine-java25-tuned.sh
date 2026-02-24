@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # YAWL Engine Startup Script - P4 JVM Tuning for Java 25
 #
 # P4 MEDIUM - JVM Tuning for Java 25:

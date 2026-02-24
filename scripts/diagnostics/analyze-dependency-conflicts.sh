@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Analyze Maven dependency conflicts from dependency tree output
 # Captures groupId:artifactId:version:scope and reports conflicts with scope info

@@ -139,7 +139,7 @@ run_tests() {
 
     END=$(date +%s%3N)
     ELAPSED=$((END - START))
-    ELAPSED_S=$(python3 -c "print(f'{${ELAPSED}/1000:.1f}')")
+    ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED/1000}")
 
     if [[ $EXIT_CODE -eq 0 ]]; then
         echo "✓ Tests passed (${ELAPSED_S}s)"

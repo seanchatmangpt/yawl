@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ################################################################################
 # YAWL v5.2 Pre-Deployment Backup Script

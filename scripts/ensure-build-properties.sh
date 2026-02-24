@@ -3,7 +3,7 @@
 # If missing or broken symlink, copies build/build.properties.remote.
 # Run from repo root. Exit 0.
 
-set -e
+set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="$REPO_ROOT/build"

@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YAWL 80/20 Validation Orchestrator
 # Runs validation checks with different execution modes and output formats
 #
 
-set -e
+set -euo pipefail
 
 # Source common utilities
 source "$(dirname "$0")/lib/common.sh"

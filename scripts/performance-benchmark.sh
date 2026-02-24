@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YAWL v5.2 Performance Benchmark Script
 # Measures build, test, and runtime performance metrics
 # Before/after comparison for Java 25 modernization
 #
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 YAWL_ROOT="$(dirname "$SCRIPT_DIR")"

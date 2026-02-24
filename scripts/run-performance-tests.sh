@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # YAWL Performance Test Runner
 # Executes complete performance baseline and load testing suite
 #
@@ -12,7 +12,7 @@
 #   --full             Run full suite (default)
 #   --jmh              Run JMH benchmarks (if available)
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"

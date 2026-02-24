@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # YAWL v5.2 Production Readiness Validation Script
 # Runs all validation checks before deployment approval

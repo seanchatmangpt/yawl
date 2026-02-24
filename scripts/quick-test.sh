@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Quick test script for A2A/MCP/Handoff Docker setup
 
 set -euo pipefail

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test YAWL MCP Server using MCP Client
 #
@@ -11,7 +11,7 @@
 #   MCP_SERVER_URL   - MCP server URL (default: http://localhost:3000)
 #   ZHIPU_API_KEY    - Z.AI API key for AI-enhanced testing (optional)
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

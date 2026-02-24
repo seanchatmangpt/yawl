@@ -46,12 +46,7 @@ mkdir -p "${PERF_DIR}"
 # Helper function to measure time in milliseconds
 # -------------------------------------------------------------------------
 get_epoch_ms() {
-    if command -v python3 &> /dev/null; then
-        python3 -c 'import time; print(int(time.time() * 1000))'
-    else
-        # Fallback to seconds, multiply by 1000
-        echo $(($(date +%s) * 1000))
-    fi
+    date +%s%3N
 }
 
 # -------------------------------------------------------------------------
