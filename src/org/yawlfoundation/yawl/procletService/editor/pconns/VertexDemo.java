@@ -374,7 +374,7 @@ public class VertexDemo extends JApplet {
             if(isEnabled()) {
                 return map.get(v);
             } else {
-                return "";
+                return ""; // empty string is a valid default when vertex labeling is disabled
             }
         }
         

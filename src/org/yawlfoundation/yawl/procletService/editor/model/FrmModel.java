@@ -168,7 +168,7 @@ public class FrmModel extends DesignInternalFrame {
 					  ProcletPort.getShortSignature(((ProcletPort) obj).getCardinality()) + "," + 
 					  ProcletPort.getShortSignature(((ProcletPort) obj).getMultiplicity());
 				  }
-				  return "";
+				  return ""; // empty string is a valid default for unrecognized edge types
 			  }
 		  };
 		  // strokeTransformer

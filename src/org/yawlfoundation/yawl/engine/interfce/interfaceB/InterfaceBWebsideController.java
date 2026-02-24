@@ -138,7 +138,7 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCancelledCaseEvent(String caseID) { }
+    public void handleCancelledCaseEvent(String caseID) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -147,7 +147,7 @@ public abstract class InterfaceBWebsideController {
      * @param caseID the id of the case that has been cancelled
      * @param tasks the list of deadlocked task ids
      */
-    public void handleDeadlockedCaseEvent(String caseID, String tasks) { }
+    public void handleDeadlockedCaseEvent(String caseID, String tasks) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -159,7 +159,7 @@ public abstract class InterfaceBWebsideController {
      * @param delayed true if this is a delayed case start, false if immediate
      */
     public void handleStartCaseEvent(YSpecificationID specID, String caseID,
-                                         String launchingService, boolean delayed) { }
+                                         String launchingService, boolean delayed) { /* no-op: override in subclass to handle this event */ }
 
     /**
      * Receives notification from the engine that an active case has been
@@ -168,7 +168,7 @@ public abstract class InterfaceBWebsideController {
      * @param caseID the id of the completed case.
      * @param casedata the set of net-level data for the case when it completes
      */
-    public void handleCompleteCaseEvent(String caseID, String casedata) { }
+    public void handleCompleteCaseEvent(String caseID, String casedata) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -176,7 +176,7 @@ public abstract class InterfaceBWebsideController {
      * expired. Override this method to handle timer expiries on timed workitems.
      * @param expiredWorkItem the workitem that has an expired timer
      */
-    public void handleTimerExpiryEvent(WorkItemRecord expiredWorkItem) { }
+    public void handleTimerExpiryEvent(WorkItemRecord expiredWorkItem) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -184,7 +184,7 @@ public abstract class InterfaceBWebsideController {
      * initialisation and is now in a running state. Override this method to
      * handle final service initialisation tasks that require a running engine
      */
-    public void handleEngineInitialisationCompletedEvent() { }
+    public void handleEngineInitialisationCompletedEvent() { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -196,7 +196,7 @@ public abstract class InterfaceBWebsideController {
      * @param newStatus the work item's new status
      */
     public void handleWorkItemStatusChangeEvent(WorkItemRecord workItem, 
-                                                String oldStatus, String newStatus) { }
+                                                String oldStatus, String newStatus) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -204,7 +204,7 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCaseSuspendingEvent(String caseID) { }
+    public void handleCaseSuspendingEvent(String caseID) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -212,7 +212,7 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCaseSuspendedEvent(String caseID) { }
+    public void handleCaseSuspendedEvent(String caseID) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
@@ -220,14 +220,14 @@ public abstract class InterfaceBWebsideController {
      * cancelled.  Override this method to take any necessary action.
      * @param caseID the id of the case that has been cancelled
      */
-    public void handleCaseResumedEvent(String caseID) { }
+    public void handleCaseResumedEvent(String caseID) { /* no-op: override in subclass to handle this event */ }
 
 
     /**
      * Receives notification when the environment is being shutdown. Override this
      * method to take any necessary finalisation action.
      */
-    public void destroy() { }
+    public void destroy() { /* no-op: override in subclass to handle this event */ }
 
 
     /**

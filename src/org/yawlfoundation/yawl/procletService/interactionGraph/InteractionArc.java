@@ -58,28 +58,15 @@ public class InteractionArc {
 	}
 	
 	public String getArcStateShort() {
-		if (this.as.equals(ArcState.CONSUMED)) {
-			return "C";
-		}
-		else if (this.as.equals(ArcState.SENT)) {
-			return "S";
-		}
-		else if (this.as.equals(ArcState.UNPRODUCED)) {
-			return "U";
-		}
-		else if (this.as.equals(ArcState.FAILED)) {
-			return "F";
-		}
-		else if (this.as.equals(ArcState.EXECUTED_BOTH)) {
-			return "EB";
-		}
-		else if (this.as.equals(ArcState.EXECUTED_SOURCE)) {
-			return "ES";
-		}
-		else if (this.as.equals(ArcState.EXECUTED_NONE)) {
-			return "EN";
-		}
-		return "";
+		return switch (this.as) {
+			case CONSUMED        -> "C";
+			case SENT            -> "S";
+			case UNPRODUCED      -> "U";
+			case FAILED          -> "F";
+			case EXECUTED_BOTH   -> "EB";
+			case EXECUTED_SOURCE -> "ES";
+			case EXECUTED_NONE   -> "EN";
+		}; // exhaustive switch over all ArcState enum values — no default needed
 	}
 	
 	public void setTail (InteractionNode tail) {
