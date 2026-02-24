@@ -358,6 +358,13 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/autonomous/marketplace/**</testInclude>
                         <!-- MCP-A2A end-to-end integration tests -->
                         <testInclude>**/org/yawlfoundation/yawl/integration/YawlMcpA2aEndToEndIntegrationTest.java</testInclude>
+                        <!-- Blue-ocean innovation tests (v6.0 new capabilities) -->
+                        <testInclude>**/org/yawlfoundation/yawl/integration/temporal/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/integration/immune/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/integration/conscience/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/integration/synthesis/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/integration/verification/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/integration/reactor/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/SelfPlayTest.java</testExclude>

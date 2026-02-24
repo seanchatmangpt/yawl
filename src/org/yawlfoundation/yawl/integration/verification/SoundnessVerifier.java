@@ -188,44 +188,18 @@ public final class SoundnessVerifier {
      */
     private List<VerificationFinding> checkDeadTransitions() {
         List<VerificationFinding> findings = new ArrayList<>();
-        Set<String> deadTransitions = new HashSet<>();
 
-        // Fixed-point iteration: identify increasingly dead transitions
-        boolean changed = true;
-        while (changed) {
-            changed = false;
-            for (String transition : transitionToPlaces.keySet()) {
-                if (deadTransitions.contains(transition)) {
-                    continue;
-                }
-
-                Set<String> inputPlaces = findInputPlaces(transition);
-                if (inputPlaces.isEmpty()) {
-                    continue; // No precondition
-                }
-
-                // Dead if all input places are unreachable or only fed by dead transitions
-                boolean isDead = inputPlaces.stream().allMatch(place ->
-                    !reachablePlaces.contains(place) ||
-                    findInputTransitions(place).stream().allMatch(deadTransitions::contains)
-                );
-
-                if (isDead) {
-                    deadTransitions.add(transition);
-                    changed = true;
-                }
+        // A transition is dead if it cannot be reached via forward BFS from the start place.
+        // reachableTransitions is pre-computed in verify() using the same BFS approach.
+        for (String transition : transitionToPlaces.keySet()) {
+            if (!reachableTransitions.contains(transition)) {
+                findings.add(new VerificationFinding(
+                    DeadlockPattern.DEAD_TRANSITION,
+                    transition,
+                    "Task '" + transition + "' can never fire. Not reachable from the start place.",
+                    VerificationFinding.Severity.ERROR
+                ));
             }
-        }
-
-        // Report dead transitions
-        for (String dead : deadTransitions) {
-            findings.add(new VerificationFinding(
-                DeadlockPattern.DEAD_TRANSITION,
-                dead,
-                "Task '" + dead + "' can never fire. All input places unreachable or "
-                    + "produced only by dead transitions.",
-                VerificationFinding.Severity.ERROR
-            ));
         }
 
         return findings;
