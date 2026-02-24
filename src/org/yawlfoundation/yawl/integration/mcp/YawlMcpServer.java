@@ -16,9 +16,14 @@ import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.OntologyDrivenToolFactory;
+import org.yawlfoundation.yawl.integration.mcp.spec.TemporalAnomalySpecification;
+import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowComplexitySpecification;
+import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowDiffSpecification;
+import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowGenomeSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.timeline.CaseTimelineSpecification;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
@@ -117,10 +122,24 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
-        // Build tool list: static YAWL tools + ontology-derived tools (if Rust service up)
+        // Build tool list: static YAWL tools + blue-ocean innovation tools + ontology tools
         List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> allTools =
             new ArrayList<>(YawlToolSpecifications.createAll(
                 interfaceBClient, interfaceAClient, sessionHandle));
+
+        // Blue-ocean innovation tools (always loaded — no external service dependency)
+        allTools.addAll(WorkflowGenomeSpecification.createAll(
+            interfaceBClient, interfaceAClient, sessionHandle));
+        allTools.add(TemporalAnomalySpecification.createTemporalAnomalySentinelTool(
+            interfaceBClient, sessionHandle));
+        allTools.addAll(CaseTimelineSpecification.createAll(
+            interfaceBClient, sessionHandle));
+        allTools.addAll(WorkflowDiffSpecification.createAll(
+            interfaceBClient, interfaceAClient, sessionHandle));
+        allTools.addAll(WorkflowComplexitySpecification.createAll(
+            interfaceBClient, interfaceAClient, sessionHandle));
+
+        // Ontology-derived tools from Rust/Oxigraph service (optional, graceful degradation)
         int ontologyToolCount = 0;
         try {
             List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> ontologyTools =
