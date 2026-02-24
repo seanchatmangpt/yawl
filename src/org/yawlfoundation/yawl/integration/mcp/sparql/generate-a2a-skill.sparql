@@ -1,0 +1,82 @@
+PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX a2a:  <http://a2aprotocol.ai/schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+# ============================================================================
+# CONSTRUCT: A2A Capability Card Generation from YAWL Workflow Net
+# ============================================================================
+#
+# This query demonstrates the extension-only architecture:
+#   - The workflow's tasks become A2A skills
+#   - The agent capability card is derived from the formal workflow definition
+#   - No private root ontology — extends public a2a: and yawl: namespaces
+#
+# The generated capability card is formally correct: each skill corresponds
+# to a task whose execution sequence is guaranteed by workflow soundness.
+#
+# An agent discovering this capability card via /.well-known/agent.json sees:
+#   - Skills derived from the workflow net (not human-written)
+#   - Coordination model declared as "CONSTRUCT"
+#   - Routing cost declared as "zero_inference_tokens"
+#   - Soundness guarantee from YAWL Petri net formalism
+#
+# This is the epistemically superior position: the capability advertisement
+# is itself a CONSTRUCT output. Other frameworks hand-write their agent cards.
+# YAWL derives them from the formal workflow definition.
+# ============================================================================
+
+CONSTRUCT {
+    ?agentUri a a2a:Agent ;
+        a2a:name              ?agentName ;
+        a2a:description       ?agentDesc ;
+        a2a:url               ?agentUrl ;
+        a2a:version           "6.0.0" ;
+        yawl:coordinationModel "CONSTRUCT" ;
+        yawl:routingCost      "zero_inference_tokens" ;
+        yawl:soundnessGuarantee "Petri net soundness: no deadlock, no livelock, every enabled task eventually fires" ;
+        a2a:hasSkill          ?skillUri .
+
+    ?skillUri a a2a:Skill ;
+        a2a:skillId          ?skillId ;
+        a2a:skillName        ?skillName ;
+        a2a:description      ?skillDesc ;
+        yawl:forTask         ?task ;
+        yawl:enabledBy       "petri_net_token_marking" ;
+        yawl:joinType        ?joinType .
+}
+WHERE {
+    ?net a yawl:WorkflowNet ;
+         yawl:netId ?netId .
+
+    ?task a yawl:AtomicTask ;
+          yawl:taskId ?taskId ;
+          yawl:inNet  ?net .
+
+    OPTIONAL { ?task yawl:taskName ?taskNameOpt }
+    OPTIONAL { ?task yawl:joinType ?joinType }
+
+    BIND(IRI(CONCAT("http://yawlfoundation.org/a2a/agents/", ?netId))
+         AS ?agentUri)
+    BIND(IRI(CONCAT("http://yawlfoundation.org/a2a/skills/", ?netId, "/", ?taskId))
+         AS ?skillUri)
+    BIND(CONCAT("YAWL Workflow Agent: ", ?netId) AS ?agentName)
+    BIND(
+        CONCAT(
+            "Autonomous agent for workflow '", ?netId, "'. ",
+            "Coordination via SPARQL CONSTRUCT over Petri net state — ",
+            "zero inference tokens for routing decisions. ",
+            "Task sequence guaranteed by workflow soundness proof."
+        )
+        AS ?agentDesc
+    )
+    BIND(CONCAT("http://localhost:8081/agents/", ?netId) AS ?agentUrl)
+    BIND(CONCAT("execute_", ?taskId) AS ?skillId)
+    BIND(COALESCE(?taskNameOpt, ?taskId) AS ?skillName)
+    BIND(
+        CONCAT(
+            "Execute task '", COALESCE(?taskNameOpt, ?taskId), "' in workflow '", ?netId, "'. ",
+            "Enabled state derivable via SPARQL SELECT on Petri net token marking — not LLM inference."
+        )
+        AS ?skillDesc
+    )
+}

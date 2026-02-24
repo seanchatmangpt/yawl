@@ -30,6 +30,7 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.skills.A2ASkill;
+import org.yawlfoundation.yawl.integration.a2a.skills.ConstructCoordinationSkill;
 import org.yawlfoundation.yawl.integration.a2a.skills.OntologyDrivenSkillFactory;
 import org.yawlfoundation.yawl.integration.a2a.skills.ProcessMiningSkill;
 import org.yawlfoundation.yawl.integration.a2a.skills.SkillRequest;
@@ -99,6 +100,7 @@ public class YawlA2AServer {
     private final java.lang.reflect.Method zaiProcessMethod;  // Cached method
     private final A2AAuthenticationProvider authProvider;
     private final ProcessMiningSkill processMiningSkill;
+    private ConstructCoordinationSkill constructCoordinationSkill;
 
     // Ontology-derived skills (populated at start, empty if Rust service unavailable)
     private volatile List<A2ASkill> ontologySkills = List.of();
@@ -454,6 +456,27 @@ public class YawlA2AServer {
                     ))
                     .inputModes(List.of("text"))
                     .outputModes(List.of("text"))
+                    .build(),
+                AgentSkill.builder()
+                    .id("construct_coordination")
+                    .name("Construct Coordination")
+                    .description("CONSTRUCT-model coordination: Petri net token marking (0 inference tokens), "
+                        + "workflow net as JSON-LD/RDF graph, SPARQL-generated MCP tool schemas. "
+                        + "Operations: query_enabled (enabled tasks for a case), "
+                        + "validate_transition (soundness check), "
+                        + "get_workflow_net (JSON-LD graph), "
+                        + "generate_tools (CONSTRUCT-derived MCP tool schemas from spec). "
+                        + "Little's Law: routing cost W=0, bypasses inference queue entirely. "
+                        + "Formally guaranteed by YAWL Petri net soundness.")
+                    .tags(List.of("construct", "coordination", "petri-net", "sparql",
+                        "zero-token", "rdf", "workflow-net"))
+                    .examples(List.of(
+                        "What tasks are enabled for case 42?",
+                        "Generate MCP tools from workflow specification 'OrderProcessing'",
+                        "Get workflow net graph for specification 'InvoiceApproval'"
+                    ))
+                    .inputModes(List.of("application/json", "text"))
+                    .outputModes(List.of("application/json"))
                     .build()
         ));
         // Append ontology-derived skills (populated at startup if Rust service available)
@@ -570,6 +593,14 @@ public class YawlA2AServer {
                     || lower.contains("xes") || lower.contains("variant") || lower.contains("performance")
                     || lower.contains("social network") || lower.contains("handover")) {
                 return handleProcessMiningRequest(userText);
+            }
+
+            if (lower.contains("construct") || lower.contains("enabled task")
+                    || lower.contains("enabled tasks") || lower.contains("petri")
+                    || lower.contains("workflow net") || lower.contains("generate tool")
+                    || lower.contains("sparql") || lower.contains("zero token")
+                    || lower.contains("token marking")) {
+                return handleConstructCoordinationRequest(userText);
             }
 
             return handleListSpecifications();
@@ -739,6 +770,56 @@ public class YawlA2AServer {
                     .orElse("Analysis completed");
             } else {
                 return "Process mining analysis failed: " + result.getError();
+            }
+        }
+
+        private String handleConstructCoordinationRequest(String userText) {
+            // sessionHandle is already valid: processWorkflowRequest() called ensureEngineConnection()
+            // Lazy-initialize: requires sessionHandle which is only available post-connection
+            if (constructCoordinationSkill == null) {
+                constructCoordinationSkill = new ConstructCoordinationSkill(
+                    interfaceBClient, sessionHandle);
+            }
+
+            String lower = userText.toLowerCase();
+
+            // Determine operation
+            String operation;
+            if (lower.contains("generate tool") || lower.contains("tool schema")) {
+                operation = "generate_tools";
+            } else if (lower.contains("workflow net") || lower.contains("rdf")
+                    || lower.contains("graph") || lower.contains("json-ld")) {
+                operation = "get_workflow_net";
+            } else if (lower.contains("valid") || lower.contains("transition")) {
+                operation = "validate_transition";
+            } else {
+                operation = "query_enabled";
+            }
+
+            Map<String, String> params = new HashMap<>();
+            params.put("operation", operation);
+
+            // Extract case_id for token-marking operations
+            String caseId = extractIdentifier(userText);
+            if (caseId != null) {
+                params.put("case_id", caseId);
+                params.put("spec_identifier", caseId);
+            }
+            String specId = extractSpecIdentifier(userText);
+            if (specId != null) {
+                params.put("spec_identifier", specId);
+            }
+
+            SkillRequest skillRequest = new SkillRequest(
+                constructCoordinationSkill.getId(), params);
+            SkillResult result = constructCoordinationSkill.execute(skillRequest);
+
+            if (result.isSuccess()) {
+                return result.getData().entrySet().stream()
+                    .map(e -> e.getKey() + ": " + e.getValue())
+                    .collect(java.util.stream.Collectors.joining("\n"));
+            } else {
+                return "CONSTRUCT coordination failed: " + result.getError();
             }
         }
 

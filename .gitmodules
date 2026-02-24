@@ -3,4 +3,4 @@
 	url = https://github.com/yawlfoundation/yawl.git
 [submodule "vendors/ggen"]
 	path = vendors/ggen
-	url = https://github.com/seanchatmangpt/ggen
+	url = https://github.com/seanchatmangpt/ggen.git

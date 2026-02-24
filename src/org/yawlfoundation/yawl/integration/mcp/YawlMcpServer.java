@@ -13,11 +13,22 @@ import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
+import org.yawlfoundation.yawl.integration.mcp.resource.MermaidStateResource;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.factory.ConversationalWorkflowFactory;
+import org.yawlfoundation.yawl.integration.mcp.spec.CancellationAuditorTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.CaseDivergenceTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.ComplexityBoundTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.ConstructCoordinationTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.CounterfactualSimulatorTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.DataLineageTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.DeadPathAnalyzerTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.LivenessOracleTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.OntologyDrivenToolFactory;
+import org.yawlfoundation.yawl.integration.mcp.spec.SoundnessProverTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.TemporalAnomalySpecification;
+import org.yawlfoundation.yawl.integration.mcp.spec.TemporalPressureTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowComplexitySpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowDiffSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowGenomeSpecification;
@@ -32,20 +43,21 @@ import org.yawlfoundation.yawl.integration.mcp.timeline.CaseTimelineSpecificatio
  *
  * Implements MCP 2025-11-25 specification with full capabilities over STDIO transport.
  *
- * Tools (20): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
+ * Tools: Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
  *   work items, get specification data/XML/schema, get running cases, upload/unload specifications,
- *   suspend/resume cases, skip work items. Process mining tools: export XES, analyze performance,
- *   discover variants, analyze resource networks.
+ *   suspend/resume cases, skip work items (YawlToolSpecifications). Plus SPARQL CONSTRUCT
+ *   coordination tools for Petri-net token routing at zero inference cost (ConstructCoordinationTools).
  *
  * Resources (3 static):
  *   - yawl://specifications - All loaded specifications
  *   - yawl://cases - All running cases
  *   - yawl://workitems - All live work items
  *
- * Resource Templates (3 parameterized):
+ * Resource Templates (4 parameterized):
  *   - yawl://cases/{caseId} - Specific case state and work items
  *   - yawl://cases/{caseId}/data - Specific case variable data
  *   - yawl://workitems/{workItemId} - Specific work item details
+ *   - yawl://cases/{caseId}/mermaid - Live Mermaid flowchart of Petri-net token positions
  *
  * Prompts (4):
  *   - workflow_analysis - Analyze a workflow specification
@@ -124,10 +136,10 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
-        // Build tool list: static YAWL tools + factory tools + blue-ocean innovations + ontology tools
-        List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> allTools =
-            new ArrayList<>(YawlToolSpecifications.createAll(
-                interfaceBClient, interfaceAClient, sessionHandle));
+        // Core workflow tools
+        var workflowTools = YawlToolSpecifications.createAll(
+            interfaceBClient, interfaceAClient, sessionHandle);
+        var allTools = new ArrayList<>(workflowTools);
 
         // Conversational workflow factory tools (NL-to-workflow)
         ConversationalWorkflowFactory workflowFactory = new ConversationalWorkflowFactory(
@@ -139,6 +151,22 @@ public class YawlMcpServer {
             sessionHandle
         );
         allTools.addAll(YawlFactoryToolSpecifications.createAll(workflowFactory));
+
+        // CONSTRUCT coordination tools (Petri-net token routing, zero inference cost)
+        var constructTools = ConstructCoordinationTools.createAll(interfaceBClient, sessionHandle);
+        allTools.addAll(constructTools);
+
+        // Formal Petri-net analysis tools
+        allTools.add(LivenessOracleTools.create(interfaceBClient, sessionHandle));
+        allTools.add(CounterfactualSimulatorTools.create(interfaceBClient, sessionHandle));
+        allTools.add(DeadPathAnalyzerTools.create(interfaceBClient, sessionHandle));
+        allTools.add(ComplexityBoundTools.create(interfaceBClient, sessionHandle));
+        allTools.add(SoundnessProverTools.create(interfaceBClient, sessionHandle));
+        allTools.add(TemporalPressureTools.create(interfaceBClient, sessionHandle));
+        allTools.add(DataLineageTools.create(interfaceBClient, sessionHandle));
+        allTools.add(CancellationAuditorTools.create(interfaceBClient, sessionHandle));
+        allTools.add(CaseDivergenceTools.create(interfaceBClient, sessionHandle));
+        int formalToolCount = 9;
 
         // Blue-ocean innovation tools (always loaded — no external service dependency)
         allTools.addAll(WorkflowGenomeSpecification.createAll(
@@ -164,6 +192,9 @@ public class YawlMcpServer {
                 + "ontology-derived tools not loaded: " + e.getMessage());
         }
 
+        int workflowToolCount = workflowTools.size();
+        int constructToolCount = constructTools.size();
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -175,14 +206,31 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 18 workflow tools (15 standard + 3 NL-to-workflow), 3 static resources,
-                3 resource templates, 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
-                """)
+                CONSTRUCT coordination tools expose the Petri net token-marking model directly:
+                routing decisions cost 0 inference tokens — answered by formal workflow
+                semantics, not LLM inference. Tool schemas are SPARQL CONSTRUCT outputs
+                derived from the workflow specification, not hand-authored.
+
+                Capabilities: %d tools (%d workflow + %d CONSTRUCT coordination + %d formal Petri-net + %d ontology-derived),
+                3 static resources, 4 resource templates, 4 prompts, 3 completions,
+                logging (MCP 2025-11-25 compliant).
+
+                Formal Petri-net tools (zero inference tokens):
+                  yawl_prove_liveness            — BFS reachability: LIVE / AT_RISK / DEADLOCKED verdict
+                  yawl_simulate_transition       — counterfactual token firing, zero side effects
+                  yawl_analyze_dead_paths        — zombie path detection across all running cases
+                  yawl_compute_structural_bounds — min/max completion steps + cyclomatic complexity
+                  yawl_prove_soundness           — formal soundness: option-to-complete, proper-completion, no-dead-tasks
+                  yawl_analyze_temporal_pressure — time-dimension heat map: expired timers, age outliers, urgency ranking
+                  yawl_trace_data_lineage        — XQuery data flow graph: producers, consumers, orphans, dangling refs
+                  yawl_audit_cancellation_regions — cancellation blast radius: mutual cancel, orphan cancel, live victims
+                  yawl_analyze_case_divergence   — cross-case cohort analysis: divergence index, outlier cases, split attribution
+                  yawl://cases/{caseId}/mermaid  — live Mermaid flowchart of token positions
+                """.formatted(allTools.size(), workflowToolCount, constructToolCount, formalToolCount, ontologyToolCount))
             .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
-            .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
-                interfaceBClient, sessionHandle))
+            .resourceTemplates(buildAllResourceTemplates(interfaceBClient, sessionHandle))
             .prompts(YawlPromptSpecifications.createAll(
                 interfaceBClient, () -> sessionHandle))
             .completions(YawlCompletionSpecifications.createAll(
@@ -192,9 +240,17 @@ public class YawlMcpServer {
         loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
         System.err.println("Capabilities: " + allTools.size() + " tools ("
-            + (allTools.size() - ontologyToolCount) + " static + "
-            + ontologyToolCount + " ontology-derived)"
-            + ", 3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
+            + workflowToolCount + " workflow + " + constructToolCount + " CONSTRUCT + "
+            + formalToolCount + " formal Petri-net + " + ontologyToolCount + " ontology-derived), "
+            + "3 resources, 4 resource templates, 4 prompts, 3 completions, logging");
+    }
+
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification>
+            buildAllResourceTemplates(InterfaceB_EnvironmentBasedClient client, String session) {
+        var templates = new ArrayList<>(
+            YawlResourceProvider.createAllResourceTemplates(client, session));
+        templates.add(MermaidStateResource.create(client, session));
+        return templates;
     }
 
     /**
