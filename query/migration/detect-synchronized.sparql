@@ -1,0 +1,45 @@
+# Detect Java 11 Synchronized Pattern
+# Finds synchronized methods and synchronized blocks.
+# Rule: R13_SynchronizedToStructuredScope (HIGH complexity)
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?class ?method ?line ?methodName ?syncType ?snippet
+WHERE {
+  {
+    # Synchronized method declarations
+    ?method a java:MethodDeclaration ;
+            java:name ?methodName ;
+            java:isSynchronized true ;
+            java:lineNumber ?line .
+
+    BIND("synchronized_method" AS ?syncType)
+    OPTIONAL { ?method java:sourceText ?snippet }
+
+    ?class a java:ClassDeclaration ;
+           java:hasMethod ?method .
+  }
+  UNION
+  {
+    # Synchronized blocks within methods
+    ?stmt a java:SynchronizedStatement ;
+          java:lineNumber ?line .
+
+    BIND("synchronized_block" AS ?syncType)
+    OPTIONAL { ?stmt java:sourceText ?snippet }
+
+    ?method a java:MethodDeclaration ;
+            java:containsStatement ?stmt ;
+            java:name ?methodName .
+
+    ?class a java:ClassDeclaration ;
+           java:hasMethod ?method .
+  }
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  ?class java:inFile ?cu .
+}
+ORDER BY ?file ?line

@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.integration.a2a.skills;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,6 +59,16 @@ public interface A2ASkill {
      * @return the skill result (success or error)
      */
     SkillResult execute(SkillRequest request);
+
+    /**
+     * Get the tags describing this skill's domain (e.g. "workflow", "bpm").
+     * Used when populating the A2A agent card for skill discovery.
+     *
+     * @return list of tags (empty list if not applicable)
+     */
+    default List<String> getTags() {
+        return List.of();
+    }
 
     /**
      * Check if this skill can be executed given the available permissions.

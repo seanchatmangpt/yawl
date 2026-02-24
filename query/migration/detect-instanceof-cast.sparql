@@ -1,0 +1,26 @@
+# Detect Java 11 instanceof + Cast Pattern
+# Finds: if (x instanceof Foo) { Foo f = (Foo) x; ... }
+# These are candidates for Java 16+ pattern matching instanceof.
+# Rule: R06_InstanceofCastToPatternMatching
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?line ?checkedType ?snippet
+WHERE {
+  ?check a java:InstanceofExpression ;
+         java:checkedType ?checkedType ;
+         java:lineNumber ?line .
+
+  # Exclude already-migrated pattern matching instances
+  FILTER NOT EXISTS { ?check a java:PatternInstanceofExpression }
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?check .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  OPTIONAL { ?check java:sourceText ?snippet }
+}
+ORDER BY ?file ?line

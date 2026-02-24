@@ -1,0 +1,33 @@
+# Detect Java 11 Chained instanceof Pattern
+# Finds methods with 3+ instanceof checks on the same variable — Switch pattern matching candidates.
+# Rule: R07_ChainedInstanceofToSwitchPattern
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?methodName ?checkCount
+WHERE {
+  ?method a java:MethodDeclaration ;
+          java:name ?methodName .
+
+  {
+    SELECT ?method (COUNT(?check) AS ?checkCount)
+    WHERE {
+      ?check a java:InstanceofExpression .
+      FILTER NOT EXISTS { ?check a java:PatternInstanceofExpression }
+      ?method java:containsExpression ?check .
+    }
+    GROUP BY ?method
+  }
+
+  FILTER(?checkCount >= 3)
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  ?class a java:ClassDeclaration ;
+         java:hasMethod ?method .
+
+  ?class java:inFile ?cu .
+}
+ORDER BY DESC(?checkCount) ?file

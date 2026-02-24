@@ -1,0 +1,54 @@
+# Detect Java 11 Raw Type Pattern
+# Finds raw type usage: List, Map, Set without type parameters.
+# Rule: R12_RawTypeToGeneric
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?line ?rawType ?context ?snippet
+WHERE {
+  {
+    # Raw type field declarations
+    ?field a java:FieldDeclaration ;
+           java:lineNumber ?line .
+
+    ?fieldType a java:TypeRef ;
+               java:name ?rawType .
+
+    ?field java:fieldType ?fieldType .
+
+    FILTER(?rawType IN ("List", "Map", "Set", "Collection", "Iterable"))
+
+    # Exclude if already parameterized (no type arguments means raw)
+    FILTER NOT EXISTS {
+      ?fieldType java:typeArguments ?args .
+    }
+
+    BIND("field" AS ?context)
+    OPTIONAL { ?field java:sourceText ?snippet }
+  }
+  UNION
+  {
+    # Raw type method parameters
+    ?param a java:Parameter ;
+           java:lineNumber ?line .
+
+    ?paramType a java:TypeRef ;
+               java:name ?rawType .
+
+    ?param java:paramType ?paramType .
+
+    FILTER(?rawType IN ("List", "Map", "Set", "Collection", "Iterable"))
+
+    FILTER NOT EXISTS {
+      ?paramType java:typeArguments ?args .
+    }
+
+    BIND("parameter" AS ?context)
+    OPTIONAL { ?param java:sourceText ?snippet }
+  }
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+}
+ORDER BY ?file ?line

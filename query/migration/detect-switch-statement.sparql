@@ -1,0 +1,28 @@
+# Detect Java 11 Switch Statement Pattern
+# Finds traditional switch statements without fallthrough — safe to migrate to switch expressions.
+# Rule: R08_SwitchStatementToExpression
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?line ?switchOnType ?caseCount ?snippet
+WHERE {
+  ?sw a java:SwitchStatement ;
+      java:lineNumber ?line ;
+      java:caseCount ?caseCount .
+
+  # Only migrate switches without fallthrough
+  FILTER NOT EXISTS {
+    ?sw java:usesFallthrough true .
+  }
+
+  OPTIONAL { ?sw java:switchOnType ?switchOnType }
+  OPTIONAL { ?sw java:sourceText ?snippet }
+
+  ?method a java:MethodDeclaration ;
+          java:containsStatement ?sw .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+}
+ORDER BY ?file ?line

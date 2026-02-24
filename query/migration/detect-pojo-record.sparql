@@ -1,0 +1,36 @@
+# Detect Java 11 Getter/Setter POJO Pattern
+# Finds classes that have only private fields + corresponding accessor methods,
+# with an all-args constructor — Record candidates.
+# Rule: R04_PojoToRecord
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?class ?className ?fieldCount ?methodCount
+WHERE {
+  ?class a java:ClassDeclaration ;
+         java:qualifiedName ?className ;
+         java:hasOnlyGettersSetters true ;
+         java:hasNoMutableFields true ;
+         java:fieldCount ?fieldCount ;
+         java:methodCount ?methodCount .
+
+  # Exclude classes that extend something other than Object
+  # (records cannot extend other classes)
+  FILTER NOT EXISTS {
+    ?class java:superClass ?parent .
+    ?parent java:name ?parentName .
+    FILTER(?parentName != "Object" && ?parentName != "java.lang.Object")
+  }
+
+  # Exclude abstract classes
+  FILTER NOT EXISTS {
+    ?class java:isAbstract true .
+  }
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  ?class java:inFile ?cu .
+}
+ORDER BY ?file ?className

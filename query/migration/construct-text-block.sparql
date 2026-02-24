@@ -1,0 +1,44 @@
+# CONSTRUCT: String.format() Multi-line → Text Block Migration Plan
+# Produces j25:FormattedTextBlockPattern instances.
+# Rule: R09_StringFormatToTextBlock
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a j25:FormattedTextBlockPattern ;
+    j25:derivedFrom ?call ;
+    j25:templateFile "templates/java25-migration/text-block.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R09_StringFormatToTextBlock ;
+    rule:sourcePattern j11:MultiLineStringPattern ;
+    j25:renderedCode ?textBlockCode .
+}
+WHERE {
+  ?call a java:MethodCallExpression ;
+        java:calleeType "java.lang.String" ;
+        java:calleeName "format" ;
+        java:isMultiLine true ;
+        java:lineNumber ?line .
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?call .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  OPTIONAL { ?call java:stringArgument ?formatStr }
+
+  BIND(IRI(CONCAT(STR(?call), "_textBlock")) AS ?migrationNode)
+
+  BIND(
+    IF(BOUND(?formatStr),
+       CONCAT("\"\"\"\n", REPLACE(?formatStr, "\\\\n", "\n"), "\n\"\"\".formatted(/* args */)"),
+       "\"\"\"\n    // multi-line content here\n    \"\"\".formatted(/* args */)"
+    ) AS ?textBlockCode
+  )
+}

@@ -1,0 +1,92 @@
+{# ============================================================================
+   java-time.tera
+   Renders java.time.* replacements for java.util.Date and java.util.Calendar.
+
+   Variables:
+     - replacement_type: "instant" | "local_date_time" | "formatter" | "duration" | "zoned"
+     - original_type: "Date" | "Calendar" | "SimpleDateFormat"
+     - field_name: field or variable name being replaced
+     - format_pattern: date format pattern string (for SimpleDateFormat → DateTimeFormatter)
+     - is_field: boolean — generating a field declaration vs inline usage
+     - modifiers: field modifiers (e.g., "private static final")
+     - timezone: timezone hint (for ZonedDateTime variants)
+   ============================================================================ #}
+
+{% if replacement_type == "instant" %}
+{# java.util.Date → java.time.Instant
+   Instant represents a point in time on the UTC timeline.
+   Use for timestamps, audit trails, case start/end times. #}
+
+{% if is_field %}
+{{ modifiers | default(value="private") }} Instant {{ field_name }};
+// Initialize: this.{{ field_name }} = Instant.now();
+// From legacy Date: this.{{ field_name }} = legacyDate.toInstant();
+// To legacy Date (interop): Date.from(this.{{ field_name }})
+{% else %}
+Instant.now()
+// Or from legacy: date.toInstant()
+{% endif %}
+
+{% elif replacement_type == "local_date_time" %}
+{# java.util.Calendar → java.time.LocalDateTime
+   LocalDateTime for display — local timezone, no UTC guarantees. #}
+
+{% if is_field %}
+{{ modifiers | default(value="private") }} LocalDateTime {{ field_name }};
+// Initialize: this.{{ field_name }} = LocalDateTime.now();
+// From legacy Calendar: this.{{ field_name }} = legacyCal.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+{% else %}
+LocalDateTime.now()
+// Or from Calendar: cal.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+{% endif %}
+
+{% elif replacement_type == "formatter" %}
+{# java.text.SimpleDateFormat → java.time.format.DateTimeFormatter
+   DateTimeFormatter is immutable and thread-safe — store as static final. #}
+
+{% if format_pattern is defined %}
+{{ modifiers | default(value="private static final") }} DateTimeFormatter {{ field_name | upper | replace(from=" ", to="_") }}_FORMATTER =
+        DateTimeFormatter.ofPattern("{{ format_pattern }}");
+// Usage: {{ field_name | upper | replace(from=" ", to="_") }}_FORMATTER.format(instant.atZone(ZoneId.systemDefault()))
+// Parse: LocalDateTime.parse(str, {{ field_name | upper | replace(from=" ", to="_") }}_FORMATTER)
+{% else %}
+private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
+// Or: DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+{% endif %}
+
+{% elif replacement_type == "duration" %}
+{# Elapsed time: Duration.between(start, end)
+   Replaces manual millis arithmetic: end.getTime() - start.getTime() #}
+
+Duration {{ field_name | default(value="elapsed") }} = Duration.between({{ start_expr | default(value="startTime") }}, Instant.now());
+long millis = {{ field_name | default(value="elapsed") }}.toMillis();
+long seconds = {{ field_name | default(value="elapsed") }}.toSeconds();
+
+{% elif replacement_type == "zoned" %}
+{# For timezone-aware timestamps: ZonedDateTime #}
+
+{% if is_field %}
+{{ modifiers | default(value="private") }} ZonedDateTime {{ field_name }};
+// Initialize: this.{{ field_name }} = ZonedDateTime.now(ZoneId.of("{{ timezone | default(value="UTC") }}"));
+{% else %}
+ZonedDateTime.now(ZoneId.of("{{ timezone | default(value="UTC") }}"))
+{% endif %}
+
+{% endif %}
+
+{#
+   Common conversions (add to import section):
+     import java.time.Instant;
+     import java.time.LocalDateTime;
+     import java.time.ZonedDateTime;
+     import java.time.ZoneId;
+     import java.time.Duration;
+     import java.time.format.DateTimeFormatter;
+
+   Interop with legacy code:
+     Date → Instant:         date.toInstant()
+     Instant → Date:         Date.from(instant)
+     Calendar → Instant:     calendar.toInstant()
+     long millis → Instant:  Instant.ofEpochMilli(millis)
+     Instant → long millis:  instant.toEpochMilli()
+#}

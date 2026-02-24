@@ -1,0 +1,106 @@
+# CONSTRUCT: WorkflowOperation → MCP Tool Descriptors
+#
+# Input:  yawl-public-roots.ttl loaded into a Jena Model
+# Output: mcp:Tool instances with mcp:Parameter links, ready for
+#         OntologyDrivenToolFactory to instantiate as SyncToolSpecification.
+#
+# Design intent:
+#   Every yawl:WorkflowOperation that declares rdfs:subClassOf a public root
+#   (schema:Action, schema:SearchAction, schema:CheckAction,
+#    schema:DownloadAction, prov:Activity) becomes an mcp:Tool.
+#
+#   The tool description is composed from:
+#     1. The operation's own rdfs:comment (YAWL-level semantics)
+#     2. The public root being extended (epistemic grounding)
+#
+#   Tool names, permissions, and parameters are transferred unchanged
+#   from the operation declaration to the tool descriptor.
+#
+#   This means: the MCP layer is derived entirely from the ontology.
+#   New operations added to yawl-public-roots.ttl automatically become
+#   MCP tools on the next CONSTRUCT execution — no Java edits required.
+#
+# Epistemic consequence:
+#   Tool descriptions carry the public root they extend, making the
+#   epistemological alignment visible to every LLM that receives the
+#   tool catalog. The tools don't just do workflow operations —
+#   they declare what public standard they are implementing.
+
+PREFIX yawl:   <http://yawlfoundation.org/yawl#>
+PREFIX mcp:    <http://yawlfoundation.org/mcp#>
+PREFIX schema: <https://schema.org/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+
+  # --- mcp:Tool instance derived from each WorkflowOperation ---
+  ?toolNode a mcp:Tool ;
+    mcp:name          ?toolName ;
+    mcp:description   ?description ;
+    mcp:epistemicRoot ?root ;
+    mcp:rootDescription ?rootDesc ;
+    mcp:permission    ?permission .
+
+  # --- mcp:Parameter instances linked to each tool ---
+  ?toolNode mcp:hasParameter ?paramNode .
+
+  ?paramNode a mcp:Parameter ;
+    mcp:paramName        ?paramName ;
+    mcp:paramType        ?paramType ;
+    mcp:required         ?required ;
+    mcp:paramDescription ?paramDesc .
+
+}
+WHERE {
+
+  # Every WorkflowOperation that declares a public root and a toolName
+  ?operation a yawl:WorkflowOperation ;
+             rdfs:subClassOf ?root ;
+             rdfs:comment    ?opDesc ;
+             yawl:toolName   ?toolName ;
+             yawl:permission ?permission .
+
+  # Restrict to the known public root set
+  FILTER(?root IN (
+    schema:Action,
+    schema:SearchAction,
+    schema:CheckAction,
+    schema:DownloadAction,
+    prov:Activity
+  ))
+
+  # Readable label for the public root (external IRIs have no rdfs:label in this model)
+  BIND(
+    IF(?root = schema:Action,         "Schema.org Action — composable unit of work",
+    IF(?root = schema:SearchAction,   "Schema.org SearchAction — discovery over a catalogue",
+    IF(?root = schema:CheckAction,    "Schema.org CheckAction — validation and verification",
+    IF(?root = schema:DownloadAction, "Schema.org DownloadAction — data retrieval and export",
+    IF(?root = prov:Activity,         "W3C PROV-O Activity — provenance-trackable unit of execution",
+    REPLACE(STR(?root), "^.*/", "")
+    ))))) AS ?rootDesc
+  )
+
+  # Tool description: YAWL semantics + epistemic grounding made explicit
+  BIND(
+    CONCAT(?opDesc, " [Extends: ", ?rootDesc, " <", STR(?root), ">]")
+    AS ?description
+  )
+
+  # Tool node IRI is deterministic from the operation IRI
+  BIND(IRI(CONCAT(STR(?operation), "/mcpTool")) AS ?toolNode)
+
+  # Parameters: optional (tools with no parameters have no hasParameter triples)
+  OPTIONAL {
+    ?operation yawl:hasParameter ?param .
+    ?param yawl:paramName ?paramName ;
+           yawl:paramType ?paramType ;
+           yawl:required  ?required .
+    OPTIONAL { ?param rdfs:comment ?paramDesc }
+    BIND(IRI(CONCAT(STR(?param), "/mcpParam")) AS ?paramNode)
+  }
+
+}
+ORDER BY ?toolName ?paramName

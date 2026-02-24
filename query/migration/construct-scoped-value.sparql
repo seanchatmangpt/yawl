@@ -1,0 +1,56 @@
+# CONSTRUCT: ThreadLocal → ScopedValue Migration Plan
+# Produces j25:ScopedValuePattern instances.
+# Rule: R03_ThreadLocalToScopedValue  (HIGH complexity — requires review flag)
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a j25:ScopedValuePattern ;
+    j25:derivedFrom ?field ;
+    j25:templateFile "templates/java25-migration/scoped-value.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R03_ThreadLocalToScopedValue ;
+    rule:sourcePattern j11:ThreadLocalPattern ;
+    rule:requiresReview true ;
+    java:name ?fieldName ;
+    j25:requiresImport "java.lang.ScopedValue" ;
+    j25:renderedCode ?scopedValueDecl .
+
+  # High-complexity warning triple
+  ?migrationNode rule:complexity "HIGH" ;
+    rule:migrationNote "ThreadLocal → ScopedValue requires analysis of set() call sites. ScopedValue.runWhere() creates a new binding scope — ThreadLocal.set() has no direct equivalent. Review all callers before applying." .
+}
+WHERE {
+  ?field a java:FieldDeclaration ;
+         java:name ?fieldName ;
+         java:lineNumber ?line .
+
+  ?fieldType a java:TypeRef ;
+             java:name ?typeName .
+
+  ?field java:fieldType ?fieldType .
+
+  FILTER(STRSTARTS(?typeName, "ThreadLocal"))
+
+  ?class a java:ClassDeclaration ;
+         java:hasField ?field .
+
+  ?class java:inFile ?cu .
+  ?cu java:filePath ?file .
+
+  BIND(IRI(CONCAT(STR(?field), "_scopedValue")) AS ?migrationNode)
+
+  BIND(
+    CONCAT(
+      "// HIGH COMPLEXITY: Review ThreadLocal.set() call sites before applying\n",
+      "private static final ScopedValue<", REPLACE(?typeName, "ThreadLocal<(.+)>", "$1"), "> ",
+      ?fieldName, " = ScopedValue.newInstance();\n",
+      "// Usage: ScopedValue.runWhere(", ?fieldName, ", value, () -> { ... });"
+    ) AS ?scopedValueDecl
+  )
+}

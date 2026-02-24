@@ -1,0 +1,31 @@
+# Detect Java 11 Thread Pool Pattern
+# Finds: Executors.newFixedThreadPool(), newCachedThreadPool(), newSingleThreadExecutor()
+# Rule: R02_ExecutorToVirtualExecutor
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?line ?poolType ?snippet
+WHERE {
+  ?call a java:MethodCallExpression ;
+        java:calleeType "java.util.concurrent.Executors" ;
+        java:calleeName ?poolType ;
+        java:lineNumber ?line .
+
+  FILTER(?poolType IN (
+    "newFixedThreadPool",
+    "newCachedThreadPool",
+    "newSingleThreadExecutor",
+    "newScheduledThreadPool",
+    "newWorkStealingPool"
+  ))
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?call .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  OPTIONAL { ?call java:sourceText ?snippet }
+}
+ORDER BY ?file ?line

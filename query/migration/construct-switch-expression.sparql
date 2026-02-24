@@ -1,0 +1,51 @@
+# CONSTRUCT: Switch Statement → Switch Expression Migration Plan
+# Produces j25:SwitchExpressionPattern instances from j11:SwitchStatementPattern sources.
+# Rule: R08_SwitchStatementToExpression
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a j25:SwitchExpressionPattern ;
+    j25:derivedFrom ?sw ;
+    j25:templateFile "templates/java25-migration/switch-expression.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R08_SwitchStatementToExpression ;
+    rule:sourcePattern j11:SwitchStatementPattern ;
+    java:switchOnType ?switchOnType ;
+    java:caseCount ?caseCount ;
+    j25:renderedCode ?switchExprCode .
+}
+WHERE {
+  ?sw a java:SwitchStatement ;
+      java:lineNumber ?line ;
+      java:caseCount ?caseCount .
+
+  # Skip switches with fallthrough
+  FILTER NOT EXISTS { ?sw java:usesFallthrough true }
+
+  OPTIONAL { ?sw java:switchOnType ?switchOnType }
+
+  ?method a java:MethodDeclaration ;
+          java:containsStatement ?sw .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  BIND(IRI(CONCAT(STR(?sw), "_switchExpr")) AS ?migrationNode)
+
+  # Synthesize example switch expression
+  BIND(
+    IF(BOUND(?switchOnType),
+       CONCAT("// Convert to: switch(", ?switchOnType, ") {\n",
+              "//   case VALUE1 -> result1;\n",
+              "//   case VALUE2 -> result2;\n",
+              "// }"),
+       "// Convert switch statement to switch expression with arrow cases"
+    ) AS ?switchExprCode
+  )
+}

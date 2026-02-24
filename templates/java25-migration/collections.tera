@@ -1,0 +1,97 @@
+{# ============================================================================
+   collections.tera
+   Renders modern Java collection replacements for legacy or raw types.
+
+   Variables:
+     - replacement_type: "list" | "map" | "set" | "deque" | "concurrent_map"
+     - element_type: generic type parameter(s) for the collection
+     - original_type: "Vector" | "Hashtable" | "Stack" | "raw"
+     - var_name: variable name being declared
+     - modifiers: field or local modifiers
+     - is_immutable: boolean — use List.of() vs new ArrayList<>()
+     - initial_values: list of initial values (for List.of / Map.of)
+     - needs_concurrent: boolean — requires thread-safe variant
+   ============================================================================ #}
+
+{% if replacement_type == "list" %}
+{% if original_type == "Vector" %}
+// Vector → ArrayList (or CopyOnWriteArrayList for concurrent read-heavy scenarios)
+{% if needs_concurrent %}
+{{ modifiers | default(value="private final") }} List<{{ element_type }}> {{ var_name }} =
+        new java.util.concurrent.CopyOnWriteArrayList<>();
+{% elif is_immutable and initial_values %}
+{{ modifiers | default(value="private static final") }} List<{{ element_type }}> {{ var_name }} =
+        List.of({% for v in initial_values %}{{ v }}{% if not loop.last %}, {% endif %}{% endfor %});
+{% else %}
+{{ modifiers | default(value="private final") }} List<{{ element_type }}> {{ var_name }} =
+        new ArrayList<>();
+{% endif %}
+{% else %}
+{% if is_immutable and initial_values %}
+List<{{ element_type }}> {{ var_name }} =
+        List.of({% for v in initial_values %}{{ v }}{% if not loop.last %}, {% endif %}{% endfor %});
+{% else %}
+List<{{ element_type }}> {{ var_name }} = new ArrayList<>();
+{% endif %}
+{% endif %}
+
+{% elif replacement_type == "map" %}
+{% if original_type == "Hashtable" %}
+// Hashtable → HashMap (single-threaded) or ConcurrentHashMap (concurrent access)
+{% if needs_concurrent %}
+{{ modifiers | default(value="private final") }} Map<{{ element_type }}> {{ var_name }} =
+        new java.util.concurrent.ConcurrentHashMap<>();
+{% elif is_immutable and initial_values %}
+// Map.of() supports up to 10 entries; Map.ofEntries() for more
+{{ modifiers | default(value="private static final") }} Map<{{ element_type }}> {{ var_name }} =
+        Map.of(
+{% for entry in initial_values %}
+                {{ entry.key }}, {{ entry.value }}{% if not loop.last %},{% endif %}
+{% endfor %}
+        );
+{% else %}
+{{ modifiers | default(value="private final") }} Map<{{ element_type }}> {{ var_name }} =
+        new HashMap<>();
+{% endif %}
+{% else %}
+Map<{{ element_type }}> {{ var_name }} = new HashMap<>();
+{% endif %}
+
+{% elif replacement_type == "deque" %}
+// Stack → ArrayDeque (used as Deque — push, pop, peek)
+{{ modifiers | default(value="private final") }} Deque<{{ element_type }}> {{ var_name }} =
+        new ArrayDeque<>();
+// Note: Deque.push() = addFirst(), Deque.pop() = removeFirst(), Deque.peek() = peekFirst()
+
+{% elif replacement_type == "set" %}
+{% if is_immutable and initial_values %}
+{{ modifiers | default(value="private static final") }} Set<{{ element_type }}> {{ var_name }} =
+        Set.of({% for v in initial_values %}{{ v }}{% if not loop.last %}, {% endif %}{% endfor %});
+{% else %}
+{{ modifiers | default(value="private final") }} Set<{{ element_type }}> {{ var_name }} =
+        new HashSet<>();
+{% endif %}
+
+{% endif %}
+
+{#
+   Required imports (add as needed):
+     import java.util.List;
+     import java.util.Map;
+     import java.util.Set;
+     import java.util.ArrayList;
+     import java.util.HashMap;
+     import java.util.HashSet;
+     import java.util.ArrayDeque;
+     import java.util.Deque;
+     import java.util.concurrent.ConcurrentHashMap;
+     import java.util.concurrent.CopyOnWriteArrayList;
+
+   Migration table:
+     Vector           → ArrayList / CopyOnWriteArrayList / List.of()
+     Hashtable        → HashMap / ConcurrentHashMap / Map.of()
+     Stack            → ArrayDeque (as Deque)
+     List raw type    → List<InferredType>
+     Map raw type     → Map<K, V>
+     Set raw type     → Set<InferredType>
+#}

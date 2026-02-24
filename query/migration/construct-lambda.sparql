@@ -1,0 +1,70 @@
+# CONSTRUCT: Anonymous Class → Lambda Migration Plan
+# Produces j25:LambdaPattern instances from functional interface anonymous classes.
+# Rule: R05_AnonymousClassToLambda
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a j25:LambdaPattern ;
+    j25:derivedFrom ?expr ;
+    j25:templateFile "templates/java25-migration/lambda.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R05_AnonymousClassToLambda ;
+    rule:sourcePattern j11:AnonymousClassPattern ;
+    java:anonymousBaseType ?baseType ;
+    j25:renderedCode ?lambdaCode .
+}
+WHERE {
+  ?expr a java:AnonymousClassCreation ;
+        java:anonymousBaseType ?baseType ;
+        java:lineNumber ?line .
+
+  FILTER(?baseType IN (
+    "Runnable", "java.lang.Runnable",
+    "Callable", "java.util.concurrent.Callable",
+    "Comparator", "java.util.Comparator",
+    "Supplier", "java.util.function.Supplier",
+    "Consumer", "java.util.function.Consumer",
+    "Function", "java.util.function.Function",
+    "Predicate", "java.util.function.Predicate"
+  ))
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?expr .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  BIND(IRI(CONCAT(STR(?expr), "_lambda")) AS ?migrationNode)
+
+  # Lambda signature depends on functional interface
+  BIND(
+    STRAFTER(
+      IF(?baseType = "Runnable" || ?baseType = "java.lang.Runnable",
+         "Runnable:() -> { /* body */ }",
+         IF(?baseType = "Callable" || ?baseType = "java.util.concurrent.Callable",
+            "Callable:() -> { /* body returning value */ }",
+            IF(?baseType = "Comparator" || ?baseType = "java.util.Comparator",
+               "Comparator:(a, b) -> { /* comparison body */ }",
+               IF(?baseType = "Supplier" || ?baseType = "java.util.function.Supplier",
+                  "Supplier:() -> value",
+                  IF(?baseType = "Consumer" || ?baseType = "java.util.function.Consumer",
+                     "Consumer:item -> { /* consume */ }",
+                     IF(?baseType = "Predicate" || ?baseType = "java.util.function.Predicate",
+                        "Predicate:item -> condition",
+                        "FI:args -> body"
+                     )
+                  )
+               )
+            )
+         )
+      ),
+      ":"
+    ) AS ?lambdaCode
+  )
+}

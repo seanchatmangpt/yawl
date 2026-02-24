@@ -1,0 +1,434 @@
+# =============================================================================
+# YAWL Java 11 → 25 Migration Pipeline Specification
+# ggen-java-migration.toml — Executable migration specification
+#
+# Architecture:
+#   YAWL coordinates the process (what tasks, in what order, with what joins)
+#   SPARQL CONSTRUCT recognizes Java 11 patterns in the codebase ontology
+#   Tera renders Java 25 equivalents
+#   This file = the executable specification tying it all together
+#
+# Usage:
+#   ggen run --config ggen-java-migration.toml --source src/
+#   ggen run --config ggen-java-migration.toml --source src/ --phase detect
+#   ggen run --config ggen-java-migration.toml --source src/ --phase generate
+#   ggen run --config ggen-java-migration.toml --source src/ --dry-run
+# =============================================================================
+
+[project]
+name = "yawl-java-migration"
+version = "1.0.0"
+description = "Ontology-driven Java 11 → Java 25 migration pipeline for the YAWL workflow engine"
+authors = ["YAWL Foundation"]
+license = "Apache-2.0"
+target_java_version = 25
+source_java_version = 11
+
+# =============================================================================
+# ONTOLOGY: Source of truth for pattern vocabulary and migration rules
+# =============================================================================
+
+[ontology]
+# Core Java code vocabulary
+source = "ontology/migration/java-code.ttl"
+# Pattern vocabularies
+imports = [
+    "ontology/migration/java11-patterns.ttl",
+    "ontology/migration/java25-patterns.ttl",
+    "ontology/migration/migration-rules.ttl"
+]
+
+[ontology.prefixes]
+java = "http://yawl.io/java#"
+j11  = "http://yawl.io/java/pattern/java11#"
+j25  = "http://yawl.io/java/pattern/java25#"
+rule = "http://yawl.io/java/migration/rule#"
+dct  = "http://purl.org/dc/terms/"
+xsd  = "http://www.w3.org/2001/XMLSchema#"
+
+# =============================================================================
+# INPUT: Java source files to analyze
+# =============================================================================
+
+[[sources]]
+type = "java_source_tree"
+path = "${SOURCE_DIR:-src}"
+glob = "**/*.java"
+description = "Java source files to analyze for migration patterns"
+required = true
+
+[[sources]]
+type = "rdf_turtle"
+path = "ontology/migration/java-code.ttl"
+namespace = "http://yawl.io/java#"
+description = "Java code vocabulary"
+required = true
+
+# =============================================================================
+# PHASE 1: ANALYZE — Parse Java source into RDF codebase ontology
+# Uses JavaParser (or tree-sitter) to extract code structure as RDF triples.
+# =============================================================================
+
+[phases.analyze]
+name = "Phase 1: Analyze"
+description = "Parse Java source files into the codebase RDF graph using the java-code.ttl vocabulary."
+engine = "java_parser"  # or "tree_sitter_java"
+output_graph = "codebase.trig"
+
+[phases.analyze.options]
+extract_methods = true
+extract_fields = true
+extract_imports = true
+extract_statements = true
+extract_expressions = true
+detect_pojo_pattern = true     # Analyze getter/setter patterns
+detect_only_getters_setters = true
+detect_mutable_fields = true
+resolve_types = true            # Resolve short type names to FQNs where possible
+
+# =============================================================================
+# PHASE 2: DETECT — Run SPARQL SELECT queries to identify Java 11 patterns
+# =============================================================================
+
+[phases.detect]
+name = "Phase 2: Detect"
+description = "Run SPARQL SELECT queries against the codebase graph to find Java 11 patterns."
+depends_on = ["analyze"]
+output = "docs/migration-detection.json"
+
+[[phases.detect.queries]]
+name = "thread_creation"
+file = "query/migration/detect-thread-creation.sparql"
+rule = "R01"
+description = "new Thread(runnable).start() patterns"
+
+[[phases.detect.queries]]
+name = "thread_pool"
+file = "query/migration/detect-thread-pool.sparql"
+rule = "R02"
+description = "Executors.newFixedThreadPool() and similar"
+
+[[phases.detect.queries]]
+name = "thread_local"
+file = "query/migration/detect-thread-local.sparql"
+rule = "R03"
+description = "ThreadLocal<T> field declarations"
+
+[[phases.detect.queries]]
+name = "pojo_record"
+file = "query/migration/detect-pojo-record.sparql"
+rule = "R04"
+description = "Getter/setter POJOs — Record candidates"
+
+[[phases.detect.queries]]
+name = "anonymous_class"
+file = "query/migration/detect-anonymous-class.sparql"
+rule = "R05"
+description = "Anonymous class implementations of functional interfaces"
+
+[[phases.detect.queries]]
+name = "instanceof_cast"
+file = "query/migration/detect-instanceof-cast.sparql"
+rule = "R06"
+description = "instanceof + cast pattern"
+
+[[phases.detect.queries]]
+name = "chained_instanceof"
+file = "query/migration/detect-chained-instanceof.sparql"
+rule = "R07"
+description = "3+ chained instanceof checks — Switch pattern candidates"
+
+[[phases.detect.queries]]
+name = "switch_statement"
+file = "query/migration/detect-switch-statement.sparql"
+rule = "R08"
+description = "Traditional switch statements without fallthrough"
+
+[[phases.detect.queries]]
+name = "string_format"
+file = "query/migration/detect-string-format.sparql"
+rule = "R09"
+description = "Multi-line String.format() and string concatenation"
+
+[[phases.detect.queries]]
+name = "date_calendar"
+file = "query/migration/detect-date-calendar.sparql"
+rule = "R10"
+description = "java.util.Date and java.util.Calendar usage"
+
+[[phases.detect.queries]]
+name = "legacy_collections"
+file = "query/migration/detect-legacy-collections.sparql"
+rule = "R11"
+description = "Vector, Hashtable, Stack usage"
+
+[[phases.detect.queries]]
+name = "raw_types"
+file = "query/migration/detect-raw-types.sparql"
+rule = "R12"
+description = "Raw generic types (List, Map, Set without parameters)"
+
+[[phases.detect.queries]]
+name = "synchronized"
+file = "query/migration/detect-synchronized.sparql"
+rule = "R13"
+description = "Synchronized methods and blocks"
+
+# =============================================================================
+# PHASE 3: PLAN — Run SPARQL CONSTRUCT to produce Java 25 migration plan as RDF
+# =============================================================================
+
+[phases.plan]
+name = "Phase 3: Plan"
+description = "SPARQL CONSTRUCT queries enrich the codebase graph with j25: migration pattern instances."
+depends_on = ["detect"]
+output_graph = "migration-plan.trig"
+
+[[phases.plan.constructs]]
+name = "virtual_thread_migration"
+file = "query/migration/construct-virtual-thread.sparql"
+description = "Thread → Virtual Thread migration triples"
+
+[[phases.plan.constructs]]
+name = "record_migration"
+file = "query/migration/construct-record.sparql"
+description = "POJO → Record migration triples"
+
+[[phases.plan.constructs]]
+name = "pattern_matching_migration"
+file = "query/migration/construct-pattern-matching.sparql"
+description = "instanceof → Pattern Matching migration triples"
+
+[[phases.plan.constructs]]
+name = "switch_expression_migration"
+file = "query/migration/construct-switch-expression.sparql"
+description = "Switch statement → Switch Expression migration triples"
+
+[[phases.plan.constructs]]
+name = "text_block_migration"
+file = "query/migration/construct-text-block.sparql"
+description = "String.format → Text Block migration triples"
+
+[[phases.plan.constructs]]
+name = "java_time_migration"
+file = "query/migration/construct-java-time.sparql"
+description = "Date/Calendar → java.time migration triples"
+
+[[phases.plan.constructs]]
+name = "scoped_value_migration"
+file = "query/migration/construct-scoped-value.sparql"
+description = "ThreadLocal → ScopedValue migration triples (HIGH: review required)"
+
+[[phases.plan.constructs]]
+name = "lambda_migration"
+file = "query/migration/construct-lambda.sparql"
+description = "Anonymous class → Lambda migration triples"
+
+[[phases.plan.constructs]]
+name = "structured_concurrency_migration"
+file = "query/migration/construct-structured-concurrency.sparql"
+description = "Synchronized → StructuredTaskScope migration triples (HIGH: review required)"
+
+[[phases.plan.constructs]]
+name = "collection_migration"
+file = "query/migration/construct-collections.sparql"
+description = "Legacy/raw collection → Modern collection migration triples"
+
+[[phases.plan.constructs]]
+name = "migration_plan_summary"
+file = "query/migration/construct-migration-plan.sparql"
+description = "Top-level MigrationPlan aggregating all migration instances"
+
+# =============================================================================
+# PHASE 4: GENERATE — Render Tera templates from migration plan RDF
+# =============================================================================
+
+[phases.generate]
+name = "Phase 4: Generate"
+description = "Render Tera templates from j25: pattern instances to produce Java 25 replacement code."
+depends_on = ["plan"]
+output_dir = "generated/java25-migration"
+
+# Template binding: j25: pattern class → Tera template file
+[[phases.generate.bindings]]
+pattern_class = "j25:VirtualThreadPattern"
+template = "templates/java25-migration/virtual-thread.tera"
+output_suffix = ".virtual-thread.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:VirtualThreadExecutorPattern"
+template = "templates/java25-migration/virtual-thread.tera"
+output_suffix = ".virtual-executor.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:RecordPattern"
+template = "templates/java25-migration/record.tera"
+output_suffix = ".record.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:PatternMatchingInstanceofPattern"
+template = "templates/java25-migration/pattern-matching.tera"
+output_suffix = ".pattern-match.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:SwitchPatternMatchingPattern"
+template = "templates/java25-migration/pattern-matching.tera"
+output_suffix = ".switch-pattern.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:SwitchExpressionPattern"
+template = "templates/java25-migration/switch-expression.tera"
+output_suffix = ".switch-expr.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:FormattedTextBlockPattern"
+template = "templates/java25-migration/text-block.tera"
+output_suffix = ".text-block.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:InstantPattern"
+template = "templates/java25-migration/java-time.tera"
+output_suffix = ".java-time.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:LambdaPattern"
+template = "templates/java25-migration/lambda.tera"
+output_suffix = ".lambda.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:ImmutableCollectionPattern"
+template = "templates/java25-migration/collections.tera"
+output_suffix = ".collections.java"
+auto_apply = true
+
+[[phases.generate.bindings]]
+pattern_class = "j25:ScopedValuePattern"
+template = "templates/java25-migration/scoped-value.tera"
+output_suffix = ".scoped-value.java"
+auto_apply = false   # HIGH: requires review before applying
+
+[[phases.generate.bindings]]
+pattern_class = "j25:StructuredTaskScopePattern"
+template = "templates/java25-migration/structured-concurrency.tera"
+output_suffix = ".structured.java"
+auto_apply = false   # HIGH: requires review before applying
+
+# Migration report
+[[phases.generate.reports]]
+name = "migration_report"
+template = "templates/java25-migration/migration-report.tera"
+output = "docs/migration-report.md"
+description = "Human-readable migration report with code diffs"
+
+# =============================================================================
+# PHASE 5: VALIDATE — Compile and test generated code
+# =============================================================================
+
+[phases.validate]
+name = "Phase 5: Validate"
+description = "Compile generated Java 25 code and run the existing test suite."
+depends_on = ["generate"]
+on_failure = "halt"
+
+[[phases.validate.checks]]
+name = "compile"
+command = "mvn compile -Dmaven.compiler.source=25 -Dmaven.compiler.target=25"
+description = "Compile all modules with Java 25 target"
+
+[[phases.validate.checks]]
+name = "guard_check"
+command = "bash .claude/hooks/hyper-validate.sh generated/java25-migration"
+description = "H phase: no TODO/mock/stub/empty in generated code"
+
+[[phases.validate.checks]]
+name = "test_suite"
+command = "bash scripts/dx.sh all"
+description = "Full YAWL test suite (must stay GREEN)"
+
+[[phases.validate.checks]]
+name = "soundness_check"
+command = "mvn -pl yawl-engine test -Dtest=WCPSoundnessTest"
+description = "YAWL soundness invariants (WCP 1-43)"
+
+# =============================================================================
+# PHASE 6: COMMIT — Apply validated migrations
+# =============================================================================
+
+[phases.commit]
+name = "Phase 6: Commit"
+description = "Apply validated migrations to source tree and create atomic commit."
+depends_on = ["validate"]
+auto_commit_complexity = ["LOW"]   # Only auto-commit LOW complexity
+review_complexity = ["MEDIUM"]     # Stage MEDIUM for review
+skip_complexity = ["HIGH"]         # Never auto-commit HIGH complexity
+
+[phases.commit.options]
+commit_message_template = "migrate(java25): apply {rule_id} — {description} ({file_count} files)"
+branch = "migrate/java-25-{rule_id}"
+create_pr = true
+pr_label = "java25-migration"
+
+# =============================================================================
+# SPARQL ENGINE CONFIGURATION
+# =============================================================================
+
+[sparql]
+engine = "oxigraph"   # Embedded — no external server required
+in_memory = true
+dataset_format = "trig"
+
+# For large codebases (>100K triples), use QLever for superior performance:
+# engine = "qlever"
+# endpoint = "http://localhost:7001"
+
+# =============================================================================
+# OUTPUT CONFIGURATION
+# =============================================================================
+
+[output]
+format = "trig"   # TriG for named graphs
+emit_dir = "generated/java25-migration"
+receipts_dir = "docs/migration-receipts"
+
+# =============================================================================
+# GUARD CONFIGURATION (H phase — no violations in generated code)
+# =============================================================================
+
+[guards]
+enabled = true
+patterns = [
+    { name = "H_TODO",    severity = "FAIL",  regex = '//\s*(TODO|FIXME|XXX)' },
+    { name = "H_STUB",    severity = "FAIL",  regex = 'return\s+"";' },
+    { name = "H_EMPTY",   severity = "FAIL",  regex = 'void.*\(\)\s*\{\s*\}' },
+    { name = "H_MOCK",    severity = "FAIL",  regex = '(mock|stub|fake)[A-Z]' },
+    { name = "H_SILENT",  severity = "FAIL",  regex = 'log\.(warn|error).*not.*impl' }
+]
+
+# =============================================================================
+# WORKFLOW INTEGRATION: YAWL coordinates this pipeline
+# =============================================================================
+
+[workflow]
+specification = "exampleSpecs/JavaMigrationPipeline.xml"
+engine_url    = "http://localhost:8080/yawl"
+description   = """
+The YAWL engine orchestrates the migration pipeline as a formal workflow:
+- Input condition: Java 11 codebase ready
+- Analyze (task): parse source → RDF
+- Detect (task): SELECT queries → pattern instances
+- Plan (task, AND-split): CONSTRUCT queries in parallel per pattern type
+- Generate (task): Tera templates → Java 25 code
+- Validate (task, XOR-split): compile + guard + test → pass/fail
+- Review (task, deferred choice): human review of MEDIUM/HIGH migrations
+- Commit (task): apply validated, create PR
+- Output condition: migration complete or review scheduled
+"""
