@@ -202,6 +202,24 @@ public class AutoRemediationLog {
     }
 
     /**
+     * Returns true if a successful timeout recovery has been recorded at least once,
+     * indicating a known remediation path exists for idle/stalled cases.
+     */
+    public boolean hasKnownPattern(String caseId) {
+        Objects.requireNonNull(caseId);
+        RemediationCounter counter = remediationCounters.get("timeout_recovery");
+        return counter != null && counter.successCount.get() > 0;
+    }
+
+    /**
+     * Returns the suggested recovery action based on historical pattern success.
+     */
+    public String getSuggestedAction(String caseId) {
+        Objects.requireNonNull(caseId);
+        return hasKnownPattern(caseId) ? "timeout_recovery" : "escalate";
+    }
+
+    /**
      * Resets counters for testing.
      */
     public void reset() {

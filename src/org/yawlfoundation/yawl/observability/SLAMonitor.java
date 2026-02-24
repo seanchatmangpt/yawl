@@ -179,6 +179,33 @@ public class SLAMonitor {
         return executionTrackers.size();
     }
 
+    /**
+     * Checks if a tracked case is predicted to breach its SLA (utilization >= 80%).
+     * Uses caseId as both slaId and itemId (convention used by CaseConciergeAgent).
+     */
+    public boolean isPredictedBreach(String caseId) {
+        Objects.requireNonNull(caseId);
+        ExecutionTracker tracker = executionTrackers.get(caseId + ":" + caseId);
+        if (tracker == null) return false;
+        SLADefinition sla = slaDefinitions.get(caseId);
+        if (sla == null) return false;
+        long elapsedMs = System.currentTimeMillis() - tracker.startTimeMs;
+        return predictBreach(caseId, elapsedMs, sla.thresholdMs);
+    }
+
+    /**
+     * Checks if a tracked case has already breached its SLA threshold.
+     */
+    public boolean isBreached(String caseId) {
+        Objects.requireNonNull(caseId);
+        ExecutionTracker tracker = executionTrackers.get(caseId + ":" + caseId);
+        if (tracker == null) return false;
+        SLADefinition sla = slaDefinitions.get(caseId);
+        if (sla == null) return false;
+        long elapsedMs = System.currentTimeMillis() - tracker.startTimeMs;
+        return elapsedMs > sla.thresholdMs;
+    }
+
     private void registerMetrics() {
         meterRegistry.gauge("yawl.sla.active", executionTrackers, Map::size);
         meterRegistry.counter("yawl.sla.violations");
