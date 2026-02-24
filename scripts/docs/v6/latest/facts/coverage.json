@@ -10,6 +10,133 @@
     "target_branch_pct": 55,
     "target_line_pct": 65
   },
-  "generated_at": "2026-02-22T08:15:58Z",
-  "modules": []
+  "generated_at": "2026-02-24T21:16:25Z",
+  "modules": [
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-authentication",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-control-panel",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-elements",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-engine",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-ggen",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-integration",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-mcp-a2a-app",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-monitoring",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-resourcing",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-scheduling",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-security",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-stateless",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-utilities",
+      "status": "no_report"
+    },
+    {
+      "branch_pct": 0,
+      "instruction_pct": 0,
+      "line_pct": 0,
+      "lines_covered": 0,
+      "lines_missed": 0,
+      "module": "yawl-webapps",
+      "status": "no_report"
+    }
+  ]
 }

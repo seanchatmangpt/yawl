@@ -1,22 +1,23 @@
 # YAWL Observatory — docs/v6/latest/
 
-Generated: 2026-02-22T08:16:09Z | Branch: claude/run-validation-tests-osh3r | Commit: 593a8fc | Status: ✅ GREEN
+Generated: 2026-02-24T21:16:25Z | Branch: claude/rust-best-practices-ZjLFD | Commit: 7b0c49d | Status: ✅ GREEN
 
-## Facts (11 files)
+## Facts (12 files)
 
 | File | Question | Size |
 |------|----------|------|
-| [facts/modules.json](facts/modules.json) | What modules exist? | 0.1KB |
-| [facts/reactor.json](facts/reactor.json) | Build order? | 0.1KB |
-| [facts/shared-src.json](facts/shared-src.json) | Who owns which source files? | 0.4KB |
-| [facts/dual-family.json](facts/dual-family.json) | Stateful ↔ stateless mapping? | 0.8KB |
-| [facts/duplicates.json](facts/duplicates.json) | Duplicate classes? | 0.2KB |
-| [facts/tests.json](facts/tests.json) | Tests per module? | 0.5KB |
-| [facts/integration.json](facts/integration.json) | MCP/A2A tools and skills? | 0.4KB |
-| [facts/docker-testing.json](facts/docker-testing.json) | Docker testing enabled? | 0.9KB |
-| [facts/coverage.json](facts/coverage.json) | Code coverage data? | 0.4KB |
+| [facts/modules.json](facts/modules.json) | What modules exist? | 4.5KB |
+| [facts/reactor.json](facts/reactor.json) | Build order? | 2.7KB |
+| [facts/shared-src.json](facts/shared-src.json) | Who owns which source files? | 0.7KB |
+| [facts/dual-family.json](facts/dual-family.json) | Stateful ↔ stateless mapping? | 3.8KB |
+| [facts/duplicates.json](facts/duplicates.json) | Duplicate classes? | 0.4KB |
+| [facts/tests.json](facts/tests.json) | Tests per module? | 1.0KB |
+| [facts/gates.json](facts/gates.json) | Quality gates active? | 2.0KB |
+| [facts/integration.json](facts/integration.json) | MCP/A2A tools and skills? | 1.2KB |
+| [facts/docker-testing.json](facts/docker-testing.json) | Docker testing enabled? | 1.0KB |
+| [facts/coverage.json](facts/coverage.json) | Code coverage data? | 3.1KB |
 | [facts/static-analysis.json](facts/static-analysis.json) | Overall code health? | 0.5KB |
-| [facts/deps-conflicts.json](facts/deps-conflicts.json) | Dependency conflicts? | 0.3KB |
+| [facts/deps-conflicts.json](facts/deps-conflicts.json) | Dependency conflicts? | 76.4KB |
 
 ## Quick Reference
 
