@@ -143,10 +143,13 @@ public class YawlMcpToolRegistry {
         List<McpServerFeatures.SyncToolSpecification> specs = new ArrayList<>();
 
         // Add core YAWL tools from existing implementation
+        // zaiFunctionService is null here; Spring registry delegates to ZaiFunctionService
+        // via YawlMcpServer when ZAI_API_KEY is configured.
         specs.addAll(YawlToolSpecifications.createAll(
             interfaceBClient,
             interfaceAClient,
-            sessionManager.getSessionHandle()
+            sessionManager.getSessionHandle(),
+            null
         ));
 
         // Add custom Spring-managed tools
