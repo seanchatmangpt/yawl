@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 # Virtual Thread Pinning Detection Script
 
 echo "=== Virtual Thread Pinning Detection ==="

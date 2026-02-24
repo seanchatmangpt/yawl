@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # workflow-common.sh — E2E Workflow Test Common Functions
 #

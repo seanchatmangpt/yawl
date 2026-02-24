@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-a2a-facts.sh — A2A Integration Facts for Observatory
 #

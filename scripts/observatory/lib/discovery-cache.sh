@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # discovery-cache.sh — Batched File Discovery for Observatory
 #

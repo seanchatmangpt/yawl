@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-receipt-chain.sh — Visualize YAWL receipt chains (BBB ledger)
 #

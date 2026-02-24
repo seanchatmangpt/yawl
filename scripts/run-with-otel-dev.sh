@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Run YAWL with OpenTelemetry Java Agent - Development Mode
 # This script uses logging exporters for local development (no external collector needed)
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 YAWL_ROOT="$(dirname "$SCRIPT_DIR")"

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-coverage.sh — Parse JaCoCo CSV reports and emit coverage.json fact
 #

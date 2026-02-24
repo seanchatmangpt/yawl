@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-analysis.sh — Shell Script Static Analysis Library for Observatory
 #

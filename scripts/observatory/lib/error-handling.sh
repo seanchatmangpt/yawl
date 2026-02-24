@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 #
 # error-handling.sh - Error handling library for observatory scripts
 #

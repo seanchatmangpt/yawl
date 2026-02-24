@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # YAWL MCP-A2A Security Test Runner
 # Performs comprehensive adversarial and security testing

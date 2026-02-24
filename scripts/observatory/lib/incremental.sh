@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # incremental.sh — Incremental Analysis for Observatory
 #

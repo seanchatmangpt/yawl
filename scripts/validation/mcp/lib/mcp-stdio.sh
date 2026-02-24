@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # mcp-stdio.sh - MCP STDIO Transport Library
 #

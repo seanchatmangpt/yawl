@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # Order Fulfillment Simulation - Launch case and validate 100% automation
 # =============================================================================
@@ -23,7 +23,7 @@
 #   YAWL_ENGINE_URL=http://localhost:8888/yawl ./scripts/run-orderfulfillment-simulation.sh
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

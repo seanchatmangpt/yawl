@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-facts.sh — Generates all fact JSON files for the observatory
 #

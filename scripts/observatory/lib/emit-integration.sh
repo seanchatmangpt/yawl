@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-integration.sh — Library for MCP and A2A integration diagram generation
 #

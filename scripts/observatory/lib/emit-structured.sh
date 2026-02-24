@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-structured.sh — Structured output (JSON and YAML) for facts and analysis
 #

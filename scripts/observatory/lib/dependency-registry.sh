@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # dependency-registry.sh — Input-to-Output Dependency Mapping
 #

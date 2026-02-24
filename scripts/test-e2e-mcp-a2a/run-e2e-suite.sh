@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # run-e2e-suite.sh — Run E2E MCP/A2A Workflow Test Suite
 #

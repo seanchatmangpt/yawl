@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Run YAWL with OpenTelemetry Java Agent - Production Mode
 # This script demonstrates zero-code instrumentation using the OpenTelemetry Java agent
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 YAWL_ROOT="$(dirname "$SCRIPT_DIR")"

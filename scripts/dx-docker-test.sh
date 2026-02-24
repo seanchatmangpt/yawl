@@ -147,7 +147,7 @@ docker run --rm \
     -c "$MVN_CMD" 2>&1
 
 EXIT_CODE=$?
-set -e
+set -euo pipefail
 
 END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
 ELAPSED_MS=$((END_MS - START_MS))

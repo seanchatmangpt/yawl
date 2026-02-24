@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-yawl-xml.sh — Generates YAWL workflow XML specifications
 #

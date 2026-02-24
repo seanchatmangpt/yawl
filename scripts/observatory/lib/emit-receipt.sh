@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-receipt.sh — Generates observatory.json receipt and INDEX.md
 #

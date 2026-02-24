@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-architecture-facts.sh — Architecture-specific fact emitters
 #

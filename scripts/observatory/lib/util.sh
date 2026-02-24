@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # util.sh — Observatory shared utility functions
 # Part of: YAWL V6 Code Analysis Observatory

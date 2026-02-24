@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-static-analysis.sh — Static Analysis Integration for Observatory
 #

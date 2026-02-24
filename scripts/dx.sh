@@ -193,7 +193,7 @@ printf "${C_CYAN}dx${C_RESET}: scope=%s | phase=%s | fail-strategy=%s\n" \
 set +e
 $MVN_CMD "${GOALS[@]}" "${MVN_ARGS[@]}" 2>&1 | tee /tmp/dx-build-log.txt
 EXIT_CODE=$?
-set -e
+set -euo pipefail
 
 END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
 ELAPSED_MS=$((END_MS - START_MS))

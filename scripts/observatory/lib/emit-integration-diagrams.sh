@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-integration-diagrams.sh — MCP/A2A/ZAI integration diagram generators
 #

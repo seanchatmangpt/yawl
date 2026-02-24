@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Comprehensive YAWL MCP-A2A Security Test Execution Script
 # This script runs multiple security testing scenarios

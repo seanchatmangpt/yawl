@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # emit-diagrams.sh — Generates all Mermaid diagram files
 #

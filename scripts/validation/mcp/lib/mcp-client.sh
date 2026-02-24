@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # mcp-client.sh — MCP JSON-RPC Client Library
 #
