@@ -469,7 +469,7 @@ class XNodeParserTest {
     @Order(32)
     @DisplayName("parse with CDATA containing special characters preserves content")
     void parse_withCDATAContainingSpecialCharacters_preservesContent() {
-        String xml = "<root><![CDATA[Text with &entities; <tags> "quotes" 'apostrophes']]></root>";
+        String xml = "<root><![CDATA[Text with &entities; <tags> \"quotes\" 'apostrophes']]></root>";
         XNode result = parser.parse(xml);
 
         assertEquals(1, result.getChildCount(), "Should have one child");

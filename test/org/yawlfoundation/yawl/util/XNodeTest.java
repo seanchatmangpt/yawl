@@ -24,8 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.yawlfoundation.yawl.util.XNodeIO;
 
 import java.util.*;
 
@@ -1296,31 +1297,37 @@ class XNodeTest {
     @DisplayName("addCollection with XNodeIO interface adds children")
     void addCollection_withXNodeIOInterface_addsChildren() {
         // Mock XNodeIO interface for testing
-        XNodeIO item1 = new XNodeIO() {
+        TestXNodeIO item1 = new TestXNodeIO() {
+            @Override
+            public void fromXNode(XNode node) { /* not used in this test */ }
+
             @Override
             public XNode toXNode() {
                 return new XNode("item1", "value1");
             }
 
             @Override
-            public Object newInstance(XNode node) {
-                return new TestObject(node);
+            public XNodeIO newInstance(XNode node) {
+                throw new UnsupportedOperationException("newInstance not needed in this test");
             }
         };
 
-        XNodeIO item2 = new XNodeIO() {
+        TestXNodeIO item2 = new TestXNodeIO() {
+            @Override
+            public void fromXNode(XNode node) { /* not used in this test */ }
+
             @Override
             public XNode toXNode() {
                 return new XNode("item2", "value2");
             }
 
             @Override
-            public Object newInstance(XNode node) {
-                return new TestObject(node);
+            public XNodeIO newInstance(XNode node) {
+                throw new UnsupportedOperationException("newInstance not needed in this test");
             }
         };
 
-        List<XNodeIO> collection = Arrays.asList(item1, item2);
+        List<TestXNodeIO> collection = Arrays.asList(item1, item2);
         rootNode.addCollection(collection);
 
         assertEquals(2, rootNode.getChildCount(), "Should have added two children");
@@ -1428,9 +1435,11 @@ class XNodeTest {
     /**
      * Helper interface for testing XNodeIO functionality
      */
-    private interface XNodeIO {
+    private interface TestXNodeIO extends XNodeIO {
+        @Override
         XNode toXNode();
-        Object newInstance(XNode node);
+        @Override
+        XNodeIO newInstance(XNode node);
     }
 
     /**
