@@ -200,8 +200,12 @@ ELAPSED_MS=$((END_MS - START_MS))
 ELAPSED_S=$(python3 -c "print(f\"{${ELAPSED_MS}/1000:.1f}\")")
 
 # Parse results from Maven log
-TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null || echo 0)
-TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null || echo 0)
+# Note: grep -c exits 1 on 0 matches (outputs "0"), so || echo 0 would produce "0\n0".
+# Use ; true to suppress exit code, then default with ${VAR:-0} for missing file case.
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null; true)
+TEST_COUNT="${TEST_COUNT:-0}"
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null; true)
+TEST_FAILED="${TEST_FAILED:-0}"
 MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l)
 
 # Enhanced status with metrics
