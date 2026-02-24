@@ -1,6 +1,7 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::sync::OnceLock;
 use chrono::{DateTime, Utc};
 
 /// Parsed event log (case-centric XES format)
@@ -110,15 +111,47 @@ pub struct ActivityStats {
     pub max_duration_ms: f64,
 }
 
+// Statically compiled regex patterns — compiled once per process via OnceLock.
+// (?s) enables dotall mode so `.` matches newlines (required for multi-line XES/PNML).
+fn xes_trace_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"(?s)<trace>(.*?)</trace>"#).unwrap())
+}
+fn xes_event_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"(?s)<event>(.*?)</event>"#).unwrap())
+}
+fn xes_attr_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"<string key="([^"]+)" value="([^"]*)"/>"#).unwrap())
+}
+fn xes_date_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"<date key="([^"]+)" value="([^"]*)"/>"#).unwrap())
+}
+fn pnml_place_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"(?s)<place id="([^"]+)".*?<name>.*?<text>([^<]*)</text>"#).unwrap())
+}
+fn pnml_trans_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"(?s)<transition id="([^"]+)".*?<name>.*?<text>([^<]*)</text>"#).unwrap())
+}
+fn pnml_arc_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"<arc.*?source="([^"]+)".*?target="([^"]+)""#).unwrap())
+}
+fn pnml_initial_pattern() -> &'static Regex {
+    static PAT: OnceLock<Regex> = OnceLock::new();
+    PAT.get_or_init(|| Regex::new(r#"<initialMarking><text>([^<]*)</text>"#).unwrap())
+}
+
 /// Parse XES format (simplified XML-based event log)
 pub fn parse_xes(xes_str: &str) -> Result<EventLog, String> {
-    // Extract traces using regex patterns
-    let trace_pattern = Regex::new(r#"<trace>(.*?)</trace>"#).map_err(|e| e.to_string())?;
-    let event_pattern = Regex::new(r#"<event>(.*?)</event>"#).map_err(|e| e.to_string())?;
-    let attr_pattern = Regex::new(r#"<string key="([^"]+)" value="([^"]*)"/>"#)
-        .map_err(|e| e.to_string())?;
-    let date_pattern = Regex::new(r#"<date key="([^"]+)" value="([^"]*)"/>"#)
-        .map_err(|e| e.to_string())?;
+    let trace_pattern = xes_trace_pattern();
+    let event_pattern = xes_event_pattern();
+    let attr_pattern = xes_attr_pattern();
+    let date_pattern = xes_date_pattern();
 
     let mut traces = Vec::new();
 
@@ -189,14 +222,10 @@ pub fn parse_xes(xes_str: &str) -> Result<EventLog, String> {
 
 /// Parse PNML format (simplified Petri net in XML)
 pub fn parse_pnml(pnml_str: &str) -> Result<PetriNet, String> {
-    let place_pattern = Regex::new(r#"<place id="([^"]+)".*?<name>.*?<text>([^<]*)</text>"#)
-        .map_err(|e| e.to_string())?;
-    let trans_pattern = Regex::new(r#"<transition id="([^"]+)".*?<name>.*?<text>([^<]*)</text>"#)
-        .map_err(|e| e.to_string())?;
-    let arc_pattern = Regex::new(r#"<arc.*?source="([^"]+)".*?target="([^"]+)""#)
-        .map_err(|e| e.to_string())?;
-    let initial_pattern = Regex::new(r#"<initialMarking><text>([^<]*)</text>"#)
-        .map_err(|e| e.to_string())?;
+    let place_pattern = pnml_place_pattern();
+    let trans_pattern = pnml_trans_pattern();
+    let arc_pattern = pnml_arc_pattern();
+    let initial_pattern = pnml_initial_pattern();
 
     let mut places = Vec::new();
     let mut transitions = Vec::new();
@@ -574,7 +603,11 @@ pub fn export_pnml(net: &PetriNet) -> String {
 
 /// Compute performance statistics from event log
 pub fn compute_performance_stats(log: &EventLog) -> PerformanceStats {
-    let mut activity_counts: HashMap<String, Vec<Option<DateTime<Utc>>>> = HashMap::new();
+    // activity_counts: occurrence count per activity name
+    let mut activity_counts: HashMap<String, usize> = HashMap::new();
+    // activity_durations: inter-event waiting times attributed to each activity.
+    // Duration for activity[i] = timestamp[i+1] - timestamp[i] within the same trace.
+    // This gives the sojourn time approximation when only single lifecycle events exist.
     let mut activity_durations: HashMap<String, Vec<i64>> = HashMap::new();
     let mut total_flow_times = Vec::new();
 
@@ -583,12 +616,24 @@ pub fn compute_performance_stats(log: &EventLog) -> PerformanceStats {
             continue;
         }
 
-        // Collect timestamps for each activity
+        // Count activity occurrences
         for event in &trace.events {
-            activity_counts
-                .entry(event.activity.clone())
-                .or_insert_with(Vec::new)
-                .push(event.timestamp);
+            *activity_counts.entry(event.activity.clone()).or_insert(0) += 1;
+        }
+
+        // Compute sojourn time per activity: time from this event to the next event in the trace.
+        for i in 0..trace.events.len().saturating_sub(1) {
+            let curr = &trace.events[i];
+            let next = &trace.events[i + 1];
+            if let (Some(curr_ts), Some(next_ts)) = (curr.timestamp, next.timestamp) {
+                let dur_ms = (next_ts - curr_ts).num_milliseconds();
+                if dur_ms >= 0 {
+                    activity_durations
+                        .entry(curr.activity.clone())
+                        .or_insert_with(Vec::new)
+                        .push(dur_ms);
+                }
+            }
         }
 
         // Compute trace flow time (first to last event)
@@ -605,26 +650,24 @@ pub fn compute_performance_stats(log: &EventLog) -> PerformanceStats {
 
     // Compute activity-level statistics
     let mut activity_stats = HashMap::new();
-    for (activity, timestamps) in activity_counts {
-        let count = timestamps.len();
-        let durations = activity_durations
-            .entry(activity.clone())
-            .or_insert_with(Vec::new);
+    for (activity, count) in &activity_counts {
+        let durations = activity_durations.get(activity.as_str());
 
-        let avg_duration = if !durations.is_empty() {
-            let sum: i64 = durations.iter().sum();
-            (sum / durations.len() as i64) as f64
-        } else {
-            0.0
+        let (avg_duration, min_duration, max_duration) = match durations {
+            Some(d) if !d.is_empty() => {
+                let sum: i64 = d.iter().sum();
+                let avg = sum as f64 / d.len() as f64;
+                let min = *d.iter().min().unwrap() as f64;
+                let max = *d.iter().max().unwrap() as f64;
+                (avg, min, max)
+            }
+            _ => (0.0, 0.0, 0.0),
         };
 
-        let min_duration = durations.iter().copied().min().unwrap_or(0) as f64;
-        let max_duration = durations.iter().copied().max().unwrap_or(0) as f64;
-
         activity_stats.insert(
-            activity,
+            activity.clone(),
             ActivityStats {
-                count,
+                count: *count,
                 avg_duration_ms: avg_duration,
                 min_duration_ms: min_duration,
                 max_duration_ms: max_duration,
