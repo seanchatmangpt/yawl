@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.integration.mcp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
@@ -12,11 +13,16 @@ import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
+import org.yawlfoundation.yawl.integration.mcp.resource.MermaidStateResource;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
+import org.yawlfoundation.yawl.integration.mcp.spec.ComplexityBoundTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.ConstructCoordinationTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.CounterfactualSimulatorTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.DeadPathAnalyzerTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.LivenessOracleTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.spec.ConstructCoordinationTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 
 /**
@@ -121,8 +127,13 @@ public class YawlMcpServer {
         var constructTools = ConstructCoordinationTools.createAll(interfaceBClient, sessionHandle);
         var allTools = new ArrayList<>(workflowTools);
         allTools.addAll(constructTools);
+        allTools.add(LivenessOracleTools.create(interfaceBClient, sessionHandle));
+        allTools.add(CounterfactualSimulatorTools.create(interfaceBClient, sessionHandle));
+        allTools.add(DeadPathAnalyzerTools.create(interfaceBClient, sessionHandle));
+        allTools.add(ComplexityBoundTools.create(interfaceBClient, sessionHandle));
         int workflowToolCount = workflowTools.size();
         int constructToolCount = constructTools.size();
+        int formalToolCount = 4; // liveness, counterfactual, dead-path, complexity
 
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
@@ -140,15 +151,21 @@ public class YawlMcpServer {
                 semantics, not LLM inference. Tool schemas are SPARQL CONSTRUCT outputs
                 derived from the workflow specification, not hand-authored.
 
-                Capabilities: %d workflow tools (%d workflow + %d CONSTRUCT coordination),
-                3 static resources, 3 resource templates, 4 prompts, 3 completions,
+                Capabilities: %d tools (%d workflow + %d CONSTRUCT coordination + %d formal Petri-net),
+                3 static resources, 4 resource templates, 4 prompts, 3 completions,
                 logging (MCP 2025-11-25 compliant).
-                """.formatted(allTools.size(), workflowToolCount, constructToolCount))
+
+                Formal Petri-net tools (zero inference tokens):
+                  yawl_prove_liveness        — BFS reachability: LIVE / AT_RISK / DEADLOCKED verdict
+                  yawl_simulate_transition   — counterfactual token firing, zero side effects
+                  yawl_analyze_dead_paths    — zombie path detection across all running cases
+                  yawl_compute_structural_bounds — min/max completion steps + cyclomatic complexity
+                  yawl://cases/{caseId}/mermaid  — live Mermaid flowchart of token positions
+                """.formatted(allTools.size(), workflowToolCount, constructToolCount, formalToolCount))
             .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
-            .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
-                interfaceBClient, sessionHandle))
+            .resourceTemplates(buildAllResourceTemplates(interfaceBClient, sessionHandle))
             .prompts(YawlPromptSpecifications.createAll(
                 interfaceBClient, () -> sessionHandle))
             .completions(YawlCompletionSpecifications.createAll(
@@ -157,9 +174,18 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: " + allTools.size() + " workflow tools ("
-            + workflowToolCount + " workflow + " + constructToolCount + " CONSTRUCT coordination), "
-            + "3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
+        System.err.println("Capabilities: " + allTools.size() + " tools ("
+            + workflowToolCount + " workflow + " + constructToolCount + " CONSTRUCT + "
+            + formalToolCount + " formal Petri-net), "
+            + "3 resources, 4 resource templates, 4 prompts, 3 completions, logging");
+    }
+
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification>
+            buildAllResourceTemplates(InterfaceB_EnvironmentBasedClient client, String session) {
+        var templates = new ArrayList<>(
+            YawlResourceProvider.createAllResourceTemplates(client, session));
+        templates.add(MermaidStateResource.create(client, session));
+        return templates;
     }
 
     /**
