@@ -1,8 +1,8 @@
 {
-  "branch": "claude/run-validation-tests-osh3r",
-  "commit": "593a8fc",
+  "branch": "claude/rust-best-practices-ZjLFD",
+  "commit": "7b0c49d",
   "facts_dir": "docs/v6/latest/facts",
-  "generated_at": "2026-02-22T08:16:09Z",
+  "generated_at": "2026-02-24T21:16:25Z",
   "outputs": {
     "diagrams": [],
     "facts": [
@@ -12,6 +12,7 @@
       "facts/dual-family.json",
       "facts/duplicates.json",
       "facts/tests.json",
+      "facts/gates.json",
       "facts/integration.json",
       "facts/docker-testing.json",
       "facts/coverage.json",
@@ -20,11 +21,9 @@
     ]
   },
   "refusals": [],
-  "run_id": "run-20260222-081609",
+  "run_id": "run-20260224-211625",
   "schema_version": "1.0",
-  "status": "RED",
+  "status": "GREEN",
   "timing_ms": 0,
-  "warnings": [
-    "Missing fact: gates.json"
-  ]
+  "warnings": []
 }

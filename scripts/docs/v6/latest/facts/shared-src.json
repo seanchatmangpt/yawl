@@ -1,14 +1,30 @@
 {
   "architecture_pattern": "shared_monolith_with_package_scoped_integration",
-  "commit": "593a8fc",
-  "full_shared_modules": [],
-  "generated_at": "2026-02-22T08:15:58Z",
+  "commit": "7b0c49d",
+  "full_shared_modules": [
+    "yawl-authentication",
+    "yawl-control-panel",
+    "yawl-elements",
+    "yawl-engine",
+    "yawl-integration",
+    "yawl-monitoring",
+    "yawl-resourcing",
+    "yawl-scheduling",
+    "yawl-security",
+    "yawl-stateless",
+    "yawl-utilities"
+  ],
+  "generated_at": "2026-02-24T21:16:25Z",
   "package_scoped_modules": [],
   "shared_source_root": "../src",
-  "standard_modules": [],
+  "standard_modules": [
+    "yawl-ggen",
+    "yawl-mcp-a2a-app",
+    "yawl-webapps"
+  ],
   "summary": {
-    "full_shared_count": 0,
+    "full_shared_count": 11,
     "package_scoped_count": 0,
-    "standard_count": 0
+    "standard_count": 3
   }
 }
