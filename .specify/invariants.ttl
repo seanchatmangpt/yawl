@@ -1,5 +1,6 @@
 @prefix code: <http://yawlfoundation.org/code#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -29,13 +30,11 @@ code:RealImplOrThrowShape a sh:NodeShape ;
     sh:targetClass code:Method ;
     sh:name "Real Implementation or Throw Exception" ;
     sh:description
-        "Each method must contain real implementation logic (body length >= 10 chars) " ;
-        "OR throw UnsupportedOperationException. No empty method bodies allowed." ;
+        "Each method must contain real implementation logic (body length >= 10 chars) OR throw UnsupportedOperationException. No empty method bodies allowed." ;
     sh:severity sh:Violation ;
     sh:sparql [
         a sh:SPARQLSelectValidator ;
-        sh:message "Method {$this} ({?methodName} in {?className}): "
-                   "Empty body (length {?bodyLen}) without throwing exception at line {?line}" ;
+        sh:message "Method {$this} ({?methodName} in {?className}): Empty body (length {?bodyLen}) without throwing exception at line {?line}" ;
         sh:select """
             PREFIX code: <http://yawlfoundation.org/code#>
             SELECT $this ?className ?methodName ?line ?bodyLen WHERE {
@@ -110,13 +109,11 @@ code:NoSilentFallbackShape a sh:NodeShape ;
     sh:targetClass code:CatchBlock ;
     sh:name "No Silent Fallback to Fake Data" ;
     sh:description
-        "Exception handlers must not silently return fake/mock/test data. " ;
-        "Must re-throw, log + alternative, or implement real recovery logic." ;
+        "Exception handlers must not silently return fake/mock/test data. Must re-throw, log + alternative, or implement real recovery logic." ;
     sh:severity sh:Violation ;
     sh:sparql [
         a sh:SPARQLSelectValidator ;
-        sh:message "Catch block in {?methodName} (line {?line}): "
-                   "silent fallback detected (returns fake/mock/demo without re-throw)" ;
+        sh:message "Catch block in {?methodName} (line {?line}): silent fallback detected (returns fake/mock/demo without re-throw)" ;
         sh:select """
             PREFIX code: <http://yawlfoundation.org/code#>
             SELECT $this ?methodName ?line WHERE {
@@ -154,14 +151,11 @@ code:NoLieShape a sh:NodeShape ;
     sh:targetClass code:Method ;
     sh:name "Code Matches Documentation" ;
     sh:description
-        "Method implementation must match its javadoc contract. " ;
-        "If javadoc @throws declares exception X, code must throw X. " ;
-        "Method behavior must align with description." ;
+        "Method implementation must match its javadoc contract. If javadoc @throws declares exception X, code must throw X. Method behavior must align with description." ;
     sh:severity sh:Violation ;
     sh:sparql [
         a sh:SPARQLSelectValidator ;
-        sh:message "Method {?methodName} in {?className} (line {?line}): "
-                   "Documentation claims 'throws {?docThrows}' but code doesn't throw it" ;
+        sh:message "Method {?methodName} in {?className} (line {?line}): Documentation claims 'throws {?docThrows}' but code doesn't throw it" ;
         sh:select """
             PREFIX code: <http://yawlfoundation.org/code#>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>

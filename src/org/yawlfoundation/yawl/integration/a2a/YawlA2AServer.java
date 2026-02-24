@@ -1075,14 +1075,10 @@ public class YawlA2AServer {
     }
 
     private HandoffToken validateHandoffToken(String messageText) {
-        // In production, this would parse and validate the JWT token
-        // For now, create a dummy token for demonstration
-        return new HandoffToken(
-            "WI-42",  // extracted from message
-            "source-agent",  // would be parsed from token
-            "target-agent",  // would be parsed from token
-            "session-handle",  // would be parsed from token
-            java.time.Instant.now().plusSeconds(60)  // 60s expiry
+        throw new UnsupportedOperationException(
+            "JWT token validation not implemented. " +
+            "Use HandoffProtocol.verifyHandoffToken() with a properly signed JWT token. " +
+            "Received message: " + (messageText != null ? messageText.substring(0, Math.min(50, messageText.length())) : "null")
         );
     }
 

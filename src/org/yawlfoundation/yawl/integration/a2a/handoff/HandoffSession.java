@@ -172,15 +172,17 @@ public record HandoffSession(
     /**
      * Returns the handoff token derived from this session.
      *
-     * @return the handoff token
+     * <p>Note: This method throws UnsupportedOperationException because the session
+     * does not store the JWT. To get a valid token, use HandoffProtocol.generateHandoffToken()
+     * to create a new signed token.
+     *
+     * @return the handoff token (never returns)
+     * @throws UnsupportedOperationException always, since JWT cannot be reconstructed
      */
     public HandoffToken toToken() {
-        return new HandoffToken(
-            workItemId,
-            fromAgent,
-            toAgent,
-            engineSession,
-            tokenExpiration
+        throw new UnsupportedOperationException(
+            "Cannot reconstruct HandoffToken from session: JWT is not stored. " +
+            "Use HandoffProtocol.generateHandoffToken() to create a new signed token."
         );
     }
 }

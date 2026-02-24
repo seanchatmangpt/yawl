@@ -254,7 +254,7 @@ yawl-new:Timeout a owl:Class ;
     }
     """ ;
     yawl-new:useCase "External service calls, long-running computations, user input" ;
-    yawl-new:relatedPattern yawl-new:RetryWithBackoff, yawl-pattern:Timer ;
+    yawl-new:relatedPattern yawl-new:RetryWithBackoff, yawl-pattern:Timer .
 
 yawl-new:TimeoutHandler a owl:Class ;
     rdfs:label "Timeout Handler" ;
@@ -398,7 +398,7 @@ yawl-new:CDCConfiguration a owl:Class ;
     yawl-new:sourceTable xsd:string ;
     yawl-new:captureOperations rdf:List ; # INSERT, UPDATE, DELETE
     yawl-new:columnFilter rdf:List ; # Columns to include
-    yawl-new:publishTo xsd:anyURI ; # Event stream/topic
+    yawl-new:publishTo xsd:anyURI . # Event stream/topic
 
 # =============================================================================
 # PATTERN 56: AGGREGATOR
@@ -426,7 +426,7 @@ yawl-new:AggregationStrategy a owl:Class ;
     yawl-new:completionCondition xsd:string ; # XPath/XQuery
     yawl-new:aggregationFunction xsd:string ; # MERGE, APPEND, CUSTOM
     yawl-new:timeout xsd:duration ;
-    yawl-new:incompleteBehavior xsd:string ; # DISCARD, EMIT_PARTIAL, ERROR
+    yawl-new:incompleteBehavior xsd:string . # DISCARD, EMIT_PARTIAL, ERROR
 
 # =============================================================================
 # PATTERN 57: SCATTER-GATHER
@@ -505,7 +505,7 @@ yawl-new:DynamicRoutingTable a owl:Class ;
     yawl-new:rules rdf:List ;
     yawl-new:lastUpdated xsd:dateTime ;
     yawl-new:version xsd:string ;
-    yawl-new:source xsd:anyURI ; # Rule registry URL
+    yawl-new:source xsd:anyURI . # Rule registry URL
 
 # =============================================================================
 # PATTERN 60: RULES ENGINE
@@ -715,7 +715,7 @@ yawl-new:AdHocActivity a owl:Class ;
     yawl-new:activity yawl:Task ;
     yawl-new:minExecutions xsd:integer ; # Minimum times to execute
     yawl-new:maxExecutions xsd:integer ; # Maximum times (unbounded = -1)
-    yawl-new:orderingConstraint xsd:string ; # NONE, SEQUENTIAL, PARALLEL
+    yawl-new:orderingConstraint xsd:string . # NONE, SEQUENTIAL, PARALLEL
 
 # =============================================================================
 # PATTERN 68: CASE MANAGEMENT

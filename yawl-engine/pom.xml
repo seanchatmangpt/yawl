@@ -336,6 +336,7 @@
                         <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/patternmatching/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/observatory/**</testInclude>
+                        <testInclude>**/org/yawlfoundation/yawl/engine/interfce/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.xsd</testExclude>

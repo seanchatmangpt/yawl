@@ -233,8 +233,9 @@
         <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
         <versions.maven.plugin.version>2.18.0</versions.maven.plugin.version>
-        <jacoco.plugin.version>0.8.15</jacoco.plugin.version>
-        <jacoco.version>0.8.15</jacoco.version>
+        <jacoco.plugin.version>0.8.14</jacoco.plugin.version>
+        <jacoco.version>0.8.14</jacoco.version>
+        <jacoco.skip>false</jacoco.skip>
         <jacoco.line.coverage>0.80</jacoco.line.coverage>
         <jacoco.branch.coverage>0.70</jacoco.branch.coverage>
         <maven.javadoc.version>3.11.1</maven.javadoc.version>

@@ -168,13 +168,17 @@ public record HandoffMessage(
                 .findFirst()
                 .orElse(java.util.Collections.emptyMap());
 
-            // Create the token (this would normally be decrypted here)
+            // The JWT token string is in partsArray[1]
+            String jwtToken = token;
+
+            // Create the token with the parsed JWT
             HandoffToken handoffToken = new HandoffToken(
                 workItemId,
                 fromAgent,
                 payload.getOrDefault("toAgent", "").toString(),
                 payload.getOrDefault("engineSession", "").toString(),
-                Instant.now().plusSeconds(60) // Default expiry
+                Instant.now().plusSeconds(60), // Default expiry
+                jwtToken
             );
 
             return new HandoffMessage(

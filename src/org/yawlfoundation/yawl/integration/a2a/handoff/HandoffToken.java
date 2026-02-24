@@ -46,6 +46,7 @@ import java.util.Objects;
  * @param toAgent the target agent ID receiving the handoff
  * @param engineSession the Interface B session handle for the work item
  * @param expiresAt the token expiration time (UTC)
+ * @param jwt the signed JWT string for authorization headers
  *
  * @since YAWL 5.2
  * @see HandoffProtocol
@@ -56,7 +57,8 @@ public record HandoffToken(
     String fromAgent,
     String toAgent,
     String engineSession,
-    Instant expiresAt
+    Instant expiresAt,
+    String jwt
 ) {
 
     /**
@@ -67,6 +69,7 @@ public record HandoffToken(
      * @param toAgent the target agent ID receiving the handoff
      * @param engineSession the Interface B session handle for the work item
      * @param expiresAt the token expiration time (UTC)
+     * @param jwt the signed JWT string for authorization headers
      * @throws IllegalArgumentException if any field is null or blank
      */
     public HandoffToken {
@@ -75,6 +78,7 @@ public record HandoffToken(
         Objects.requireNonNull(toAgent, "toAgent cannot be null");
         Objects.requireNonNull(engineSession, "engineSession cannot be null");
         Objects.requireNonNull(expiresAt, "expiresAt cannot be null");
+        Objects.requireNonNull(jwt, "jwt cannot be null");
 
         if (workItemId.isBlank()) {
             throw new IllegalArgumentException("workItemId cannot be blank");
@@ -88,16 +92,21 @@ public record HandoffToken(
         if (engineSession.isBlank()) {
             throw new IllegalArgumentException("engineSession cannot be blank");
         }
+        if (jwt.isBlank()) {
+            throw new IllegalArgumentException("jwt cannot be blank");
+        }
     }
 
     /**
      * Returns a copy of this token with the expiration time updated.
+     * Note: The JWT is preserved from the original token. If the expiration
+     * changes significantly, a new token should be generated via HandoffProtocol.
      *
      * @param newExpiresAt the new expiration time
      * @return a new handoff token with updated expiration
      */
     public HandoffToken withExpiresAt(Instant newExpiresAt) {
-        return new HandoffToken(workItemId, fromAgent, toAgent, engineSession, newExpiresAt);
+        return new HandoffToken(workItemId, fromAgent, toAgent, engineSession, newExpiresAt, jwt);
     }
 
     /**
@@ -125,8 +134,6 @@ public record HandoffToken(
      * @return the JWT string
      */
     public String getJwt() {
-        // This should be implemented using the HandoffProtocol's sign method
-        // For now, return a placeholder - actual implementation should generate JWT
-        return "placeholder-jwt-token";
+        return jwt;
     }
 }
