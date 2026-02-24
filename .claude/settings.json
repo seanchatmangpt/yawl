@@ -27,7 +27,8 @@
     "environment": "Dual-track: Docker/DevContainer (local) + Claude Code Web (remote)",
     "hooks": "Omnipresent Rust hook system: Ψ facts injected at every prompt (65ms)",
     "webSessions": "Supported via SessionStart hook (Maven proxy + H2 database)",
-    "hookArchitecture": "yawl-hooks binary handles UserPromptSubmit/PreToolUse/PostToolUse/Stop/PreCompact"
+    "hookArchitecture": "yawl-hooks binary handles 7 events: UserPromptSubmit/PreToolUse[Write|Edit|Bash]/PostToolUse[Write|Edit|Bash]/PostToolUseFailure/PermissionRequest/Stop/PreCompact",
+    "guardCoverage": "14 Java hyper-standards patterns (PreToolUse Write|Edit) + 7 Ω-gate Bash patterns (PreToolUse Bash)"
   },
   "hooks": {
     "SessionStart": [
@@ -56,13 +57,13 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|Bash",
         "hooks": [
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
             "timeout": 5,
-            "statusMessage": "Checking shared-src blast radius..."
+            "statusMessage": "Checking guards + blast radius..."
           }
         ]
       }
@@ -73,16 +74,45 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/hyper-validate.sh",
-            "timeout": 30,
-            "statusMessage": "Validating H (Guards) - checking for anti-patterns..."
-          },
-          {
-            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
             "timeout": 30,
             "async": true,
             "statusMessage": "Refreshing Ψ facts in background..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 5,
+            "statusMessage": "Checking build results..."
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 5,
+            "statusMessage": "Capturing failure context..."
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "timeout": 5,
+            "statusMessage": "Checking permissions..."
           }
         ]
       }
@@ -92,15 +122,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-hook-git-check.sh",
-            "timeout": 10,
-            "statusMessage": "Verifying git state..."
-          },
-          {
-            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
-            "timeout": 5,
-            "statusMessage": "Ψ quality gate..."
+            "timeout": 10,
+            "statusMessage": "Ψ quality + git gate..."
           }
         ]
       }
@@ -125,8 +149,8 @@
     "packageDocs": "All 89 packages have package-info.java files"
   },
   "bestPractices": {
-    "guards": "14 anti-patterns blocked by hyper-validate.sh",
-    "verification": "ant compile after each batch",
+    "guards": "14 Java anti-patterns (Write|Edit PreToolUse) + 7 Bash Ω-gate patterns (Bash PreToolUse)",
+    "verification": "bash scripts/dx.sh compile after each batch",
     "commits": "Include session URL in commit messages",
     "branching": "claude/<description>-<sessionId> format",
     "documentation": "AI-first: entry points + boundaries + purpose"
