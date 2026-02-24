@@ -19,6 +19,7 @@ pub mod receipt;
 pub mod shared_src;
 pub mod static_analysis;
 pub mod tests;
+pub mod workflow_runtime;
 
 /// Return type for all emitters: Ok(path written) or Err(description).
 pub type EmitResult = Result<PathBuf, String>;

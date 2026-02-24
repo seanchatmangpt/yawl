@@ -17,16 +17,17 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
  *
  * Implements MCP 2025-11-25 specification with full capabilities over STDIO transport.
  *
- * Tools (20): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
+ * Tools (16): Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
  *   work items, get specification data/XML/schema, get running cases, upload/unload specifications,
- *   suspend/resume cases, skip work items. Process mining tools: export XES, analyze performance,
- *   discover variants, analyze resource networks.
+ *   suspend/resume cases, skip work items, and AI-powered specification synthesis (yawl_synthesize_spec).
+ *   Spec synthesis uses Z.AI GLM-4.7-Flash for natural language to YAWL XML conversion.
  *
  * Resources (3 static):
  *   - yawl://specifications - All loaded specifications
@@ -65,6 +66,7 @@ public class YawlMcpServer {
     private final String yawlUsername;
     private final String yawlPassword;
     private final McpLoggingHandler loggingHandler;
+    private final ZaiFunctionService zaiService;
     private McpSyncServer mcpServer;
     private String sessionHandle;
 
@@ -95,6 +97,19 @@ public class YawlMcpServer {
         this.yawlUsername = username;
         this.yawlPassword = password;
         this.loggingHandler = new McpLoggingHandler();
+
+        // Initialize Z.AI service (optional - spec synthesis tool will check availability)
+        ZaiFunctionService tempService = null;
+        try {
+            String zaiApiKey = System.getenv("ZAI_API_KEY");
+            if (zaiApiKey != null && !zaiApiKey.isBlank()) {
+                tempService = new ZaiFunctionService(zaiApiKey, yawlEngineUrl, username, password);
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Z.AI service initialization failed: " + e.getMessage() +
+                ". Spec synthesis tool will not be available.");
+        }
+        this.zaiService = tempService;
     }
 
     /**
@@ -126,10 +141,10 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 15 workflow tools, 3 static resources, 3 resource templates,
-                4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
+                Capabilities: 16 workflow tools (including AI-powered spec synthesis), 3 static resources,
+                3 resource templates, 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle, zaiService))
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
@@ -142,8 +157,8 @@ public class YawlMcpServer {
 
         loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
-        System.err.println("Capabilities: 15 workflow tools, 3 resources, 3 resource templates, " +
-            "4 prompts, 3 completions, logging");
+        System.err.println("Capabilities: 16 workflow tools (including AI-powered spec synthesis), " +
+            "3 resources, 3 resource templates, 4 prompts, 3 completions, logging");
     }
 
     /**

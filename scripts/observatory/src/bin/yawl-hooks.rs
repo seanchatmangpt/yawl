@@ -18,6 +18,8 @@ use serde_json::{json, Value};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process;
+use regex::Regex;
+use std::sync::OnceLock;
 
 fn main() {
     let mut input = String::new();
@@ -46,6 +48,86 @@ fn main() {
     }
 }
 
+// ─── Guard Pattern Definitions ──────────────────────────────────────────────
+
+const GUARD_PATTERNS: &[(&str, &str)] = &[
+    ("DEFERRED WORK MARKERS", r"//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|NOTE:.*implement|REVIEW:.*implement|TEMPORARY|@incomplete|@unimplemented|@stub|@mock|@fake|not\s+implemented\s+yet|coming\s+soon|placeholder|for\s+demo|simplified\s+version|basic\s+implementation)"),
+    ("MOCK/STUB METHOD NAMES", r"(mock|stub|fake|demo)[A-Z][a-zA-Z]*\s*[=(]"),
+    ("MOCK/STUB CLASS NAMES", r"(class|interface)\s+(Mock|Stub|Fake|Demo)[A-Za-z]*\s+(implements|extends|\{)"),
+    ("MOCK MODE FLAGS", r"(is|use|enable|allow)(Mock|Fake|Demo|Stub)(Mode|Data|ing)\s*="),
+    ("EMPTY STRING RETURNS", r#"return\s+""\s*;"#),
+    ("NULL STUB RETURNS", r"(?i)return\s+null\s*;\s*//\s*(stub|todo|placeholder|not\s+implemented|temporary)"),
+    ("EMPTY METHOD BODIES", r"public\s+void\s+\w+\([^)]*\)\s*\{\s*\}"),
+    ("PLACEHOLDER CONSTANTS", r"(DUMMY|PLACEHOLDER|MOCK|FAKE)_[A-Z_]+\s*="),
+    ("SILENT FALLBACK", r"catch\s*\([^)]+\)\s*\{[^}]*(return\s+(new|mock|fake|test)|log\.(warn|error).*not\s+implemented)"),
+    ("CONDITIONAL MOCK", r"if\s*\([^)]*\)\s*return\s+(mock|fake|test|sample|demo)[A-Z][a-zA-Z]*\(\)"),
+    ("SUSPICIOUS GETORDEFAULT", r#"\.getOrDefault\([^,]+,\s*"(test|mock|fake|default|sample|placeholder)"#),
+    ("EARLY RETURN SKIP", r"if\s*\(true\)\s*return\s*;"),
+    ("LOG INSTEAD OF THROW", r#"log\.(warn|error)\([^)]*"[^"]*not\s+implemented[^"]*""#),
+    ("MOCK FRAMEWORK IMPORTS", r"import\s+(org\.mockito|org\.easymock|org\.jmock|org\.powermock)"),
+];
+
+/// Lazy-compiled regex patterns (OnceLock for thread-safe one-time initialization).
+fn compiled_patterns() -> &'static Vec<(String, Regex)> {
+    static PATTERNS: OnceLock<Vec<(String, Regex)>> = OnceLock::new();
+    PATTERNS.get_or_init(|| {
+        GUARD_PATTERNS
+            .iter()
+            .map(|(name, pat)| {
+                (
+                    name.to_string(),
+                    Regex::new(pat).expect("valid guard regex"),
+                )
+            })
+            .collect()
+    })
+}
+
+/// Check a Java file for hyper-standards violations.
+///
+/// Returns a Vec of (violation_name, vec_of_matching_lines).
+/// Only checks .java files in src/ or test/ paths (skips orderfulfillment/).
+fn hyper_validate(file_path: &str) -> Vec<(String, Vec<String>)> {
+    // Filter: only .java files in src/ or test/
+    if !file_path.ends_with(".java") {
+        return vec![];
+    }
+
+    if !file_path.contains("/src/") && !file_path.contains("/test/") {
+        return vec![];
+    }
+
+    // Skip orderfulfillment directory
+    if file_path.contains("/orderfulfillment/") {
+        return vec![];
+    }
+
+    // Read file contents
+    let content = match std::fs::read_to_string(file_path) {
+        Ok(c) => c,
+        Err(_) => return vec![],
+    };
+
+    let patterns = compiled_patterns();
+    let mut violations = vec![];
+
+    for (pattern_name, regex) in patterns {
+        let mut matching_lines = vec![];
+
+        for line in content.lines() {
+            if regex.is_match(line) {
+                matching_lines.push(line.trim().to_string());
+            }
+        }
+
+        if !matching_lines.is_empty() {
+            violations.push((pattern_name.clone(), matching_lines));
+        }
+    }
+
+    violations
+}
+
 // ─── Event Handlers ──────────────────────────────────────────────────────────
 
 /// OMNISCIENCE — Inject fresh Ψ facts into Claude's context before every prompt.
@@ -64,12 +146,16 @@ fn handle_user_prompt_submit(project_dir: &Path) {
 }
 
 /// OMNIPOTENCE — Warn on shared-src blast radius before any write.
+/// Also check for hyper-standards violations (guard patterns).
 ///
 /// The YAWL src/ directory is shared by 11 full_shared modules simultaneously.
 /// Editing any file there affects ALL 11 modules. This hook injects that warning
 /// into Claude's context as additionalContext before the write proceeds.
 ///
-/// Exit 0 always (warn, never block — Claude decides).
+/// Additionally, validates the file against 14 guard patterns (TODO, mock, stub, etc.).
+/// If violations found: write formatted output to stderr and exit(2).
+///
+/// Exit 0 normally (warn, never block), or exit(2) if guard violations detected.
 fn handle_pre_tool_use(hook: &Value, project_dir: &Path) {
     let tool_name = hook["tool_name"].as_str().unwrap_or("");
     if tool_name != "Write" && tool_name != "Edit" {
@@ -81,6 +167,7 @@ fn handle_pre_tool_use(hook: &Value, project_dir: &Path) {
         process::exit(0);
     }
 
+    // Check for shared-src warning (non-blocking)
     if let Some(warning) = check_shared_src(file_path, project_dir) {
         let output = json!({
             "hookSpecificOutput": {
@@ -90,6 +177,32 @@ fn handle_pre_tool_use(hook: &Value, project_dir: &Path) {
             }
         });
         println!("{}", serde_json::to_string(&output).unwrap_or_default());
+    }
+
+    // Check for guard violations (blocking)
+    let violations = hyper_validate(file_path);
+    if !violations.is_empty() {
+        // Format and emit error to stderr
+        eprintln!();
+        eprintln!("╔═══════════════════════════════════════════════════════════════════╗");
+        eprintln!("║  🚨 FORTUNE 5 STANDARDS VIOLATION DETECTED                       ║");
+        eprintln!("╚═══════════════════════════════════════════════════════════════════╝");
+        eprintln!();
+        eprintln!("File: {}", file_path);
+        eprintln!();
+
+        for (violation_name, matching_lines) in violations {
+            eprintln!("❌ {}", violation_name);
+            if let Some(first_line) = matching_lines.first() {
+                eprintln!("{}", first_line);
+            }
+            eprintln!();
+        }
+
+        eprintln!("Fix: Implement the REAL version or throw UnsupportedOperationException");
+        eprintln!();
+
+        process::exit(2);
     }
 
     process::exit(0);
@@ -167,11 +280,11 @@ fn read_fact(facts: &Path, name: &str) -> Option<Value> {
     serde_json::from_str(&content).ok()
 }
 
-/// Build a compact Ψ facts summary (1 line, ~100 tokens, 8 dimensions).
+/// Build a compact Ψ facts summary (1 line, ~100 tokens, 8+ dimensions).
 ///
 /// Example output:
 ///   Ψ facts: 13 modules (11 full_shared) | 439 tests (325 JUnit5) |
-///            1 duplicates (duplicates_found) | stateful=287 stateless=12
+///            1 duplicates (duplicates_found) | stateful=287 stateless=12 | engine=online 2 cases
 fn build_fact_summary(project_dir: &Path) -> Option<String> {
     let facts = facts_dir(project_dir);
     if !facts.exists() {
@@ -183,6 +296,7 @@ fn build_fact_summary(project_dir: &Path) -> Option<String> {
     let duplicates = read_fact(&facts, "duplicates.json");
     let shared = read_fact(&facts, "shared-src.json");
     let dual = read_fact(&facts, "dual-family.json");
+    let runtime = read_fact(&facts, "workflow-runtime.json");
 
     let module_count = modules
         .as_ref()
@@ -225,9 +339,29 @@ fn build_fact_summary(project_dir: &Path) -> Option<String> {
         .and_then(|v| v["families"]["stateless"]["class_count"].as_u64())
         .unwrap_or(0);
 
+    // Engine status from runtime facts
+    let engine_status = runtime
+        .as_ref()
+        .and_then(|v| v["engine_status"].as_str())
+        .unwrap_or("offline");
+
+    let engine_summary = if engine_status == "online" {
+        let cases = runtime
+            .as_ref()
+            .and_then(|v| v["active_cases"].as_u64())
+            .unwrap_or(0);
+        let workitems = runtime
+            .as_ref()
+            .and_then(|v| v["enabled_workitems"].as_u64())
+            .unwrap_or(0);
+        format!("| engine=online {} cases {} workitems", cases, workitems)
+    } else {
+        "| engine=offline".to_string()
+    };
+
     Some(format!(
-        "Ψ facts: {} modules ({} full_shared) | {} tests ({} JUnit5) | {} duplicates ({}) | stateful={} stateless={}",
-        module_count, full_shared, test_count, junit5, dup_count, dup_status, stateful, stateless
+        "Ψ facts: {} modules ({} full_shared) | {} tests ({} JUnit5) | {} duplicates ({}) | stateful={} stateless={} {}",
+        module_count, full_shared, test_count, junit5, dup_count, dup_status, stateful, stateless, engine_summary
     ))
 }
 
