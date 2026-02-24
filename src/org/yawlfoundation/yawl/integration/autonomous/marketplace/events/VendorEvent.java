@@ -73,7 +73,7 @@ public record VendorEvent(
      */
     public VendorEvent {
         // Validate base fields
-        new MarketplaceEvent(eventType, agentId, idempotencyToken, timestamp, version, metadata);
+        MarketplaceEvent.validateBaseFields(eventType, agentId, idempotencyToken, timestamp, version);
 
         // Validate vendor-specific fields
         if (vendorId == null || vendorId.isBlank()) {

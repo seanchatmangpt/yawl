@@ -2650,29 +2650,6 @@ public class YEngine implements InterfaceADesign,
     }
 
     /**
-     * Determines if a work item handoff should be attempted.
-     * This method provides a stub implementation for observability.
-     *
-     * @param workItem the work item to evaluate
-     * @return true if handoff should be attempted, false otherwise
-     */
-    private boolean classifyHandoffIfNeeded(org.yawlfoundation.yawl.engine.interfce.WorkItemRecord workItem) {
-        // Stub implementation for observability
-        // In a real implementation, this would check:
-        // - If the work item can be processed by other agents
-        // - If the current agent lacks required capabilities
-        // - If there are errors that prevent completion
-
-        if (workItem == null) {
-            return false;
-        }
-
-        // For now, always return false to prevent handoff
-        // This should be implemented based on business logic
-        return false;
-    }
-
-    /**
      * Gets the engine start time in milliseconds.
      * Used for uptime calculations in health checks.
      * @return the start time in milliseconds since epoch, or 0 if not available

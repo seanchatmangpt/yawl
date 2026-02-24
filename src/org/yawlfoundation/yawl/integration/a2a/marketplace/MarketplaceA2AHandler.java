@@ -344,28 +344,23 @@ public class MarketplaceA2AHandler {
      */
     private String launchWorkflowCase(String specificationId, Map<String, Object> caseData)
             throws IOException {
-        // In production:
-        // 1. Convert caseData to YAWL case data format (XML)
-        // 2. Call interfaceB.launchCase(specId, null, caseDataXml, sessionHandle)
-        // 3. Return the launched case ID
-
-        // Mock implementation
-        String caseId = specificationId + "-" + UUID.randomUUID().toString().substring(0, 8);
-        logger.debug("Launched workflow case: spec={}, caseId={}, data={}", specificationId, caseId, caseData);
-        return caseId;
+        String caseDataXml = caseData != null ? objectMapper.writeValueAsString(caseData) : null;
+        String result = interfaceB.launchCase(specificationId, caseDataXml, sessionHandle);
+        logger.debug("Launched workflow case: spec={}, result={}", specificationId, result);
+        return result;
     }
 
     /**
      * Update YAWL workflow case data.
-     * Actual implementation would call InterfaceB to update case variables.
+     * Requires InterfaceB case variable update support — not yet available via the standard
+     * InterfaceB_EnvironmentBasedClient API. Use work-item-level data update via
+     * {@code interfaceB.updateWorkItemData} once a work item is checked out.
      */
     private void updateWorkflowCaseData(String caseId, Map<String, Object> updates) throws IOException {
-        // In production:
-        // 1. Fetch current case data via interfaceB
-        // 2. Merge updates into case data
-        // 3. Update via interfaceB
-
-        logger.debug("Updated workflow case data: caseId={}, updates={}", caseId, updates);
+        throw new UnsupportedOperationException(
+            "updateWorkflowCaseData not implemented: InterfaceB does not expose a direct " +
+            "case-variable update endpoint. Update case data via interfaceB.updateWorkItemData " +
+            "after checking out the relevant work item for caseId=" + caseId);
     }
 
     /**

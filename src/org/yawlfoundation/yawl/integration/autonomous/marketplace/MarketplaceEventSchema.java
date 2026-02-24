@@ -305,17 +305,6 @@ public final class MarketplaceEventSchema {
     // =========================================================================
 
     /**
-     * Sealed interface for all marketplace events.
-     * Enables exhaustive pattern matching on event types.
-     */
-    public sealed interface MarketplaceEvent
-        permits OrderCreatedEvent, OrderConfirmedEvent, OrderShippedEvent,
-                OrderDeliveredEvent, OrderReturnedEvent,
-                VendorOnboardedEvent, VendorVerifiedEvent, VendorSuspendedEvent,
-                PaymentAuthorizedEvent, PaymentCapturedEvent, PaymentFailedEvent,
-                PayoutInitiatedEvent {}
-
-    /**
      * Event metadata carrier with ordering guarantees.
      *
      * Ensures message ordering and idempotency via:
@@ -337,7 +326,7 @@ public final class MarketplaceEventSchema {
             Objects.requireNonNull(eventId, "eventId");
             Objects.requireNonNull(eventType, "eventType");
             Objects.requireNonNull(idempotencyKey, "idempotencyKey");
-            Objects.requireNonNull(timestamp, "timestamp");
+            Objects.requireNonNull(timestampUtc, "timestampUtc");
         }
     }
 

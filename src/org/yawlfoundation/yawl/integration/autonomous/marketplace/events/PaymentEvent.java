@@ -97,7 +97,7 @@ public record PaymentEvent(
      */
     public PaymentEvent {
         // Validate base fields
-        new MarketplaceEvent(eventType, agentId, idempotencyToken, timestamp, version, metadata);
+        MarketplaceEvent.validateBaseFields(eventType, agentId, idempotencyToken, timestamp, version);
 
         // Validate payment-specific fields
         if (transactionId == null || transactionId.isBlank()) {
