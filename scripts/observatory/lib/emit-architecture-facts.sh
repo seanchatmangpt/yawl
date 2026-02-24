@@ -376,8 +376,8 @@ _emit_tests_impl() {
         done
         printf '\n  ],\n'
         printf '  "coverage_hints": {\n'
-        printf '    "minimum_line_coverage": 0.65,\n'
-        printf '    "minimum_branch_coverage": 0.55,\n'
+        printf '    "minimum_line_coverage": 0.80,\n'
+        printf '    "minimum_branch_coverage": 0.70,\n'
         printf '    "profile": "coverage",\n'
         printf '    "run_command": "mvn -T 1.5C clean verify -P coverage"\n'
         printf '  }\n'
@@ -435,7 +435,7 @@ _emit_gates_impl() {
         printf '    "spotbugs": {"enabled": %s, "phase": "verify", "fail_on_error": false},\n' "$has_spotbugs"
         printf '    "checkstyle": {"enabled": %s, "phase": "verify", "fail_on_error": false},\n' "$has_checkstyle"
         printf '    "pmd": {"enabled": %s, "phase": "verify", "fail_on_error": false},\n' "$has_pmd"
-        printf '    "jacoco": {"enabled": %s, "line_coverage": 0.65, "branch_coverage": 0.55},\n' "$has_jacoco"
+        printf '    "jacoco": {"enabled": %s, "line_coverage": 0.80, "branch_coverage": 0.70},\n' "$has_jacoco"
         printf '    "enforcer": {"enabled": %s, "rules": ["requireUpperBoundDeps", "banDuplicatePomDependencyVersions"]},\n' "$has_enforcer"
         printf '    "dependency-check": {"enabled": %s, "fail_on_cvss": 7}\n' "$has_dependency_check"
         printf '  },\n'

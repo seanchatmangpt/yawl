@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
  * Chicago TDD tests for YEnabledTransitionSet.
@@ -160,7 +161,7 @@ class TestYEnabledTransitionSet {
 
         @Test
         @DisplayName("TaskGroup with composite tasks")
-        void taskGroupWithCompositeTasks() {
+        void taskGroupWithCompositeTasks() throws YPersistenceException {
             YCompositeTask composite = new YCompositeTask("composite", YTask._AND, YTask._AND, net);
             YCondition cond = new YCondition("cond1", net);
             cond.add(null, new YIdentifier("test"));
@@ -175,7 +176,7 @@ class TestYEnabledTransitionSet {
 
         @Test
         @DisplayName("TaskGroup getRandomCompositeTaskFromGroup returns task when available")
-        void taskGroupGetRandomCompositeTaskFromGroupReturnsTask() {
+        void taskGroupGetRandomCompositeTaskFromGroupReturnsTask() throws YPersistenceException {
             YCompositeTask composite = new YCompositeTask("composite", YTask._AND, YTask._AND, net);
             YCondition cond = new YCondition("cond1", net);
             cond.add(null, new YIdentifier("test"));

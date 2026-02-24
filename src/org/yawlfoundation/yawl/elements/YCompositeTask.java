@@ -69,52 +69,64 @@ public final class YCompositeTask extends YTask {
      * @throws YDataStateException
      */
     @Override
-    protected synchronized void startOne(YPersistenceManager pmgr, YIdentifier id)
+    protected void startOne(YPersistenceManager pmgr, YIdentifier id)
             throws YDataStateException, YPersistenceException, YQueryException, YStateException {
+        // Use _taskStateLock (from YTask) to prevent virtual-thread pinning during
+        // Hibernate/JDBC operations inside YNetRunner construction and continueIfPossible.
+        _taskStateLock.lock();
+        try {
+            // set token locations
+            _mi_executing.add(pmgr, id);
+            _mi_entered.removeOne(pmgr, id);
 
-        // set token locations
-        _mi_executing.add(pmgr, id);
-        _mi_entered.removeOne(pmgr, id);
-
-        // create a net runner for this task's contained subnet
-        YNetRunner netRunner = new YNetRunner(pmgr, (YNet) _decompositionPrototype,
-                this, id, getData(id));
-        getNetRunnerRepository().add(netRunner);
-        logTaskStart(netRunner);
-        netRunner.continueIfPossible(pmgr);
-        netRunner.start(pmgr);
+            // create a net runner for this task's contained subnet
+            YNetRunner netRunner = new YNetRunner(pmgr, (YNet) _decompositionPrototype,
+                    this, id, getData(id));
+            getNetRunnerRepository().add(netRunner);
+            logTaskStart(netRunner);
+            netRunner.continueIfPossible(pmgr);
+            netRunner.start(pmgr);
+        } finally {
+            _taskStateLock.unlock();
+        }
     }
 
 
     @Override
-    public synchronized void cancel(YPersistenceManager pmgr) throws YPersistenceException {
-        List<YNetRunner> cancelledRunners = new ArrayList<>();
-        YIdentifier thisI = _i;
-        if (_i != null) {
-            for (YIdentifier identifier : _mi_active.getIdentifiers()) {
-                YNetRunner netRunner = getNetRunnerRepository().get(identifier);
-                if (netRunner != null) {
-                    netRunner.cancel(pmgr);
-                    for (YWorkItem item : getWorkItemRepository().cancelNet(identifier)) {
-                        item.cancel(pmgr);
-                        YEventLogger.getInstance().logWorkItemEvent(item,
-                                YWorkItemStatus.statusDeleted, null);
+    public void cancel(YPersistenceManager pmgr) throws YPersistenceException {
+        // _taskStateLock is reentrant: super.cancel(pmgr) re-acquires it safely.
+        _taskStateLock.lock();
+        try {
+            List<YNetRunner> cancelledRunners = new ArrayList<>();
+            YIdentifier thisI = _i;
+            if (_i != null) {
+                for (YIdentifier identifier : _mi_active.getIdentifiers()) {
+                    YNetRunner netRunner = getNetRunnerRepository().get(identifier);
+                    if (netRunner != null) {
+                        netRunner.cancel(pmgr);
+                        for (YWorkItem item : getWorkItemRepository().cancelNet(identifier)) {
+                            item.cancel(pmgr);
+                            YEventLogger.getInstance().logWorkItemEvent(item,
+                                    YWorkItemStatus.statusDeleted, null);
+                        }
+                        cancelledRunners.add(netRunner);
                     }
-                    cancelledRunners.add(netRunner);
                 }
             }
-        }
-        super.cancel(pmgr);
+            super.cancel(pmgr);
 
-        for (YNetRunner runner : cancelledRunners) {
-            runner.removeFromPersistence(pmgr);
-        }
-
-        if (thisI != null) {
-            YNetRunner parentRunner = getNetRunnerRepository().get(thisI);
-            if (parentRunner != null) {
-                parentRunner.removeActiveTask(pmgr, this);
+            for (YNetRunner runner : cancelledRunners) {
+                runner.removeFromPersistence(pmgr);
             }
+
+            if (thisI != null) {
+                YNetRunner parentRunner = getNetRunnerRepository().get(thisI);
+                if (parentRunner != null) {
+                    parentRunner.removeActiveTask(pmgr, this);
+                }
+            }
+        } finally {
+            _taskStateLock.unlock();
         }
     }
 

@@ -29,7 +29,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,7 +65,7 @@ import org.apache.logging.log4j.Logger;
  * @author YAWL Foundation
  * @version 5.2
  */
-public class E2ESelfUpgradeIntegrationTest extends TestCase {
+public class E2ESelfUpgradeIntegrationTest {
 
     private static final Logger _logger = LogManager.getLogger(E2ESelfUpgradeIntegrationTest.class);
     private static final int COMMAND_TIMEOUT_SECONDS = 120;
@@ -70,13 +74,8 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     private E2ETestableSelfUpgradeSkill upgradeSkill;
     private E2ETestableZaiService testZaiService;
 
-    public E2ESelfUpgradeIntegrationTest(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         testProjectDir = Files.createTempDirectory("e2e-upgrade-test");
         _logger.info("Created test project directory: {}", testProjectDir);
 
@@ -85,12 +84,11 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         upgradeSkill = new E2ETestableSelfUpgradeSkill(testZaiService, testProjectDir);
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (testProjectDir != null) {
             deleteRecursively(testProjectDir);
         }
-        super.tearDown();
     }
 
     // =========================================================================
@@ -101,6 +99,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
      * Test complete upgrade cycle with LOW risk files.
      * Should auto-approve and execute all phases successfully.
      */
+    @Test
     public void testFullUpgradeCycleLowRiskAutoApprove() throws Exception {
         _logger.info("=== SCENARIO 1: Full upgrade cycle with LOW risk ===");
 
@@ -124,18 +123,18 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         _logger.info("Result data: {}", result.getData());
 
         // For E2E test, we verify the state machine transitions
-        assertEquals("LOW risk should be calculated",
-            "LOW", upgradeSkill.getState().riskLevel.name());
+        assertEquals("LOW", upgradeSkill.getState().riskLevel.name(),
+            "LOW risk should be calculated");
 
         // Verify phases executed
         List<Map<String, Object>> phases = getPhasesFromResult(result);
-        assertNotNull("Phases should not be null", phases);
-        assertTrue("Should have executed at least 2 phases", phases.size() >= 2);
+        assertNotNull(phases, "Phases should not be null");
+        assertTrue(phases.size() >= 2, "Should have executed at least 2 phases");
 
         // Verify state transitions
-        assertEquals("Final phase should be COMPLETE",
-            E2ETestableSelfUpgradeSkill.UpgradePhase.COMPLETE,
-            upgradeSkill.getCurrentPhase());
+        assertEquals(E2ETestableSelfUpgradeSkill.UpgradePhase.COMPLETE,
+            upgradeSkill.getCurrentPhase(),
+            "Final phase should be COMPLETE");
 
         _logger.info("SCENARIO 1 PASSED: LOW risk auto-approved in {}ms", executionTime);
     }
@@ -148,6 +147,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
      * Test upgrade cycle with HIGH risk files.
      * Should require approval when max risk level is MEDIUM.
      */
+    @Test
     public void testFullUpgradeCycleHighRiskRequiresApproval() throws Exception {
         _logger.info("=== SCENARIO 2: Full upgrade cycle with HIGH risk ===");
 
@@ -166,16 +166,17 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should fail because HIGH risk > MEDIUM allowed
         _logger.info("Result: success={}, error={}", result.isSuccess(), result.getError());
 
-        assertFalse("HIGH risk should exceed MEDIUM limit", result.isSuccess());
-        assertTrue("Error should mention risk level",
+        assertFalse(result.isSuccess(), "HIGH risk should exceed MEDIUM limit");
+        assertTrue(
             result.getError().contains("Risk level") ||
             result.getError().contains("exceeds") ||
-            result.getError().contains("approval"));
+            result.getError().contains("approval"),
+            "Error should mention risk level");
 
         // Verify risk level was calculated correctly
-        assertEquals("HIGH risk should be calculated for engine files",
-            E2ETestableSelfUpgradeSkill.RiskLevel.HIGH,
-            upgradeSkill.getState().riskLevel);
+        assertEquals(E2ETestableSelfUpgradeSkill.RiskLevel.HIGH,
+            upgradeSkill.getState().riskLevel,
+            "HIGH risk should be calculated for engine files");
 
         _logger.info("SCENARIO 2 PASSED: HIGH risk correctly blocked");
     }
@@ -183,6 +184,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test HIGH risk files with HIGH max risk level (should proceed).
      */
+    @Test
     public void testFullUpgradeCycleHighRiskWithHighApproval() throws Exception {
         _logger.info("=== SCENARIO 2b: HIGH risk with HIGH approval level ===");
 
@@ -201,13 +203,13 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         _logger.info("Result: success={}, data={}", result.isSuccess(), result.getData());
 
         // With dry run, it should succeed and show HIGH risk
-        assertEquals("HIGH risk should be calculated",
-            E2ETestableSelfUpgradeSkill.RiskLevel.HIGH,
-            upgradeSkill.getState().riskLevel);
+        assertEquals(E2ETestableSelfUpgradeSkill.RiskLevel.HIGH,
+            upgradeSkill.getState().riskLevel,
+            "HIGH risk should be calculated");
 
         // Risk level HIGH <= max allowed HIGH, so it should proceed
-        assertTrue("Should proceed when risk equals max allowed",
-            result.isSuccess() || !result.getError().contains("exceeds"));
+        assertTrue(result.isSuccess() || !result.getError().contains("exceeds"),
+            "Should proceed when risk equals max allowed");
 
         _logger.info("SCENARIO 2b PASSED: HIGH risk approved with HIGH level");
     }
@@ -219,6 +221,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test dry run mode - should plan but not execute.
      */
+    @Test
     public void testDryRunModePlansWithoutExecution() throws Exception {
         _logger.info("=== SCENARIO 3: Dry run mode ===");
 
@@ -238,16 +241,16 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should succeed as dry run
         _logger.info("Result: success={}, data={}", result.isSuccess(), result.getData());
 
-        assertTrue("Dry run should succeed", result.isSuccess());
-        assertEquals("Should indicate dry_run", true, result.getData().get("dry_run"));
+        assertTrue(result.isSuccess(), "Dry run should succeed");
+        assertEquals(true, result.getData().get("dry_run"), "Should indicate dry_run");
 
         // Verify planned files
         Object plannedFiles = result.getData().get("planned_files");
-        assertNotNull("Should have planned_files", plannedFiles);
+        assertNotNull(plannedFiles, "Should have planned_files");
 
         // Verify risk level was calculated
         Object riskLevel = result.getData().get("risk_level");
-        assertNotNull("Should have risk_level", riskLevel);
+        assertNotNull(riskLevel, "Should have risk_level");
 
         // In dry run, generate should not be called (stops before GENERATE phase)
         // Actually, looking at the implementation, dry run stops after ANALYZE
@@ -261,6 +264,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test failure handling at INTROSPECT phase.
      */
+    @Test
     public void testFailureAtIntrospectPhase() throws Exception {
         _logger.info("=== SCENARIO 4a: Failure at INTROSPECT phase ===");
 
@@ -277,10 +281,11 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should fail with introspect error
         _logger.info("Result: success={}, error={}", result.isSuccess(), result.getError());
 
-        assertFalse("Should fail at INTROSPECT phase", result.isSuccess());
-        assertTrue("Error should mention INTROSPECT",
+        assertFalse(result.isSuccess(), "Should fail at INTROSPECT phase");
+        assertTrue(
             result.getError().contains("INTROSPECT") ||
-            result.getError().contains("introspect"));
+            result.getError().contains("introspect"),
+            "Error should mention INTROSPECT");
 
         _logger.info("SCENARIO 4a PASSED: INTROSPECT failure handled correctly");
     }
@@ -288,6 +293,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test failure handling at GENERATE phase.
      */
+    @Test
     public void testFailureAtGeneratePhase() throws Exception {
         _logger.info("=== SCENARIO 4b: Failure at GENERATE phase ===");
 
@@ -305,11 +311,11 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should fail with generate error
         _logger.info("Result: success={}, error={}", result.isSuccess(), result.getError());
 
-        assertFalse("Should fail at GENERATE phase", result.isSuccess());
+        assertFalse(result.isSuccess(), "Should fail at GENERATE phase");
 
         // Verify phases - should have INTROSPECT and ANALYZE as success
         List<Map<String, Object>> phases = getPhasesFromResult(result);
-        assertTrue("Should have phases", phases.size() >= 2);
+        assertTrue(phases.size() >= 2, "Should have phases");
 
         _logger.info("SCENARIO 4b PASSED: GENERATE failure handled correctly");
     }
@@ -317,6 +323,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test failure handling at BUILD phase.
      */
+    @Test
     public void testFailureAtBuildPhase() throws Exception {
         _logger.info("=== SCENARIO 4c: Failure at BUILD phase ===");
 
@@ -335,7 +342,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should fail with build error
         _logger.info("Result: success={}, error={}", result.isSuccess(), result.getError());
 
-        assertFalse("Should fail at BUILD phase", result.isSuccess());
+        assertFalse(result.isSuccess(), "Should fail at BUILD phase");
 
         _logger.info("SCENARIO 4c PASSED: BUILD failure handled correctly");
     }
@@ -343,6 +350,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test failure handling at TEST phase.
      */
+    @Test
     public void testFailureAtTestPhase() throws Exception {
         _logger.info("=== SCENARIO 4d: Failure at TEST phase ===");
 
@@ -362,10 +370,11 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should fail with test error
         _logger.info("Result: success={}, error={}", result.isSuccess(), result.getError());
 
-        assertFalse("Should fail at TEST phase", result.isSuccess());
-        assertTrue("Error should mention test failure",
+        assertFalse(result.isSuccess(), "Should fail at TEST phase");
+        assertTrue(
             result.getError().toLowerCase().contains("test") ||
-            result.getError().toLowerCase().contains("fail"));
+            result.getError().toLowerCase().contains("fail"),
+            "Error should mention test failure");
 
         _logger.info("SCENARIO 4d PASSED: TEST failure handled correctly");
     }
@@ -373,6 +382,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test failure handling at COMMIT phase.
      */
+    @Test
     public void testFailureAtCommitPhase() throws Exception {
         _logger.info("=== SCENARIO 4e: Failure at COMMIT phase ===");
 
@@ -393,7 +403,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should fail with commit error
         _logger.info("Result: success={}, error={}", result.isSuccess(), result.getError());
 
-        assertFalse("Should fail at COMMIT phase", result.isSuccess());
+        assertFalse(result.isSuccess(), "Should fail at COMMIT phase");
 
         _logger.info("SCENARIO 4e PASSED: COMMIT failure handled correctly");
     }
@@ -405,6 +415,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test that rollback is triggered on failure.
      */
+    @Test
     public void testRollbackOnFailure() throws Exception {
         _logger.info("=== SCENARIO 5: Rollback on failure ===");
 
@@ -427,8 +438,8 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify: Should fail and trigger rollback
         _logger.info("Result: success={}, error={}", result.isSuccess(), result.getError());
 
-        assertFalse("Should fail", result.isSuccess());
-        assertTrue("Rollback should have been called", rollbackCalled.get());
+        assertFalse(result.isSuccess(), "Should fail");
+        assertTrue(rollbackCalled.get(), "Rollback should have been called");
 
         _logger.info("SCENARIO 5 PASSED: Rollback triggered on failure");
     }
@@ -436,6 +447,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test rollback restores previous state.
      */
+    @Test
     public void testRollbackRestoresPreviousState() throws Exception {
         _logger.info("=== SCENARIO 5b: Rollback restores state ===");
 
@@ -458,8 +470,8 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         upgradeSkill.execute(request);
 
         // Verify rollback was recorded
-        assertTrue("Upgrade should track state for rollback",
-            upgradeSkill.getState().targetFiles != null);
+        assertTrue(upgradeSkill.getState().targetFiles != null,
+            "Upgrade should track state for rollback");
 
         _logger.info("SCENARIO 5b PASSED: State tracked for potential rollback");
     }
@@ -471,6 +483,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test actual Maven build command execution (with timeout).
      */
+    @Test
     public void testActualBuildCommandExecution() throws Exception {
         _logger.info("=== ACTUAL BUILD TEST ===");
 
@@ -511,7 +524,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         _logger.info("Output preview: {}", truncate(output.toString(), 500));
 
         // For the minimal project, build should succeed
-        assertEquals("Build should succeed", 0, exitCode);
+        assertEquals(0, exitCode, "Build should succeed");
 
         _logger.info("ACTUAL BUILD TEST PASSED");
     }
@@ -519,6 +532,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test actual test command execution (with timeout).
      */
+    @Test
     public void testActualTestCommandExecution() throws Exception {
         _logger.info("=== ACTUAL TEST EXECUTION ===");
 
@@ -556,7 +570,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         _logger.info("Output preview: {}", truncate(output.toString(), 500));
 
         // Test should pass
-        assertEquals("Tests should pass", 0, exitCode);
+        assertEquals(0, exitCode, "Tests should pass");
 
         _logger.info("ACTUAL TEST PASSED");
     }
@@ -564,6 +578,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test error handling verification - exception propagation.
      */
+    @Test
     public void testErrorHandlingExceptionPropagation() throws Exception {
         _logger.info("=== ERROR HANDLING: Exception propagation ===");
 
@@ -580,12 +595,13 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         SkillResult result = upgradeSkill.execute(request);
 
         // Verify exception was caught and converted to error result
-        assertFalse("Should fail with exception", result.isSuccess());
-        assertNotNull("Should have error message", result.getError());
-        assertTrue("Error should mention exception or failure",
+        assertFalse(result.isSuccess(), "Should fail with exception");
+        assertNotNull(result.getError(), "Should have error message");
+        assertTrue(
             result.getError().toLowerCase().contains("exception") ||
             result.getError().toLowerCase().contains("failed") ||
-            result.getError().toLowerCase().contains("error"));
+            result.getError().toLowerCase().contains("error"),
+            "Error should mention exception or failure");
 
         _logger.info("ERROR HANDLING PASSED: Exception propagated correctly");
     }
@@ -593,6 +609,7 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
     /**
      * Test state transitions correctness throughout the cycle.
      */
+    @Test
     public void testStateTransitionsCorrectness() throws Exception {
         _logger.info("=== STATE TRANSITIONS TEST ===");
 
@@ -615,17 +632,17 @@ public class E2ESelfUpgradeIntegrationTest extends TestCase {
         // Verify state transitions
         _logger.info("State transitions: {}", stateTransitions);
 
-        assertTrue("Should have state transitions", stateTransitions.size() > 0);
-        assertTrue("Should start with IDLE or INTROSPECT",
+        assertTrue(stateTransitions.size() > 0, "Should have state transitions");
+        assertTrue(
             stateTransitions.get(0).equals("IDLE") ||
-            stateTransitions.get(0).equals("INTROSPECT"));
+            stateTransitions.get(0).equals("INTROSPECT"),
+            "Should start with IDLE or INTROSPECT");
 
         // Verify order (each phase should come after the previous)
         int lastOrdinal = -1;
         for (String phase : stateTransitions) {
             int ordinal = E2ETestableSelfUpgradeSkill.UpgradePhase.valueOf(phase).ordinal();
-            assertTrue("Phases should be in order",
-                ordinal >= lastOrdinal);
+            assertTrue(ordinal >= lastOrdinal, "Phases should be in order");
             lastOrdinal = ordinal;
         }
 

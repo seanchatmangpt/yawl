@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A2A Case Monitor - Real implementation for case monitoring with A2A events.
@@ -34,9 +35,12 @@ public class A2ACaseMonitor {
     // Case state tracking
     private final Map<String, CaseState> activeCases = new ConcurrentHashMap<>();
 
-    // Configuration
-    private boolean monitoringEnabled = false;
+    // Configuration — volatile: plain reads/writes suffice for single-boolean flag.
+    // _monitoringLock guards the compound start/stop transition (awaitTermination
+    // is blocking I/O — synchronized would pin the virtual-thread carrier).
+    private volatile boolean monitoringEnabled = false;
     private long monitoringInterval = 5000; // 5 seconds default
+    private final ReentrantLock _monitoringLock = new ReentrantLock();
 
     private ScheduledExecutorService scheduler;
 
@@ -49,29 +53,36 @@ public class A2ACaseMonitor {
     }
 
     /**
-     * Enable A2A case monitoring
+     * Enable A2A case monitoring.
+     * Uses ReentrantLock (not synchronized) to prevent virtual-thread pinning:
+     * awaitTermination() blocks on I/O, and synchronized would pin the carrier thread.
      */
-    public synchronized void setMonitoringEnabled(boolean enabled) {
-        if (enabled && !monitoringEnabled) {
-            // Start monitoring
-            monitoringEnabled = enabled;
-            startPeriodicMonitoring();
-            _logger.info("A2A case monitoring enabled");
-        } else if (!enabled && monitoringEnabled) {
-            // Stop monitoring
-            monitoringEnabled = enabled;
-            if (scheduler != null) {
-                scheduler.shutdown();
-                try {
-                    if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+    public void setMonitoringEnabled(boolean enabled) {
+        _monitoringLock.lock();
+        try {
+            if (enabled && !monitoringEnabled) {
+                // Start monitoring
+                monitoringEnabled = true;
+                startPeriodicMonitoring();
+                _logger.info("A2A case monitoring enabled");
+            } else if (!enabled && monitoringEnabled) {
+                // Stop monitoring
+                monitoringEnabled = false;
+                if (scheduler != null) {
+                    scheduler.shutdown();
+                    try {
+                        if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                            scheduler.shutdownNow();
+                        }
+                    } catch (InterruptedException e) {
                         scheduler.shutdownNow();
+                        Thread.currentThread().interrupt();
                     }
-                } catch (InterruptedException e) {
-                    scheduler.shutdownNow();
-                    Thread.currentThread().interrupt();
                 }
+                _logger.info("A2A case monitoring disabled");
             }
-            _logger.info("A2A case monitoring disabled");
+        } finally {
+            _monitoringLock.unlock();
         }
     }
 

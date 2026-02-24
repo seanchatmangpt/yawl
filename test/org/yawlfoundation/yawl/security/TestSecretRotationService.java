@@ -134,7 +134,7 @@ class TestSecretRotationService {
 
     @Test
     @DisplayName("Should track last rotation time")
-    void testLastRotationTime() {
+    void testLastRotationTime() throws InterruptedException {
         String secretName = "time-test";
         service.registerSecret(secretName, 1);
 
