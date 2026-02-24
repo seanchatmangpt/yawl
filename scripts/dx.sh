@@ -200,9 +200,11 @@ ELAPSED_MS=$((END_MS - START_MS))
 ELAPSED_S=$(python3 -c "print(f\"{${ELAPSED_MS}/1000:.1f}\")")
 
 # Parse results from Maven log
-TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null || echo 0)
-TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null || echo 0)
-MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l)
+# NOTE: grep -c exits 1 when 0 matches (still outputs "0"), so || must be outside
+# the $() to avoid capturing both grep's "0" output AND the fallback "0" as "0\n0".
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || TEST_COUNT=0
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || TEST_FAILED=0
+MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l | xargs)
 
 # Enhanced status with metrics
 echo ""
