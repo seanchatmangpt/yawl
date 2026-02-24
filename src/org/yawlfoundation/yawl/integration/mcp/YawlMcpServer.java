@@ -15,8 +15,9 @@ import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
+import org.yawlfoundation.yawl.integration.mcp.spec.McpToolRegistry;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 /**
@@ -130,6 +131,9 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
+        YawlMcpContext ctx = new YawlMcpContext(
+                interfaceBClient, interfaceAClient, sessionHandle, zaiService);
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -144,7 +148,7 @@ public class YawlMcpServer {
                 Capabilities: 16 workflow tools (including AI-powered spec synthesis), 3 static resources,
                 3 resource templates, 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
-            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle, zaiService))
+            .tools(McpToolRegistry.createAll(ctx))
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(
