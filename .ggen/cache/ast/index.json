@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "ast_models": [
+    {
+      "name": "workflow-ast",
+      "description": "YAWL Workflow AST model",
+      "cached": false
+    },
+    {
+      "name": "task-ast",
+      "description": "YAWL Task AST model",
+      "cached": false
+    },
+    {
+      "name": "flow-ast",
+      "description": "YAWL Flow AST model",
+      "cached": false
+    }
+  ],
+  "timestamp": "2026-02-22T00:00:00Z"
+}

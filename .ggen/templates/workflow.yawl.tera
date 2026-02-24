@@ -1,0 +1,170 @@
+{#
+ YAWL Workflow Specification Template
+ Generates a complete YAWL specification with decompositions from SPARQL query results.
+
+ Context Variables (from SPARQL extract-tasks.sparql and extract-flows.sparql):
+   - tasks: Array of task rows {?taskId, ?taskName, ?splitType, ?joinType, ?decomposesTo, ?documentation}
+   - flows: Array of flow rows {?fromTaskId, ?toTaskId, ?predicate, ?isDefault, ?evaluationOrder}
+   - variables: Array of variable definitions {?varName, ?varType, ?initialValue}
+   - specId: Specification identifier
+   - specName: Specification name
+   - specVersion: Version string (e.g., "0.1")
+   - specUri: URI for specification
+   - rootNetId: ID of root workflow net
+   - inputCondition: ID of input condition (usually "InputCondition")
+   - outputCondition: ID of output condition (usually "OutputCondition")
+   - documentation: Optional specification documentation
+#}
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  version="4.0"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="{{ specUri or specId }}">
+    {# Specification Metadata #}
+    <documentation>{{ documentation or "YAWL workflow specification generated from RDF ontology" }}</documentation>
+    <metaData>
+      <creator>yawl-ggen</creator>
+      <description>{{ documentation or "Auto-generated YAWL workflow" }}</description>
+      <coverage>4.0</coverage>
+      <version>{{ specVersion or "0.1" }}</version>
+      <persistent>false</persistent>
+      <identifier>UID_{{ specId }}-{{ range(1000000)|random }}</identifier>
+    </metaData>
+
+    {# XSD Schema for data bindings #}
+    <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" />
+
+    {# Root Net Decomposition #}
+    <decomposition id="{{ rootNetId or specId }}" isRootNet="true" xsi:type="NetFactsType">
+      {# Local Variables #}
+      {% set var_index = 0 %}
+      {% for variable in (variables or []) %}
+      <localVariable>
+        <index>{{ var_index }}</index>
+        <name>{{ variable.get('?varName') or variable.get('varName') }}</name>
+        <type>{{ variable.get('?varType') or variable.get('varType') or "string" }}</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        {% if variable.get('?initialValue') or variable.get('initialValue') %}
+        <initialValue>{{ variable.get('?initialValue') or variable.get('initialValue') }}</initialValue>
+        {% endif %}
+      </localVariable>
+      {% set var_index = var_index + 1 %}
+      {% endfor %}
+
+      {# Process Control Elements (Tasks, Conditions, and Flows) #}
+      <processControlElements>
+        {# Input Condition #}
+        <inputCondition id="{{ inputCondition or 'InputCondition' }}">
+          <flowsInto>
+            {% set first_task = tasks|first %}
+            {% if first_task %}
+            <nextElementRef id="{{ first_task.get('?taskId') or first_task.get('taskId') }}" />
+            {% else %}
+            <nextElementRef id="{{ outputCondition or 'OutputCondition' }}" />
+            {% endif %}
+          </flowsInto>
+        </inputCondition>
+
+        {# Tasks from SPARQL Results #}
+        {% for task in tasks %}
+        <task id="{{ task.get('?taskId') or task.get('taskId') }}">
+          <name>{{ task.get('?taskName') or task.get('taskName') }}</name>
+
+          {# Control Flow Connections #}
+          <flowsInto>
+            {% set task_id = task.get('?taskId') or task.get('taskId') %}
+            {% set has_flow = false %}
+            {% for flow in flows %}
+              {% if (flow.get('?fromTaskId') or flow.get('fromTaskId')) == task_id %}
+                {% set has_flow = true %}
+              {% endif %}
+            {% endfor %}
+            {% if has_flow %}
+              {% for flow in flows %}
+                {% if (flow.get('?fromTaskId') or flow.get('fromTaskId')) == task_id %}
+            <nextElementRef id="{{ flow.get('?toTaskId') or flow.get('toTaskId') }}" />
+                {% endif %}
+              {% endfor %}
+            {% else %}
+            <nextElementRef id="{{ outputCondition or 'OutputCondition' }}" />
+            {% endif %}
+          </flowsInto>
+
+          {# Join and Split Control #}
+          <join code="{{ (task.get('?joinType') or task.get('joinType') or 'xor')|lower }}" />
+          <split code="{{ (task.get('?splitType') or task.get('splitType') or 'and')|lower }}" />
+
+          {# Resourcing Configuration #}
+          <resourcing>
+            <offer initiator="user" />
+            <allocate initiator="user" />
+            <start initiator="user" />
+          </resourcing>
+
+          {# Task Decomposition Reference #}
+          {% if task.get('?decomposesTo') or task.get('decomposesTo') %}
+          <decomposesTo id="{{ task.get('?decomposesTo') or task.get('decomposesTo') }}" />
+          {% else %}
+          <decomposesTo id="{{ task.get('?taskId') or task.get('taskId') }}" />
+          {% endif %}
+        </task>
+
+        {% endfor %}
+
+        {# Output Condition #}
+        <outputCondition id="{{ outputCondition or 'OutputCondition' }}" />
+      </processControlElements>
+    </decomposition>
+
+    {# Task Decompositions (from decompositions.yawl.tera inclusion) #}
+    {% include "decompositions.yawl.tera" %}
+
+  </specification>
+
+  {# Layout Information (minimal, for visualization) #}
+  <layout>
+    <locale language="en" country="US"/>
+    <specification id="{{ rootNetId or specId }}" defaultBgColor="-526351">
+      <size w="100" h="50"/>
+      <net id="{{ rootNetId or specId }}" bgColor="-526351">
+        <bounds x="0" y="0" w="1000" h="600"/>
+        <frame x="0" y="0" w="1000" h="600"/>
+        <viewport x="0" y="0" w="1000" h="600"/>
+        {# Layout vertices for input/output conditions #}
+        <vertex id="{{ inputCondition or 'InputCondition' }}">
+          <attributes>
+            <bounds x="50" y="250" w="32" h="32"/>
+            <backgroundColor>-197913</backgroundColor>
+          </attributes>
+        </vertex>
+        <vertex id="{{ outputCondition or 'OutputCondition' }}">
+          <attributes>
+            <bounds x="920" y="250" w="32" h="32"/>
+            <backgroundColor>-197913</backgroundColor>
+          </attributes>
+        </vertex>
+        {# Layout vertices for tasks #}
+        {% set task_x = 150 %}
+        {% for task in tasks %}
+        <container id="{{ task.get('?taskId') or task.get('taskId') }}">
+          <vertex>
+            <attributes>
+              <bounds x="{{ task_x }}" y="250" w="32" h="32"/>
+              <backgroundColor>-197913</backgroundColor>
+            </attributes>
+          </vertex>
+          <label>
+            <attributes>
+              <bounds x="{{ task_x - 20 }}" y="282" w="80" h="21"/>
+              <foregroundColor>-16776961</foregroundColor>
+            </attributes>
+          </label>
+        </container>
+        {% set task_x = task_x + 100 %}
+        {% endfor %}
+      </net>
+      <labelFontSize>13</labelFontSize>
+    </specification>
+  </layout>
+</specificationSet>

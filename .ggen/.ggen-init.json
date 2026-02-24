@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "initialized_at": "2026-02-24T17:20:03Z",
+  "initialized_by": "ggen-init.sh",
+  "directories": {
+    "templates": "templates/",
+    "sparql": "sparql/",
+    "cache": "cache/",
+    "logs": "logs/",
+    "config": "config/"
+  },
+  "templates_count": 3,
+  "sparql_queries": 7,
+  "status": "ready"
+}
