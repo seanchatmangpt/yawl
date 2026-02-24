@@ -91,8 +91,8 @@ public record OrderEvent(
      * @throws IllegalArgumentException if required fields are missing or invalid
      */
     public OrderEvent {
-        // Validate base fields (delegated to parent sealed interface)
-        new MarketplaceEvent(eventType, agentId, idempotencyToken, timestamp, version, metadata);
+        // Validate base fields
+        MarketplaceEvent.validateBaseFields(eventType, agentId, idempotencyToken, timestamp, version);
 
         // Validate order-specific fields
         if (orderId == null || orderId.isBlank()) {
