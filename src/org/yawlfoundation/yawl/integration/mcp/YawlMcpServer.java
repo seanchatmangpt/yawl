@@ -40,10 +40,11 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
  *   - yawl://cases - All running cases
  *   - yawl://workitems - All live work items
  *
- * Resource Templates (3 parameterized):
+ * Resource Templates (4 parameterized):
  *   - yawl://cases/{caseId} - Specific case state and work items
  *   - yawl://cases/{caseId}/data - Specific case variable data
  *   - yawl://workitems/{workItemId} - Specific work item details
+ *   - yawl://cases/{caseId}/mermaid - Live Mermaid flowchart of Petri-net token positions
  *
  * Prompts (4):
  *   - workflow_analysis - Analyze a workflow specification
