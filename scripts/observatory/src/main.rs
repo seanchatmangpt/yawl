@@ -8,6 +8,7 @@ use emitters::{
     coverage, deps_conflicts, docker, dual_family, duplicates, gates, integration, modules, reactor, receipt,
     shared_src, static_analysis, tests, utc_now, EmitCtx,
 };
+use rayon::prelude::*;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -143,8 +144,6 @@ fn main() {
         let verbose = config.verbose;
 
         // Collect results from parallel emitters using rayon's parallel iterator
-        use rayon::prelude::*;
-
         let emitter_specs: Vec<&str> = vec![
             "modules",
             "reactor",
