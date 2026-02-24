@@ -1,0 +1,33 @@
+##
+## WorkflowDNAOracle SPARQL Queries
+##
+## Cross-workflow failure pattern detection via RDF graph queries
+## Used by: WorkflowDNAOracle.assess()
+##
+## Query execution: QueryExecutionFactory.create(queryString, model)
+## Parameters substituted at runtime via String.formatted()
+##
+
+PREFIX exec: <http://yawlfoundation.org/execution#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+##
+## Query 1: Find matching cases by specId + fingerprint
+##
+## Substitution parameters (at runtime):
+##   %1$s = specId (e.g., "workflow-order-processing-v2")
+##   %2$s = fingerprint (e.g., "a1b2c3d4")
+##
+## Used by: assess() to find all historical cases matching the pattern
+##
+## Result: For each matching case, returns:
+##   - caseUri: RDF resource URI for the case
+##   - failedStr: String representation of boolean (true|false)
+##
+SELECT ?caseUri (STR(?failed) AS ?failedStr)
+WHERE {
+    ?caseUri a exec:CaseExecution ;
+             exec:specId "%1$s" ;
+             exec:fingerprint "%2$s" ;
+             exec:failed ?failed .
+}

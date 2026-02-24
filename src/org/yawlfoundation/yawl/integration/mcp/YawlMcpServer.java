@@ -15,12 +15,14 @@ import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_Environment
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
+import org.yawlfoundation.yawl.integration.factory.ConversationalWorkflowFactory;
 import org.yawlfoundation.yawl.integration.mcp.spec.OntologyDrivenToolFactory;
 import org.yawlfoundation.yawl.integration.mcp.spec.TemporalAnomalySpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowComplexitySpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowDiffSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowGenomeSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlFactoryToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.timeline.CaseTimelineSpecification;
@@ -122,10 +124,21 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
-        // Build tool list: static YAWL tools + blue-ocean innovation tools + ontology tools
+        // Build tool list: static YAWL tools + factory tools + blue-ocean innovations + ontology tools
         List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> allTools =
             new ArrayList<>(YawlToolSpecifications.createAll(
                 interfaceBClient, interfaceAClient, sessionHandle));
+
+        // Conversational workflow factory tools (NL-to-workflow)
+        ConversationalWorkflowFactory workflowFactory = new ConversationalWorkflowFactory(
+            org.yawlfoundation.yawl.integration.zai.SpecificationGenerator.create(),
+            interfaceAClient,
+            interfaceBClient,
+            new org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade(
+                yawlEngineUrl, yawlUsername, yawlPassword),
+            sessionHandle
+        );
+        allTools.addAll(YawlFactoryToolSpecifications.createAll(workflowFactory));
 
         // Blue-ocean innovation tools (always loaded — no external service dependency)
         allTools.addAll(WorkflowGenomeSpecification.createAll(
@@ -162,8 +175,8 @@ public class YawlMcpServer {
                 specifications, cases, and work items. Prompts guide workflow analysis,
                 task completion, troubleshooting, and design review.
 
-                Capabilities: 15 workflow tools, 3 static resources, 3 resource templates,
-                4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
+                Capabilities: 18 workflow tools (15 standard + 3 NL-to-workflow), 3 static resources,
+                3 resource templates, 4 prompts, 3 completions, logging (MCP 2025-11-25 compliant).
                 """)
             .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(

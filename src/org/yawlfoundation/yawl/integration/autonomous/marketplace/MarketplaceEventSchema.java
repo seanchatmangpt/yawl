@@ -54,7 +54,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("timestamp_utc") String timestampUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public OrderCreatedEvent {
             Objects.requireNonNull(orderId, "orderId");
             Objects.requireNonNull(vendorId, "vendorId");
@@ -76,7 +76,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("timestamp_utc") String timestampUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public OrderConfirmedEvent {
             Objects.requireNonNull(orderId, "orderId");
             Objects.requireNonNull(confirmationId, "confirmationId");
@@ -97,7 +97,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("shipped_timestamp_utc") String shippedTimestampUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public OrderShippedEvent {
             Objects.requireNonNull(orderId, "orderId");
             Objects.requireNonNull(shipmentId, "shipmentId");
@@ -118,7 +118,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("signature_required") boolean signatureRequired,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public OrderDeliveredEvent {
             Objects.requireNonNull(orderId, "orderId");
             Objects.requireNonNull(shipmentId, "shipmentId");
@@ -137,7 +137,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("returned_timestamp_utc") String returnedTimestampUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public OrderReturnedEvent {
             Objects.requireNonNull(orderId, "orderId");
             Objects.requireNonNull(returnId, "returnId");
@@ -162,7 +162,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("onboarded_timestamp_utc") String onboardedTimestampUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public VendorOnboardedEvent {
             Objects.requireNonNull(vendorId, "vendorId");
             Objects.requireNonNull(companyName, "companyName");
@@ -181,7 +181,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("verified_timestamp_utc") String verifiedTimestampUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public VendorVerifiedEvent {
             Objects.requireNonNull(vendorId, "vendorId");
             Objects.requireNonNull(verificationId, "verificationId");
@@ -201,7 +201,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("appeal_deadline_utc") String appealDeadlineUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public VendorSuspendedEvent {
             Objects.requireNonNull(vendorId, "vendorId");
             Objects.requireNonNull(suspensionId, "suspensionId");
@@ -227,7 +227,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("expiration_timestamp_utc") String expirationTimestampUtc,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public PaymentAuthorizedEvent {
             Objects.requireNonNull(orderId, "orderId");
             Objects.requireNonNull(authorizationId, "authorizationId");
@@ -247,7 +247,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("settlement_window_hours") int settlementWindowHours,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public PaymentCapturedEvent {
             Objects.requireNonNull(authorizationId, "authorizationId");
             Objects.requireNonNull(captureId, "captureId");
@@ -269,7 +269,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("retry_after_seconds") int retryAfterSeconds,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public PaymentFailedEvent {
             Objects.requireNonNull(orderId, "orderId");
             Objects.requireNonNull(failureId, "failureId");
@@ -292,7 +292,7 @@ public final class MarketplaceEventSchema {
         @JsonProperty("expected_settlement_date") String expectedSettlementDate,
         @JsonProperty("sequence_number") long sequenceNumber,
         @JsonProperty("metadata") Map<String, String> metadata
-    ) {
+    ) implements MarketplaceEvent {
         public PayoutInitiatedEvent {
             Objects.requireNonNull(vendorId, "vendorId");
             Objects.requireNonNull(payoutId, "payoutId");
