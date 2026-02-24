@@ -16,11 +16,16 @@ import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.mcp.resource.MermaidStateResource;
 import org.yawlfoundation.yawl.integration.mcp.resource.YawlResourceProvider;
 import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
+import org.yawlfoundation.yawl.integration.mcp.spec.CancellationAuditorTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.CaseDivergenceTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.ComplexityBoundTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.ConstructCoordinationTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.CounterfactualSimulatorTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.DataLineageTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.DeadPathAnalyzerTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.LivenessOracleTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.SoundnessProverTools;
+import org.yawlfoundation.yawl.integration.mcp.spec.TemporalPressureTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
@@ -132,9 +137,14 @@ public class YawlMcpServer {
         allTools.add(CounterfactualSimulatorTools.create(interfaceBClient, sessionHandle));
         allTools.add(DeadPathAnalyzerTools.create(interfaceBClient, sessionHandle));
         allTools.add(ComplexityBoundTools.create(interfaceBClient, sessionHandle));
+        allTools.add(SoundnessProverTools.create(interfaceBClient, sessionHandle));
+        allTools.add(TemporalPressureTools.create(interfaceBClient, sessionHandle));
+        allTools.add(DataLineageTools.create(interfaceBClient, sessionHandle));
+        allTools.add(CancellationAuditorTools.create(interfaceBClient, sessionHandle));
+        allTools.add(CaseDivergenceTools.create(interfaceBClient, sessionHandle));
         int workflowToolCount = workflowTools.size();
         int constructToolCount = constructTools.size();
-        int formalToolCount = 4; // liveness, counterfactual, dead-path, complexity
+        int formalToolCount = 9; // liveness, counterfactual, dead-path, complexity, soundness, temporal, lineage, cancellation, divergence
 
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
@@ -157,10 +167,15 @@ public class YawlMcpServer {
                 logging (MCP 2025-11-25 compliant).
 
                 Formal Petri-net tools (zero inference tokens):
-                  yawl_prove_liveness        — BFS reachability: LIVE / AT_RISK / DEADLOCKED verdict
-                  yawl_simulate_transition   — counterfactual token firing, zero side effects
-                  yawl_analyze_dead_paths    — zombie path detection across all running cases
+                  yawl_prove_liveness            — BFS reachability: LIVE / AT_RISK / DEADLOCKED verdict
+                  yawl_simulate_transition       — counterfactual token firing, zero side effects
+                  yawl_analyze_dead_paths        — zombie path detection across all running cases
                   yawl_compute_structural_bounds — min/max completion steps + cyclomatic complexity
+                  yawl_prove_soundness           — formal soundness: option-to-complete, proper-completion, no-dead-tasks
+                  yawl_analyze_temporal_pressure — time-dimension heat map: expired timers, age outliers, urgency ranking
+                  yawl_trace_data_lineage        — XQuery data flow graph: producers, consumers, orphans, dangling refs
+                  yawl_audit_cancellation_regions — cancellation blast radius: mutual cancel, orphan cancel, live victims
+                  yawl_analyze_case_divergence   — cross-case cohort analysis: divergence index, outlier cases, split attribution
                   yawl://cases/{caseId}/mermaid  — live Mermaid flowchart of token positions
                 """.formatted(allTools.size(), workflowToolCount, constructToolCount, formalToolCount))
             .tools(allTools)
