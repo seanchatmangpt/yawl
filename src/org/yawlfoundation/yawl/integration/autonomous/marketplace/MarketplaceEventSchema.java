@@ -305,6 +305,12 @@ public final class MarketplaceEventSchema {
     // =========================================================================
 
     /**
+     * Marker interface for all marketplace events.
+     * Provides a common type for routing and processing.
+     */
+    public interface MarketplaceEvent {}
+
+    /**
      * Event metadata carrier with ordering guarantees.
      *
      * Ensures message ordering and idempotency via:

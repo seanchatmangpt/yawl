@@ -74,7 +74,7 @@ public class XESTimestampComparator implements Comparator<XNode> {
                 return string.getAttributeValue("value");
             }
         }
-        return "";
+        return ""; // empty string is a valid default when lifecycle:instance attribute is absent
     }
 
 }
