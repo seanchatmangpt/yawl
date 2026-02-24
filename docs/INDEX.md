@@ -1,6 +1,8 @@
 # YAWL v6.0.0 Documentation Index
 
-**Version**: 6.0.0 | **Updated**: 2026-02-18 | **Status**: Production-Ready
+**Version**: 6.0.0 | **Updated**: 2026-02-24 | **Framework**: [Diataxis](https://diataxis.fr/)
+
+Documentation is organized into four Diataxis quadrants. For the full cross-quadrant map, see [diataxis/INDEX.md](diataxis/INDEX.md).
 
 ---
 
@@ -8,305 +10,113 @@
 
 | Audience | Start Here |
 |----------|------------|
-| **New Developer** | [Getting Started Tutorial](#tutorials) |
-| **Contributor** | [Architecture Overview](#architecture) |
-| **Operator** | [Deployment Guide](#operations) |
+| **New Developer** | [tutorials/01-build-yawl.md](tutorials/01-build-yawl.md) |
+| **Contributor** | [how-to/contributing.md](how-to/contributing.md) |
+| **Operator** | [how-to/deployment/production.md](how-to/deployment/production.md) |
+| **Architect** | [explanation/dual-engine-architecture.md](explanation/dual-engine-architecture.md) |
 | **Claude Code User** | [CLAUDE.md](../CLAUDE.md) |
 
 ---
 
 ## Documentation Quadrants
 
-### Tutorials (Learning-Oriented)
+### Tutorials — [tutorials/index.md](tutorials/index.md)
 
-| Tutorial | Description | Time |
-|----------|-------------|------|
-| [Getting Started](tutorials/getting-started.md) | 5-minute setup guide | 5 min |
-| [First Workflow](tutorials/first-workflow.md) | Build your first YAWL net | 15 min |
-| [Agent Integration](tutorials/agent-integration.md) | Connect autonomous agents | 20 min |
-| [MCP/A2A Setup](tutorials/mcp-a2a-setup.md) | Model Context Protocol setup | 10 min |
+| Tutorial | Description |
+|----------|-------------|
+| [01-build-yawl.md](tutorials/01-build-yawl.md) | Clone, build, and verify YAWL |
+| [02-understand-the-build.md](tutorials/02-understand-the-build.md) | Maven multi-module structure |
+| [03-run-your-first-workflow.md](tutorials/03-run-your-first-workflow.md) | Launch engine, deploy spec, run case |
+| [04-write-a-yawl-specification.md](tutorials/04-write-a-yawl-specification.md) | Design a YAWL workflow |
+| [05-call-yawl-rest-api.md](tutorials/05-call-yawl-rest-api.md) | Drive workflows via REST |
+| [06-write-a-custom-work-item-handler.md](tutorials/06-write-a-custom-work-item-handler.md) | Custom task execution |
+| [07-docker-dev-environment.md](tutorials/07-docker-dev-environment.md) | Containerized development |
+| [08-mcp-agent-integration.md](tutorials/08-mcp-agent-integration.md) | AI agent via MCP |
+| [09-marketplace-quick-start.md](tutorials/09-marketplace-quick-start.md) | Cloud marketplace deployment |
+| [10-getting-started.md](tutorials/10-getting-started.md) | End-user walkthrough |
 
-### Guides (Problem-Oriented)
+### How-To Guides — [how-to/index.md](how-to/index.md)
 
-| Guide | Solves |
-|-------|--------|
-| [Build Optimization](guides/build-optimization.md) | Slow build times |
-| [Migration v5 to v6](guides/migration-v5-v6.md) | Upgrading from v5.x |
-| [Performance Tuning](guides/performance-tuning.md) | Workflow bottlenecks |
-| [Security Hardening](guides/security-hardening.md) | Production security |
+| Category | Key Guides |
+|----------|-----------|
+| Configuration | [configure-multi-tenancy.md](how-to/configure-multi-tenancy.md) · [configure-spiffe.md](how-to/configure-spiffe.md) · [enable-stateless-persistence.md](how-to/enable-stateless-persistence.md) |
+| Deployment | [deployment/](how-to/deployment/) — Docker, Jetty, Tomcat, WildFly, Java 25 |
+| CI/CD | [cicd/](how-to/cicd/) — build pipeline, Maven, testing |
+| Migration | [migration/](how-to/migration/) — v5→v6, Jakarta EE, library |
+| Integration | [integration/](how-to/integration/) — MCP, A2A, marketplace |
+| Operations | [operations/](how-to/operations/) — scaling, disaster recovery, upgrade |
+| Development | [contributing.md](how-to/contributing.md) · [testing.md](how-to/testing.md) · [troubleshooting.md](how-to/troubleshooting.md) |
 
-### Reference (Information-Oriented)
+### Reference — [reference/index.md](reference/index.md)
 
-| Reference | Coverage |
-|-----------|----------|
-| [API Documentation](reference/api/) | Interface A, B, E, X |
-| [Schema Reference](reference/schemas/) | YAWL XML schemas |
-| [Configuration](reference/configuration/) | Engine, services, agents |
-| [Error Codes](reference/error-codes.md) | Diagnostic reference |
+| Category | Key Refs |
+|----------|---------|
+| Engine & Schema | [configuration.md](reference/configuration.md) · [error-codes.md](reference/error-codes.md) · [yawl-schema.md](reference/yawl-schema.md) |
+| Interfaces | [interface-b.md](reference/interface-b.md) · [interface-e.md](reference/interface-e.md) · [interface-x.md](reference/interface-x.md) |
+| API | [api-reference.md](reference/api-reference.md) · [api/](reference/api/) · [mcp-tools.md](reference/mcp-tools.md) |
+| Patterns | [workflow-patterns.md](reference/workflow-patterns.md) · [patterns/](reference/patterns/) |
+| Build | [maven-quick-reference.md](reference/maven-quick-reference.md) · [maven-module-structure.md](reference/maven-module-structure.md) |
 
-### Explanation (Understanding-Oriented)
+### Explanation — [explanation/index.md](explanation/index.md)
 
-| Concept | Description |
-|---------|-------------|
-| [Petri Net Semantics](explanation/petri-nets.md) | Formal foundation |
-| [Workflow Patterns](explanation/patterns.md) | 43+ control-flow patterns |
-| [Agent Architecture](explanation/agents.md) | Autonomous agent design |
-| [Observatory System](explanation/observatory.md) | Codebase instrumentation |
+| Category | Key Explanations |
+|----------|----------------|
+| Core Concepts | [petri-net-foundations.md](explanation/petri-net-foundations.md) · [case-lifecycle.md](explanation/case-lifecycle.md) · [or-join-semantics.md](explanation/or-join-semantics.md) |
+| Architecture | [dual-engine-architecture.md](explanation/dual-engine-architecture.md) · [interface-architecture.md](explanation/interface-architecture.md) · [shared-src-build-strategy.md](explanation/shared-src-build-strategy.md) |
+| Integration | [autonomous-agents.md](explanation/autonomous-agents.md) · [mcp-llm-design.md](explanation/mcp-llm-design.md) |
+| ADRs | [decisions/](explanation/decisions/) — 30+ Architecture Decision Records |
 
 ---
 
 ## Codebase Facts (Observatory)
 
-**Generated**: 2026-02-18T19:29:52Z | **Status**: RED | **Health Score**: 100
-
-### Quick Facts
-
-| Fact | Source | What It Answers |
-|------|--------|-----------------|
-| [Module Inventory](v6/latest/facts/modules.json) | `modules.json` | What modules exist? |
-| [Build Order](v6/latest/facts/reactor.json) | `reactor.json` | Maven reactor sequence? |
-| [Integration Status](v6/latest/facts/integration.json) | `integration.json` | MCP/A2A ready? |
-| [Static Analysis](v6/latest/facts/static-analysis.json) | `static-analysis.json` | Code health summary? |
-
-### All Facts (9 files)
-
-- `facts/modules.json` - Module inventory with source strategies
-- `facts/reactor.json` - Maven reactor build order
-- `facts/integration.json` - MCP/A2A integration status
-- `facts/static-analysis.json` - Aggregated code health
-- `facts/spotbugs-findings.json` - SpotBugs bug findings
-- `facts/pmd-violations.json` - PMD rule violations
-- `facts/checkstyle-warnings.json` - Checkstyle warnings
-- `facts/coverage.json` - Test coverage metrics
-- `facts/integration-facts.json` - Detailed integration facts
-
-### Diagrams (8 files)
-
-| Diagram | Visualizes |
-|---------|------------|
-| [Maven Reactor](v6/latest/diagrams/10-maven-reactor.mmd) | Module dependency graph |
-| [Risk Surfaces](v6/latest/diagrams/50-risk-surfaces.mmd) | FMEA risk map |
-| [Code Health](v6/latest/diagrams/60-code-health-dashboard.mmd) | Health dashboard |
-| [MCP Architecture](v6/latest/diagrams/60-mcp-architecture.mmd) | MCP integration flow |
-| [Static Analysis Trends](v6/latest/diagrams/61-static-analysis-trends.mmd) | Trend visualization |
-| [A2A Topology](v6/latest/diagrams/65-a2a-topology.mmd) | A2A integration flow |
-| [Agent Capabilities](v6/latest/diagrams/70-agent-capabilities.mmd) | Agent capability matrix |
-| [Protocol Sequences](v6/latest/diagrams/75-protocol-sequences.mmd) | Protocol flow diagrams |
-
-### Verification
-
-- [Observatory Receipt](v6/latest/receipts/observatory.json) - SHA256 provenance
-- [Performance Summary](v6/latest/performance/) - Benchmark results
+| Fact File | What it answers |
+|-----------|----------------|
+| [v6/latest/INDEX.md](v6/latest/INDEX.md) | Full observatory manifest |
+| [v6/latest/facts/modules.json](v6/latest/facts/modules.json) | Module inventory |
+| [v6/latest/facts/reactor.json](v6/latest/facts/reactor.json) | Maven reactor build order |
+| [v6/OBSERVATORY-GUIDE.md](v6/OBSERVATORY-GUIDE.md) | How to run and interpret observatory |
 
 ---
 
 ## Architecture
 
-### Core Components
-
-| Component | Package | Description |
-|-----------|---------|-------------|
-| **Engine** | `org.yawlfoundation.yawl.engine` | Stateful workflow engine |
-| **Stateless Engine** | `org.yawlfoundation.yawl.stateless` | Event-driven engine |
-| **Elements** | `org.yawlfoundation.yawl.elements` | YSpecification, YNet, YTask |
-| **Resourcing** | `org.yawlfoundation.yawl.resourcing` | Resource service |
-| **Integration** | `org.yawlfoundation.yawl.integration` | MCP/A2A servers |
-
-### Interfaces
-
-| Interface | Purpose | Clients |
-|-----------|---------|---------|
-| **A** | Design-time | YAWL Editor, spec upload |
-| **B** | Client/Runtime | Worklist, case management |
-| **E** | Events | External event listeners |
-| **X** | Extended | Custom services |
-
-### Patterns
-
-YAWL implements 43+ workflow control-flow patterns:
-
-| Category | Patterns |
-|----------|----------|
-| Basic | Sequence, Parallel Split, Synchronization, Exclusive Choice |
-| Advanced | Multi-Choice, Discriminator, N-out-of-M, Deferred Choice |
-| Iteration | Structured Loop, Recursion, Arbitrary Cycles |
-| Cancellation | Cancel Activity, Cancel Case, Cancel Region |
-| State | Interleaved Routing, Milestone, Critical Section |
-
-See [Workflow Patterns](explanation/patterns.md) for complete list.
+| Resource | Contents |
+|----------|---------|
+| [explanation/decisions/](explanation/decisions/) | All Architecture Decision Records |
+| [v6/THESIS-YAWL-V6-ARCHITECTURE-ANALYSIS.md](v6/THESIS-YAWL-V6-ARCHITECTURE-ANALYSIS.md) | Full architecture analysis |
+| [v6/DEFINITION-OF-DONE.md](v6/DEFINITION-OF-DONE.md) | Quality definition of done |
 
 ---
 
 ## Claude Code Integration
 
-### Configuration Files
-
-| File | Purpose |
-|------|---------|
-| [CLAUDE.md](../CLAUDE.md) | Main agent instructions (A = mu(O)) |
-| [BEST-PRACTICES-2026.md](../.claude/BEST-PRACTICES-2026.md) | 12 best practices sections |
-| [JAVA-25-FEATURES.md](../.claude/JAVA-25-FEATURES.md) | Java 25 adoption roadmap |
-| [ARCHITECTURE-PATTERNS-JAVA25.md](../.claude/ARCHITECTURE-PATTERNS-JAVA25.md) | 8 architectural patterns |
-| [BUILD-PERFORMANCE.md](../.claude/BUILD-PERFORMANCE.md) | Maven optimization guide |
-| [SECURITY-CHECKLIST-JAVA25.md](../.claude/SECURITY-CHECKLIST-JAVA25.md) | Production security |
-| [OBSERVATORY.md](../.claude/OBSERVATORY.md) | Observatory instrument protocol |
-
-### Agents
-
-| Agent | Role | Invoke With |
-|-------|------|-------------|
-| `engineer` | Implement features | Task(..., "engineer") |
-| `validator` | Run builds, verify | Task(..., "validator") |
-| `architect` | Design patterns | Task(..., "architect") |
-| `integrator` | Coordinate subsystems | Task(..., "integrator") |
-| `reviewer` | Code quality | Task(..., "reviewer") |
-| `tester` | Write/run tests | Task(..., "tester") |
-| `prod-val` | Production validation | Task(..., "prod-val") |
-| `perf-bench` | Benchmark performance | Task(..., "perf-bench") |
-
-### Guards (H)
-
-Post-tool-use validation enforces these anti-patterns:
-
-```
-H = {TODO, FIXME, mock, stub, fake, empty_return, silent_fallback, lie}
-```
-
-See [HYPER_STANDARDS.md](../.claude/HYPER_STANDARDS.md) for details.
-
-### Hooks
-
-| Hook | Trigger | Action |
-|------|---------|--------|
-| `session-start.sh` | Session begin | Bootstrap Maven + H2 |
-| `validate-no-mocks.sh` | Post-response | Verify no guard violations |
-| `hyper-validate.sh` | Post-Write/Edit | Block forbidden patterns |
+| Resource | Contents |
+|----------|---------|
+| [../CLAUDE.md](../CLAUDE.md) | Claude Code project instructions |
+| [../CHANGELOG.md](../CHANGELOG.md) | Version history |
+| [../README.md](../README.md) | Project root README |
+| [diataxis/INDEX.md](diataxis/INDEX.md) | Master 4-quadrant doc index |
 
 ---
 
-## Operations
-
-### Build Commands
+## Operations Quick Reference
 
 ```bash
-# Fast agent DX loop (PREFERRED)
-bash scripts/dx.sh                       # Compile + test changed modules only
-bash scripts/dx.sh compile               # Compile changed modules
-bash scripts/dx.sh test                  # Test changed modules
-bash scripts/dx.sh all                   # Compile + test ALL modules
+# Build
+bash scripts/dx.sh compile          # Fast compile check
+bash scripts/dx.sh all              # Full pre-commit gate (mandatory before commit)
+bash scripts/dx.sh -pl <module>     # Single-module build
 
-# Standard build
-mvn -T 1.5C clean compile               # Parallel compile (~45s)
-mvn -T 1.5C clean test                  # Parallel tests (~90s)
-mvn -T 1.5C clean package               # Full build
+# Analysis
+mvn clean verify -P analysis        # SpotBugs + PMD
 
-# Validation
-bash scripts/validation/validate-release.sh  # Pre-release validation
-bash scripts/observatory/observatory.sh      # Refresh facts
-```
-
-### Performance Baselines
-
-| Metric | Target | Location |
-|--------|--------|----------|
-| Clean compile | <60s | `v6/latest/performance/build-baseline.json` |
-| Observatory run | <5s | `v6/latest/performance/observatory-baseline.json` |
-| Test coverage | >75% | `v6/latest/performance/test-coverage-baseline.json` |
-
-### Deployment
-
-```bash
-# Build Docker image
-docker buildx bake --load
-
-# Run in container
-docker run -it --rm -v $(pwd):/work -w /work yawl:6.0.0 bash
-
-# Production deployment
-kubectl apply -f k8s/deployment.yaml
+# Observatory
+bash scripts/observatory/observatory.sh   # Regenerate codebase facts
 ```
 
 ---
 
-## Validation & Quality
+## Archive
 
-### Validation Scripts
-
-| Script | Validates |
-|--------|-----------|
-| `scripts/validation/validate-documentation.sh` | Links, schemas, coverage |
-| `scripts/validation/validate-observatory.sh` | Fact freshness, SHA256 |
-| `scripts/validation/validate-performance-baselines.sh` | Regression detection |
-| `scripts/validation/validate-release.sh` | Complete pre-release check |
-
-### Quality Gates
-
-| Gate | Threshold | Enforced By |
-|------|-----------|-------------|
-| Package-info coverage | 100% | CI/CD |
-| Test pass rate | 100% | Maven |
-| Build time regression | <10% | Validation script |
-| Link integrity | 0 broken | markdown-link-check |
-
-### CI/CD Pipeline
-
-- **Trigger**: Push to docs/, .claude/, schema/
-- **Jobs**: Link validation, observatory validation, XSD validation, coverage check
-- **Artifact**: Validation report uploaded on completion
-
----
-
-## Release Information
-
-- [Release Checklist](RELEASE-CHECKLIST.md) - Pre-release validation steps
-- [Migration Guide v5.2 to v6.0](MIGRATION-v5.2-to-v6.0.md) - Upgrade instructions
-- [Final Implementation Plan](FINAL-IMPLEMENTATION-PLAN.md) - Days 7-14 roadmap
-- [CHANGELOG](../CHANGELOG.md) - Version history
-
----
-
-## Related Resources
-
-| Resource | Link |
-|----------|------|
-| Official Website | https://yawl.foundation |
-| GitHub Repository | https://github.com/yawlfoundation/yawl |
-| Issue Tracker | https://github.com/yawlfoundation/yawl/issues |
-| Maven Central | https://search.maven.org/search?q=yawl |
-
----
-
-## Documentation Maintenance
-
-### Refresh Commands
-
-```bash
-# Refresh observatory facts (after code changes)
-bash scripts/observatory/observatory.sh
-
-# Validate all documentation
-bash scripts/validation/validate-documentation.sh
-
-# Update performance baselines
-bash scripts/performance/measure-baseline.sh
-```
-
-### Staleness Detection
-
-Check `docs/v6/latest/receipts/observatory.json`:
-
-```bash
-# Verify observatory receipt
-RECEIPT_SHA=$(jq -r '.outputs.index_sha256' docs/v6/latest/receipts/observatory.json)
-ACTUAL_SHA="sha256:$(sha256sum docs/v6/latest/INDEX.md | cut -d' ' -f1)"
-
-if [[ "$RECEIPT_SHA" != "$ACTUAL_SHA" ]]; then
-  echo "Observatory facts stale. Run: bash scripts/observatory/observatory.sh"
-fi
-```
-
----
-
-**Generated by**: YAWL v6.0.0 Documentation System
-**Last Updated**: 2026-02-18
-**Maintained by**: Documentation Architect
+Session deliverables and historical reports: [archive/index.md](archive/index.md)
