@@ -154,10 +154,18 @@ public final class AgentTracer {
 
         @Override
         public void setAttribute(String key, String value) {
+            throw new UnsupportedOperationException(
+                "OpenTelemetry SDK not available. " +
+                "Set OTEL_SDK_ENABLED=true and add OpenTelemetry SDK to classpath."
+            );
         }
 
         @Override
         public void setAttribute(String key, long value) {
+            throw new UnsupportedOperationException(
+                "OpenTelemetry SDK not available. " +
+                "Set OTEL_SDK_ENABLED=true and add OpenTelemetry SDK to classpath."
+            );
         }
 
         @Override
