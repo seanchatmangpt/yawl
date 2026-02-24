@@ -13,18 +13,9 @@
 
 package org.yawlfoundation.yawl.containers;
 
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Duration;
 
 /**
  * Reusable TestContainers fixtures for YAWL integration tests.
@@ -59,93 +50,14 @@ import java.time.Duration;
  */
 public final class YawlContainerFixtures {
 
-    /** PostgreSQL image pinned for reproducible CI runs. */
-    public static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse("postgres:16.3-alpine");
-
-    /** MySQL image pinned for reproducible CI runs. */
-    public static final DockerImageName MYSQL_IMAGE =
-            DockerImageName.parse("mysql:8.4.0");
-
     /** YAWL database name used in all containers. */
     public static final String YAWL_DB_NAME     = "yawl";
     public static final String YAWL_DB_USER     = "yawl";
     public static final String YAWL_DB_PASSWORD = "yawl_test_password";
 
-    /** Maximum time to wait for a database container to become ready. */
-    private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(90);
-
     private YawlContainerFixtures() {
         throw new UnsupportedOperationException(
                 "YawlContainerFixtures is a static utility class");
-    }
-
-    // =========================================================================
-    // Container Factory Methods
-    // =========================================================================
-
-    /**
-     * Creates a PostgreSQL container configured for YAWL integration tests.
-     * The returned container is NOT started; the caller controls lifecycle.
-     *
-     * @return configured but not-yet-started PostgreSQLContainer
-     */
-    @SuppressWarnings("resource")
-    public static PostgreSQLContainer<?> createPostgres() {
-        return new PostgreSQLContainer<>(POSTGRES_IMAGE)
-                .withDatabaseName(YAWL_DB_NAME)
-                .withUsername(YAWL_DB_USER)
-                .withPassword(YAWL_DB_PASSWORD)
-                .withStartupTimeout(STARTUP_TIMEOUT)
-                .waitingFor(Wait.forListeningPort());
-    }
-
-    /**
-     * Creates a MySQL container configured for YAWL integration tests.
-     * The returned container is NOT started; the caller controls lifecycle.
-     *
-     * @return configured but not-yet-started MySQLContainer
-     */
-    @SuppressWarnings("resource")
-    public static MySQLContainer<?> createMySQL() {
-        return new MySQLContainer<>(MYSQL_IMAGE)
-                .withDatabaseName(YAWL_DB_NAME)
-                .withUsername(YAWL_DB_USER)
-                .withPassword(YAWL_DB_PASSWORD)
-                .withStartupTimeout(STARTUP_TIMEOUT)
-                .waitingFor(Wait.forListeningPort());
-    }
-
-    /**
-     * Creates a generic container for Chaos-Engineering scenarios (Toxiproxy).
-     * Toxiproxy is a configurable network-failure proxy used by chaos tests.
-     *
-     * @return configured but not-yet-started GenericContainer for Toxiproxy
-     */
-    @SuppressWarnings("resource")
-    public static GenericContainer<?> createToxiproxy() {
-        return new GenericContainer<>(DockerImageName.parse("ghcr.io/shopify/toxiproxy:2.7.0"))
-                .withExposedPorts(8474, 5432)
-                .withStartupTimeout(STARTUP_TIMEOUT)
-                .waitingFor(Wait.forHttp("/version").forPort(8474).withStartupTimeout(STARTUP_TIMEOUT));
-    }
-
-    // =========================================================================
-    // Connection Helpers
-    // =========================================================================
-
-    /**
-     * Opens a JDBC connection to any {@link JdbcDatabaseContainer}.
-     *
-     * @param container a running database container
-     * @return open JDBC Connection (caller must close)
-     * @throws SQLException if the connection cannot be established
-     */
-    public static Connection connectTo(JdbcDatabaseContainer<?> container) throws SQLException {
-        return DriverManager.getConnection(
-                container.getJdbcUrl(),
-                container.getUsername(),
-                container.getPassword());
     }
 
     // =========================================================================

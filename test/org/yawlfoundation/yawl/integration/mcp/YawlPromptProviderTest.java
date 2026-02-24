@@ -37,13 +37,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.execution.ExecutionMode;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
+import org.yawlfoundation.yawl.schema.YSchemaVersion;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
@@ -155,7 +156,7 @@ class YawlPromptProviderTest {
                 YawlPromptSpecifications.createAll(testClient, sessionSupplier);
 
             for (McpServerFeatures.SyncPromptSpecification spec : prompts) {
-                assertNotNull(spec.handler(),
+                assertNotNull(spec.promptHandler(),
                     "Prompt handler should not be null");
             }
         }
@@ -228,7 +229,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_analysis", args);
 
-            McpSchema.GetPromptResult result = workflowAnalysisPrompt.handler()
+            McpSchema.GetPromptResult result = workflowAnalysisPrompt.promptHandler()
                 .apply(null, request);
 
             assertNotNull(result, "Result should not be null");
@@ -253,7 +254,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_analysis", args);
 
-            McpSchema.GetPromptResult result = workflowAnalysisPrompt.handler()
+            McpSchema.GetPromptResult result = workflowAnalysisPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -279,7 +280,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_analysis", args);
 
-            McpSchema.GetPromptResult result = workflowAnalysisPrompt.handler()
+            McpSchema.GetPromptResult result = workflowAnalysisPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -299,7 +300,7 @@ class YawlPromptProviderTest {
                 "workflow_analysis", args);
 
             RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> workflowAnalysisPrompt.handler().apply(null, request));
+                () -> workflowAnalysisPrompt.promptHandler().apply(null, request));
 
             assertTrue(exception.getMessage().contains("spec_identifier"),
                 "Exception message should mention the missing argument");
@@ -315,7 +316,7 @@ class YawlPromptProviderTest {
                 "workflow_analysis", args);
 
             // Should not throw - returns prompt with "not found" message
-            McpSchema.GetPromptResult result = workflowAnalysisPrompt.handler()
+            McpSchema.GetPromptResult result = workflowAnalysisPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -335,7 +336,7 @@ class YawlPromptProviderTest {
                 "workflow_analysis", args);
 
             RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> workflowAnalysisPrompt.handler().apply(null, request));
+                () -> workflowAnalysisPrompt.promptHandler().apply(null, request));
 
             assertNotNull(exception.getMessage());
         }
@@ -407,7 +408,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "task_completion_guide", args);
 
-            McpSchema.GetPromptResult result = taskCompletionPrompt.handler()
+            McpSchema.GetPromptResult result = taskCompletionPrompt.promptHandler()
                 .apply(null, request);
 
             assertNotNull(result);
@@ -426,7 +427,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "task_completion_guide", args);
 
-            McpSchema.GetPromptResult result = taskCompletionPrompt.handler()
+            McpSchema.GetPromptResult result = taskCompletionPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -450,7 +451,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "task_completion_guide", args);
 
-            McpSchema.GetPromptResult result = taskCompletionPrompt.handler()
+            McpSchema.GetPromptResult result = taskCompletionPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -470,7 +471,7 @@ class YawlPromptProviderTest {
                 "task_completion_guide", args);
 
             RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> taskCompletionPrompt.handler().apply(null, request));
+                () -> taskCompletionPrompt.promptHandler().apply(null, request));
 
             assertTrue(exception.getMessage().contains("work_item_id"),
                 "Exception message should mention the missing argument");
@@ -487,7 +488,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "task_completion_guide", args);
 
-            McpSchema.GetPromptResult result = taskCompletionPrompt.handler()
+            McpSchema.GetPromptResult result = taskCompletionPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -509,7 +510,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "task_completion_guide", args);
 
-            McpSchema.GetPromptResult result = taskCompletionPrompt.handler()
+            McpSchema.GetPromptResult result = taskCompletionPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -593,7 +594,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "case_troubleshooting", args);
 
-            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.handler()
+            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.promptHandler()
                 .apply(null, request);
 
             assertNotNull(result);
@@ -613,7 +614,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "case_troubleshooting", args);
 
-            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.handler()
+            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -640,7 +641,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "case_troubleshooting", args);
 
-            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.handler()
+            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -660,7 +661,7 @@ class YawlPromptProviderTest {
                 "case_troubleshooting", args);
 
             RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> caseTroubleshootingPrompt.handler().apply(null, request));
+                () -> caseTroubleshootingPrompt.promptHandler().apply(null, request));
 
             assertTrue(exception.getMessage().contains("case_id"),
                 "Exception message should mention the missing argument");
@@ -683,7 +684,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "case_troubleshooting", args);
 
-            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.handler()
+            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -705,7 +706,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "case_troubleshooting", args);
 
-            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.handler()
+            McpSchema.GetPromptResult result = caseTroubleshootingPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -764,7 +765,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_design_review", args);
 
-            McpSchema.GetPromptResult result = designReviewPrompt.handler()
+            McpSchema.GetPromptResult result = designReviewPrompt.promptHandler()
                 .apply(null, request);
 
             assertNotNull(result);
@@ -783,7 +784,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_design_review", args);
 
-            McpSchema.GetPromptResult result = designReviewPrompt.handler()
+            McpSchema.GetPromptResult result = designReviewPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -806,7 +807,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_design_review", args);
 
-            McpSchema.GetPromptResult result = designReviewPrompt.handler()
+            McpSchema.GetPromptResult result = designReviewPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -827,7 +828,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_design_review", args);
 
-            McpSchema.GetPromptResult result = designReviewPrompt.handler()
+            McpSchema.GetPromptResult result = designReviewPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -848,7 +849,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_design_review", args);
 
-            McpSchema.GetPromptResult result = designReviewPrompt.handler()
+            McpSchema.GetPromptResult result = designReviewPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -871,7 +872,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_design_review", args);
 
-            McpSchema.GetPromptResult result = designReviewPrompt.handler()
+            McpSchema.GetPromptResult result = designReviewPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -891,7 +892,7 @@ class YawlPromptProviderTest {
                 "workflow_design_review", args);
 
             RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> designReviewPrompt.handler().apply(null, request));
+                () -> designReviewPrompt.promptHandler().apply(null, request));
 
             assertTrue(exception.getMessage().contains("spec_identifier"),
                 "Exception message should mention the missing argument");
@@ -906,7 +907,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "workflow_design_review", args);
 
-            McpSchema.GetPromptResult result = designReviewPrompt.handler()
+            McpSchema.GetPromptResult result = designReviewPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -947,7 +948,7 @@ class YawlPromptProviderTest {
             analysisArgs.put("spec_identifier", "chain-spec");
             analysisArgs.put("analysis_type", "performance");
 
-            McpSchema.GetPromptResult analysisResult = analysisPrompt.handler()
+            McpSchema.GetPromptResult analysisResult = analysisPrompt.promptHandler()
                 .apply(null, new McpSchema.GetPromptRequest("workflow_analysis", analysisArgs));
 
             assertNotNull(analysisResult, "Analysis prompt should return result");
@@ -959,7 +960,7 @@ class YawlPromptProviderTest {
             completionArgs.put("work_item_id", "wi-chain");
             completionArgs.put("context", "Based on performance analysis");
 
-            McpSchema.GetPromptResult completionResult = completionPrompt.handler()
+            McpSchema.GetPromptResult completionResult = completionPrompt.promptHandler()
                 .apply(null, new McpSchema.GetPromptRequest("task_completion_guide", completionArgs));
 
             assertNotNull(completionResult, "Completion prompt should return result");
@@ -992,7 +993,7 @@ class YawlPromptProviderTest {
             troubleshootArgs.put("case_id", "case-chain");
             troubleshootArgs.put("symptom", "Task failed unexpectedly");
 
-            McpSchema.GetPromptResult troubleshootResult = troubleshootingPrompt.handler()
+            McpSchema.GetPromptResult troubleshootResult = troubleshootingPrompt.promptHandler()
                 .apply(null, new McpSchema.GetPromptRequest("case_troubleshooting", troubleshootArgs));
 
             assertNotNull(troubleshootResult, "Troubleshooting prompt should return result");
@@ -1003,7 +1004,7 @@ class YawlPromptProviderTest {
             Map<String, Object> designArgs = new HashMap<>();
             designArgs.put("spec_identifier", "troubled-spec");
 
-            McpSchema.GetPromptResult designResult = designReviewPrompt.handler()
+            McpSchema.GetPromptResult designResult = designReviewPrompt.promptHandler()
                 .apply(null, new McpSchema.GetPromptRequest("workflow_design_review", designArgs));
 
             assertNotNull(designResult, "Design review prompt should return result");
@@ -1040,7 +1041,7 @@ class YawlPromptProviderTest {
                     }
                 }
 
-                McpSchema.GetPromptResult result = prompt.handler()
+                McpSchema.GetPromptResult result = prompt.promptHandler()
                     .apply(null, new McpSchema.GetPromptRequest(prompt.prompt().name(), args));
                 results.add(result);
             }
@@ -1079,7 +1080,7 @@ class YawlPromptProviderTest {
                 "workflow_analysis", args);
 
             // Empty string is technically a value, should not throw but may not find spec
-            assertDoesNotThrow(() -> analysisPrompt.handler().apply(null, request));
+            assertDoesNotThrow(() -> analysisPrompt.promptHandler().apply(null, request));
         }
 
         @Test
@@ -1102,7 +1103,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "task_completion_guide", args);
 
-            McpSchema.GetPromptResult result = completionPrompt.handler()
+            McpSchema.GetPromptResult result = completionPrompt.promptHandler()
                 .apply(null, request);
 
             assertNotNull(result, "Should handle special characters without error");
@@ -1129,7 +1130,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "case_troubleshooting", args);
 
-            McpSchema.GetPromptResult result = troubleshootingPrompt.handler()
+            McpSchema.GetPromptResult result = troubleshootingPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -1158,7 +1159,7 @@ class YawlPromptProviderTest {
             McpSchema.GetPromptRequest request = new McpSchema.GetPromptRequest(
                 "task_completion_guide", args);
 
-            McpSchema.GetPromptResult result = completionPrompt.handler()
+            McpSchema.GetPromptResult result = completionPrompt.promptHandler()
                 .apply(null, request);
 
             McpSchema.TextContent content =
@@ -1189,7 +1190,7 @@ class YawlPromptProviderTest {
                 "workflow_analysis", args);
 
             // Extra arguments should be ignored, not cause errors
-            assertDoesNotThrow(() -> analysisPrompt.handler().apply(null, request));
+            assertDoesNotThrow(() -> analysisPrompt.promptHandler().apply(null, request));
         }
     }
 
@@ -1237,7 +1238,7 @@ class YawlPromptProviderTest {
                                 args.put("case_id", "concurrent-case");
                         }
 
-                        return prompt.handler().apply(null,
+                        return prompt.promptHandler().apply(null,
                             new McpSchema.GetPromptRequest(prompt.prompt().name(), args));
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -1287,7 +1288,7 @@ class YawlPromptProviderTest {
                 Map<String, Object> args = new HashMap<>();
                 args.put("spec_identifier", "session-spec");
 
-                analysisPrompt.handler().apply(null,
+                analysisPrompt.promptHandler().apply(null,
                     new McpSchema.GetPromptRequest("workflow_analysis", args));
             }
 
@@ -1302,10 +1303,11 @@ class YawlPromptProviderTest {
 
     private SpecificationData createTestSpec(String identifier, String version) {
         YSpecificationID specId = new YSpecificationID(identifier, version, "http://test.yawl/" + identifier);
-        SpecificationData spec = new SpecificationData();
-        spec.setID(specId);
-        spec.setName("Test Specification: " + identifier);
-        spec.setDocumentation("Test documentation for " + identifier);
+        SpecificationData spec = new SpecificationData(specId,
+                "Test Specification: " + identifier,
+                "Test documentation for " + identifier,
+                "Active",
+                YSchemaVersion.DEFAULT_VERSION);
         spec.setRootNetID("Net_" + identifier);
         return spec;
     }
@@ -1395,8 +1397,8 @@ class YawlPromptProviderTest {
         }
 
         @Override
-        public void disconnect(String sessionHandle) throws IOException {
-            // No-op for test
+        public String disconnect(String sessionHandle) throws IOException {
+            return "<success/>"; // Test double: simulate successful disconnect
         }
     }
 }
