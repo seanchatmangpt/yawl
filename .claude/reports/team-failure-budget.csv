@@ -1,0 +1,10 @@
+Condition Type,Trigger Rate (%),Detection Latency - Median (s),Detection Latency - p95 (s),Detection Latency - p99 (s),Recovery Time - Median (s),Recovery Time - p95 (s),Recovery Time - p99 (s),Est. MTTD (hours),Est. MTTR (hours),Est. Incidents/Day (100 teams × 8h)
+circular_dependency,10.0,2.5,3.0,3.0,240.0,600.0,600.0,0.001,0.067,80.00
+teammate_idle_timeout_30min,10.0,300.0,350.0,350.0,900.0,1800.0,1800.0,0.083,0.250,80.00
+task_timeout_2hours,10.0,125.0,150.0,150.0,900.0,2400.0,2400.0,0.035,0.250,80.00
+message_timeout_15min,10.0,25.0,45.0,45.0,750.0,1800.0,1800.0,0.007,0.208,80.00
+lead_dx_failure,10.0,52.5,75.0,75.0,900.0,1800.0,1800.0,0.015,0.250,80.00
+hook_q_violation,10.0,15.0,30.0,30.0,900.0,1800.0,1800.0,0.004,0.250,80.00
+teammate_crash_5min_unresponsive,10.0,15.0,30.0,30.0,900.0,1800.0,1800.0,0.004,0.250,80.00
+message_delivery_loss,10.0,45.0,120.0,120.0,900.0,1800.0,1800.0,0.013,0.250,80.00
+message_delivery_dup,10.0,4.0,5.0,5.0,450.0,600.0,600.0,0.001,0.125,80.00
