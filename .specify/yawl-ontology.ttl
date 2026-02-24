@@ -67,48 +67,52 @@ dcterms:modified a owl:AnnotationProperty .
 yawls:SpecificationSet a owl:Class ;
     rdfs:label "Specification Set" ;
     rdfs:comment "Container for one or more YAWL specifications" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasSpecification ;
-        owl:minCardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:specSetRestriction .
+
+_:specSetRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasSpecification ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger .
 
 # Primary specification class - maps from YAWLSpecificationFactsType
 yawls:Specification a owl:Class ;
     rdfs:label "YAWL Specification" ;
     rdfs:comment "A complete YAWL workflow specification containing decompositions and metadata" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:uri ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasMetaData ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasDecomposition ;
-        owl:minCardinality "1"^^xsd:nonNegativeInteger
-    ] ;
+    rdfs:subClassOf _:specUriRestriction ;
+    rdfs:subClassOf _:specMetaDataRestriction ;
+    rdfs:subClassOf _:specDecompRestriction ;
     dcterms:relation <http://purl.org/dc/dcmitype/Software> .
+
+_:specUriRestriction a owl:Restriction ;
+    owl:onProperty yawls:uri ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:specMetaDataRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasMetaData ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:specDecompRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasDecomposition ;
+    owl:minCardinality "1"^^xsd:nonNegativeInteger .
 
 # Dublin Core metadata alignment
 yawls:MetaData a owl:Class ;
     rdfs:label "Meta Data" ;
     rdfs:comment "Dublin Core aligned metadata for YAWL specifications" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty dcterms:title ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty dcterms:created ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty dcterms:valid ;
-        owl:maxCardinality "2"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:metaTitleRestriction ;
+    rdfs:subClassOf _:metaCreatedRestriction ;
+    rdfs:subClassOf _:metaValidRestriction .
+
+_:metaTitleRestriction a owl:Restriction ;
+    owl:onProperty dcterms:title ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:metaCreatedRestriction a owl:Restriction ;
+    owl:onProperty dcterms:created ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:metaValidRestriction a owl:Restriction ;
+    owl:onProperty dcterms:valid ;
+    owl:maxCardinality "2"^^xsd:nonNegativeInteger .
 
 #################################################################
 # DECOMPOSITION HIERARCHY
@@ -119,56 +123,64 @@ yawls:Decomposition a owl:Class ;
     rdfs:label "Decomposition" ;
     rdfs:comment "Abstract base class for all decomposable workflow elements" ;
     owl:hasKey ( yawls:id ) ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:id ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasInputParameter ;
-        owl:minCardinality "0"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasOutputParameter ;
-        owl:minCardinality "0"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:decompIdRestriction ;
+    rdfs:subClassOf _:decompInputRestriction ;
+    rdfs:subClassOf _:decompOutputRestriction .
+
+_:decompIdRestriction a owl:Restriction ;
+    owl:onProperty yawls:id ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:decompInputRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasInputParameter ;
+    owl:minCardinality "0"^^xsd:nonNegativeInteger .
+
+_:decompOutputRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasOutputParameter ;
+    owl:minCardinality "0"^^xsd:nonNegativeInteger .
 
 # Workflow Net - maps from NetFactsType
 yawls:WorkflowNet a owl:Class ;
     rdfs:label "Workflow Net" ;
     rdfs:comment "A YAWL workflow net containing process control elements" ;
-    rdfs:subClassOf yawls:Decomposition , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasProcessControlElements ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasLocalVariable ;
-        owl:minCardinality "0"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:isRootNet ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] ;
+    rdfs:subClassOf yawls:Decomposition ;
+    rdfs:subClassOf _:wfNetPceRestriction ;
+    rdfs:subClassOf _:wfNetVarRestriction ;
+    rdfs:subClassOf _:wfNetRootRestriction ;
     skos:note "Corresponds to Petri Net workflow net with input and output conditions" .
+
+_:wfNetPceRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasProcessControlElements ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:wfNetVarRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasLocalVariable ;
+    owl:minCardinality "0"^^xsd:nonNegativeInteger .
+
+_:wfNetRootRestriction a owl:Restriction ;
+    owl:onProperty yawls:isRootNet ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
 
 # Web Service Gateway - maps from WebServiceGatewayFactsType
 yawls:WebServiceGateway a owl:Class ;
     rdfs:label "Web Service Gateway" ;
     rdfs:comment "A decomposition that interfaces with external web services" ;
-    rdfs:subClassOf yawls:Decomposition , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasYawlService ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasCodelet ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:externalInteraction ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf yawls:Decomposition ;
+    rdfs:subClassOf _:wsgServiceRestriction ;
+    rdfs:subClassOf _:wsgCodeletRestriction ;
+    rdfs:subClassOf _:wsgExtIntRestriction .
+
+_:wsgServiceRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasYawlService ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:wsgCodeletRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasCodelet ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:wsgExtIntRestriction a owl:Restriction ;
+    owl:onProperty yawls:externalInteraction ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
 
 #################################################################
 # NET ELEMENT HIERARCHY
@@ -179,15 +191,16 @@ yawls:NetElement a owl:Class ;
     rdfs:label "Net Element" ;
     rdfs:comment "Abstract base class for elements in a workflow net" ;
     owl:hasKey ( yawls:id ) ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:id ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasFlowInto ;
-        owl:minCardinality "0"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:netElemIdRestriction ;
+    rdfs:subClassOf _:netElemFlowRestriction .
+
+_:netElemIdRestriction a owl:Restriction ;
+    owl:onProperty yawls:id ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:netElemFlowRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasFlowInto ;
+    owl:minCardinality "0"^^xsd:nonNegativeInteger .
 
 # Condition (places in Petri Net terms) - maps from ExternalConditionFactsType
 yawls:Condition a owl:Class ;
@@ -213,50 +226,59 @@ yawls:OutputCondition a owl:Class ;
 yawls:Task a owl:Class ;
     rdfs:label "Task" ;
     rdfs:comment "A work item in the workflow that may be executed by resources" ;
-    rdfs:subClassOf yawls:NetElement , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasJoin ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasSplit ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasResourcing ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasTimer ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:decomposesTo ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] ;
+    rdfs:subClassOf yawls:NetElement ;
+    rdfs:subClassOf _:taskJoinRestriction ;
+    rdfs:subClassOf _:taskSplitRestriction ;
+    rdfs:subClassOf _:taskResourcingRestriction ;
+    rdfs:subClassOf _:taskTimerRestriction ;
+    rdfs:subClassOf _:taskDecomposesRestriction ;
     skos:note "Primary unit of work in YAWL workflows" .
+
+_:taskJoinRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasJoin ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:taskSplitRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasSplit ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:taskResourcingRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasResourcing ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:taskTimerRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasTimer ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:taskDecomposesRestriction a owl:Restriction ;
+    owl:onProperty yawls:decomposesTo ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
 
 # Multiple Instance Task - maps from MultipleInstanceExternalTaskFactsType
 yawls:MultipleInstanceTask a owl:Class ;
     rdfs:label "Multiple Instance Task" ;
     rdfs:comment "A task that can have multiple concurrent instances" ;
-    rdfs:subClassOf yawls:Task , [
-        a owl:Restriction ;
-        owl:onProperty yawls:minimum ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:maximum ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:threshold ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:creationMode ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf yawls:Task ;
+    rdfs:subClassOf _:miMinRestriction ;
+    rdfs:subClassOf _:miMaxRestriction ;
+    rdfs:subClassOf _:miThresholdRestriction ;
+    rdfs:subClassOf _:miCreationModeRestriction .
+
+_:miMinRestriction a owl:Restriction ;
+    owl:onProperty yawls:minimum ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:miMaxRestriction a owl:Restriction ;
+    owl:onProperty yawls:maximum ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:miThresholdRestriction a owl:Restriction ;
+    owl:onProperty yawls:threshold ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:miCreationModeRestriction a owl:Restriction ;
+    owl:onProperty yawls:creationMode ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 #################################################################
 # CONTROL FLOW TYPES (AND/XOR/OR)
@@ -284,21 +306,21 @@ yawls:OR a yawls:ControlType ;
 yawls:Join a owl:Class ;
     rdfs:label "Join" ;
     rdfs:comment "Join behavior for a task (how multiple incoming flows are synchronized)" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:code ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:joinCodeRestriction .
+
+_:joinCodeRestriction a owl:Restriction ;
+    owl:onProperty yawls:code ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Split configuration
 yawls:Split a owl:Class ;
     rdfs:label "Split" ;
     rdfs:comment "Split behavior for a task (how multiple outgoing flows are triggered)" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:code ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:splitCodeRestriction .
+
+_:splitCodeRestriction a owl:Restriction ;
+    owl:onProperty yawls:code ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 #################################################################
 # FLOW AND CONNECTIVITY
@@ -308,33 +330,36 @@ yawls:Split a owl:Class ;
 yawls:FlowInto a owl:Class ;
     rdfs:label "Flow Into" ;
     rdfs:comment "Defines a flow from one element to another" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:nextElement ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasPredicate ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:isDefaultFlow ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:flowNextRestriction ;
+    rdfs:subClassOf _:flowPredicateRestriction ;
+    rdfs:subClassOf _:flowDefaultRestriction .
+
+_:flowNextRestriction a owl:Restriction ;
+    owl:onProperty yawls:nextElement ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:flowPredicateRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasPredicate ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:flowDefaultRestriction a owl:Restriction ;
+    owl:onProperty yawls:isDefaultFlow ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
 
 # Predicate - maps from PredicateType
 yawls:Predicate a owl:Class ;
     rdfs:label "Predicate" ;
     rdfs:comment "XPath predicate for conditional flow" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:ordering ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:xpathExpression ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:predOrderingRestriction ;
+    rdfs:subClassOf _:predXpathRestriction .
+
+_:predOrderingRestriction a owl:Restriction ;
+    owl:onProperty yawls:ordering ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:predXpathRestriction a owl:Restriction ;
+    owl:onProperty yawls:xpathExpression ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 #################################################################
 # RESOURCING MODEL
@@ -344,49 +369,51 @@ yawls:Predicate a owl:Class ;
 yawls:Resourcing a owl:Class ;
     rdfs:label "Resourcing" ;
     rdfs:comment "Resource allocation and management for tasks" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasOffer ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasAllocate ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasStart ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:resOfferRestriction ;
+    rdfs:subClassOf _:resAllocateRestriction ;
+    rdfs:subClassOf _:resStartRestriction .
+
+_:resOfferRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasOffer ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:resAllocateRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasAllocate ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:resStartRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasStart ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Offer - maps from ResourcingOfferFactsType
 yawls:Offer a owl:Class ;
     rdfs:label "Offer" ;
     rdfs:comment "Offer configuration for task distribution" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:initiator ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:offerInitRestriction .
+
+_:offerInitRestriction a owl:Restriction ;
+    owl:onProperty yawls:initiator ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Allocate - maps from ResourcingAllocateFactsType
 yawls:Allocate a owl:Class ;
     rdfs:label "Allocate" ;
     rdfs:comment "Allocation configuration for task assignment" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:initiator ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:allocInitRestriction .
+
+_:allocInitRestriction a owl:Restriction ;
+    owl:onProperty yawls:initiator ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Distribution Set - maps from ResourcingDistributionSetFactsType
 yawls:DistributionSet a owl:Class ;
     rdfs:label "Distribution Set" ;
     rdfs:comment "Set of resources for task distribution" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasInitialSet ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:distSetRestriction .
+
+_:distSetRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasInitialSet ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Resource Set - maps from ResourcingSetFactsType
 yawls:ResourceSet a owl:Class ;
@@ -397,11 +424,11 @@ yawls:ResourceSet a owl:Class ;
 yawls:Selector a owl:Class ;
     rdfs:label "Selector" ;
     rdfs:comment "A resource selection mechanism (filter, allocator, constraint)" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:selectorName ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:selectorNameRestriction .
+
+_:selectorNameRestriction a owl:Restriction ;
+    owl:onProperty yawls:selectorName ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Privileges - maps from ResourcingPrivilegesFactsType
 yawls:PrivilegeSet a owl:Class ;
@@ -496,11 +523,11 @@ yawls:automated a yawls:ExternalInteraction ;
 yawls:Timer a owl:Class ;
     rdfs:label "Timer" ;
     rdfs:comment "Timer configuration for tasks" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:useWorkdays ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:timerWorkdaysRestriction .
+
+_:timerWorkdaysRestriction a owl:Restriction ;
+    owl:onProperty yawls:useWorkdays ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
 
 # Timer Trigger enumeration
 yawls:TimerTrigger a owl:Class ;
@@ -548,15 +575,16 @@ yawls:MSEC a yawls:TimerInterval ;
 yawls:TimerDuration a owl:Class ;
     rdfs:label "Timer Duration" ;
     rdfs:comment "Duration specification for a timer" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:ticks ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:interval ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:timerTicksRestriction ;
+    rdfs:subClassOf _:timerIntervalRestriction .
+
+_:timerTicksRestriction a owl:Restriction ;
+    owl:onProperty yawls:ticks ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:timerIntervalRestriction a owl:Restriction ;
+    owl:onProperty yawls:interval ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 #################################################################
 # DATA AND VARIABLES
@@ -566,19 +594,21 @@ yawls:TimerDuration a owl:Class ;
 yawls:Variable a owl:Class ;
     rdfs:label "Variable" ;
     rdfs:comment "A variable in a workflow net" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:variableName ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:dataType ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:index ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:varNameRestriction ;
+    rdfs:subClassOf _:varTypeRestriction ;
+    rdfs:subClassOf _:varIndexRestriction .
+
+_:varNameRestriction a owl:Restriction ;
+    owl:onProperty yawls:variableName ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:varTypeRestriction a owl:Restriction ;
+    owl:onProperty yawls:dataType ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:varIndexRestriction a owl:Restriction ;
+    owl:onProperty yawls:index ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Input Parameter - maps from InputParameterFactsType
 yawls:InputParameter a owl:Class ;
@@ -590,39 +620,42 @@ yawls:InputParameter a owl:Class ;
 yawls:OutputParameter a owl:Class ;
     rdfs:label "Output Parameter" ;
     rdfs:comment "Output parameter from a decomposition" ;
-    rdfs:subClassOf yawls:Variable , [
-        a owl:Restriction ;
-        owl:onProperty yawls:isMandatory ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:isCutThroughParam ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf yawls:Variable ;
+    rdfs:subClassOf _:outParamMandatoryRestriction ;
+    rdfs:subClassOf _:outParamCutThroughRestriction .
+
+_:outParamMandatoryRestriction a owl:Restriction ;
+    owl:onProperty yawls:isMandatory ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:outParamCutThroughRestriction a owl:Restriction ;
+    owl:onProperty yawls:isCutThroughParam ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
 
 # Variable Mapping - maps from VarMappingFactsType
 yawls:VariableMapping a owl:Class ;
     rdfs:label "Variable Mapping" ;
     rdfs:comment "Maps data between variables using XQuery expressions" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:expression ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:mapsTo ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:varMapExprRestriction ;
+    rdfs:subClassOf _:varMapMapsToRestriction .
+
+_:varMapExprRestriction a owl:Restriction ;
+    owl:onProperty yawls:expression ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:varMapMapsToRestriction a owl:Restriction ;
+    owl:onProperty yawls:mapsTo ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Expression - maps from ExpressionType
 yawls:Expression a owl:Class ;
     rdfs:label "Expression" ;
     rdfs:comment "XQuery expression for data transformation" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:query ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:exprQueryRestriction .
+
+_:exprQueryRestriction a owl:Restriction ;
+    owl:onProperty yawls:query ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 # Log Predicate - maps from LogPredicateFactsType
 yawls:LogPredicate a owl:Class ;
@@ -637,23 +670,26 @@ yawls:LogPredicate a owl:Class ;
 yawls:Configuration a owl:Class ;
     rdfs:label "Configuration" ;
     rdfs:comment "Configuration settings for variant management" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasJoinConfig ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasSplitConfig ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasNofiConfig ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasRemConfig ;
-        owl:maxCardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:configJoinRestriction ;
+    rdfs:subClassOf _:configSplitRestriction ;
+    rdfs:subClassOf _:configNofiRestriction ;
+    rdfs:subClassOf _:configRemRestriction .
+
+_:configJoinRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasJoinConfig ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:configSplitRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasSplitConfig ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:configNofiRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasNofiConfig ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
+
+_:configRemRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasRemConfig ;
+    owl:maxCardinality "1"^^xsd:nonNegativeInteger .
 
 # Input Port Config - maps from InputPortConfigType
 yawls:InputPortConfig a owl:Class ;
@@ -732,11 +768,11 @@ yawls:LayoutAttributes a owl:Class ;
 yawls:YawlService a owl:Class ;
     rdfs:label "YAWL Service" ;
     rdfs:comment "External service integration point" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:serviceId ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:yawlServiceIdRestriction .
+
+_:yawlServiceIdRestriction a owl:Restriction ;
+    owl:onProperty yawls:serviceId ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 #################################################################
 # PROCESS CONTROL ELEMENTS
@@ -745,15 +781,16 @@ yawls:YawlService a owl:Class ;
 yawls:ProcessControlElements a owl:Class ;
     rdfs:label "Process Control Elements" ;
     rdfs:comment "Container for all net elements in a workflow net" ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasInputCondition ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] , [
-        a owl:Restriction ;
-        owl:onProperty yawls:hasOutputCondition ;
-        owl:cardinality "1"^^xsd:nonNegativeInteger
-    ] .
+    rdfs:subClassOf _:pceInputRestriction ;
+    rdfs:subClassOf _:pceOutputRestriction .
+
+_:pceInputRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasInputCondition ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
+
+_:pceOutputRestriction a owl:Restriction ;
+    owl:onProperty yawls:hasOutputCondition ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger .
 
 #################################################################
 # OBJECT PROPERTIES
@@ -842,8 +879,11 @@ yawls:hasSplit a owl:ObjectProperty ;
 # Control type reference
 yawls:code a owl:ObjectProperty ;
     rdfs:label "control code" ;
-    rdfs:domain [ a owl:Class ; owl:unionOf (yawls:Join yawls:Split) ] ;
+    rdfs:domain _:joinOrSplitUnion ;
     rdfs:range yawls:ControlType .
+
+_:joinOrSplitUnion a owl:Class ;
+    owl:unionOf (yawls:Join yawls:Split) .
 
 # Resourcing
 yawls:hasResourcing a owl:ObjectProperty ;
@@ -1038,8 +1078,11 @@ yawls:hasLayoutContainer a owl:ObjectProperty ;
 # Initiator reference
 yawls:initiator a owl:ObjectProperty ;
     rdfs:label "initiator" ;
-    rdfs:domain [ a owl:Class ; owl:unionOf (yawls:Offer yawls:Allocate) ] ;
+    rdfs:domain _:offerOrAllocateUnion ;
     rdfs:range yawls:Initiator .
+
+_:offerOrAllocateUnion a owl:Class ;
+    owl:unionOf (yawls:Offer yawls:Allocate) .
 
 # External interaction
 yawls:externalInteraction a owl:ObjectProperty ;
@@ -1329,23 +1372,17 @@ yawls:Variable owl:hasKey ( yawls:variableName ) .
 
 # FlowInto instances must reference valid next elements
 yawls:FlowConnectsToValidElement a owl:Class ;
-    owl:equivalentClass [
-        a owl:Restriction ;
-        owl:onProperty yawls:nextElement ;
-        owl:someValuesFrom yawls:NetElement
-    ] .
+    owl:equivalentClass _:flowConnectsRestriction .
+
+_:flowConnectsRestriction a owl:Restriction ;
+    owl:onProperty yawls:nextElement ;
+    owl:someValuesFrom yawls:NetElement .
 
 # Tasks with XOR/OR split must have predicates on outgoing flows
+# Note: This is a semantic constraint best enforced at the SHACL level
 yawls:ConditionalSplitRequiresPredicates a owl:Class ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty [ owl:inverseOf yawls:hasFlowInto ] ;
-        owl:someValuesFrom [
-            a owl:Restriction ;
-            owl:onProperty yawls:hasPredicate ;
-            owl:someValuesFrom yawls:Predicate
-        ]
-    ] .
+    rdfs:label "Conditional Split Requires Predicates" ;
+    rdfs:comment "Constraint: Tasks with XOR/OR split must have predicates on conditional flows" .
 
 #################################################################
 # PETRI NET ALIGNMENT NOTES
