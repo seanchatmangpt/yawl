@@ -40,6 +40,7 @@ import java.util.Optional;
  * @param skillInput JSON input for single skill invocation
  * @param enableMetrics whether to collect detailed metrics
  * @param verbose whether to enable verbose logging
+ * @param selfPlayMode whether to run the automated self-play demo
  *
  * @author YAWL Foundation
  * @version 6.0.0
@@ -57,7 +58,8 @@ public record GregVerseConfig(
     String singleSkillId,
     String skillInput,
     boolean enableMetrics,
-    boolean verbose
+    boolean verbose,
+    boolean selfPlayMode
 ) {
 
     /**
@@ -103,6 +105,7 @@ public record GregVerseConfig(
             null,
             null,
             true,
+            false,
             false
         );
     }
@@ -127,6 +130,7 @@ public record GregVerseConfig(
             null,
             null,
             true,
+            false,
             false
         );
     }
@@ -151,6 +155,7 @@ public record GregVerseConfig(
             null,
             null,
             true,
+            false,
             false
         );
     }
@@ -176,6 +181,35 @@ public record GregVerseConfig(
             agentId,
             skillId,
             input,
+            false,
+            true,
+            false
+        );
+    }
+
+    /**
+     * Create a configuration for the automated self-play demo.
+     *
+     * <p>The self-play demo runs all 5 GregVerse scenarios automatically with all
+     * 8 agents, where each agent acts as both advisor and client. Results are
+     * written to {@code demo-results.json} in the current directory.</p>
+     *
+     * @return configuration for self-play demo mode
+     */
+    public static GregVerseConfig forSelfPlay() {
+        return new GregVerseConfig(
+            null,
+            List.of(),
+            OutputFormat.JSON,
+            "demo-results.json",
+            DEFAULT_TIMEOUT_SECONDS,
+            true,
+            false,
+            DEFAULT_MARKETPLACE_DURATION,
+            null,
+            null,
+            null,
+            true,
             false,
             true
         );
@@ -219,6 +253,15 @@ public record GregVerseConfig(
     }
 
     /**
+     * Check if automated self-play demo mode is active.
+     *
+     * @return true if self-play demo mode is configured
+     */
+    public boolean isSelfPlayMode() {
+        return selfPlayMode;
+    }
+
+    /**
      * Get the timeout as a Duration.
      *
      * @return timeout duration
@@ -248,6 +291,7 @@ public record GregVerseConfig(
         boolean metrics = true;
         boolean verbose = false;
         boolean allScenarios = false;
+        boolean selfPlay = false;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -303,6 +347,7 @@ public record GregVerseConfig(
                 case "--no-metrics" -> metrics = false;
                 case "--verbose", "-v" -> verbose = true;
                 case "--all" -> allScenarios = true;
+                case "--self-play" -> selfPlay = true;
                 case "--help", "-h" -> {
                     printUsage();
                     System.exit(0);
@@ -323,7 +368,8 @@ public record GregVerseConfig(
             singleSkill,
             skillInput,
             metrics,
-            verbose
+            verbose,
+            selfPlay
         );
     }
 
@@ -368,6 +414,9 @@ public record GregVerseConfig(
               --sequential           Run agents sequentially
               --no-metrics           Disable detailed metrics collection
               --verbose, -v          Enable verbose logging
+
+            Demo Options:
+              --self-play            Run automated self-play demo across all scenarios
 
             Other:
               --help, -h             Show this help message

@@ -165,7 +165,9 @@ public class GregVerseRunner {
         try {
             GregVerseReport report;
 
-            if (config.isSingleSkillMode()) {
+            if (config.isSelfPlayMode()) {
+                report = runSelfPlayDemo();
+            } else if (config.isSingleSkillMode()) {
                 report = runSingleSkillInvocation();
             } else if (config.marketplaceMode()) {
                 report = runMarketplaceSimulation();
@@ -265,7 +267,8 @@ public class GregVerseRunner {
                 config.marketplaceDuration(),
                 null, null, null,
                 config.enableMetrics(),
-                config.verbose()
+                config.verbose(),
+                false
             );
 
             GregVerseSimulation simulation = new GregVerseSimulation(scenarioConfig);
@@ -641,6 +644,132 @@ public class GregVerseRunner {
         }
         return result.toString();
     }
+
+    /**
+     * Run the automated self-play demo across all GregVerse scenarios.
+     *
+     * <p>The self-play demo iterates through all {@value #AVAILABLE_SCENARIOS_COUNT}
+     * predefined scenarios with all 8 agents acting as both advisors and clients.
+     * Results are aggregated into a single report and written to
+     * {@code demo-results.json}.</p>
+     *
+     * @return combined report across all self-play scenario rounds
+     */
+    private GregVerseReport runSelfPlayDemo() {
+        System.out.printf("Starting GregVerse self-play demo: %d scenarios × %d agents%n%n",
+            AVAILABLE_SCENARIOS.size(), getAvailableAgentCount());
+
+        List<GregVerseReport.AgentResult> allResults = new ArrayList<>();
+        List<GregVerseReport.AgentInteraction> allInteractions = new ArrayList<>();
+        List<GregVerseReport.SkillTransaction> allTransactions = new ArrayList<>();
+        List<DemoPatternResult> patternResults = new ArrayList<>();
+
+        Instant startTime = Instant.now();
+
+        for (String scenarioId : AVAILABLE_SCENARIOS) {
+            GregVerseConfig scenarioConfig = new GregVerseConfig(
+                scenarioId,
+                config.agentIds(),
+                config.outputFormat(),
+                null,
+                config.timeoutSeconds(),
+                config.parallelExecution(),
+                false,
+                config.marketplaceDuration(),
+                null, null, null,
+                config.enableMetrics(),
+                config.verbose(),
+                false
+            );
+
+            GregVerseSimulation simulation = new GregVerseSimulation(scenarioConfig);
+            GregVerseReport round = simulation.run();
+
+            allResults.addAll(round.agentResults());
+            allInteractions.addAll(round.interactions());
+            allTransactions.addAll(round.transactions());
+
+            boolean scenarioSuccess = round.getFailedAgents() == 0;
+            patternResults.add(new DemoPatternResult(
+                scenarioId, scenarioSuccess ? "SUCCESS" : "FAILED"));
+            printScenarioProgress(scenarioId, round);
+        }
+
+        Duration totalDuration = Duration.between(startTime, Instant.now());
+
+        GregVerseReport combined = GregVerseReport.builder()
+            .scenarioId("gregverse-self-play-demo")
+            .generatedAt(Instant.now())
+            .totalDuration(totalDuration)
+            .agentResults(allResults)
+            .interactions(allInteractions)
+            .transactions(allTransactions)
+            .build();
+
+        writeDemoResults(patternResults, totalDuration);
+
+        return combined;
+    }
+
+    /**
+     * Write self-play demo results to {@code demo-results.json}.
+     *
+     * @param results list of per-scenario pattern results
+     * @param duration total demo execution duration
+     */
+    private void writeDemoResults(List<DemoPatternResult> results, Duration duration) {
+        long successful = results.stream()
+            .filter(r -> "SUCCESS".equals(r.status())).count();
+        long failed = results.stream()
+            .filter(r -> "FAILED".equals(r.status())).count();
+        double successRate = results.isEmpty()
+            ? 0.0 : (double) successful / results.size() * 100;
+
+        StringBuilder json = new StringBuilder();
+        json.append("{\n");
+        json.append("  \"version\": \"2.0.0\",\n");
+        json.append(String.format("  \"timestamp\": \"%s\",\n", Instant.now()));
+        json.append(String.format("  \"totalPatterns\": %d,\n", results.size()));
+        json.append(String.format("  \"successfulPatterns\": %d,\n", successful));
+        json.append(String.format("  \"failedPatterns\": %d,\n", failed));
+        json.append(String.format("  \"executionTimeSeconds\": %d,\n", duration.toSeconds()));
+        json.append("  \"results\": [\n");
+        for (int i = 0; i < results.size(); i++) {
+            DemoPatternResult r = results.get(i);
+            json.append(String.format("    {\"patternId\": \"%s\", \"status\": \"%s\"}",
+                r.patternId(), r.status()));
+            if (i < results.size() - 1) {
+                json.append(",");
+            }
+            json.append("\n");
+        }
+        json.append("  ],\n");
+        json.append(String.format("  \"successRate\": %.0f%n", successRate));
+        json.append("}\n");
+
+        String outputPath = config.hasOutputPath() ? config.outputPath() : "demo-results.json";
+        try {
+            Path path = Paths.get(outputPath);
+            if (path.getParent() != null) {
+                Files.createDirectories(path.getParent());
+            }
+            Files.writeString(path, json.toString(), StandardCharsets.UTF_8);
+            System.out.println("\nDemo results written to: " + outputPath);
+        } catch (IOException e) {
+            LOGGER.error("Failed to write demo results to {}", outputPath, e);
+        }
+    }
+
+    /**
+     * Per-scenario result record used when building {@code demo-results.json}.
+     *
+     * @param patternId the GregVerse scenario ID (e.g. {@code gvs-1-startup-idea})
+     * @param status    {@code "SUCCESS"} or {@code "FAILED"}
+     */
+    private record DemoPatternResult(String patternId, String status) {}
+
+    /** Number of available scenarios (used in log messages). */
+    private static final int AVAILABLE_SCENARIOS_COUNT = 5;
 
     /**
      * Get the number of available agents.
