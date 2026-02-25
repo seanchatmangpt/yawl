@@ -2,6 +2,8 @@ package org.yawlfoundation.yawl.mcp.a2a.mcp;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
@@ -13,6 +15,7 @@ import org.yawlfoundation.yawl.integration.mcp.server.YawlServerCapabilities;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
+import org.yawlfoundation.yawl.pi.mcp.PIToolProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -287,6 +290,16 @@ public class YawlMcpHttpServer {
     // Transport initialization
     // =========================================================================
 
+    /**
+     * Combine YAWL core tools and Process Intelligence tools into a single list.
+     */
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> buildAllTools() {
+        List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> tools =
+            new ArrayList<>(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle));
+        tools.addAll(new PIToolProvider().createTools(null));
+        return tools;
+    }
+
     private void startStdioTransport() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
@@ -298,7 +311,7 @@ public class YawlMcpHttpServer {
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
             .instructions(buildServerInstructions())
-            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(buildAllTools())
             .resources(YawlResourceProvider.createAllResources(interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(interfaceBClient, sessionHandle))
             .prompts(YawlPromptSpecifications.createAll(interfaceBClient, () -> sessionHandle))
@@ -328,7 +341,7 @@ public class YawlMcpHttpServer {
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
             .instructions(buildServerInstructions())
-            .tools(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle))
+            .tools(buildAllTools())
             .resources(YawlResourceProvider.createAllResources(interfaceBClient, sessionHandle))
             .resourceTemplates(YawlResourceProvider.createAllResourceTemplates(interfaceBClient, sessionHandle))
             .prompts(YawlPromptSpecifications.createAll(interfaceBClient, () -> sessionHandle))

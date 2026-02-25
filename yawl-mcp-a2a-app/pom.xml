@@ -34,6 +34,10 @@
         </dependency>
         <dependency>
             <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-pi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-engine</artifactId>
         </dependency>
         <dependency>
