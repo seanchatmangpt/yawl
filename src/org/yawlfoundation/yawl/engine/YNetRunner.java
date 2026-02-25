@@ -124,17 +124,20 @@ public class YNetRunner {
     protected YNet _net;
     private YWorkItemRepository _workItemRepository;
     private Set<YTask> _netTasks;
-    private Set<YTask> _enabledTasks = new LinkedHashSet<YTask>();
-    private Set<YTask> _busyTasks = new LinkedHashSet<YTask>();
-    private final Set<YTask> _deadlockedTasks = new LinkedHashSet<YTask>();
+    // P1 CRITICAL - Thread-safe concurrent sets for virtual thread compatibility
+    // LinkedHashSet causes ConcurrentModificationException with virtual threads
+    private Set<YTask> _enabledTasks = ConcurrentHashMap.newKeySet();
+    private Set<YTask> _busyTasks = ConcurrentHashMap.newKeySet();
+    private final Set<YTask> _deadlockedTasks = ConcurrentHashMap.newKeySet();
     private YIdentifier _caseIDForNet;
     private YSpecificationID _specID;
     private YCompositeTask _containingCompositeTask;
     private YEngine _engine;
     private YAnnouncer _announcer;
     private boolean _cancelling;
-    private Set<String> _enabledTaskNames = new LinkedHashSet<String>();
-    private Set<String> _busyTaskNames = new LinkedHashSet<String>();
+    // Thread-safe concurrent string sets for task name tracking
+    private Set<String> _enabledTaskNames = ConcurrentHashMap.newKeySet();
+    private Set<String> _busyTaskNames = ConcurrentHashMap.newKeySet();
     private String _caseID = null;
     private String _containingTaskID = null;
     private YNetData _netdata = null;
@@ -1383,8 +1386,8 @@ public class YNetRunner {
                 cond.removeAll(pmgr);
             }
         }
-        _enabledTasks = new LinkedHashSet<>();
-        _busyTasks = new LinkedHashSet<>();
+        _enabledTasks = ConcurrentHashMap.newKeySet();
+        _busyTasks = ConcurrentHashMap.newKeySet();
 
         if (_containingCompositeTask == null) {
             _engine.getNetRunnerRepository().remove(_caseIDForNet);
