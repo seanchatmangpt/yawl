@@ -1,6 +1,6 @@
 # yawl-engine-webapp
 
-**Artifact:** `org.yawlfoundation:yawl-engine-webapp:6.0.0-Alpha` | `packaging: war`
+**Artifact:** `org.yawlfoundation:yawl-engine-webapp:6.0.0-Beta` | `packaging: war`
 **Parent:** `yawl-webapps`
 **Output:** `yawl.war`
 

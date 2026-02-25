@@ -1,6 +1,6 @@
 # YAWL v6.0.0 Comprehensive Assessment Report
 
-**Date**: 2026-02-18 | **Version**: 6.0.0-Alpha | **Assessment Type**: Production Readiness
+**Date**: 2026-02-18 | **Version**: 6.0.0-Beta | **Assessment Type**: Production Readiness
 
 ---
 
@@ -18,7 +18,7 @@
 
 ### Verdict
 
-**YAWL v6.0.0-Alpha is 85% production-ready.** The core engine, build system, and documentation are excellent. Gaps exist in test coverage measurement, integration test automation, and deployment validation.
+**YAWL v6.0.0-Beta is 85% production-ready.** The core engine, build system, and documentation are excellent. Gaps exist in test coverage measurement, integration test automation, and deployment validation.
 
 **Distance to Production**: 2-3 weeks for critical path items, 4-6 weeks for full production hardening.
 
@@ -70,7 +70,7 @@
 ### 2.1 Build Architecture
 
 ```
-YAWL Parent (6.0.0-Alpha)
+YAWL Parent (6.0.0-Beta)
 ├── 14 modules in reactor
 ├── Maven 3.9.11 + Java 25
 ├── Parallel execution (-T 1.5C)
@@ -427,7 +427,7 @@ webapps, control-panel
 
 ### Summary Assessment
 
-YAWL v6.0.0-Alpha demonstrates **strong engineering practices** with excellent documentation, fast build system, and solid security foundation. The project follows rigorous quality standards enforced by automated hooks and CI/CD gates.
+YAWL v6.0.0-Beta demonstrates **strong engineering practices** with excellent documentation, fast build system, and solid security foundation. The project follows rigorous quality standards enforced by automated hooks and CI/CD gates.
 
 ### Production Readiness
 

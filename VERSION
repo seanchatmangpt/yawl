@@ -1,8 +1,8 @@
-YAWL Version 6.0.0-Alpha
-========================
+YAWL Version 6.0.0-Beta
+=======================
 
-Release Date: February 16, 2026
-Release Type: Alpha (Community Preview)
+Release Date: February 25, 2026
+Release Type: Beta (Pre-Release)
 
 Contributors:
 - Sean Chatman (Library Modernization Lead & Architecture Consultant)
@@ -12,29 +12,31 @@ Original Authors:
 - YAWL Foundation Team
 
 Description:
-This alpha release modernizes YAWL's library dependencies to their latest stable versions,
-establishes comprehensive validation frameworks, and improves code quality standards to
-100% HYPER_STANDARDS compliance.
+This beta release builds on the v6.0.0-Alpha foundation with documentation consolidation,
+version alignment across all 14 modules, and continued quality improvements toward
+production readiness.
 
 Major Changes:
-- 24 library updates to stable, secure versions
-- Performance monitoring framework
-- Production validation framework
-- Zero code quality violations
-- Architecture preserved and verified
+- Version bump from Alpha to Beta across entire codebase
+- Documentation consolidation (185 files archived, 46 canonical docs in docs/v6/)
+- 77% of violations resolved (47/61)
+- All BLOCKER violations resolved (12/12)
+- Java 25 modernization complete (226+ switch expressions, 275+ pattern matches)
+- MCP and A2A integration operational
 
-Status: Alpha Release
-- Intended for community review and testing
+Status: Beta Release
+- Feature-complete for core functionality
+- Suitable for integration testing and evaluation
 - Not recommended for production use
 - Feedback welcome via GitHub issues
 
 Next Steps:
-- Beta release after community feedback
-- Release candidate for production validation
+- Release candidate (RC1) for full violation resolution
+- Production validation and SOC 2 compliance
 - Stable 6.0.0 release
 
 For detailed changes, see CHANGELOG.md
-For technical details, see /validation/ and /performance-reports/
+For technical details, see docs/v6/
 
 ---
 Built with Claude Code Agent Team

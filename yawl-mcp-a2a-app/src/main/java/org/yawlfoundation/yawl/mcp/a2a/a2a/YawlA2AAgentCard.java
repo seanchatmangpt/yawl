@@ -59,7 +59,7 @@ import java.util.Map;
  * yawl:
  *   a2a:
  *     agent-name: "yawl-workflow-agent"
- *     agent-version: "6.0.0-Alpha"
+ *     agent-version: "6.0.0-Beta"
  *     agent-description: "YAWL workflow management agent"
  * }</pre>
  *
@@ -77,7 +77,7 @@ public class YawlA2AAgentCard {
     @Value("${yawl.a2a.agent-name:yawl-workflow-agent}")
     private String agentName;
 
-    @Value("${yawl.a2a.agent-version:6.0.0-Alpha}")
+    @Value("${yawl.a2a.agent-version:6.0.0-Beta}")
     private String agentVersion;
 
     @Value("${yawl.a2a.agent-description:YAWL workflow management agent with MCP tool support}")

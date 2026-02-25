@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
  * No mocks or stubs.
  *
  * @author YAWL Foundation
- * @version 6.0.0-Alpha
+ * @version 6.0.0-Beta
  */
 @DisplayName("RdrSet — per-task rule tree collection and multi-task selection")
 @Tag("unit")

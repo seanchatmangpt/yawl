@@ -46,13 +46,19 @@ public class YNetData {
     }
 
     public boolean equals(Object other) {
-        return other instanceof YNetData data &&    // instanceof = false if other is null
-                ((getId() != null) ? getId().equals(data.getId())
-                : super.equals(other));
+        if (!(other instanceof YNetData data)) return false;
+        if (getId() != null) {
+            return getId().equals(data.getId()) &&
+                    ((getData() != null) ? getData().equals(data.getData())
+                            : data.getData() == null);
+        }
+        return super.equals(other);
     }
 
     public int hashCode() {
-        return (getId() != null) ? getId().hashCode() : super.hashCode();
+        int result = (getId() != null) ? getId().hashCode() : super.hashCode();
+        result = 31 * result + (getData() != null ? getData().hashCode() : 0);
+        return result;
     }
 
     public String toString() {

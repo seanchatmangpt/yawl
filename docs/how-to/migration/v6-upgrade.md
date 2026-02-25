@@ -3,7 +3,7 @@
 **Master Reference Document for V6 Migration**
 
 **Date:** 2026-02-17
-**Version:** 6.0.0-Alpha
+**Version:** 6.0.0-Beta
 **Status:** Alpha Release - Breaking Changes
 **Document Version:** 1.0.0
 
@@ -31,7 +31,7 @@
 
 ## Executive Summary
 
-YAWL v6.0.0-Alpha represents a major version release that modernizes the codebase for contemporary enterprise deployment. This version introduces:
+YAWL v6.0.0-Beta represents a major version release that modernizes the codebase for contemporary enterprise deployment. This version introduces:
 
 - **Java 25 as minimum requirement** (from Java 21)
 - **Jakarta EE 10 migration** (complete javax → jakarta namespace transformation)
@@ -187,7 +187,7 @@ specId.setUri("http://example.com/spec");
 String id = specId.getIdentifier();
 ```
 
-**After (v6.0.0-Alpha):**
+**After (v6.0.0-Beta):**
 ```java
 // Canonical constructor
 YSpecificationID specId = new YSpecificationID(
@@ -207,7 +207,7 @@ YSpecificationID updated = specId.withIdentifier("new-id");
 ```
 
 **Key Differences:**
-| Feature | v5.2 | v6.0.0-Alpha |
+| Feature | v5.2 | v6.0.0-Beta |
 |---------|------|--------------|
 | Mutability | Mutable class | Immutable record |
 | Constructor | Default + setters | Canonical only |
@@ -252,7 +252,7 @@ Query<YCase> query = session.createQuery("FROM YCase", YCase.class);
 List<YCase> results = query.getResultList();
 ```
 
-**After (v6.0.0-Alpha - Hibernate 6.x):**
+**After (v6.0.0-Beta - Hibernate 6.x):**
 ```java
 Session session = sessionFactory.getCurrentSession();
 SelectionQuery<YCase> query = session.createSelectionQuery("FROM YCase", YCase.class);
@@ -638,7 +638,7 @@ ExecutorService executor = Executors.newFixedThreadPool(100);
 // Thread switching = ~1-2 microseconds
 ```
 
-**After (v6.0.0-Alpha - Virtual Threads):**
+**After (v6.0.0-Beta - Virtual Threads):**
 ```java
 // Can handle 100,000+ concurrent threads
 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -745,7 +745,7 @@ public class CaseEvent {
     // ~50 lines of boilerplate
 }
 
-// After (v6.0.0-Alpha)
+// After (v6.0.0-Beta)
 public record CaseEvent(
     String caseID,
     String specID,
@@ -765,7 +765,7 @@ if (event instanceof CaseEvent(var caseId, var specId, var ts)) {
 
 ### Major Version Upgrades
 
-| Dependency | v5.2 | v6.0.0-Alpha | Reason |
+| Dependency | v5.2 | v6.0.0-Beta | Reason |
 |------------|------|--------------|--------|
 | Java | 21 | 25 | Virtual threads, records, pattern matching |
 | Spring Boot | 3.2.x | 3.5.10 | Latest cloud-native features |
@@ -970,7 +970,7 @@ for (int i = 0; i < 10000; i++) {
 // Only 100 concurrent, 9900 queued
 ```
 
-**After (v6.0.0-Alpha):**
+**After (v6.0.0-Beta):**
 ```java
 // Unlimited concurrency with virtual threads
 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -1022,7 +1022,7 @@ public class CaseExecutionEvent {
 }
 ```
 
-**After (v6.0.0-Alpha):**
+**After (v6.0.0-Beta):**
 ```java
 public record CaseExecutionEvent(
     String caseID,
@@ -1054,7 +1054,7 @@ if (event instanceof CaseExecutionEvent) {
 }
 ```
 
-**After (v6.0.0-Alpha):**
+**After (v6.0.0-Beta):**
 ```java
 // Pattern matching with type inference
 if (element instanceof YAtomicTask task) {
@@ -1210,7 +1210,7 @@ java --enable-preview \
 
 ### Virtual Thread Benchmarks
 
-| Scenario | v5.2 (Platform Threads) | v6.0.0-Alpha (Virtual Threads) | Improvement |
+| Scenario | v5.2 (Platform Threads) | v6.0.0-Beta (Virtual Threads) | Improvement |
 |----------|------------------------|-------------------------------|------------|
 | 1,000 concurrent cases | ~800ms latency | ~50ms latency | **16x faster** |
 | 10,000 concurrent cases | Queue timeout | ~200ms latency | **Unlimited** |
@@ -1220,7 +1220,7 @@ java --enable-preview \
 ### Case Execution Performance
 
 ```
-Metric                    v5.2        v6.0.0-Alpha   Improvement
+Metric                    v5.2        v6.0.0-Beta   Improvement
 ─────────────────────────────────────────────────────────────────
 Case creation (p50)       300ms       150ms          2x
 Case creation (p95)       800ms       200ms          4x
@@ -1237,7 +1237,7 @@ Concurrent users          1000        10000          10x
 ### Memory Usage
 
 ```
-Component               v5.2        v6.0.0-Alpha
+Component               v5.2        v6.0.0-Beta
 ────────────────────────────────────────────────
 Heap size (startup)     1.5GB       512MB
 Per case                ~2MB        ~200KB
@@ -1247,7 +1247,7 @@ JVM overhead            ~300MB      ~200MB
 
 ### Database Connection Pooling
 
-**HikariCP (new default in v6.0.0-Alpha):**
+**HikariCP (new default in v6.0.0-Beta):**
 ```properties
 # Connection pool tuning
 hibernate.hikari.minimumIdle=5
@@ -1269,7 +1269,7 @@ hibernate.hikari.maxLifetime=1800000
 
 ### Dependency Security Updates
 
-| Vulnerability | v5.2 | v6.0.0-Alpha | Status |
+| Vulnerability | v5.2 | v6.0.0-Beta | Status |
 |---------------|------|--------------|--------|
 | Log4Shell (CVE-2021-44228) | MITIGATED | FIXED (2.25.3) | ✅ RESOLVED |
 | Hibernate CVEs | Multiple | 6.6.5 (patched) | ✅ RESOLVED |
@@ -1278,7 +1278,7 @@ hibernate.hikari.maxLifetime=1800000
 
 ### HYPER_STANDARDS Compliance
 
-**V6.0.0-Alpha is 100% HYPER_STANDARDS compliant:**
+**V6.0.0-Beta is 100% HYPER_STANDARDS compliant:**
 
 ✅ **Zero Deferred Work Markers**
 - No TODO/FIXME/XXX/HACK in production code
@@ -1310,7 +1310,7 @@ grep -rn "mock\|stub\|fake" src/ --include="*.java" --exclude-dir=test
 
 ### Secret Management
 
-**Best Practices (v6.0.0-Alpha):**
+**Best Practices (v6.0.0-Beta):**
 
 ```bash
 # ✅ GOOD: Environment variables
@@ -1363,7 +1363,7 @@ server.port=8443
 
 ### Test Suite Coverage
 
-**V6.0.0-Alpha includes:**
+**V6.0.0-Beta includes:**
 - 176+ test classes
 - 98.9% pass rate in v5.2 baseline
 - Core engine, stateless engine, integration tests
@@ -1672,7 +1672,7 @@ mvn idea:idea              # Generate IntelliJ project
 
 ### Version Information Matrix
 
-| Component | v5.2 | v6.0.0-Alpha | Status |
+| Component | v5.2 | v6.0.0-Beta | Status |
 |-----------|------|--------------|--------|
 | Java | 21 | 25 | Major upgrade |
 | Maven | 3.6+ | 3.9+ | Version bump |
@@ -1721,7 +1721,7 @@ Project Root/
 
 ## Conclusion
 
-YAWL v6.0.0-Alpha represents a significant modernization step, positioning the platform for contemporary enterprise deployment. The breaking changes are necessary to adopt modern Java practices, cloud-native architectures, and current industry standards.
+YAWL v6.0.0-Beta represents a significant modernization step, positioning the platform for contemporary enterprise deployment. The breaking changes are necessary to adopt modern Java practices, cloud-native architectures, and current industry standards.
 
 **Key Takeaways:**
 1. **Plan ahead**: 2-4 weeks for typical migrations

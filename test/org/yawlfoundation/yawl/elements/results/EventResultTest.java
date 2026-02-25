@@ -260,7 +260,7 @@ class EventResultTest {
             EventAccepted r = new EventAccepted("evt-999", EVENT_TYPE, FIXED_NOW, "case-001");
             String str = r.toString();
             assertTrue(str.contains("evt-999"));
-            assertTrue(str.contains("ACCEPTED"));
+            assertTrue(str.contains("EventAccepted"));
         }
     }
 

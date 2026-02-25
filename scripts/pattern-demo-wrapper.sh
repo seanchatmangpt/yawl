@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Configuration
-JAR_PATH="$PROJECT_ROOT/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar"
+JAR_PATH="$PROJECT_ROOT/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar"
 MAIN_CLASS="org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunner"
 
 # Colors
@@ -41,11 +41,11 @@ run_with_classpath() {
 
     # Add all YAWL dependencies
     local deps=(
-        "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Alpha.jar"
+        "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Beta.jar"
     )
 
     for dep in "${deps[@]}"; do
@@ -97,11 +97,11 @@ run_with_compile() {
     # Build a comprehensive classpath for compilation
     local compile_classpath="$JAR_PATH"
     local deps=(
-        "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Alpha.jar"
-        "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Alpha.jar"
+        "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Beta.jar"
+        "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Beta.jar"
     )
 
     for dep in "${deps[@]}"; do

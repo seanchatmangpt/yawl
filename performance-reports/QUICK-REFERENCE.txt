@@ -2,7 +2,7 @@
 YAWL v6.0.0 Performance & Stability vs v5.2 Baseline - QUICK REFERENCE
 ================================================================================
 
-TESTED: 2026-02-21 | VERSION: 6.0.0-Alpha | JAVA: 21.0.10
+TESTED: 2026-02-21 | VERSION: 6.0.0-Beta | JAVA: 21.0.10
 
 ================================================================================
 PASS/FAIL SUMMARY (6/6 TESTS PASS)

@@ -1,8 +1,8 @@
-# A = μ(O): A Formal Analysis of YAWL v6.0.0-Alpha Architecture, Build System, and Quality Recovery
+# A = μ(O): A Formal Analysis of YAWL v6.0.0-Beta Architecture, Build System, and Quality Recovery
 
 ## Abstract
 
-This dissertation presents a comprehensive analysis of the YAWL (Yet Another Workflow Language) v6.0.0-Alpha codebase, examining its multi-module Maven architecture, shared source directory pattern, dual stateful/stateless engine design, and the systematic recovery from catastrophic git history loss. We introduce the formal notation **A = μ(O)** where **O** = {engine, elements, stateless, integration, schema, test} represents the observable components and **μ** = {engineer, validator, architect, integrator, reviewer, tester} represents the agent transformations applied to produce the artifact **A**.
+This dissertation presents a comprehensive analysis of the YAWL (Yet Another Workflow Language) v6.0.0-Beta codebase, examining its multi-module Maven architecture, shared source directory pattern, dual stateful/stateless engine design, and the systematic recovery from catastrophic git history loss. We introduce the formal notation **A = μ(O)** where **O** = {engine, elements, stateless, integration, schema, test} represents the observable components and **μ** = {engineer, validator, architect, integrator, reviewer, tester} represents the agent transformations applied to produce the artifact **A**.
 
 Our analysis reveals 90+ intentionally duplicated classes supporting a dual-architecture pattern, 813 dependency version conflicts requiring mediation, and a critical XNodeParser bug corrupting large epoch millisecond values. We document the application of 15 parallel analysis agents to map the build system topology, culminating in a YAWL XML specification representing the build-and-test workflow as a Petri net.
 
@@ -35,7 +35,7 @@ Our analysis reveals 90+ intentionally duplicated classes supporting a dual-arch
 
 YAWL (Yet Another Workflow Language) is an enterprise Business Process Management (BPM) system based on rigorous Petri net semantics. Originally developed at the Queensland University of Technology and later maintained by the YAWL Foundation, it provides a formal foundation for workflow specification, verification, and execution.
 
-The v6.0.0-Alpha release represents a significant architectural evolution, incorporating:
+The v6.0.0-Beta release represents a significant architectural evolution, incorporating:
 - Java 25 preview features
 - Jakarta EE 10 migration
 - Spring Boot 3.5.10 integration
@@ -118,10 +118,10 @@ The goal is to minimize drift through continuous validation and agent-based anal
 
 ### 3.1 Module Overview
 
-The YAWL v6.0.0-Alpha project consists of 15 Maven modules organized in a hierarchical structure:
+The YAWL v6.0.0-Beta project consists of 15 Maven modules organized in a hierarchical structure:
 
 ```
-org.yawlfoundation:yawl-parent:pom:6.0.0-Alpha
+org.yawlfoundation:yawl-parent:pom:6.0.0-Beta
 ├── yawl-utilities:jar          # Base utilities
 ├── yawl-elements:jar           # Core YAWL elements
 ├── yawl-authentication:jar     # Session management
@@ -729,7 +729,7 @@ flowchart TD
 
 ### 13.1 Summary of Findings
 
-This dissertation has presented a comprehensive analysis of the YAWL v6.0.0-Alpha codebase, revealing:
+This dissertation has presented a comprehensive analysis of the YAWL v6.0.0-Beta codebase, revealing:
 
 1. **Architecture**: 15-module Maven structure with dual stateful/stateless pattern
 2. **Build System**: Shared source directories with include/exclude filtering
@@ -813,7 +813,7 @@ Where each agent transformation is applied in sequence to produce a validated, t
 ---
 
 *Document generated: 2024-12-19*
-*YAWL Version: 6.0.0-Alpha*
+*YAWL Version: 6.0.0-Beta*
 *Analysis Agents: 15 parallel*
 *Total Context: ~150,000 tokens*
 

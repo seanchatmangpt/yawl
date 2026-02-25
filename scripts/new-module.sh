@@ -32,7 +32,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
 # ── Constants ──────────────────────────────────────────────────────────────
-readonly YAWL_VERSION="6.0.0-Alpha"
+readonly YAWL_VERSION="6.0.0-Beta"
 readonly YAWL_GROUP_ID="org.yawlfoundation"
 readonly YAWL_BASE_PACKAGE="org.yawlfoundation.yawl"
 
@@ -134,7 +134,7 @@ generate_pom_xml() {
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Alpha</version>
+        <version>6.0.0-Beta</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

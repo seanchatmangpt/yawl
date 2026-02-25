@@ -1,4 +1,4 @@
-# YAWL v6.0.0-Alpha - Dependency Catalog
+# YAWL v6.0.0-Beta - Dependency Catalog
 
 This document describes every major dependency group used by YAWL, the rationale for
 its inclusion, and the version strategy applied.
