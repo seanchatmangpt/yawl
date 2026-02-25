@@ -139,4 +139,14 @@
         <Bug pattern="EI_EXPOSE_REP"/>
     </Match>
 
+
+    <!-- UiPathAutomationClient.wrapXamlAsBpmn: Java text block generates XML content.
+         \n is intentional — XML requires platform-independent Unix line endings.
+         %n would produce OS-specific line endings which breaks XML portability. -->
+    <Match>
+        <Class name="org.yawlfoundation.yawl.ggen.mining.cloud.UiPathAutomationClient"/>
+        <Method name="wrapXamlAsBpmn"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
 </FindBugsFilter>
