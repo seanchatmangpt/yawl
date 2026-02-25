@@ -68,7 +68,7 @@ yawl:
 
 zai:
   api_key: "${ZAI_API_KEY}"
-  model: "${ZAI_MODEL:-GLM-4-Flash}"
+  model: "${ZAI_MODEL:-GLM-4.7-Flash}"
   base_url: "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/chat/completions}"
   timeout_ms: 30000
   max_retries: 3
