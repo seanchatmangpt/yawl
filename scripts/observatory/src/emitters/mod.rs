@@ -19,7 +19,6 @@ pub mod receipt;
 pub mod shared_src;
 pub mod static_analysis;
 pub mod tests;
-pub mod workflow_runtime;
 
 /// Return type for all emitters: Ok(path written) or Err(description).
 pub type EmitResult = Result<PathBuf, String>;
@@ -95,25 +94,17 @@ pub fn extract_package(path: &Path) -> Option<String> {
 }
 
 /// Read the first N lines of a file for pattern matching.
-///
-/// Uses BufReader with early exit — reads only the first N lines, avoiding
-/// loading the entire file into memory.
 pub fn head_lines(path: &Path, n: usize) -> Vec<String> {
-    use std::io::{BufRead, BufReader};
-    let Ok(file) = std::fs::File::open(path) else { return vec![] };
-    BufReader::new(file).lines().take(n).filter_map(|l| l.ok()).collect()
+    std::fs::read_to_string(path)
+        .map(|s| s.lines().take(n).map(String::from).collect())
+        .unwrap_or_default()
 }
 
 /// Check if a file contains a given string (fast: stops at first match).
-///
-/// Uses BufReader line-by-line — stops reading once the needle is found,
-/// avoiding loading the entire file into memory for early matches.
 pub fn file_contains(path: &Path, needle: &str) -> bool {
-    use std::io::{BufRead, BufReader};
-    let Ok(file) = std::fs::File::open(path) else { return false };
-    BufReader::new(file)
-        .lines()
-        .any(|l| l.ok().map(|l| l.contains(needle)).unwrap_or(false))
+    std::fs::read_to_string(path)
+        .map(|s| s.contains(needle))
+        .unwrap_or(false)
 }
 
 /// Count lines matching a pattern in a file.

@@ -2,66 +2,62 @@
   "details": {
     "coverage": {
       "status": "miss",
-      "timing_ms": 10
+      "timing_ms": 0
     },
     "deps-conflicts": {
       "status": "miss",
-      "timing_ms": 102
+      "timing_ms": 0
     },
     "docker-testing": {
       "status": "miss",
-      "timing_ms": 331
+      "timing_ms": 0
     },
     "dual-family": {
       "status": "miss",
-      "timing_ms": 483
+      "timing_ms": 0
     },
     "duplicates": {
       "status": "miss",
-      "timing_ms": 331
+      "timing_ms": 0
     },
     "gates": {
-      "status": "miss",
-      "timing_ms": 9
+      "status": "skipped",
+      "timing_ms": 0
     },
     "integration": {
       "status": "miss",
-      "timing_ms": 128
+      "timing_ms": 0
     },
     "modules": {
       "status": "miss",
-      "timing_ms": 102
+      "timing_ms": 0
     },
     "reactor": {
       "status": "miss",
-      "timing_ms": 89
+      "timing_ms": 0
     },
     "receipt": {
       "status": "miss",
-      "timing_ms": 92
+      "timing_ms": 3
     },
     "shared-src": {
       "status": "miss",
-      "timing_ms": 91
+      "timing_ms": 0
     },
     "static-analysis": {
       "status": "miss",
-      "timing_ms": 85
+      "timing_ms": 0
     },
     "tests": {
       "status": "miss",
-      "timing_ms": 336
-    },
-    "workflow-runtime": {
-      "status": "miss",
-      "timing_ms": 3
+      "timing_ms": 0
     }
   },
   "summary": {
     "hit_ratio": 0.0,
     "hits": 0,
-    "misses": 14,
-    "skipped": 0,
-    "total_checks": 14
+    "misses": 12,
+    "skipped": 1,
+    "total_checks": 13
   }
 }
