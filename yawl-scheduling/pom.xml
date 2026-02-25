@@ -10,7 +10,6 @@
         <artifactId>yawl-parent</artifactId>
 
         <version>6.0.0</version>
-        <version>6.0.0-Beta</version>
     <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -69,6 +68,7 @@
 
     <build>
         <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test/org/yawlfoundation/yawl/scheduling</testSourceDirectory>
 
         <plugins>
             <plugin>
@@ -89,6 +89,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/Test*.java</include>
+                    </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>

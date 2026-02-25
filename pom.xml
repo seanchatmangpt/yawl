@@ -9,7 +9,6 @@
     <artifactId>yawl-parent</artifactId>
 
     <version>6.0.0</version>
-    <version>6.0.0-Beta</version>
     <packaging>pom</packaging>
 
     <name>YAWL Parent</name>
@@ -45,9 +44,9 @@
         </contributor>
     </contributors>
 
-         DISTRIBUTION MANAGEMENT
+    <!-- DISTRIBUTION MANAGEMENT
          For deploying releases and snapshots to Maven Central via Sonatype OSSRH.
-         Usage: mvn deploy -P release
+         Usage: mvn deploy -P release -->
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -77,8 +76,8 @@
         <module>yawl-mcp-a2a-app</module>
     </modules>
 
-         PROPERTIES - single source of truth for all dependency versions.
-         All child modules inherit these; never redeclare versions in children.
+    <!-- PROPERTIES - single source of truth for all dependency versions.
+         All child modules inherit these; never redeclare versions in children. -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -250,7 +249,7 @@
         </repository>
     </repositories>
 
-         DEPENDENCY MANAGEMENT
+    <!-- DEPENDENCY MANAGEMENT
          Order of sections:
            1.  Jakarta EE
            2.  ORM
@@ -282,7 +281,7 @@
            The default build uses explicit version pins (this section) for
            offline/air-gapped compatibility. When network is available, activate
            the online profile: mvn -P online clean compile
-           The BOMs then take precedence and reduce duplication.
+           The BOMs then take precedence and reduce duplication. -->
     <dependencyManagement>
         <dependencies>
 
@@ -1155,7 +1154,7 @@
         </dependencies>
     </dependencyManagement>
 
-         DIRECT DEPENDENCIES
+    <!-- DIRECT DEPENDENCIES
          The parent POM does NOT declare direct compile-scope dependencies.
          Each child module declares exactly what it needs; this avoids
          putting every library on every module's classpath and keeps
@@ -1163,7 +1162,7 @@
 
          The only direct parent-level dependencies are universal concerns
          that literally every module requires: compilation annotations and
-         logging API.
+         logging API. -->
     <dependencies>
         <!-- SLF4J API - logging facade required by every module -->
         <dependency>
@@ -1211,7 +1210,7 @@
         </dependency>
     </dependencies>
 
-         BUILD
+    <!-- BUILD -->
     <build>
         <!-- Default goal when running `mvn` without arguments -->
         <defaultGoal>clean compile</defaultGoal>
@@ -1851,7 +1850,7 @@
         </plugins>
     </build>
 
-         BUILD PROFILES
+    <!-- BUILD PROFILES -->
     <profiles>
 
         <!-- Default profile: Java 21 compatible (JDK 21 available)            -->
