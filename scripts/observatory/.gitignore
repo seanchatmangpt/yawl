@@ -1,6 +1,0 @@
-# Compiled artifacts
-target/
-
-# But track Rust source in src/bin/ (overrides root gitignore's bin/ rule)
-!src/bin/
-!src/bin/*.rs

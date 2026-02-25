@@ -1,0 +1,365 @@
+```mermaid
+graph TB
+    %% Main YAWL Engine Container
+    subgraph YAWL_Engine_v6 [YAWL Engine v6]
+        direction TB
+
+        %% Top Level: Virtual Thread Management
+        subgraph Virtual_Threads [Virtual Thread Management]
+            direction LR
+
+            VTP1[VirtualThreadPool<br/>Auto-scaling Pool]
+            VTP2[Per-Case Virtual Threads<br/>Case-Isolated]
+            VTP3[StructuredTaskScope<br/>Structured Concurrency]
+
+            VTP1 --> VTP2
+            VTP2 --> VTP3
+        end
+
+        %% Middle Level: Context System
+        subgraph Context_System [ScopedValue Context System]
+            direction LR
+
+            SV_ROOT[ScopedValue<br/>WorkflowContext<br/>Root Context]
+            SV_CASE[ScopedValue<br/>CASE_CONTEXT<br/>Case State]
+            SV_META[ScopedValue<br/>WORKFLOW_METADATA<br/>Spec Metadata]
+            SV_OP[ScopedValue<br/>OPERATION_CONTEXT<br/>Task Context]
+
+            SV_ROOT --> SV_CASE
+            SV_ROOT --> SV_META
+            SV_ROOT --> SV_OP
+        end
+
+        %% Core Logic Layer
+        subgraph Core_Logic [YAWL Core Logic]
+            direction LR
+
+            YNR[YNetRunner<br/>Modernized]
+            YTI[YTaskInstance<br/>Thread-Safe]
+            YWI[YWorkItem<br/>Virtual Thread Compatible]
+            YDB[YDatabaseService<br/>Async Operations]
+        end
+
+        %% Integration Layer
+        subgraph Integration [Integration Layer]
+            direction LR
+
+            OT[OpenTelemetry<br/>Tracing]
+            MW[Monitoring<br/>Metrics Collection]
+            EH[Error Handling<br/>Structured Exceptions]
+            DC[Distributed Context<br/>Propagation]
+        end
+
+        %% Bottom Layer: External Services
+        subgraph External_Services [External Services]
+            direction LR
+
+            EXT_DB[External Database<br/>Async Operations]
+            EXT_API[External APIs<br/>Non-Blocking]
+            EXT_LOG[Logging Service<br/>Virtual Thread Safe]
+        end
+
+        %% Connect layers
+        Virtual_Threads --> Context_System
+        Context_System --> Core_Logic
+        Core_Logic --> Integration
+        Integration --> External_Services
+
+        %% Add specific connections
+        YNR --> VTP2
+        VTP3 --> SV_ROOT
+        YTI --> SV_CASE
+        YWI --> SV_OP
+        YDB --> OT
+        EH --> MW
+        DC --> EXT_DB
+
+    end
+
+    %% Legend
+    subgraph Legend [Legend]
+        direction TB
+
+        LT1[🟩 Virtual Threads<br/>Lightweight, scalable]
+        LT2[🟨 Scoped Values<br/>Immutable, inherited]
+        LT3[🟪 Structured Concurrency<br/>Coordinated execution]
+        LT4[🟦 Async Operations<br/>Non-blocking I/O]
+    end
+
+    %% Title and description
+    title YAWL Java 25 Modernization Architecture
+    style YAWL_Engine_v6 fill:#f0f4f8,stroke:#333,stroke-width:2px
+    style Legend fill:#e8f5e9,stroke:#4caf50,stroke-width:1px
+
+    %% Add annotations
+    annotation1:::note("Virtual threads enable 10-100x more concurrent cases")
+    annotation2:::note("Scoped values provide automatic context inheritance")
+    annotation3:::note("Structured concurrency eliminates thread management complexity")
+    annotation4:::note("Async operations prevent virtual thread pinning")
+
+    %% Add flow annotations
+    linkStyle 0 stroke:#4caf50,stroke-width:2px
+    linkStyle 1 stroke:#2196f3,stroke-width:2px
+    linkStyle 2 stroke:#ff9800,stroke-width:2px
+    linkStyle 3 stroke:#9c27b0,stroke-width:2px
+
+    %% Style definitions
+    classDef note fill:#fff3e0,stroke:#ff6f00,stroke-width:1px,font-size:12px
+    classDef context fill:#e3f2fd,stroke:#1976d2
+    classDef thread fill:#e8f5e9,stroke:#388e3c
+    classDef core fill:#fce4ec,stroke:#c2185b
+    classDef integration fill:#f3e5f5,stroke:#7b1fa2
+    classDef external fill:#fff8e1,stroke:#ffa000
+
+    %% Apply styles to nodes
+    class SV_ROOT,SV_CASE,SV_META,SV_OP context
+    class VTP1,VTP2,VTP3 thread
+    class YNR,YTI,YWI,YDB core
+    class OT,MW,EH,DC integration
+    class EXT_DB,EXT_API,EXT_LOG external
+```
+
+```mermaid
+sequenceDiagram
+    participant Client as YAWL Client
+    participant Engine as YAWL Engine
+    participant Context as Context System
+    participant Threads as Virtual Threads
+    participant Tasks as Structured Tasks
+    participant DB as External Services
+
+    %% Client request
+    Client->>Engine: startCase(caseID, specID)
+
+    %% Context binding
+    Engine->>Context: createWorkflowContext(caseID, specID)
+    Context->>Context: bindScopedValue(WORKFLOW_CONTEXT)
+
+    %% Virtual thread allocation
+    Engine->>Threads: allocatePerCaseThread(caseID)
+    Threads->>Threads: Thread.ofVirtual().name("case-" + caseID)
+
+    %% Structured execution
+    Threads->>Tasks: executeInParallel(tasks)
+
+    %% Task execution with context inheritance
+    Tasks->>Context: inheritScopedValues()
+    Tasks->>Engine: executeTask(workItem)
+
+    %% Parallel operations
+    par Fork Tasks
+        Tasks->>DB: asyncFetchData()
+        Tasks->>DB: asyncUpdateState()
+        Tasks->>Engine: validateBusinessLogic()
+    and
+        Tasks->>Context: logOperationMetrics()
+    end
+
+    %% Context cleanup
+    Tasks->>Context: autoCleanup()
+
+    %% Response
+    Tasks->>Engine: taskComplete()
+    Engine->>Client: caseStarted(caseID)
+
+    %% Monitoring
+    loop Every 30s
+        Threads->>Engine: reportMetrics()
+        Engine->>Context: updateContextMetrics()
+    end
+```
+
+```mermaid
+flowchart TB
+    %% Start node
+    Start([Start Case Execution]) --> BindContext[Bind Workflow Context]
+
+    %% Context hierarchy
+    BindContext --> CreateContext[Create Context Objects]
+    CreateContext --> CaseContext[ScopedValue<CaseContext>]
+    CreateContext --> MetaContext[ScopedValue<WorkflowMetadata>]
+    CreateContext --> OpContext[ScopedValue<OperationContext>]
+
+    %% Virtual thread allocation
+    CaseContext --> AllocateThread[Allocate Virtual Thread]
+    AllocateThread --> ThreadConfig[Thread.ofVirtual()<br/>.name("case-{id}")]
+
+    %% Task execution
+    ThreadConfig --> CheckEnabled[Check Enabled Tasks]
+    CheckEnabled --> EnableTasks{Has Enabled Tasks?}
+
+    EnableTasks -->|Yes| ExecuteParallel[Execute Tasks in Parallel]
+    EnableTasks -->|No| CompleteCase[Complete Case]
+
+    %% Structured concurrency
+    ExecuteParallel --> StructuredScope[StructuredTaskScope<br/>.ShutdownOnFailure]
+
+    StructuredScope --> Fork1[Fork Task 1<br/>Task Executor]
+    StructuredScope --> Fork2[Fork Task 2<br/>Task Executor]
+    StructuredScope --> Fork3[Fork Task 3<br/>Task Executor]
+
+    %% Task execution with context
+    Fork1 --> InheritContext1[Inherit Case Context]
+    Fork2 --> InheritContext2[Inherit Case Context]
+    Fork3 --> InheritContext3[Inherit Case Context]
+
+    InheritContext1 --> ExecuteTask1[Execute Task 1<br/>with Context]
+    InheritContext2 --> ExecuteTask2[Execute Task 2<br/>with Context]
+    InheritContext3 --> ExecuteTask3[Execute Task 3<br/>with Context]
+
+    %% Task completion
+    ExecuteTask1 --> CompleteTask1[Complete Task 1]
+    ExecuteTask2 --> CompleteTask2[Complete Task 2]
+    ExecuteTask3 --> CompleteTask3[Complete Task 3]
+
+    CompleteTask1 --> JoinScope[Join Scope]
+    CompleteTask2 --> JoinScope
+    CompleteTask3 --> JoinScope
+
+    JoinScope --> HandleResults[Handle Results]
+    HandleResults --> CheckCompletion{Case Complete?}
+
+    %% Final state
+    CheckCompletion -->|Yes| FinalizeCase[Finalize Case]
+    CheckCompletion -->|No| CheckEnabled
+    FinalizeCase --> End([End])
+
+    %% Error handling path
+    ExecuteTask1 --> Error1{Task 1 Error?}
+    ExecuteTask2 --> Error2{Task 2 Error?}
+    ExecuteTask3 --> Error3{Task 3 Error?}
+
+    Error1 -->|Yes| CancelOthers[Cancel Remaining Tasks]
+    Error2 -->|Yes| CancelOthers
+    Error3 -->|Yes| CancelOthers
+
+    CancelOthers --> HandleError[Handle Error]
+    HandleError --> End
+
+    %% Monitoring annotations
+    subgraph Monitoring [Monitoring Points]
+        M1[Context Bind Time]
+        M2[Thread Allocation Time]
+        M3[Task Execution Time]
+        M4[Case Completion Time]
+    end
+
+    BindContext -.-> M1
+    AllocateThread -.-> M2
+    ExecuteParallel -.-> M3
+    CompleteCase -.-> M4
+```
+
+```mermaid
+classDiagram
+    %% Core Context Classes
+    class ScopedValueSystem {
+        +ScopedValue~WorkflowContext~ WORKFLOW_CONTEXT
+        +ScopedValue~CaseContext~ CASE_CONTEXT
+        +ScopedValue~WorkflowMetadata~ WORKFLOW_METADATA
+        +ScopedValue~OperationContext~ OPERATION_CONTEXT
+        +executeWithContext(Runnable, ScopedValue, Object)
+        +propagateContext(Supplier, Map)
+    }
+
+    class WorkflowContext {
+        +String caseID
+        +String specID
+        +int engineNbr
+        +Instant startedAt
+        +toLogString() String
+        +of(String, String, int) WorkflowContext
+    }
+
+    class CaseContext {
+        +String caseID
+        +CaseState caseState
+        +Instant startTime
+        +Map~String, Object~ caseAttributes
+    }
+
+    class WorkflowMetadata {
+        +String specificationID
+        +String specificationName
+        +String version
+        +int engineInstance
+    }
+
+    class OperationContext {
+        +String operationName
+        +String currentTask
+        +String transactionID
+        +Map~String, Object~ taskData
+    }
+
+    %% Virtual Thread Classes
+    class VirtualThreadPool {
+        +ExecutorService virtualExecutor
+        +String name
+        +maxCarrierThreads int
+        +submit(String, Callable) CompletableFuture
+        +executeInParallel(List~Callable~) List
+    }
+
+    class PerCaseVirtualThreadPool {
+        +ConcurrentHashMap~String, VirtualThreadPool~ casePools
+        +VirtualThreadPool globalPool
+        +maxThreadsPerCase int
+        +getPoolForCase(String) VirtualThreadPool
+        +createCaseThread(String, String, Runnable) Thread
+    }
+
+    class StructuredTaskExecutor {
+        +executeInParallel(String, List~Callable~) List
+        +executeWithTimeout(String, Supplier, Duration) T
+        +executeDependentTasks(String, List~DependentTask~) T
+    }
+
+    %% Integration Classes
+    class ModernYNetRunner {
+        +VirtualThreadPool caseThreadPool
+        +StructuredTaskExecutor taskExecutor
+        +executeCaseModernized(String)
+        +executeWorkItemModernized(YWorkItem)
+    }
+
+    class VirtualThreadObservability {
+        +Tracer tracer
+        +traceVirtualThread(String, String, Supplier) T
+        +recordContext(Span, ScopedValue~?, Object)
+    }
+
+    class VirtualThreadMetrics {
+        +MeterRegistry meterRegistry
+        +registerMetrics()
+        +checkPoolHealth() Health
+    }
+
+    %% Relationships
+    ScopedValueSystem --> WorkflowContext : creates
+    ScopedValueSystem --> CaseContext : creates
+    ScopedValueSystem --> WorkflowMetadata : creates
+    ScopedValueSystem --> OperationContext : creates
+
+    VirtualThreadPool --> StructuredTaskExecutor : uses
+    PerCaseVirtualThreadPool --> VirtualThreadPool : extends
+    ModernYNetRunner --> PerCaseVirtualThreadPool : uses
+    ModernYNetRunner --> StructuredTaskExecutor : uses
+    ModernYNetRunner --> ScopedValueSystem : uses
+
+    VirtualThreadObservability --> VirtualThreadPool : enhances
+    VirtualThreadMetrics --> VirtualThreadPool : monitors
+
+    %% Inheritance
+    class StructuredTaskExecutor {
+        +forkWithScope(Runnable) CompletableFuture
+        +joinScope() void
+        +handleFailure(StructuredTaskScope.SubtaskFailureException) void
+    }
+
+    class ErrorHandlingPattern {
+        +executeWithRetry(String, Supplier, int) T
+        +handleTimeout(String, TimeoutException) void
+        +propagateError(Exception) void
+    }
+```
