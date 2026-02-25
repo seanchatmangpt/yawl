@@ -200,9 +200,13 @@ ELAPSED_MS=$((END_MS - START_MS))
 ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 # Parse results from Maven log
-TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null || echo 0)
-TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null || echo 0)
-MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l)
+# grep -c exits 1 on no matches (still outputs "0") so "|| echo 0" doubles the output
+# into "0\n0" which printf %d rejects.  Use "|| true" instead to suppress the error.
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null || true)
+TEST_COUNT="${TEST_COUNT:-0}"
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null || true)
+TEST_FAILED="${TEST_FAILED:-0}"
+MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l | tr -d '[:space:]')
 
 # Enhanced status with metrics
 echo ""
