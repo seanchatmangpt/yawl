@@ -375,7 +375,9 @@
                         <testExclude>**/engine/YCaseNbrStoreTest.java</testExclude>
                         <testExclude>**/engine/YNetDataTest.java</testExclude>
                         <testExclude>**/engine/YNetRunnerRepositoryTest.java</testExclude>
-                        <!-- WorkflowPattern/Soundness tests reference yawl-integration classes not on engine classpath -->
+                        <!-- WorkflowPattern* tests and YNetRunnerSoundnessTest reference yawl-integration
+                             classes (WorkflowPattern, PatternCategory, YAWLServiceInterfaceRegistry)
+                             not in engine compile scope; compiled/run in yawl-integration module -->
                         <testExclude>**/engine/YNetRunnerSoundnessTest.java</testExclude>
                         <testExclude>**/engine/patterns/WorkflowPatternPerformanceTest.java</testExclude>
                         <testExclude>**/engine/patterns/WorkflowPatternSoundnessTest.java</testExclude>
@@ -383,6 +385,7 @@
                         <testExclude>**/engine/patterns/WorkflowPatternEdgeCasesTest.java</testExclude>
                         <testExclude>**/engine/patterns/WorkflowPatternErrorHandlingTest.java</testExclude>
                         <testExclude>**/engine/patterns/WorkflowPatternIntegrationTest.java</testExclude>
+                        <!-- YWorkItemSoundnessTest references API methods not present on WorkItemRecord -->
                         <testExclude>**/engine/YWorkItemSoundnessTest.java</testExclude>
                         <!-- Uses old com.hp.hpl.jena API (Jena 2.x) not on classpath -->
                         <testExclude>**/observatory/rdf/FactsToRDFConverterTest.java</testExclude>
@@ -433,6 +436,16 @@
                                 <exclude>**/*.properties</exclude>
                                 <!-- ggen BuildPhaseTest has type errors (int vs long comparisons) - needs fix -->
                                 <exclude>org/yawlfoundation/yawl/engine/ggen/BuildPhaseTest.java</exclude>
+                                <!-- WorkflowPattern* tests reference yawl-integration classes not in engine scope -->
+                                <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternEdgeCasesTest.java</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternErrorHandlingTest.java</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternIntegrationTest.java</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternPerformanceTest.java</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternSoundnessTest.java</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternTestSuite.java</exclude>
+                                <exclude>org/yawlfoundation/yawl/engine/YNetRunnerSoundnessTest.java</exclude>
+                                <!-- YWorkItemSoundnessTest references API methods not on WorkItemRecord -->
+                                <exclude>org/yawlfoundation/yawl/engine/YWorkItemSoundnessTest.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>

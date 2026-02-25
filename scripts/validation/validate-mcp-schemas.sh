@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # MCP Schema Validation Script
 # Validates all MCP protocol schemas and messages
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"

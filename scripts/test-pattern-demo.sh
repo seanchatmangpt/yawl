@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Test script for Pattern Demo Runner
 # Tests various configurations to ensure the script works correctly

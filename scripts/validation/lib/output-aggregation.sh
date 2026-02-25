@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==========================================================================
 # output-aggregation.sh - JSON/JUnit output aggregation for validation scripts
 #
@@ -22,7 +22,7 @@
 #   AGG_OUTPUT_DIR          - Directory for output files (default: docs/validation)
 #   AGG_PARALLEL_RESULTS    - Directory for intermediate results (default: /tmp/yawl-validation-$$)
 # ==========================================================================
-set -uo pipefail
+set -euo pipefail
 
 # Colors
 readonly _AGG_RED='\033[0;31m'

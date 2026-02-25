@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YAWL Pattern Demo Runner
 #
@@ -13,7 +13,7 @@
 #   ./run-vdaalst-demo.sh --help             # Show help
 #
 
-set -e
+set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

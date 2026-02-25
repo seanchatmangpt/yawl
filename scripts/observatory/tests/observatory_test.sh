@@ -13,7 +13,7 @@
 #   - grep patterns work portably
 # ==========================================================================
 
-set -uo pipefail
+set -euo pipefail
 # Note: We intentionally do NOT use 'set -e' here because we want to
 # continue running tests even when individual tests fail
 

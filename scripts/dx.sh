@@ -75,8 +75,8 @@ fi
 ALL_MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
     yawl-stateless yawl-resourcing yawl-scheduling
-    yawl-security yawl-integration yawl-monitoring yawl-webapps
-    yawl-control-panel
+    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-webapps
+    yawl-control-panel yawl-mcp-a2a-app
 )
 
 detect_changed_modules() {
@@ -182,7 +182,7 @@ if [[ "$SCOPE" == "explicit" ]]; then
 fi
 
 # Use Python for cross-platform millisecond precision
-START_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+START_MS=$(date +%s%3N)
 
 # Pretty header
 echo ""
@@ -193,20 +193,20 @@ printf "${C_CYAN}dx${C_RESET}: scope=%s | phase=%s | fail-strategy=%s\n" \
 set +e
 $MVN_CMD "${GOALS[@]}" "${MVN_ARGS[@]}" 2>&1 | tee /tmp/dx-build-log.txt
 EXIT_CODE=$?
-set -e
+set -euo pipefail
 
-END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+END_MS=$(date +%s%3N)
 ELAPSED_MS=$((END_MS - START_MS))
-ELAPSED_S=$(python3 -c "print(f\"{${ELAPSED_MS}/1000:.1f}\")")
+ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 # Parse results from Maven log
-# Note: grep -c exits 1 on 0 matches (outputs "0"), so || echo 0 would produce "0\n0".
-# Use ; true to suppress exit code, then default with ${VAR:-0} for missing file case.
-TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null; true)
-TEST_COUNT="${TEST_COUNT:-0}"
-TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null; true)
-TEST_FAILED="${TEST_FAILED:-0}"
-MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l)
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || true
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || true
+if [[ "$SCOPE" == "all" ]]; then
+    MODULES_COUNT=${#ALL_MODULES[@]}
+else
+    MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l | tr -d ' ')
+fi
 
 # Enhanced status with metrics
 echo ""

@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test JAX-RS compilation and structure
 # This script verifies that JAX-RS dependencies and code are correctly set up
 
-set -e
+set -euo pipefail
 
 echo "=== YAWL JAX-RS Setup Verification ==="
 echo

@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.elements;
 
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
@@ -34,6 +35,8 @@ import org.yawlfoundation.yawl.util.YVerificationHandler;
  */
 public class YCondition extends YExternalNetElement implements YConditionInterface {
 
+    /** Prevents virtual-thread pinning during Hibernate JDBC calls in removeAll(). */
+    private final ReentrantLock _bagLock = new ReentrantLock();
 
     protected YIdentifierBag _bag;
     private boolean _isImplicit;
@@ -119,8 +122,13 @@ public class YCondition extends YExternalNetElement implements YConditionInterfa
     }
 
     @Override
-    public synchronized void removeAll(YPersistenceManager pmgr) throws YPersistenceException {
-        _bag.removeAll(pmgr);
+    public void removeAll(YPersistenceManager pmgr) throws YPersistenceException {
+        _bagLock.lock();
+        try {
+            _bag.removeAll(pmgr);
+        } finally {
+            _bagLock.unlock();
+        }
     }
 
     @Override

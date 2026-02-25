@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==========================================================================
 # gc-benchmark.sh - Compare GC performance between G1GC and ZGC
 #

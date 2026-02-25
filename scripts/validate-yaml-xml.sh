@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Validate YAML-generated XML against YAWL schema
 
-set -e
+set -euo pipefail
 
 # Configuration
 SCHEMA="/Users/sac/cre/vendors/yawl/schema/YAWL_Schema4.0.xsd"

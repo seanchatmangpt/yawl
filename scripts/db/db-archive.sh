@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YAWL Data Archiving Script
 # Version: 1.0.0
@@ -76,7 +76,7 @@ execute_sql() {
 # Calculate cutoff epoch (milliseconds)
 calculate_cutoff() {
     local days=$1
-    python3 -c "import time; print(int((time.time() - ${days} * 86400) * 1000))"
+    echo $(( $(date +%s%3N) - days * 86400000 ))
 }
 
 # Archive table data

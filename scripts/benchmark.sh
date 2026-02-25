@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # YAWL Performance Benchmark Runner Script
 # Usage: ./scripts/benchmark.sh [options] [benchmark-class]
 
-set -e
+set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

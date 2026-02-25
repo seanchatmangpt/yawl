@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Deploy SPIRE Agent for YAWL Workload Identity
 #
 # This script installs and configures SPIRE Agent to provide SPIFFE

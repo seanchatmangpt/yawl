@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ###############################################################################
 # YAWL GCP Marketplace Readiness Verification Script
@@ -7,7 +7,7 @@
 # Run: bash scripts/verify-marketplace-readiness.sh
 ###############################################################################
 
-set -e
+set -euo pipefail
 
 BOLD='\033[1m'
 GREEN='\033[0;32m'

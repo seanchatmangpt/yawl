@@ -95,9 +95,16 @@ public final class YAtomicTask extends YTask {
      * @throws YPersistenceException if there's a problem persisting the change.
      */
     @Override
-    public synchronized void cancel(YPersistenceManager pmgr) throws YPersistenceException {
-        cancelBusyWorkItem(pmgr);
-        super.cancel(pmgr);
+    public void cancel(YPersistenceManager pmgr) throws YPersistenceException {
+        // Use _taskStateLock (from YTask) — reentrant, so super.cancel() re-acquires safely.
+        // Avoids virtual-thread pinning that synchronized causes during Hibernate JDBC calls.
+        _taskStateLock.lock();
+        try {
+            cancelBusyWorkItem(pmgr);
+            super.cancel(pmgr);
+        } finally {
+            _taskStateLock.unlock();
+        }
     }
 
 
@@ -108,14 +115,19 @@ public final class YAtomicTask extends YTask {
      * @param caseID the case identifier of this atomic task.
      * @throws YPersistenceException if there's a problem persisting the change.
      */
-    public synchronized void cancel(YPersistenceManager pmgr, YIdentifier caseID)
+    public void cancel(YPersistenceManager pmgr, YIdentifier caseID)
             throws YPersistenceException {
-        if (! cancelBusyWorkItem(pmgr)) {
-            String workItemID = caseID.get_idString() + ":" + getID();
-            YWorkItem workItem = getWorkItemRepository().get(workItemID);
-            if (null != workItem) cancelWorkItem(pmgr, workItem) ;
+        _taskStateLock.lock();
+        try {
+            if (! cancelBusyWorkItem(pmgr)) {
+                String workItemID = caseID.get_idString() + ":" + getID();
+                YWorkItem workItem = getWorkItemRepository().get(workItemID);
+                if (null != workItem) cancelWorkItem(pmgr, workItem);
+            }
+            super.cancel(pmgr);
+        } finally {
+            _taskStateLock.unlock();
         }
-        super.cancel(pmgr);
     }
 
 

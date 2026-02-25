@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # test-a2a-workflow.sh — A2A E2E Workflow Test
 #

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # test-auth.sh — A2A Authentication Provider Comprehensive Test Suite
 #

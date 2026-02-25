@@ -117,8 +117,11 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
     public static final int _OR = 103;
     public static final int _XOR = 126;
 
-    //virtual thread safety lock (prevents pinning)
-    private final ReentrantLock _taskStateLock = new ReentrantLock();
+    /** Virtual-thread safety lock (prevents carrier-thread pinning).
+     *  Protected so that subclasses (YAtomicTask, YCompositeTask) can use the
+     *  same reentrant lock for their cancel/start overrides without mixing
+     *  synchronized monitors and ReentrantLock. */
+    protected final ReentrantLock _taskStateLock = new ReentrantLock();
 
     //internal state nodes
     protected YIdentifier _i;

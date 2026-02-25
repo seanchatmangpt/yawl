@@ -345,7 +345,7 @@ class TestYVariable {
         @DisplayName("SetLogPredicate should store correctly")
         void setLogPredicateStoresCorrectly() {
             YVariable var = new YVariable(gateway);
-            YLogPredicate predicate = new YLogPredicate("test");
+            YLogPredicate predicate = new YLogPredicate();
             var.setLogPredicate(predicate);
             assertEquals(predicate, var.getLogPredicate());
         }

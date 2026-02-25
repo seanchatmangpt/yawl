@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # Run ZAI + MCP + A2A integration tests (Docker/devcontainer-first)
 # =============================================================================
@@ -10,7 +10,7 @@
 # Run inside: docker compose run --rm yawl-dev bash scripts/run-zai-mcp-a2a.sh
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

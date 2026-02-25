@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 #
 # Module Sync Validation Script
 # Verifies that declared modules match actual directories in Maven project

@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -69,9 +70,11 @@ public class InterfaceXDeadLetterQueue {
     // Cleanup scheduler
     private final ScheduledExecutorService cleanupScheduler;
 
-    // Singleton instance
+    // Singleton instance — ReentrantLock instead of synchronized(Object) so that
+    // shutdownInstance() → close() → awaitTermination() (blocking I/O) does not
+    // pin the virtual-thread carrier.
     private static volatile InterfaceXDeadLetterQueue instance;
-    private static final Object INSTANCE_LOCK = new Object();
+    private static final ReentrantLock INSTANCE_LOCK = new ReentrantLock();
 
     // Callback for dead letter notifications
     private volatile Consumer<InterfaceXDeadLetterEntry> deadLetterCallback;
@@ -123,10 +126,13 @@ public class InterfaceXDeadLetterQueue {
      */
     public static InterfaceXDeadLetterQueue getInstance() {
         if (instance == null) {
-            synchronized (INSTANCE_LOCK) {
+            INSTANCE_LOCK.lock();
+            try {
                 if (instance == null) {
                     instance = new InterfaceXDeadLetterQueue(DEFAULT_TTL_HOURS);
                 }
+            } finally {
+                INSTANCE_LOCK.unlock();
             }
         }
         return instance;
@@ -134,14 +140,19 @@ public class InterfaceXDeadLetterQueue {
 
     /**
      * Shuts down the singleton instance, releasing resources.
+     * Uses ReentrantLock: close() calls awaitTermination() (blocking I/O) which
+     * would pin the virtual-thread carrier if held under synchronized.
      */
     public static void shutdownInstance() {
-        synchronized (INSTANCE_LOCK) {
+        INSTANCE_LOCK.lock();
+        try {
             if (instance != null) {
                 instance.clear();
                 instance.close();
                 instance = null;
             }
+        } finally {
+            INSTANCE_LOCK.unlock();
         }
     }
 

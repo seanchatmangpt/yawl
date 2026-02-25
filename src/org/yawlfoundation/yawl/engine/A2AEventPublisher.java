@@ -34,9 +34,10 @@ public class A2AEventPublisher {
     }
 
     /**
-     * Enable or disable A2A event publishing
+     * Enable or disable A2A event publishing.
+     * Plain write to volatile field — no lock needed; visibility guaranteed by volatile.
      */
-    public synchronized void setEnabled(boolean enabled) {
+    public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         _logger.info("A2A event publishing {}", enabled ? "enabled" : "disabled");
     }

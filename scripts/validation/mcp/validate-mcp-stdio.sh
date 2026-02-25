@@ -533,11 +533,7 @@ test_utf8_encoding() {
 
     # Test 1: Chinese characters
     local chinese_msg
-    chinese_msg=$(python3 -c '
-import json
-msg = {"jsonrpc": "2.0", "id": 601, "method": "test/utf8", "params": {"text": "中文测试"}}
-print(json.dumps(msg, ensure_ascii=False))
-')
+    chinese_msg='{"jsonrpc":"2.0","id":601,"method":"test/utf8","params":{"text":"中文测试"}}'
     if mcp_stdio_validate_utf8 "$chinese_msg"; then
         log_test_pass "UTF-8 validation: Chinese"
         ((utf8_tests_passed++)) || true
@@ -547,11 +543,7 @@ print(json.dumps(msg, ensure_ascii=False))
 
     # Test 2: Emoji
     local emoji_msg
-    emoji_msg=$(python3 -c '
-import json
-msg = {"jsonrpc": "2.0", "id": 602, "method": "test/utf8", "params": {"text": "😀 👍 🎉"}}
-print(json.dumps(msg, ensure_ascii=False))
-')
+    emoji_msg='{"jsonrpc":"2.0","id":602,"method":"test/utf8","params":{"text":"😀 👍 🎉"}}'
     if mcp_stdio_validate_utf8 "$emoji_msg"; then
         log_test_pass "UTF-8 validation: Emoji"
         ((utf8_tests_passed++)) || true
@@ -561,11 +553,7 @@ print(json.dumps(msg, ensure_ascii=False))
 
     # Test 3: Accented characters
     local accent_msg
-    accent_msg=$(python3 -c '
-import json
-msg = {"jsonrpc": "2.0", "id": 603, "method": "test/utf8", "params": {"text": "café résumé naïve"}}
-print(json.dumps(msg, ensure_ascii=False))
-')
+    accent_msg='{"jsonrpc":"2.0","id":603,"method":"test/utf8","params":{"text":"café résumé naïve"}}'
     if mcp_stdio_validate_utf8 "$accent_msg"; then
         log_test_pass "UTF-8 validation: Accents"
         ((utf8_tests_passed++)) || true
@@ -609,7 +597,7 @@ test_binary_messages() {
     fi
 
     # Validate it's valid JSON
-    if echo "$binary_message" | python3 -c "import json,sys; json.loads(sys.stdin.read())" 2>/dev/null; then
+    if echo "$binary_message" | jq . >/dev/null 2>&1; then
         log_test_pass "Binary message is valid JSON"
     else
         log_test_fail "Binary message is not valid JSON"

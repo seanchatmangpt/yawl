@@ -29,9 +29,11 @@ public class A2ALifecycleIntegration {
     private final A2AEventPublisher _eventPublisher;
     private final A2ACaseMonitor _caseMonitor;
 
-    // Integration state
+    // Integration state — both volatile: plain writes are immediately visible to
+    // all threads without pinning virtual threads (no synchronized needed for
+    // these lifecycle flags that are read on every workflow event).
     private volatile boolean integrationEnabled = false;
-    private boolean monitoringEnabled = false;
+    private volatile boolean monitoringEnabled = false;
 
     public A2ALifecycleIntegration(Object engine) {
         if (engine == null) {
@@ -43,9 +45,11 @@ public class A2ALifecycleIntegration {
     }
 
     /**
-     * Enable A2A lifecycle integration
+     * Enable A2A lifecycle integration.
+     * Volatile writes to both flags are immediately visible; no synchronized needed
+     * for this lifecycle setter — avoids virtual-thread pinning on the config path.
      */
-    public synchronized void enableIntegration(boolean enableMonitoring) {
+    public void enableIntegration(boolean enableMonitoring) {
         this.integrationEnabled = true;
         this.monitoringEnabled = enableMonitoring;
 
@@ -59,9 +63,10 @@ public class A2ALifecycleIntegration {
     }
 
     /**
-     * Disable A2A lifecycle integration
+     * Disable A2A lifecycle integration.
+     * Plain volatile write — no synchronized needed on this lifecycle path.
      */
-    public synchronized void disableIntegration() {
+    public void disableIntegration() {
         this.integrationEnabled = false;
 
         if (_caseMonitor != null) {

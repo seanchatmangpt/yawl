@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YAWL MCP-A2A Performance Benchmark Runner
 # 
@@ -15,7 +15,7 @@
 #   --junit      Run JUnit performance tests only
 #   --report     Generate HTML report after benchmarks
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"

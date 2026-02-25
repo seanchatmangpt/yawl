@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # YAWL v5.2 REST API Smoke Test Script
@@ -12,7 +12,7 @@
 # Default: http://localhost:8080/yawl/api
 #
 
-set -e
+set -euo pipefail
 
 # Configuration
 BASE_URL="${1:--engine-url}"

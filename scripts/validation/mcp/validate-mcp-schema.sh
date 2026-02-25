@@ -175,11 +175,11 @@ validate_schema_syntax() {
         check-jsonschema|ajv)
             if $VALIDATOR --help &>/dev/null; then
                 # Schema is valid JSON if we can read it
-                python3 -c "import json; json.load(open('$schema_file'))" 2>/dev/null || return 1
+                jq . "$schema_file" >/dev/null 2>&1 || return 1
             fi
             ;;
         python)
-            python3 -c "import json; json.load(open('$schema_file'))" 2>/dev/null || return 1
+            jq . "$schema_file" >/dev/null 2>&1 || return 1
             ;;
     esac
 
