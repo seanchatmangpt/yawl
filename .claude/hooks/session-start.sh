@@ -78,6 +78,49 @@ if [ -n "${https_proxy:-}" ] || [ -n "${HTTPS_PROXY:-}" ]; then
     export MAVEN_PROXY_ENABLED=true
     export MAVEN_PROXY_PORT=3128
 
+    # Sweep any Maven .lastUpdated poison markers left by prior session.
+    # These appear when a JAR download was truncated mid-stream (the egress
+    # gateway has a per-CONNECT-tunnel data cap of ~1.6 MB). Re-download via
+    # curl which opens a fresh connection per file and reliably gets large JARs.
+    M2_CACHE="${HOME}/.m2/repository"
+    MAVEN_CENTRAL="https://repo.maven.apache.org/maven2"
+    UPSTREAM_PROXY="${https_proxy:-${HTTPS_PROXY:-}}"
+    SWEPT=0
+    FAILED=0
+    if [ -n "${UPSTREAM_PROXY}" ] && [ -d "${M2_CACHE}" ]; then
+        while IFS= read -r -d '' marker; do
+            jarfile="${marker%.lastUpdated}"
+            relpath="${jarfile#${M2_CACHE}/}"
+            # Skip internal YAWL artifacts — built from source, not on Central
+            if echo "${relpath}" | grep -q "yawlfoundation"; then
+                rm -f "${marker}"
+                continue
+            fi
+            jar_url="${MAVEN_CENTRAL}/${relpath}"
+            sha_url="${jar_url%.jar}.jar.sha1"
+            sha_file="${jarfile%.jar}.jar.sha1"
+            if curl --silent --show-error --proxy "${UPSTREAM_PROXY}" \
+                    --retry 3 --retry-delay 2 \
+                    -o "${jarfile}" "${jar_url}" 2>/dev/null; then
+                curl --silent --proxy "${UPSTREAM_PROXY}" -o "${sha_file}" "${sha_url}" 2>/dev/null
+                remote_sha=$(cat "${sha_file}" 2>/dev/null | tr -d '[:space:]' | head -c 40)
+                local_sha=$(sha1sum "${jarfile}" 2>/dev/null | cut -d' ' -f1)
+                if [ "${remote_sha}" = "${local_sha}" ] && [ -n "${local_sha}" ]; then
+                    rm -f "${marker}"
+                    SWEPT=$((SWEPT + 1))
+                else
+                    rm -f "${jarfile}"
+                    FAILED=$((FAILED + 1))
+                fi
+            else
+                FAILED=$((FAILED + 1))
+            fi
+        done < <(find "${M2_CACHE}" -name "*.jar.lastUpdated" -print0 2>/dev/null)
+        if [ "${SWEPT}" -gt 0 ] || [ "${FAILED}" -gt 0 ]; then
+            echo "   🔄 Maven cache repair: ${SWEPT} JARs recovered, ${FAILED} failed"
+        fi
+    fi
+
     # Configure apt to use the upstream proxy for package downloads
     if [ -n "${http_proxy:-}" ]; then
         mkdir -p /etc/apt/apt.conf.d
@@ -208,6 +251,13 @@ export MAVEN_OPTS="${MAVEN_OPTS} -Dspring.datasource.password="
 # Set Hibernate dialect for H2
 export MAVEN_OPTS="${MAVEN_OPTS} -Dhibernate.dialect=org.hibernate.dialect.H2Dialect"
 
+# Disable Maven's HTTP connection pool so each artifact download gets a fresh
+# CONNECT tunnel through the egress proxy. Without this, Maven reuses tunnels
+# across downloads; the egress gateway drops connections after ~1.6 MB of data
+# through a single tunnel, causing "Premature end of Content-Length" errors for
+# large JARs (bouncycastle 8.4 MB, byte-buddy 9 MB, etc.).
+export MAVEN_OPTS="${MAVEN_OPTS} -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=5"
+
 echo "✅ H2 database configured (in-memory, ephemeral)"
 
 # Export environment variables for runtime detection and correct Java toolchain.
@@ -221,8 +271,10 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   # the hook exports it inside its own subprocess.
   echo "export JAVA_HOME=${TEMURIN_25_HOME}" >> "$CLAUDE_ENV_FILE"
   echo "export PATH=${TEMURIN_25_HOME}/bin:\$PATH" >> "$CLAUDE_ENV_FILE"
-  # H2 database properties for Hibernate during tests
-  echo "export MAVEN_OPTS=\"-Dspring.datasource.url=jdbc:h2:mem:yawl;DB_CLOSE_DELAY=-1 -Dspring.datasource.username=sa -Dspring.datasource.password= -Dhibernate.dialect=org.hibernate.dialect.H2Dialect\"" >> "$CLAUDE_ENV_FILE"
+  # H2 database properties + egress-proxy connection pool disable.
+  # The egress gateway drops CONNECT tunnels after ~1.6 MB; disabling Maven's
+  # connection pool ensures each artifact download gets a fresh tunnel.
+  echo "export MAVEN_OPTS=\"-Dspring.datasource.url=jdbc:h2:mem:yawl;DB_CLOSE_DELAY=-1 -Dspring.datasource.username=sa -Dspring.datasource.password= -Dhibernate.dialect=org.hibernate.dialect.H2Dialect -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=5\"" >> "$CLAUDE_ENV_FILE"
 fi
 
 # ============================================================================
