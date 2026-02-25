@@ -1,6 +1,6 @@
-# Architecture Comparison: Java 11 vs Java 21 + Spring Boot
+# Architecture Comparison: Java 11 (v5.2) vs Java 25 (v6.0.0) + Spring Boot
 
-**YAWL Version:** 5.2 → 5.3
+**YAWL Version:** 5.2 → 6.0.0
 **Date:** 2026-02-15
 
 ---
@@ -56,7 +56,7 @@ Deployment Characteristics:
 
 ---
 
-## Target Architecture (YAWL 5.3 - Java 21 + Spring Boot)
+## Target Architecture (YAWL 6.0.0 - Java 25 + Spring Boot)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -154,7 +154,7 @@ Example:
   // Must tune pool size for workload
 ```
 
-### Target: Virtual Threads (Java 21)
+### Target: Virtual Threads (Java 25)
 
 ```
 ┌─────────────────────────────────────────────────────────┐

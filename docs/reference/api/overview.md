@@ -1,6 +1,6 @@
 # YAWL Engine API Documentation
 
-**Version:** 5.2.0
+**Version:** 6.0.0
 **Base URL:** `http://localhost:8080/yawl`
 
 ## Overview

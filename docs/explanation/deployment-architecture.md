@@ -1,7 +1,7 @@
 # YAWL Multi-Cloud Architecture
 
-**Version:** 5.2
-**Last Updated:** 2026-02-14
+**Version:** 6.0.0
+**Last Updated:** 2026-02-25
 
 ---
 
@@ -127,11 +127,11 @@ CMD ["/opt/tomcat/bin/catalina.sh", "run"]
 
 | Cloud | Registry | Image Path |
 |-------|----------|------------|
-| AWS | ECR | `123456789012.dkr.ecr.us-east-1.amazonaws.com/yawl/engine:5.2` |
-| Azure | ACR | `yawlmcr.azurecr.io/yawl/engine:5.2` |
-| GCP | Artifact Registry | `us-docker.pkg.dev/yawl-project/yawl/engine:5.2` |
-| Oracle | OCIR | `iad.ocir.io/tenant/yawl/engine:5.2` |
-| IBM | ICR | `icr.io/yawl/engine:5.2` |
+| AWS | ECR | `123456789012.dkr.ecr.us-east-1.amazonaws.com/yawl/engine:6.0.0` |
+| Azure | ACR | `yawlmcr.azurecr.io/yawl/engine:6.0.0` |
+| GCP | Artifact Registry | `us-docker.pkg.dev/yawl-project/yawl/engine:6.0.0` |
+| Oracle | OCIR | `iad.ocir.io/tenant/yawl/engine:6.0.0` |
+| IBM | ICR | `icr.io/yawl/engine:6.0.0` |
 
 ### 3.3 Container Resource Requirements
 
@@ -292,7 +292,7 @@ spec:
   - route:
     - destination:
         host: yawl-engine
-        subset: v5-2
+        subset: v6-0-0
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
@@ -301,9 +301,9 @@ metadata:
 spec:
   host: yawl-engine
   subsets:
-  - name: v5-2
+  - name: v6-0-0
     labels:
-      version: v5.2.0
+      version: v6.0.0
 ```
 
 ---
