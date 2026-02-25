@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 #
 # Output functions for validation scripts
 # Contains reusable JSON and JUnit output functions

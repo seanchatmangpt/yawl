@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify REST API Configuration
 # Tests that all necessary files and configurations are in place
 #
 
-set -e
+set -euo pipefail
 
 YAWL_HOME="/home/user/yawl"
 PASS=0

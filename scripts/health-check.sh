@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ################################################################################
 # YAWL v5.2 Health Check Script
@@ -8,7 +8,7 @@
 # Exit Codes: 0 = all checks passed, 1 = warnings, 2 = critical failure
 ################################################################################
 
-set -uo pipefail
+set -euo pipefail
 
 # Configuration
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

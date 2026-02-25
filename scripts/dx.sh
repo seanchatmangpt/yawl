@@ -182,7 +182,7 @@ if [[ "$SCOPE" == "explicit" ]]; then
 fi
 
 # Use Python for cross-platform millisecond precision
-START_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+START_MS=$(date +%s%3N)
 
 # Pretty header
 echo ""
@@ -193,11 +193,11 @@ printf "${C_CYAN}dx${C_RESET}: scope=%s | phase=%s | fail-strategy=%s\n" \
 set +e
 $MVN_CMD "${GOALS[@]}" "${MVN_ARGS[@]}" 2>&1 | tee /tmp/dx-build-log.txt
 EXIT_CODE=$?
-set -e
+set -euo pipefail
 
-END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+END_MS=$(date +%s%3N)
 ELAPSED_MS=$((END_MS - START_MS))
-ELAPSED_S=$(python3 -c "print(f\"{${ELAPSED_MS}/1000:.1f}\")")
+ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 # Parse results from Maven log
 # NOTE: grep -c exits 1 when 0 matches (still outputs "0"), so || must be outside

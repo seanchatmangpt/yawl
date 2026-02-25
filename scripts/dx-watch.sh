@@ -81,7 +81,7 @@ BUILD_LOCK="/tmp/dx-watch.lock"
 
 # Debounced build function
 run_build() {
-    local current_time=$(python3 -c "import time; print(int(time.time() * 1000))")
+    local current_time=$(date +%s%3N)
     local time_since_last=$(( (current_time - LAST_BUILD_TIME) / 1000 ))
 
     # Skip if build happened too recently
@@ -104,7 +104,7 @@ run_build() {
         bash scripts/dx.sh
     fi
 
-    LAST_BUILD_TIME=$(python3 -c "import time; print(int(time.time() * 1000))")
+    LAST_BUILD_TIME=$(date +%s%3N)
     rm -f "$BUILD_LOCK"
 }
 

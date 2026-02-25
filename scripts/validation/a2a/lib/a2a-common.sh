@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # a2a-common.sh — A2A Common Functions Library
 #

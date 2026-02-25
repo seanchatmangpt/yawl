@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Register YAWL Workloads with SPIRE Server
 #
 # This script creates SPIRE registration entries for all YAWL components,

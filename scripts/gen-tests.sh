@@ -97,53 +97,10 @@ fi
 
 # ── Extract public methods ────────────────────────────────────────────────
 # Uses Python for robust AST-like parsing
-# Falls back to grep-based extraction if Python unavailable
 extract_methods() {
     local file="$1"
 
-    # Try Python first (more robust)
-    if command -v python3 >/dev/null 2>&1; then
-        python3 - "$file" <<'PYTHON'
-import re
-import sys
-
-methods = []
-try:
-    filepath = sys.argv[1]
-    with open(filepath, 'r') as f:
-        content = f.read()
-
-    # Remove comments and javadoc
-    content = re.sub(r'/\*\*.*?\*/', '', content, flags=re.DOTALL)
-    content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
-
-    # Find public methods: public [modifiers] return-type name(params)
-    # Matches: public, public static, public abstract, etc.
-    pattern = r'public\s+(?:static\s+)?(?:abstract\s+)?(?:synchronized\s+)?([a-zA-Z_][a-zA-Z0-9_<>?\[\],\s]*?)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)'
-
-    for match in re.finditer(pattern, content):
-        return_type = match.group(1).strip()
-        method_name = match.group(2)
-        params = match.group(3).strip()
-
-        # Skip private/protected (shouldn't happen with public pattern, but safe)
-        if 'private' in return_type or 'protected' in return_type:
-            continue
-
-        methods.append(f"{return_type} {method_name}|{params}")
-
-    # Remove duplicates and print
-    for method in sorted(set(methods)):
-        print(method)
-
-except Exception as e:
-    print(f"Error parsing {filepath}: {e}", file=sys.stderr)
-    sys.exit(1)
-PYTHON
-        return
-    fi
-
-    # Fallback: grep-based extraction
+    # grep-based public method extraction
     grep -E "^\s*public\s+.*\(" "$file" | \
         grep -v "^\s*//" | \
         sed 's/^[[:space:]]*//' | \

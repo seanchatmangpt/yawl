@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # Order Fulfillment Permutation Suite - Challenge autonomous agents
 # =============================================================================
@@ -20,7 +20,7 @@
 #   PERMUTATION_CONFIG=my-permutations.json ./scripts/run-orderfulfillment-permutations.sh
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

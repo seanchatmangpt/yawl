@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test YAWL MCP Server HTTP Endpoints
 #
@@ -9,7 +9,7 @@
 #
 # Requirements: curl, jq (for JSON formatting)
 
-set -e
+set -euo pipefail
 
 # Configuration
 MCP_SERVER_URL="${1:-http://localhost:3000}"

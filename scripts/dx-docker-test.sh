@@ -127,7 +127,7 @@ echo "Image: ${IMAGE_NAME}"
 echo "Module: ${MODULE:-all}"
 echo ""
 
-START_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+START_MS=$(date +%s%3N)
 
 # Build the Maven command
 MVN_CMD="mvn -P agent-dx test -q"
@@ -147,11 +147,11 @@ docker run --rm \
     -c "$MVN_CMD" 2>&1
 
 EXIT_CODE=$?
-set -e
+set -euo pipefail
 
-END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+END_MS=$(date +%s%3N)
 ELAPSED_MS=$((END_MS - START_MS))
-ELAPSED_S=$(python3 -c "print(f'{${ELAPSED_MS}/1000:.1f}')")
+ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 # ── Summary ───────────────────────────────────────────────────────────────
 echo ""

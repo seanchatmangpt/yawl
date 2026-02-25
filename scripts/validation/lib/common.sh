@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Common utilities for validation scripts
 # Provides consistent logging, output formatting, and platform support

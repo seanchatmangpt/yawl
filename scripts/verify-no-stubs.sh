@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify No Stubs in MCP Implementation
 #
@@ -81,7 +81,7 @@ echo "Checking for empty method bodies..."
 
 set +e
 empty_returns=$(grep -r -n -B5 --include="*.java" "return null;" "$MCP_SRC" 2>/dev/null | grep -v "if\|else\|for\|while\|try\|catch" | head -20 || true)
-set -e
+set -euo pipefail
 
 if [ -n "$empty_returns" ]; then
     echo -e "${YELLOW}WARNING: Methods with 'return null;' (may be valid, review manually):${NC}"
@@ -95,7 +95,7 @@ echo "Checking for mock/stub keywords..."
 
 set +e
 mock_patterns=$(grep -r -n -i --include="*.java" -E "(mock|stub|fake|dummy)" "$MCP_SRC" 2>/dev/null | grep -v "// " | grep -v "/\*" | grep -v "test" | grep -v "Test" | head -20 || true)
-set -e
+set -euo pipefail
 
 if [ -n "$mock_patterns" ]; then
     echo -e "${RED}FOUND: mock/stub/fake keywords (outside test context):${NC}"

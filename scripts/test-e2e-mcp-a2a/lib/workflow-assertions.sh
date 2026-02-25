@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # workflow-assertions.sh — Workflow Test Assertion Functions
 #

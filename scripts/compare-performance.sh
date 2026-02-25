@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Performance Comparison Script
 # Compares performance metrics across different YAWL versions/ configurations
 #
 
-set -e
+set -euo pipefail
 
 # Source common utilities
 source "$(dirname "$0")/validation/lib/common.sh"
@@ -91,7 +91,7 @@ if [[ ! -f "$COMPARE_SCRIPT" ]]; then
 
     # Create minimal comparison script
     cat > "$COMPARE_SCRIPT" << 'EOF'
-#!/bin/bash
+#!/usr/bin/env bash
 # Minimal performance comparison wrapper
 echo "Performance Comparison Results:"
 echo "================================"
