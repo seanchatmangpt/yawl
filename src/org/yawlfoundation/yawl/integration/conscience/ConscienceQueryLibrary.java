@@ -53,16 +53,18 @@ public final class ConscienceQueryLibrary {
     /**
      * CONSTRUCT query: explain routing decisions by agent.
      *
-     * <p>Usage: {@code String.format(EXPLAIN_ROUTING, "agent-1")}</p>
+     * <p>Usage: {@code String.format(EXPLAIN_ROUTING, "agent-1", "2024-02-23T14:32:15Z")}</p>
      *
-     * <p>Returns all decision triples where {@code dec:agentId} matches the given value.
+     * <p>Returns all decision triples where {@code dec:agentId} matches the given value
+     * and {@code dec:timestamp} is at or after the specified lower bound.
      * Useful for auditing agent behavior and decision rationales.</p>
      */
     public static final String EXPLAIN_ROUTING = """
         PREFIX dec: <http://yawlfoundation.org/yawl/conscience#>
         CONSTRUCT { ?d ?p ?o }
-        WHERE { ?d a dec:AgentDecision ; dec:agentId ?aid ; ?p ?o .
-                FILTER(?aid = "%s") }
+        WHERE { ?d a dec:AgentDecision ; dec:agentId ?aid ; dec:timestamp ?ts ; ?p ?o .
+                FILTER(?aid = "%s")
+                FILTER(?ts >= "%s") }
         """;
 
     /**
@@ -91,8 +93,66 @@ public final class ConscienceQueryLibrary {
     public static final String ALL_RECENT_DECISIONS = """
         PREFIX dec: <http://yawlfoundation.org/yawl/conscience#>
         CONSTRUCT { ?d ?p ?o }
-        WHERE { ?d a dec:AgentDecision ; ?p ?o }
+        WHERE { ?d a dec:AgentDecision ; dec:timestamp ?timestamp ; ?p ?o }
         ORDER BY DESC(?timestamp)
         LIMIT %d
+        """;
+
+    /**
+     * SELECT query: decision frequency by agent.
+     *
+     * <p>Returns agent IDs with their decision counts, ordered by most active first.</p>
+     */
+    public static final String DECISION_FREQUENCY_BY_AGENT = """
+        PREFIX dec: <http://yawlfoundation.org/yawl/conscience#>
+        SELECT ?agentId (COUNT(?d) AS ?count)
+        WHERE { ?d a dec:AgentDecision ; dec:agentId ?agentId }
+        GROUP BY ?agentId
+        ORDER BY DESC(?count)
+        """;
+
+    /**
+     * SELECT query: confidence distribution across all decisions.
+     *
+     * <p>Returns decisions grouped into confidence buckets:
+     * low (0-0.25), medium-low (0.25-0.5), medium-high (0.5-0.75), high (0.75-1.0).</p>
+     */
+    public static final String CONFIDENCE_DISTRIBUTION = """
+        PREFIX dec: <http://yawlfoundation.org/yawl/conscience#>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        SELECT ?bucket (COUNT(?d) AS ?count)
+        WHERE {
+            ?d a dec:AgentDecision ; dec:confidence ?conf .
+            BIND(
+                IF(?conf < 0.25, "low",
+                IF(?conf < 0.5, "medium-low",
+                IF(?conf < 0.75, "medium-high", "high")))
+                AS ?bucket)
+        }
+        GROUP BY ?bucket
+        ORDER BY ?bucket
+        """;
+
+    /**
+     * SELECT query: decisions below a confidence threshold.
+     *
+     * <p>Usage: {@code String.format(LOW_CONFIDENCE_DECISIONS, 0.5)}</p>
+     *
+     * <p>Returns agent ID, task type, choice key, rationale, and confidence
+     * for all decisions below the specified threshold.</p>
+     */
+    public static final String LOW_CONFIDENCE_DECISIONS = """
+        PREFIX dec: <http://yawlfoundation.org/yawl/conscience#>
+        SELECT ?agentId ?taskType ?choiceKey ?rationale ?confidence
+        WHERE {
+            ?d a dec:AgentDecision ;
+               dec:agentId ?agentId ;
+               dec:taskType ?taskType ;
+               dec:choiceKey ?choiceKey ;
+               dec:rationale ?rationale ;
+               dec:confidence ?confidence .
+            FILTER(?confidence < %f)
+        }
+        ORDER BY ASC(?confidence)
         """;
 }

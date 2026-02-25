@@ -1,6 +1,6 @@
 # yawl-webapps
 
-**Artifact:** `org.yawlfoundation:yawl-webapps:6.0.0-Alpha` | `packaging: pom`
+**Artifact:** `org.yawlfoundation:yawl-webapps:6.0.0-Beta` | `packaging: pom`
 **Parent:** `yawl-parent`
 
 ## Purpose

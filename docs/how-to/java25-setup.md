@@ -178,4 +178,4 @@ DX_VERBOSE=1 bash scripts/dx.sh compile
 **Created**: 2026-02-20
 **Java Version**: 25.0.2
 **Maven Version**: 3.9.11
-**YAWL Version**: 6.0.0-Alpha
+**YAWL Version**: 6.0.0-Beta

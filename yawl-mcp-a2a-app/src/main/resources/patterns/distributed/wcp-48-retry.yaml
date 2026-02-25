@@ -47,7 +47,7 @@ tasks:
     join: xor
     timer:
       trigger: onEnabled
-      duration: PT${retryCount * 2}S
+      duration: PT10S
     description: "Exponential backoff wait"
 
   - id: Succeed

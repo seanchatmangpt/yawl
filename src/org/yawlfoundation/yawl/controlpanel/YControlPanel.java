@@ -136,7 +136,7 @@ public class YControlPanel {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        LOGGER.info("YAWL Control Panel v6.0.0-Alpha");
+        LOGGER.info("YAWL Control Panel v6.0.0-Beta");
         LOGGER.info("Parsing command line arguments...");
 
         String engineUrl = DEFAULT_ENGINE_URL;

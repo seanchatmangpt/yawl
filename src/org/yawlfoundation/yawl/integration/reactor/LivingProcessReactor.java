@@ -310,48 +310,135 @@ public final class LivingProcessReactor {
      * @return proposed mutation, or null if no suitable mutation found
      */
     private SpecMutation proposeMutation(Map<String, Double> metrics) {
-        // Simple proposal logic: if learning has failure patterns, propose reduction
-        // In a full implementation, this would query LearningCapture for patterns
-        // and synthesize mutations based on root causes
+        // Query LearningCapture for known failure patterns
+        List<LearningCapture.FailurePattern> failures =
+            learning.findMatchingFailurePatterns("performance");
 
-        // For now, return a generic bottleneck reduction mutation
-        return new SpecMutation(
-            "REDUCE_BOTTLENECK",
-            "bottleneck_phase",
-            "<mutation/>",
-            "Performance drift detected; propose parallelization of sequential tasks",
-            SpecMutation.RiskLevel.MEDIUM
-        );
+        if (!failures.isEmpty()) {
+            LearningCapture.FailurePattern topFailure = failures.get(0);
+            String targetElement = topFailure.affectedPhases().isEmpty()
+                ? "workflow"
+                : topFailure.affectedPhases().iterator().next();
+            String rationale = "Failure pattern '" + topFailure.name()
+                + "' detected " + topFailure.occurrenceCount() + " times";
+            if (!topFailure.resolution().isEmpty()) {
+                rationale += ". Recommended: " + topFailure.resolution().get(0);
+            }
+            SpecMutation.RiskLevel risk = topFailure.occurrenceCount() > 5
+                ? SpecMutation.RiskLevel.HIGH
+                : SpecMutation.RiskLevel.MEDIUM;
+            return new SpecMutation("ADDRESS_FAILURE_PATTERN", targetElement,
+                "<mutation type=\"address-failure\"/>", rationale, risk);
+        }
+
+        // No failure patterns — use metrics-based mutation selection
+        String driftedMetric = findMostDriftedMetric(metrics);
+        String mutationType = switch (driftedMetric) {
+            case "avgExecutionTimeMs" -> "PARALLELIZE_SEQUENTIAL";
+            case "queueDepth" -> "INCREASE_CAPACITY";
+            case "errorRate" -> "ADD_RETRY_LOGIC";
+            default -> "OPTIMIZE_THROUGHPUT";
+        };
+        String rationale = "Performance drift detected in " + driftedMetric
+            + ": current=" + String.format("%.2f", metrics.getOrDefault(driftedMetric, 0.0));
+        return new SpecMutation(mutationType, driftedMetric,
+            "<mutation type=\"" + mutationType.toLowerCase() + "\"/>",
+            rationale, SpecMutation.RiskLevel.MEDIUM);
+    }
+
+    /**
+     * Finds the metric with the largest relative drift since the last cycle.
+     *
+     * @param metrics current metrics snapshot
+     * @return name of the most drifted metric, or default metric if none found
+     */
+    private String findMostDriftedMetric(Map<String, Double> metrics) {
+        ReactorCycle previous = lastCycle.get();
+        if (previous == null || previous.metricsSnapshot().isEmpty()) {
+            return metrics.keySet().stream().findFirst().orElse("avgExecutionTimeMs");
+        }
+        String mostDrifted = "avgExecutionTimeMs";
+        double maxDrift = 0.0;
+        for (Map.Entry<String, Double> entry : metrics.entrySet()) {
+            Double previousValue = previous.metricsSnapshot().get(entry.getKey());
+            if (previousValue != null && previousValue > 0) {
+                double drift = Math.abs(entry.getValue() - previousValue) / previousValue;
+                if (drift > maxDrift) {
+                    maxDrift = drift;
+                    mostDrifted = entry.getKey();
+                }
+            }
+        }
+        return mostDrifted;
     }
 
     /**
      * Simulates the proposed mutation against historical execution patterns.
      *
-     * <p>For the 80/20 version, this returns a successful SimulationResult
-     * without actual integration with ZAI or replay engines.</p>
+     * <p>Queries LearningCapture for success patterns matching the mutation type
+     * and evaluates soundness based on historical success rate.</p>
      *
      * @param mutation the mutation to simulate
      * @return simulation result showing soundness and success rate
      */
     private SimulationResult simulateMutation(SpecMutation mutation) {
-        // Simple simulation: assume 5 replays succeed (80/20 version)
-        // In full version, would replay historical case traces against mutated spec
-        return SimulationResult.sound(5);
+        List<LearningCapture.SuccessPattern> patterns = learning.getSuccessPatterns(
+            p -> p.tags().contains(mutation.mutationType().toLowerCase()));
+
+        if (patterns.isEmpty()) {
+            // No historical data — conservative pass with low confidence
+            return SimulationResult.sound(1);
+        }
+
+        LearningCapture.SuccessPattern bestMatch = patterns.get(0);
+        double successRate = bestMatch.successRate();
+        int replays = bestMatch.occurrenceCount();
+
+        if (successRate >= 0.8) {
+            return SimulationResult.sound(replays);
+        } else {
+            return SimulationResult.unsound(List.of(
+                "Historical success rate for " + mutation.mutationType()
+                + " is " + String.format("%.0f%%", successRate * 100)
+                + " (below 80% threshold)"));
+        }
     }
 
     /**
      * Stores a completed cycle in the UpgradeMemoryStore.
      *
+     * <p>Records the cycle outcome and metrics for analysis and learning.</p>
+     *
      * @param cycle the cycle to persist
      */
     private void storeCycleInMemory(ReactorCycle cycle) {
         try {
-            // Build UpgradeRecord from cycle (simplified)
-            // In full version, would use UpgradeMemoryStore.UpgradeRecord.Builder
-            // For now, just log it
+            Instant now = Instant.now();
+            UpgradeMemoryStore.UpgradeOutcome outcome = cycle.isSuccessful()
+                ? new UpgradeMemoryStore.Success("Reactor cycle completed: " + cycle.outcome())
+                : new UpgradeMemoryStore.Failure(cycle.outcome(), "reactor_cycle", "");
+
+            UpgradeMemoryStore.UpgradeRecord record = UpgradeMemoryStore.UpgradeRecord.builder()
+                .id("reactor-" + cycle.cycleId())
+                .sessionId("reactor")
+                .targetVersion("6.0.0-Beta")
+                .sourceVersion("6.0.0-Beta")
+                .startTime(cycle.startTime())
+                .endTime(now)
+                .addPhase(new UpgradeMemoryStore.PhaseResult(
+                    "reactor_cycle", cycle.startTime(), now,
+                    outcome, cycle.outcome()))
+                .outcome(outcome)
+                .addMetadata("cycleId", cycle.cycleId())
+                .addMetadata("outcome", cycle.outcome())
+                .addMetadata("durationMs", String.valueOf(cycle.durationMs()))
+                .build();
+
+            memory.store(record);
+            learning.captureOutcome(record);
             log.debug("Stored cycle {} in memory: outcome={}", cycle.cycleId(), cycle.outcome());
         } catch (Exception e) {
-            log.warn("Failed to store cycle in memory", e);
+            log.warn("Failed to store cycle in memory: {}", e.getMessage());
         }
     }
 }

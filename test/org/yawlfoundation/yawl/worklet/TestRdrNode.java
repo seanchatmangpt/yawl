@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
  * No mocks, no stubs.
  *
  * @author YAWL Foundation
- * @version 6.0.0-Alpha
+ * @version 6.0.0-Beta
  */
 @DisplayName("RdrNode — RDR node condition evaluation and tree traversal")
 @Tag("unit")

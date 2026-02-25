@@ -1,7 +1,7 @@
 {
   "project": {
     "name": "YAWL (Yet Another Workflow Language)",
-    "version": "6.0.0-Alpha",
+    "version": "6.0.0-Beta",
     "description": "BPM/Workflow system with powerful modelling language",
     "buildSystem": "Maven",
     "mainLanguage": "Java",

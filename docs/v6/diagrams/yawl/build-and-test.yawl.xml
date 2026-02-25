@@ -6,8 +6,8 @@
         http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
 
   <specification uri="BuildAndTestPipeline">
-    <name>YAWL 6.0.0-Alpha Build and Test Pipeline</name>
-    <documentation>Models the Maven build lifecycle and CI test execution for YAWL 6.0.0-Alpha.</documentation>
+    <name>YAWL 6.0.0-Beta Build and Test Pipeline</name>
+    <documentation>Models the Maven build lifecycle and CI test execution for YAWL 6.0.0-Beta.</documentation>
     <metaData/>
 
     <decomposition id="BuildAndTestNet" xsi:type="NetFactsType" isRootNet="true">

@@ -140,7 +140,7 @@ public class A2ALlmAgent {
         return AgentCard.builder()
                 .name("yawl-llm-agent")
                 .description("Intelligent YAWL workflow agent powered by Z.AI GLM-4.7")
-                .version("6.0.0-Alpha")
+                .version("6.0.0-Beta")
                 .provider(new AgentProvider("YAWL Foundation", "https://yawlfoundation.github.io"))
                 .capabilities(AgentCapabilities.builder()
                         .streaming(true)

@@ -1,6 +1,6 @@
 # yawl-integration
 
-**Artifact:** `org.yawlfoundation:yawl-integration:6.0.0-Alpha` | `packaging: jar`
+**Artifact:** `org.yawlfoundation:yawl-integration:6.0.0-Beta` | `packaging: jar`
 **Parent:** `yawl-parent`
 
 ## Purpose

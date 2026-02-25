@@ -68,7 +68,7 @@ Expected output ends with:
 [INFO] Total time:  1:28 min
 ```
 
-The shaded JAR lands at `yawl-control-panel/target/yawl-control-panel-6.0.0-Alpha.jar`. The `Dockerfile.modernized` build stage expects to find it under the same path after running its own internal `mvn clean package`.
+The shaded JAR lands at `yawl-control-panel/target/yawl-control-panel-6.0.0-Beta.jar`. The `Dockerfile.modernized` build stage expects to find it under the same path after running its own internal `mvn clean package`.
 
 ---
 

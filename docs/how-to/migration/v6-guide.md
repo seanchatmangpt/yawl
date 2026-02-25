@@ -261,7 +261,7 @@ grep "FAILURE" full-test-output.txt || echo "✅ No failures"
 
 #### Wednesday: Performance Testing
 
-**1. Baseline performance (v6.0.0-Alpha):**
+**1. Baseline performance (v6.0.0-Beta):**
 
 ```java
 // Test: Case creation latency
@@ -271,7 +271,7 @@ public void testCaseCreationPerformance() {
     YCase ycase = engine.createCase(specId, "case-001", null, null);
     long duration = System.currentTimeMillis() - startTime;
 
-    // v6.0.0-Alpha target: < 500ms
+    // v6.0.0-Beta target: < 500ms
     assertTrue(duration < 500, "Case creation too slow: " + duration + "ms");
 }
 
@@ -295,7 +295,7 @@ public void testConcurrentExecution() {
     latch.await(30, TimeUnit.SECONDS);
     long duration = System.currentTimeMillis() - startTime;
     System.out.println("1000 concurrent cases in " + duration + "ms");
-    // v6.0.0-Alpha target: < 10 seconds
+    // v6.0.0-Beta target: < 10 seconds
 }
 ```
 
@@ -318,7 +318,7 @@ gh pr create \
   --title "V6 Migration: Java 25, Jakarta EE 10, Maven" \
   --body "$(cat <<'EOF'
 ## Summary
-Complete migration to YAWL v6.0.0-Alpha with:
+Complete migration to YAWL v6.0.0-Beta with:
 - Java 25 features (records, pattern matching, virtual threads)
 - Jakarta EE 10 namespace (javax → jakarta)
 - Maven primary build system
@@ -1049,7 +1049,7 @@ echo "✅ Rollback complete - v5.2 is active"
 
 ## Conclusion
 
-This migration guide provides actionable steps for each team to successfully upgrade from YAWL v6.0.0 to v6.0.0-Alpha. Each team follows their specific phase while coordinating overall progress.
+This migration guide provides actionable steps for each team to successfully upgrade from YAWL v6.0.0 to v6.0.0-Beta. Each team follows their specific phase while coordinating overall progress.
 
 **Key Success Factors:**
 1. **Parallel work:** Dev, QA, DevOps teams work simultaneously

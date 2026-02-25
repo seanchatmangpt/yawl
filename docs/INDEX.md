@@ -43,7 +43,7 @@ Documentation is organized into four Diataxis quadrants. For the full cross-quad
 | Deployment | [deployment/](how-to/deployment/) — Docker, Jetty, Tomcat, WildFly, Java 25 |
 | CI/CD | [cicd/](how-to/cicd/) — build pipeline, Maven, testing |
 | Migration | [migration/](how-to/migration/) — v5→v6, Jakarta EE, library |
-| Integration | [integration/](how-to/integration/) — MCP, A2A, marketplace |
+| Integration | [integration/](how-to/integration/) — MCP, A2A, marketplace · [ocpm-integration.md](how-to/integration/ocpm-integration.md) — Rust4PM + pm4py OCPM stack |
 | Operations | [operations/](how-to/operations/) — scaling, disaster recovery, upgrade |
 | Development | [contributing.md](how-to/contributing.md) · [testing.md](how-to/testing.md) · [troubleshooting.md](how-to/troubleshooting.md) |
 
@@ -53,7 +53,7 @@ Documentation is organized into four Diataxis quadrants. For the full cross-quad
 |----------|---------|
 | Engine & Schema | [configuration.md](reference/configuration.md) · [error-codes.md](reference/error-codes.md) · [yawl-schema.md](reference/yawl-schema.md) |
 | Interfaces | [interface-b.md](reference/interface-b.md) · [interface-e.md](reference/interface-e.md) · [interface-x.md](reference/interface-x.md) |
-| API | [api-reference.md](reference/api-reference.md) · [api/](reference/api/) · [mcp-tools.md](reference/mcp-tools.md) |
+| API | [api-reference.md](reference/api-reference.md) · [api/](reference/api/) · [mcp-tools.md](reference/mcp-tools.md) · [mcp-process-mining-tools.md](reference/mcp-process-mining-tools.md) |
 | Patterns | [workflow-patterns.md](reference/workflow-patterns.md) · [patterns/](reference/patterns/) |
 | Build | [maven-quick-reference.md](reference/maven-quick-reference.md) · [maven-module-structure.md](reference/maven-module-structure.md) |
 
@@ -64,6 +64,7 @@ Documentation is organized into four Diataxis quadrants. For the full cross-quad
 | Core Concepts | [petri-net-foundations.md](explanation/petri-net-foundations.md) · [case-lifecycle.md](explanation/case-lifecycle.md) · [or-join-semantics.md](explanation/or-join-semantics.md) |
 | Architecture | [dual-engine-architecture.md](explanation/dual-engine-architecture.md) · [interface-architecture.md](explanation/interface-architecture.md) · [shared-src-build-strategy.md](explanation/shared-src-build-strategy.md) |
 | Integration | [autonomous-agents.md](explanation/autonomous-agents.md) · [mcp-llm-design.md](explanation/mcp-llm-design.md) |
+| Process Mining & AI | [object-centric-process-mining.md](explanation/object-centric-process-mining.md) · [process-intelligence.md](explanation/process-intelligence.md) |
 | ADRs | [decisions/](explanation/decisions/) — 30+ Architecture Decision Records |
 
 ---

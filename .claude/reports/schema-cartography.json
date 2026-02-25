@@ -4,7 +4,7 @@
     "timestamp": "2026-02-24T00:00:00Z",
     "analyst": "Claude Architecture Specialist",
     "scope": "89 package-info.java files, 14 Maven modules, 526+ test cases",
-    "version": "6.0.0-Alpha"
+    "version": "6.0.0-Beta"
   },
   "executive_summary": {
     "total_packages": 89,

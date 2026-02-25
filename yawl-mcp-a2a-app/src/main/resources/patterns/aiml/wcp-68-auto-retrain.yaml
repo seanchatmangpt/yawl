@@ -10,7 +10,7 @@ variables:
     type: xs:string
   - name: retrainTriggered
     type: xs:boolean
-    default: false
+    default: true
   - name: newDataAvailable
     type: xs:boolean
     default: false

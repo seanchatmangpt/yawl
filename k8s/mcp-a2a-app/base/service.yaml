@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: yawl-mcp-a2a-app
     app.kubernetes.io/component: service
     app.kubernetes.io/part-of: yawl
-    app.kubernetes.io/version: "6.0.0-Alpha"
+    app.kubernetes.io/version: "6.0.0-Beta"
   annotations:
     # Istio service mesh annotations
     traffic.istio.io/loadBalancerPort: "8080"

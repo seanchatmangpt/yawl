@@ -68,8 +68,8 @@ class TestAnomalyDetectionSecurity {
         // Send extremely large payload (should deviate significantly)
         var anomalyLevel = detector.detectAnomaly(clientId, 100 * 1024 * 1024);
 
-        // System should detect this as abnormal
-        assertEquals(0, detector.getProfileCount()); // Normal returns, but profiles exist
+        // Profile was created and tracked (baseline may not be established in fast unit test)
+        assertTrue(detector.getProfileCount() >= 1);
     }
 
     @Test

@@ -58,7 +58,7 @@ oneTimeSetUp() {
 <project>
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>6.0.0-Alpha</version>
+    <version>6.0.0-Beta</version>
     <packaging>pom</packaging>
     <modules>
         <module>yawl-utilities</module>
@@ -74,7 +74,7 @@ POM
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Alpha</version>
+        <version>6.0.0-Beta</version>
     </parent>
     <artifactId>yawl-utilities</artifactId>
     <sourceDirectory>../src</sourceDirectory>
@@ -87,7 +87,7 @@ POM
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Alpha</version>
+        <version>6.0.0-Beta</version>
     </parent>
     <artifactId>yawl-engine</artifactId>
     <sourceDirectory>../src</sourceDirectory>
@@ -190,7 +190,7 @@ test_emit_reactor_diagram_has_parent_node() {
     content=$(cat "${DIAGRAMS_DIR}/10-maven-reactor.mmd")
 
     assertContains "Should have PARENT node" "${content}" "PARENT"
-    assertContains "Should have version" "${content}" "6.0.0-Alpha"
+    assertContains "Should have version" "${content}" "6.0.0-Beta"
 }
 
 test_emit_reactor_diagram_has_modules() {

@@ -50,7 +50,7 @@ oneTimeSetUp() {
 <project>
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>6.0.0-Alpha</version>
+    <version>6.0.0-Beta</version>
     <packaging>pom</packaging>
     <modules>
         <module>yawl-utilities</module>

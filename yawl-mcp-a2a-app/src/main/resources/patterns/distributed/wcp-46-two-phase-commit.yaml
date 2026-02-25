@@ -8,9 +8,6 @@ first: StartTransaction
 variables:
   - name: transactionId
     type: xs:string
-  - name: participantCount
-    type: xs:integer
-    default: 3
   - name: allPrepared
     type: xs:boolean
     default: false
@@ -33,6 +30,7 @@ tasks:
       min: 3
       max: 3
       mode: static
+      splitQuery: "/*/*"
     description: "Prepare all participants"
 
   - id: CollectVotes
@@ -51,6 +49,7 @@ tasks:
       min: 3
       max: 3
       mode: static
+      splitQuery: "/*/*"
     description: "Commit all participants"
 
   - id: AbortPhase
@@ -61,6 +60,7 @@ tasks:
       min: 3
       max: 3
       mode: static
+      splitQuery: "/*/*"
     description: "Abort all participants"
 
   - id: TransactionComplete
