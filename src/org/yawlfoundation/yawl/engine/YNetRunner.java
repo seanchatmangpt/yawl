@@ -20,8 +20,6 @@ package org.yawlfoundation.yawl.engine;
 
 import java.lang.ScopedValue;
 import java.net.URL;
-import java.util.concurrent.StructuredTaskScope;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -38,7 +36,6 @@ import org.yawlfoundation.yawl.elements.state.YInternalCondition;
 import org.yawlfoundation.yawl.engine.announcement.YAnnouncement;
 import org.yawlfoundation.yawl.engine.announcement.YEngineEvent;
 import org.yawlfoundation.yawl.engine.time.YTimer;
-import org.yawlfoundation.yawl.engine.CaseContext;
 import org.yawlfoundation.yawl.engine.time.YTimerVariable;
 import org.yawlfoundation.yawl.engine.time.YWorkItemTimer;
 import org.yawlfoundation.yawl.exceptions.YDataStateException;
@@ -391,30 +388,6 @@ public class YNetRunner {
     }
 
     /**
-     * Kicks the case execution with ScopedValue context bindings.
-     *
-     * <p>This method wraps case execution with ScopedValue bindings for case ID,
-     * correlation ID, and start time. These bindings are inherited by all child
-     * virtual threads participating in this case's execution.</p>
-     *
-     * @param pmgr the persistence manager
-     * @throws YPersistenceException if there's a persistence error
-     */
-    public void kickWithScopedValues(YPersistenceManager pmgr)
-            throws YPersistenceException, YDataStateException,
-                   YQueryException, YStateException {
-
-        String correlationId = _caseIDForNet + "-" + System.currentTimeMillis();
-        Instant startTime = Instant.now();
-
-        // Bind context via ScopedValue
-        ScopedValue.where(CaseContext.CASE_ID, _caseID)
-            .where(CaseContext.CORRELATION_ID, correlationId)
-            .where(CaseContext.START_TIME, startTime)
-            .run(() -> kick(pmgr));
-    }
-
-    /**
      * Assumption: this will only get called AFTER a workitem has been progressed?
      * Because if it is called any other time then it will cause the case to stop.
      * @param pmgr
@@ -451,10 +424,10 @@ public class YNetRunner {
             }
 
             try {
-                _logger.debug(createContextMessage("--> YNetRunner.kick"));
+                _logger.debug("--> YNetRunner.kick");
 
                 if (! continueIfPossible(pmgr)) {
-                    _logger.debug(createContextMessage("YNetRunner not able to continue"));
+                    _logger.debug("YNetRunner not able to continue");
 
                     // if root net can't continue it means a case completion
                     if ((_engine != null) && isRootNet()) {
@@ -466,7 +439,7 @@ public class YNetRunner {
                         // call the external data source, if its set for this specification
                         _net.postCaseDataToExternal(getCaseID().toString());
 
-                        _logger.debug(createContextMessage("Asking engine to finish case"));
+                        _logger.debug("Asking engine to finish case");
                         _engine.removeCaseFromCaches(_caseIDForNet);
 
                         // log it
@@ -486,7 +459,7 @@ public class YNetRunner {
                     if ((_engine != null) && isRootNet()) _engine.clearCaseFromPersistence(_caseIDForNet);
                 }
 
-                _logger.debug(createContextMessage("<-- YNetRunner.kick"));
+                _logger.debug("<-- YNetRunner.kick");
                 span.setStatus(StatusCode.OK);
             } finally {
                 _writeLock.unlock();
@@ -500,28 +473,6 @@ public class YNetRunner {
         }
     }
 
-
-      /**
-     * Creates a context-aware log message with ScopedValue information.
-     *
-     * @param message the base log message
-     * @return a formatted log message with context information
-     */
-    private String createContextMessage(String message) {
-        StringBuilder sb = new StringBuilder(message);
-
-        // Add case ID if available
-        if (CASE_CONTEXT.isBound()) {
-            CaseContext ctx = CASE_CONTEXT.get();
-            sb.append(" [case=").append(ctx.caseID()).append("]");
-
-            // Add elapsed time if available
-            long elapsedMs = System.currentTimeMillis() - ctx.startedAt().toEpochMilli();
-            sb.append(" [elapsed=").append(elapsedMs).append("ms]");
-        }
-
-        return sb.toString();
-    }
 
     private void announceCaseCompletion() {
         _announcer.announceCaseCompletion(_caseObserver, _caseIDForNet, _net.getOutputData());
@@ -649,7 +600,7 @@ public class YNetRunner {
         if (_lockMetrics != null) _lockMetrics.recordWriteLockWait(System.nanoTime() - lockWaitStart);
         try {
 
-        _logger.debug(createContextMessage("--> processCompletedSubnet"));
+        _logger.debug("--> processCompletedSubnet");
 
         NullCheckModernizer.requirePresent(caseIDForSubnet,
                 "caseIDForSubnet must not be null in processCompletedSubnet",
@@ -865,7 +816,7 @@ public class YNetRunner {
                 if (! enabledTransitions.isEmpty()) fireTasks(enabledTransitions, pmgr);
 
                 _busyTasks = _net.getBusyTasks();
-                // fire the set of enabled transitions (method removed in refactoring)
+
                 // Add task counts to span
                 span.setAttribute("yawl.tasks.enabled", _enabledTasks.size());
                 span.setAttribute("yawl.tasks.busy", _busyTasks.size());
@@ -887,76 +838,42 @@ public class YNetRunner {
     }
 
 
-      /**
-     * Fires multiple atomic tasks in parallel using StructuredTaskScope.
-     *
-     * <p>Uses Java 25's StructuredTaskScope for efficient parallel execution of
-     * atomic tasks within the same task group. This improves performance for
-     * AND-split patterns while maintaining proper error handling semantics.</p>
-     *
-     * @param atomicTasks the list of atomic tasks to fire in parallel
-     * @param groupID the deferred choice group ID (may be null)
-     * @param pmgr the persistence manager
-     * @param enabledTasks the set to track which tasks have been enabled
-     * @throws YDataStateException if data state management fails
-     * @throws YStateException if workflow state management fails
-     * @throws YQueryException if data queries fail
-     * @throws YPersistenceException if persistence operations fail
-     */
-    private void fireAtomicTasksInParallel(List<YAtomicTask> atomicTasks, String groupID,
-                                           YPersistenceManager pmgr, Set<YTask> enabledTasks)
+    private void fireTasks(YEnabledTransitionSet enabledSet, YPersistenceManager pmgr)
             throws YDataStateException, YStateException, YQueryException,
                    YPersistenceException {
+        Set<YTask> enabledTasks = new HashSet<>();
 
-        if (endOfNetReached()) {
-            return; // Don't proceed if net has completed
-        }
-
-        // Use ShutdownOnFailure to cancel remaining tasks if any fail
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            List<StructuredTaskScope.Subtask<AnnouncementResult>> tasks = new ArrayList<>();
-
-            // Fork each task execution in a separate virtual thread
-            for (YAtomicTask atomicTask : atomicTasks) {
-                if (! (enabledTasks.contains(atomicTask) || endOfNetReached())) {
-                    tasks.add(scope.fork(() -> {
-                        try {
-                            YTask task = atomicTask;
-                            return new AnnouncementResult(
-                                fireAtomicTask(atomicTask, groupID, pmgr), task
-                            );
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to execute atomic task: " +
-                                atomicTask.getID(), e);
+        // A TaskGroup is a group of tasks that are all enabled by a single condition.
+        // If the group has more than one task, it's a deferred choice, in which case:
+        // 1. If any are composite, fire one (chosen randomly) - rest are withdrawn
+        // 2. Else, if any are empty, fire one (chosen randomly) - rest are withdrawn
+        // 3. Else, fire and announce all enabled atomic tasks to the environment
+        for (YEnabledTransitionSet.TaskGroup group : enabledSet.getAllTaskGroups()) {
+            if (group.hasCompositeTasks()) {
+                YCompositeTask composite = group.getRandomCompositeTaskFromGroup();
+                if (! (enabledTasks.contains(composite) || endOfNetReached())) {
+                    fireCompositeTask(composite, pmgr);
+                    enabledTasks.add(composite);
+                }
+            }
+            else if (group.hasEmptyTasks()) {
+                YAtomicTask atomic = group.getRandomEmptyTaskFromGroup();
+                if (! (enabledTasks.contains(atomic) || endOfNetReached())) {
+                    processEmptyTask(atomic, pmgr);
+                }
+            }
+            else {
+                String groupID = group.getDeferredChoiceID();       // null if <2 tasks
+                for (YAtomicTask atomic : group.getAtomicTasks()) {
+                    if (! (enabledTasks.contains(atomic) || endOfNetReached())) {
+                        YAnnouncement announcement = fireAtomicTask(atomic, groupID, pmgr);
+                        if (announcement != null) {
+                            _announcements.add(announcement);
                         }
-                    }));
+                        enabledTasks.add(atomic) ;
+                    }
                 }
             }
-
-            // Wait for all tasks to complete or fail
-            scope.join();
-
-            // If any task failed, propagate the exception
-            scope.throwIfFailed();
-
-            // Collect successful announcements
-            for (StructuredTaskScope.Subtask<AnnouncementResult> task : tasks) {
-                AnnouncementResult result = task.get();
-                if (result.announcement != null) {
-                    _announcements.add(result.announcement);
-                }
-                enabledTasks.add(result.task);
-            }
-        }
-    }
-
-    /**
-     * Wrapper class to store both announcement and the task reference.
-     */
-    private record AnnouncementResult(YAnnouncement announcement, YTask task) {
-        public AnnouncementResult {
-            // Ensure task is never null
-            Objects.requireNonNull(task, "Task cannot be null");
         }
     }
 
@@ -1150,7 +1067,7 @@ public class YNetRunner {
         Span span = YAWLTracing.createWorkItemSpan("yawl.task.complete",
             workItemId, _caseID, taskId);
         try (Scope scope = span.makeCurrent()) {
-            _logger.debug(createContextMessage("--> completeTask: {}"), taskId);
+            _logger.debug("--> completeTask: {}", taskId);
 
             long startTime = System.nanoTime();
             boolean taskExited = atomicTask.t_complete(pmgr, identifier, outputData);
@@ -1228,7 +1145,7 @@ public class YNetRunner {
             }
 
             span.setStatus(StatusCode.OK);
-            _logger.debug(createContextMessage("<-- completeTask: {}, Exited={}"), taskId, taskExited);
+            _logger.debug("<-- completeTask: {}, Exited={}", taskId, taskExited);
 
             return taskExited;
         } catch (YPersistenceException | YDataStateException | YQueryException | YStateException e) {
