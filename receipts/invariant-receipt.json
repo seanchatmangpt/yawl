@@ -1,0 +1,22 @@
+{
+  "phase": "invariants",
+  "timestamp": "2026-02-25T04:28:06Z",
+  "code_directory": "src",
+  "java_files_scanned": 1119,
+  "violations_found": 0,
+  "violations_by_type": {
+    "Q1_empty_methods": 0,
+    "Q2_mock_classes": 0,
+    "Q3_silent_fallbacks": 0
+  },
+  "violations": [
+    
+    
+    
+    null
+  ],
+  "status": "GREEN",
+  "passing_rate": "100%",
+  "severity": "INFO",
+  "next_action": "Proceed to Ω phase"
+}

@@ -7,7 +7,8 @@
 
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>6.0.0-Beta</version>
+
+    <version>6.0.0</version>
     <packaging>pom</packaging>
 
     <name>YAWL Parent</name>
@@ -43,11 +44,9 @@
         </contributor>
     </contributors>
 
-    <!-- ======================================================================
-         DISTRIBUTION MANAGEMENT
+    <!-- DISTRIBUTION MANAGEMENT
          For deploying releases and snapshots to Maven Central via Sonatype OSSRH.
-         Usage: mvn deploy -P release
-         ====================================================================== -->
+         Usage: mvn deploy -P release -->
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -78,10 +77,8 @@
         <module>yawl-mcp-a2a-app</module>
     </modules>
 
-    <!-- ======================================================================
-         PROPERTIES - single source of truth for all dependency versions.
-         All child modules inherit these; never redeclare versions in children.
-         ====================================================================== -->
+    <!-- PROPERTIES - single source of truth for all dependency versions.
+         All child modules inherit these; never redeclare versions in children. -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -91,9 +88,7 @@
         <!-- Enable virtual threads and compact object headers -->
         <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+UseThreadPriorityQueue</argLine>
 
-        <!-- ================================================================ -->
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
-        <!-- ================================================================ -->
         <spring-boot.version>3.5.11</spring-boot.version>
         <jakarta-ee.version>10.0.0</jakarta-ee.version>
         <opentelemetry.version>1.59.0</opentelemetry.version>
@@ -103,9 +98,7 @@
         <testcontainers.version>1.21.4</testcontainers.version>
         <jackson.version>2.19.4</jackson.version>
 
-        <!-- ================================================================ -->
         <!-- Jakarta EE standalone artifacts (not covered by Jakarta EE BOM)   -->
-        <!-- ================================================================ -->
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
@@ -121,14 +114,10 @@
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <resilience4j.version>2.3.0</resilience4j.version>
 
-        <!-- ================================================================ -->
         <!-- ORM                                                                -->
-        <!-- ================================================================ -->
         <hibernate.version>6.6.43.Final</hibernate.version>
 
-        <!-- ================================================================ -->
         <!-- Apache Commons                                                     -->
-        <!-- ================================================================ -->
         <commons.lang3.version>3.20.0</commons.lang3.version>
         <commons.io.version>2.21.0</commons.io.version>
         <commons.codec.version>1.21.0</commons.codec.version>
@@ -140,9 +129,7 @@
         <commons.text.version>1.15.0</commons.text.version>
         <commons.beanutils.version>1.11.0</commons.beanutils.version>
 
-        <!-- ================================================================ -->
         <!-- Database drivers                                                   -->
-        <!-- ================================================================ -->
         <h2.version>2.4.240</h2.version>
         <postgresql.version>42.7.10</postgresql.version>
         <mysql.version>9.6.0</mysql.version>
@@ -150,62 +137,44 @@
         <hsqldb.version>2.7.4</hsqldb.version>
         <hikaricp.version>7.0.2</hikaricp.version>
 
-        <!-- ================================================================ -->
         <!-- Logging                                                            -->
-        <!-- ================================================================ -->
         <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <jboss.logging.version>3.6.2.Final</jboss.logging.version>
 
-        <!-- ================================================================ -->
         <!-- JSON / serialisation                                               -->
-        <!-- ================================================================ -->
         <gson.version>2.13.2</gson.version>
         <networknt.json.schema.validator.version>1.5.7</networknt.json.schema.validator.version>
 
-        <!-- ================================================================ -->
         <!-- XML processing                                                     -->
-        <!-- ================================================================ -->
         <jdom.version>2.0.6.1</jdom.version>
         <jaxen.version>1.2.0</jaxen.version>
         <saxon.version>12.9</saxon.version>
         <saaj.api.version>1.4.0</saaj.api.version>
         <saaj.impl.version>3.0.4</saaj.impl.version>
 
-        <!-- ================================================================ -->
         <!-- HTTP clients                                                       -->
-        <!-- ================================================================ -->
         <okhttp.version>5.3.2</okhttp.version>
 
-        <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
-        <!-- ================================================================ -->
         <mcp.version>1.0.0</mcp.version>
         <a2a.version>1.0.0.Alpha2</a2a.version>
 
-        <!-- ================================================================ -->
         <!-- Security / auth                                                    -->
-        <!-- ================================================================ -->
         <jjwt.version>0.13.0</jjwt.version>
         <microsoft.graph.version>6.62.0</microsoft.graph.version>
         <azure.identity.version>1.18.2</azure.identity.version>
 
-        <!-- ================================================================ -->
         <!-- REST                                                               -->
-        <!-- ================================================================ -->
         <jersey.version>4.0.2</jersey.version>
 
-        <!-- ================================================================ -->
         <!-- Observability / metrics                                            -->
-        <!-- ================================================================ -->
         <!-- Pinned at 1.15.9: Spring Boot 3.5.x BOM resolves this version;
              upgrading to 1.16.x requires Spring Boot 3.6.x. Update both together. -->
         <micrometer.version>1.15.9</micrometer.version>
         <opentelemetry.semconv.version>1.40.0</opentelemetry.semconv.version>
 
-        <!-- ================================================================ -->
         <!-- Misc runtime support                                               -->
-        <!-- ================================================================ -->
         <jspecify.version>1.0.0</jspecify.version>
         <jandex.version>3.5.3</jandex.version>
         <byte.buddy.version>1.18.5</byte.buddy.version>
@@ -215,9 +184,7 @@
         <ant.version>1.10.15</ant.version>
         <simple-java-mail.version>8.12.6</simple-java-mail.version>
 
-        <!-- ================================================================ -->
         <!-- Testing                                                            -->
-        <!-- ================================================================ -->
         <junit.version>4.13.2</junit.version>
         <junit.jupiter.version>5.12.0</junit.jupiter.version>
         <junit.platform.version>1.12.0</junit.platform.version>
@@ -226,9 +193,7 @@
         <xmlunit.version>1.6</xmlunit.version>
         <jmh.version>1.37</jmh.version>
 
-        <!-- ================================================================ -->
         <!-- Build plugins (pinned for reproducibility)                        -->
-        <!-- ================================================================ -->
         <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
         <maven.surefire.plugin.version>3.5.4</maven.surefire.plugin.version>
         <maven.failsafe.plugin.version>3.5.4</maven.failsafe.plugin.version>
@@ -268,19 +233,13 @@
              JUnit 5 parallel execution is controlled by junit-platform.properties. -->
         <surefire.threadCount>4</surefire.threadCount>
 
-        <!-- ================================================================ -->
         <!-- Cryptography (BouncyCastle)                                       -->
-        <!-- ================================================================ -->
         <bouncycastle.version>1.81</bouncycastle.version>
 
-        <!-- ================================================================ -->
         <!-- Static Analysis - Error Prone                                     -->
-        <!-- ================================================================ -->
         <error.prone.version>2.38.0</error.prone.version>
 
-        <!-- ================================================================ -->
         <!-- Static Analysis - NullAway with JSpecify                          -->
-        <!-- ================================================================ -->
         <nullaway.version>0.12.3</nullaway.version>
     </properties>
 
@@ -297,8 +256,7 @@
         </repository>
     </repositories>
 
-    <!-- ======================================================================
-         DEPENDENCY MANAGEMENT
+    <!-- DEPENDENCY MANAGEMENT
          Order of sections:
            1.  Jakarta EE
            2.  ORM
@@ -330,14 +288,11 @@
            The default build uses explicit version pins (this section) for
            offline/air-gapped compatibility. When network is available, activate
            the online profile: mvn -P online clean compile
-           The BOMs then take precedence and reduce duplication.
-         ====================================================================== -->
+           The BOMs then take precedence and reduce duplication. -->
     <dependencyManagement>
         <dependencies>
 
-            <!-- ============================================================== -->
             <!-- 0. YAWL INTERNAL MODULES                                      -->
-            <!-- ============================================================== -->
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-utilities</artifactId>
@@ -409,11 +364,9 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 0. SPRING BOOT STARTERS                                       -->
             <!--    Explicit entries provide offline fallback when the Spring   -->
             <!--    Boot BOM (online profile) is not active.                   -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -458,9 +411,7 @@
                 <optional>true</optional>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 1. JAKARTA EE                                                  -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>jakarta.servlet</groupId>
@@ -555,9 +506,7 @@
                 <scope>provided</scope>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 3. ORM                                                         -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
@@ -575,9 +524,7 @@
                 <version>${hibernate.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 4. APACHE COMMONS                                              -->
-            <!-- ============================================================== -->
 
             <!-- commons-lang3 uses org.apache.commons groupId -->
             <dependency>
@@ -638,9 +585,7 @@
                 <version>${commons.beanutils.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 5. DATABASE DRIVERS                                            -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -673,9 +618,7 @@
                 <version>${hikaricp.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 6. LOGGING                                                     -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -713,12 +656,11 @@
                 <version>${jboss.logging.version}</version>
             </dependency>
 
-            
+
             <!-- ============================================================== -->
             <!-- 7. JSON / SERIALISATION                                        -->
             <!--    Explicit entries provide offline fallback when the Jackson  -->
             <!--    BOM (online profile) is not active.                        -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -768,9 +710,7 @@
                 <version>${networknt.json.schema.validator.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 8. XML PROCESSING                                              -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.jdom</groupId>
@@ -799,9 +739,7 @@
                 <version>${saaj.impl.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 9. HTTP CLIENTS                                                -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -809,12 +747,10 @@
                 <version>${okhttp.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 10. MCP / A2A INTEGRATION SDKs                                -->
             <!--     Both SDKs are installed from local JARs (not Maven         -->
             <!--     Central). Versions are pinned here so child modules do     -->
             <!--     not repeat them.                                           -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>io.modelcontextprotocol.sdk</groupId>
@@ -903,9 +839,7 @@
                 <version>${a2a.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 11. SECURITY / AUTH                                            -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -952,9 +886,7 @@
                 <version>${bouncycastle.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 12. REST                                                       -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
@@ -977,11 +909,9 @@
                 <version>${jersey.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 13. OBSERVABILITY / METRICS                                    -->
             <!--     OTel artifacts version-managed by opentelemetry-bom above. -->
             <!--     Semconv and Micrometer are not in that BOM.               -->
-            <!-- ============================================================== -->
 
             <!-- OpenTelemetry Core - explicit versions for offline builds -->
             <dependency>
@@ -1115,9 +1045,7 @@
                 </exclusions>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 14. GRAPH ALGORITHMS                                           -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>net.sf.jung</groupId>
@@ -1135,9 +1063,7 @@
                 <version>${jung.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 15. SUPPORT LIBRARIES                                          -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.jspecify</groupId>
@@ -1175,9 +1101,7 @@
                 <version>${ant.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 16. TESTING  (all test-scoped by default)                     -->
-            <!-- ============================================================== -->
 
             <!-- JUnit 4 - legacy tests (still widely used in the codebase) -->
             <dependency>
@@ -1306,8 +1230,7 @@
         </dependencies>
     </dependencyManagement>
 
-    <!-- ======================================================================
-         DIRECT DEPENDENCIES
+    <!-- DIRECT DEPENDENCIES
          The parent POM does NOT declare direct compile-scope dependencies.
          Each child module declares exactly what it needs; this avoids
          putting every library on every module's classpath and keeps
@@ -1315,8 +1238,7 @@
 
          The only direct parent-level dependencies are universal concerns
          that literally every module requires: compilation annotations and
-         logging API.
-         ====================================================================== -->
+         logging API. -->
     <dependencies>
         <!-- SLF4J API - logging facade required by every module -->
         <dependency>
@@ -1398,9 +1320,7 @@
         </dependency>
     </dependencies>
 
-    <!-- ======================================================================
-         BUILD
-         ====================================================================== -->
+    <!-- BUILD -->
     <build>
         <!-- Default goal when running `mvn` without arguments -->
         <defaultGoal>clean compile</defaultGoal>
@@ -1421,11 +1341,9 @@
             </testResource>
         </testResources>
 
-        <!-- ================================================================ -->
         <!-- PLUGIN MANAGEMENT                                                  -->
         <!-- All plugins used anywhere in this multi-module build are listed    -->
         <!-- here with explicit versions so child modules inherit them.         -->
-        <!-- ================================================================ -->
         <pluginManagement>
             <plugins>
 
@@ -1988,9 +1906,7 @@
             </plugins>
         </pluginManagement>
 
-        <!-- ================================================================ -->
         <!-- ACTIVE PLUGINS (applied to every module)                           -->
-        <!-- ================================================================ -->
         <plugins>
 
             <!-- Compiler - applies global settings defined in pluginManagement -->
@@ -2044,14 +1960,10 @@
         </plugins>
     </build>
 
-    <!-- ======================================================================
-         BUILD PROFILES
-         ====================================================================== -->
+    <!-- BUILD PROFILES -->
     <profiles>
 
-        <!-- ================================================================ -->
         <!-- Default profile: Java 21 compatible (JDK 21 available)            -->
-        <!-- ================================================================ -->
         <profile>
             <id>java25</id>
             <activation>
@@ -2088,9 +2000,7 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Java 24 forward-compatibility testing                              -->
-        <!-- ================================================================ -->
         <profile>
             <id>java24</id>
             <properties>
@@ -2121,11 +2031,9 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- CI profile: adds coverage and static analysis                      -->
         <!-- Usage: mvn -P ci clean verify                                      -->
         <!-- Auto-activates when the CI environment variable is set.            -->
-        <!-- ================================================================ -->
         <profile>
             <id>ci</id>
             <activation>
@@ -2194,11 +2102,9 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Production profile: CVE scan fails build on CVSS >= 7             -->
         <!-- Usage: mvn -P prod clean verify                                    -->
         <!--         NVD_API_KEY env var required for NVD data feed.            -->
-        <!-- ================================================================ -->
         <profile>
             <id>prod</id>
             <properties>
@@ -2242,7 +2148,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Security audit: comprehensive CVE scanning and SBOM generation    -->
         <!--                                                                     -->
         <!-- Purpose:                                                             -->
@@ -2275,7 +2180,6 @@
         <!-- CI/CD Integration:                                                   -->
         <!--   Runs in GitHub Actions on every commit (see cve-scanning.yml).    -->
         <!--   Fails build on CVSS >= 7.0 for production quality enforcement.    -->
-        <!-- ================================================================ -->
         <profile>
             <id>security-audit</id>
             <build>
@@ -2317,7 +2221,6 @@
         </profile>
 
 
-        <!-- ================================================================ -->
         <!-- CI/CD Security Profile: automated CVE scanning on every commit     -->
         <!--                                                                     -->
         <!-- Purpose:                                                             -->
@@ -2338,7 +2241,6 @@
         <!--   CVSS >= 7.0  : FAIL (High/Critical - must remediate)             -->
         <!--   CVSS 4-6.9   : PASS (Medium - track for next release)             -->
         <!--   CVSS < 4.0   : PASS (Low - monitor)                               -->
-        <!-- ================================================================ -->
         <profile>
             <id>ci-security</id>
             <activation>
@@ -2385,7 +2287,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Analysis profile: full static analysis suite                       -->
         <!-- Runs: SpotBugs + Checkstyle + PMD + JaCoCo + Error Prone           -->
         <!-- Usage: mvn clean package -P analysis                               -->
@@ -2396,7 +2297,6 @@
         <!--   target/pmd.xml                                                   -->
         <!--   target/site/jacoco/                                              -->
         <!--   Error Prone warnings in compile output                           -->
-        <!-- ================================================================ -->
         <profile>
             <id>analysis</id>
             <properties>
@@ -2556,13 +2456,11 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Coverage profile: dedicated JaCoCo coverage with threshold check  -->
         <!-- Usage: mvn -T 1.5C clean verify -P coverage                       -->
         <!--                                                                    -->
         <!-- This profile focuses purely on coverage without other analysis    -->
         <!-- tools, making it faster for coverage-only requirements.           -->
-        <!-- ================================================================ -->
         <profile>
             <id>coverage</id>
             <properties>
@@ -2639,7 +2537,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- SonarQube profile: push analysis to SonarQube/SonarCloud          -->
         <!-- Usage: mvn -P sonar clean verify sonar:sonar                       -->
         <!--                                                                    -->
@@ -2647,7 +2544,6 @@
         <!--   SONAR_TOKEN  - authentication token from SonarQube              -->
         <!--   SONAR_HOST_URL - e.g. https://sonarcloud.io (SonarCloud)        -->
         <!--                   or http://localhost:9000 (local SonarQube)       -->
-        <!-- ================================================================ -->
         <profile>
             <id>sonar</id>
             <properties>
@@ -2728,13 +2624,11 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Online profile: activates BOM imports when network is available. -->
         <!-- BOM imports take version-precedence over explicit pins in         -->
         <!-- dependencyManagement, reducing maintenance for transitive deps.  -->
         <!-- Usage: mvn -P online clean compile                               -->
         <!--        mvn -P online,ci clean verify                             -->
-        <!-- ================================================================ -->
         <profile>
             <id>online</id>
             <dependencyManagement>
@@ -2807,13 +2701,11 @@
             </dependencyManagement>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Fast profile: excludes slow integration tests for CI             -->
         <!-- This profile is active by default for quick feedback loops.      -->
         <!-- Usage: mvn clean test                   (fast - default)         -->
         <!--        mvn clean test -P docker         (full integration)       -->
         <!-- Excluded groups: integration, docker, containers                 -->
-        <!-- ================================================================ -->
         <profile>
             <id>fast</id>
             <activation>
@@ -2838,12 +2730,10 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Agent DX profile: fastest possible build-test loop for AI agents -->
         <!-- Maximizes parallelism, disables all overhead, fails fast.        -->
         <!-- Usage: mvn compile test -P agent-dx                              -->
         <!--        mvn compile test -P agent-dx -pl module -amd              -->
-        <!-- ================================================================ -->
         <profile>
             <id>agent-dx</id>
             <properties>
@@ -2873,7 +2763,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- quick-test profile: unit tests only, maximum local dev speed    -->
         <!--                                                                  -->
         <!-- Differences from the default "fast" profile:                    -->
@@ -2901,7 +2790,6 @@
         <!--   mvn clean test -P docker                    (docker tests)     -->
         <!--   mvn clean test -P quick-test -pl yawl-engine                  -->
         <!--   ./scripts/test-fast.sh                                         -->
-        <!-- ================================================================ -->
         <profile>
             <id>quick-test</id>
             <properties>
@@ -2942,12 +2830,10 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Docker profile: includes all integration and container tests     -->
         <!-- Requires Docker daemon running for testcontainers.               -->
         <!-- Usage: mvn clean test -P docker                                   -->
         <!-- Included groups: integration, docker (excludes slow containers)   -->
-        <!-- ================================================================ -->
         <profile>
             <id>docker</id>
             <properties>
@@ -3002,11 +2888,9 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Integration-test profile: runs v5.2 integration tests           -->
         <!-- No testcontainers required; excludes slow/chaos/containers.      -->
         <!-- Usage: mvn test -P integration-test                              -->
-        <!-- ================================================================ -->
         <profile>
             <id>integration-test</id>
             <properties>
@@ -3051,7 +2935,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Release profile: deploys to Maven Central via Sonatype OSSRH     -->
         <!-- Signs artifacts with GPG and stages to Nexus repository.         -->
         <!-- Usage: mvn clean deploy -P release                                -->
@@ -3068,7 +2951,6 @@
         <!--       <gpg.keyname>YOUR_GPG_KEY_ID</gpg.keyname>                 -->
         <!--     </properties>                                                -->
         <!--   </profile>                                                     -->
-        <!-- ================================================================ -->
         <profile>
             <id>release</id>
             <build>
@@ -3106,9 +2988,7 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Observatory Analysis Profile - Generate SpotBugs, PMD, Checkstyle reports -->
-        <!-- ================================================================ -->
         <profile>
             <id>observatory-analysis</id>
             <activation>
