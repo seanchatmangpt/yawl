@@ -43,8 +43,14 @@ if [ -n "${https_proxy:-}" ] || [ -n "${HTTPS_PROXY:-}" ]; then
     HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
 
-    # Start local Maven proxy bridge if not already running
-    if ! pgrep -f "maven-proxy.*python\|python.*maven-proxy" > /dev/null 2>&1; then
+    # Check if proxy is already listening on port 3128 (TCP connectivity test)
+    proxy_listening() {
+        bash -c '< /dev/tcp/127.0.0.1/3128' 2>/dev/null
+    }
+
+    if proxy_listening; then
+        echo "   ✅ Local Maven proxy already running"
+    else
         echo "   🔧 Starting local Maven proxy bridge..."
         PROXY_SCRIPT=""
         [ -f "${REPO_ROOT}/maven-proxy-v2.py" ] && PROXY_SCRIPT="${REPO_ROOT}/maven-proxy-v2.py"
@@ -52,15 +58,22 @@ if [ -n "${https_proxy:-}" ] || [ -n "${HTTPS_PROXY:-}" ]; then
 
         if [ -n "${PROXY_SCRIPT}" ]; then
             nohup python3 "${PROXY_SCRIPT}" > /tmp/maven-proxy.log 2>&1 &
-            sleep 2
-            if pgrep -f "maven-proxy" > /dev/null 2>&1; then
+            # Wait up to 10s for port 3128 to be bound instead of a fixed sleep
+            PROXY_READY=false
+            for i in $(seq 1 20); do
+                sleep 0.5
+                if proxy_listening; then
+                    PROXY_READY=true
+                    break
+                fi
+            done
+            if [ "${PROXY_READY}" = "true" ]; then
                 echo "   ✅ Local Maven proxy started (127.0.0.1:3128)"
             else
                 echo "   ⚠️  Proxy start failed — check /tmp/maven-proxy.log"
+                cat /tmp/maven-proxy.log >&2 2>/dev/null || true
             fi
         fi
-    else
-        echo "   ✅ Local Maven proxy already running"
     fi
     export MAVEN_PROXY_ENABLED=true
     export MAVEN_PROXY_PORT=3128
