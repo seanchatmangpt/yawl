@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.ggen.mining.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -32,7 +33,7 @@ public class XesLog {
     }
 
     public List<XesTrace> getTraces() {
-        return traces;
+        return Collections.unmodifiableList(traces);
     }
 
     public void addTrace(XesTrace trace) {

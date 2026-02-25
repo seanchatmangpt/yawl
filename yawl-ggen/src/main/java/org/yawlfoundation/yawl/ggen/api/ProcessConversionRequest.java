@@ -61,7 +61,7 @@ public class ProcessConversionRequest {
     }
 
     public Map<String, String> getOptions() {
-        return options;
+        return java.util.Collections.unmodifiableMap(options);
     }
 
     public void setOptions(Map<String, String> options) {

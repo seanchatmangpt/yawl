@@ -59,7 +59,7 @@ public class SignavioClient implements CloudMiningClient {
         conn.setRequestProperty("Content-Type", "application/json");
 
         String body = "{\"username\":\"" + email + "\",\"password\":\"" + password + "\"}";
-        conn.getOutputStream().write(body.getBytes());
+        conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
 
         int statusCode = conn.getResponseCode();
         if (statusCode != 200 && statusCode != 302) {
@@ -75,7 +75,7 @@ public class SignavioClient implements CloudMiningClient {
         }
 
         if (authToken == null) {
-            String responseBody = new String(conn.getInputStream().readAllBytes());
+            String responseBody = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             JsonObject jsonResponse = JsonParser.parseString(responseBody).getAsJsonObject();
             if (jsonResponse.has("sessionId")) {
                 this.authToken = jsonResponse.get("sessionId").getAsString();
@@ -111,7 +111,7 @@ public class SignavioClient implements CloudMiningClient {
             throw new IOException("Failed to list process models: HTTP " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         Map<String, Object> models = new HashMap<>();
@@ -131,7 +131,7 @@ public class SignavioClient implements CloudMiningClient {
             throw new IOException("Failed to discover workspace: HTTP " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         if (jsonResponse.has("directories") && jsonResponse.getAsJsonArray("directories").size() > 0) {
@@ -210,7 +210,7 @@ public class SignavioClient implements CloudMiningClient {
             throw new IOException("Failed to export process as BPMN: HTTP " + statusCode);
         }
 
-        return new String(conn.getInputStream().readAllBytes());
+        return new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     }
 
     /**

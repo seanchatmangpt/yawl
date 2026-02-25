@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.ggen.mining.model;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,11 +29,11 @@ public class Transition extends PnmlElement {
     }
 
     public Set<Arc> getIncomingArcs() {
-        return incomingArcs;
+        return Collections.unmodifiableSet(incomingArcs);
     }
 
     public Set<Arc> getOutgoingArcs() {
-        return outgoingArcs;
+        return Collections.unmodifiableSet(outgoingArcs);
     }
 
     public void addIncomingArc(Arc arc) {

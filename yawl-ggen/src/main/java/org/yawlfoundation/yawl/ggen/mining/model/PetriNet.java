@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.ggen.mining.model;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,15 +38,15 @@ public class PetriNet {
     }
 
     public Map<String, Place> getPlaces() {
-        return places;
+        return Collections.unmodifiableMap(places);
     }
 
     public Map<String, Transition> getTransitions() {
-        return transitions;
+        return Collections.unmodifiableMap(transitions);
     }
 
     public Set<Arc> getArcs() {
-        return arcs;
+        return Collections.unmodifiableSet(arcs);
     }
 
     /**

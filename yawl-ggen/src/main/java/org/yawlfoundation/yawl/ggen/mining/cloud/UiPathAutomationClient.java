@@ -29,10 +29,8 @@ public class UiPathAutomationClient implements CloudMiningClient {
     private static final String IDENTITY_ENDPOINT = "/identity_/connect/token";
     private static final String ODATA_ENDPOINT = "/odata";
 
-    private String apiToken;
-    private String tenantName;
-    private String accountName;
     private String accessToken;
+    private String apiToken;
     private String clientId;
     private String clientSecret;
 
@@ -44,8 +42,7 @@ public class UiPathAutomationClient implements CloudMiningClient {
      */
     public UiPathAutomationClient(String apiToken, String tenantName, String accountName) {
         this.apiToken = apiToken;
-        this.tenantName = tenantName;
-        this.accountName = accountName;
+        // tenantName and accountName accepted for API compatibility but not currently used
     }
 
     /**
@@ -89,14 +86,14 @@ public class UiPathAutomationClient implements CloudMiningClient {
             "&client_secret=" +
             URLEncoder.encode(clientSecret, StandardCharsets.UTF_8) +
             "&scope=OR.Administration%20OR.Execution";
-        conn.getOutputStream().write(body.getBytes());
+        conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
 
         int statusCode = conn.getResponseCode();
         if (statusCode != 200) {
             throw new IOException("OAuth authentication failed with status " + statusCode);
         }
 
-        String responseBody = new String(conn.getInputStream().readAllBytes());
+        String responseBody = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(responseBody).getAsJsonObject();
         this.accessToken = jsonResponse.get("access_token").getAsString();
     }
@@ -121,7 +118,7 @@ public class UiPathAutomationClient implements CloudMiningClient {
             throw new IOException("Failed to list process models: HTTP " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         Map<String, Object> models = new HashMap<>();
@@ -161,7 +158,7 @@ public class UiPathAutomationClient implements CloudMiningClient {
             throw new IOException("Failed to get metrics: HTTP " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         CelonicsMiningClient.ConformanceMetrics metrics = new CelonicsMiningClient.ConformanceMetrics();
@@ -224,7 +221,7 @@ public class UiPathAutomationClient implements CloudMiningClient {
             throw new IOException("Failed to export process: HTTP " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         String processName = "UiPathProcess";
@@ -278,14 +275,15 @@ public class UiPathAutomationClient implements CloudMiningClient {
             throw new IOException("Failed to get event log: HTTP " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         return convertJobsToCsv(processId, jsonResponse);
     }
 
     private String convertJobsToCsv(String processId, JsonObject jobsResponse) {
-        StringBuilder csv = new StringBuilder("caseId,activity,startTime,endTime,resource\n");
+        StringBuilder csv = new StringBuilder();
+        csv.append(String.format("caseId,activity,startTime,endTime,resource%n"));
 
         JsonArray valueArray = jobsResponse.getAsJsonArray("value");
         if (valueArray != null) {
