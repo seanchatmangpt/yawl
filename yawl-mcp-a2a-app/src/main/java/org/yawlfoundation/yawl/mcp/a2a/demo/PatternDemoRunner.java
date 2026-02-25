@@ -104,7 +104,7 @@ public class PatternDemoRunner {
     private static final String RESOURCE_PATH = "patterns/";
 
     private static final String ZAI_API_URL = "https://api.z.ai/api/paas/v4/chat/completions";
-    private static final String ZAI_MODEL = "glm-5";
+    private static final String ZAI_MODEL = "glm-4.5-air";
 
     private final DemoConfig config;
     private final ExtendedYamlConverter yamlConverter;
@@ -613,7 +613,7 @@ public class PatternDemoRunner {
             .replace("\t", "\\t");
 
         String requestBody = """
-            {"model":"%s","messages":[{"role":"user","content":"%s"}],"max_tokens":256}"""
+            {"model":"%s","messages":[{"role":"system","content":"You are a workflow patterns expert."},{"role":"user","content":"%s"}],"max_tokens":256}"""
             .formatted(ZAI_MODEL, escapedMessage);
 
         HttpRequest request = HttpRequest.newBuilder()
