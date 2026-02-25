@@ -388,6 +388,28 @@ public class YNetRunner {
     }
 
     /**
+     * Kicks the case execution with ScopedValue context bindings.
+     *
+     * <p>This method wraps case execution with ScopedValue bindings for case ID,
+     * correlation ID, and start time. These bindings are inherited by all child
+     * virtual threads participating in this case's execution.</p>
+     *
+     * @param pmgr the persistence manager
+     * @throws YPersistenceException if there's a persistence error
+     */
+    public void kickWithScopedValues(YPersistenceManager pmgr)
+            throws YPersistenceException, YDataStateException,
+                   YQueryException, YStateException {
+
+        String correlationId = _caseIDForNet + "-" + System.currentTimeMillis();
+
+        ScopedValue.where(CaseContext.CASE_ID, _caseID)
+            .where(CaseContext.CORRELATION_ID, correlationId)
+            .where(CaseContext.START_TIME, Instant.now())
+            .run(() -> kick(pmgr));
+    }
+
+    /**
      * Assumption: this will only get called AFTER a workitem has been progressed?
      * Because if it is called any other time then it will cause the case to stop.
      * @param pmgr
@@ -424,10 +446,10 @@ public class YNetRunner {
             }
 
             try {
-                _logger.debug("--> YNetRunner.kick");
+                _logger.debug(createContextMessage("--> YNetRunner.kick"));
 
                 if (! continueIfPossible(pmgr)) {
-                    _logger.debug("YNetRunner not able to continue");
+                    _logger.debug(createContextMessage("YNetRunner not able to continue"));
 
                     // if root net can't continue it means a case completion
                     if ((_engine != null) && isRootNet()) {
@@ -439,7 +461,7 @@ public class YNetRunner {
                         // call the external data source, if its set for this specification
                         _net.postCaseDataToExternal(getCaseID().toString());
 
-                        _logger.debug("Asking engine to finish case");
+                        _logger.debug(createContextMessage("Asking engine to finish case"));
                         _engine.removeCaseFromCaches(_caseIDForNet);
 
                         // log it
@@ -459,7 +481,7 @@ public class YNetRunner {
                     if ((_engine != null) && isRootNet()) _engine.clearCaseFromPersistence(_caseIDForNet);
                 }
 
-                _logger.debug("<-- YNetRunner.kick");
+                _logger.debug(createContextMessage("<-- YNetRunner.kick"));
                 span.setStatus(StatusCode.OK);
             } finally {
                 _writeLock.unlock();
@@ -473,6 +495,35 @@ public class YNetRunner {
         }
     }
 
+
+      /**
+     * Creates a context-aware log message with ScopedValue information.
+     *
+     * @param message the base log message
+     * @return a formatted log message with context information
+     */
+    private String createContextMessage(String message) {
+        StringBuilder sb = new StringBuilder(message);
+
+        // Add case ID if available
+        if (CaseContext.CASE_ID.isBound()) {
+            sb.append(" [case=").append(CaseContext.CASE_ID.get()).append("]");
+        }
+
+        // Add correlation ID if available
+        if (CaseContext.CORRELATION_ID.isBound()) {
+            sb.append(" [correlation=").append(CaseContext.CORRELATION_ID.get()).append("]");
+        }
+
+        // Add elapsed time if available
+        if (CaseContext.START_TIME.isBound()) {
+            Instant startTime = CaseContext.START_TIME.get();
+            long elapsedMs = System.currentTimeMillis() - startTime.toEpochMilli();
+            sb.append(" [elapsed=").append(elapsedMs).append("ms]");
+        }
+
+        return sb.toString();
+    }
 
     private void announceCaseCompletion() {
         _announcer.announceCaseCompletion(_caseObserver, _caseIDForNet, _net.getOutputData());
@@ -1067,7 +1118,7 @@ public class YNetRunner {
         Span span = YAWLTracing.createWorkItemSpan("yawl.task.complete",
             workItemId, _caseID, taskId);
         try (Scope scope = span.makeCurrent()) {
-            _logger.debug("--> completeTask: {}", taskId);
+            _logger.debug(createContextMessage("--> completeTask: {}"), taskId);
 
             long startTime = System.nanoTime();
             boolean taskExited = atomicTask.t_complete(pmgr, identifier, outputData);
@@ -1145,7 +1196,7 @@ public class YNetRunner {
             }
 
             span.setStatus(StatusCode.OK);
-            _logger.debug("<-- completeTask: {}, Exited={}", taskId, taskExited);
+            _logger.debug(createContextMessage("<-- completeTask: {}, Exited={}"), taskId, taskExited);
 
             return taskExited;
         } catch (YPersistenceException | YDataStateException | YQueryException | YStateException e) {
