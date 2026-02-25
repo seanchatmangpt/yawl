@@ -1,0 +1,20 @@
+# H_FALLBACK Guard — Silent Degradation in Catch Blocks
+# Pattern: Catch block that returns fake data instead of propagating the exception
+# Severity: FAIL
+# Fix: Propagate exception instead of faking data
+# Source: H-GUARDS-QUERIES.md Query 5
+
+PREFIX code: <http://ggen.io/code#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  ?method a code:Method ;
+          code:body ?body ;
+          code:lineNumber ?line .
+
+  FILTER(REGEX(?body, 'catch\\s*\\([^)]+\\)\\s*\\{[^}]*return[^}]*fake[^}]*\\}'))
+
+  BIND("H_FALLBACK" AS ?pattern)
+  BIND(CONCAT("Silent fallback at line ", STR(?line))
+       AS ?violation)
+}

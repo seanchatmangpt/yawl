@@ -1,0 +1,28 @@
+# H_STUB Guard — Empty/Placeholder Returns
+# Pattern: Empty string, zero, null, or empty collection from non-void methods
+# Severity: FAIL
+# Fix: Implement real method or throw UnsupportedOperationException
+# Source: H-GUARDS-QUERIES.md Query 3
+
+PREFIX code: <http://ggen.io/code#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  ?method a code:Method ;
+          code:body ?body ;
+          code:lineNumber ?line ;
+          code:returnType ?retType .
+
+  FILTER(
+    (REGEX(?body, 'return\\s+"";') ||
+     REGEX(?body, 'return\\s+0;') ||
+     REGEX(?body, 'return\\s+null;.*//.*stub') ||
+     REGEX(?body, 'return\\s+(Collections\\.empty|new\\s+(HashMap|ArrayList)\\(\\));\\s*$'))
+    &&
+    ?retType != "void"
+  )
+
+  BIND("H_STUB" AS ?pattern)
+  BIND(CONCAT("Stub return at line ", STR(?line), ": ", ?body)
+       AS ?violation)
+}

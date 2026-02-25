@@ -65,6 +65,7 @@
         <module>yawl-authentication</module>
         <module>yawl-engine</module>
         <module>yawl-stateless</module>
+        <module>yawl-worklet</module>
         <module>yawl-resourcing</module>
         <module>yawl-scheduling</module>
         <module>yawl-security</module>
