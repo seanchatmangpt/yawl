@@ -44,9 +44,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Base64;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -107,7 +104,7 @@ public class PatternDemoRunner {
     private static final String RESOURCE_PATH = "patterns/";
 
     private static final String ZAI_API_URL = "https://api.z.ai/api/paas/v4/chat/completions";
-    private static final String ZAI_MODEL = "GLM-4.7-Flash";
+    private static final String ZAI_MODEL = "glm-5";
 
     private final DemoConfig config;
     private final ExtendedYamlConverter yamlConverter;
@@ -600,48 +597,8 @@ public class PatternDemoRunner {
     }
 
     /**
-     * Generate a JWT token for Z.AI/Zhipu authentication.
-     * The API key format is "{id}.{secret}" and the token is an HS256-signed JWT.
-     */
-    private String generateZaiToken() {
-        String[] parts = zaiApiKey.split("\\.", 2);
-        if (parts.length != 2) {
-            return zaiApiKey; // fallback: use as-is
-        }
-        String apiKeyId = parts[0];
-        String apiKeySecret = parts[1];
-
-        try {
-            // Base64url encode without padding
-            java.util.function.Function<byte[], String> b64url = bytes ->
-                Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-
-            // JWT header
-            String header = b64url.apply(
-                ("{\"alg\":\"HS256\",\"sign_type\":\"SIGN\",\"typ\":\"JWT\"}").getBytes(StandardCharsets.UTF_8));
-
-            // JWT payload with expiry 1 hour from now
-            long nowMs = System.currentTimeMillis();
-            long expMs = nowMs + 3600_000;
-            String payload = b64url.apply(
-                ("{\"api_key\":\"" + apiKeyId + "\",\"exp\":" + expMs + ",\"timestamp\":" + nowMs + "}")
-                    .getBytes(StandardCharsets.UTF_8));
-
-            // HMAC-SHA256 signature
-            String signingInput = header + "." + payload;
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(apiKeySecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            String signature = b64url.apply(mac.doFinal(signingInput.getBytes(StandardCharsets.UTF_8)));
-
-            return signingInput + "." + signature;
-        } catch (Exception e) {
-            LOGGER.warning("JWT generation failed, using raw API key: " + e.getMessage());
-            return zaiApiKey;
-        }
-    }
-
-    /**
      * Call the Z.AI chat completions API directly via HttpClient.
+     * Uses raw API key as Bearer token per Z.AI API docs.
      *
      * @param userMessage the user prompt to send
      * @return the assistant's reply text
@@ -659,12 +616,11 @@ public class PatternDemoRunner {
             {"model":"%s","messages":[{"role":"user","content":"%s"}],"max_tokens":256}"""
             .formatted(ZAI_MODEL, escapedMessage);
 
-        String token = generateZaiToken();
-
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(ZAI_API_URL))
             .header("Content-Type", "application/json")
-            .header("Authorization", "Bearer " + token)
+            .header("Accept-Language", "en-US,en")
+            .header("Authorization", "Bearer " + zaiApiKey)
             .timeout(Duration.ofSeconds(30))
             .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
             .build();
@@ -677,14 +633,6 @@ public class PatternDemoRunner {
                 long backoffMs = (long) (2000 * Math.pow(2, attempt));
                 LOGGER.info("Z.AI rate limited, retrying in " + backoffMs + "ms...");
                 Thread.sleep(backoffMs);
-                // Regenerate token for retry
-                request = HttpRequest.newBuilder()
-                    .uri(URI.create(ZAI_API_URL))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + generateZaiToken())
-                    .timeout(Duration.ofSeconds(30))
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                    .build();
                 continue;
             }
             break;
