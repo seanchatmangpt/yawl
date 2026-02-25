@@ -49,9 +49,17 @@ class TestE2WFOJNet {
         YCondition c2 = new YCondition("c2", net);
         YCondition c3 = new YCondition("c3", net);
 
+        net.addNetElement(c1);
+        net.addNetElement(c2);
+        net.addNetElement(c3);
+
         YAtomicTask task1 = new YAtomicTask("t1", YTask._XOR, YTask._XOR, net);
         YAtomicTask task2 = new YAtomicTask("t2", YTask._AND, YTask._AND, net);
         YAtomicTask orJoinTask = new YAtomicTask("orJoin", YTask._OR, YTask._AND, net);
+
+        net.addNetElement(task1);
+        net.addNetElement(task2);
+        net.addNetElement(orJoinTask);
 
         // i -> t1 -> c1, c2 (XOR split)
         input.addPostset(new org.yawlfoundation.yawl.elements.YFlow(input, task1));

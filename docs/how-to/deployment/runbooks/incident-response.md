@@ -1,7 +1,7 @@
 # Production Incident Response Runbook - YAWL v6.0.0
 
 **Emergency Operations Guide**
-**Version:** 5.2
+**Version:** 6.0.0
 **Date:** 2026-02-16
 
 ---

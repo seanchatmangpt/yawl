@@ -1,6 +1,6 @@
 # YAWL Maven Multi-Module Structure
 
-**Version:** 5.2
+**Version:** 6.0.0
 **Date:** 2026-02-16
 **Status:** Design Phase
 **Branch:** claude/maven-first-build-kizBd

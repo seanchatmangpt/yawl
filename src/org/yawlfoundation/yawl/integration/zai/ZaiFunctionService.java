@@ -194,6 +194,23 @@ public class ZaiFunctionService {
         });
 
         registerFunction("list_workflows", args -> listWorkflows());
+
+        registerFunction("get_case_data", args -> getCaseData((String) args.get("case_id")));
+
+        registerFunction("suspend_case", args -> suspendCase((String) args.get("case_id")));
+
+        registerFunction("resume_case", args -> resumeCase((String) args.get("case_id")));
+
+        registerFunction("query_work_items", args -> {
+            String taskId = args.get("task_id") != null ? args.get("task_id").toString() : null;
+            String status = args.get("status") != null ? args.get("status").toString() : null;
+            return queryWorkItems(taskId, status);
+        });
+
+        registerFunction("get_specification_details",
+            args -> getSpecificationDetails((String) args.get("spec_id")));
+
+        registerFunction("cancel_case", args -> cancelCase((String) args.get("case_id")));
     }
 
     /**
@@ -288,6 +305,9 @@ public class ZaiFunctionService {
     private String getSystemPrompt() {
         return "You are an intelligent assistant for YAWL workflow operations. "
             + "Analyze user requests and call appropriate functions when needed. "
+            + "Available functions include: start_workflow, get_workflow_status, complete_task, "
+            + "list_workflows, get_case_data, suspend_case, resume_case, query_work_items, "
+            + "get_specification_details, cancel_case. "
             + "Be precise and follow the exact format when calling functions.";
     }
 
@@ -474,6 +494,127 @@ public class ZaiFunctionService {
         json.append("]}");
 
         return json.toString();
+    }
+
+    private String getCaseData(String caseId) throws IOException {
+        ensureConnection();
+        String xmlData = interfaceBClient.getCaseData(caseId, sessionHandle);
+        if (xmlData == null || xmlData.contains("failure")) {
+            return "{\"error\": \"No data found for case: " + caseId + "\"}";
+        }
+        return "{\"case_id\": \"" + caseId + "\", \"data\": " + xmlToJsonValue(xmlData) + "}";
+    }
+
+    private String suspendCase(String caseId) throws IOException {
+        ensureConnection();
+        List<WorkItemRecord> items = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+        if (items == null || items.isEmpty()) {
+            return "{\"error\": \"No active work items found for case: " + caseId + "\"}";
+        }
+        int suspended = 0;
+        for (WorkItemRecord item : items) {
+            if (item.hasLiveStatus()) {
+                String result = interfaceBClient.suspendWorkItem(item.getID(), sessionHandle);
+                if (result != null && !result.contains("failure")) suspended++;
+            }
+        }
+        return "{\"status\": \"suspended\", \"case_id\": \"" + caseId
+               + "\", \"items_suspended\": " + suspended + "}";
+    }
+
+    private String resumeCase(String caseId) throws IOException {
+        ensureConnection();
+        List<WorkItemRecord> items = interfaceBClient.getWorkItemsForCase(caseId, sessionHandle);
+        if (items == null || items.isEmpty()) {
+            return "{\"error\": \"No work items found for case: " + caseId + "\"}";
+        }
+        int resumed = 0;
+        for (WorkItemRecord item : items) {
+            String result = interfaceBClient.unsuspendWorkItem(item.getID(), sessionHandle);
+            if (result != null && !result.contains("failure")) resumed++;
+        }
+        return "{\"status\": \"resumed\", \"case_id\": \"" + caseId
+               + "\", \"items_resumed\": " + resumed + "}";
+    }
+
+    private String queryWorkItems(String taskId, String statusFilter) throws IOException {
+        ensureConnection();
+        List<WorkItemRecord> items;
+        if (taskId != null && !taskId.isBlank()) {
+            items = interfaceBClient.getWorkItemsForTask(taskId, sessionHandle);
+        } else {
+            items = interfaceBClient.getCompleteListOfLiveWorkItems(sessionHandle);
+        }
+        if (items == null) {
+            return "{\"items\": []}";
+        }
+        // Filter by status if provided
+        if (statusFilter != null && !statusFilter.isBlank()) {
+            items = items.stream()
+                .filter(item -> statusFilter.equalsIgnoreCase(item.getStatus()))
+                .toList();
+        }
+        StringBuilder json = new StringBuilder("{\"items\": [");
+        boolean first = true;
+        for (WorkItemRecord item : items) {
+            if (!first) json.append(",");
+            json.append("{\"id\":\"").append(item.getID())
+                .append("\",\"task_id\":\"").append(item.getTaskID())
+                .append("\",\"case_id\":\"").append(item.getCaseID())
+                .append("\",\"status\":\"").append(item.getStatus())
+                .append("\",\"task_name\":\"").append(item.getTaskName()).append("\"}");
+            first = false;
+        }
+        json.append("]}");
+        return json.toString();
+    }
+
+    private String getSpecificationDetails(String specId) throws IOException {
+        ensureConnection();
+        List<SpecificationData> specs = interfaceBClient.getSpecificationList(sessionHandle);
+        if (specs == null) {
+            return "{\"error\": \"Could not retrieve specification list\"}";
+        }
+        // Find by name or URI
+        SpecificationData found = specs.stream()
+            .filter(s -> specId.equals(s.getSpecURI()) || specId.equals(s.getName()))
+            .findFirst()
+            .orElse(null);
+        if (found == null) {
+            // Return all available spec names if not found
+            StringBuilder available = new StringBuilder("[");
+            boolean first = true;
+            for (SpecificationData s : specs) {
+                if (!first) available.append(",");
+                available.append("\"").append(s.getName() != null ? s.getName() : s.getSpecURI())
+                    .append("\"");
+                first = false;
+            }
+            available.append("]");
+            return "{\"error\": \"Specification not found: " + specId
+                   + "\", \"available\": " + available + "}";
+        }
+        // Get specification XML
+        String specXml = interfaceBClient.getSpecification(found.getID(), sessionHandle);
+        return "{\"spec_id\":\"" + specId + "\",\"name\":\"" + found.getName()
+               + "\",\"version\":\"" + found.getSpecVersion() + "\",\"xml_length\":"
+               + (specXml != null ? specXml.length() : 0) + "}";
+    }
+
+    private String cancelCase(String caseId) throws IOException {
+        ensureConnection();
+        String result = interfaceBClient.cancelCase(caseId, sessionHandle);
+        if (result == null || result.contains("failure") || result.contains("error")) {
+            return "{\"error\": \"Failed to cancel case: " + result + "\"}";
+        }
+        return "{\"status\": \"cancelled\", \"case_id\": \"" + caseId + "\"}";
+    }
+
+    private String xmlToJsonValue(String xml) {
+        if (xml == null || xml.isBlank()) return "null";
+        // Escape quotes and return as JSON string
+        return "\"" + xml.replace("\\", "\\\\").replace("\"", "\\\"")
+               .replace("\n", "\\n").replace("\r", "\\r") + "\"";
     }
 
     private YSpecificationID parseSpecificationID(String workflowId) {

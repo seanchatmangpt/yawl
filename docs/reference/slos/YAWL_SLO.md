@@ -1,7 +1,7 @@
 # YAWL Service Level Objectives (SLOs) - v5.2
 
 **Production SLA Commitments**
-**Version:** 5.2
+**Version:** 6.0.0
 **Effective Date:** 2026-03-02
 **Review Cycle:** Quarterly
 

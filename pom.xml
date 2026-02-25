@@ -65,6 +65,7 @@
         <module>yawl-authentication</module>
         <module>yawl-engine</module>
         <module>yawl-stateless</module>
+        <module>yawl-worklet</module>
         <module>yawl-resourcing</module>
         <module>yawl-scheduling</module>
         <module>yawl-security</module>
@@ -378,6 +379,11 @@
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-integration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-ggen</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -3071,6 +3077,17 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- JMH Benchmarks Profile - Include yawl-benchmark module           -->
+        <!-- Usage: mvn test -P jmh-benchmarks                                -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>jmh-benchmarks</id>
+            <modules>
+                <module>yawl-benchmark</module>
+            </modules>
         </profile>
 
     </profiles>

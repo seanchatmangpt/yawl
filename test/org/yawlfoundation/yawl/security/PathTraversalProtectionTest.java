@@ -80,7 +80,7 @@ public class PathTraversalProtectionTest {
      * Pattern to detect null bytes that can truncate paths.
      */
     private static final Pattern NULL_BYTE_PATTERN = Pattern.compile(
-            "%00|\\x00|%0|\\0"
+            "%00|\\x00|%0|\\x00"
     );
 
     /**

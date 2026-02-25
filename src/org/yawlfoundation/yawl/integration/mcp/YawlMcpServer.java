@@ -2,9 +2,13 @@ package org.yawlfoundation.yawl.integration.mcp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplace;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplaceListing;
 import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
 import io.modelcontextprotocol.server.McpSyncServer;
@@ -105,6 +109,7 @@ public class YawlMcpServer {
     private final ZaiFunctionService zaiService;
     private McpSyncServer mcpServer;
     private String sessionHandle;
+    private AgentMarketplace agentMarketplace;
 
     /**
      * Construct a YAWL MCP Server with YAWL engine connection parameters.
@@ -146,6 +151,22 @@ public class YawlMcpServer {
                 ". Spec synthesis tool will not be available.");
         }
         this.zaiService = tempService;
+    }
+
+    /**
+     * Wires an {@link AgentMarketplace} so that a {@code yawl://agents/marketplace}
+     * static resource is exposed to LLMs via MCP.
+     *
+     * <p>Must be called before {@link #start()}. If not called, no marketplace
+     * resource is registered and LLMs cannot query available agents.</p>
+     *
+     * @param marketplace the agent marketplace to expose (must not be null)
+     * @return this server, for fluent chaining
+     */
+    public YawlMcpServer withMarketplace(AgentMarketplace marketplace) {
+        this.agentMarketplace = java.util.Objects.requireNonNull(
+                marketplace, "marketplace must not be null");
+        return this;
     }
 
     /**
@@ -285,8 +306,8 @@ public class YawlMcpServer {
                 semantics, not LLM inference. Tool schemas are SPARQL CONSTRUCT outputs
                 derived from the workflow specification, not hand-authored.
 
-                Capabilities: %d tools (%d core + %d CONSTRUCT + %d formal + %d ontology + %d PM + %d reactor + %d conscience + %d pattern),
-                3 static resources, 4 resource templates, 4 prompts, 3 completions,
+                Capabilities: %d tools (%d core + %d CONSTRUCT coordination + %d formal Petri-net + %d ontology-derived),
+                3 static resources, 4 resource templates, 5 prompts, 3 completions,
                 logging (MCP 2025-11-25 compliant).
 
                 Blue-ocean innovation tools:
@@ -303,11 +324,9 @@ public class YawlMcpServer {
                 """.formatted(allTools.size(), coreToolCount, constructToolCount, formalToolCount,
                     ontologyToolCount, pmToolCount, reactorToolCount, conscienceToolCount, patternToolCount))
             .tools(allTools)
-            .resources(YawlResourceProvider.createAllResources(
-                interfaceBClient, sessionHandle))
+            .resources(buildAllResources(interfaceBClient, sessionHandle))
             .resourceTemplates(buildAllResourceTemplates(interfaceBClient, sessionHandle))
-            .prompts(YawlPromptSpecifications.createAll(
-                interfaceBClient, () -> sessionHandle))
+            .prompts(buildAllPrompts())
             .completions(YawlCompletionSpecifications.createAll(
                 interfaceBClient, sessionHandle))
             .build();
@@ -316,10 +335,61 @@ public class YawlMcpServer {
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
         System.err.println("Capabilities: " + allTools.size() + " tools ("
             + coreToolCount + " core + " + constructToolCount + " CONSTRUCT + "
-            + formalToolCount + " formal + " + ontologyToolCount + " ontology + "
-            + pmToolCount + " PM + " + reactorToolCount + " reactor + "
-            + conscienceToolCount + " conscience + " + patternToolCount + " pattern), "
-            + "3 resources, 4 resource templates, 4 prompts, 3 completions, logging");
+            + formalToolCount + " formal Petri-net + " + ontologyToolCount + " ontology-derived), "
+            + "3 resources, 4 resource templates, 5 prompts, 3 completions, logging");
+    }
+
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification>
+            buildAllResources(InterfaceB_EnvironmentBasedClient client, String session) {
+        var resources = new ArrayList<>(
+            YawlResourceProvider.createAllResources(client, session));
+        if (agentMarketplace != null) {
+            resources.add(buildMarketplaceResource());
+        }
+        return resources;
+    }
+
+    private io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification
+            buildMarketplaceResource() {
+        McpSchema.Resource resource = new McpSchema.Resource(
+            "yawl://agents/marketplace",
+            "Agent Marketplace",
+            "All currently live agents registered in the YAWL agent marketplace, "
+                + "with their capability, endpoint, and cost/latency specifications",
+            "application/json",
+            null, 0L, null, Map.of()
+        );
+
+        return new io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification(
+            resource, (exchange, request) -> {
+            try {
+                List<AgentMarketplaceListing> live = agentMarketplace.allLiveListings();
+                List<Map<String, Object>> entries = new ArrayList<>();
+                for (AgentMarketplaceListing listing : live) {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("agentId", listing.agentInfo().getId());
+                    entry.put("name", listing.agentInfo().getName());
+                    entry.put("capabilities", listing.agentInfo().getCapabilities());
+                    entry.put("endpoint", listing.agentInfo().getEndpointUrl());
+                    entry.put("specVersion", listing.spec().specVersion());
+                    entry.put("capability", listing.spec().capability().domainName());
+                    entry.put("registeredAt", listing.registeredAt().toString());
+                    entry.put("lastHeartbeatAt", listing.lastHeartbeatAt().toString());
+                    entries.add(entry);
+                }
+                String json = new ObjectMapper().writeValueAsString(
+                    Map.of("marketplace", entries, "totalLive", live.size()));
+                return new McpSchema.ReadResourceResult(List.of(
+                    new McpSchema.TextResourceContents(
+                        request.uri(), "application/json", json)));
+            } catch (Exception e) {
+                String errJson = "{\"error\": \"Failed to retrieve marketplace: "
+                    + e.getMessage().replace("\"", "'") + "\"}";
+                return new McpSchema.ReadResourceResult(List.of(
+                    new McpSchema.TextResourceContents(
+                        request.uri(), "application/json", errJson)));
+            }
+        });
     }
 
     private List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification>
@@ -328,6 +398,23 @@ public class YawlMcpServer {
             YawlResourceProvider.createAllResourceTemplates(client, session));
         templates.add(MermaidStateResource.create(client, session));
         return templates;
+    }
+
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncPromptSpecification>
+            buildAllPrompts() {
+        var prompts = new ArrayList<>(
+            YawlPromptSpecifications.createAll(interfaceBClient, () -> sessionHandle));
+        try {
+            org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade miningFacade =
+                new org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade(
+                    yawlEngineUrl, yawlUsername, yawlPassword);
+            prompts.add(YawlPromptSpecifications.createWorkflowPerformanceReport(
+                miningFacade, interfaceBClient, () -> sessionHandle));
+        } catch (java.io.IOException e) {
+            System.err.println("WARN [YawlMcpServer] Process mining facade unavailable — "
+                + "workflow_performance_report prompt not loaded: " + e.getMessage());
+        }
+        return prompts;
     }
 
     /**

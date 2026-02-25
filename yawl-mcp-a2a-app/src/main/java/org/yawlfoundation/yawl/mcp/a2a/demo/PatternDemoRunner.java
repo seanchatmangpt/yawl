@@ -36,6 +36,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -95,10 +103,15 @@ public class PatternDemoRunner {
     private static final String VERSION = "6.0.0";
     private static final String RESOURCE_PATH = "patterns/";
 
+    private static final String ZAI_API_URL = "https://api.z.ai/api/paas/v4/chat/completions";
+    private static final String ZAI_MODEL = "GLM-4.7-Flash";
+
     private final DemoConfig config;
     private final ExtendedYamlConverter yamlConverter;
     private final PatternRegistry registry;
     private YStatelessEngine engine;
+    private HttpClient zaiClient;
+    private String zaiApiKey;
 
     /**
      * Main entry point for the pattern demo runner.
@@ -137,6 +150,40 @@ public class PatternDemoRunner {
         try {
             // Initialize engine with idle timeout monitoring
             engine = new YStatelessEngine(config.timeoutSeconds() * 1000L);
+
+            // Initialize Z.AI via HttpClient for commentary if requested and API key available
+            zaiApiKey = System.getenv("ZAI_API_KEY");
+            if (config.withCommentary() && zaiApiKey != null && !zaiApiKey.isBlank()) {
+                try {
+                    HttpClient.Builder builder = HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofSeconds(10));
+
+                    // Configure proxy from system properties (set via JAVA_TOOL_OPTIONS)
+                    String proxyHost = System.getProperty("https.proxyHost");
+                    String proxyPort = System.getProperty("https.proxyPort");
+                    if (proxyHost != null && proxyPort != null) {
+                        builder.proxy(ProxySelector.of(
+                            new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort))));
+
+                        String proxyUser = System.getProperty("https.proxyUser");
+                        String proxyPass = System.getProperty("https.proxyPassword");
+                        if (proxyUser != null && proxyPass != null) {
+                            builder.authenticator(new Authenticator() {
+                                @Override
+                                protected PasswordAuthentication getPasswordAuthentication() {
+                                    return new PasswordAuthentication(
+                                        proxyUser, proxyPass.toCharArray());
+                                }
+                            });
+                        }
+                    }
+
+                    zaiClient = builder.build();
+                    System.out.println("Z.AI commentary enabled (model: " + ZAI_MODEL + ")");
+                } catch (Throwable t) {
+                    LOGGER.log(Level.WARNING, "Z.AI unavailable, commentary disabled: " + t.getMessage());
+                }
+            }
 
             // Get patterns to execute
             List<PatternInfo> patterns = getPatternsToExecute();
@@ -302,8 +349,9 @@ public class PatternDemoRunner {
                 );
             }
 
-            // Execute via harness
-            ExecutionHarness harness = ExecutionHarness.create(engine)
+            // Execute via harness with a fresh engine per pattern to avoid state leakage
+            YStatelessEngine patternEngine = new YStatelessEngine(config.timeoutSeconds() * 1000L);
+            ExecutionHarness harness = ExecutionHarness.create(patternEngine)
                 .withAutoCompletion(config.autoComplete())
                 .withTracing(config.enableTracing())
                 .withMetrics(config.enableMetrics())
@@ -524,9 +572,103 @@ public class PatternDemoRunner {
             System.out.printf("  Savings:     %.1f%%%n", report.getTotalTokenSavings());
         }
 
+        // Z.AI commentary via direct HttpClient
+        if (zaiClient != null) {
+            System.out.println();
+            System.out.println("Z.AI Commentary (Wil van der Aalst perspective):");
+            try {
+                String commentary = callZaiApi(String.format(
+                    "You are Professor Wil van der Aalst, the creator of workflow patterns. "
+                    + "Provide a brief (3-4 sentences) commentary on these YAWL pattern demo results: "
+                    + "%d/%d patterns executed successfully, %d patterns failed, "
+                    + "total execution time: %s. "
+                    + "Comment on the workflow pattern coverage and significance.",
+                    report.getSuccessfulPatterns(), report.getTotalPatterns(),
+                    report.getFailedPatterns(), report.getFormattedTotalTime()));
+                System.out.println("  " + commentary.replace("\n", "\n  "));
+            } catch (Exception e) {
+                System.out.println("  (Commentary unavailable: " + e.getMessage() + ")");
+            }
+        }
+
         System.out.println();
         System.out.printf("Total duration: %s%n", report.getFormattedTotalTime());
         System.out.println("======================================================================");
+    }
+
+    /**
+     * Call the Z.AI chat completions API directly via HttpClient.
+     * Uses raw API key as Bearer token per Z.AI API docs.
+     *
+     * @param userMessage the user prompt to send
+     * @return the assistant's reply text
+     */
+    private String callZaiApi(String userMessage) throws IOException, InterruptedException {
+        // Escape the message for JSON embedding
+        String escapedMessage = userMessage
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t");
+
+        String requestBody = """
+            {"model":"%s","messages":[{"role":"system","content":"You are a workflow patterns expert."},{"role":"user","content":"%s"}],"max_tokens":256}"""
+            .formatted(ZAI_MODEL, escapedMessage);
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(ZAI_API_URL))
+            .header("Content-Type", "application/json")
+            .header("Accept-Language", "en-US,en")
+            .header("Authorization", "Bearer " + zaiApiKey)
+            .timeout(Duration.ofSeconds(30))
+            .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+            .build();
+
+        // Retry with exponential backoff for rate limits
+        HttpResponse<String> response = null;
+        for (int attempt = 0; attempt < 3; attempt++) {
+            response = zaiClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 429) {
+                long backoffMs = (long) (2000 * Math.pow(2, attempt));
+                LOGGER.info("Z.AI rate limited, retrying in " + backoffMs + "ms...");
+                Thread.sleep(backoffMs);
+                continue;
+            }
+            break;
+        }
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Z.AI API returned HTTP " + response.statusCode() + ": " + response.body());
+        }
+
+        // Extract content from JSON response: {"choices":[{"message":{"content":"..."}}]}
+        String body = response.body();
+        int contentIdx = body.indexOf("\"content\":");
+        if (contentIdx < 0) {
+            throw new IOException("No content in Z.AI response");
+        }
+        // Find the opening quote after "content":
+        int startQuote = body.indexOf('"', contentIdx + 10);
+        if (startQuote < 0) {
+            throw new IOException("Malformed Z.AI response");
+        }
+        // Find the closing quote, handling escaped quotes
+        int endQuote = startQuote + 1;
+        while (endQuote < body.length()) {
+            char c = body.charAt(endQuote);
+            if (c == '\\') {
+                endQuote += 2; // skip escaped character
+            } else if (c == '"') {
+                break;
+            } else {
+                endQuote++;
+            }
+        }
+        return body.substring(startQuote + 1, endQuote)
+            .replace("\\n", "\n")
+            .replace("\\\"", "\"")
+            .replace("\\\\", "\\");
     }
 
     /**

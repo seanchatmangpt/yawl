@@ -25,6 +25,16 @@
             <artifactId>yawl-engine</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-stateless</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-integration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Jakarta Persistence -->
         <dependency>

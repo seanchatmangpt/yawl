@@ -48,6 +48,10 @@
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-utilities</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-ggen</artifactId>
+        </dependency>
 
         <!-- ============================================================== -->
         <!-- SPRING BOOT STARTERS                                           -->
@@ -266,9 +270,12 @@
         <!-- HTTP CLIENT                                                    -->
         <!-- ============================================================== -->
 
+        <!-- zai-sdk 0.3.0 was compiled against okhttp 3.14.9 (uses okhttp3/internal/Util
+             removed in 5.x). Pin to 3.14.9 so ZaiService can initialize at runtime. -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
+            <version>3.14.9</version>
         </dependency>
 
         <!-- ============================================================== -->
@@ -503,7 +510,13 @@
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.lang.reflect=ALL-UNNAMED
                         --add-opens java.base/java.io=ALL-UNNAMED
-                        --add-opens java.base/java.util=ALL-UNNAMED</argLine>
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=3128
+                        -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=3128
+                        -Dhttp.nonProxyHosts=169.254.169.254|metadata.google.internal|*.svc.cluster.local|*.local</argLine>
+                    <!-- Self-play tests make sequential Z.AI API calls across 5 scenarios;
+                         override parent 300s limit to allow them to complete naturally -->
+                    <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                     <classpathDependencyExcludes>
                         <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
                     </classpathDependencyExcludes>
