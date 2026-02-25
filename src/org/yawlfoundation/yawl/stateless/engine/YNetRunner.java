@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.stateless.engine;
 
 
+import java.time.Instant;
+import java.lang.ScopedValue;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
@@ -50,6 +52,13 @@ import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 import org.yawlfoundation.yawl.stateless.listener.predicate.YLogPredicate;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
+import org.yawlfoundation.yawl.engine.observability.YAWLTelemetry;
+import org.yawlfoundation.yawl.engine.observability.YAWLTracing;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.api.common.Attributes;
 
 /**
  *
@@ -67,6 +76,20 @@ public class YNetRunner {
     public enum ExecutionStatus { Normal, Suspending, Suspended, Resuming }
 
     private static final Logger _logger = LogManager.getLogger(YNetRunner.class);
+
+    /** Scoped value carrying the current workflow context for virtual thread propagation.
+     *
+     * <p>Replaces ThreadLocal for case-ID propagation. ScopedValue is immutable, inherited
+     * automatically by forked virtual threads (StructuredTaskScope children), and released
+     * automatically when the scope exits — eliminating the ThreadLocal leak risk.</p>
+     *
+     * <p>Bound per-case during key entry points via {@code ScopedValue.callWhere()}.
+     * Observable by any virtual thread spawned within those call trees (e.g., telemetry,
+     * logging side-cars).</p>
+     *
+     * @see WorkflowContext
+     */
+    public static final ScopedValue<WorkflowContext> WORKFLOW_CONTEXT = ScopedValue.newInstance();
 
     /** Lock for virtual thread safe parent runner operations */
     private final ReentrantLock _runnerLock = new ReentrantLock();
@@ -340,7 +363,32 @@ public class YNetRunner {
 
 
     public void start() throws YDataStateException, YQueryException, YStateException {
-        kick();
+        Span span = YAWLTracing.createCaseSpan("yawl.stateless.case.start",
+            _caseIDForNet.toString(), _specID.toKeyString());
+        try (Scope scope = span.makeCurrent()) {
+            // Record case start telemetry
+            YAWLTelemetry.getInstance().recordCaseStarted(
+                _caseIDForNet.toString(), _specID.toKeyString());
+
+            WorkflowContext ctx = WorkflowContext.of(
+                _caseIDForNet.toString(),
+                _specID.toKeyString(),
+                Thread.currentThread().hashCode() // Use hash as engine number for stateless
+            );
+
+            try {
+                ScopedValue.where(WORKFLOW_CONTEXT, ctx).call(() -> {
+                    kick();
+                    return null;
+                });
+            } catch (Exception e) {
+                span.setStatus(StatusCode.ERROR, e.getMessage());
+                span.recordException(e);
+                throw new YStateException("Failed to start case with ScopedValue context", e);
+            }
+        } finally {
+            span.end();
+        }
     }
 
 
@@ -353,29 +401,49 @@ public class YNetRunner {
      * Because if it is called any other time then it will cause the case to stop.
      */
     public synchronized void kick() throws YDataStateException, YQueryException, YStateException {
-        _logger.debug("--> YNetRunner.kick");
+        WorkflowContext ctx = WorkflowContext.of(
+            _caseIDForNet.toString(),
+            _specID.toKeyString(),
+            Thread.currentThread().hashCode()
+        );
 
-        if (! continueIfPossible()) {
-            _logger.debug("YNetRunner not able to continue");
+        Span span = YAWLTracing.createNetRunnerSpan("yawl.stateless.net.kick", getCaseID().toString(),
+            _net != null ? _net.getID() : "unknown");
 
-            // if root net can't continue it means a case completion
-            if (isRootNet()) {
-                announceCaseCompletion();
-                if (endOfNetReached() && warnIfNetNotEmpty()) {
-                    _cancelling = true;                       // flag its not a deadlock                                   
+        try (Scope scope = span.makeCurrent()) {
+            ScopedValue.where(WORKFLOW_CONTEXT, ctx).call(() -> {
+                _logger.debug("--> YNetRunner.kick with context: {}", ctx.toLogString());
+
+                if (! continueIfPossible()) {
+                    _logger.debug("YNetRunner not able to continue");
+
+                    // if root net can't continue it means a case completion
+                    if (isRootNet()) {
+                        announceCaseCompletion();
+                        if (endOfNetReached() && warnIfNetNotEmpty()) {
+                            _cancelling = true;                       // flag its not a deadlock
+                        }
+
+                        // call the external data source, if its set for this specification
+                        _net.postCaseDataToExternal(getCaseID().toString());
+
+                        _logger.debug("Asking engine to finish case");
+
+                    }
+                    if (! _cancelling && deadLocked()) notifyDeadLock();
+                    cancel();
                 }
 
-                // call the external data source, if its set for this specification
-                _net.postCaseDataToExternal(getCaseID().toString());
-
-                _logger.debug("Asking engine to finish case");
-
-            }
-            if (! _cancelling && deadLocked()) notifyDeadLock();
-            cancel();
+                _logger.debug("<-- YNetRunner.kick");
+                return null;
+            });
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw new YStateException("Failed to execute kick with ScopedValue context", e);
+        } finally {
+            span.end();
         }
-
-        _logger.debug("<-- YNetRunner.kick");
     }
 
 
@@ -410,23 +478,37 @@ public class YNetRunner {
 
 
     private void notifyDeadLock() {
-        Set<YTask> deadlockedTasks = new HashSet<>();
-        for (Object o : _caseIDForNet.getLocations()) {
-            if (o instanceof YExternalNetElement element) {
-                if (_net.getNetElements().containsValue(element)) {
-                    if (element instanceof YTask task) {
-                        deadlockedTasks.add(task);
-                    }
-                    Set<YExternalNetElement> postset = element.getPostsetElements();
-                    for (YExternalNetElement postsetElement : postset) {
-                        if (postsetElement instanceof YTask taskElement) {
-                            deadlockedTasks.add(taskElement);
+        Span span = YAWLTracing.createCaseSpan("yawl.stateless.deadlock",
+            _caseIDForNet.toString(), _specID.toKeyString());
+        try (Scope scope = span.makeCurrent()) {
+            Set<YTask> deadlockedTasks = new HashSet<>();
+            for (Object o : _caseIDForNet.getLocations()) {
+                if (o instanceof YExternalNetElement element) {
+                    if (_net.getNetElements().containsValue(element)) {
+                        if (element instanceof YTask task) {
+                            deadlockedTasks.add(task);
+                        }
+                        Set<YExternalNetElement> postset = element.getPostsetElements();
+                        for (YExternalNetElement postsetElement : postset) {
+                            if (postsetElement instanceof YTask taskElement) {
+                                deadlockedTasks.add(taskElement);
+                            }
                         }
                     }
                 }
             }
+
+            // Record deadlock telemetry
+            YAWLTelemetry.getInstance().recordDeadlock(
+                _caseIDForNet.toString(), _specID.toKeyString(), deadlockedTasks.size());
+
+            _announcer.announceDeadlock(_caseIDForNet, deadlockedTasks);
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+        } finally {
+            span.end();
         }
-        _announcer.announceDeadlock(_caseIDForNet, deadlockedTasks);
     }
 
 
@@ -533,15 +615,34 @@ public class YNetRunner {
                                                        Document outputData,
                                                        WorkItemCompletion completionType)
             throws YDataStateException, YStateException, YQueryException {
-        _logger.debug("--> completeWorkItemInTask");
-        YAtomicTask task = (YAtomicTask) _net.getNetElement(taskID);
-        boolean success = completeTask(workItem, task, caseID, outputData, completionType);
+        Span span = YAWLTracing.createWorkItemSpan("yawl.stateless.complete.workitem",
+            workItem.getIDString(), caseID.toString(), taskID);
+        try (Scope scope = span.makeCurrent()) {
+            _logger.debug("--> completeWorkItemInTask");
+            YAtomicTask task = (YAtomicTask) _net.getNetElement(taskID);
+            boolean success = completeTask(workItem, task, caseID, outputData, completionType);
 
-        // notify exception checkpoint to service if available
-        _announcer.announceCheckWorkItemConstraints(
-                    workItem, _net.getInternalDataDocument(), false);
-        _logger.debug("<-- completeWorkItemInTask");
-        return success;
+            // Record work item completion telemetry
+            YAWLTelemetry.getInstance().recordWorkItemCompleted(
+                workItem.getIDString(), caseID.toString(), taskID);
+
+            // notify exception checkpoint to service if available
+            _announcer.announceCheckWorkItemConstraints(
+                        workItem, _net.getInternalDataDocument(), false);
+            _logger.debug("<-- completeWorkItemInTask");
+            return success;
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+
+            // Record work item failure telemetry
+            YAWLTelemetry.getInstance().recordWorkItemFailed(
+                workItem.getIDString(), caseID.toString(), taskID, e.getMessage());
+
+            throw e;
+        } finally {
+            span.end();
+        }
     }
 
 
@@ -549,62 +650,71 @@ public class YNetRunner {
            throws YDataStateException, YStateException, YQueryException {
         _logger.debug("--> continueIfPossible");
 
-        // Check if we are suspending (or suspended?) and if so exit out as we
-        // shouldn't post new workitems
-        if (isInSuspense()) {
-            _logger.debug("Aborting runner continuation as case is currently suspending/suspended");
-            return true;
+        try {
+            return ScopedValue.where(WORKFLOW_CONTEXT, WorkflowContext.of(
+                _caseIDForNet.toString(),
+                _specID.toKeyString(),
+                Thread.currentThread().hashCode()
+            )).call(() -> {
+                // Check if we are suspending (or suspended?) and if so exit out as we
+                // shouldn't post new workitems
+                if (isInSuspense()) {
+                    _logger.debug("Aborting runner continuation as case is currently suspending/suspended");
+                    return true;
+                }
+
+                // don't continue if the net has already finished
+                if (isCompleted()) return false;
+
+                // storage for the running set of enabled tasks
+                YEnabledTransitionSet enabledTransitions = new YEnabledTransitionSet();
+
+                // iterate through the full set of tasks for the net
+                for (YTask task : _netTasks) {
+
+                    // if this task is an enabled 'transition'
+                    if (task.t_enabled(_caseIDForNet)) {
+                        if (! (_enabledTasks.contains(task) || _busyTasks.contains(task)))
+                            enabledTransitions.add(task) ;
+                    }
+                    else {
+
+                        // if the task is not (or no longer) an enabled transition, and it
+                        // has been previously enabled by the engine, then it must be withdrawn
+                        if (_enabledTasks.contains(task)) {
+                            withdrawEnabledTask(task);
+                        }
+                    }
+
+                    // wait if necessary for the runner busy tasks to synch (rarely required)
+                    int retries = 5;
+                    while (task.t_isBusy() && !_busyTasks.contains(task)) {
+                        _logger.debug("Retrying busy task synchronization: {} (retries: {})",
+                                task.getID(), retries);
+                        try {
+                            Thread.sleep(5);
+                        }
+                        catch (InterruptedException e) {
+                            //fall through;
+                        }
+                        if (--retries == 0) {
+                            _logger.error("Throwing RTE for lists out of sync");
+                            throw new RuntimeException("Busy task list out of synch with a busy task: "
+                                    + task.getID() + " busy tasks: " + _busyTasks);
+                        }
+                    }
+                }
+
+                // fire the set of enabled 'transitions' (if any)
+                if (! enabledTransitions.isEmpty()) fireTasks(enabledTransitions);
+
+                _logger.debug("<-- continueIfPossible");
+
+                return hasActiveTasks();
+            });
+        } catch (Exception e) {
+            throw new YStateException("Failed to execute continueIfPossible with ScopedValue context", e);
         }
-
-        // don't continue if the net has already finished
-        if (isCompleted()) return false;
-
-        // storage for the running set of enabled tasks
-        YEnabledTransitionSet enabledTransitions = new YEnabledTransitionSet();
-
-        // iterate through the full set of tasks for the net
-        for (YTask task : _netTasks) {
-
-            // if this task is an enabled 'transition'
-            if (task.t_enabled(_caseIDForNet)) {
-                if (! (_enabledTasks.contains(task) || _busyTasks.contains(task)))
-                    enabledTransitions.add(task) ;
-            }
-            else {
-
-                // if the task is not (or no longer) an enabled transition, and it
-                // has been previously enabled by the engine, then it must be withdrawn
-                if (_enabledTasks.contains(task)) {
-                    withdrawEnabledTask(task);
-                }
-            }
-
-            // wait if necessary for the runner busy tasks to synch (rarely required)
-            int retries = 5;
-            while (task.t_isBusy() && !_busyTasks.contains(task)) {
-                _logger.debug("Retrying busy task synchronization: {} (retries: {})",
-                        task.getID(), retries);
-                try {
-                    Thread.sleep(5);
-                }
-                catch (InterruptedException e) {
-                    //fall through;
-                }
-                if (--retries == 0) {
-                    _logger.error("Throwing RTE for lists out of sync");
-                    throw new RuntimeException("Busy task list out of synch with a busy task: "
-                            + task.getID() + " busy tasks: " + _busyTasks);
-                }
-            }
-        }
-
-        // fire the set of enabled 'transitions' (if any)
-        if (! enabledTransitions.isEmpty()) fireTasks(enabledTransitions);
-
-  //      _busyTasks = _net.getBusyTasks();
-        _logger.debug("<-- continueIfPossible");
-
-        return hasActiveTasks();
     }
 
 
@@ -845,25 +955,31 @@ public class YNetRunner {
 
 
     public synchronized void cancel() {
-        _logger.debug("--> NetRunner cancel {}", getCaseID().get_idString());
+        Span span = YAWLTracing.createNetRunnerSpan("yawl.stateless.cancel", getCaseID().toString(),
+            _net != null ? _net.getID() : "unknown");
+        try (Scope scope = span.makeCurrent()) {
+            _logger.debug("--> NetRunner cancel {}", getCaseID().get_idString());
 
-        _cancelling = true;
-        for (YExternalNetElement netElement : _net.getNetElements().values()) {
-            if (netElement instanceof YTask task) {
-                if (task.t_isBusy()) {
-                    task.cancel();
+            _cancelling = true;
+            for (YExternalNetElement netElement : _net.getNetElements().values()) {
+                if (netElement instanceof YTask task) {
+                    if (task.t_isBusy()) {
+                        task.cancel();
+                    }
+                }
+                else if (netElement instanceof YCondition condition && condition.containsIdentifier()) {
+                    condition.removeAll();
                 }
             }
-            else if (netElement instanceof YCondition condition && condition.containsIdentifier()) {
-                condition.removeAll();
-            }
-        }
-        _enabledTasks = new LinkedHashSet<>();
-        _busyTasks = new LinkedHashSet<>();
+            _enabledTasks = new LinkedHashSet<>();
+            _busyTasks = new LinkedHashSet<>();
 
-        if (_containingCompositeTask != null) {
-            _announcer.announceLogEvent(new YLogEvent(YEventType.NET_CANCELLED,
-                    getCaseID(), _specID, null));
+            if (_containingCompositeTask != null) {
+                _announcer.announceLogEvent(new YLogEvent(YEventType.NET_CANCELLED,
+                        getCaseID(), _specID, null));
+            }
+        } finally {
+            span.end();
         }
     }
 

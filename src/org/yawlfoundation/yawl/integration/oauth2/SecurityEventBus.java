@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
@@ -96,6 +97,7 @@ public final class SecurityEventBus {
     private static final String INSTRUMENTATION_NAME = "org.yawlfoundation.yawl.oauth2";
 
     private static volatile SecurityEventBus instance;
+    private static final ReentrantLock _classLock = new ReentrantLock();
 
     private final Tracer tracer;
     private final Meter meter;
@@ -164,10 +166,13 @@ public final class SecurityEventBus {
      */
     public static SecurityEventBus getInstance() {
         if (instance == null) {
-            synchronized (SecurityEventBus.class) {
+            _classLock.lock();
+            try {
                 if (instance == null) {
                     instance = new SecurityEventBus();
                 }
+            } finally {
+                _classLock.unlock();
             }
         }
         return instance;
@@ -686,8 +691,11 @@ public final class SecurityEventBus {
      * Reset the singleton instance. For testing only.
      */
     static void resetForTesting() {
-        synchronized (SecurityEventBus.class) {
+        _classLock.lock();
+        try {
             instance = null;
+        } finally {
+            _classLock.unlock();
         }
     }
 }

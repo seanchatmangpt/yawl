@@ -24,6 +24,9 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Auto-scaling virtual thread pool with autonomous cost optimization.
@@ -328,5 +331,98 @@ public class VirtualThreadPool {
         public long availableCarrierThreads() {
             return maxCarrierThreads - estimatedCarrierThreads;
         }
+    }
+
+    /**
+     * Executes multiple tasks in parallel using CompletableFuture.
+     * This provides better error handling and resource management than
+     * submitting tasks individually to the executor.
+     *
+     * @param tasks list of callables to execute
+     * @return list of results
+     * @throws ExecutionException if any task fails
+     * @throws InterruptedException if the thread is interrupted
+     */
+    public <T> List<T> executeInParallel(List<Callable<T>> tasks)
+            throws ExecutionException, InterruptedException {
+        if (tasks.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<CompletableFuture<T>> futures = new ArrayList<>();
+
+        // Create futures for each task
+        for (Callable<T> task : tasks) {
+            CompletableFuture<T> future = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return task.call();
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                },
+                executor
+            );
+            futures.add(future);
+        }
+
+        // Wait for all to complete and collect results
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.toArray(new CompletableFuture[0])
+        );
+        allFutures.get(); // This will throw if any task failed
+
+        // Collect results
+        List<T> results = new ArrayList<>(futures.size());
+        for (CompletableFuture<T> future : futures) {
+            results.add(future.get());
+        }
+        return results;
+    }
+
+    /**
+     * Submits multiple tasks and waits for all to complete.
+     * Uses CompletableFuture for better error handling.
+     *
+     * @param tasks list of callables to execute
+     * @return list of futures
+     * @throws ExecutionException if any task fails
+     * @throws InterruptedException if the thread is interrupted
+     */
+    public <T> List<Future<T>> submitAndWaitAll(List<Callable<T>> tasks)
+            throws ExecutionException, InterruptedException {
+        if (tasks.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<CompletableFuture<T>> futures = new ArrayList<>();
+
+        // Create futures for each task
+        for (Callable<T> task : tasks) {
+            CompletableFuture<T> future = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return task.call();
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                },
+                executor
+            );
+            futures.add(future);
+        }
+
+        // Wait for all to complete
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.toArray(new CompletableFuture[0])
+        );
+        allFutures.get(); // This will throw if any task failed
+
+        // Convert to regular Futures
+        List<Future<T>> resultFutures = new ArrayList<>(futures.size());
+        for (CompletableFuture<T> future : futures) {
+            resultFutures.add(new FutureTask<>(() -> future.get()));
+        }
+        return resultFutures;
     }
 }

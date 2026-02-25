@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
@@ -69,7 +70,7 @@ public class VaultCredentialCache {
     private static final long SWEEP_PERIOD_SECONDS = DEFAULT_TTL.getSeconds();
 
     private static volatile VaultCredentialCache _instance;
-    private static final Object _instanceLock = new Object();
+    private static final ReentrantLock _lock = new ReentrantLock();
 
     // ------------------------------------------------------------------ state
 
@@ -135,10 +136,13 @@ public class VaultCredentialCache {
      */
     public static VaultCredentialCache getInstance() {
         if (_instance == null) {
-            synchronized (_instanceLock) {
+            _lock.lock();
+            try {
                 if (_instance == null) {
                     _instance = new VaultCredentialCache(DEFAULT_TTL);
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return _instance;

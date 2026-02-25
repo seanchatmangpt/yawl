@@ -31,6 +31,7 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.logging.YLogServer;
 
 import java.rmi.RemoteException;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * REST API for Interface E (Event/Log operations).
@@ -51,6 +52,7 @@ import java.rmi.RemoteException;
 public class InterfaceERestResource {
 
     private static final Logger _logger = LogManager.getLogger(InterfaceERestResource.class);
+    private static final ReentrantLock _persistenceLock = new ReentrantLock();
 
     @Context
     private ServletContext _servletContext;
@@ -104,7 +106,8 @@ public class InterfaceERestResource {
                         .entity("<failure>Invalid or expired session handle</failure>")
                         .build();
             }
-            synchronized (YLogServer.getInstance().getPersistenceManager()) {
+            _persistenceLock.lock();
+            try {
                 boolean isLocalTransaction = YLogServer.getInstance().startTransaction();
                 try {
                     String result = YLogServer.getInstance().getAllSpecifications();
@@ -115,6 +118,8 @@ public class InterfaceERestResource {
                         YLogServer.getInstance().commitTransaction();
                     }
                 }
+            } finally {
+                _persistenceLock.unlock();
             }
         } catch (RemoteException e) {
             _logger.error("getLoggedSpecifications failed during session check: {}", e.getMessage(), e);
@@ -164,7 +169,8 @@ public class InterfaceERestResource {
                         .entity("<failure>Specification key must be a numeric log key</failure>")
                         .build();
             }
-            synchronized (YLogServer.getInstance().getPersistenceManager()) {
+            _persistenceLock.lock();
+            try {
                 boolean isLocalTransaction = YLogServer.getInstance().startTransaction();
                 try {
                     String result = YLogServer.getInstance().getNetInstancesOfSpecification(key);
@@ -175,6 +181,8 @@ public class InterfaceERestResource {
                         YLogServer.getInstance().commitTransaction();
                     }
                 }
+            } finally {
+                _persistenceLock.unlock();
             }
         } catch (RemoteException e) {
             _logger.error("getCasesForSpecification failed for specKey={}: {}", specKey, e.getMessage(), e);

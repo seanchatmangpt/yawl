@@ -9,10 +9,7 @@ import org.apache.logging.log4j.Logger;
 import java.time.Instant;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -195,24 +192,90 @@ public class A2ACaseMonitor {
 
         long now = System.currentTimeMillis();
 
-        for (Map.Entry<String, CaseState> entry : activeCases.entrySet()) {
-            String caseId = entry.getKey();
-            CaseState caseState = entry.getValue();
+        // Use StructuredTaskScope for parallel case monitoring when there are many cases
+        if (activeCases.size() > 5) { // Threshold for parallel processing
+            checkAllCasesInParallel(now);
+        } else {
+            // Small number of cases - use sequential approach
+            for (Map.Entry<String, CaseState> entry : activeCases.entrySet()) {
+                String caseId = entry.getKey();
+                CaseState caseState = entry.getValue();
 
-            try {
-                // Update case state
-                caseState.lastUpdateTime = now;
-
-                // Simulate case state check
-                if (now - caseState.startTime > 120000) { // 2 minutes
-                    // Simulate case completion
-                    publishCaseEvent(caseId, "CASE_COMPLETED", caseState);
-                    activeCases.remove(caseId);
+                try {
+                    checkSingleCase(caseId, caseState, now);
+                } catch (Exception e) {
+                    _logger.error("Error monitoring case {}: {}", caseId, e.getMessage(), e);
                 }
-
-            } catch (Exception e) {
-                _logger.error("Error monitoring case {}: {}", caseId, e.getMessage(), e);
             }
+        }
+    }
+
+    /**
+     * Checks all cases in parallel using CompletableFuture.
+     * This improves performance when monitoring many cases.
+     */
+    private void checkAllCasesInParallel(long now) {
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+            // Fork case monitoring for each active case
+            for (Map.Entry<String, CaseState> entry : activeCases.entrySet()) {
+                String caseId = entry.getKey();
+                CaseState caseState = entry.getValue();
+
+                CompletableFuture<Void> future = CompletableFuture.runAsync(
+                    () -> checkSingleCase(caseId, caseState, now),
+                    executor
+                );
+                futures.add(future);
+            }
+
+            // Wait for all case checks to complete
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[0])
+            );
+            allFutures.get(); // This will throw if any task failed
+
+        } catch (ExecutionException e) {
+            _logger.error("Error in parallel case monitoring: {}", e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            _logger.warn("Case monitoring interrupted");
+        } finally {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /**
+     * Checks a single case and updates its state.
+     *
+     * @param caseId the case identifier
+     * @param caseState the case state
+     * @param now the current timestamp
+     */
+    private void checkSingleCase(String caseId, CaseState caseState, long now) {
+        try {
+            // Update case state
+            caseState.lastUpdateTime = now;
+
+            // Simulate case state check
+            if (now - caseState.startTime > 120000) { // 2 minutes
+                // Simulate case completion
+                publishCaseEvent(caseId, "CASE_COMPLETED", caseState);
+                activeCases.remove(caseId);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error checking case " + caseId, e);
         }
     }
 

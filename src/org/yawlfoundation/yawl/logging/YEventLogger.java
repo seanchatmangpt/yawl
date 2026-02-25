@@ -86,6 +86,7 @@ public class YEventLogger {
     private HibernateEngine _db;
 
     private final ReentrantLock _taskInstLock = new ReentrantLock();
+    private static final ReentrantLock _singletonLock = new ReentrantLock();
     private final YEventKeyCache _keyCache = new YEventKeyCache();
 
     private static final Class[] LOG_CLASSES = {
@@ -153,10 +154,13 @@ public class YEventLogger {
      */
     public static YEventLogger getInstance(YEngine engine) {
         if (INSTANCE == null) {
-            synchronized (YEventLogger.class) {
+            _singletonLock.lock();
+            try {
                 if (INSTANCE == null) {
                     INSTANCE = new YEventLogger();
                 }
+            } finally {
+                _singletonLock.unlock();
             }
         }
         INSTANCE._engine = engine;
@@ -171,10 +175,13 @@ public class YEventLogger {
     /** @return an instantiated event logger */
     public static YEventLogger getInstance() {
         if (INSTANCE == null) {
-            synchronized (YEventLogger.class) {
+            _singletonLock.lock();
+            try {
                 if (INSTANCE == null) {
                     INSTANCE = new YEventLogger();
                 }
+            } finally {
+                _singletonLock.unlock();
             }
         }
         return INSTANCE;
@@ -187,13 +194,16 @@ public class YEventLogger {
      * state between tests. It should not be called in production code.</p>
      */
     static void resetForTesting() {
-        synchronized (YEventLogger.class) {
+        _singletonLock.lock();
+        try {
             if (INSTANCE != null) {
                 INSTANCE._enabled = true;
                 INSTANCE._engine = null;
                 INSTANCE._db = null;
                 INSTANCE = null;
             }
+        } finally {
+            _singletonLock.unlock();
         }
     }
 
