@@ -72,6 +72,7 @@
         <module>yawl-integration</module>
         <module>yawl-monitoring</module>
         <module>yawl-ggen</module>
+        <module>yawl-pi</module>
         <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>
@@ -384,6 +385,11 @@
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-ggen</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-pi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
