@@ -1,0 +1,39 @@
+# Detect Java 11 String.format() and multi-line string patterns
+# Finds multi-line String.format() calls and string concatenations with \n.
+# Rule: R09_StringFormatToTextBlock
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?line ?formatString ?snippet
+WHERE {
+  {
+    # String.format() with multi-line format string
+    ?call a java:MethodCallExpression ;
+          java:calleeType "java.lang.String" ;
+          java:calleeName "format" ;
+          java:lineNumber ?line ;
+          java:isMultiLine true .
+
+    OPTIONAL { ?call java:stringArgument ?formatString }
+    OPTIONAL { ?call java:sourceText ?snippet }
+  }
+  UNION
+  {
+    # "%s".formatted() pattern
+    ?call a java:MethodCallExpression ;
+          java:calleeName "formatted" ;
+          java:lineNumber ?line ;
+          java:isMultiLine true .
+
+    OPTIONAL { ?call java:stringArgument ?formatString }
+    OPTIONAL { ?call java:sourceText ?snippet }
+  }
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?call .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+}
+ORDER BY ?file ?line

@@ -1,0 +1,53 @@
+{# ============================================================================
+   switch-expression.tera
+   Renders Java 14+ switch expression replacing traditional switch statement.
+
+   Variables:
+     - subject_expr: the expression being switched on
+     - subject_type: declared type of the subject
+     - result_type: return type of the switch expression (e.g., "TaskState", "int")
+     - result_var: variable to assign result to (if used as expression)
+     - cases: list of {labels, body, is_block} where:
+         labels: list of case label values or patterns
+         body:   the single expression or block body
+         is_block: true if body needs { ... yield ... } form
+     - has_default: boolean
+     - default_body: expression for default case
+     - is_statement: true if switch is used as a statement (no assignment)
+   ============================================================================ #}
+
+{% if not is_statement %}
+{{ result_type }} {{ result_var }} = switch ({{ subject_expr }}) {
+{% else %}
+switch ({{ subject_expr }}) {
+{% endif %}
+{% for case in cases %}
+{% if case.labels | length == 1 %}
+    case {{ case.labels[0] }}{% if not is_statement %} ->{% else %} ->{% endif %}
+{% else %}
+    case {% for label in case.labels %}{{ label }}{% if not loop.last %}, {% endif %}{% endfor %} ->
+{% endif %}
+{% if case.is_block %}
+ {
+{{ case.body | indent(width=8) }}
+{% if not is_statement %}
+        yield {{ case.yield_expr }};
+{% endif %}
+    };
+{% else %}
+ {{ case.body }};
+{% endif %}
+{% endfor %}
+{% if has_default %}
+    default -> {{ default_body | default(value='throw new IllegalStateException("Unexpected value: " + ' ~ subject_expr ~ ')') }};
+{% endif %}
+}{% if not is_statement %};{% endif %}
+
+{#
+   Migration notes:
+   - Arrow cases (->) have no fallthrough: each case is independent.
+   - Multi-label cases: case A, B -> body (replaces case A: case B: body break;)
+   - Block cases use yield to produce value (not return).
+   - default required unless switch is exhaustive (sealed types / enums with all cases covered).
+   - Compiler verifies exhaustiveness at compile time.
+#}

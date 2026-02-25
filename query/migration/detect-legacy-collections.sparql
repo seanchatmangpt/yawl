@@ -1,0 +1,58 @@
+# Detect Java 11 Legacy Collection Pattern
+# Finds Vector, Hashtable, Stack — synchronized legacy collections.
+# Rule: R11_LegacyCollectionToModern
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?class ?line ?legacyType ?snippet
+WHERE {
+  {
+    # Field declarations using legacy types
+    ?field a java:FieldDeclaration ;
+           java:lineNumber ?line .
+
+    ?fieldType a java:TypeRef ;
+               java:name ?legacyType .
+
+    ?field java:fieldType ?fieldType .
+
+    FILTER(?legacyType IN (
+      "Vector", "java.util.Vector",
+      "Hashtable", "java.util.Hashtable",
+      "Stack", "java.util.Stack"
+    ))
+
+    ?class a java:ClassDeclaration ;
+           java:hasField ?field .
+
+    OPTIONAL { ?field java:sourceText ?snippet }
+  }
+  UNION
+  {
+    # Object creation of legacy types
+    ?expr a java:ObjectCreationExpression ;
+          java:constructedType ?legacyType ;
+          java:lineNumber ?line .
+
+    FILTER(?legacyType IN (
+      "java.util.Vector",
+      "java.util.Hashtable",
+      "java.util.Stack"
+    ))
+
+    ?method a java:MethodDeclaration ;
+            java:containsExpression ?expr .
+
+    ?class a java:ClassDeclaration ;
+           java:hasMethod ?method .
+
+    OPTIONAL { ?expr java:sourceText ?snippet }
+  }
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  ?class java:inFile ?cu .
+}
+ORDER BY ?file ?line

@@ -30,7 +30,12 @@ public class ConversionJob {
 
     public ConversionJob(ProcessConversionRequest request) {
         this();
-        this.request = request;
+        this.request = request != null ?
+            new ProcessConversionRequest(request.getSourceFormat(), request.getTargetFormat(),
+                                         request.getProcessId(), request.getContent()) : null;
+        if (request != null && request.getOptions() != null) {
+            this.request.setOptions(new java.util.HashMap<>(request.getOptions()));
+        }
     }
 
     public String getJobId() {
@@ -42,11 +47,28 @@ public class ConversionJob {
     }
 
     public ProcessConversionRequest getRequest() {
-        return request;
+        if (request == null) {
+            return null;
+        }
+        ProcessConversionRequest copy = new ProcessConversionRequest(
+            request.getSourceFormat(),
+            request.getTargetFormat(),
+            request.getProcessId(),
+            request.getContent()
+        );
+        if (request.getOptions() != null) {
+            copy.setOptions(new java.util.HashMap<>(request.getOptions()));
+        }
+        return copy;
     }
 
     public void setRequest(ProcessConversionRequest request) {
-        this.request = request;
+        this.request = request != null ?
+            new ProcessConversionRequest(request.getSourceFormat(), request.getTargetFormat(),
+                                         request.getProcessId(), request.getContent()) : null;
+        if (request != null && request.getOptions() != null) {
+            this.request.setOptions(new java.util.HashMap<>(request.getOptions()));
+        }
     }
 
     public Status getStatus() {

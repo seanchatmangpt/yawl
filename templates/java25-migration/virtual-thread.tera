@@ -1,0 +1,49 @@
+{# ============================================================================
+   virtual-thread.tera
+   Renders Java 25 virtual thread replacement code.
+
+   Variables (from j25:VirtualThreadPattern or j25:VirtualThreadExecutorPattern):
+     - pattern_type: "thread_creation" | "executor_pool"
+     - method_name: name of containing method
+     - thread_name_hint: suggested thread name (optional)
+     - runnable_expr: the Runnable expression being wrapped
+     - executor_field_name: field name for executor pool replacement (optional)
+   ============================================================================ #}
+
+{% if pattern_type == "thread_creation" %}
+{# Replace: new Thread({{ runnable_expr }}).start()
+   With:    Thread.ofVirtual()... #}
+
+{% if thread_name_hint is defined %}
+Thread.ofVirtual()
+      .name("{{ thread_name_hint }}")
+      .start({{ runnable_expr }});
+{% else %}
+Thread.ofVirtual().start({{ runnable_expr }});
+{% endif %}
+
+{# --- For named thread pools (structured lifecycle management) --- #}
+{# Consider using StructuredTaskScope if threads need coordinated completion:
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    scope.fork(() -> {{ runnable_expr }});
+    scope.join().throwIfFailed();
+}
+#}
+
+{% elif pattern_type == "executor_pool" %}
+{# Replace: Executors.newFixedThreadPool(N) / newCachedThreadPool() / etc.
+   With:    Executors.newVirtualThreadPerTaskExecutor()
+
+   I/O-bound workloads scale naturally — no pool sizing needed.
+   CPU-bound workloads: keep fixed pool or use ForkJoinPool.commonPool() #}
+
+{% if executor_field_name is defined %}
+// {{ executor_field_name }}: replaced fixed-size pool with virtual thread executor
+// Virtual threads are JVM-managed: no pool sizing, no starvation, cheap blocking I/O
+private final ExecutorService {{ executor_field_name }} =
+        Executors.newVirtualThreadPerTaskExecutor();
+{% else %}
+ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+{% endif %}
+
+{% endif %}

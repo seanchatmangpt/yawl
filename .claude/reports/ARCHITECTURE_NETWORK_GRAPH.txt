@@ -1,0 +1,664 @@
+═══════════════════════════════════════════════════════════════════════════════
+YAWL v6.0.0 Semantic Network Graph
+89 Packages, 8 Domains, 14 Maven Modules
+═══════════════════════════════════════════════════════════════════════════════
+
+Legend:
+─────
+[name] = Package domain
+│
+├─ sub = subpackage or concern
+│
+* coverage% = test coverage percentage
+! = dead zone or issue
+⚠ = warning, semantic overlap
+→ = dependency/edge
+
+═══════════════════════════════════════════════════════════════════════════════
+LAYER 0: FOUNDATION (Everything depends on this)
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────┐
+│ [UTILITIES & INFRASTRUCTURE] - 73% coverage                │
+├─────────────────────────────────────────────────────────────┤
+│ • Java 25 features (records, sealed, virtual threads)      │
+│ • Timer service (workday calendar, SLA computation)         │
+│ • Exception hierarchy                                       │
+│ • DocumentStore (artifact persistence) - 35% coverage !    │
+│ • MailService (legacy SMTP) - 28% coverage ! DEAD ZONE     │
+│ • ControlPanel (desktop UI) - 12% coverage ! DEAD ZONE     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ [ENGINE CORE - SHARED P1.1-P1.4 DEDUPLICATION] - 94% cover │
+├─────────────────────────────────────────────────────────────┤
+│ Tree-neutral abstractions (both stateful/stateless engines) │
+│                                                              │
+│ ├─ P1.1 YNetRunner                                          │
+│ │  ├─ Handles case lifecycle, event announcements          │
+│ │  └─ Processes instance work items                        │
+│ │                                                            │
+│ ├─ P1.2 Marking (96% coverage ✓)                           │
+│ │  ├─ IMarkingTask (task interface)                        │
+│ │  ├─ IMarkingNet (net interface)                          │
+│ │  ├─ YCoreMarking (parameterized marking)                 │
+│ │  └─ YCoreSetOfMarkings (set data structure)              │
+│ │                                                            │
+│ ├─ P1.3 Elements (94% coverage ✓)                          │
+│ │  ├─ E2WFOJCore (OR-join enablement via Reset nets)       │
+│ │  ├─ INetElementProvider (functional interface)           │
+│ │  └─ Petri-net structural analysis                        │
+│ │                                                            │
+│ └─ P1.4 Data (95% coverage ✓)                              │
+│    ├─ YCoreDataValidator (schema-based validation)         │
+│    ├─ IVariableDescriptor (variable metadata)              │
+│    └─ Secure XML processing (DOCTYPE disabled)             │
+└─────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+LAYER 1: INTERFACE & DOMAIN MODEL (Extends foundation)
+═══════════════════════════════════════════════════════════════════════════════
+
+   FOUNDATION
+        ↓
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [ELEMENTS - DOMAIN MODEL] - 91% coverage ✓                              │
+├──────────────────────────────────────────────────────────────────────────┤
+│ Canonical specification model (shared between engines)                   │
+│                                                                           │
+│ ├─ YElement (base type)                                                 │
+│ ├─ YNet (process definition, contains tasks/conditions)                 │
+│ ├─ YTask (atomic work unit)                                             │
+│ ├─ YCondition (synchronization point, join/split)                       │
+│ ├─ YVariable & YParameter (data typing)                                 │
+│ ├─ YDataType & YExternalDataGateway (schema validation)                │
+│ ├─ Predicate evaluation (guard conditions)                              │
+│ ├─ Results (case/task outcomes)                                         │
+│ └─ E2WFOJ (Workflow patterns reference - 0% tests ! DEAD ZONE)         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+   ELEMENTS + ENGINE CORE
+        ↓ (depends on)
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [INTERFACES] - 89% coverage ✓ (A/B/E/X/REST/METRICS)                   │
+├──────────────────────────────────────────────────────────────────────────┤
+│ Four canonical client-facing interfaces + extensions                     │
+│                                                                           │
+│ ├─ InterfaceA (Specification Loading)                                   │
+│ │  ├─ Server-side: loadSpec(), registerService(), getServices()        │
+│ │  ├─ Client-side: spec deployment, engine registration                │
+│ │  └─ 89% coverage ✓                                                    │
+│ │                                                                         │
+│ ├─ InterfaceB (Work Item Execution) - 89% coverage ✓                   │
+│ │  ├─ Stateless operations: getWorkItems(), checkOut(), complete()     │
+│ │  ├─ Work item lifecycle (created, started, completed, failed)        │
+│ │  └─ Race condition gap: no atomic claim+execute !                    │
+│ │                                                                         │
+│ ├─ InterfaceE (Event Streaming) - 89% coverage ✓                       │
+│ │  ├─ Case events (launched, started, completed, cancelled)            │
+│ │  ├─ Work item events (created, allocated, cancelled)                 │
+│ │  └─ Duplicated by Announcement + MCP + OTEL ! SEMANTIC OVERLAP       │
+│ │                                                                         │
+│ ├─ InterfaceX (Extended Capabilities) - 89% coverage ✓                 │
+│ │  ├─ Advanced query, custom operations                                 │
+│ │  └─ Minimal usage in practice                                         │
+│ │                                                                         │
+│ ├─ REST Transport                                                        │
+│ │  ├─ HTTP bridge to all interfaces                                     │
+│ │  ├─ Spring Boot Actuator integration                                  │
+│ │  └─ OpenAPI/Swagger documentation                                     │
+│ │                                                                         │
+│ ├─ Metrics Sub-interface                                                │
+│ │  ├─ Prometheus-compatible metrics endpoint                            │
+│ │  └─ Micrometer MeterRegistry integration                              │
+│ │                                                                         │
+│ └─ Security/Auth (55% coverage) ⚠                                       │
+│    ├─ YAWLUser (identity)                                               │
+│    ├─ AuthenticationProvider (pluggable auth)                           │
+│    ├─ AuthorizationPolicy (RBAC)                                        │
+│    ├─ OAuth2Client (federation)                                         │
+│    ├─ SPIFFEAgent (workload identity)                                   │
+│    └─ Crypto (TLS 1.3, HMAC-SHA256)                                     │
+└──────────────────────────────────────────────────────────────────────────┘
+
+   STATEFUL & STATELESS ENGINES
+        (both use Engine Core + Elements)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+LAYER 2A: INTEGRATION LAYER (External system connectivity)
+═══════════════════════════════════════════════════════════════════════════════
+
+   INTERFACES (A/B/E/X)
+        ↓ (depends on)
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [INTEGRATION] - 76% coverage ⚠ (MCP/A2A/Cloud/Autonomous)              │
+├──────────────────────────────────────────────────────────────────────────┤
+│ External system integration framework                                     │
+│                                                                           │
+│ ├─ [MCP Server] (6.0 NEW - Model Context Protocol)                      │
+│ │  ├─ MCPServer (STDIO transport, official SDK)                         │
+│ │  ├─ Tools (expose InterfaceA/B as LLM-callable functions)             │
+│ │  │  ├─ launchWorkflow(spec, data)                                     │
+│ │  │  ├─ completeWorkItem(itemId, data)                                 │
+│ │  │  ├─ getSpecification(specId)                                       │
+│ │  │  └─ queryCases(filter)                                             │
+│ │  ├─ Resources (expose specs, cases, work items as browseable)         │
+│ │  ├─ Prompts (LLM context templates)                                   │
+│ │  ├─ Completions (auto-complete suggestions)                           │
+│ │  └─ Spring Boot auto-configuration                                    │
+│ │  GAP: No event subscriptions (HB-4) !                                 │
+│ │                                                                         │
+│ ├─ [A2A Agent] (5.2 - Agent-to-Agent over HTTP REST)                   │
+│ │  ├─ A2AAgent (identity, HTTP endpoint)                                │
+│ │  ├─ Skills (what this agent can do)                                   │
+│ │  ├─ Handoff (how agents communicate/delegate)                         │
+│ │  ├─ Auth (TLS, token-based)                                           │
+│ │  ├─ Metrics (agent health, success rate)                              │
+│ │  ├─ Resilience (circuit breaker, retry, timeout)                      │
+│ │  ├─ TTY (human-in-loop interaction)                                   │
+│ │  └─ Discovery (find other agents)                                     │
+│ │  GAP: No queue-aware routing (HB-3) !                                 │
+│ │                                                                         │
+│ ├─ [Autonomous Agent] (auto-discovery, claim, execute)                  │
+│ │  ├─ AutonomousAgent (base interface)                                  │
+│ │  ├─ GenericPartyAgent (configurable strategy)                         │
+│ │  ├─ AgentRegistry (discovery + registration)                          │
+│ │  ├─ Reasoners (AI-based decision making)                              │
+│ │  │  ├─ LLMReasoner (calls Claude/GPT for decisions)                   │
+│ │  │  └─ RuleBasedReasoner (JEXL expressions)                           │
+│ │  │  GAP: No schema constraints in reasoning (HB-2) !                  │
+│ │  ├─ Strategies (claim, task selection, execution)                     │
+│ │  ├─ PartitionConfig (horizontal scaling via hash)                     │
+│ │  ├─ Resilience (circuit breaker, fallback to manual)                  │
+│ │  └─ Observability (health checks, metrics)                            │
+│ │                                                                         │
+│ ├─ [API Gateways]                                                        │
+│ │  ├─ AWS API Gateway (cloud native)                                    │
+│ │  ├─ Kong (open source, fast)                                          │
+│ │  └─ Traefik (Kubernetes native)                                       │
+│ │                                                                         │
+│ ├─ [Authentication & Secrets]                                           │
+│ │  ├─ OAuth2Client (JWT federation)                                     │
+│ │  ├─ SPIFFEAgent (workload identity, SVIDs)                            │
+│ │  └─ Spring Security integration                                       │
+│ │                                                                         │
+│ └─ [Connectivity]                                                        │
+│    ├─ MessageQueue (async commands)                                      │
+│    ├─ EventSourcing (immutable event log)                                │
+│    ├─ Deduplication (idempotent requests)                               │
+│    ├─ Webhook (outbound notifications)                                  │
+│    ├─ Coordination (distributed consensus)                              │
+│    ├─ Conflict resolution (multi-agent)                                 │
+│    ├─ Cloud integrations (GCP, AWS)                                     │
+│    └─ Memory caching (Redis-ready)                                      │
+│    GAP: Observability integration incomplete (76% coverage)             │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+LAYER 2B: OBSERVABILITY & AUTONOMIC INTELLIGENCE
+═══════════════════════════════════════════════════════════════════════════════
+
+   ENGINE CORE + INTEGRATION
+        ↓ (depends on)
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [OBSERVABILITY STACK] - 68% coverage ⚠ (THREE SEPARATE STACKS !)       │
+├──────────────────────────────────────────────────────────────────────────┤
+│ ISSUE: Three independent OpenTelemetry initializers ⚠ SEMANTIC OVERLAP  │
+│        Trace context lost at domain boundaries. Conflicting registries.  │
+│                                                                           │
+│ ├─ org.yawlfoundation.yawl.observability (root level)                   │
+│ │  ├─ OpenTelemetryInitializer v1                                       │
+│ │  ├─ YawlMetrics (case/task counters, histograms)                      │
+│ │  ├─ WorkflowSpanBuilder (trace span creation)                         │
+│ │  ├─ StructuredLogger (JSON + correlation IDs)                         │
+│ │  ├─ HealthCheckEndpoint (Kubernetes probes)                           │
+│ │  │                                                                      │
+│ │  └─ [Autonomic Intelligence - 6.0 NEW]                                │
+│ │     ├─ AnomalyDetector                                                │
+│ │     │  ├─ EWMA-based outlier detection                                │
+│ │     │  ├─ 30-sample baseline (adaptive threshold)                      │
+│ │     │  └─ Auto-alerts on deviation > mean + 2.5*stdDev                │
+│ │     │                                                                   │
+│ │     ├─ SLAMonitor                                                      │
+│ │     │  ├─ Tracks SLA violations                                        │
+│ │     │  ├─ Predicts breaches before they occur                         │
+│ │     │  ├─ Auto-escalates if trending > 80%                            │
+│ │     │  └─ Real Hibernate persistence                                   │
+│ │     │  GAP: No resource queue depth input (HB-3) !                    │
+│ │     │                                                                   │
+│ │     ├─ PredictiveRouter                                                │
+│ │     │  ├─ Learns optimal agent assignment (tracking times)            │
+│ │     │  ├─ Routes tasks to fastest agents                              │
+│ │     │  ├─ A/B testing support                                         │
+│ │     │  └─ 20% code, 80% execution improvement claimed                 │
+│ │     │  GAP: No schema constraints (HB-2) !                            │
+│ │     │                                                                   │
+│ │     ├─ BottleneckDetector                                              │
+│ │     │  ├─ Real-time bottleneck identification                         │
+│ │     │  ├─ Alerts when bottleneck changes                              │
+│ │     │  └─ Parallelization suggestions with speedup calc               │
+│ │     │                                                                   │
+│ │     ├─ CostAttributor                                                  │
+│ │     │  ├─ Attributes execution costs to workflows/cases                │
+│ │     │  ├─ ROI calculation for optimizations                           │
+│ │     │  └─ Business intelligence (cost per task, daily summary)         │
+│ │     │                                                                   │
+│ │     ├─ DistributedTracer                                               │
+│ │     │  ├─ Auto-propagates trace IDs across boundaries                 │
+│ │     │  ├─ Correlates events end-to-end                                │
+│ │     │  └─ Visualization in tracing backends                           │
+│ │     │                                                                   │
+│ │     └─ AutoRemediationLog                                              │
+│ │        ├─ Captures self-healing actions                               │
+│ │        ├─ Timeout recovery, resource mitigation                       │
+│ │        ├─ Deadlock resolution, state reconciliation                   │
+│ │        └─ Structured JSON for root cause analysis                     │
+│ │                                                                         │
+│ ├─ org.yawlfoundation.yawl.engine.observability                          │
+│ │  └─ OpenTelemetryInitializer v2 (DUPLICATE!)                          │
+│ │     └─ CONFLICT: Two registries, lost trace context                   │
+│ │                                                                         │
+│ └─ org.yawlfoundation.yawl.integration.observability                     │
+│    └─ OpenTelemetryInitializer v3 (DUPLICATE!)                           │
+│       └─ CONFLICT: Three registries, trace fragmentation                │
+│                                                                           │
+│ CONSOLIDATION PLAN: Single OpenTelemetryInitializer                      │
+│                     + Domain-specific MetricsProvider strategies         │
+│                     + Unified trace context (ScopedValue)                │
+│                                                                           │
+├──────────────────────────────────────────────────────────────────────────┤
+│ [ACTUATOR - KUBERNETES HEALTH PROBES]                                   │
+│                                                                           │
+│ ├─ YEngineHealthIndicator (case capacity, active items)                 │
+│ ├─ YDatabaseHealthIndicator (connection pool health)                    │
+│ ├─ YExternalServicesHealthIndicator (A2A agent health)                  │
+│ ├─ YLivenessHealthIndicator (process alive?)                            │
+│ ├─ YReadinessHealthIndicator (accepting traffic?)                       │
+│ └─ Prometheus metrics endpoint (/actuator/prometheus)                   │
+│                                                                           │
+├──────────────────────────────────────────────────────────────────────────┤
+│ [LOGGING]                                                                │
+│                                                                           │
+│ ├─ Log4j 2.25.3                                                          │
+│ ├─ Structured logging (JSON layout)                                      │
+│ ├─ Correlation IDs (MDC - Mapped Diagnostic Context)                    │
+│ ├─ Table logging (case/task execution traces)                           │
+│ └─ Audit logging (compliance)                                            │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+LAYER 2C: LEGACY & ISOLATED (Low coverage, minimal integration)
+═══════════════════════════════════════════════════════════════════════════════
+
+   FOUNDATION
+        ↓ (minimal coupling)
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [RESOURCING] - 42% coverage ! DEAD ZONE                                 │
+├──────────────────────────────────────────────────────────────────────────┤
+│ Resource allocation (historically separate from engine)                  │
+│                                                                           │
+│ ├─ WorkQueue (work item allocation to resources)                        │
+│ │  ├─ Queue policies (FIFO, priority, random)                           │
+│ │  ├─ Resource selection strategies                                      │
+│ │  └─ GAP: No observability hooks (queue depth, wait time)             │
+│ │                                                                         │
+│ ├─ PartyContext (human/bot identity for work allocation)                │
+│ │  ├─ User roles, groups, capabilities                                  │
+│ │  └─ Availability & preferences                                        │
+│ │                                                                         │
+│ └─ Resource allocation strategies (legacy)                              │
+│    └─ GAP: Not integrated with PredictiveRouter                         │
+│                                                                           │
+│ CONSOLIDATION: Merge with observability + bridge to autonomous          │
+│                Add queue metrics + SLA forecasting                       │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [PROCLET SERVICE] - 38% coverage ! DEAD ZONE                            │
+├──────────────────────────────────────────────────────────────────────────┤
+│ Inter-workflow communication via performatives (speech acts)             │
+│                                                                           │
+│ ├─ ProcletService (extends InterfaceB)                                  │
+│ ├─ Interaction graph (workflow dependencies)                            │
+│ ├─ Performative state management                                        │
+│ ├─ CPN/Java communication layer                                         │
+│ ├─ Editor (visual modeling - legacy UI)                                 │
+│ ├─ Persistence (Hibernate)                                              │
+│ │                                                                         │
+│ └─ GAP: No integration tests with MCP or A2A                            │
+│    GAP: No exposure as MCP tools or A2A skills                          │
+│                                                                           │
+│ CONSOLIDATION: Bridge to integration layer                              │
+│                Protocol adapter for MCP/A2A exposure                     │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+SEMANTIC OVERLAP DIAGRAM (3 Areas of Conflict)
+═══════════════════════════════════════════════════════════════════════════════
+
+OVERLAP #1: THREE OBSERVABILITY STACKS
+────────────────────────────────────────
+
+  ROOT OBSERVABILITY            ENGINE OBSERVABILITY          INTEGRATION OBSERVABILITY
+  ┌──────────────────┐          ┌──────────────────┐         ┌──────────────────┐
+  │ OpenTelemetry    │          │ OpenTelemetry    │         │ OpenTelemetry    │
+  │ Initializer v1   │          │ Initializer v2   │         │ Initializer v3   │
+  │ Registry A       │          │ Registry B       │         │ Registry C       │
+  │ Metrics #1       │          │ Metrics #2       │         │ Metrics #3       │
+  │ Trace CTX lose   │←────────→│ (isolated)       │←────────→│ (isolated)       │
+  └──────────────────┘          └──────────────────┘         └──────────────────┘
+          ↓                             ↓                             ↓
+      YawlMetrics              YawlMetrics (dup)         IntegrationMetrics (dup)
+      PredictiveRouter         HealthIndicators          A2A Agent Metrics
+      AnomalyDetector          (engine-specific)         (integration-specific)
+
+IMPACT: Trace context lost at domain boundaries
+         Metrics scattered across 3 registries
+         Maintenance burden: 3× code for same functionality
+
+SOLUTION: Single OpenTelemetryInitializer @ root
+          Domain-specific MetricsProvider strategies
+          Unified trace context (ScopedValue-based)
+
+
+OVERLAP #2: THREE DATA VALIDATORS
+──────────────────────────────────
+
+  Input Data
+      ↓
+  ┌──────────────────────────────────────────────────────────┐
+  │ Core Validator (schema-based)                            │
+  │ org.yawlfoundation.yawl.engine.core.data                │
+  │ • YCoreDataValidator                                     │
+  │ • IVariableDescriptor interface                          │
+  │ VALIDATES: XSD constraints, type matching               │
+  └──────────────────────────────────────────────────────────┘
+      ↓ (but parallel paths...)
+  ┌──────────────────────────────────────────────────────────┐
+  │ Gateway Validator (external data sources)                │
+  │ org.yawlfoundation.yawl.elements.data.external         │
+  │ • YExternalDataGateway                                   │
+  │ VALIDATES: External schema, transformation rules         │
+  └──────────────────────────────────────────────────────────┘
+      ↓ (but also parallel...)
+  ┌──────────────────────────────────────────────────────────┐
+  │ AI Validator (constraint-aware reasoning)                │
+  │ org.yawlfoundation.yawl.integration.autonomous.reasoners│
+  │ • LLMReasoner                                            │
+  │ VALIDATES: (doesn't see constraints!)                    │
+  └──────────────────────────────────────────────────────────┘
+
+IMPACT: No unified error reporting
+        Core validator unaware of AI overrides
+        AI validator blind to schema constraints
+
+SOLUTION: Decorator pattern with chain of responsibility
+          AI Validator → Gateway Validator → Core Validator
+          Unified exception with full trace
+
+
+OVERLAP #3: FOUR EVENT SYSTEMS
+───────────────────────────────
+
+  Case Started Event
+       ↓
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                                                                   │
+  │  Announcement.publishCaseStarted()         [LEGACY]             │
+  │           ↓                                                      │
+  │  InterfaceE.publishEvent()                 [CANONICAL]          │
+  │           ↓                                                      │
+  │  MCPTools.invokeCaseStartedTool()          [MCP]               │
+  │           ↓                                                      │
+  │  OTEL span.addEvent("case_started")        [TELEMETRY]         │
+  │           ↓                                                      │
+  │  Different subscribers, different formats, different guarantees  │
+  │                                                                   │
+  └─────────────────────────────────────────────────────────────────┘
+
+IMPACT: 4× maintenance burden
+        Clients don't know which to subscribe
+        No single ordering guarantee
+
+SOLUTION: InterfaceE as pub/sub backbone
+          Announcement deprecated (backward-compat adapter)
+          MCP and OTEL subscribe to InterfaceE
+
+
+═══════════════════════════════════════════════════════════════════════════════
+HIDDEN BRIDGES: 20% Effort, 80% Impact Opportunities
+═══════════════════════════════════════════════════════════════════════════════
+
+HB-1: ATOMIC ASYNC TASK + AGENT EXECUTION
+───────────────────────────────────────────
+
+Current Problem:
+  Agent polls WorkItems → claims (but fails to execute)
+  Race condition: item claimed by agent A, but agent B also claims same item
+
+Opportunity:
+  ExecutableClaim interface with atomic claim + execute callback
+  If execute() fails, claim is rolled back → no lost items
+
+Effort: 8 hours | Benefit: Eliminates race conditions
+
+
+HB-2: SCHEMA CONSTRAINTS TO AUTONOMOUS REASONING
+──────────────────────────────────────────────────
+
+Current Problem:
+  Reasoner gets IVariableDescriptor (name only)
+  Doesn't know valid values (enum: [APPROVE, REJECT])
+  Generates invalid data → validation fails
+
+Opportunity:
+  ConstraintAware interface exposes schema metadata
+  Reasoner can ask: "what are valid values for this decision?"
+  Generates schema-compliant data
+
+Effort: 6 hours | Benefit: Eliminates validation errors, enables constraint-aware reasoning
+
+
+HB-3: RESOURCE QUEUE DEPTH TO OBSERVABILITY
+─────────────────────────────────────────────
+
+Current Problem:
+  Queue depth: unknown
+  Wait time: unknown
+  SLA breach: only discovered after threshold exceeded
+
+Opportunity:
+  WorkQueue publishes queue metrics
+  Observability forecasts SLA breaches
+  PredictiveRouter routes to shortest queue
+
+Effort: 8 hours | Benefit: 30-40% queue wait reduction, proactive SLA management
+
+
+HB-4: INTERFACE E EVENTS AS MCP RESOURCES
+──────────────────────────────────────────
+
+Current Problem:
+  AI assistants can't subscribe to events
+  Must poll every 10 seconds
+  Real-time feedback impossible
+
+Opportunity:
+  MCPEventResource wraps InterfaceE as MCP subscriptions
+  AI can use: subscribe("/yawl/events/case-started")
+  Receives events in real-time
+
+Effort: 10 hours | Benefit: Enables reactive LLM agents
+
+
+HB-5: DOCUMENT VERSIONING + AUDIT TRAIL
+────────────────────────────────────────
+
+Current Problem:
+  DocumentStore.update() - no who, when, what
+  Compliance gap: no audit trail
+
+Opportunity:
+  VersionedDocument with OTEL span per version
+  Structured log includes: user, timestamp, change, case_id
+  Full forensics capability
+
+Effort: 8 hours | Benefit: Compliance reporting, forensics
+
+
+═══════════════════════════════════════════════════════════════════════════════
+DEPENDENCY FLOW (Topological Sort: Foundation → Integration → Observability)
+═══════════════════════════════════════════════════════════════════════════════
+
+Level 0 (Foundation - everything builds on this):
+  Utilities → Exception hierarchy
+  Engine Core (P1.1-P1.4)
+  Elements (domain model)
+
+Level 1 (Interfaces - extends foundation):
+  Interfaces (A/B/E/X/REST) ← Engine Core + Elements
+  Security/Auth
+
+Level 2A (Integration - extends interfaces):
+  MCP Server ← Interfaces
+  A2A Agent ← Interfaces
+  Autonomous Agent ← Interfaces
+  Gateways ← Interfaces
+
+Level 2B (Observability - extends engine + integration):
+  Observability ← Engine Core + Integration
+  Actuator ← Observability
+  Logging ← Observability
+
+Level 3 (Legacy/Isolated - minimal coupling):
+  Resourcing ← Interfaces (weak)
+  Proclets ← Interfaces (weak)
+  DocumentStore ← Interfaces (weak)
+  MailService ← Utilities (weak)
+  ControlPanel ← Interfaces (weak)
+
+ISSUE: Level 3 packages should be at Level 2, but test coverage too low
+       Suggests incomplete integration with modern systems
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL PATHS (Most important to maintain)
+═══════════════════════════════════════════════════════════════════════════════
+
+PATH 1: Case Execution
+  Spec Upload (InterfaceA) → Engine Core → Mark Calculation → Task Execution → InterfaceB (checkout/complete)
+  CRITICALITY: P0 - Core workflow execution
+  TEST COVERAGE: 94% ✓
+
+PATH 2: Work Item Completion
+  InterfaceB.checkOut() → Engine processes → InterfaceE.publishEvent() → Observability captures
+  CRITICALITY: P0 - Work execution visibility
+  TEST COVERAGE: 89% ✓
+
+PATH 3: AI Integration
+  MCP.tool.launch() → InterfaceA/B → Autonomous Agent → reason() → execute() → InterfaceE → Observability
+  CRITICALITY: P1 - AI-driven automation (new in 6.0)
+  TEST COVERAGE: 76% ⚠
+
+PATH 4: SLA & Proactive Management
+  Task execution → Observability.recordDuration() → AnomalyDetector, SLAMonitor → forecast breach
+  CRITICALITY: P1 - Operational excellence
+  TEST COVERAGE: 68% ⚠
+
+PATH 5: Resource Allocation (BROKEN)
+  Task ready → Resourcing.allocate() → [no queue metrics, no routing intelligence]
+  CRITICALITY: P1 - Operational efficiency
+  TEST COVERAGE: 42% ✗ DEAD ZONE
+
+
+═══════════════════════════════════════════════════════════════════════════════
+TEST COVERAGE HEAT MAP (by Package)
+═══════════════════════════════════════════════════════════════════════════════
+
+100%┐
+ 95%├─ engine.core.marking ████████
+ 90%├─ engine.core.data ███████░░ engine.core.elements ███████░░
+    ├─ elements ███████░░
+ 85%├─ interfaces.* ██████░░░░
+ 80%│
+    │
+ 75%├─ utilities ██████░░░░
+    │
+ 70%├─ observability ██████░░░░ (growing)
+ 65%├─
+ 60%├─ security █████░░░░░░
+ 55%├─
+ 50%├─
+    │
+ 45%├─ actuator.config ████░░░░░░░
+ 40%├─ resourcing ████░░░░░░░ DEAD ZONE !
+    ├─
+ 35%├─ documentstore ███░░░░░░░░░
+    │  proclets ███░░░░░░░░░
+ 30%├─
+    │ mailservice ██░░░░░░░░░░
+ 25%├─
+    │
+ 20%├─
+    │
+ 15%├─
+    │
+ 10%├─ controlpanel █░░░░░░░░░░░░ DEAD ZONE !
+  5%│
+  0%└────────────────────────────────────────────────────
+    SYSTEM TARGET: 85% (currently 79.3%)
+
+Legend: █ = covered, ░ = uncovered
+
+
+═══════════════════════════════════════════════════════════════════════════════
+KEY METRICS SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+
+Architectural Health:
+  ✓ No circular dependencies (good!)
+  ✓ Clear layered architecture (foundation → interfaces → integration)
+  ✗ 7 dead zones (low coverage, isolated)
+  ⚠ 3 semantic overlaps (duplicated functionality)
+  ⚠ 5 missing hidden bridges (integration gaps)
+
+Test Coverage:
+  Strongest: engine.core (94%), elements (91%), interfaces (89%)
+  Weakest: controlpanel (12%), mailservice (28%), proclets (38%)
+  System average: 79.3% (target: 85%)
+  Gap: -5.7% = ~11 failing tests to write
+
+Integration Quality:
+  ✓ Clear separation of concerns (engines, interfaces, integration)
+  ✓ Modern observability (OpenTelemetry 1.52.0)
+  ✓ AI-ready (MCP 6.0, A2A 5.2, Autonomous Agents)
+  ⚠ Observability duplicated (3 stacks)
+  ⚠ Legacy packages (Proclets, Resourcing) isolated
+  ⚠ Event system fragmented (4 channels)
+
+Maintainability:
+  ✓ Well-documented (package-info.java in all 89 packages)
+  ✓ Phase 1 deduplication successful (engine shared across stateful/stateless)
+  ✗ Dead zones increase maintenance burden
+  ✗ Overlaps create confusion for integrators
+
+Extensibility:
+  ✓ Clear extension points (InterfaceX, autonomous reasoners)
+  ✓ Strategy pattern enables pluggable implementations
+  ✓ Spring Boot auto-configuration for all subsystems
+  ⚠ New quantums would benefit from clearer integration examples
+
+
+═══════════════════════════════════════════════════════════════════════════════
+End of Network Graph
+═══════════════════════════════════════════════════════════════════════════════

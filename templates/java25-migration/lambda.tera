@@ -1,0 +1,73 @@
+{# ============================================================================
+   lambda.tera
+   Renders Java lambda expression replacing single-method anonymous class.
+
+   Variables:
+     - interface_type: functional interface name (e.g., "Runnable", "Comparator<Task>")
+     - params: list of {name, type} — lambda parameters
+     - body: the lambda body (expression or block)
+     - is_block_body: boolean — true if body requires { }
+     - context: "thread" | "executor" | "comparator" | "stream" | "other"
+     - method_reference: optional — if body is just a method call, use method ref
+   ============================================================================ #}
+
+{% if method_reference is defined %}
+{# Method reference is more concise when lambda just calls one method #}
+{{ method_reference }}
+{# Examples:
+   new Runnable() { run() { process(item); } } → this::process
+   new Comparator<T>() { compare(a,b) { return a.id().compareTo(b.id()); } }
+     → Comparator.comparing(T::id)
+   new Callable<Result>() { call() { return compute(); } } → this::compute
+#}
+
+{% else %}
+
+{% if params | length == 0 %}
+{# Zero-parameter lambda: () -> ... #}
+{% if context == "thread" or context == "executor" %}
+() -> {
+{{ body | indent(width=4) }}
+}
+{% else %}
+() -> {{ body }}
+{% endif %}
+
+{% elif params | length == 1 %}
+{# Single parameter — parentheses optional when type inferred #}
+{% if params[0].type is defined %}
+({{ params[0].type }} {{ params[0].name }}) -> {{ body }}
+{% else %}
+{{ params[0].name }} -> {{ body }}
+{% endif %}
+
+{% else %}
+{# Multiple parameters — parentheses required #}
+({% for p in params %}{% if p.type is defined %}{{ p.type }} {% endif %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}) -> {{ body }}
+{% endif %}
+
+{% endif %}
+
+{#
+   Migration guide for common YAWL anonymous classes:
+
+   // Runnable → lambda:
+   // Before: new Thread(new Runnable() { public void run() { process(item); } })
+   // After:  new Thread(() -> process(item))
+   // Or:     Thread.ofVirtual().start(() -> process(item))
+
+   // Callable → lambda:
+   // Before: executor.submit(new Callable<Result>() { public Result call() { return compute(data); } })
+   // After:  executor.submit(() -> compute(data))
+
+   // Comparator → Comparator.comparing:
+   // Before: Collections.sort(tasks, new Comparator<YTask>() {
+   //             public int compare(YTask a, YTask b) { return a.getID().compareTo(b.getID()); }
+   //         });
+   // After:  tasks.sort(Comparator.comparing(YTask::getID))
+
+   // EventListener → lambda (if single method):
+   // Before: addListener(new YawlEventListener() { public void onEvent(YEvent e) { handle(e); } })
+   // After:  addListener(e -> handle(e))
+   // Or:     addListener(this::handle)
+#}

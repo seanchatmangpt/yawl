@@ -1,0 +1,111 @@
+{# ============================================================================
+   structured-concurrency.tera
+   Renders Java 21+ StructuredTaskScope replacing synchronized blocks/methods.
+
+   Variables:
+     - scope_type: "shutdown_on_failure" | "shutdown_on_success" | "custom"
+     - tasks: list of {name, expr, return_type} — forked subtasks
+     - method_name: name of the method being replaced
+     - result_type: return type of the composite operation
+     - has_result: boolean — whether to collect results from forked tasks
+     - error_handling: "throw" | "log_and_continue" | "partial_results"
+     - thread_name_prefix: prefix for virtual thread names (optional)
+   ============================================================================ #}
+
+{% if scope_type == "shutdown_on_failure" %}
+{# All tasks must succeed. First failure shuts down scope and propagates exception.
+   YAWL engine semantics: AND-split tasks — all branches must complete. #}
+
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+{% if thread_name_prefix is defined %}
+    Thread.Builder vtBuilder = Thread.ofVirtual().name("{{ thread_name_prefix }}-", 0);
+{% endif %}
+{% for task in tasks %}
+{% if has_result %}
+    var {{ task.name }} = scope.fork(
+{% if thread_name_prefix is defined %}
+            vtBuilder.factory(),
+{% endif %}
+            () -> {{ task.expr }}
+    );
+{% else %}
+    scope.fork(() -> {{ task.expr }});
+{% endif %}
+{% endfor %}
+
+    scope.join()             // wait for all tasks
+         .throwIfFailed();   // propagate first failure as ExecutionException
+
+{% if has_result %}
+    return {% if tasks | length == 1 %}{{ tasks[0].name }}.get(){% else %}new {{ result_type }}(
+{% for task in tasks %}
+            {{ task.name }}.get(){% if not loop.last %},{% endif %}
+{% endfor %}
+    ){% endif %};
+{% endif %}
+} // scope closes: all forked threads terminated
+
+{% elif scope_type == "shutdown_on_success" %}
+{# First success shuts down scope. YAWL XOR-join / racing semantics.
+   E.g., try multiple backends, return first response. #}
+
+try (var scope = new StructuredTaskScope.ShutdownOnSuccess<{{ result_type }}>()) {
+{% for task in tasks %}
+    scope.fork(() -> {{ task.expr }});
+{% endfor %}
+
+    scope.join();
+    return scope.result(); // returns first successful result
+} catch (ExecutionException e) {
+    throw new RuntimeException("All alternatives failed", e);
+}
+
+{% elif scope_type == "custom" %}
+{# Custom scope for advanced YAWL coordination patterns.
+   Handles partial completion (OR-join semantics). #}
+
+// Custom StructuredTaskScope for YAWL {{ scope_name | default(value="workflow") }} semantics
+try (var scope = new StructuredTaskScope<{{ result_type }}>() {
+    @Override
+    protected void handleComplete(Subtask<? extends {{ result_type }}> subtask) {
+        switch (subtask.state()) {
+            case SUCCESS  -> onSuccess(subtask.get());
+            case FAILED   -> onFailure(subtask.exception());
+            case UNAVAILABLE -> { /* cancelled, ignore */ }
+        }
+    }
+
+    private void onSuccess({{ result_type }} result) {
+        // Handle successful subtask — accumulate results for OR-join
+    }
+
+    private void onFailure(Throwable t) {
+        // Handle failure — log or re-throw based on YAWL exception strategy
+    }
+}) {
+{% for task in tasks %}
+    scope.fork(() -> {{ task.expr }});
+{% endfor %}
+    scope.join();
+    // Collect results based on join policy
+}
+
+{% endif %}
+
+{#
+   Required imports:
+     import java.util.concurrent.StructuredTaskScope;
+     import java.util.concurrent.ExecutionException;
+
+   YAWL migration guidance:
+   - AND-split (all tasks) → ShutdownOnFailure
+   - XOR-split racing (first wins) → ShutdownOnSuccess
+   - OR-split (some tasks) → custom scope with counter
+   - Deferred choice → ShutdownOnSuccess with guard evaluation
+
+   IMPORTANT: Verify YAWL soundness invariants:
+   1. Completeness: every case reaches the output condition
+   2. Proper completion: no tokens remain on internal conditions
+   3. No deadlock: no reachable state with no enabled transitions
+   These are preserved if StructuredTaskScope replaces equivalent thread coordination.
+#}

@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.ggen.mining.model;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,7 +25,7 @@ public class XesTrace {
     }
 
     public List<XesEvent> getEvents() {
-        return events;
+        return Collections.unmodifiableList(events);
     }
 
     public void addEvent(XesEvent event) {

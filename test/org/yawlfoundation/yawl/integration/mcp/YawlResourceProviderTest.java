@@ -724,8 +724,11 @@ public class YawlResourceProviderTest {
             McpSchema.Resource resource = new McpSchema.Resource(
                 "yawl://specifications",
                 "Loaded Specifications",
+                null,
                 "All workflow specifications currently loaded in the YAWL engine",
                 "application/json",
+                null,
+                null,
                 null
             );
 
@@ -742,8 +745,11 @@ public class YawlResourceProviderTest {
             McpSchema.Resource resource = new McpSchema.Resource(
                 "yawl://cases",
                 "Running Cases",
+                null,
                 "All currently running workflow cases in the YAWL engine",
                 "application/json",
+                null,
+                null,
                 null
             );
 
@@ -759,8 +765,11 @@ public class YawlResourceProviderTest {
             McpSchema.Resource resource = new McpSchema.Resource(
                 "yawl://workitems",
                 "Live Work Items",
+                null,
                 "All live work items across all running cases in the YAWL engine",
                 "application/json",
+                null,
+                null,
                 null
             );
 
@@ -918,8 +927,11 @@ public class YawlResourceProviderTest {
                         McpSchema.Resource resource = new McpSchema.Resource(
                             "yawl://test/" + idx,
                             "Test Resource " + idx,
+                            null,
                             "Description " + idx,
                             "application/json",
+                            null,
+                            null,
                             null
                         );
                         if (resource != null && resource.uri().contains(String.valueOf(idx))) {

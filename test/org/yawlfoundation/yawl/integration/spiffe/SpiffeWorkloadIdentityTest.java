@@ -437,10 +437,11 @@ class SpiffeWorkloadIdentityTest {
     @Test
     @DisplayName("getLifetimeElapsedPercent should calculate correctly")
     void testGetLifetimeElapsedPercent() {
-        Instant expiresAt = Instant.now().plusSeconds(3600);
+        // Total lifetime = 60 mins: issued 30 mins ago, expires 30 mins from now
+        Instant issuedAt = Instant.now().minusSeconds(1800);
+        Instant expiresAt = Instant.now().plusSeconds(1800);
         SpiffeWorkloadIdentity identity = new SpiffeWorkloadIdentity(VALID_SPIFFE_ID, "token", expiresAt);
 
-        Instant issuedAt = Instant.now().minusSeconds(1800);
         double percent = identity.getLifetimeElapsedPercent(issuedAt);
 
         assertTrue(percent >= 0 && percent <= 100,

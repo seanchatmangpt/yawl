@@ -71,23 +71,17 @@ public final class GcpMarketplaceMcpTools {
      * Idempotency: Keyed by (companyName, contactEmail) hash
      */
     public McpSchema.Tool vendorRegisterTool() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("company_name", Map.of("type", "string", "description", "Vendor company name"));
+        props.put("contact_email", Map.of("type", "string", "description", "Primary contact email"));
+        props.put("region", Map.of("type", "string", "description", "Primary operation region (e.g., us-east1)"));
+        props.put("tier", Map.of("type", "string", "description", "Vendor tier level: standard, premium, or enterprise"));
         return McpSchema.Tool.builder()
             .name("marketplace_vendor_register")
             .description("Register a new vendor on GCP marketplace. Returns vendor ID and status. " +
                         "Idempotent: same (companyName, contactEmail) returns cached vendor ID.")
-            .inputSchema(new McpSchema.JsonSchema(
-                "object",
-                Map.<String, Object>of(
-                    "company_name", Map.of("type", "string", "description", "Vendor company name"),
-                    "contact_email", Map.of("type", "string", "description", "Primary contact email"),
-                    "region", Map.of("type", "string", "description", "Primary operation region (e.g., us-east1)"),
-                    "tier", Map.<String, Object>of("type", "string",
-                                "enum", List.of("standard", "premium", "enterprise"),
-                                "description", "Vendor tier level")
-                ),
-                List.of("company_name", "contact_email", "region", "tier"),
-                false, null, null
-            ))
+            .inputSchema(new McpSchema.JsonSchema("object", props,
+                List.of("company_name", "contact_email", "region", "tier"), false, null, Map.of()))
             .build();
     }
 
@@ -98,23 +92,17 @@ public final class GcpMarketplaceMcpTools {
      * Returns paginated list of products, optionally filtered by vendor or category.
      */
     public McpSchema.Tool productListTool() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("vendor_id", Map.of("type", "string", "description", "Optional: filter by vendor"));
+        props.put("category", Map.of("type", "string", "description", "Optional: filter by category"));
+        props.put("limit", Map.of("type", "integer", "description", "Max results (1-100), default 50"));
+        props.put("offset", Map.of("type", "integer", "description", "Pagination offset, default 0"));
         return McpSchema.Tool.builder()
             .name("marketplace_products_list")
             .description("List products in GCP marketplace with optional filtering. " +
                         "Supports pagination (limit, offset) and filtering (vendor_id, category).")
-            .inputSchema(new McpSchema.JsonSchema(
-                "object",
-                Map.<String, Object>of(
-                    "vendor_id", Map.of("type", "string", "description", "Optional: filter by vendor"),
-                    "category", Map.of("type", "string", "description", "Optional: filter by category"),
-                    "limit", Map.<String, Object>of("type", "integer", "default", 50,
-                                "description", "Max results (1-100)"),
-                    "offset", Map.<String, Object>of("type", "integer", "default", 0,
-                                "description", "Pagination offset")
-                ),
-                List.of(),
-                false, null, null
-            ))
+            .inputSchema(new McpSchema.JsonSchema("object", props,
+                List.of(), false, null, Map.of()))
             .build();
     }
 
@@ -125,23 +113,19 @@ public final class GcpMarketplaceMcpTools {
      * Idempotency: Keyed by (customerId, productId, timestamp_utc) triple.
      */
     public McpSchema.Tool orderCreateTool() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("vendor_id", Map.of("type", "string", "description", "Product vendor ID"));
+        props.put("product_id", Map.of("type", "string", "description", "Product identifier"));
+        props.put("quantity", Map.of("type", "integer", "description", "Order quantity"));
+        props.put("customer_id", Map.of("type", "string", "description", "Customer identifier"));
+        props.put("region", Map.of("type", "string", "description", "Order destination region"));
         return McpSchema.Tool.builder()
             .name("marketplace_orders_create")
             .description("Create a new marketplace order. " +
                         "Idempotent: same (customerId, productId, timestamp) returns cached order ID. " +
                         "Triggers OrderCreatedEvent.")
-            .inputSchema(new McpSchema.JsonSchema(
-                "object",
-                Map.<String, Object>of(
-                    "vendor_id", Map.of("type", "string", "description", "Product vendor ID"),
-                    "product_id", Map.of("type", "string", "description", "Product identifier"),
-                    "quantity", Map.of("type", "integer", "description", "Order quantity"),
-                    "customer_id", Map.of("type", "string", "description", "Customer identifier"),
-                    "region", Map.of("type", "string", "description", "Order destination region")
-                ),
-                List.of("vendor_id", "product_id", "quantity", "customer_id", "region"),
-                false, null, null
-            ))
+            .inputSchema(new McpSchema.JsonSchema("object", props,
+                List.of("vendor_id", "product_id", "quantity", "customer_id", "region"), false, null, Map.of()))
             .build();
     }
 
@@ -152,20 +136,16 @@ public final class GcpMarketplaceMcpTools {
      * Returns tracking info and estimated delivery.
      */
     public McpSchema.Tool fulfillmentTrackTool() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("order_id", Map.of("type", "string", "description", "Order to track"));
+        props.put("shipment_id", Map.of("type", "string", "description", "Optional: specific shipment ID"));
         return McpSchema.Tool.builder()
             .name("marketplace_fulfillment_track")
             .description("Track order fulfillment status. Returns shipment info, carrier, " +
                         "tracking number, and estimated delivery. Updates trigger " +
                         "OrderShippedEvent or OrderDeliveredEvent.")
-            .inputSchema(new McpSchema.JsonSchema(
-                "object",
-                Map.<String, Object>of(
-                    "order_id", Map.of("type", "string", "description", "Order to track"),
-                    "shipment_id", Map.of("type", "string", "description", "Optional: specific shipment ID")
-                ),
-                List.of("order_id"),
-                false, null, null
-            ))
+            .inputSchema(new McpSchema.JsonSchema("object", props,
+                List.of("order_id"), false, null, Map.of()))
             .build();
     }
 
@@ -176,26 +156,20 @@ public final class GcpMarketplaceMcpTools {
      * Idempotency: Keyed by (orderId, paymentGatewayId) pair.
      */
     public McpSchema.Tool paymentProcessTool() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("order_id", Map.of("type", "string", "description", "Order to pay for"));
+        props.put("amount_cents", Map.of("type", "integer", "description", "Amount in cents"));
+        props.put("operation", Map.of("type", "string", "description", "Payment operation: authorize, capture, or refund"));
+        props.put("payment_method", Map.of("type", "string", "description", "e.g., 'credit_card', 'paypal'"));
+        props.put("gateway_id", Map.of("type", "string", "description", "Payment gateway transaction ID"));
         return McpSchema.Tool.builder()
             .name("marketplace_payments_process")
             .description("Process payment for an order. Supports authorize, capture, and " +
                         "refund operations. Idempotent: same (orderId, gatewayId) returns " +
                         "cached result. Triggers PaymentAuthorizedEvent, " +
                         "PaymentCapturedEvent, or PaymentFailedEvent.")
-            .inputSchema(new McpSchema.JsonSchema(
-                "object",
-                Map.<String, Object>of(
-                    "order_id", Map.of("type", "string", "description", "Order to pay for"),
-                    "amount_cents", Map.of("type", "integer", "description", "Amount in cents"),
-                    "operation", Map.<String, Object>of("type", "string",
-                                "enum", List.of("authorize", "capture", "refund"),
-                                "description", "Payment operation"),
-                    "payment_method", Map.of("type", "string", "description", "e.g., 'credit_card', 'paypal'"),
-                    "gateway_id", Map.of("type", "string", "description", "Payment gateway transaction ID")
-                ),
-                List.of("order_id", "amount_cents", "operation", "payment_method", "gateway_id"),
-                false, null, null
-            ))
+            .inputSchema(new McpSchema.JsonSchema("object", props,
+                List.of("order_id", "amount_cents", "operation", "payment_method", "gateway_id"), false, null, Map.of()))
             .build();
     }
 
@@ -203,7 +177,7 @@ public final class GcpMarketplaceMcpTools {
      * Execute vendor register tool.
      * Idempotency: (companyName, contactEmail) hash as key.
      */
-    public String executeVendorRegister(Map<String, ?> args) throws IOException {
+    public String executeVendorRegister(Map<String, Object> args) throws IOException {
         String companyName = (String) args.get("company_name");
         String contactEmail = (String) args.get("contact_email");
         String region = (String) args.get("region");
@@ -247,16 +221,21 @@ public final class GcpMarketplaceMcpTools {
      * Execute product list tool.
      * Supports filtering and pagination.
      */
-    public String executeProductList(Map<String, ?> args) throws IOException {
+    public String executeProductList(Map<String, Object> args) throws IOException {
         String vendorId = (String) args.get("vendor_id");
         String category = (String) args.get("category");
-        int limit = args.get("limit") instanceof Number n ? n.intValue() : 50;
-        int offset = args.get("offset") instanceof Number n ? n.intValue() : 0;
+        int limit = args.getOrDefault("limit", 50) instanceof Number
+            ? ((Number) args.get("limit")).intValue()
+            : 50;
+        int offset = args.getOrDefault("offset", 0) instanceof Number
+            ? ((Number) args.get("offset")).intValue()
+            : 0;
 
         limit = Math.min(Math.max(limit, 1), 100);
         offset = Math.max(offset, 0);
 
         // In production, query product catalog from database
+        // For now, return mock catalog
         List<Map<String, Object>> products = new ArrayList<>();
         products.add(Map.of(
             "product_id", "prod-001",
@@ -277,7 +256,7 @@ public final class GcpMarketplaceMcpTools {
      * Execute order create tool.
      * Idempotency: (customerId, productId, timestamp) triple hash as key.
      */
-    public String executeOrderCreate(Map<String, ?> args) throws IOException {
+    public String executeOrderCreate(Map<String, Object> args) throws IOException {
         String vendorId = (String) args.get("vendor_id");
         String productId = (String) args.get("product_id");
         int quantity = ((Number) args.get("quantity")).intValue();
@@ -324,11 +303,10 @@ public final class GcpMarketplaceMcpTools {
     /**
      * Execute fulfillment track tool.
      */
-    public String executeFulfillmentTrack(Map<String, ?> args) throws IOException {
+    public String executeFulfillmentTrack(Map<String, Object> args) throws IOException {
         String orderId = (String) args.get("order_id");
-        String shipmentId = args.get("shipment_id") instanceof String s
-            ? s
-            : "shipment-" + UUID.randomUUID().toString().substring(0, 8);
+        String shipmentId = (String) args.getOrDefault("shipment_id",
+            "shipment-" + UUID.randomUUID().toString().substring(0, 8));
 
         // Mock fulfillment status
         OrderShippedEvent event = new OrderShippedEvent(
@@ -356,7 +334,7 @@ public final class GcpMarketplaceMcpTools {
      * Execute payment process tool.
      * Idempotency: (orderId, gatewayId) pair hash as key.
      */
-    public String executePaymentProcess(Map<String, ?> args) throws IOException {
+    public String executePaymentProcess(Map<String, Object> args) throws IOException {
         String orderId = (String) args.get("order_id");
         long amountCents = ((Number) args.get("amount_cents")).longValue();
         String operation = (String) args.get("operation");

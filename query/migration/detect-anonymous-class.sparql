@@ -1,0 +1,35 @@
+# Detect Java 11 Anonymous Class Pattern
+# Finds anonymous class creations of functional interfaces — lambda candidates.
+# Rule: R05_AnonymousClassToLambda
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?line ?baseType ?snippet
+WHERE {
+  ?expr a java:AnonymousClassCreation ;
+        java:anonymousBaseType ?baseType ;
+        java:lineNumber ?line .
+
+  # Target well-known functional interfaces
+  FILTER(?baseType IN (
+    "Runnable", "java.lang.Runnable",
+    "Callable", "java.util.concurrent.Callable",
+    "Comparator", "java.util.Comparator",
+    "Supplier", "java.util.function.Supplier",
+    "Consumer", "java.util.function.Consumer",
+    "Function", "java.util.function.Function",
+    "Predicate", "java.util.function.Predicate",
+    "BiFunction", "java.util.function.BiFunction",
+    "ActionListener", "java.awt.event.ActionListener"
+  ))
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?expr .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  OPTIONAL { ?expr java:sourceText ?snippet }
+}
+ORDER BY ?file ?line

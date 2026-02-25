@@ -115,16 +115,11 @@ public class ProcessConversionServlet extends HttpServlet {
             if (job.getStatus() == ConversionJob.Status.COMPLETE) {
                 apiResponse.setOutputContent(job.getResult());
                 apiResponse.setCompletedAt(System.currentTimeMillis());
-                response.setStatus(HttpServletResponse.SC_OK);
             } else if (job.getStatus() == ConversionJob.Status.FAILED) {
                 apiResponse.setErrorMessage(job.getError());
                 apiResponse.setCompletedAt(System.currentTimeMillis());
-                response.setStatus(HttpServletResponse.SC_OK);
-            } else if (job.getStatus() == ConversionJob.Status.PROCESSING) {
-                response.setStatus(HttpServletResponse.SC_OK);
-            } else {
-                response.setStatus(HttpServletResponse.SC_OK);
             }
+            response.setStatus(HttpServletResponse.SC_OK);
 
             try (PrintWriter writer = response.getWriter()) {
                 writer.print(apiResponse.toJson());

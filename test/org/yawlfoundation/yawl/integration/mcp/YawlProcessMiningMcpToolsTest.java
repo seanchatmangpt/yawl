@@ -208,7 +208,7 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = exportXesTool.handler().call(null, args);
+        McpSchema.CallToolResult result = exportXesTool.callHandler().apply(null, new McpSchema.CallToolRequest(exportXesTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
@@ -224,7 +224,7 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = analyzeTool.handler().call(null, args);
+        McpSchema.CallToolResult result = analyzeTool.callHandler().apply(null, new McpSchema.CallToolRequest(analyzeTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
@@ -240,7 +240,7 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = perfTool.handler().call(null, args);
+        McpSchema.CallToolResult result = perfTool.callHandler().apply(null, new McpSchema.CallToolRequest(perfTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
@@ -256,7 +256,7 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = variantsTool.handler().call(null, args);
+        McpSchema.CallToolResult result = variantsTool.callHandler().apply(null, new McpSchema.CallToolRequest(variantsTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
@@ -272,7 +272,7 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = socialTool.handler().call(null, args);
+        McpSchema.CallToolResult result = socialTool.callHandler().apply(null, new McpSchema.CallToolRequest(socialTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
@@ -294,7 +294,7 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = exportXesTool.handler().call(null, args);
+        McpSchema.CallToolResult result = exportXesTool.callHandler().apply(null, new McpSchema.CallToolRequest(exportXesTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
@@ -312,7 +312,7 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = analyzeTool.handler().call(null, args);
+        McpSchema.CallToolResult result = analyzeTool.callHandler().apply(null, new McpSchema.CallToolRequest(analyzeTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
@@ -330,7 +330,7 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = perfTool.handler().call(null, args);
+        McpSchema.CallToolResult result = perfTool.callHandler().apply(null, new McpSchema.CallToolRequest(perfTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
@@ -348,7 +348,7 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = variantsTool.handler().call(null, args);
+        McpSchema.CallToolResult result = variantsTool.callHandler().apply(null, new McpSchema.CallToolRequest(variantsTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
@@ -366,7 +366,7 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = socialTool.handler().call(null, args);
+        McpSchema.CallToolResult result = socialTool.callHandler().apply(null, new McpSchema.CallToolRequest(socialTool.tool().name(), args));
 
         assertNotNull(result, "Result should not be null");
         assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");

@@ -1,0 +1,81 @@
+# CONSTRUCT: Thread Creation → Virtual Thread Migration Plan
+# Produces j25:VirtualThreadPattern instances from detected j11:ThreadCreationPattern sources.
+# Also handles ExecutorService pool → virtual thread executor (R01, R02).
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  # --- Virtual Thread replacement for new Thread(runnable).start() ---
+  ?migrationNode a j25:VirtualThreadPattern ;
+    j25:derivedFrom ?threadExpr ;
+    j25:templateFile "templates/java25-migration/virtual-thread.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    j25:requiresImport "java.lang.Thread" ;
+    rule:appliedRule rule:R01_ThreadToVirtualThread ;
+
+    # Template variables for Tera rendering
+    java:name ?methodName ;
+    j25:renderedCode ?virtualThreadCode .
+
+  # Traceability link
+  ?migrationNode rule:sourcePattern j11:ThreadCreationPattern .
+}
+WHERE {
+  ?threadExpr a java:ObjectCreationExpression ;
+              java:constructedType "java.lang.Thread" ;
+              java:lineNumber ?line .
+
+  ?method a java:MethodDeclaration ;
+          java:name ?methodName ;
+          java:containsExpression ?threadExpr .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  # Derive IRI for the migration node from source expression IRI
+  BIND(IRI(CONCAT(STR(?threadExpr), "_virtualThread")) AS ?migrationNode)
+
+  # Derive the rendered code from the source text or synthesize
+  OPTIONAL { ?threadExpr java:sourceText ?srcText }
+
+  BIND(
+    IF(BOUND(?srcText),
+       REPLACE(?srcText,
+               "new Thread\\((.+?)\\)\\.start\\(\\)",
+               "Thread.ofVirtual().name(\"yawl-worker\").start($1)"),
+       "Thread.ofVirtual().name(\"yawl-worker\").start(runnable)"
+    ) AS ?virtualThreadCode
+  )
+}
+
+# --- Executor pool replacement ---
+# (Union query — run separately or merge with UNION in full pipeline)
+#
+# CONSTRUCT {
+#   ?migrationNode a j25:VirtualThreadExecutorPattern ;
+#     j25:derivedFrom ?poolCall ;
+#     j25:templateFile "templates/java25-migration/virtual-thread.tera" ;
+#     j25:targetFile ?file ;
+#     j25:targetLine ?line ;
+#     j25:requiresImport "java.util.concurrent.Executors" ;
+#     rule:appliedRule rule:R02_ExecutorToVirtualExecutor ;
+#     j25:renderedCode "Executors.newVirtualThreadPerTaskExecutor()" .
+# }
+# WHERE {
+#   ?poolCall a java:MethodCallExpression ;
+#             java:calleeType "java.util.concurrent.Executors" ;
+#             java:calleeName ?poolType ;
+#             java:lineNumber ?line .
+#
+#   FILTER(?poolType IN ("newFixedThreadPool","newCachedThreadPool","newSingleThreadExecutor"))
+#
+#   ?cu a java:CompilationUnit ;
+#       java:filePath ?file .
+#
+#   BIND(IRI(CONCAT(STR(?poolCall), "_virtualExecutor")) AS ?migrationNode)
+# }
