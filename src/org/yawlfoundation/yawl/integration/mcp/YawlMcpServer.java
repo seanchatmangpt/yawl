@@ -33,12 +33,25 @@ import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowComplexitySpecificat
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowDiffSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowGenomeSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlConscienceToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlFactoryToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
 import org.yawlfoundation.yawl.integration.mcp.spec.McpToolRegistry;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlPatternSynthesisToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlProcessMiningToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlReactorToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.timeline.CaseTimelineSpecification;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.OxigraphSparqlEngine;
+import org.yawlfoundation.yawl.integration.conscience.DecisionGraph;
+import org.yawlfoundation.yawl.integration.memory.LearningCapture;
+import org.yawlfoundation.yawl.integration.memory.UpgradeMemoryStore;
+import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
+import org.yawlfoundation.yawl.integration.reactor.LivingProcessReactor;
+import org.yawlfoundation.yawl.integration.reactor.ReactorPolicy;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
@@ -212,6 +225,50 @@ public class YawlMcpServer {
 
         int constructToolCount = constructTools.size();
 
+        // Process mining tools (delegates to ProcessMiningFacade)
+        var pmFacade = new ProcessMiningFacade(yawlEngineUrl, yawlUsername, yawlPassword);
+        var pmTools = new YawlProcessMiningToolSpecifications(
+            yawlEngineUrl, yawlUsername, yawlPassword, pmFacade);
+        allTools.addAll(pmTools.createAll());
+        int pmToolCount = pmTools.createAll().size();
+
+        // Reactor tools (self-optimizing workflow loop)
+        int reactorToolCount = 0;
+        try {
+            var memoryStore = new UpgradeMemoryStore(
+                java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "yawl-reactor-memory"));
+            var learningCapture = new LearningCapture(memoryStore);
+            Supplier<Map<String, Double>> metricsSupplier = () -> fetchEngineMetrics();
+            var reactor = new LivingProcessReactor(
+                learningCapture, memoryStore, ReactorPolicy.defaults(), metricsSupplier);
+            var reactorTools = new YawlReactorToolSpecifications(reactor);
+            allTools.add(reactorTools.createStatusToolSpec());
+            allTools.add(reactorTools.createTriggerToolSpec());
+            reactorToolCount = 2;
+        } catch (Exception e) {
+            System.err.println("WARN [YawlMcpServer] Reactor tools not loaded: " + e.getMessage());
+        }
+
+        // Conscience/compliance tools (graceful degradation if Oxigraph unavailable)
+        int conscienceToolCount = 0;
+        try {
+            var sparqlEngine = new OxigraphSparqlEngine();
+            var decisionGraph = new DecisionGraph(sparqlEngine);
+            var conscienceTools = new YawlConscienceToolSpecifications(decisionGraph);
+            var conscienceList = conscienceTools.createAll();
+            allTools.addAll(conscienceList);
+            conscienceToolCount = conscienceList.size();
+        } catch (Exception e) {
+            System.err.println("WARN [YawlMcpServer] Conscience tools not loaded "
+                + "(Oxigraph unavailable): " + e.getMessage());
+        }
+
+        // Pattern synthesis tools (no external dependencies)
+        var patternTools = new YawlPatternSynthesisToolSpecifications();
+        var patternList = patternTools.createAll();
+        allTools.addAll(patternList);
+        int patternToolCount = patternList.size();
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -228,22 +285,23 @@ public class YawlMcpServer {
                 semantics, not LLM inference. Tool schemas are SPARQL CONSTRUCT outputs
                 derived from the workflow specification, not hand-authored.
 
-                Capabilities: %d tools (%d core + %d CONSTRUCT coordination + %d formal Petri-net + %d ontology-derived),
+                Capabilities: %d tools (%d core + %d CONSTRUCT + %d formal + %d ontology + %d PM + %d reactor + %d conscience + %d pattern),
                 3 static resources, 4 resource templates, 4 prompts, 3 completions,
                 logging (MCP 2025-11-25 compliant).
 
+                Blue-ocean innovation tools:
+                  Process Mining (5): yawl_pm_export_xes, yawl_pm_analyze, yawl_pm_performance, yawl_pm_variants, yawl_pm_social_network
+                  Reactor (2): yawl_reactor_status, yawl_reactor_trigger — self-optimizing workflow loop
+                  Conscience (4): yawl_publish_decision, yawl_recall_similar_decisions, yawl_explain_routing, yawl_compliance_report
+                  Pattern Synthesis (1): yawl_synthesize_from_pattern — offline WCP-based spec generation
+
                 Formal Petri-net tools (zero inference tokens):
-                  yawl_prove_liveness            — BFS reachability: LIVE / AT_RISK / DEADLOCKED verdict
-                  yawl_simulate_transition       — counterfactual token firing, zero side effects
-                  yawl_analyze_dead_paths        — zombie path detection across all running cases
-                  yawl_compute_structural_bounds — min/max completion steps + cyclomatic complexity
-                  yawl_prove_soundness           — formal soundness: option-to-complete, proper-completion, no-dead-tasks
-                  yawl_analyze_temporal_pressure — time-dimension heat map: expired timers, age outliers, urgency ranking
-                  yawl_trace_data_lineage        — XQuery data flow graph: producers, consumers, orphans, dangling refs
-                  yawl_audit_cancellation_regions — cancellation blast radius: mutual cancel, orphan cancel, live victims
-                  yawl_analyze_case_divergence   — cross-case cohort analysis: divergence index, outlier cases, split attribution
-                  yawl://cases/{caseId}/mermaid  — live Mermaid flowchart of token positions
-                """.formatted(allTools.size(), coreToolCount, constructToolCount, formalToolCount, ontologyToolCount))
+                  yawl_prove_liveness, yawl_simulate_transition, yawl_analyze_dead_paths,
+                  yawl_compute_structural_bounds, yawl_prove_soundness, yawl_analyze_temporal_pressure,
+                  yawl_trace_data_lineage, yawl_audit_cancellation_regions, yawl_analyze_case_divergence
+                  yawl://cases/{caseId}/mermaid — live Mermaid flowchart of token positions
+                """.formatted(allTools.size(), coreToolCount, constructToolCount, formalToolCount,
+                    ontologyToolCount, pmToolCount, reactorToolCount, conscienceToolCount, patternToolCount))
             .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
@@ -258,7 +316,9 @@ public class YawlMcpServer {
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
         System.err.println("Capabilities: " + allTools.size() + " tools ("
             + coreToolCount + " core + " + constructToolCount + " CONSTRUCT + "
-            + formalToolCount + " formal Petri-net + " + ontologyToolCount + " ontology-derived), "
+            + formalToolCount + " formal + " + ontologyToolCount + " ontology + "
+            + pmToolCount + " PM + " + reactorToolCount + " reactor + "
+            + conscienceToolCount + " conscience + " + patternToolCount + " pattern), "
             + "3 resources, 4 resource templates, 4 prompts, 3 completions, logging");
     }
 
@@ -308,6 +368,33 @@ public class YawlMcpServer {
      */
     public McpLoggingHandler getLoggingHandler() {
         return loggingHandler;
+    }
+
+    // =========================================================================
+    // Metrics supplier for reactor
+    // =========================================================================
+
+    private Map<String, Double> fetchEngineMetrics() {
+        try {
+            if (sessionHandle == null) {
+                return Map.of();
+            }
+            var metrics = new java.util.HashMap<String, Double>();
+
+            String casesXml = interfaceBClient.getAllRunningCases(sessionHandle);
+            if (casesXml != null && !casesXml.contains("<failure>")) {
+                long caseCount = casesXml.chars().filter(c -> c == '<').count() / 2;
+                metrics.put("runningCases", (double) caseCount);
+            }
+
+            metrics.put("queueDepth", 0.0);
+            metrics.put("avgExecutionTimeMs", 0.0);
+            metrics.put("errorRate", 0.0);
+            return Map.copyOf(metrics);
+        } catch (Exception e) {
+            System.err.println("WARN [YawlMcpServer] Failed to fetch engine metrics: " + e.getMessage());
+            return Map.of();
+        }
     }
 
     // =========================================================================
