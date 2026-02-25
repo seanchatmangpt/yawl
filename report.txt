@@ -1,48 +1,412 @@
 [1m[36m======================================================================
   YAWL PATTERN DEMO REPORT
-  Generated: 2026-02-25T03:51:38Z
+  Generated: 2026-02-25T04:21:03Z
 ======================================================================
 [0m
 [1mSUMMARY[0m
 ----------------------------------------
-  Patterns Run:    5
-  Successful:      [32m5[0m
-  Failed:          [90m0[0m
-  Success Rate:    [32m100.0%[0m
-  Total Duration:  3.061 sec
+  Patterns Run:    89
+  Successful:      [32m23[0m
+  Failed:          [31m66[0m
+  Success Rate:    [31m25.8%[0m
+  Total Duration:  28 min 40 sec
 
 [1mTOKEN SAVINGS (YAML vs XML)[0m
 ----------------------------------------
-  YAML Tokens:     856
-  XML Tokens:      4,240
-  Savings:         [32m79.8%[0m
-  Compression:     5.0x
+  YAML Tokens:     30,706
+  XML Tokens:      133,529
+  Savings:         [32m77.0%[0m
+  Compression:     4.3x
 
 [1mBY CATEGORY[0m
 ----------------------------------------
   Category               Count Success   Avg Time  Savings
   --------------------------------------------------------
-  [32mBasic Control Flow    [0m     5  100.0%     612 ms    79.8%
+  [32mBasic Control Flow    [0m     5  100.0%     241 ms    79.8%
+  [35mMulti-Instance        [0m     8   25.0% 15.076 sec    76.9%
+  [36mState-Based           [0m     7   28.6% 13.055 sec    78.0%
+  [33mDistributed           [0m     6    0.0% 20.069 sec    77.6%
+  [31mEvent-Driven          [0m    13   15.4% 23.189 sec    78.0%
+  [38;5;208mAI/ML Integration     [0m    12   16.7% 25.074 sec    77.4%
+  [38;5;93mEnterprise Patterns   [0m    11    9.1% 27.383 sec    77.0%
+  [38;5;40mAgent Patterns        [0m     5    0.0% 30.094 sec    71.9%
+  [38;5;69mAdvanced Branching    [0m     5   20.0% 12.105 sec    78.4%
+  [38;5;102mStructural            [0m     1  100.0%     222 ms    80.8%
+  [38;5;132mIteration             [0m     5   20.0% 24.083 sec    76.7%
+  [38;5;243mExtended              [0m     4   50.0% 15.130 sec    76.9%
+  [38;5;197mCancellation          [0m     7   57.1% 12.995 sec    76.4%
 
 [1mPATTERN RESULTS[0m
 ----------------------------------------
-  [32m[PASS][0m Sequence
-        Duration: 1296 ms | Work Items: 1
-        Tokens: 136 (YAML) vs 701 (XML) = 81% saved
+  [31m[FAIL][0m Static Partial Join
+        Duration: 415 ms | Work Items: 0
+        Tokens: 321 (YAML) vs 1559 (XML) = 79% saved
+  [31m[FAIL][0m Dynamic Partial Join
+        Duration: 55 ms | Work Items: 0
+        Tokens: 318 (YAML) vs 1361 (XML) = 77% saved
+  [31m[FAIL][0m Synchronizing Merge with Cancel
+        Duration: 30297 ms | Work Items: 1
+        Tokens: 386 (YAML) vs 1729 (XML) = 78% saved
+  [32m[PASS][0m Generalized And-Join
+        Duration: 299 ms | Work Items: 1
+        Tokens: 275 (YAML) vs 1211 (XML) = 77% saved
+  [31m[FAIL][0m Global Trigger
+        Duration: 30086 ms | Work Items: 1
+        Tokens: 329 (YAML) vs 1435 (XML) = 77% saved
+  [31m[FAIL][0m Reset Trigger
+        Duration: 30034 ms | Work Items: 1
+        Tokens: 393 (YAML) vs 1598 (XML) = 75% saved
+  [31m[FAIL][0m Discriminator with Complete MI
+        Duration: 29 ms | Work Items: 0
+        Tokens: 335 (YAML) vs 1386 (XML) = 76% saved
+  [31m[FAIL][0m Local Trigger
+        Duration: 30127 ms | Work Items: 1
+        Tokens: 282 (YAML) vs 1249 (XML) = 77% saved
+  [31m[FAIL][0m Loop with Cancel Region
+        Duration: 30044 ms | Work Items: 1
+        Tokens: 561 (YAML) vs 2404 (XML) = 77% saved
+  [32m[PASS][0m Cancel Case (Control Flow)
+        Duration: 453 ms | Work Items: 1
+        Tokens: 438 (YAML) vs 1682 (XML) = 74% saved
+  [31m[FAIL][0m Loop with Complete MI
+        Duration: 30122 ms | Work Items: 1
+        Tokens: 569 (YAML) vs 2397 (XML) = 76% saved
+  [31m[FAIL][0m Saga Choreography
+        Duration: 30114 ms | Work Items: 1
+        Tokens: 315 (YAML) vs 1419 (XML) = 78% saved
+  [31m[FAIL][0m Agent-to-Agent Handoff
+        Duration: 30099 ms | Work Items: 1
+        Tokens: 675 (YAML) vs 2287 (XML) = 70% saved
+  [31m[FAIL][0m Two-Phase Commit
+        Duration: 30096 ms | Work Items: 1
+        Tokens: 355 (YAML) vs 1615 (XML) = 78% saved
+  [31m[FAIL][0m Human-Agent Handoff
+        Duration: 30083 ms | Work Items: 1
+        Tokens: 397 (YAML) vs 1568 (XML) = 75% saved
+  [31m[FAIL][0m Critical Section with Cancel
+        Duration: 30092 ms | Work Items: 1
+        Tokens: 598 (YAML) vs 2512 (XML) = 76% saved
+  [32m[PASS][0m Saga Pattern
+        Duration: 114 ms | Work Items: 0
+        Tokens: 233 (YAML) vs 839 (XML) = 72% saved
+  [31m[FAIL][0m Multi-Agent Orchestration
+        Duration: 30088 ms | Work Items: 1
+        Tokens: 1088 (YAML) vs 3411 (XML) = 68% saved
+  [31m[FAIL][0m Bulkhead
+        Duration: 30096 ms | Work Items: 1
+        Tokens: 261 (YAML) vs 1131 (XML) = 77% saved
+  [32m[PASS][0m Cancel Task (Control Flow)
+        Duration: 125 ms | Work Items: 1
+        Tokens: 314 (YAML) vs 1173 (XML) = 73% saved
+  [31m[FAIL][0m Circuit Breaker
+        Duration: 30079 ms | Work Items: 1
+        Tokens: 368 (YAML) vs 1626 (XML) = 77% saved
+  [31m[FAIL][0m LLM Decision
+        Duration: 30093 ms | Work Items: 1
+        Tokens: 308 (YAML) vs 1256 (XML) = 75% saved
+  [31m[FAIL][0m Retry
+        Duration: 10 ms | Work Items: 0
+        Tokens: 319 (YAML) vs 1360 (XML) = 77% saved
+  [31m[FAIL][0m Agent Assisted
+        Duration: 30108 ms | Work Items: 1
+        Tokens: 381 (YAML) vs 1627 (XML) = 77% saved
+  [32m[PASS][0m Blocked And-Split
+        Duration: 229 ms | Work Items: 1
+        Tokens: 494 (YAML) vs 2344 (XML) = 79% saved
+  [31m[FAIL][0m Critical Section
+        Duration: 30085 ms | Work Items: 1
+        Tokens: 528 (YAML) vs 2314 (XML) = 77% saved
+  [31m[FAIL][0m Reset Trigger with Cancel Region
+        Duration: 30069 ms | Work Items: 1
+        Tokens: 403 (YAML) vs 1701 (XML) = 76% saved
+  [31m[FAIL][0m Feature Engineering
+        Duration: 30104 ms | Work Items: 1
+        Tokens: 571 (YAML) vs 2611 (XML) = 78% saved
   [32m[PASS][0m Parallel Split
-        Duration: 371 ms | Work Items: 1
+        Duration: 218 ms | Work Items: 1
         Tokens: 151 (YAML) vs 822 (XML) = 82% saved
-  [32m[PASS][0m Synchronization
-        Duration: 358 ms | Work Items: 1
-        Tokens: 193 (YAML) vs 913 (XML) = 79% saved
+  [32m[PASS][0m MI Without Synchronization
+        Duration: 112 ms | Work Items: 1
+        Tokens: 208 (YAML) vs 817 (XML) = 75% saved
+  [31m[FAIL][0m CQRS
+        Duration: 30081 ms | Work Items: 1
+        Tokens: 377 (YAML) vs 1847 (XML) = 80% saved
+  [31m[FAIL][0m Escalation
+        Duration: 30109 ms | Work Items: 1
+        Tokens: 388 (YAML) vs 1673 (XML) = 77% saved
+  [32m[PASS][0m Sequence
+        Duration: 247 ms | Work Items: 1
+        Tokens: 136 (YAML) vs 701 (XML) = 81% saved
+  [31m[FAIL][0m MI With A Priori Design Time Knowledge
+        Duration: 30080 ms | Work Items: 1
+        Tokens: 122 (YAML) vs 560 (XML) = 78% saved
+  [32m[PASS][0m Event Sourcing
+        Duration: 166 ms | Work Items: 1
+        Tokens: 344 (YAML) vs 1687 (XML) = 80% saved
+  [31m[FAIL][0m Parallel Approval
+        Duration: 30096 ms | Work Items: 0
+        Tokens: 360 (YAML) vs 1515 (XML) = 76% saved
   [32m[PASS][0m Exclusive Choice
-        Duration: 894 ms | Work Items: 1
+        Duration: 267 ms | Work Items: 1
         Tokens: 181 (YAML) vs 885 (XML) = 80% saved
+  [32m[PASS][0m Structured Loop
+        Duration: 122 ms | Work Items: 1
+        Tokens: 182 (YAML) vs 811 (XML) = 78% saved
+  [31m[FAIL][0m Event Router
+        Duration: 30074 ms | Work Items: 1
+        Tokens: 317 (YAML) vs 1415 (XML) = 78% saved
+  [31m[FAIL][0m SLA Monitoring
+        Duration: 30039 ms | Work Items: 1
+        Tokens: 329 (YAML) vs 1478 (XML) = 78% saved
+  [32m[PASS][0m Synchronization
+        Duration: 340 ms | Work Items: 1
+        Tokens: 193 (YAML) vs 913 (XML) = 79% saved
+  [32m[PASS][0m Implicit Termination
+        Duration: 222 ms | Work Items: 1
+        Tokens: 167 (YAML) vs 869 (XML) = 81% saved
+  [31m[FAIL][0m Event Stream
+        Duration: 30110 ms | Work Items: 1
+        Tokens: 247 (YAML) vs 1089 (XML) = 77% saved
+  [31m[FAIL][0m Compensation
+        Duration: 30029 ms | Work Items: 1
+        Tokens: 358 (YAML) vs 1610 (XML) = 78% saved
+  [31m[FAIL][0m Multi-Choice
+        Duration: 30104 ms | Work Items: 1
+        Tokens: 253 (YAML) vs 1083 (XML) = 77% saved
+  [31m[FAIL][0m MI Without A Priori Knowledge
+        Duration: 30114 ms | Work Items: 1
+        Tokens: 210 (YAML) vs 871 (XML) = 76% saved
+  [32m[PASS][0m Four Eyes
+        Duration: 460 ms | Work Items: 1
+        Tokens: 376 (YAML) vs 1655 (XML) = 77% saved
   [32m[PASS][0m Simple Merge
-        Duration: 140 ms | Work Items: 1
+        Duration: 130 ms | Work Items: 1
         Tokens: 195 (YAML) vs 919 (XML) = 79% saved
+  [31m[FAIL][0m Interleaved Parallel Routing
+        Duration: 30123 ms | Work Items: 1
+        Tokens: 277 (YAML) vs 1236 (XML) = 78% saved
+  [31m[FAIL][0m Delegation
+        Duration: 30119 ms | Work Items: 1
+        Tokens: 300 (YAML) vs 1340 (XML) = 78% saved
+  [31m[FAIL][0m Multi-Merge
+        Duration: 30113 ms | Work Items: 1
+        Tokens: 190 (YAML) vs 958 (XML) = 80% saved
+  [31m[FAIL][0m MI With A Priori Runtime Knowledge
+        Duration: 30107 ms | Work Items: 1
+        Tokens: 176 (YAML) vs 834 (XML) = 79% saved
+  [31m[FAIL][0m Compensating Transaction
+        Duration: 30116 ms | Work Items: 1
+        Tokens: 366 (YAML) vs 1607 (XML) = 77% saved
+  [31m[FAIL][0m Approval Workflow
+        Duration: 30048 ms | Work Items: 1
+        Tokens: 276 (YAML) vs 1304 (XML) = 79% saved
+  [32m[PASS][0m Structured Synchronizing Merge
+        Duration: 270 ms | Work Items: 1
+        Tokens: 192 (YAML) vs 993 (XML) = 81% saved
+  [32m[PASS][0m MI Without A Priori Runtime Knowledge
+        Duration: 121 ms | Work Items: 1
+        Tokens: 194 (YAML) vs 852 (XML) = 77% saved
+  [31m[FAIL][0m Side-by-Side
+        Duration: 30111 ms | Work Items: 0
+        Tokens: 318 (YAML) vs 1473 (XML) = 78% saved
+  [31m[FAIL][0m Nomination
+        Duration: 30144 ms | Work Items: 1
+        Tokens: 364 (YAML) vs 1637 (XML) = 78% saved
+  [31m[FAIL][0m Outbox
+        Duration: 30048 ms | Work Items: 1
+        Tokens: 293 (YAML) vs 1403 (XML) = 79% saved
+  [32m[PASS][0m Scatter-Gather
+        Duration: 409 ms | Work Items: 1
+        Tokens: 259 (YAML) vs 1266 (XML) = 80% saved
+  [31m[FAIL][0m Timeout
+        Duration: 20 ms | Work Items: 0
+        Tokens: 274 (YAML) vs 1284 (XML) = 79% saved
+  [31m[FAIL][0m Event Gateway
+        Duration: 22 ms | Work Items: 0
+        Tokens: 216 (YAML) vs 1032 (XML) = 79% saved
+  [31m[FAIL][0m Delegation Workflow
+        Duration: 30029 ms | Work Items: 0
+        Tokens: 541 (YAML) vs 2326 (XML) = 77% saved
+  [31m[FAIL][0m Escalation Workflow
+        Duration: 30075 ms | Work Items: 1
+        Tokens: 539 (YAML) vs 2328 (XML) = 77% saved
+  [31m[FAIL][0m Data Preprocessing
+        Duration: 30071 ms | Work Items: 1
+        Tokens: 572 (YAML) vs 2658 (XML) = 78% saved
+  [31m[FAIL][0m Structured Discriminator
+        Duration: 8 ms | Work Items: 0
+        Tokens: 167 (YAML) vs 849 (XML) = 80% saved
+  [31m[FAIL][0m Deferred Choice
+        Duration: 30070 ms | Work Items: 1
+        Tokens: 238 (YAML) vs 1105 (XML) = 78% saved
+  [32m[PASS][0m Milestone
+        Duration: 123 ms | Work Items: 1
+        Tokens: 262 (YAML) vs 1219 (XML) = 79% saved
+  [31m[FAIL][0m Sequential Approval
+        Duration: 30069 ms | Work Items: 0
+        Tokens: 372 (YAML) vs 1408 (XML) = 74% saved
+  [32m[PASS][0m Drift Detection
+        Duration: 109 ms | Work Items: 1
+        Tokens: 328 (YAML) vs 1468 (XML) = 78% saved
+  [31m[FAIL][0m Cancel Multiple Instances
+        Duration: 30038 ms | Work Items: 1
+        Tokens: 336 (YAML) vs 1425 (XML) = 76% saved
+  [31m[FAIL][0m Auto-Retrain
+        Duration: 30061 ms | Work Items: 1
+        Tokens: 563 (YAML) vs 2337 (XML) = 76% saved
+  [31m[FAIL][0m Complete Multiple Instances
+        Duration: 30058 ms | Work Items: 1
+        Tokens: 365 (YAML) vs 1565 (XML) = 77% saved
+  [32m[PASS][0m Cancel Case
+        Duration: 109 ms | Work Items: 0
+        Tokens: 246 (YAML) vs 1226 (XML) = 80% saved
+  [31m[FAIL][0m Feature Store
+        Duration: 30069 ms | Work Items: 0
+        Tokens: 405 (YAML) vs 1905 (XML) = 79% saved
+  [31m[FAIL][0m Pipeline
+        Duration: 30064 ms | Work Items: 1
+        Tokens: 385 (YAML) vs 1846 (XML) = 79% saved
+  [31m[FAIL][0m Cancel Region
+        Duration: 30066 ms | Work Items: 1
+        Tokens: 369 (YAML) vs 1701 (XML) = 78% saved
+  [31m[FAIL][0m Concurrent MI Without A Priori Knowledge
+        Duration: 8 ms | Work Items: 0
+        Tokens: 355 (YAML) vs 1538 (XML) = 77% saved
+  [31m[FAIL][0m Structured Loop (Control Flow)
+        Duration: 30058 ms | Work Items: 1
+        Tokens: 330 (YAML) vs 1458 (XML) = 77% saved
+  [31m[FAIL][0m Cancel and Complete MI
+        Duration: 30063 ms | Work Items: 0
+        Tokens: 392 (YAML) vs 1579 (XML) = 75% saved
+  [31m[FAIL][0m Sequential MI Without A Priori Knowledge
+        Duration: 9 ms | Work Items: 0
+        Tokens: 318 (YAML) vs 1398 (XML) = 77% saved
+  [31m[FAIL][0m Rules Engine
+        Duration: 30059 ms | Work Items: 1
+        Tokens: 308 (YAML) vs 1543 (XML) = 80% saved
+  [31m[FAIL][0m Model Fallback
+        Duration: 30059 ms | Work Items: 1
+        Tokens: 315 (YAML) vs 1203 (XML) = 74% saved
+  [32m[PASS][0m Cancel Activity
+        Duration: 110 ms | Work Items: 1
+        Tokens: 225 (YAML) vs 1027 (XML) = 78% saved
+  [31m[FAIL][0m Confidence Threshold
+        Duration: 30064 ms | Work Items: 1
+        Tokens: 328 (YAML) vs 1335 (XML) = 75% saved
+  [32m[PASS][0m ML Model
+        Duration: 110 ms | Work Items: 0
+        Tokens: 311 (YAML) vs 1310 (XML) = 76% saved
+  [31m[FAIL][0m Human-AI Handoff
+        Duration: 30048 ms | Work Items: 0
+        Tokens: 404 (YAML) vs 1628 (XML) = 75% saved
+  [31m[FAIL][0m ML Pipeline
+        Duration: 30068 ms | Work Items: 0
+        Tokens: 587 (YAML) vs 2602 (XML) = 77% saved
+  [31m[FAIL][0m Loop with Cancel Task
+        Duration: 30068 ms | Work Items: 1
+        Tokens: 541 (YAML) vs 2298 (XML) = 76% saved
+
+[1m[31mFAILURES[0m
+----------------------------------------
+  Agent Assisted: Case execution timed out after PT30S
+  LLM Decision: Case execution timed out after PT30S
+  Human-Agent Handoff: Case execution timed out after PT30S
+  Agent-to-Agent Handoff: Case execution timed out after PT30S
+  Multi-Agent Orchestration: Case execution timed out after PT30S
+  Sequential Approval: Case execution timed out after PT30S
+  Delegation Workflow: Case execution timed out after PT30S
+  Escalation Workflow: Case execution timed out after PT30S
+  Parallel Approval: Case execution timed out after PT30S
+  Escalation: Case execution timed out after PT30S
+  Compensation: Case execution timed out after PT30S
+  SLA Monitoring: Case execution timed out after PT30S
+  Delegation: Case execution timed out after PT30S
+  Nomination: Case execution timed out after PT30S
+  Approval Workflow: Case execution timed out after PT30S
+  MI With A Priori Design Time Knowledge: Case execution timed out after PT30S
+  MI With A Priori Runtime Knowledge: Case execution timed out after PT30S
+  MI Without A Priori Knowledge: Case execution timed out after PT30S
+  Interleaved Parallel Routing: Case execution timed out after PT30S
+  Deferred Choice: Case execution timed out after PT30S
+  Cancel Region: Case execution timed out after PT30S
+  Cancel Multiple Instances: Case execution timed out after PT30S
+  Complete Multiple Instances: Case execution timed out after PT30S
+  Cancel and Complete MI: Case execution timed out after PT30S
+  Sequential MI Without A Priori Knowledge: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 73:44: cvc-enumeration-valid: Value 'sequential' is not facet-valid with respect to enumeration '[static, dynamic]'. It must be a value from the enumeration.
+Error: 73:44: cvc-attribute.3: The value 'sequential' of attribute 'code' on element 'creationMode' is not valid with respect to its type, 'CreationModeCodeType'.
+
+  Concurrent MI Without A Priori Knowledge: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 68:44: cvc-enumeration-valid: Value 'concurrent' is not facet-valid with respect to enumeration '[static, dynamic]'. It must be a value from the enumeration.
+Error: 68:44: cvc-attribute.3: The value 'concurrent' of attribute 'code' on element 'creationMode' is not valid with respect to its type, 'CreationModeCodeType'.
+
+  Structured Loop (Control Flow): Case execution timed out after PT30S
+  Loop with Cancel Task: Case execution timed out after PT30S
+  Loop with Cancel Region: Case execution timed out after PT30S
+  Loop with Complete MI: Case execution timed out after PT30S
+  Synchronizing Merge with Cancel: Case execution timed out after PT30S
+  Static Partial Join: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 114:33: cvc-enumeration-valid: Value 'partial' is not facet-valid with respect to enumeration '[and, or, xor]'. It must be a value from the enumeration.
+Error: 114:33: cvc-attribute.3: The value 'partial' of attribute 'code' on element 'join' is not valid with respect to its type, 'ControlTypeCodeType'.
+
+  Dynamic Partial Join: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 89:33: cvc-enumeration-valid: Value 'partial' is not facet-valid with respect to enumeration '[and, or, xor]'. It must be a value from the enumeration.
+Error: 89:33: cvc-attribute.3: The value 'partial' of attribute 'code' on element 'join' is not valid with respect to its type, 'ControlTypeCodeType'.
+
+  Discriminator with Complete MI: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 70:39: cvc-enumeration-valid: Value 'discriminator' is not facet-valid with respect to enumeration '[and, or, xor]'. It must be a value from the enumeration.
+Error: 70:39: cvc-attribute.3: The value 'discriminator' of attribute 'code' on element 'join' is not valid with respect to its type, 'ControlTypeCodeType'.
+
+  Local Trigger: Case execution timed out after PT30S
+  Global Trigger: Case execution timed out after PT30S
+  Reset Trigger: Case execution timed out after PT30S
+  Reset Trigger with Cancel Region: Case execution timed out after PT30S
+  Critical Section: Case execution timed out after PT30S
+  Critical Section with Cancel: Case execution timed out after PT30S
+  Saga Choreography: Case execution timed out after PT30S
+  Two-Phase Commit: Case execution timed out after PT30S
+  Circuit Breaker: Case execution timed out after PT30S
+  Retry: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 87:54: cvc-datatype-valid.1.2.1: 'PT${retryCount * 2}S' is not a valid value for 'duration'.
+Error: 87:54: cvc-type.3.1.3: The value 'PT${retryCount * 2}S' of element 'duration' is not valid.
+
+  Bulkhead: Case execution timed out after PT30S
+  Timeout: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 62:54: cvc-datatype-valid.1.2.1: 'PT${timeoutSeconds}S' is not a valid value for 'duration'.
+Error: 62:54: cvc-type.3.1.3: The value 'PT${timeoutSeconds}S' of element 'duration' is not valid.
+
+  Event Gateway: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 42:39: cvc-enumeration-valid: Value 'discriminator' is not facet-valid with respect to enumeration '[and, or, xor]'. It must be a value from the enumeration.
+Error: 42:39: cvc-attribute.3: The value 'discriminator' of attribute 'code' on element 'join' is not valid with respect to its type, 'ControlTypeCodeType'.
+Error: 53:39: cvc-enumeration-valid: Value 'discriminator' is not facet-valid with respect to enumeration '[and, or, xor]'. It must be a value from the enumeration.
+Error: 53:39: cvc-attribute.3: The value 'discriminator' of attribute 'code' on element 'join' is not valid with respect to its type, 'ControlTypeCodeType'.
+Error: 64:39: cvc-enumeration-valid: Value 'discriminator' is not facet-valid with respect to enumeration '[and, or, xor]'. It must be a value from the enumeration.
+Error: 64:39: cvc-attribute.3: The value 'discriminator' of attribute 'code' on element 'join' is not valid with respect to its type, 'ControlTypeCodeType'.
+
+  Outbox: Case execution timed out after PT30S
+  Event Router: Case execution timed out after PT30S
+  Event Stream: Case execution timed out after PT30S
+  CQRS: Case execution timed out after PT30S
+  Compensating Transaction: Case execution timed out after PT30S
+  Side-by-Side: Case execution timed out after PT30S
+  Multi-Choice: Case execution timed out after PT30S
+  Rules Engine: Case execution timed out after PT30S
+  ML Pipeline: Case execution timed out after PT30S
+  Human-AI Handoff: Case execution timed out after PT30S
+  Data Preprocessing: Case execution timed out after PT30S
+  Model Fallback: Case execution timed out after PT30S
+  Feature Engineering: Case execution timed out after PT30S
+  Confidence Threshold: Case execution timed out after PT30S
+  Feature Store: Case execution timed out after PT30S
+  Pipeline: Case execution timed out after PT30S
+  Auto-Retrain: Case execution timed out after PT30S
+  Multi-Merge: Case execution timed out after PT30S
+  Structured Discriminator: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
+Error: 60:39: cvc-enumeration-valid: Value 'discriminator' is not facet-valid with respect to enumeration '[and, or, xor]'. It must be a value from the enumeration.
+Error: 60:39: cvc-attribute.3: The value 'discriminator' of attribute 'code' on element 'join' is not valid with respect to its type, 'ControlTypeCodeType'.
+
 
 [90m----------------------------------------------------------------------
   YAWL Foundation - Yet Another Workflow Language v6.0.0
-  Report generated at: 2026-02-25 03:51:38
+  Report generated at: 2026-02-25 04:21:03
 [0m
