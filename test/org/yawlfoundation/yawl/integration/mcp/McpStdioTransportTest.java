@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -633,6 +634,7 @@ public class McpStdioTransportTest {
 
     @Test
     @Order(8)
+    @Tag("slow")
         @DisplayName("Test large message handling exceeding default buffer size")
     @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
     void testLargeMessage() throws Exception {
@@ -729,6 +731,7 @@ public class McpStdioTransportTest {
 
     @Test
     @Order(9)
+    @Tag("slow")
         @DisplayName("Test multiple large messages in sequence")
     @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
     void testSequentialLargeMessages() throws Exception {
