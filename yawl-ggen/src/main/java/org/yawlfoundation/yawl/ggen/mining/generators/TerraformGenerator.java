@@ -5,6 +5,7 @@ import org.yawlfoundation.yawl.ggen.mining.model.Transition;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -261,6 +262,6 @@ public class TerraformGenerator {
      * Write generated Terraform to file.
      */
     public void writeToFile(String terraform, Path outputPath) throws IOException {
-        Files.write(outputPath, terraform.getBytes());
+        Files.write(outputPath, terraform.getBytes(StandardCharsets.UTF_8));
     }
 }

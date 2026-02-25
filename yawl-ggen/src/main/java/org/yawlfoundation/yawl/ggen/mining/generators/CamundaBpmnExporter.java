@@ -6,6 +6,7 @@ import org.yawlfoundation.yawl.ggen.mining.model.Place;
 import org.yawlfoundation.yawl.ggen.mining.model.Transition;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -164,7 +165,7 @@ public class CamundaBpmnExporter {
      */
     public void exportToFile(PetriNet model, Path outputPath) throws IOException {
         String bpmnXml = export(model);
-        Files.write(outputPath, bpmnXml.getBytes());
+        Files.write(outputPath, bpmnXml.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

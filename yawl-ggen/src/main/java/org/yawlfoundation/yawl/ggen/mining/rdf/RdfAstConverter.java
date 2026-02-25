@@ -5,6 +5,8 @@ import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
 import org.yawlfoundation.yawl.ggen.mining.model.*;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Converts a Petri net AST into RDF triples using Apache Jena.
  * Creates semantic representation of discovered process models.
@@ -26,6 +28,11 @@ public class RdfAstConverter {
 
     /**
      * Convert a Petri net model to RDF triples.
+     *
+     * Apache Jena's Model class is a framework object designed for direct use.
+     * Returning the internal Model reference is intentional as there is no standard
+     * defensive copy mechanism and callers rely on direct access to the mutable
+     * RDF graph for queries and reasoning operations.
      *
      * @param petriNet The Petri net to convert
      * @return Apache Jena Model containing RDF triples
@@ -161,6 +168,11 @@ public class RdfAstConverter {
 
     /**
      * Get the converted RDF model.
+     *
+     * Apache Jena's Model class is a framework object designed for direct use.
+     * Returning the internal Model reference is intentional as there is no standard
+     * defensive copy mechanism and callers rely on direct access to the mutable
+     * RDF graph for queries and reasoning operations.
      */
     public Model getModel() {
         return model;
@@ -170,7 +182,7 @@ public class RdfAstConverter {
      * Write the RDF model to a file in Turtle format.
      */
     public void writeTurtle(String filePath) {
-        try (var out = new java.io.FileWriter(filePath)) {
+        try (var out = new java.io.FileWriter(filePath, StandardCharsets.UTF_8)) {
             model.write(out, "TURTLE");
         } catch (java.io.IOException e) {
             throw new RuntimeException("Failed to write RDF to file: " + filePath, e);
