@@ -1360,7 +1360,11 @@ class YawlPromptProviderTest {
         }
 
         void setWorkItemData(String workItemId, String data) {
-            workItemData.put(workItemId, data);
+            if (data == null) {
+                workItemData.remove(workItemId); // null = "not found" — remove the entry
+            } else {
+                workItemData.put(workItemId, data);
+            }
         }
 
         void setCaseState(String caseId, String state) {
