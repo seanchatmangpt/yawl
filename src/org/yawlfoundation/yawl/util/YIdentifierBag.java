@@ -24,6 +24,7 @@ import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+import org.yawlfoundation.yawl.exceptions.YStateException;
 
 /**
  * 
@@ -43,6 +44,7 @@ public class YIdentifierBag {
 
     public void addIdentifier(YPersistenceManager pmgr, YIdentifier identifier)
             throws YPersistenceException {
+        if (identifier == null) return;
         int amount = getAmount(identifier);
         _idToQtyMap.put(identifier, ++amount);
         identifier.addLocation(pmgr, _condition);
@@ -76,15 +78,15 @@ public class YIdentifierBag {
 
 
     public void remove(YPersistenceManager pmgr, YIdentifier identifier, int amountToRemove)
-            throws YPersistenceException {
+            throws YStateException, YPersistenceException {
         if (_idToQtyMap.containsKey(identifier)) {
             int amountExisting = _idToQtyMap.get(identifier);
             if (amountToRemove <= 0) {
-                throw new RuntimeException("Cannot remove " + amountToRemove
+                throw new YStateException("Cannot remove " + amountToRemove
                         + " from YIdentifierBag:" + _condition + " " + identifier.toString());
             }
             else if (amountToRemove > amountExisting) {
-                throw new RuntimeException("Cannot remove " + amountToRemove
+                throw new YStateException("Cannot remove " + amountToRemove
                         + " tokens from YIdentifierBag:" + _condition
                         + " - this bag only contains " + amountExisting
                         + " identifiers of type " + identifier.toString());
@@ -101,7 +103,7 @@ public class YIdentifierBag {
             identifier.removeLocation(pmgr, _condition);
         }
         else {
-            throw new RuntimeException("Cannot remove " + amountToRemove
+            throw new YStateException("Cannot remove " + amountToRemove
                     + " tokens from YIdentifierBag:" + _condition
                     + " - this bag contains no"
                     + " identifiers of type " + identifier.toString()

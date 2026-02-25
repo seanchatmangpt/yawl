@@ -18,9 +18,9 @@ set -euo pipefail
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-JAR_PATH="$PROJECT_ROOT/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar"
+JAR_PATH="$PROJECT_ROOT/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar"
 MAIN_CLASS="org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunner"
-CLASSPATH="$JAR_PATH:$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Alpha.jar:$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Alpha.jar:$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Alpha.jar"
+CLASSPATH="$JAR_PATH:$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Beta.jar:$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Beta.jar:$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Beta.jar"
 
 # Default options
 DEFAULT_PATTERNS="WCP-1,WCP-2,WCP-3,WCP-4,WCP-5"

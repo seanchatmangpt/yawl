@@ -146,7 +146,7 @@ public final class DecisionGraph {
             );
         }
 
-        String query = String.format(ConscienceQueryLibrary.EXPLAIN_ROUTING, agentId);
+        String query = String.format(ConscienceQueryLibrary.EXPLAIN_ROUTING, agentId, since.toString());
         return engine.constructToTurtle(query);
     }
 
@@ -169,6 +169,52 @@ public final class DecisionGraph {
 
         String query = String.format(ConscienceQueryLibrary.ALL_RECENT_DECISIONS, limit);
         return engine.constructToTurtle(query);
+    }
+
+    /**
+     * Generates a compliance report from the conscience graph.
+     *
+     * <p>Runs three analysis queries: decision frequency by agent,
+     * confidence distribution, and low-confidence decisions below threshold.</p>
+     *
+     * @param confidenceThreshold decisions below this confidence are flagged for review
+     * @return formatted compliance report text
+     * @throws SparqlEngineException if the SPARQL engine is unavailable
+     */
+    public String complianceReport(double confidenceThreshold) throws SparqlEngineException {
+        if (!isAvailable()) {
+            throw new SparqlEngineException(
+                "SPARQL engine is unavailable; cannot generate compliance report"
+            );
+        }
+
+        StringBuilder report = new StringBuilder();
+        report.append("Agent Decision Compliance Report\n");
+        report.append("================================\n\n");
+
+        // Section 1: Decision frequency by agent
+        report.append("1. Decision Frequency by Agent\n");
+        report.append("------------------------------\n");
+        String frequencyResult = engine.constructToTurtle(
+            ConscienceQueryLibrary.DECISION_FREQUENCY_BY_AGENT);
+        report.append(frequencyResult).append("\n\n");
+
+        // Section 2: Confidence distribution
+        report.append("2. Confidence Distribution\n");
+        report.append("--------------------------\n");
+        String distributionResult = engine.constructToTurtle(
+            ConscienceQueryLibrary.CONFIDENCE_DISTRIBUTION);
+        report.append(distributionResult).append("\n\n");
+
+        // Section 3: Low-confidence decisions requiring review
+        report.append("3. Low-Confidence Decisions (threshold < ")
+            .append(String.format("%.2f", confidenceThreshold)).append(")\n");
+        report.append("------------------------------------------------\n");
+        String lowConfResult = engine.constructToTurtle(
+            String.format(ConscienceQueryLibrary.LOW_CONFIDENCE_DECISIONS, confidenceThreshold));
+        report.append(lowConfResult).append("\n");
+
+        return report.toString();
     }
 
     /**

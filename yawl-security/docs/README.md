@@ -1,6 +1,6 @@
 # YAWL Security Module
 
-**Artifact:** `org.yawlfoundation:yawl-security:6.0.0-Alpha`
+**Artifact:** `org.yawlfoundation:yawl-security:6.0.0-Beta`
 
 ## Overview
 

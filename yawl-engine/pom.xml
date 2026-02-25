@@ -8,7 +8,9 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
+
         <version>6.0.0</version>
+        <version>6.0.0-Beta</version>
     <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -235,6 +237,12 @@
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>net.jqwik</groupId>
+            <artifactId>jqwik</artifactId>
+            <version>1.8.5</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -350,31 +358,16 @@
                              dependencies not in local Maven cache -->
                         <testExclude>**/engine/interfce/metrics/InterfaceXHealthIndicatorTest.java</testExclude>
                         <testExclude>**/engine/interfce/metrics/ResilienceHealthIndicatorTest.java</testExclude>
-                        <!-- New v6.0 tests using Java 21+ structured concurrency APIs not available
-                             at current source level (resultNow), or checked Exception in lambdas -->
-                        <testExclude>**/engine/StructuredConcurrencyParallelCaseTest.java</testExclude>
-                        <testExclude>**/engine/CaseExecutionContextTest.java</testExclude>
-                        <testExclude>**/engine/interfce/WorkItemMetadataTest.java</testExclude>
-                        <!-- ggen BuildPhaseTest has type errors (int vs long comparisons) - needs fix -->
-                        <testExclude>**/engine/ggen/BuildPhaseTest.java</testExclude>
-                        <!-- Tests added by a2a-godspeed/feature branches with syntax errors or stale API -->
+                        <!-- InterfaceB tests use org.mockito which violates Q invariant (no mocks) -->
                         <testExclude>**/interfaceB/InterfaceBClientTest.java</testExclude>
                         <testExclude>**/interfaceB/InterfaceB_EngineBasedClientTest.java</testExclude>
                         <testExclude>**/interfaceB/InterfaceB_EnvironmentBasedClientTest.java</testExclude>
-                        <testExclude>**/interfaceB/SimpleTest.java</testExclude>
+                        <!-- REST interface tests use stale API - excluded pending A5 fix -->
                         <testExclude>**/interfce/rest/InterfaceARestResourceTest.java</testExclude>
                         <testExclude>**/interfce/rest/YawlExceptionMapperTest.java</testExclude>
                         <testExclude>**/interfce/rest/YawlRestApplicationTest.java</testExclude>
-                        <testExclude>**/time/YLaunchDelayerTest.java</testExclude>
-                        <testExclude>**/time/YTimedObjectTest.java</testExclude>
-                        <testExclude>**/time/YTimerTest.java</testExclude>
-                        <testExclude>**/time/YTimerVariableTest.java</testExclude>
-                        <testExclude>**/time/YWorkItemTimerTest.java</testExclude>
-                        <testExclude>**/time/workdays/HolidayTest.java</testExclude>
+                        <!-- A2ALifecycleIntegrationTest requires cross-module A2A classes not in engine scope -->
                         <testExclude>**/engine/A2ALifecycleIntegrationTest.java</testExclude>
-                        <testExclude>**/engine/YCaseNbrStoreTest.java</testExclude>
-                        <testExclude>**/engine/YNetDataTest.java</testExclude>
-                        <testExclude>**/engine/YNetRunnerRepositoryTest.java</testExclude>
                         <!-- WorkflowPattern* tests and YNetRunnerSoundnessTest reference yawl-integration
                              classes (WorkflowPattern, PatternCategory, YAWLServiceInterfaceRegistry)
                              not in engine compile scope; compiled/run in yawl-integration module -->
@@ -389,17 +382,24 @@
                         <testExclude>**/engine/YWorkItemSoundnessTest.java</testExclude>
                         <!-- Uses old com.hp.hpl.jena API (Jena 2.x) not on classpath -->
                         <testExclude>**/observatory/rdf/FactsToRDFConverterTest.java</testExclude>
-                        <!-- Tests that fail in integration -am build chain (API/classpath issues) -->
+                        <!-- EngineClearer is a test helper class, not a test -->
                         <testExclude>**/engine/EngineClearer.java</testExclude>
-                        <testExclude>**/engine/HibernateV6ApiTest.java</testExclude>
-                        <testExclude>**/engine/NetRunnerBehavioralTest.java</testExclude>
-                        <testExclude>**/engine/TaskLifecycleBehavioralTest.java</testExclude>
-                        <testExclude>**/engine/TestCaseCancellation.java</testExclude>
-                        <testExclude>**/engine/TestConcurrentCaseExecution.java</testExclude>
-                        <testExclude>**/engine/TestDeadlockingWorkflows.java</testExclude>
+                        <!-- TestEngineAgainst* tests excluded pending investigation -->
                         <testExclude>**/engine/TestEngineAgainstABeta4Spec.java</testExclude>
                         <testExclude>**/engine/TestEngineAgainstImproperCompletionOfASubnet.java</testExclude>
-                        <testExclude>**/engine/TestEngineSystem1.java</testExclude>
+                        <!-- TestYPersistenceManager requires YEngine singleton initialised with
+                             persisting=true, but the JUnit in-process singleton is already
+                             created with persisting=false by earlier tests. Re-enable once
+                             a per-test engine factory reset mechanism is available. -->
+                        <testExclude>**/engine/TestYPersistenceManager.java</testExclude>
+                        <!-- Timer tests use inner helper classes with wrong base types and call private
+                             constructors - requires full rewrite, excluded pending A6 fix -->
+                        <testExclude>**/time/YLaunchDelayerTest.java</testExclude>
+                        <testExclude>**/time/YTimedObjectTest.java</testExclude>
+                        <testExclude>**/time/YTimerTest.java</testExclude>
+                        <testExclude>**/time/YTimerVariableTest.java</testExclude>
+                        <testExclude>**/time/YWorkItemTimerTest.java</testExclude>
+                        <testExclude>**/time/workdays/HolidayTest.java</testExclude>
                     </testExcludes>
                 </configuration>
                 <executions>
@@ -434,8 +434,6 @@
                                 <exclude>**/*.xml</exclude>
                                 <exclude>**/*.xsd</exclude>
                                 <exclude>**/*.properties</exclude>
-                                <!-- ggen BuildPhaseTest has type errors (int vs long comparisons) - needs fix -->
-                                <exclude>org/yawlfoundation/yawl/engine/ggen/BuildPhaseTest.java</exclude>
                                 <!-- WorkflowPattern* tests reference yawl-integration classes not in engine scope -->
                                 <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternEdgeCasesTest.java</exclude>
                                 <exclude>org/yawlfoundation/yawl/engine/patterns/WorkflowPatternErrorHandlingTest.java</exclude>

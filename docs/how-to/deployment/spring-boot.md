@@ -1,6 +1,6 @@
 # Spring Boot 3.4 Migration Guide for YAWL
 
-**YAWL Version:** 5.2 → 5.3
+**YAWL Version:** 5.2 → 6.0.0
 **Target:** Spring Boot 3.4.x + Jakarta EE 10
 **Strategy:** Hybrid (new services only, preserve existing WAR files)
 **Author:** YAWL Architecture Team

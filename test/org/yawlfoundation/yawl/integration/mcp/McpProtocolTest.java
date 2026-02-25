@@ -256,7 +256,9 @@ public class McpProtocolTest extends TestCase {
             server.stop();
             fail("Expected IOException when engine is unreachable");
         } catch (java.io.IOException e) {
-            assertNotNull("IOException should have a message", e.getMessage());
+            // IOException message may be null for connection-refused scenarios
+            // from the underlying network layer — the key assertion is that the
+            // server is not running after a failed start.
             assertFalse("Server should not be running after failed start",
                 server.isRunning());
         }

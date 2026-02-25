@@ -56,7 +56,7 @@ mvn -T 1.5C clean package -pl yawl-integration \
 The `-am` flag builds all modules that `yawl-integration` depends on. The resulting JAR is at:
 
 ```
-yawl-integration/target/yawl-integration-6.0.0-Alpha.jar
+yawl-integration/target/yawl-integration-6.0.0-Beta.jar
 ```
 
 However, `YawlMcpServer.main()` needs all its runtime dependencies on the classpath. The easiest way to run it is from the reactor root with the full classpath assembled by Maven:
@@ -105,7 +105,7 @@ export YAWL_ENGINE_URL=http://localhost:8080/yawl
 export YAWL_USERNAME=admin
 export YAWL_PASSWORD=YAWL
 
-CLASSPATH="yawl-integration/target/yawl-integration-6.0.0-Alpha.jar:$(cat yawl-integration/target/integration-cp.txt)"
+CLASSPATH="yawl-integration/target/yawl-integration-6.0.0-Beta.jar:$(cat yawl-integration/target/integration-cp.txt)"
 
 java -cp "$CLASSPATH" \
   org.yawlfoundation.yawl.integration.mcp.YawlMcpServer
@@ -141,7 +141,7 @@ Claude desktop and Claude CLI support MCP servers via a JSON configuration file.
       "command": "java",
       "args": [
         "-cp",
-        "/absolute/path/to/yawl/yawl-integration/target/yawl-integration-6.0.0-Alpha.jar:/absolute/path/to/dependencies/*",
+        "/absolute/path/to/yawl/yawl-integration/target/yawl-integration-6.0.0-Beta.jar:/absolute/path/to/dependencies/*",
         "org.yawlfoundation.yawl.integration.mcp.YawlMcpServer"
       ],
       "env": {

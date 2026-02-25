@@ -12,6 +12,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.yawlfoundation.yawl.engine.WorkItemCompletion;
 import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
+import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStoreListener;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.stateless.elements.YSpecification;
 import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
@@ -302,6 +304,27 @@ public class YStatelessEngine {
      */
     public boolean isMultiThreadedAnnouncementsEnabled() {
         return _engine.getAnnouncer().isMultiThreadedAnnouncementsEnabled();
+    }
+
+
+    /**
+     * Wire a {@link WorkflowEventStore} to receive all case and work item lifecycle
+     * events from this engine.
+     *
+     * <p>Registers a {@link WorkflowEventStoreListener} for both case and work item
+     * events. Every meaningful state transition (case started/completed/cancelled,
+     * work item enabled/started/completed/cancelled) will be appended to the store as
+     * an immutable {@link org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent}.
+     *
+     * <p>This method is idempotent with respect to the same store instance; however,
+     * calling it multiple times with different stores will register multiple listeners.
+     *
+     * @param eventStore the event store to populate (must not be null)
+     */
+    public void wireEventStore(WorkflowEventStore eventStore) {
+        WorkflowEventStoreListener listener = new WorkflowEventStoreListener(eventStore);
+        addCaseEventListener(listener);
+        addWorkItemEventListener(listener);
     }
 
 

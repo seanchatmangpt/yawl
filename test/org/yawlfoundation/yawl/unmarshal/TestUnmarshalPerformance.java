@@ -650,6 +650,8 @@ class TestUnmarshalPerformance {
         for (int i = 1; i <= taskCount; i++) {
             sb.append("""
                     <task id="task%d">
+                      <join code="xor"/>
+                      <split code="and"/>
                       <flowsInto>
                         <nextElementRef id="task%d"/>
                       </flowsInto>
@@ -700,7 +702,10 @@ class TestUnmarshalPerformance {
 
             for (int t = 1; t <= tasksPerDecomposition; t++) {
                 sb.append("""
-                            <task id="subnet-%d-task-%d"/>
+                            <task id="subnet-%d-task-%d">
+                              <join code="xor"/>
+                              <split code="and"/>
+                            </task>
                     """.formatted(d, t));
             }
 

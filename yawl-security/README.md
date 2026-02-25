@@ -1,6 +1,6 @@
 # yawl-security
 
-**Artifact:** `org.yawlfoundation:yawl-security:6.0.0-Alpha` | `packaging: jar`
+**Artifact:** `org.yawlfoundation:yawl-security:6.0.0-Beta` | `packaging: jar`
 **Parent:** `yawl-parent`
 
 ## Purpose

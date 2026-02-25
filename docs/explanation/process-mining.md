@@ -1,5 +1,12 @@
 # YAWL Process Mining Enhancement Plan
 
+> **Conceptual foundation**: Before reading this roadmap, see
+> [Object-Centric Process Mining](object-centric-process-mining.md) for OCPM/OCEL 2.0
+> theory and [Process Intelligence](process-intelligence.md) for how YAWL's PI stack
+> connects OCPM to generative, predictive, and prescriptive AI.
+> To deploy the existing Rust4PM + pm4py integration, see
+> [OCPM Integration How-To](../how-to/integration/ocpm-integration.md).
+
 ## Current State Analysis
 
 YAWL v6.0 already has a comprehensive process mining infrastructure but requires enhancements to fully realize the mission. Here's the current state:

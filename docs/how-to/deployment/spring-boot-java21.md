@@ -1,7 +1,7 @@
 # Java 21 + Spring Boot 3.4 Migration Architecture
 
-**YAWL Version:** 5.2 → 5.3
-**Target:** Java 21 LTS + Spring Boot 3.4
+**YAWL Version:** 5.2 → 6.0.0
+**Target:** Java 25 + Spring Boot 3.4
 **Focus:** Virtual threads for agent-based, high-fan-out concurrency
 **Author:** YAWL Architecture Team
 **Date:** 2026-02-15

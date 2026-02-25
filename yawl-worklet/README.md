@@ -6,7 +6,7 @@
 
 The Worklet Service provides runtime workflow adaptation by substituting tasks with "worklets" -- small workflow fragments selected via a rule-based inference engine based on Ripple Down Rules (RDR). This enables context-sensitive workflow execution without modifying the original specification.
 
-**Version**: 6.0.0-Alpha
+**Version**: 6.0.0-Beta
 **Module**: `org.yawlfoundation.yawl.worklet`
 **Source**: `src/org/yawlfoundation/yawl/worklet/`
 **Tests**: `test/org/yawlfoundation/yawl/worklet/`

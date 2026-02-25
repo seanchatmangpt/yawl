@@ -1,5 +1,8 @@
 # WCP-60: Rules Engine Pattern
-# Business rules evaluation in workflow
+# Business rules evaluation in workflow.
+# Demo uses AND-split to fire all actions (simplified: all rules match).
+# In production, each action would be guarded by a predicate (e.g. ruleA_matched==true)
+# so only actions whose rules fired are executed.
 
 name: RulesEnginePattern
 uri: rules-engine.xml
@@ -37,30 +40,30 @@ tasks:
 
   - id: ApplyActions
     flows: [ActionA, ActionB, ActionC]
-    split: or
+    split: and
     join: xor
     description: "Apply rule actions"
 
   - id: ActionA
     flows: [Complete]
     split: xor
-    join: or
+    join: xor
     description: "Execute action A"
 
   - id: ActionB
     flows: [Complete]
     split: xor
-    join: or
+    join: xor
     description: "Execute action B"
 
   - id: ActionC
     flows: [Complete]
     split: xor
-    join: or
+    join: xor
     description: "Execute action C"
 
   - id: Complete
     flows: [end]
     split: xor
-    join: xor
+    join: and
     description: "Rules processing complete"

@@ -49,6 +49,7 @@ public class ProcessExporterFactory {
             case "TERRAFORM_AZURE" -> new TerraformGenerator().generateTerraform(model, "azure");
             case "TERRAFORM_GCP" -> new TerraformGenerator().generateTerraform(model, "gcp");
             case "KUBERNETES" -> new TerraformGenerator().generateTerraform(model, "kubernetes");
+            case "YAWL_SPEC" -> new YawlSpecExporter().export(model);
             default -> throw new IllegalArgumentException(
                     "Unsupported target format: " + targetFormat +
                     ". Supported formats: " + String.join(", ", supportedFormats())
@@ -68,7 +69,8 @@ public class ProcessExporterFactory {
                 "TERRAFORM_AWS",
                 "TERRAFORM_AZURE",
                 "TERRAFORM_GCP",
-                "KUBERNETES"
+                "KUBERNETES",
+                "YAWL_SPEC"
         );
     }
 }

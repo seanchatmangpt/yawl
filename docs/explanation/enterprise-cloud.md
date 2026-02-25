@@ -1,5 +1,5 @@
 # YAWL Enterprise Cloud Architecture Assessment
-**Version:** 5.2
+**Version:** 6.0.0
 **Date:** 2026-02-15
 **Scope:** Enterprise Cloud Modernization Readiness Analysis
 

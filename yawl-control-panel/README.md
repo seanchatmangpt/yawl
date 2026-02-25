@@ -1,6 +1,6 @@
 # yawl-control-panel
 
-**Artifact:** `org.yawlfoundation:yawl-control-panel:6.0.0-Alpha` | `packaging: jar`
+**Artifact:** `org.yawlfoundation:yawl-control-panel:6.0.0-Beta` | `packaging: jar`
 **Main-Class:** `org.yawlfoundation.yawl.controlpanel.YControlPanel`
 **Parent:** `yawl-parent`
 
@@ -51,7 +51,7 @@ provided by `yawl-engine`.
 mvn -pl yawl-utilities,yawl-elements,yawl-engine,yawl-control-panel clean package
 
 # Run
-java -jar yawl-control-panel/target/yawl-control-panel-6.0.0-Alpha.jar
+java -jar yawl-control-panel/target/yawl-control-panel-6.0.0-Beta.jar
 ```
 
 ## Test Coverage

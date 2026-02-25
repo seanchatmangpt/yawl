@@ -154,7 +154,7 @@ public class A2AClientExample {
         AgentCard serverCard = AgentCard.builder()
                 .name("yawl-workflow-agent")
                 .description("YAWL workflow management agent")
-                .version("6.0.0-Alpha")
+                .version("6.0.0-Beta")
                 .skills(List.of(
                         io.a2a.spec.AgentSkill.builder()
                                 .id("launch-case")

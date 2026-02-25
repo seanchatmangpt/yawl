@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
  * Tests all supported operators and edge cases.
  *
  * @author YAWL Foundation
- * @version 6.0.0-Alpha
+ * @version 6.0.0-Beta
  */
 @DisplayName("RdrCondition — condition expression evaluation against data contexts")
 @Tag("unit")

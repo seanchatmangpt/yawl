@@ -1,6 +1,6 @@
 # YAWL Developer Build Guide
 
-**Version:** 6.0.0-Alpha | **Java:** 25 | **Last Updated:** 2026-02-18
+**Version:** 6.0.0-Beta | **Java:** 25 | **Last Updated:** 2026-02-18
 
 ---
 

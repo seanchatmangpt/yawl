@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
  * Tests the complete tree traversal and worklet selection logic.
  *
  * @author YAWL Foundation
- * @version 6.0.0-Alpha
+ * @version 6.0.0-Beta
  */
 @DisplayName("RdrTree — RDR tree structure and worklet selection logic")
 @Tag("unit")

@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
+import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.YNet;
@@ -246,6 +249,51 @@ public final class ProcessMiningFacade {
     }
 
     /**
+     * Analyze process mining data from the event store for a specific case.
+     *
+     * <p>Reads all events for the given case from the event store, converts them to XES,
+     * and runs the full analysis pipeline (performance, variants, OCEL). This method uses
+     * the event store as the authoritative source, avoiding a live engine connection.</p>
+     *
+     * @param caseId     Case identifier to analyze (must not be null)
+     * @param eventStore Source of workflow events (must not be null)
+     * @return Analysis report with performance and variant data (null conformance)
+     * @throws WorkflowEventStore.EventStoreException If reading from the store fails
+     * @throws NullPointerException If caseId or eventStore is null
+     */
+    public ProcessMiningReport analyzeFromEventStore(
+            String caseId, WorkflowEventStore eventStore)
+            throws WorkflowEventStore.EventStoreException {
+        Objects.requireNonNull(caseId, "caseId is required");
+        Objects.requireNonNull(eventStore, "eventStore is required");
+
+        _log.info("Starting event-store-based process mining analysis for case '{}'", caseId);
+
+        List<WorkflowEvent> events = eventStore.loadEvents(caseId);
+        _log.debug("Loaded {} events for case '{}'", events.size(), caseId);
+
+        String xesXml = workflowEventsToXes(caseId, events);
+
+        PerformanceAnalyzer performanceAnalyzer = new PerformanceAnalyzer();
+        PerformanceAnalyzer.PerformanceResult performance = performanceAnalyzer.analyze(xesXml);
+        _log.debug("Performance analysis complete: {} traces, avg flow time {} ms",
+                   performance.traceCount, performance.avgFlowTimeMs);
+
+        Map<String, Long> variants = computeVariants(xesXml);
+        _log.debug("Variant extraction complete: {} variants", variants.size());
+
+        String ocelJson = OcelExporter.xesToOcel(xesXml);
+        _log.debug("OCEL export complete: {} bytes", ocelJson.length());
+
+        _log.info("Event-store analysis complete for case '{}': {} events, {} variants",
+                  caseId, events.size(), variants.size());
+
+        return new ProcessMiningReport(
+            xesXml, null, performance, variants, ocelJson,
+            performance.traceCount, caseId);
+    }
+
+    /**
      * Export YAWL net to PNML for external process mining tools.
      *
      * <p>Converts YAWL's internal net representation to PNML (Petri Net Markup Language),
@@ -266,6 +314,78 @@ public final class ProcessMiningFacade {
      */
     public void close() throws IOException {
         exporter.close();
+    }
+
+    /**
+     * Convert workflow events for a single case into XES event log XML.
+     *
+     * <p>Produces one trace containing one XES event per recorded workflow event.
+     * Activity name is derived from the work item ID (task portion) for work-item
+     * events, or the event type name for case-level events.</p>
+     *
+     * @param caseId case identifier (used as trace concept:name)
+     * @param events ordered list of workflow events
+     * @return XES XML string (IEEE 1849-2016 compliant)
+     */
+    private static String workflowEventsToXes(String caseId, List<WorkflowEvent> events) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<log xes.version=\"1.0\" xes.features=\"\" openxes.version=\"1.0RC7\"\n");
+        sb.append("     xmlns=\"http://www.xes-standard.org/\">\n");
+        sb.append("  <extension name=\"Concept\" prefix=\"concept\"")
+          .append(" uri=\"http://www.xes-standard.org/concept.xesext\"/>\n");
+        sb.append("  <extension name=\"Time\" prefix=\"time\"")
+          .append(" uri=\"http://www.xes-standard.org/time.xesext\"/>\n");
+        sb.append("  <extension name=\"Lifecycle\" prefix=\"lifecycle\"")
+          .append(" uri=\"http://www.xes-standard.org/lifecycle.xesext\"/>\n");
+        sb.append("  <trace>\n");
+        sb.append("    <string key=\"concept:name\" value=\"")
+          .append(escapeXml(caseId)).append("\"/>\n");
+        for (WorkflowEvent event : events) {
+            String activityName = deriveActivityName(event);
+            String lifecycle = deriveLifecycleTransition(event.getEventType());
+            String timestamp = event.getTimestamp().toString();
+            sb.append("    <event>\n");
+            sb.append("      <string key=\"concept:name\" value=\"")
+              .append(escapeXml(activityName)).append("\"/>\n");
+            sb.append("      <string key=\"lifecycle:transition\" value=\"")
+              .append(lifecycle).append("\"/>\n");
+            sb.append("      <date key=\"time:timestamp\" value=\"")
+              .append(escapeXml(timestamp)).append("\"/>\n");
+            sb.append("    </event>\n");
+        }
+        sb.append("  </trace>\n");
+        sb.append("</log>");
+        return sb.toString();
+    }
+
+    private static String deriveActivityName(WorkflowEvent event) {
+        String workItemId = event.getWorkItemId();
+        if (workItemId != null && !workItemId.isBlank()) {
+            // YAWL workItemId format: "caseId:taskId" or "caseId:taskId.childIndex"
+            int colonIdx = workItemId.indexOf(':');
+            return colonIdx >= 0 ? workItemId.substring(colonIdx + 1) : workItemId;
+        }
+        // Case-level events: use readable event type name
+        return event.getEventType().name().replace('_', ' ').toLowerCase();
+    }
+
+    private static String deriveLifecycleTransition(WorkflowEvent.EventType eventType) {
+        return switch (eventType) {
+            case WORKITEM_STARTED, CASE_STARTED     -> "start";
+            case WORKITEM_COMPLETED, CASE_COMPLETED -> "complete";
+            case WORKITEM_ENABLED                   -> "schedule";
+            case WORKITEM_CANCELLED, CASE_CANCELLED -> "ate_abort";
+            default                                 -> "complete";
+        };
+    }
+
+    private static String escapeXml(String value) {
+        if (value == null) return "";
+        return value.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;");
     }
 
     /**

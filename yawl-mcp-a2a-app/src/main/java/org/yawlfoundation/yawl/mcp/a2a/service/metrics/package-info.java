@@ -35,7 +35,7 @@
  *   metrics:
  *     tags:
  *       application: yawl-mcp-a2a-app
- *       version: 6.0.0-Alpha
+ *       version: 6.0.0-Beta
  *     distribution:
  *       percentiles-histogram:
  *         yawl_mcp_tool_duration_seconds: true

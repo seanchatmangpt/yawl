@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Alpha - Production Docker Compose Configuration
+# YAWL v6.0.0-Beta - Production Docker Compose Configuration
 # =============================================================================
 # Production-grade deployment with:
 # - PostgreSQL with connection pooling and replication readiness
@@ -325,7 +325,7 @@ services:
   # YAWL Engine - Core Workflow Engine
   # ===========================================================================
   engine:
-    image: yawl/engine:${YAWL_VERSION:-6.0.0-Alpha}
+    image: yawl/engine:${YAWL_VERSION:-6.0.0-Beta}
     build:
       context: .
       dockerfile: docker/production/Dockerfile.engine
@@ -406,7 +406,7 @@ services:
   # YAWL Resource Service - Resource Allocation
   # ===========================================================================
   resource-service:
-    image: yawl/resource-service:${YAWL_VERSION:-6.0.0-Alpha}
+    image: yawl/resource-service:${YAWL_VERSION:-6.0.0-Beta}
     build:
       context: .
       dockerfile: containerization/Dockerfile.resourceService
@@ -459,7 +459,7 @@ services:
   # YAWL Worklet Service - Dynamic Workflow Adaptation
   # ===========================================================================
   worklet-service:
-    image: yawl/worklet-service:${YAWL_VERSION:-6.0.0-Alpha}
+    image: yawl/worklet-service:${YAWL_VERSION:-6.0.0-Beta}
     build:
       context: .
       dockerfile: containerization/Dockerfile.workletService
@@ -512,7 +512,7 @@ services:
   # YAWL Monitor Service - Process Monitoring
   # ===========================================================================
   monitor-service:
-    image: yawl/monitor-service:${YAWL_VERSION:-6.0.0-Alpha}
+    image: yawl/monitor-service:${YAWL_VERSION:-6.0.0-Beta}
     build:
       context: .
       dockerfile: containerization/Dockerfile.monitorService

@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.util.YIdentifierBag;
 import org.yawlfoundation.yawl.util.YVerificationHandler;
 
@@ -102,23 +103,38 @@ public class YCondition extends YExternalNetElement implements YConditionInterfa
     @Override
     public YIdentifier removeOne(YPersistenceManager pmgr) throws YPersistenceException {
         YIdentifier identifier = getIdentifiers().get(0);
-        _bag.remove(pmgr, identifier, 1);
+        try {
+            _bag.remove(pmgr, identifier, 1);
+        } catch (YStateException e) {
+            throw new RuntimeException(e); // Should not happen: identifier was just retrieved
+        }
         return identifier;
     }
 
     @Override
     public void removeOne(YPersistenceManager pmgr, YIdentifier identifier) throws YPersistenceException {
-        _bag.remove(pmgr, identifier, 1);
+        try {
+            _bag.remove(pmgr, identifier, 1);
+        } catch (YStateException e) {
+            throw new RuntimeException(e); // Should not happen: caller must ensure identifier is in bag
+        }
     }
 
     @Override
-    public void remove(YPersistenceManager pmgr, YIdentifier identifier, int amount) throws YPersistenceException {
+    public void remove(YPersistenceManager pmgr, YIdentifier identifier, int amount) throws YStateException, YPersistenceException {
         _bag.remove(pmgr, identifier, amount);
     }
 
     @Override
     public void removeAll(YPersistenceManager pmgr, YIdentifier identifier) throws YPersistenceException {
-        _bag.remove(pmgr, identifier, _bag.getAmount(identifier));
+        int amount = _bag.getAmount(identifier);
+        if (amount > 0) {
+            try {
+                _bag.remove(pmgr, identifier, amount);
+            } catch (YStateException e) {
+                throw new RuntimeException(e); // Should not happen: amount was just retrieved
+            }
+        }
     }
 
     @Override

@@ -250,7 +250,7 @@ _emit_mmd_from_dot() {
     fi
 
     # Parse DOT edges into Mermaid format:
-    #   Input:  "org.yawlfoundation:yawl-elements:jar:6.0.0-Alpha:compile" -> "org.yawlfoundation:yawl-utilities:jar:6.0.0-Alpha:compile" ;
+    #   Input:  "org.yawlfoundation:yawl-elements:jar:6.0.0-Beta:compile" -> "org.yawlfoundation:yawl-utilities:jar:6.0.0-Beta:compile" ;
     #   Output: yawl-elements --> yawl-utilities
     local mmd_edges
     mmd_edges="$(echo "${raw_edges}" | awk '

@@ -6,41 +6,46 @@
  * General Public License as published by the Free Software Foundation.
  *
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * Public License for more details.
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.engine.interfce;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for WorkItemMetadata record.
  * Chicago TDD style - testing real record behavior.
  *
+ * Record field order: (attributeTable, taskName, documentation, allowsDynamicCreation,
+ * requiresManualResourcing, codelet, deferredChoiceGroupID, customFormURL,
+ * logPredicateStarted, logPredicateCompletion)
+ *
  * @author YAWL Foundation
  * @version 5.2
  */
 @Tag("unit")
-public class WorkItemMetadataTest extends TestCase {
+class WorkItemMetadataTest {
 
-    public WorkItemMetadataTest(String name) {
-        super(name);
-    }
-
-    public void testFullConstruction() {
+    @Test
+    void testFullConstruction() {
         Map<String, String> attrs = new HashMap<>();
         attrs.put("key1", "value1");
 
         WorkItemMetadata metadata = new WorkItemMetadata(
-            "TaskName", "Documentation", "true", "false",
-            "codelet123", "groupID", attrs, "/custom.jsp",
+            attrs, "TaskName", "Documentation", "true", "false",
+            "codelet123", "groupID", "/custom.jsp",
             "startPredicate", "completionPredicate"
         );
 
@@ -56,7 +61,8 @@ public class WorkItemMetadataTest extends TestCase {
         assertEquals("completionPredicate", metadata.logPredicateCompletion());
     }
 
-    public void testDefaultConstruction() {
+    @Test
+    void testDefaultConstruction() {
         WorkItemMetadata metadata = new WorkItemMetadata();
 
         assertNull(metadata.taskName());
@@ -71,7 +77,8 @@ public class WorkItemMetadataTest extends TestCase {
         assertNull(metadata.logPredicateCompletion());
     }
 
-    public void testBasicConstruction() {
+    @Test
+    void testBasicConstruction() {
         WorkItemMetadata metadata = new WorkItemMetadata("MyTask", "My docs");
 
         assertEquals("MyTask", metadata.taskName());
@@ -80,74 +87,80 @@ public class WorkItemMetadataTest extends TestCase {
         assertNull(metadata.requiresManualResourcing());
     }
 
-    public void testIsDynamicCreationAllowed() {
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", null, "true", null,
-                                                   null, null, null, null, null, null);
-        assertTrue("Should allow dynamic creation", m1.isDynamicCreationAllowed());
+    @Test
+    void testIsDynamicCreationAllowed() {
+        WorkItemMetadata m1 = new WorkItemMetadata(null, "Task", null, "true", null,
+                                                   null, null, null, null, null);
+        assertTrue(m1.isDynamicCreationAllowed(), "Should allow dynamic creation");
 
-        WorkItemMetadata m2 = new WorkItemMetadata("Task", null, "True", null,
-                                                   null, null, null, null, null, null);
-        assertTrue("Should allow dynamic creation (case insensitive)",
-                  m2.isDynamicCreationAllowed());
+        WorkItemMetadata m2 = new WorkItemMetadata(null, "Task", null, "True", null,
+                                                   null, null, null, null, null);
+        assertTrue(m2.isDynamicCreationAllowed(),
+                  "Should allow dynamic creation (case insensitive)");
 
-        WorkItemMetadata m3 = new WorkItemMetadata("Task", null, "false", null,
-                                                   null, null, null, null, null, null);
-        assertFalse("Should not allow dynamic creation", m3.isDynamicCreationAllowed());
-
-        WorkItemMetadata m4 = new WorkItemMetadata();
-        assertFalse("Should not allow dynamic creation when null",
-                   m4.isDynamicCreationAllowed());
-    }
-
-    public void testIsAutoTask() {
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", null, null, "false",
-                                                   null, null, null, null, null, null);
-        assertTrue("Should be auto task", m1.isAutoTask());
-
-        WorkItemMetadata m2 = new WorkItemMetadata("Task", null, null, "False",
-                                                   null, null, null, null, null, null);
-        assertTrue("Should be auto task (case insensitive)", m2.isAutoTask());
-
-        WorkItemMetadata m3 = new WorkItemMetadata("Task", null, null, "true",
-                                                   null, null, null, null, null, null);
-        assertFalse("Should not be auto task", m3.isAutoTask());
+        WorkItemMetadata m3 = new WorkItemMetadata(null, "Task", null, "false", null,
+                                                   null, null, null, null, null);
+        assertFalse(m3.isDynamicCreationAllowed(), "Should not allow dynamic creation");
 
         WorkItemMetadata m4 = new WorkItemMetadata();
-        assertFalse("Should not be auto task when null", m4.isAutoTask());
+        assertFalse(m4.isDynamicCreationAllowed(),
+                   "Should not allow dynamic creation when null");
     }
 
-    public void testIsManualResourcingRequired() {
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", null, null, "false",
-                                                   null, null, null, null, null, null);
-        assertFalse("Manual resourcing should not be required",
-                   m1.isManualResourcingRequired());
+    @Test
+    void testIsAutoTask() {
+        WorkItemMetadata m1 = new WorkItemMetadata(null, "Task", null, null, "false",
+                                                   null, null, null, null, null);
+        assertTrue(m1.isAutoTask(), "Should be auto task");
 
-        WorkItemMetadata m2 = new WorkItemMetadata("Task", null, null, "true",
-                                                   null, null, null, null, null, null);
-        assertTrue("Manual resourcing should be required",
-                  m2.isManualResourcingRequired());
+        WorkItemMetadata m2 = new WorkItemMetadata(null, "Task", null, null, "False",
+                                                   null, null, null, null, null);
+        assertTrue(m2.isAutoTask(), "Should be auto task (case insensitive)");
+
+        WorkItemMetadata m3 = new WorkItemMetadata(null, "Task", null, null, "true",
+                                                   null, null, null, null, null);
+        assertFalse(m3.isAutoTask(), "Should not be auto task");
+
+        WorkItemMetadata m4 = new WorkItemMetadata();
+        assertFalse(m4.isAutoTask(), "Should not be auto task when null");
     }
 
-    public void testIsDeferredChoiceGroupMember() {
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", null, null, null,
-                                                   null, "group123", null, null, null, null);
-        assertTrue("Should be deferred choice group member",
-                  m1.isDeferredChoiceGroupMember());
+    @Test
+    void testIsManualResourcingRequired() {
+        WorkItemMetadata m1 = new WorkItemMetadata(null, "Task", null, null, "false",
+                                                   null, null, null, null, null);
+        assertFalse(m1.isManualResourcingRequired(),
+                   "Manual resourcing should not be required");
+
+        WorkItemMetadata m2 = new WorkItemMetadata(null, "Task", null, null, "true",
+                                                   null, null, null, null, null);
+        assertTrue(m2.isManualResourcingRequired(),
+                  "Manual resourcing should be required");
+    }
+
+    @Test
+    void testIsDeferredChoiceGroupMember() {
+        WorkItemMetadata m1 = new WorkItemMetadata(null, "Task", null, null, null,
+                                                   null, "group123", null, null, null);
+        assertTrue(m1.isDeferredChoiceGroupMember(),
+                  "Should be deferred choice group member");
 
         WorkItemMetadata m2 = new WorkItemMetadata();
-        assertFalse("Should not be deferred choice group member",
-                   m2.isDeferredChoiceGroupMember());
+        assertFalse(m2.isDeferredChoiceGroupMember(),
+                   "Should not be deferred choice group member");
     }
 
-    public void testHasDocumentation() {
+    @Test
+    void testHasDocumentation() {
         WorkItemMetadata m1 = new WorkItemMetadata("Task", "Some docs");
-        assertTrue("Should have documentation", m1.hasDocumentation());
+        assertTrue(m1.hasDocumentation(), "Should have documentation");
 
         WorkItemMetadata m2 = new WorkItemMetadata("Task", null);
-        assertFalse("Should not have documentation", m2.hasDocumentation());
+        assertFalse(m2.hasDocumentation(), "Should not have documentation");
     }
 
-    public void testWithTaskName() {
+    @Test
+    void testWithTaskName() {
         WorkItemMetadata m1 = new WorkItemMetadata("Task1", "Docs");
         WorkItemMetadata m2 = m1.withTaskName("Task2");
 
@@ -156,7 +169,8 @@ public class WorkItemMetadataTest extends TestCase {
         assertEquals("Task1", m1.taskName()); // original unchanged
     }
 
-    public void testWithDocumentation() {
+    @Test
+    void testWithDocumentation() {
         WorkItemMetadata m1 = new WorkItemMetadata("Task", "Doc1");
         WorkItemMetadata m2 = m1.withDocumentation("Doc2");
 
@@ -165,15 +179,16 @@ public class WorkItemMetadataTest extends TestCase {
         assertEquals("Doc1", m1.documentation()); // original unchanged
     }
 
-    public void testWithAttributes() {
+    @Test
+    void testWithAttributes() {
         Map<String, String> attrs1 = new HashMap<>();
         attrs1.put("k1", "v1");
 
         Map<String, String> attrs2 = new HashMap<>();
         attrs2.put("k2", "v2");
 
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", null, null, null,
-                                                   null, null, attrs1, null, null, null);
+        WorkItemMetadata m1 = new WorkItemMetadata(attrs1, "Task", null, null, null,
+                                                   null, null, null, null, null);
         WorkItemMetadata m2 = m1.withAttributes(attrs2);
 
         assertEquals(attrs2, m2.attributeTable());
@@ -181,18 +196,20 @@ public class WorkItemMetadataTest extends TestCase {
         assertEquals(attrs1, m1.attributeTable()); // original unchanged
     }
 
-    public void testWithCustomFormURL() {
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", null, null, null,
-                                                   null, null, null, "/form1.jsp", null, null);
+    @Test
+    void testWithCustomFormURL() {
+        WorkItemMetadata m1 = new WorkItemMetadata(null, "Task", null, null, null,
+                                                   null, null, "/form1.jsp", null, null);
         WorkItemMetadata m2 = m1.withCustomFormURL("/form2.jsp");
 
         assertEquals("/form2.jsp", m2.customFormURL());
         assertEquals("/form1.jsp", m1.customFormURL()); // original unchanged
     }
 
-    public void testWithLogPredicates() {
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", null, null, null,
-                                                   null, null, null, null, "pred1", "pred2");
+    @Test
+    void testWithLogPredicates() {
+        WorkItemMetadata m1 = new WorkItemMetadata(null, "Task", null, null, null,
+                                                   null, null, null, "pred1", "pred2");
         WorkItemMetadata m2 = m1.withLogPredicates("newPred1", "newPred2");
 
         assertEquals("newPred1", m2.logPredicateStarted());
@@ -200,44 +217,47 @@ public class WorkItemMetadataTest extends TestCase {
         assertEquals("pred1", m1.logPredicateStarted()); // original unchanged
     }
 
-    public void testImmutability() {
+    @Test
+    void testImmutability() {
         WorkItemMetadata original = new WorkItemMetadata("Task1", "Doc1");
         WorkItemMetadata modified = original.withTaskName("Task2");
 
         assertEquals("Task1", original.taskName());
         assertEquals("Task2", modified.taskName());
-        assertNotSame("Modified metadata should be different instance",
-                     original, modified);
+        assertNotSame(original, modified, "Modified metadata should be different instance");
     }
 
-    public void testRecordEquality() {
+    @Test
+    void testRecordEquality() {
         Map<String, String> attrs = new HashMap<>();
         attrs.put("k", "v");
 
-        WorkItemMetadata m1 = new WorkItemMetadata("Task", "Doc", "true", "false",
-                                                   "code", "group", attrs, "/form.jsp",
+        WorkItemMetadata m1 = new WorkItemMetadata(attrs, "Task", "Doc", "true", "false",
+                                                   "code", "group", "/form.jsp",
                                                    "pred1", "pred2");
-        WorkItemMetadata m2 = new WorkItemMetadata("Task", "Doc", "true", "false",
-                                                   "code", "group", attrs, "/form.jsp",
+        WorkItemMetadata m2 = new WorkItemMetadata(attrs, "Task", "Doc", "true", "false",
+                                                   "code", "group", "/form.jsp",
                                                    "pred1", "pred2");
 
-        assertEquals("Equal records should be equal", m1, m2);
-        assertEquals("Equal records should have same hash code",
-                    m1.hashCode(), m2.hashCode());
+        assertEquals(m1, m2, "Equal records should be equal");
+        assertEquals(m1.hashCode(), m2.hashCode(),
+                    "Equal records should have same hash code");
     }
 
-    public void testRecordInequality() {
+    @Test
+    void testRecordInequality() {
         WorkItemMetadata m1 = new WorkItemMetadata("Task1", "Doc1");
         WorkItemMetadata m2 = new WorkItemMetadata("Task2", "Doc2");
 
-        assertFalse("Different records should not be equal", m1.equals(m2));
+        assertNotEquals(m1, m2, "Different records should not be equal");
     }
 
-    public void testToString() {
+    @Test
+    void testToString() {
         WorkItemMetadata metadata = new WorkItemMetadata("MyTask", "MyDocs");
 
         String str = metadata.toString();
-        assertNotNull("toString should not be null", str);
-        assertTrue("toString should contain taskName", str.contains("MyTask"));
+        assertNotNull(str, "toString should not be null");
+        assertTrue(str.contains("MyTask"), "toString should contain taskName");
     }
 }
