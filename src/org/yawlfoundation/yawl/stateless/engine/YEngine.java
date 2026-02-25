@@ -45,6 +45,13 @@ import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.StringUtil;
 import org.yawlfoundation.yawl.util.YBuildProperties;
+import org.yawlfoundation.yawl.engine.observability.YAWLTelemetry;
+import org.yawlfoundation.yawl.engine.observability.YAWLTracing;
+
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.api.common.Attributes;
 
 /**
  * A stateless version of the YAWL engine
@@ -182,16 +189,30 @@ public class YEngine {
      * @throws YEngineStateException if there's some persistence problem
      */
     public void cancelCase(YNetRunner runner) throws YEngineStateException {
-        _logger.debug("--> cancelCase");
-        checkEngineRunning();
-        if (runner == null) {
-            throw new IllegalArgumentException(
-                    "Attempt to cancel a case using a null case runner");
-        }
+        Span span = YAWLTracing.createCaseSpan("yawl.stateless.cancel.case",
+            runner.get_caseID(), runner.getSpecificationID().toKeyString());
+        try (Scope scope = span.makeCurrent()) {
+            _logger.debug("--> cancelCase");
+            checkEngineRunning();
+            if (runner == null) {
+                throw new IllegalArgumentException(
+                        "Attempt to cancel a case using a null case runner");
+            }
 
-        YTimer.getInstance().cancelTimersForCase(runner.get_caseID());
-        runner.cancel();
-        _announcer.announceCaseCancellation(runner);
+            // Record case cancellation telemetry
+            YAWLTelemetry.getInstance().recordCaseCancelled(
+                runner.get_caseID(), runner.getSpecificationID().toKeyString());
+
+            YTimer.getInstance().cancelTimersForCase(runner.get_caseID());
+            runner.cancel();
+            _announcer.announceCaseCancellation(runner);
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
+        } finally {
+            span.end();
+        }
     }
     
     
@@ -376,43 +397,54 @@ public class YEngine {
     public YWorkItem startWorkItem(YWorkItem workItem)
             throws YStateException, YDataStateException, YQueryException,
              YEngineStateException {
+        Span span = YAWLTracing.createWorkItemSpan("yawl.stateless.start.workitem",
+            workItem.getIDString(), workItem.getCaseID().toString(), workItem.getTask().getID());
+        try (Scope scope = span.makeCurrent()) {
+            _logger.debug("--> startWorkItem");
+            checkEngineRunning();
 
-        _logger.debug("--> startWorkItem");
-        checkEngineRunning();
-
-        if (workItem == null) {
-            throw new YStateException("Cannot start null work item.");
-        }
-
-        YNetRunner caseRunner = workItem.getTask().getNetRunner();
-        YWorkItem startedItem = null;
-        YNetRunner netRunner = null;
-
-        try {
-            switch (workItem.getStatus()) {
-                case statusEnabled -> {
-                    netRunner = caseRunner.getRunnerWithID(workItem.getCaseID());
-                    startedItem = startEnabledWorkItem(netRunner, workItem);
-                }
-                case statusFired -> {
-                    netRunner = caseRunner.getRunnerWithID(workItem.getCaseID().getParent());
-                    startedItem = startFiredWorkItem(netRunner, workItem);
-                }
-                case statusDeadlocked -> startedItem = workItem;
-                default -> throw new YStateException(String.format(
-                        "Item [%s]: status [%s] does not permit starting.",
-                        workItem.getIDString(), workItem.getStatus()));
+            if (workItem == null) {
+                throw new YStateException("Cannot start null work item.");
             }
-            announceItemStarted(startedItem);
-            if (netRunner != null) announceEvents(netRunner);
 
-            _logger.debug("<-- startWorkItem");
-        }
-        catch (Exception e) {
-            throw new YStateException(e.getMessage(), e);
-        }
+            // Record work item start telemetry
+            YAWLTelemetry.getInstance().recordWorkItemStarted(
+                workItem.getIDString(), workItem.getCaseID().toString(), workItem.getTask().getID());
 
-        return startedItem;
+            YNetRunner caseRunner = workItem.getTask().getNetRunner();
+            YWorkItem startedItem = null;
+            YNetRunner netRunner = null;
+
+            try {
+                switch (workItem.getStatus()) {
+                    case statusEnabled -> {
+                        netRunner = caseRunner.getRunnerWithID(workItem.getCaseID());
+                        startedItem = startEnabledWorkItem(netRunner, workItem);
+                    }
+                    case statusFired -> {
+                        netRunner = caseRunner.getRunnerWithID(workItem.getCaseID().getParent());
+                        startedItem = startFiredWorkItem(netRunner, workItem);
+                    }
+                    case statusDeadlocked -> startedItem = workItem;
+                    default -> throw new YStateException(String.format(
+                            "Item [%s]: status [%s] does not permit starting.",
+                            workItem.getIDString(), workItem.getStatus()));
+                }
+                announceItemStarted(startedItem);
+                if (netRunner != null) announceEvents(netRunner);
+
+                _logger.debug("<-- startWorkItem");
+            }
+            catch (Exception e) {
+                span.setStatus(StatusCode.ERROR, e.getMessage());
+                span.recordException(e);
+                throw new YStateException(e.getMessage(), e);
+            }
+
+            return startedItem;
+        } finally {
+            span.end();
+        }
     }
 
 

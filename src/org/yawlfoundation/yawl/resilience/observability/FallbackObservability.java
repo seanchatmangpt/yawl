@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -114,7 +115,7 @@ public class FallbackObservability {
     private static final String ANDON_SEVERITY_P1 = "P1";
 
     private static volatile FallbackObservability instance;
-    private static final Object INSTANCE_LOCK = new Object();
+    private static final ReentrantLock _lock = new ReentrantLock();
 
     private final MeterRegistry meterRegistry;
     private final Tracer tracer;
@@ -364,13 +365,16 @@ public class FallbackObservability {
      */
     public static FallbackObservability getInstance() {
         if (instance == null) {
-            synchronized (INSTANCE_LOCK) {
+            _lock.lock();
+            try {
                 if (instance == null) {
                     // Use simple meter registry as default
                     io.micrometer.core.instrument.simple.SimpleMeterRegistry simpleRegistry =
                         new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
                     instance = new FallbackObservability(simpleRegistry, null, null, null);
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return instance;
@@ -389,13 +393,16 @@ public class FallbackObservability {
                                                    OpenTelemetry openTelemetry,
                                                    AndonAlertService andonService,
                                                    Duration stalenessThreshold) {
-        synchronized (INSTANCE_LOCK) {
+        _lock.lock();
+        try {
             Tracer tracer = null;
             if (openTelemetry != null) {
                 tracer = openTelemetry.getTracer("yawl-fallback-observability", "6.0");
             }
             instance = new FallbackObservability(meterRegistry, tracer, andonService, stalenessThreshold);
             return instance;
+        } finally {
+            _lock.unlock();
         }
     }
 

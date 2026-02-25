@@ -112,6 +112,10 @@ public class YawlA2AServer {
     // Ontology-derived skills (populated at start, empty if Rust service unavailable)
     private volatile List<A2ASkill> ontologySkills = List.of();
 
+    // Dynamically-registered skills (injected after construction to avoid circular deps)
+    private final java.util.concurrent.CopyOnWriteArrayList<A2ASkill> additionalSkills =
+        new java.util.concurrent.CopyOnWriteArrayList<>();
+
     // Handoff services
     private HandoffProtocol handoffProtocol;
     private HandoffToken handoffToken;
@@ -359,6 +363,20 @@ public class YawlA2AServer {
         return httpServer != null;
     }
 
+    /**
+     * Register an additional A2A skill at runtime.
+     *
+     * <p>Allows modules that depend on this server (e.g. yawl-pi) to inject
+     * their skills without creating circular Maven dependencies.</p>
+     *
+     * @param skill the skill to register (must not be null)
+     */
+    public void addSkill(A2ASkill skill) {
+        if (skill == null) throw new IllegalArgumentException("skill must not be null");
+        additionalSkills.add(skill);
+        _logger.info("Registered additional A2A skill: {}", skill.getId());
+    }
+
     // =========================================================================
     // Agent Card definition
     // =========================================================================
@@ -497,6 +515,17 @@ public class YawlA2AServer {
                 .outputModes(List.of("text"))
                 .build());
         }
+        // Append dynamically-registered skills (e.g. from yawl-pi module)
+        for (A2ASkill s : additionalSkills) {
+            skills.add(AgentSkill.builder()
+                .id(s.getId())
+                .name(s.getName())
+                .description(s.getDescription())
+                .tags(s.getTags())
+                .inputModes(List.of("text"))
+                .outputModes(List.of("text"))
+                .build());
+        }
         return skills;
     }
 
@@ -572,7 +601,22 @@ public class YawlA2AServer {
                     return "Skill error: " + result.getError();
                 }
             }
-            String lower = userText.toLowerCase().trim();
+            // Route to dynamically-registered skills (e.g. process_intelligence from yawl-pi)
+            for (A2ASkill skill : additionalSkills) {
+                String idNorm = skill.getId().replace('_', ' ').toLowerCase();
+                if (lower.contains(idNorm) || lower.contains(skill.getName().toLowerCase())
+                        || skill.getTags().stream().anyMatch(lower::contains)) {
+                    SkillResult result = skill.execute(
+                        SkillRequest.builder(skill.getId())
+                            .parameter("userText", userText)
+                            .build());
+                    if (result.isSuccess()) {
+                        Object msg = result.get("message");
+                        return msg != null ? msg.toString() : "Skill completed successfully.";
+                    }
+                    return "Skill error: " + result.getError();
+                }
+            }
 
             if (lower.contains("list") && (lower.contains("spec")
                     || lower.contains("workflow"))) {

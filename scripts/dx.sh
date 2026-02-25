@@ -75,7 +75,7 @@ fi
 ALL_MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
     yawl-stateless yawl-resourcing yawl-scheduling
-    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-webapps
+    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-pi yawl-webapps
     yawl-control-panel yawl-mcp-a2a-app
 )
 

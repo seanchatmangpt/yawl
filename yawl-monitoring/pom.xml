@@ -54,7 +54,6 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-trace</artifactId>
-            <version>${opentelemetry.version}</version>
         </dependency>
         <!-- opentelemetry-instrumentation-api:2.18.1 POM not in local Maven cache;
              excluded to allow offline builds. Re-enable when network access is available.
@@ -64,12 +63,15 @@
         </dependency>
         -->
 
-        <!-- OpenTelemetry Exporters - use locally cached 1.52.0 versions only.
-             The OTLP exporter transitive deps (exporter-common) are not fully cached at 1.52.0;
-             excluded to allow offline builds. Only API is used at runtime. -->
+        <!-- OpenTelemetry Exporters - align with parent OpenTelemetry 1.59.0 -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-logging</artifactId>
+        </dependency>
+        <!-- OTLP exporter for gRPC-based metrics export -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
         </dependency>
 
         <!-- OpenTelemetry Semantic Conventions -->
@@ -82,23 +84,38 @@
             <artifactId>opentelemetry-semconv-incubating</artifactId>
         </dependency>
 
+        <!-- GRPC for OTLP support -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-api</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+
         <!-- Micrometer: Metrics -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
-        <!-- micrometer-registry-prometheus:1.16.3 requires prometheus-metrics-exposition-textformats:1.4.3
-             which is not locally cached; excluded to allow offline builds -->
-        <!-- <dependency>
+        <!-- Micrometer Prometheus registry for Prometheus-compatible metrics export -->
+        <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency> -->
-        <!-- opentelemetry-exporter-prometheus version 1.59.0-alpha requires OTEL 1.59.0
-             but this project uses 1.52.0; prometheus export handled via micrometer instead -->
-        <!-- <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-prometheus</artifactId>
-        </dependency> -->
+        </dependency>
 
         <!-- Logging: SLF4J + Log4j 2 -->
         <dependency>

@@ -51,7 +51,9 @@ public class AgentConfigurationTest extends TestCase {
         workItem -> true;
 
     private static final DecisionReasoner EMPTY_OUTPUT =
-        workItem -> "<" + workItem.getTaskID() + "/>";
+        workItem -> """
+            <""" + workItem.getTaskID() + """/>
+            """;
 
     private final AgentCapability TEST_CAPABILITY =
         new AgentCapability("TestDomain", "test domain for unit tests");

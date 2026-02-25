@@ -8,6 +8,8 @@
 
 package org.yawlfoundation.yawl.worklet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
 import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
@@ -49,8 +51,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>{@code
  * engine.addWorkItemEventListener(new WorkletService(repository));
  * }</pre>
+ *
+ * <p><strong>Dispatch contract</strong>: WorkletService and ResourceManager are
+ * independent listeners with no coordination between them. If WorkletService
+ * produces an {@link WorkletSelection.A2AAgentSelection}, the work item is dispatched
+ * on a virtual thread and no further routing occurs from this listener. Applications
+ * must register only one A2A-dispatching listener per engine instance to avoid
+ * double-dispatch of the same work item.
  */
 public class WorkletService implements YWorkItemEventListener {
+
+    private static final Logger log = LoggerFactory.getLogger(WorkletService.class);
 
     static final String A2A_PREFIX = "a2a:";
     private static final Duration A2A_TIMEOUT = Duration.ofSeconds(30);
@@ -224,7 +235,8 @@ public class WorkletService implements YWorkItemEventListener {
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            // A2A dispatch failure is non-fatal: log and allow normal YAWL execution to continue
+            log.warn("A2A dispatch failed for case '{}' task '{}': {}",
+                    record.getHostCaseId(), record.getHostTaskId(), e.getMessage());
             activeRecords.remove(record.getCompositeKey());
         }
     }
@@ -239,7 +251,10 @@ public class WorkletService implements YWorkItemEventListener {
     }
 
     private String escapeJson(String value) {
-        if (value == null) return "";
+        if (value == null) {
+            throw new IllegalArgumentException(
+                    "JSON field value must not be null; null IDs produce invalid A2A dispatch payloads");
+        }
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

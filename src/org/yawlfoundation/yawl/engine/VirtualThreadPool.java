@@ -21,9 +21,16 @@ package org.yawlfoundation.yawl.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.ScopedValue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+
+// Import OpenTelemetry context for tracing
+import io.opentelemetry.context.Context;
 
 /**
  * Auto-scaling virtual thread pool with autonomous cost optimization.
@@ -36,14 +43,15 @@ import java.util.concurrent.atomic.LongAdder;
  *   <li><b>Measures cost impact</b>: Records throughput, latency, and resource metrics</li>
  * </ul>
  *
- * <h2>Cost Optimization Strategy</h2>
+ * <h2>ScopedValue Context Propagation</h2>
  *
- * <p>Unlike fixed-size pools, this pool auto-scales:</p>
+ * <p>This VirtualThreadPool integrates with ScopedValue for better context propagation
+ * than ThreadLocal in virtual thread environments:</p>
  * <ul>
- *   <li>Peak throughput needed: 10,000 req/s, 100 OS threads</li>
- *   <li>Average throughput: 1,000 req/s, needs only 10 OS threads</li>
- *   <li>Pool auto-scales to use 10 threads during low load → 80% cost reduction</li>
- *   <li>Scales back up when needed → no latency spike</li>
+ *   <li><b>Case Context</b>: Case ID and specification ID for workflow correlation</li>
+ *   <li><b>Work Item Context</b>: Task ID and work item ID for operation tracking</li>
+ *   <li><b>Tenant Context</b>: Multi-tenant isolation and authorization</li>
+ *   <li><b>Tracing Context</b>: OpenTelemetry span propagation for distributed tracing</li>
  * </ul>
  *
  * <h2>Usage Example</h2>
@@ -55,13 +63,24 @@ import java.util.concurrent.atomic.LongAdder;
  * );
  * pool.start();
  *
- * // Submit work
- * Future<String> result = pool.submit(() -> executeWorkflow());
+ * // Submit work with context
+ * Future<String> result = pool.submitWithContext(
+ *     () -> executeWorkflowTask(),
+ *     "case-123",
+ *     "spec-456",
+ *     "tenant-789",
+ *     "task-abc",
+ *     "workitem-def",
+ *     traceContext
+ * );
+ *
+ * // Access context within task
+ * String currentCaseId = VirtualThreadPool.getCurrentCaseId();
+ * String currentTaskId = VirtualThreadPool.getCurrentTaskId();
  *
  * // Monitor costs
  * VirtualThreadPool.CostMetrics metrics = pool.getCostMetrics();
  * System.out.println("Carrier utilization: " + metrics.carrierUtilizationPercent() + "%");
- * System.out.println("Cost factor: " + metrics.costFactor());
  *
  * pool.shutdown();
  * }</pre>
@@ -71,6 +90,14 @@ import java.util.concurrent.atomic.LongAdder;
  * @since 6.0
  */
 public class VirtualThreadPool {
+
+    // ScopedValue bindings for context propagation in virtual threads
+    private static final ScopedValue<String> CASE_ID = ScopedValue.newInstance();
+    private static final ScopedValue<String> SPEC_ID = ScopedValue.newInstance();
+    private static final ScopedValue<String> TENANT_ID = ScopedValue.newInstance();
+    private static final ScopedValue<String> TASK_ID = ScopedValue.newInstance();
+    private static final ScopedValue<String> WORKITEM_ID = ScopedValue.newInstance();
+    private static final ScopedValue<Context> TRACE_CONTEXT = ScopedValue.newInstance();
 
     private static final Logger _logger = LogManager.getLogger(VirtualThreadPool.class);
 
@@ -173,6 +200,395 @@ public class VirtualThreadPool {
                 tasksCompleted.increment();
             }
         });
+    }
+
+    /**
+     * Submit a callable task with case context propagation.
+     *
+     * @param <T> return type
+     * @param task the task to execute
+     * @param caseId the YAWL case identifier
+     * @return future with result
+     */
+    public <T> Future<T> submitWithContext(Callable<T> task, String caseId) {
+        if (!running) {
+            throw new IllegalStateException("Pool not running");
+        }
+        if (caseId == null || caseId.trim().isEmpty()) {
+            throw new IllegalArgumentException("caseId cannot be null or empty");
+        }
+
+        tasksSubmitted.increment();
+
+        return executor.submit(() -> {
+            long startNanos = System.nanoTime();
+            try {
+                return ScopedValue.where(CASE_ID, caseId)
+                               .call(() -> task.call());
+            } finally {
+                long latencyNanos = System.nanoTime() - startNanos;
+                totalLatencyNanos.add(latencyNanos);
+                tasksCompleted.increment();
+            }
+        });
+    }
+
+    /**
+     * Submit a callable task with full context propagation.
+     *
+     * @param <T> return type
+     * @param task the task to execute
+     * @param caseId the YAWL case identifier
+     * @param specId the YAWL specification identifier
+     * @param tenantId the tenant identifier for multi-tenancy
+     * @return future with result
+     */
+    public <T> Future<T> submitWithContext(Callable<T> task, String caseId, String specId, String tenantId) {
+        if (!running) {
+            throw new IllegalStateException("Pool not running");
+        }
+        if (caseId == null || caseId.trim().isEmpty()) {
+            throw new IllegalArgumentException("caseId cannot be null or empty");
+        }
+
+        tasksSubmitted.increment();
+
+        return executor.submit(() -> {
+            long startNanos = System.nanoTime();
+            try {
+                return ScopedValue.where(CASE_ID, caseId)
+                               .where(SPEC_ID, specId != null ? specId : "")
+                               .where(TENANT_ID, tenantId != null ? tenantId : "")
+                               .call(() -> task.call());
+            } finally {
+                long latencyNanos = System.nanoTime() - startNanos;
+                totalLatencyNanos.add(latencyNanos);
+                tasksCompleted.increment();
+            }
+        });
+    }
+
+    /**
+     * Submit a callable task with complete context including work item and tracing.
+     *
+     * @param <T> return type
+     * @param task the task to execute
+     * @param caseId the YAWL case identifier
+     * @param specId the YAWL specification identifier
+     * @param taskId the task identifier
+     * @param workitemId the work item identifier
+     * @param tenantId the tenant identifier for multi-tenancy
+     * @param traceContext the OpenTelemetry context for distributed tracing
+     * @return future with result
+     */
+    public <T> Future<T> submitWithContext(Callable<T> task,
+                                          String caseId,
+                                          String specId,
+                                          String taskId,
+                                          String workitemId,
+                                          String tenantId,
+                                          Context traceContext) {
+        if (!running) {
+            throw new IllegalStateException("Pool not running");
+        }
+        if (caseId == null || caseId.trim().isEmpty()) {
+            throw new IllegalArgumentException("caseId cannot be null or empty");
+        }
+
+        tasksSubmitted.increment();
+
+        return executor.submit(() -> {
+            long startNanos = System.nanoTime();
+            try {
+                return ScopedValue.where(CASE_ID, caseId)
+                               .where(SPEC_ID, specId != null ? specId : "")
+                               .where(TENANT_ID, tenantId != null ? tenantId : "")
+                               .where(TASK_ID, taskId != null ? taskId : "")
+                               .where(WORKITEM_ID, workitemId != null ? workitemId : "")
+                               .where(TRACE_CONTEXT, traceContext != null ? traceContext : Context.current())
+                               .call(() -> task.call());
+            } finally {
+                long latencyNanos = System.nanoTime() - startNanos;
+                totalLatencyNanos.add(latencyNanos);
+                tasksCompleted.increment();
+            }
+        });
+    }
+
+    /**
+     * Submit a runnable task with case context propagation.
+     *
+     * @param task the task to execute
+     * @param caseId the YAWL case identifier
+     * @return future for completion
+     */
+    public Future<?> submitWithContext(Runnable task, String caseId) {
+        if (!running) {
+            throw new IllegalStateException("Pool not running");
+        }
+        if (caseId == null || caseId.trim().isEmpty()) {
+            throw new IllegalArgumentException("caseId cannot be null or empty");
+        }
+
+        tasksSubmitted.increment();
+
+        return executor.submit(() -> {
+            long startNanos = System.nanoTime();
+            try {
+                ScopedValue.where(CASE_ID, caseId)
+                         .run(task);
+            } finally {
+                long latencyNanos = System.nanoTime() - startNanos;
+                totalLatencyNanos.add(latencyNanos);
+                tasksCompleted.increment();
+            }
+        });
+    }
+
+    /**
+     * Submit a runnable task with complete context propagation.
+     *
+     * @param task the task to execute
+     * @param caseId the YAWL case identifier
+     * @param specId the YAWL specification identifier
+     * @param taskId the task identifier
+     * @param workitemId the work item identifier
+     * @param tenantId the tenant identifier for multi-tenancy
+     * @param traceContext the OpenTelemetry context for distributed tracing
+     * @return future for completion
+     */
+    public Future<?> submitWithContext(Runnable task,
+                                     String caseId,
+                                     String specId,
+                                     String taskId,
+                                     String workitemId,
+                                     String tenantId,
+                                     Context traceContext) {
+        if (!running) {
+            throw new IllegalStateException("Pool not running");
+        }
+        if (caseId == null || caseId.trim().isEmpty()) {
+            throw new IllegalArgumentException("caseId cannot be null or empty");
+        }
+
+        tasksSubmitted.increment();
+
+        return executor.submit(() -> {
+            long startNanos = System.nanoTime();
+            try {
+                ScopedValue.where(CASE_ID, caseId)
+                         .where(SPEC_ID, specId != null ? specId : "")
+                         .where(TENANT_ID, tenantId != null ? tenantId : "")
+                         .where(TASK_ID, taskId != null ? taskId : "")
+                         .where(WORKITEM_ID, workitemId != null ? workitemId : "")
+                         .where(TRACE_CONTEXT, traceContext != null ? traceContext : Context.current())
+                         .run(task);
+            } finally {
+                long latencyNanos = System.nanoTime() - startNanos;
+                totalLatencyNanos.add(latencyNanos);
+                tasksCompleted.increment();
+            }
+        });
+    }
+
+    /**
+     * Submit multiple tasks in parallel with case context propagation.
+     *
+     * @param tasks list of callables to execute
+     * @param caseId the YAWL case identifier
+     * @return list of results
+     * @throws ExecutionException if any task fails
+     * @throws InterruptedException if the thread is interrupted
+     */
+    public <T> List<T> executeInWithContext(List<Callable<T>> tasks, String caseId)
+            throws ExecutionException, InterruptedException {
+        if (tasks.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (caseId == null || caseId.trim().isEmpty()) {
+            throw new IllegalArgumentException("caseId cannot be null or empty");
+        }
+
+        List<CompletableFuture<T>> futures = new ArrayList<>();
+
+        // Create futures for each task
+        for (Callable<T> task : tasks) {
+            CompletableFuture<T> future = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return ScopedValue.where(CASE_ID, caseId)
+                                       .call(() -> task.call());
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                },
+                executor
+            );
+            futures.add(future);
+        }
+
+        // Wait for all to complete and collect results
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.toArray(new CompletableFuture[0])
+        );
+        allFutures.get(); // This will throw if any task failed
+
+        // Collect results
+        List<T> results = new ArrayList<>(futures.size());
+        for (CompletableFuture<T> future : futures) {
+            results.add(future.get());
+        }
+        return results;
+    }
+
+    /**
+     * Execute multiple tasks in parallel with complete context propagation.
+     *
+     * @param tasks list of callables to execute
+     * @param caseId the YAWL case identifier
+     * @param specId the YAWL specification identifier
+     * @param tenantId the tenant identifier for multi-tenancy
+     * @return list of results
+     * @throws ExecutionException if any task fails
+     * @throws InterruptedException if the thread is interrupted
+     */
+    public <T> List<T> executeInWithContext(List<Callable<T>> tasks,
+                                          String caseId,
+                                          String specId,
+                                          String tenantId)
+            throws ExecutionException, InterruptedException {
+        if (tasks.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (caseId == null || caseId.trim().isEmpty()) {
+            throw new IllegalArgumentException("caseId cannot be null or empty");
+        }
+
+        List<CompletableFuture<T>> futures = new ArrayList<>();
+
+        // Create futures for each task
+        for (Callable<T> task : tasks) {
+            CompletableFuture<T> future = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return ScopedValue.where(CASE_ID, caseId)
+                                       .where(SPEC_ID, specId != null ? specId : "")
+                                       .where(TENANT_ID, tenantId != null ? tenantId : "")
+                                       .call(() -> task.call());
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                },
+                executor
+            );
+            futures.add(future);
+        }
+
+        // Wait for all to complete and collect results
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.toArray(new CompletableFuture[0])
+        );
+        allFutures.get(); // This will throw if any task failed
+
+        // Collect results
+        List<T> results = new ArrayList<>(futures.size());
+        for (CompletableFuture<T> future : futures) {
+            results.add(future.get());
+        }
+        return results;
+    }
+
+    /**
+     * Executes multiple tasks in parallel using CompletableFuture.
+     * This provides better error handling and resource management than
+     * submitting tasks individually to the executor.
+     *
+     * @param tasks list of callables to execute
+     * @return list of results
+     * @throws ExecutionException if any task fails
+     * @throws InterruptedException if the thread is interrupted
+     */
+    public <T> List<T> executeInParallel(List<Callable<T>> tasks)
+            throws ExecutionException, InterruptedException {
+        if (tasks.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<CompletableFuture<T>> futures = new ArrayList<>();
+
+        // Create futures for each task
+        for (Callable<T> task : tasks) {
+            CompletableFuture<T> future = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return task.call();
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                },
+                executor
+            );
+            futures.add(future);
+        }
+
+        // Wait for all to complete and collect results
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.toArray(new CompletableFuture[0])
+        );
+        allFutures.get(); // This will throw if any task failed
+
+        // Collect results
+        List<T> results = new ArrayList<>(futures.size());
+        for (CompletableFuture<T> future : futures) {
+            results.add(future.get());
+        }
+        return results;
+    }
+
+    /**
+     * Submits multiple tasks and waits for all to complete.
+     * Uses CompletableFuture for better error handling.
+     *
+     * @param tasks list of callables to execute
+     * @return list of futures
+     * @throws ExecutionException if any task fails
+     * @throws InterruptedException if the thread is interrupted
+     */
+    public <T> List<Future<T>> submitAndWaitAll(List<Callable<T>> tasks)
+            throws ExecutionException, InterruptedException {
+        if (tasks.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<CompletableFuture<T>> futures = new ArrayList<>();
+
+        // Create futures for each task
+        for (Callable<T> task : tasks) {
+            CompletableFuture<T> future = CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        return task.call();
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                },
+                executor
+            );
+            futures.add(future);
+        }
+
+        // Wait for all to complete
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+            futures.toArray(new CompletableFuture[0])
+        );
+        allFutures.get(); // This will throw if any task failed
+
+        // Convert to regular Futures
+        List<Future<T>> resultFutures = new ArrayList<>(futures.size());
+        for (CompletableFuture<T> future : futures) {
+            resultFutures.add(new FutureTask<>(() -> future.get()));
+        }
+        return resultFutures;
     }
 
     /**

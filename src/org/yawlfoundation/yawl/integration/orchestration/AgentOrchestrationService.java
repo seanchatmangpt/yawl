@@ -18,6 +18,7 @@ package org.yawlfoundation.yawl.integration.orchestration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.YWorkItem;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Core orchestration service for autonomous task delegation.
@@ -42,7 +43,7 @@ public class AgentOrchestrationService {
 
     private static final Logger logger = LogManager.getLogger(AgentOrchestrationService.class);
     private static volatile AgentOrchestrationService _instance;
-    private static final Object _lock = new Object();
+    private static final ReentrantLock _lock = new ReentrantLock();
 
     private AgentOrchestrationService() {
         logger.info("AgentOrchestrationService initialized (Phase 1: Blue Ocean)");
@@ -55,10 +56,13 @@ public class AgentOrchestrationService {
      */
     public static AgentOrchestrationService getInstance() {
         if (_instance == null) {
-            synchronized (_lock) {
+            _lock.lock();
+            try {
                 if (_instance == null) {
                     _instance = new AgentOrchestrationService();
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return _instance;
