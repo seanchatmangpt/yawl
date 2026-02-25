@@ -46,11 +46,11 @@ esac
 format_size() {
     local bytes=$1
     if [[ $bytes -ge 1073741824 ]]; then
-        echo "$(python3 -c "print(f'{$bytes/1073741824:.1f}')")G"
+        awk "BEGIN {printf \"%.1fG\", $bytes/1073741824}"
     elif [[ $bytes -ge 1048576 ]]; then
-        echo "$(python3 -c "print(f'{$bytes/1048576:.1f}')")M"
+        awk "BEGIN {printf \"%.1fM\", $bytes/1048576}"
     elif [[ $bytes -ge 1024 ]]; then
-        echo "$(python3 -c "print(f'{$bytes/1024:.1f}')")K"
+        awk "BEGIN {printf \"%.1fK\", $bytes/1024}"
     else
         echo "${bytes}B"
     fi

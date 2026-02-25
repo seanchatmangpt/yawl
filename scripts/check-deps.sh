@@ -31,10 +31,10 @@ echo ""
 echo "[2/3] Checking deps-conflicts.json from Observatory..."
 CONFLICTS_FILE="${REPO_ROOT}/docs/v6/latest/facts/deps-conflicts.json"
 if [ -f "${CONFLICTS_FILE}" ]; then
-    CONFLICT_COUNT=$(python3 -c "import json; d=json.load(open('${CONFLICTS_FILE}')); print(len(d.get('conflicts', [])))" 2>/dev/null || echo "?")
+    CONFLICT_COUNT=$(jq '.conflicts | length' "${CONFLICTS_FILE}" 2>/dev/null || echo "?")
     echo "Dependency conflicts: ${CONFLICT_COUNT}"
     if [ "${CONFLICT_COUNT}" != "0" ] && [ "${CONFLICT_COUNT}" != "?" ]; then
-        python3 -c "import json; [print(f'  - {c}') for c in json.load(open('${CONFLICTS_FILE}')).get('conflicts', [])]" 2>/dev/null || true
+        jq -r '.conflicts[] | "  - " + .' "${CONFLICTS_FILE}" 2>/dev/null || true
     else
         echo "OK No version conflicts detected"
     fi
@@ -46,10 +46,10 @@ echo ""
 echo "[3/3] Checking maven-hazards.json..."
 HAZARDS_FILE="${REPO_ROOT}/docs/v6/latest/facts/maven-hazards.json"
 if [ -f "${HAZARDS_FILE}" ]; then
-    HAZARD_COUNT=$(python3 -c "import json; d=json.load(open('${HAZARDS_FILE}')); print(len(d.get('hazards', [])))" 2>/dev/null || echo "?")
+    HAZARD_COUNT=$(jq '.hazards | length' "${HAZARDS_FILE}" 2>/dev/null || echo "?")
     echo "Maven hazards: ${HAZARD_COUNT}"
     if [ "${HAZARD_COUNT}" != "0" ] && [ "${HAZARD_COUNT}" != "?" ]; then
-        python3 -c "import json; [print(f'  [{h[\"code\"]}] {h[\"message\"]}') for h in json.load(open('${HAZARDS_FILE}')).get('hazards', [])]" 2>/dev/null || true
+        jq -r '.hazards[] | "  [" + .code + "] " + .message' "${HAZARDS_FILE}" 2>/dev/null || true
     else
         echo "OK No Maven build hazards"
     fi

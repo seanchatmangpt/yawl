@@ -273,9 +273,12 @@ step_ggen_sync() {
     fi
 
     log_info "Generating YAWL XML from Turtle specification..."
-    log_debug "Running: bash ${SCRIPT_DIR}/generate-yawl.sh ${TURTLE_SPEC} ${YAWL_OUTPUT} ${gen_args[*]}"
+    local template="${SCRIPT_DIR}/../templates/yawl-xml/workflow.yawl.tera"
+    log_debug "Running: python3 ${SCRIPT_DIR}/ggen-wrapper.py generate --input ${TURTLE_SPEC} --output ${YAWL_OUTPUT}"
 
-    if ! bash "${SCRIPT_DIR}/generate-yawl.sh" "$TURTLE_SPEC" "$YAWL_OUTPUT" "${gen_args[@]}"; then
+    if ! python3 "${SCRIPT_DIR}/ggen-wrapper.py" generate \
+        --template "$template" --input "$TURTLE_SPEC" --output "$YAWL_OUTPUT" \
+        "${gen_args[@]}"; then
         GEN_EXIT=$?
         log_error "YAWL generation failed with exit code: $GEN_EXIT"
 

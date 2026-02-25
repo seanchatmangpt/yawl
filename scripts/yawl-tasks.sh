@@ -109,7 +109,7 @@ timer_stop() {
     local start=$1
     local end=$(date +%s%N)
     local elapsed_ms=$(( (end - start) / 1000000 ))
-    local elapsed_s=$(python3 -c "print(f'{${elapsed_ms}/1000:.1f}')")
+    local elapsed_s=$(awk "BEGIN {printf \"%.1f\", $elapsed_ms/1000}")
     echo "$elapsed_s"
 }
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YAWL Dependency Upgrade Script
 # Version: 1.0
@@ -11,7 +11,7 @@
 # A backup is created automatically before any changes.
 #
 
-set -e  # Exit on any error
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'

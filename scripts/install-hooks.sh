@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # YAWL v5.2 Git Hooks Installer
 #
 # Installs the YAWL quality gate hooks into .git/hooks/.

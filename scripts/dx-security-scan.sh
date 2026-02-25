@@ -40,7 +40,7 @@ done
 mkdir -p "${REPORTS_DIR}"
 
 # ── Helper: timestamp ─────────────────────────────────────────────────────
-START_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+START_MS=$(date +%s%3N)
 
 # ── Run scans based on mode ───────────────────────────────────────────────
 echo "=== YAWL Security Scan ==="
@@ -159,9 +159,9 @@ EOF
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────
-END_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+END_MS=$(date +%s%3N)
 ELAPSED_MS=$((END_MS - START_MS))
-ELAPSED_S=$(python3 -c "print(f'{${ELAPSED_MS}/1000:.1f}')")
+ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 echo ""
 echo "=== Security Scan Complete ==="

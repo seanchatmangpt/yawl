@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # workflow-common.sh — E2E Workflow Test Common Functions
 #
@@ -307,32 +308,11 @@ xml_to_json() {
         return 1
     fi
 
-    # Simple XML to JSON conversion (for basic XML structures)
-    python3 -c "
-import json
-import xml.etree.ElementTree as ET
-
-tree = ET.parse('$xml_file')
-root = tree.getroot()
-
-# Convert XML to simple dictionary
-def xml_to_dict(element):
-    result = {}
-    for child in element:
-        if child.attrib:
-            result[child.tag] = child.attrib
-        if child.text and child.text.strip():
-            if child.text.strip():
-                result[child.tag] = child.text.strip()
-        elif len(list(child)) > 0:
-            result[child.tag] = xml_to_dict(child)
-    return result
-
-try:
-    print(json.dumps(xml_to_dict(root)))
-except Exception as e:
-    print('{}')
-" 2>/dev/null || echo "{}"
+    # Wrap XML file content in a JSON object for MCP transport
+    if [[ ! -f "$xml_file" ]]; then echo "{}"; return; fi
+    local content
+    content=$(cat "$xml_file" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n')
+    echo "{\"xml\":\"${content}\"}" 2>/dev/null || echo "{}"
 }
 
 wait_for_completion() {
@@ -370,23 +350,18 @@ generate_jwt() {
     local permissions="$2"
     local audience="$3"
 
-    # Simple JWT generation for testing
-    python3 -c "
-import jwt
-import time
-
-payload = {
-    'sub': '$sub',
-    'permissions': $permissions,
-    'iat': int(time.time()),
-    'exp': int(time.time()) + 3600,
-    'aud': '$audience'
-}
-
-secret = 'test-secret-key'  # In production, use proper secret
-token = jwt.encode(payload, secret, algorithm='HS256')
-print(token)
-" 2>/dev/null || echo ""
+    # JWT generation for testing using openssl (no Python dependency)
+    local now exp header_b64 payload_b64 signing_input signature
+    now=$(date +%s)
+    exp=$((now + 3600))
+    header_b64=$(printf '{"alg":"HS256","typ":"JWT"}' | base64 | tr -d '\n=' | tr '+/' '-_')
+    payload_b64=$(printf '{"sub":"%s","permissions":%s,"iat":%d,"exp":%d,"aud":"%s"}' \
+        "$sub" "$permissions" "$now" "$exp" "$audience" | base64 | tr -d '\n=' | tr '+/' '-_')
+    signing_input="${header_b64}.${payload_b64}"
+    signature=$(printf '%s' "$signing_input" | \
+        openssl dgst -sha256 -hmac "test-secret-key" -binary | \
+        base64 | tr -d '\n=' | tr '+/' '-_')
+    echo "${signing_input}.${signature}" 2>/dev/null || echo ""
 }
 
 # ─── Test Result Functions ───────────────────────────────────────────────

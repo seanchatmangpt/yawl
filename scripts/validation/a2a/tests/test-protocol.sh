@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # test-protocol.sh — A2A Protocol Comprehensive Test Suite
 #

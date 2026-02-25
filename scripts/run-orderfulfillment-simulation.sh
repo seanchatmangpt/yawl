@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # Order Fulfillment Simulation - Launch case and validate 100% automation
 # =============================================================================
@@ -23,7 +23,7 @@
 #   YAWL_ENGINE_URL=http://localhost:8888/yawl ./scripts/run-orderfulfillment-simulation.sh
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -80,13 +80,11 @@ if ant -f build/build.xml run-orderfulfillment-launcher; then
             PM4PY_URL="${PM4PY_AGENT_URL:-http://localhost:9092}"
             XES_INPUT="$XES_PATH"
             [ -d /workspace ] 2>/dev/null && XES_INPUT="/workspace/orderfulfillment.xes"
-            if command -v curl &>/dev/null && command -v python3 &>/dev/null; then
-                BODY=$(XES_INPUT="$XES_INPUT" python3 -c '
-import json, os
-payload = {"skill":"performance","xes_input":os.environ.get("XES_INPUT","")}
-msg = {"jsonrpc":"2.0","id":1,"method":"message/send","params":{"message":{"role":"user","parts":[{"kind":"text","text":json.dumps(payload)}]}}}
-print(json.dumps(msg))
-' 2>/dev/null)
+            if command -v curl &>/dev/null; then
+                local payload_text
+                payload_text=$(jq -cn --arg xes "$XES_INPUT" '{"skill":"performance","xes_input":$xes}')
+                BODY=$(jq -cn --arg text "$payload_text" \
+                    '{"jsonrpc":"2.0","id":1,"method":"message/send","params":{"message":{"role":"user","parts":[{"kind":"text","text":$text}]}}}')
                 if [ -n "$BODY" ]; then
                     RESP=$(curl -sf -X POST "$PM4PY_URL/" -H "Content-Type: application/json" -d "$BODY" 2>/dev/null) || true
                     [ -n "$RESP" ] && echo "  PM4Py: $(echo "$RESP" | head -c 400)..."

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Pattern Demo Runner - Standalone Shell Script
 # Bypasses Spring Boot JAR classloading issues by using Maven exec:java

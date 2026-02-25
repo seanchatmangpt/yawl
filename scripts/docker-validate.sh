@@ -23,7 +23,7 @@
 #   BUILD_DATE       - Build date label
 #   VCS_REF          - Git commit reference
 # ==========================================================================
-set -uo pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"

@@ -2,7 +2,7 @@
 # Run unit tests inside container. Ensures build.properties then runs ant clean unitTest.
 # Execute from repo root: docker compose run --rm yawl-dev bash -c "./scripts/run-unit-tests.sh"
 
-set -e
+set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"

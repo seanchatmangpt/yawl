@@ -36,9 +36,9 @@ if [ "${MODE}" = "trend" ]; then
     printf "%-30s %10s %10s\n" "TIMESTAMP" "COMPILE_MS" "TEST_MS"
     printf "%-30s %10s %10s\n" "---" "---" "---"
     while IFS= read -r PROFILE_FILE; do
-        TS=$(python3 -c "import json,sys; d=json.load(open('${PROFILE_FILE}')); print(d.get('timestamp','?'))" 2>/dev/null || echo "?")
-        CTIME=$(python3 -c "import json,sys; d=json.load(open('${PROFILE_FILE}')); print(d.get('compile_ms','?'))" 2>/dev/null || echo "?")
-        TTIME=$(python3 -c "import json,sys; d=json.load(open('${PROFILE_FILE}')); print(d.get('test_ms','N/A'))" 2>/dev/null || echo "N/A")
+        TS=$(jq -r '.timestamp // "?"' "${PROFILE_FILE}" 2>/dev/null || echo "?")
+        CTIME=$(jq -r '.compile_ms // "?"' "${PROFILE_FILE}" 2>/dev/null || echo "?")
+        TTIME=$(jq -r '.test_ms // "N/A"' "${PROFILE_FILE}" 2>/dev/null || echo "N/A")
         printf "%-30s %10s %10s\n" "${TS}" "${CTIME}" "${TTIME}"
     done <<< "${PROFILES}"
     exit 0
@@ -91,21 +91,16 @@ fi
 # Extract per-module timings from log
 MODULE_TIMES="[]"
 if [ -f "${LOG_FILE}" ]; then
-    MODULE_TIMES=$(python3 - "${LOG_FILE}" << 'PYEOF'
-import sys, re, json
-lines = open(sys.argv[1]).readlines()
-modules = []
-for i, line in enumerate(lines):
-    m = re.search(r'Building (\S+.*?) \d+\.\d+\.\d+', line)
-    if m:
-        # Look ahead for timing
-        modules.append({"module": m.group(1).strip(), "order": len(modules)+1})
-print(json.dumps(modules))
-PYEOF
-    ) 2>/dev/null || MODULE_TIMES="[]"
+    MODULE_TIMES=$(awk '
+        /Building [^ ]+ [0-9]+\.[0-9]+\.[0-9]+/ {
+            gsub(/\[INFO\] Building /, ""); gsub(/ [0-9]+\.[0-9]+\.[0-9]+.*/, "")
+            printf "%s{\"module\":\"%s\",\"order\":%d}", (n?",":""), $0, ++n
+        }
+        END { printf "" }
+    ' "${LOG_FILE}" 2>/dev/null | sed 's/^/[/; s/$/]/' || echo "[]")
 fi
 
-COMPILE_S=$(python3 -c "print(round(${COMPILE_MS} / 1000, 1))" 2>/dev/null || echo "0")
+COMPILE_S=$(awk "BEGIN {printf \"%.1f\", $COMPILE_MS/1000}")
 JAVA_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2 || echo "unknown")
 
 # Write profile JSON

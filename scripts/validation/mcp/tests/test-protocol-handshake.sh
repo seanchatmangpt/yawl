@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ==========================================================================
 # test-protocol-handshake.sh — MCP Protocol Handshake Tests
 #

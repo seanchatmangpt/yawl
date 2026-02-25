@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 #
 # Dockerfile JVM Flags Validation Script
 # Checks Dockerfiles for required JVM flags and Java 25 features
