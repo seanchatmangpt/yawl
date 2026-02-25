@@ -7,7 +7,7 @@
 
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>6.0.0-Alpha</version>
+    <version>6.0.0-Beta</version>
     <packaging>pom</packaging>
 
     <name>YAWL Parent</name>
@@ -3077,6 +3077,17 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- JMH Benchmarks Profile - Include yawl-benchmark module           -->
+        <!-- Usage: mvn test -P jmh-benchmarks                                -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>jmh-benchmarks</id>
+            <modules>
+                <module>yawl-benchmark</module>
+            </modules>
         </profile>
 
     </profiles>

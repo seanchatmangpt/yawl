@@ -32,7 +32,7 @@ tasks:
     join: xor
     timer:
       trigger: onEnabled
-      duration: PT${timeoutSeconds}S
+      duration: PT30S
     description: "Monitor for timeout"
 
   - id: HandleTimeout

@@ -12,7 +12,7 @@ COPY --from=builder /yawl-engine/classes /app/classes
 COPY --from=builder /yawl-integration/classes /app/classes
 
 # Copy necessary JARs (if available)
-COPY yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar /app/libs/
+COPY yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar /app/libs/
 
 # Set environment variables
 ENV JAVA_OPTS="-XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"

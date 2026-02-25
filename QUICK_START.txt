@@ -10,7 +10,7 @@ Timeline: 4-5 days (2026-02-18 through 2026-02-21)
                            EXECUTIVE SUMMARY
 ================================================================================
 
-WHAT: Fix 61 HYPER_STANDARDS violations in YAWL v6.0.0-Alpha
+WHAT: Fix 61 HYPER_STANDARDS violations in YAWL v6.0.0-Beta
 WHO: 9-agent specialist team
 WHEN: 2026-02-18 through 2026-02-21 (4 phases)
 WHERE: /home/user/yawl/ (main source, schema, config)

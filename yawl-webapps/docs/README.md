@@ -1,6 +1,6 @@
 # YAWL Web Applications
 
-**Artifact:** `org.yawlfoundation:yawl-webapps:6.0.0-Alpha` | `packaging: pom`
+**Artifact:** `org.yawlfoundation:yawl-webapps:6.0.0-Beta` | `packaging: pom`
 
 ## Module Purpose
 

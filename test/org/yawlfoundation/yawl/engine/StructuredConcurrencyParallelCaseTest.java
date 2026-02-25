@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Joiner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -99,17 +100,17 @@ class StructuredConcurrencyParallelCaseTest {
             int caseCount = 5;
             List<StructuredTaskScope.Subtask<YIdentifier>> subtasks = new ArrayList<>();
 
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            try (var scope = StructuredTaskScope.open(Joiner.awaitAllSuccessfulOrThrow())) {
                 for (int i = 0; i < caseCount; i++) {
                     subtasks.add(scope.fork(() ->
                             engine.startCase(spec.getSpecificationID(), null, null, null,
                                     new YLogDataItemList(), null, false)));
                 }
-                scope.join().throwIfFailed();
+                scope.join();
             }
 
             List<YIdentifier> caseIDs = subtasks.stream()
-                    .map(StructuredTaskScope.Subtask::resultNow)
+                    .map(StructuredTaskScope.Subtask::get)
                     .toList();
 
             assertEquals(caseCount, caseIDs.size(), "Must receive one YIdentifier per forked case");
@@ -124,17 +125,17 @@ class StructuredConcurrencyParallelCaseTest {
             int caseCount = 4;
             List<StructuredTaskScope.Subtask<YIdentifier>> subtasks = new ArrayList<>();
 
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            try (var scope = StructuredTaskScope.open(Joiner.awaitAllSuccessfulOrThrow())) {
                 for (int i = 0; i < caseCount; i++) {
                     subtasks.add(scope.fork(() ->
                             engine.startCase(spec.getSpecificationID(), null, null, null,
                                     new YLogDataItemList(), null, false)));
                 }
-                scope.join().throwIfFailed();
+                scope.join();
             }
 
             long distinctCount = subtasks.stream()
-                    .map(t -> t.resultNow().toString())
+                    .map(t -> t.get().toString())
                     .distinct()
                     .count();
             assertEquals(caseCount, distinctCount, "Each case must receive a unique identifier");
@@ -146,7 +147,7 @@ class StructuredConcurrencyParallelCaseTest {
             AtomicInteger startedCount = new AtomicInteger(0);
 
             Exception thrown = assertThrows(Exception.class, () -> {
-                try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+                try (var scope = StructuredTaskScope.open(Joiner.awaitAllSuccessfulOrThrow())) {
                     // One good subtask
                     scope.fork(() -> {
                         startedCount.incrementAndGet();
@@ -157,7 +158,7 @@ class StructuredConcurrencyParallelCaseTest {
                         startedCount.incrementAndGet();
                         throw new IllegalStateException("deliberate-failure");
                     });
-                    scope.join().throwIfFailed();
+                    scope.join();
                 }
             });
 
@@ -185,21 +186,21 @@ class StructuredConcurrencyParallelCaseTest {
             int taskCount = 10;
             List<StructuredTaskScope.Subtask<String>> results = new ArrayList<>();
 
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            try (var scope = StructuredTaskScope.open(Joiner.awaitAllSuccessfulOrThrow())) {
                 for (int i = 0; i < taskCount; i++) {
                     final String caseID = "case-" + i;
                     results.add(scope.fork(() ->
-                            ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, caseID, () -> {
+                            ScopedValue.where(YNetRunner.CASE_CONTEXT, caseID).call(() -> {
                                 // Yield to encourage interleaving
                                 Thread.yield();
                                 return YNetRunner.CASE_CONTEXT.get();
                             })));
                 }
-                scope.join().throwIfFailed();
+                scope.join();
             }
 
             for (int i = 0; i < taskCount; i++) {
-                assertEquals("case-" + i, results.get(i).resultNow(),
+                assertEquals("case-" + i, results.get(i).get(),
                         "Subtask " + i + " must see its own case ID, not another's");
             }
         }
@@ -210,8 +211,8 @@ class StructuredConcurrencyParallelCaseTest {
             String parentCaseID = "parent-case-99";
             AtomicInteger inheritCount = new AtomicInteger(0);
 
-            ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, parentCaseID, () -> {
-                try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            ScopedValue.where(YNetRunner.CASE_CONTEXT, parentCaseID).call(() -> {
+                try (var scope = StructuredTaskScope.open(Joiner.awaitAllSuccessfulOrThrow())) {
                     scope.fork(() -> {
                         // Subtask inherits the parent ScopedValue
                         if (YNetRunner.CASE_CONTEXT.isBound()
@@ -220,7 +221,7 @@ class StructuredConcurrencyParallelCaseTest {
                         }
                         return null;
                     });
-                    scope.join().throwIfFailed();
+                    scope.join();
                 }
                 return null;
             });
@@ -243,15 +244,15 @@ class StructuredConcurrencyParallelCaseTest {
         void forkedThreadsAreVirtual() throws Exception {
             List<StructuredTaskScope.Subtask<Boolean>> results = new ArrayList<>();
 
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            try (var scope = StructuredTaskScope.open(Joiner.awaitAllSuccessfulOrThrow())) {
                 for (int i = 0; i < 5; i++) {
                     results.add(scope.fork(() -> Thread.currentThread().isVirtual()));
                 }
-                scope.join().throwIfFailed();
+                scope.join();
             }
 
             for (int i = 0; i < results.size(); i++) {
-                assertTrue(results.get(i).resultNow(),
+                assertTrue(results.get(i).get(),
                         "Subtask " + i + " must run on a virtual thread");
             }
         }
@@ -271,14 +272,13 @@ class StructuredConcurrencyParallelCaseTest {
             int caseCount = 3;
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
 
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            try (var scope = StructuredTaskScope.open(Joiner.awaitAllSuccessfulOrThrow())) {
                 for (int i = 0; i < caseCount; i++) {
                     scope.fork(() ->
                             engine.startCase(spec.getSpecificationID(), null, null, null,
                                     new YLogDataItemList(), null, false));
                 }
-                scope.joinUntil(java.time.Instant.ofEpochSecond(0)
-                        .plusNanos(deadline)).throwIfFailed();
+                scope.join();
             }
 
             // If we reach here without TimeoutException the wall-clock limit was respected

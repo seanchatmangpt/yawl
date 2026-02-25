@@ -29,7 +29,7 @@ tasks:
     join: xor
     multiInstance:
       min: 1
-      max: 5
+      max: 3
       mode: dynamic
       threshold: all
     description: "Process multiple items"

@@ -88,6 +88,11 @@ public final class AttackPatternDetector {
             Pattern.CASE_INSENSITIVE
     );
 
+    private static final Pattern SQL_BOOLEAN_INJECTION = Pattern.compile(
+            "'\\s*(OR|AND)\\s+'",
+            Pattern.CASE_INSENSITIVE
+    );
+
     /**
      * XXE/XML bomb patterns.
      */
@@ -271,6 +276,11 @@ public final class AttackPatternDetector {
             return true;
         }
 
+        if (SQL_BOOLEAN_INJECTION.matcher(input).find()) {
+            recordSqlInjectionIncident(clientId, fieldName, input, "Boolean injection");
+            return true;
+        }
+
         return false;
     }
 
@@ -350,7 +360,12 @@ public final class AttackPatternDetector {
             String details = "Credential stuffing: " + failureCount + " consecutive failures";
             AttackIncident incident = new AttackIncident(now, clientId, "CREDENTIAL_STUFFING", details, null);
             recordViolation(clientId, incident);
-            log.warn("Credential stuffing detected: {} - {} consecutive failures", clientId, failureCount);
+            // Immediately block the client when credential stuffing threshold is reached
+            ClientViolations v = violations.get(clientId);
+            if (v != null) {
+                v.isBlocked = true;
+            }
+            log.warn("Credential stuffing detected and client blocked: {} - {} consecutive failures", clientId, failureCount);
             return true;
         }
 

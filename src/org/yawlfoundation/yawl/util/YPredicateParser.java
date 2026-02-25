@@ -82,14 +82,17 @@ public class YPredicateParser {
      * expression is unrecognised
      */
     protected String valueOf(String s) {
-        if (s.equalsIgnoreCase("${now}")) {
+        if (s.equals("${now}")) {
             s = dateTimeString(System.currentTimeMillis());
         }
-        else if (s.equalsIgnoreCase("${date}")) {
+        else if (s.equals("${date}")) {
             s = new SimpleDateFormat("yyyy-MM-dd").format(System.currentTimeMillis());
         }
-        else if (s.equalsIgnoreCase("${time}")) {
-            s = new SimpleDateFormat("HH:mm:ss.SSS").format(System.currentTimeMillis()); 
+        else if (s.equals("${time}")) {
+            s = new SimpleDateFormat("HH:mm:ss.SSS").format(System.currentTimeMillis());
+        }
+        else if (s.equals("${}")) {
+            s = "n/a";
         }
         return s ;
     }

@@ -1,6 +1,6 @@
 # YAWL Build Performance
 
-**Version**: 6.0.0-Alpha | **Baseline Date**: 2026-02-18 | **Platform**: 8-core, 16GB RAM, NVMe SSD
+**Version**: 6.0.0-Beta | **Baseline Date**: 2026-02-18 | **Platform**: 8-core, 16GB RAM, NVMe SSD
 
 This document covers build and test performance metrics, the optimizations that were
 applied, how to measure performance, and steps to investigate regressions.
@@ -320,7 +320,7 @@ incremental compile time, then writes a timestamped report:
 ## References
 
 - [DEVELOPER-BUILD-GUIDE.md](DEVELOPER-BUILD-GUIDE.md) — Complete build command reference
-- [PERFORMANCE_BASELINE.md](PERFORMANCE_BASELINE.md) — Engine runtime performance baseline (v6.0.0-Alpha vs v5.2)
+- [PERFORMANCE_BASELINE.md](PERFORMANCE_BASELINE.md) — Engine runtime performance baseline (v6.0.0-Beta vs v5.2)
 - [PERFORMANCE-MONITORING.md](PERFORMANCE-MONITORING.md) — Library update impact monitoring
 - [.claude/BUILD-PERFORMANCE.md](.claude/BUILD-PERFORMANCE.md) — Maven 4.x and JUnit 5 configuration details
 - [.mvn/maven.config](.mvn/maven.config) — Active Maven CLI flags

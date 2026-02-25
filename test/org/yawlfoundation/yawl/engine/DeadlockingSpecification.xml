@@ -12,10 +12,13 @@
 				</inputCondition>
 				<task id="a-top">
 					<flowsInto>
-						<nextElementRef id="c1-top"/>
+						<nextElementRef id="c2-top"/>
+						<predicate>false()</predicate>
+						<predicateOrdering>1</predicateOrdering>
 					</flowsInto>
 					<flowsInto>
-						<nextElementRef id="c2-top"/>
+						<nextElementRef id="c1-top"/>
+						<isDefaultFlow/>
 					</flowsInto>
 					<join code="xor"/>
 					<split code="xor"/>

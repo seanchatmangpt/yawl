@@ -1,5 +1,5 @@
 ================================================================================
-YAWL v6.0.0-Alpha | SOC2 COMPLIANCE VALIDATION CHECKLIST
+YAWL v6.0.0-Beta | SOC2 COMPLIANCE VALIDATION CHECKLIST
 ================================================================================
 
 ✓ = PASSED | × = FAILED | ○ = NOT APPLICABLE
@@ -142,7 +142,7 @@ JAVADOC COVERAGE:
 PROJECT DOCUMENTATION:
 ✓ README.md: Comprehensive (50+ features)
 ✓ CHANGELOG.md: Full semantic versioning
-✓ VERSION: Explicit version (6.0.0-Alpha)
+✓ VERSION: Explicit version (6.0.0-Beta)
 ✓ LICENSES.md: Complete inventory
 ✓ Architectural decision records
 ✓ Performance testing docs
@@ -155,13 +155,13 @@ DOCUMENTATION SCORE: 28/30
 ================================================================================
 
 VERSION INFORMATION:
-✓ Explicit VERSION file present (6.0.0-Alpha)
+✓ Explicit VERSION file present (6.0.0-Beta)
 ✓ Release date documented (2026-02-16)
 ✓ Java target specified (Java 21)
 ✓ Maven version specified (3.9.x+)
 
 POM CONFIGURATION:
-✓ Parent POM: org.yawlfoundation:yawl-parent:6.0.0-Alpha
+✓ Parent POM: org.yawlfoundation:yawl-parent:6.0.0-Beta
 ✓ 12 child modules defined
 ✓ Explicit version management (no BOM required)
 ✓ Offline-compatible dependencies cached
@@ -169,7 +169,7 @@ POM CONFIGURATION:
 CHANGELOG:
 ✓ Follows Keep a Changelog format
 ✓ Follows Semantic Versioning
-✓ [6.0.0-Alpha] - 2026-02-16 entry
+✓ [6.0.0-Beta] - 2026-02-16 entry
 ✓ Added/Changed/Deprecated/Removed sections
 ✓ Complete release notes
 

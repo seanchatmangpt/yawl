@@ -1,6 +1,6 @@
-# YAWL v6.0.0-Alpha Optimization Recommendations
+# YAWL v6.0.0-Beta Optimization Recommendations
 
-**Version:** 6.0.0-Alpha  
+**Version:** 6.0.0-Beta  
 **Date:** 2026-02-18  
 **Priority:** Performance optimization for production deployment
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This document provides actionable optimization recommendations based on comprehensive performance analysis of YAWL v6.0.0-Alpha. Recommendations are prioritized by impact and implementation effort.
+This document provides actionable optimization recommendations based on comprehensive performance analysis of YAWL v6.0.0-Beta. Recommendations are prioritized by impact and implementation effort.
 
 ### Priority Matrix
 

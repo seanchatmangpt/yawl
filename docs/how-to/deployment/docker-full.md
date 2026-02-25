@@ -1,4 +1,4 @@
-# YAWL v6.0.0-Alpha Docker Guide
+# YAWL v6.0.0-Beta Docker Guide
 
 **Target Platforms**: Docker 24.0+, Docker Compose 2.x, Kubernetes 1.28+
 **Base Images**: eclipse-temurin:25-jre-alpine (runtime), eclipse-temurin:25-jdk-alpine (builder)
@@ -83,7 +83,7 @@ cd yawl
 docker build \
   -f Dockerfile.modernized \
   -t yawl:6.0.0-alpha \
-  --build-arg VERSION=6.0.0-Alpha \
+  --build-arg VERSION=6.0.0-Beta \
   --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
   --build-arg VCS_REF=$(git rev-parse --short HEAD) \
   .
@@ -1506,8 +1506,8 @@ docker inspect --format='{{json .Config.Labels}}' yawl:6.0.0-alpha | jq
 # Example output:
 {
   "org.opencontainers.image.title": "YAWL Workflow Engine",
-  "org.opencontainers.image.version": "6.0.0-Alpha",
-  "org.opencontainers.image.description": "YAWL v6.0.0-Alpha - Yet Another Workflow Language...",
+  "org.opencontainers.image.version": "6.0.0-Beta",
+  "org.opencontainers.image.description": "YAWL v6.0.0-Beta - Yet Another Workflow Language...",
   "org.opencontainers.image.source": "https://github.com/yawlfoundation/yawl",
   "org.opencontainers.image.vendor": "YAWL Foundation",
   "org.opencontainers.image.licenses": "LGPL-3.0-or-later",

@@ -281,7 +281,7 @@ class WorkflowResultTest {
             String str = r.toString();
             assertTrue(str.contains("wf-001"), "toString must contain workflowID");
             assertTrue(str.contains("999"), "toString must contain durationMs");
-            assertTrue(str.contains("SUCCESS"), "toString must contain status code");
+            assertTrue(str.contains("SuccessfulWorkflow"), "toString must contain status code");
         }
     }
 
@@ -392,7 +392,7 @@ class WorkflowResultTest {
             String str = r.toString();
             assertTrue(str.contains("wf-002"));
             assertTrue(str.contains("75"));
-            assertTrue(str.contains("FAILED"));
+            assertTrue(str.contains("FailedWorkflow"));
         }
     }
 

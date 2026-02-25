@@ -1,6 +1,6 @@
 # YAWL Scheduling Module
 
-**Artifact:** `org.yawlfoundation:yawl-scheduling:6.0.0-Alpha`
+**Artifact:** `org.yawlfoundation:yawl-scheduling:6.0.0-Beta`
 
 ## Overview
 

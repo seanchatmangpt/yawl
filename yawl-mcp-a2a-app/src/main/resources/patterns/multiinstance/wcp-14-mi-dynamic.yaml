@@ -25,7 +25,7 @@ tasks:
     join: and
     multiInstance:
       min: 1
-      max: itemCount
+      max: 2
       mode: dynamic
       threshold: all
     description: "Process items in parallel"

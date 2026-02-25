@@ -46,7 +46,7 @@ import org.junit.jupiter.api.Test;
  * Uses Chicago TDD style (real inputs, no mocks).
  *
  * @author YAWL Foundation
- * @since YAWL 6.0.0-Alpha
+ * @since YAWL 6.0.0-Beta
  */
 @DisplayName("NullCheckModernizer")
 @Tag("unit")

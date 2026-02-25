@@ -1,6 +1,6 @@
 # YAWL Testing Guide
 
-**Version**: 6.0.0-Alpha | **Framework**: JUnit 5 | **Coverage Target**: 65% line / 55% branch
+**Version**: 6.0.0-Beta | **Framework**: JUnit 5 | **Coverage Target**: 65% line / 55% branch
 
 This guide explains the Chicago TDD approach used in YAWL v6.0.0, how to run tests, and how to interpret coverage reports.
 

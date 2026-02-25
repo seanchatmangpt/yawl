@@ -1,7 +1,7 @@
 # YAWL v6.0.0 Performance & Stability Report vs v5.2 Baseline
 
 **Report Date:** 2026-02-21  
-**Tested Version:** v6.0.0-Alpha  
+**Tested Version:** v6.0.0-Beta  
 **Baseline:** v5.2 (expected targets)  
 **Java Version:** 21.0.10 (Java 25 ready)  
 **Test Framework:** Custom performance baseline + JUnit + JMH  
@@ -510,6 +510,6 @@ YAWL v6.0.0 demonstrates **production-ready performance** with:
 ---
 
 **YAWL Performance Team**  
-**Version:** 6.0.0-Alpha  
+**Version:** 6.0.0-Beta  
 **Baseline:** v5.2  
 

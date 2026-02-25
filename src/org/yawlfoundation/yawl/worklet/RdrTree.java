@@ -27,7 +27,7 @@ import java.util.Objects;
  * <p>The tree's task name identifies which workflow task this rule set applies to.
  *
  * @author YAWL Foundation
- * @version 6.0.0-Alpha
+ * @version 6.0.0-Beta
  */
 public class RdrTree {
 

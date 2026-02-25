@@ -1,6 +1,16 @@
 package org.yawlfoundation.yawl.engine;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.StringUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -8,19 +18,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.exceptions.*;
-import org.yawlfoundation.yawl.unmarshal.YMarshal;
-import org.yawlfoundation.yawl.util.StringUtil;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
-
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive concurrency tests for YAWL Engine.
@@ -34,21 +32,15 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  */
 @Tag("slow")
 @Execution(ExecutionMode.SAME_THREAD)
-public class TestConcurrentCaseExecution extends TestCase {
+class TestConcurrentCaseExecution {
 
     private YEngine _engine;
     private YSpecification _specification;
     private final List<YIdentifier> _launchedCases = Collections.synchronizedList(
         new ArrayList<YIdentifier>());
 
-    public TestConcurrentCaseExecution(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-
+    @BeforeEach
+    void setUp() throws Exception {
         _engine = YEngine.getInstance();
 
         // Load test specification
@@ -61,8 +53,8 @@ public class TestConcurrentCaseExecution extends TestCase {
         }
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         // Clean up all launched cases
         for (YIdentifier caseID : _launchedCases) {
             try {
@@ -72,7 +64,6 @@ public class TestConcurrentCaseExecution extends TestCase {
             }
         }
         _launchedCases.clear();
-        super.tearDown();
     }
 
     /**
@@ -80,7 +71,8 @@ public class TestConcurrentCaseExecution extends TestCase {
      * Verifies engine handles high concurrency without deadlocks
      * Target: 100 cases/sec throughput
      */
-    public void testConcurrentCaseLaunches() throws Exception {
+    @Test
+    void testConcurrentCaseLaunches() throws Exception {
         if (_specification == null) {
             return; // Skip if no test spec
         }
@@ -155,18 +147,19 @@ public class TestConcurrentCaseExecution extends TestCase {
         }
 
         // Assertions
-        assertTrue("All threads should complete within timeout", completed);
-        assertTrue("Majority of cases should launch successfully (>80%)",
-                 successCount.get() > (NUM_CASES * 0.8));
-        assertTrue("Should achieve reasonable throughput (>10 cases/sec)",
-                 throughput > 10.0);
+        assertTrue(completed, "All threads should complete within timeout");
+        assertTrue(successCount.get() > (NUM_CASES * 0.8),
+                 "Majority of cases should launch successfully (>80%)");
+        assertTrue(throughput > 10.0,
+                 "Should achieve reasonable throughput (>10 cases/sec)");
     }
 
     /**
      * Test 2: Concurrent work item operations
      * Tests thread safety of work item state transitions
      */
-    public void testConcurrentWorkItemOperations() throws Exception {
+    @Test
+    void testConcurrentWorkItemOperations() throws Exception {
         if (_specification == null) {
             return;
         }
@@ -213,16 +206,17 @@ public class TestConcurrentCaseExecution extends TestCase {
         boolean completed = latch.await(20, TimeUnit.SECONDS);
         executor.shutdown();
 
-        assertTrue("All operations should complete", completed);
-        assertTrue("Most read operations should succeed",
-                 successCount.get() > (NUM_OPERATIONS * 0.7));
+        assertTrue(completed, "All operations should complete");
+        assertTrue(successCount.get() > (NUM_OPERATIONS * 0.7),
+                 "Most read operations should succeed");
     }
 
     /**
      * Test 3: Database connection pool stress test
      * Verifies connection pool handles concurrent database access
      */
-    public void testDatabaseConnectionPoolStress() throws Exception {
+    @Test
+    void testDatabaseConnectionPoolStress() throws Exception {
         YPersistenceManager pmgr = _engine.getPersistenceManager();
         if (pmgr == null || !pmgr.isEnabled()) {
             return; // Skip if persistence disabled
@@ -270,16 +264,17 @@ public class TestConcurrentCaseExecution extends TestCase {
         System.out.println("Successful queries: " + querySuccessCount.get());
         System.out.println("Failed queries: " + queryErrorCount.get());
 
-        assertTrue("All threads should complete", completed);
-        assertTrue("Most queries should succeed without pool exhaustion",
-                 querySuccessCount.get() > (NUM_THREADS * 0.6));
+        assertTrue(completed, "All threads should complete");
+        assertTrue(querySuccessCount.get() > (NUM_THREADS * 0.6),
+                 "Most queries should succeed without pool exhaustion");
     }
 
     /**
      * Test 4: Concurrent case cancellation
      * Tests thread safety of case lifecycle management
      */
-    public void testConcurrentCaseCancellation() throws Exception {
+    @Test
+    void testConcurrentCaseCancellation() throws Exception {
         if (_specification == null) {
             return;
         }
@@ -322,16 +317,17 @@ public class TestConcurrentCaseExecution extends TestCase {
         System.out.println("=== Concurrent Cancellation Test ===");
         System.out.println("Cases cancelled: " + cancelSuccessCount.get() + "/" + casesToCancel.size());
 
-        assertTrue("All cancellation attempts should complete", completed);
-        assertTrue("Most cancellations should succeed",
-                 cancelSuccessCount.get() > (casesToCancel.size() * 0.8));
+        assertTrue(completed, "All cancellation attempts should complete");
+        assertTrue(cancelSuccessCount.get() > (casesToCancel.size() * 0.8),
+                 "Most cancellations should succeed");
     }
 
     /**
      * Test 5: Deadlock detection test
      * Attempts to trigger deadlock scenarios and verify recovery
      */
-    public void testDeadlockDetection() throws Exception {
+    @Test
+    void testDeadlockDetection() throws Exception {
         if (_specification == null) {
             return;
         }
@@ -378,16 +374,17 @@ public class TestConcurrentCaseExecution extends TestCase {
         System.out.println("=== Deadlock Detection Test ===");
         System.out.println("Completed operations: " + completedOperations.get());
 
-        assertTrue("All threads should complete (no deadlock)", completed);
-        assertTrue("Some operations should succeed despite contention",
-                 completedOperations.get() > 0);
+        assertTrue(completed, "All threads should complete (no deadlock)");
+        assertTrue(completedOperations.get() > 0,
+                 "Some operations should succeed despite contention");
     }
 
     /**
      * Test 6: Thread safety of work item repository
      * Tests concurrent access to work item collections
      */
-    public void testWorkItemRepositoryConcurrency() throws Exception {
+    @Test
+    void testWorkItemRepositoryConcurrency() throws Exception {
         if (_specification == null) {
             return;
         }
@@ -433,18 +430,8 @@ public class TestConcurrentCaseExecution extends TestCase {
         boolean completed = latch.await(15, TimeUnit.SECONDS);
         executor.shutdown();
 
-        assertTrue("All read operations should complete", completed);
-        assertTrue("Repository reads should be thread-safe",
-                 readSuccessCount.get() > (NUM_READERS * 0.8));
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite("Concurrent Case Execution Tests");
-        suite.addTestSuite(TestConcurrentCaseExecution.class);
-        return suite;
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(suite());
+        assertTrue(completed, "All read operations should complete");
+        assertTrue(readSuccessCount.get() > (NUM_READERS * 0.8),
+                 "Repository reads should be thread-safe");
     }
 }

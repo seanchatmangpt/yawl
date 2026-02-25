@@ -78,7 +78,7 @@ Machine-readable JSON output:
 ```json
 {
   "runner": "PatternDemoRunner",
-  "version": "6.0.0-Alpha",
+  "version": "6.0.0-Beta",
   "timestamp": "2026-02-22T14:30:45Z",
   "patterns": [
     {
