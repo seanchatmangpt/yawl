@@ -24,6 +24,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Foundation
  * @version 6.0.0
  */
+@Execution(ExecutionMode.SAME_THREAD)
 class InterfaceXDeadLetterQueueTest {
 
     @BeforeEach

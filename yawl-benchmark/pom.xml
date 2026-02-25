@@ -53,6 +53,7 @@
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
             <version>${jmh.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
@@ -106,38 +107,6 @@
 
     <build>
         <plugins>
-            <!-- JMH Plugin -->
-            <plugin>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-maven-plugin</artifactId>
-                <version>${jmh.version}</version>
-                <executions>
-                    <execution>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>benchmark</goal>
-                            <goal>generate-aggregate-reports</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <resultsFormat>JSON</resultsFormat>
-                    <resultsFile>target/benchmarks.json</resultsFile>
-                    <jvmArgs>
-                        <jvmArg>-XX:+UseCompactObjectHeaders</jvmArg>
-                        <jvmArg>-Xms2g</jvmArg>
-                        <jvmArg>-Xmx4g</jvmArg>
-                        <jvmArg>-XX:+UseG1GC</jvmArg>
-                    </jvmArgs>
-                    <forkCount>1</forkCount>
-                    <threads>1</threads>
-                    <warmupIterations>20</warmupIterations>
-                    <measurementIterations>50</measurementIterations>
-                    <timeout>30m</timeout>
-                    <jmhVersion>${jmh.version}</jmhVersion>
-                </configuration>
-            </plugin>
-
             <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

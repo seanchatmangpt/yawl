@@ -140,10 +140,12 @@ public final class SecretRotationService {
         RotatingSecret(String secretName, long rotationIntervalSeconds) {
             this.secretName = Objects.requireNonNull(secretName);
             this.rotationIntervalSeconds = rotationIntervalSeconds;
-            this.currentSecret = new AtomicReference<>(generateNewSecret(0, 0));
+            long now = Instant.now().getEpochSecond();
+            this.currentSecret = new AtomicReference<>(generateNewSecret(
+                    now, now + rotationIntervalSeconds + GRACE_PERIOD_MINUTES * 60));
             this.previousSecret = new AtomicReference<>(null);
             this.auditTrail = new LinkedList<>();
-            this.lastRotationEpochSeconds = Instant.now().getEpochSecond();
+            this.lastRotationEpochSeconds = now - rotationIntervalSeconds;
         }
 
         private SecretVersion generateNewSecret(long createdAt, long expiresAt) {
@@ -157,11 +159,6 @@ public final class SecretRotationService {
 
         void rotate() {
             long now = Instant.now().getEpochSecond();
-
-            // Check if rotation is needed
-            if (now - lastRotationEpochSeconds < rotationIntervalSeconds) {
-                return;
-            }
 
             SecretVersion oldSecret = currentSecret.get();
             SecretVersion newSecret = generateNewSecret(
@@ -324,7 +321,7 @@ public final class SecretRotationService {
             throw new IllegalArgumentException("secretName cannot be empty");
         }
         if (candidate.isEmpty()) {
-            throw new IllegalArgumentException("candidate cannot be empty");
+            return false; // empty string never matches a real secret
         }
 
         RotatingSecret rotating = secrets.get(secretName);
