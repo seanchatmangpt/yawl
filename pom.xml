@@ -3079,6 +3079,17 @@
             </build>
         </profile>
 
+        <!-- ================================================================ -->
+        <!-- JMH Benchmarks Profile - Include yawl-benchmark module           -->
+        <!-- Usage: mvn test -P jmh-benchmarks                                -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>jmh-benchmarks</id>
+            <modules>
+                <module>yawl-benchmark</module>
+            </modules>
+        </profile>
+
     </profiles>
 
 </project>

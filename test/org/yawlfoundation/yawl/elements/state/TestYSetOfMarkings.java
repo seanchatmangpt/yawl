@@ -32,18 +32,19 @@ class TestYSetOfMarkings {
     private YSetOfMarkings markingSet2;
     private YNet net;
     private YSpecification spec;
+    private YCondition a, b, c, d, e, f;
 
     @BeforeEach
     void setUp() {
         spec = new YSpecification("http://test.com/test-spec");
         net = new YNet("testNet", spec);
 
-        YCondition a = new YCondition("a", net);
-        YCondition b = new YCondition("b", net);
-        YCondition c = new YCondition("c", net);
-        YCondition d = new YCondition("d", net);
-        YCondition e = new YCondition("e", net);
-        YCondition f = new YCondition("f", net);
+        a = new YCondition("a", net);
+        b = new YCondition("b", net);
+        c = new YCondition("c", net);
+        d = new YCondition("d", net);
+        e = new YCondition("e", net);
+        f = new YCondition("f", net);
 
         List<YNetElement> locs1 = new ArrayList<>();
         List<YNetElement> locs2 = new ArrayList<>();
@@ -181,8 +182,8 @@ class TestYSetOfMarkings {
         @DisplayName("Contains should return true for added marking")
         void containsReturnsTrueForAdded() {
             List<YNetElement> locs = new ArrayList<>();
-            locs.add(new YCondition("a", net));
-            locs.add(new YCondition("b", net));
+            locs.add(a);
+            locs.add(b);
             YMarking marking = new YMarking(locs);
 
             assertTrue(markingSet1.contains(marking));
@@ -232,7 +233,7 @@ class TestYSetOfMarkings {
         @DisplayName("Contains bigger equal should work for bigger marking")
         void containsBiggerEqualWorksWithBigger() {
             List<YNetElement> locs = new ArrayList<>();
-            locs.add(new YCondition("a", net));
+            locs.add(a);
             YMarking smallerMarking = new YMarking(locs);
             assertTrue(markingSet1.containsBiggerEqual(smallerMarking));
         }

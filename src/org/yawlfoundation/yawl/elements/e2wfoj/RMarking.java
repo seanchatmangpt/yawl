@@ -128,12 +128,13 @@ public class RMarking {
                 }
             }
 
-            //As it is possible to have equal - need to check here
+            // If not already bigger by token count, check if we have extra places
             if (!isBigger) {
-                if (otherPlaces.containsAll(myPlaces))
-                    isEqual = true;
-            } else {
-                isBigger = true;
+                // If I have places the other marking doesn't, I'm strictly bigger
+                if (!otherPlaces.containsAll(myPlaces)) {
+                    isBigger = true;
+                }
+                // else: same places, same token counts → equal (not strictly bigger)
             }
             return isBigger;
 

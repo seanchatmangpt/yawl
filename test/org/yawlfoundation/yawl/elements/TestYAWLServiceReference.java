@@ -263,7 +263,7 @@ class TestYAWLServiceReference {
         @DisplayName("GetScheme returns null for no scheme")
         void getSchemeReturnsNullForNoScheme() {
             YAWLServiceReference noSchemeService = new YAWLServiceReference(
-                "localhost:8080", gateway, "LocalService");
+                "localhost", gateway, "LocalService");
             assertNull(noSchemeService.getScheme());
         }
     }
