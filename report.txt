@@ -1,49 +1,48 @@
 [1m[36m======================================================================
   YAWL PATTERN DEMO REPORT
-  Generated: 2026-02-20T04:01:17Z
+  Generated: 2026-02-25T03:40:13Z
 ======================================================================
 [0m
 [1mSUMMARY[0m
 ----------------------------------------
-  Patterns Run:    1
-  Successful:      [32m0[0m
-  Failed:          [31m1[0m
-  Success Rate:    [31m0.0%[0m
-  Total Duration:  518 ms
+  Patterns Run:    5
+  Successful:      [32m5[0m
+  Failed:          [90m0[0m
+  Success Rate:    [32m100.0%[0m
+  Total Duration:  3.374 sec
 
 [1mTOKEN SAVINGS (YAML vs XML)[0m
 ----------------------------------------
-  YAML Tokens:     136
-  XML Tokens:      476
-  Savings:         [32m71.4%[0m
-  Compression:     3.5x
+  YAML Tokens:     856
+  XML Tokens:      4,240
+  Savings:         [32m79.8%[0m
+  Compression:     5.0x
 
 [1mBY CATEGORY[0m
 ----------------------------------------
   Category               Count Success   Avg Time  Savings
   --------------------------------------------------------
-  [32mBasic Control Flow    [0m     1    0.0%     518 ms    71.4%
+  [32mBasic Control Flow    [0m     5  100.0%     674 ms    79.8%
 
 [1mPATTERN RESULTS[0m
 ----------------------------------------
-  [31m[FAIL][0m Sequence
-        Duration: 518 ms | Work Items: 0
-        Tokens: 136 (YAML) vs 476 (XML) = 71% saved
-
-[1m[31mFAILURES[0m
-----------------------------------------
-  Sequence: Specification syntax error:  The specification file failed to verify against YAWL's Schema:
-Error: 3:23: cvc-complex-type.2.4.a: Invalid content was found starting with element '{"http://www.citi.qut.edu.au/yawl":rootNet}'. One of '{"http://www.citi.qut.edu.au/yawl":name, "http://www.citi.qut.edu.au/yawl":documentation, "http://www.citi.qut.edu.au/yawl":metaData}' is expected.
-Error: 8:31: cvc-complex-type.2.4.a: Invalid content was found starting with element '{"http://www.citi.qut.edu.au/yawl":variableDeclarations}'. One of '{"http://www.citi.qut.edu.au/yawl":task, "http://www.citi.qut.edu.au/yawl":condition, "http://www.citi.qut.edu.au/yawl":outputCondition}' is expected.
-Error: 16:32: cvc-identity-constraint.4.2.1.a: Element "rootNet" has no value for the key "NetElementKey_Inner1".
-Error: 16:32: cvc-identity-constraint.4.2.1.a: Element "specificationSet" has no value for the key "NetElementKey".
-Error: 18:24: cvc-complex-type.2.4.a: Invalid content was found starting with element '{"http://www.citi.qut.edu.au/yawl":description}'. One of '{"http://www.citi.qut.edu.au/yawl":name, "http://www.citi.qut.edu.au/yawl":documentation, "http://www.citi.qut.edu.au/yawl":flowsInto}' is expected.
-Error: 27:24: cvc-complex-type.2.4.a: Invalid content was found starting with element '{"http://www.citi.qut.edu.au/yawl":description}'. One of '{"http://www.citi.qut.edu.au/yawl":name, "http://www.citi.qut.edu.au/yawl":documentation, "http://www.citi.qut.edu.au/yawl":flowsInto}' is expected.
-Error: 36:24: cvc-complex-type.2.4.a: Invalid content was found starting with element '{"http://www.citi.qut.edu.au/yawl":description}'. One of '{"http://www.citi.qut.edu.au/yawl":name, "http://www.citi.qut.edu.au/yawl":documentation, "http://www.citi.qut.edu.au/yawl":flowsInto}' is expected.
-Error: 46:15: cvc-identity-constraint.4.3: Key 'Flows_ToInnerKeyRef1' with value 'end' not found for identity constraint of element 'rootNet'.
-
+  [32m[PASS][0m Sequence
+        Duration: 1413 ms | Work Items: 1
+        Tokens: 136 (YAML) vs 701 (XML) = 81% saved
+  [32m[PASS][0m Parallel Split
+        Duration: 414 ms | Work Items: 1
+        Tokens: 151 (YAML) vs 822 (XML) = 82% saved
+  [32m[PASS][0m Synchronization
+        Duration: 408 ms | Work Items: 1
+        Tokens: 193 (YAML) vs 913 (XML) = 79% saved
+  [32m[PASS][0m Exclusive Choice
+        Duration: 965 ms | Work Items: 1
+        Tokens: 181 (YAML) vs 885 (XML) = 80% saved
+  [32m[PASS][0m Simple Merge
+        Duration: 172 ms | Work Items: 1
+        Tokens: 195 (YAML) vs 919 (XML) = 79% saved
 
 [90m----------------------------------------------------------------------
   YAWL Foundation - Yet Another Workflow Language v6.0.0
-  Report generated at: 2026-02-20 04:01:17
+  Report generated at: 2026-02-25 03:40:13
 [0m
