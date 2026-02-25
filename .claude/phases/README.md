@@ -184,9 +184,9 @@ See: "GODSPEED Flow" section, phase Q documentation.
 
 - CLAUDE.md: GODSPEED flow (overall)
 - HYPER_STANDARDS.md: H phase (guards)
-- error-recovery.md: Team error handling
-- session-resumption.md: State persistence
-- team-decision-framework.md: When to use teams
+- TEAMS-GUIDE.md#error-recovery: Team error handling
+- TEAMS-GUIDE.md#session-resumption: State persistence
+- team-decision-framework.md: When to use teams (R RULES trigger for teams/**)
 - .specify/invariants.ttl: SHACL shapes (executable)
 - .claude/hooks/q-phase-invariants.sh: MVP hook (executable)
 

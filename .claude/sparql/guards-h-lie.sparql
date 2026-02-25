@@ -1,0 +1,35 @@
+# H_LIE Guard — Code Does Not Match Documentation
+# Pattern: Method documentation claims one thing, implementation does another
+# Severity: FAIL
+# Fix: Update code to match documentation (or documentation to match code)
+# Source: H-GUARDS-QUERIES.md Query 6
+
+PREFIX code: <http://ggen.io/code#>
+PREFIX javadoc: <http://ggen.io/javadoc#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  ?method a code:Method ;
+          code:javadoc ?doc ;
+          code:body ?body ;
+          code:lineNumber ?line .
+
+  ?doc javadoc:throws ?throws .
+  ?doc javadoc:returns ?returns .
+
+  # Check if method claims to return value but body doesn't
+  FILTER(
+    (STRSTARTS(?returns, "void") && REGEX(?body, 'return\\s+[^;};]+')) ||
+    (NOT STRSTARTS(?returns, "void") && !REGEX(?body, 'return\\s+[^;};]+'))
+  )
+
+  FILTER(
+    # Check if method claims to throw but doesn't
+    EXISTS { ?throws javadoc:name ?throwName } &&
+    !REGEX(?body, 'throw\\s+' + ?throwName)
+  )
+
+  BIND("H_LIE" AS ?pattern)
+  BIND(CONCAT("Documentation mismatch at line ", STR(?line))
+       AS ?violation)
+}
