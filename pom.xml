@@ -97,6 +97,7 @@
         <jakarta-ee.version>10.0.0</jakarta-ee.version>
         <opentelemetry.version>1.59.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>2.25.0</opentelemetry-instrumentation.version>
+        <grpc.version>1.66.0</grpc.version>
         <resilience4j.version>2.3.0</resilience4j.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <jackson.version>2.19.4</jackson.version>
@@ -112,9 +113,11 @@
         <angus.mail.version>2.0.5</angus.mail.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
         <angus.activation.version>2.0.3</angus.activation.version>
+        <kotlin.version>1.9.20</kotlin.version>
         <jakarta.faces.version>4.1.6</jakarta.faces.version>
         <jakarta.cdi.version>4.1.0</jakarta.cdi.version>
         <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
+        <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <resilience4j.version>2.3.0</resilience4j.version>
 
         <!-- ================================================================ -->
@@ -503,6 +506,26 @@
                 <version>${jakarta.faces.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk7</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.faces</artifactId>
                 <version>${jakarta.faces.version}</version>
@@ -515,7 +538,7 @@
             <dependency>
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
-                <version>3.1.1</version>
+                <version>${jakarta.validation.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>
@@ -682,6 +705,7 @@
                 <version>${jboss.logging.version}</version>
             </dependency>
 
+            
             <!-- ============================================================== -->
             <!-- 7. JSON / SERIALISATION                                        -->
             <!--    Explicit entries provide offline fallback when the Jackson  -->
@@ -1014,31 +1038,73 @@
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-retry</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-circuitbreaker</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-core</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-micrometer</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-bulkhead</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-ratelimiter</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- ============================================================== -->
@@ -1268,18 +1334,46 @@
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-circuitbreaker</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-retry</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-bulkhead</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-ratelimiter</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Gson - JSON serialisation used by ggen BuildReceipt and JSONL receipt chain -->
@@ -2666,6 +2760,14 @@
                         <groupId>io.opentelemetry.instrumentation</groupId>
                         <artifactId>opentelemetry-instrumentation-bom-alpha</artifactId>
                         <version>${opentelemetry-instrumentation.version}-alpha</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                    <!-- GRPC BOM: manages gRPC dependencies -->
+                    <dependency>
+                        <groupId>io.grpc</groupId>
+                        <artifactId>grpc-bom</artifactId>
+                        <version>${grpc.version}</version>
                         <type>pom</type>
                         <scope>import</scope>
                     </dependency>

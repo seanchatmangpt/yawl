@@ -62,9 +62,11 @@ public class SecurityHeadersFilter implements Filter {
      * fonts, scripts, or images must extend this policy via the allowedCsp init-param.
      */
     private static final String DEFAULT_CSP_VALUE =
-            "default-src 'self'; script-src 'self'; style-src 'self'; " +
-            "img-src 'self' data:; font-src 'self'; connect-src 'self'; " +
-            "frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+            "style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; " +
+            "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; " +
+            "form-action 'self'; frame-src 'none'; object-src 'none'; " +
+            "block-all-mixed-content; upgrade-insecure-requests";
 
     private String cspValue = DEFAULT_CSP_VALUE;
 
@@ -116,7 +118,26 @@ public class SecurityHeadersFilter implements Filter {
 
         // Disable dangerous browser features
         response.setHeader("Permissions-Policy",
-                "geolocation=(), microphone=(), camera=(), payment=(), usb=()");
+                "geolocation=(), microphone=(), camera=(), payment=(), usb=(), " +
+                "accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), " +
+                "browsing-topics=(), calculate-in=(), clipboard-read=(), " +
+                "clipboard-write=(), cross-origin-isolated=(), document-domain=(), " +
+                "encrypted-media=(), execution-while-not-rendered=(), " +
+                "execution-while-out-of-viewport=(), fullscreen=(), gyroscope=(), " +
+                "hid=(), identity-credentials-get=(), local-fonts=(), magnetometer=(), " +
+                "microphone=(), midi=(), otp-credentials=(), payment=(), " +
+                "publickey-credentials-get=(), screen-wake-lock=(), serial=(), " +
+                "storage-access=(), usb=(), web-share=(), window-management=(), " +
+                "xr-spatial-tracking=()");
+
+        // Additional security headers
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+        response.setHeader("Clear-Site-Data", "\"cache\", \"cookies\", \"storage\"");
+
+        // Enhanced CSP with nonce support for inline scripts
+        String cspWithNonce = cspValue + " script-src 'self' 'nonce-" + System.currentTimeMillis() + "'";
+        response.setHeader("Content-Security-Policy", cspWithNonce);
 
         // Prevent sensitive API responses from being cached by intermediate proxies
         response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");

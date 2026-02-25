@@ -1,0 +1,92 @@
+org.yawlfoundation:yawl-utilities:jar:6.0.0-Alpha
++- org.apache.commons:commons-lang3:jar:3.20.0:compile
++- commons-io:commons-io:jar:2.21.0:compile
++- commons-codec:commons-codec:jar:1.21.0:compile
++- org.apache.commons:commons-text:jar:1.15.0:compile
++- commons-beanutils:commons-beanutils:jar:1.11.0:compile
+|  +- commons-logging:commons-logging:jar:1.3.5:compile
+|  \- commons-collections:commons-collections:jar:3.2.2:compile
++- io.jsonwebtoken:jjwt-api:jar:0.13.0:compile
++- io.jsonwebtoken:jjwt-impl:jar:0.13.0:runtime
++- io.jsonwebtoken:jjwt-jackson:jar:0.13.0:runtime
+|  \- com.fasterxml.jackson.core:jackson-databind:jar:2.19.4:compile
++- org.jdom:jdom2:jar:2.0.6.1:compile
++- jaxen:jaxen:jar:1.2.0:compile
++- net.sf.saxon:Saxon-HE:jar:12.9:compile
+|  +- org.xmlresolver:xmlresolver:jar:5.3.3:compile
+|  \- org.xmlresolver:xmlresolver:jar:data:5.3.3:compile
++- jakarta.xml.bind:jakarta.xml.bind-api:jar:4.0.5:compile
+|  \- jakarta.activation:jakarta.activation-api:jar:2.1.4:compile
++- com.sun.xml.bind:jaxb-impl:jar:4.0.5:runtime
+|  \- com.sun.xml.bind:jaxb-core:jar:4.0.5:runtime
++- javax.xml.soap:javax.xml.soap-api:jar:1.4.0:compile
++- com.sun.xml.messaging.saaj:saaj-impl:jar:3.0.4:runtime
+|  +- jakarta.xml.soap:jakarta.xml.soap-api:jar:3.0.2:runtime
+|  +- org.jvnet.staxex:stax-ex:jar:2.1.0:runtime
+|  \- org.eclipse.angus:angus-activation:jar:2.0.3:runtime
++- jakarta.persistence:jakarta.persistence-api:jar:3.2.0:compile
++- jakarta.servlet:jakarta.servlet-api:jar:6.1.0:provided
++- org.hibernate.orm:hibernate-core:jar:6.6.43.Final:compile
+|  +- jakarta.transaction:jakarta.transaction-api:jar:2.0.1:compile
+|  +- org.jboss.logging:jboss-logging:jar:3.6.2.Final:runtime
+|  +- org.hibernate.common:hibernate-commons-annotations:jar:7.0.3.Final:runtime
+|  +- io.smallrye:jandex:jar:3.5.3:runtime
+|  +- com.fasterxml:classmate:jar:1.7.3:runtime
+|  +- net.bytebuddy:byte-buddy:jar:1.18.5:runtime
+|  +- org.glassfish.jaxb:jaxb-runtime:jar:4.0.2:runtime
+|  |  \- org.glassfish.jaxb:jaxb-core:jar:4.0.2:runtime
+|  |     +- org.glassfish.jaxb:txw2:jar:4.0.2:runtime
+|  |     \- com.sun.istack:istack-commons-runtime:jar:4.2.0:runtime
+|  +- jakarta.inject:jakarta.inject-api:jar:2.0.1:runtime
+|  \- org.antlr:antlr4-runtime:jar:4.13.0:runtime
++- org.hibernate.orm:hibernate-hikaricp:jar:6.6.43.Final:compile
++- com.zaxxer:HikariCP:jar:7.0.2:compile
++- com.h2database:h2:jar:2.4.240:runtime
++- org.apache.ant:ant:jar:1.10.15:provided
+|  \- org.apache.ant:ant-launcher:jar:1.10.15:provided
++- org.simplejavamail:simple-java-mail:jar:8.12.6:compile
+|  +- org.simplejavamail:core-module:jar:8.12.6:compile
+|  |  +- jakarta.mail:jakarta.mail-api:jar:2.1.5:compile
+|  |  +- org.eclipse.angus:angus-mail:jar:2.0.5:runtime
+|  |  \- com.sanctionco.jmail:jmail:jar:1.6.3:compile
+|  +- com.github.bbottema:jetbrains-runtime-annotations:jar:1.0.2:compile
+|  \- com.pivovarit:throwing-function:jar:1.6.1:compile
++- org.apache.logging.log4j:log4j-api:jar:2.25.3:compile
++- org.apache.logging.log4j:log4j-core:jar:2.25.3:compile
++- de.mkammerer:argon2-jvm:jar:2.11:runtime
+|  \- de.mkammerer:argon2-jvm-nolibs:jar:2.11:runtime
+|     \- net.java.dev.jna:jna:jar:5.8.0:runtime
++- org.junit.jupiter:junit-jupiter-api:jar:5.12.0:test
+|  +- org.opentest4j:opentest4j:jar:1.3.0:test
+|  +- org.junit.platform:junit-platform-commons:jar:1.12.0:test
+|  \- org.apiguardian:apiguardian-api:jar:1.1.2:test
++- org.junit.jupiter:junit-jupiter-engine:jar:5.12.0:test
+|  \- org.junit.platform:junit-platform-engine:jar:1.12.0:test
++- org.junit.jupiter:junit-jupiter-params:jar:5.12.0:test
++- org.junit.platform:junit-platform-suite-api:jar:1.12.0:test
++- org.junit.platform:junit-platform-suite-engine:jar:1.12.0:test
+|  \- org.junit.platform:junit-platform-suite-commons:jar:1.12.0:test
+|     \- org.junit.platform:junit-platform-launcher:jar:1.12.0:test
++- junit:junit:jar:4.13.2:test
++- org.hamcrest:hamcrest-core:jar:3.0:test
+|  \- org.hamcrest:hamcrest:jar:3.0:test
++- org.slf4j:slf4j-api:jar:2.0.17:compile
++- org.jspecify:jspecify:jar:1.0.0:compile
++- io.opentelemetry:opentelemetry-api:jar:1.59.0:compile
+|  \- io.opentelemetry:opentelemetry-context:jar:1.59.0:compile
+|     \- io.opentelemetry:opentelemetry-common:jar:1.59.0:compile
++- io.github.resilience4j:resilience4j-circuitbreaker:jar:2.3.0:compile
+|  \- io.github.resilience4j:resilience4j-core:jar:2.3.0:compile
+|     \- org.jetbrains.kotlin:kotlin-stdlib-jdk8:jar:1.9.0:compile
+|        +- org.jetbrains.kotlin:kotlin-stdlib:jar:1.9.0:compile
+|        |  +- org.jetbrains.kotlin:kotlin-stdlib-common:jar:1.9.0:compile
+|        |  \- org.jetbrains:annotations:jar:13.0:compile
+|        \- org.jetbrains.kotlin:kotlin-stdlib-jdk7:jar:1.9.0:compile
++- io.github.resilience4j:resilience4j-retry:jar:2.3.0:compile
++- io.github.resilience4j:resilience4j-bulkhead:jar:2.3.0:compile
++- io.github.resilience4j:resilience4j-ratelimiter:jar:2.3.0:compile
++- com.google.code.gson:gson:jar:2.13.2:compile
+|  \- com.google.errorprone:error_prone_annotations:jar:2.41.0:compile
+\- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.19.4:compile
+   +- com.fasterxml.jackson.core:jackson-annotations:jar:2.19.4:compile
+   \- com.fasterxml.jackson.core:jackson-core:jar:2.19.4:compile

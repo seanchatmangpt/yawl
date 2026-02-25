@@ -1,0 +1,231 @@
+org.yawlfoundation:yawl-integration:jar:6.0.0-Alpha
++- org.yawlfoundation:yawl-engine:jar:6.0.0-Alpha:compile
+|  +- org.yawlfoundation:yawl-elements:jar:6.0.0-Alpha:compile
+|  |  \- com.sun.xml.bind:jaxb-impl:jar:4.0.5:compile
+|  |     \- com.sun.xml.bind:jaxb-core:jar:4.0.5:compile
+|  +- jakarta.persistence:jakarta.persistence-api:jar:3.2.0:compile
+|  +- org.hibernate.orm:hibernate-core:jar:6.6.43.Final:compile
+|  |  +- jakarta.transaction:jakarta.transaction-api:jar:2.0.1:compile
+|  |  +- org.jboss.logging:jboss-logging:jar:3.6.2.Final:runtime
+|  |  +- org.hibernate.common:hibernate-commons-annotations:jar:7.0.3.Final:runtime
+|  |  +- io.smallrye:jandex:jar:3.5.3:runtime
+|  |  +- com.fasterxml:classmate:jar:1.7.3:runtime
+|  |  +- net.bytebuddy:byte-buddy:jar:1.18.5:runtime
+|  |  +- org.glassfish.jaxb:jaxb-runtime:jar:4.0.2:runtime
+|  |  |  \- org.glassfish.jaxb:jaxb-core:jar:4.0.2:runtime
+|  |  |     +- org.glassfish.jaxb:txw2:jar:4.0.2:runtime
+|  |  |     \- com.sun.istack:istack-commons-runtime:jar:4.2.0:runtime
+|  |  \- org.antlr:antlr4-runtime:jar:4.13.0:runtime
+|  +- org.hibernate.orm:hibernate-hikaricp:jar:6.6.43.Final:compile
+|  +- org.postgresql:postgresql:jar:42.7.10:runtime
+|  |  \- org.checkerframework:checker-qual:jar:3.52.0:compile
+|  +- com.mysql:mysql-connector-j:jar:9.6.0:runtime
+|  |  \- com.google.protobuf:protobuf-java:jar:4.31.1:compile
+|  +- com.zaxxer:HikariCP:jar:7.0.2:compile
+|  +- org.apache.commons:commons-dbcp2:jar:2.14.0:compile
+|  |  \- commons-logging:commons-logging:jar:1.3.5:compile
+|  +- org.jdom:jdom2:jar:2.0.6.1:compile
+|  +- jakarta.xml.bind:jakarta.xml.bind-api:jar:4.0.5:compile
+|  |  \- jakarta.activation:jakarta.activation-api:jar:2.1.4:compile
+|  +- org.apache.logging.log4j:log4j-core:jar:2.25.3:compile
+|  +- io.micrometer:micrometer-registry-prometheus:jar:1.15.9:compile
+|  |  +- io.prometheus:prometheus-metrics-core:jar:1.3.10:compile
+|  |  |  +- io.prometheus:prometheus-metrics-model:jar:1.3.10:compile
+|  |  |  \- io.prometheus:prometheus-metrics-config:jar:1.3.10:compile
+|  |  +- io.prometheus:prometheus-metrics-tracer-common:jar:1.3.10:compile
+|  |  \- io.prometheus:prometheus-metrics-exposition-formats:jar:1.3.10:runtime
+|  +- org.apache.jena:jena-core:jar:4.10.0:compile
+|  |  +- org.apache.jena:jena-base:jar:4.10.0:compile
+|  |  |  +- org.apache.commons:commons-csv:jar:1.10.0:compile
+|  |  |  +- org.apache.commons:commons-compress:jar:1.24.0:compile
+|  |  |  +- com.github.ben-manes.caffeine:caffeine:jar:3.1.8:compile
+|  |  |  \- com.github.andrewoma.dexx:collection:jar:0.7:compile
+|  |  +- org.apache.jena:jena-iri:jar:4.10.0:compile
+|  |  +- commons-cli:commons-cli:jar:1.5.0:compile
+|  |  \- org.roaringbitmap:RoaringBitmap:jar:1.0.0:compile
+|  +- org.apache.jena:jena-querybuilder:jar:4.10.0:compile
+|  |  \- org.apache.jena:apache-jena-libs:pom:4.10.0:compile
+|  |     +- org.apache.jena:jena-rdfpatch:jar:4.10.0:compile
+|  |     |  \- org.apache.jena:jena-arq:jar:4.10.0:compile
+|  |     |     +- com.github.jsonld-java:jsonld-java:jar:0.13.4:compile
+|  |     |     +- org.apache.httpcomponents:httpclient-cache:jar:4.5.14:compile
+|  |     |     +- org.apache.httpcomponents:httpclient:jar:4.5.14:compile
+|  |     |     |  \- org.apache.httpcomponents:httpcore:jar:4.4.16:compile
+|  |     |     +- org.slf4j:jcl-over-slf4j:jar:1.7.36:compile
+|  |     |     +- com.apicatalog:titanium-json-ld:jar:1.3.2:compile
+|  |     |     +- org.glassfish:jakarta.json:jar:2.0.1:compile
+|  |     |     \- org.apache.thrift:libthrift:jar:0.19.0:compile
+|  |     +- org.apache.jena:jena-shacl:jar:4.10.0:compile
+|  |     +- org.apache.jena:jena-shex:jar:4.10.0:compile
+|  |     +- org.apache.jena:jena-tdb:jar:4.10.0:compile
+|  |     +- org.apache.jena:jena-tdb2:jar:4.10.0:compile
+|  |     |  \- org.apache.jena:jena-dboe-storage:jar:4.10.0:compile
+|  |     |     \- org.apache.jena:jena-dboe-trans-data:jar:4.10.0:compile
+|  |     |        +- org.apache.jena:jena-dboe-transaction:jar:4.10.0:compile
+|  |     |        |  \- org.apache.jena:jena-dboe-base:jar:4.10.0:compile
+|  |     |        \- org.apache.jena:jena-dboe-index:jar:4.10.0:compile
+|  |     \- org.apache.jena:jena-rdfconnection:jar:4.10.0:compile
+|  +- io.opentelemetry:opentelemetry-sdk:jar:1.59.0:compile
+|  |  +- io.opentelemetry:opentelemetry-sdk-common:jar:1.59.0:compile
+|  |  +- io.opentelemetry:opentelemetry-sdk-metrics:jar:1.59.0:compile
+|  |  \- io.opentelemetry:opentelemetry-sdk-logs:jar:1.59.0:compile
+|  +- io.opentelemetry:opentelemetry-sdk-trace:jar:1.59.0:compile
+|  +- io.opentelemetry:opentelemetry-exporter-otlp:jar:1.59.0:compile
+|  |  +- io.opentelemetry:opentelemetry-exporter-otlp-common:jar:1.59.0:runtime
+|  |  +- io.opentelemetry:opentelemetry-exporter-sender-okhttp:jar:1.59.0:runtime
+|  |  |  \- com.squareup.okhttp3:okhttp-jvm:jar:5.3.2:runtime
+|  |  \- io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:jar:1.59.0:runtime
+|  \- io.opentelemetry:opentelemetry-exporter-logging:jar:1.59.0:compile
++- org.yawlfoundation:yawl-stateless:jar:6.0.0-Alpha:compile
+|  +- org.yawlfoundation:yawl-utilities:jar:6.0.0-Alpha:compile
+|  |  +- commons-io:commons-io:jar:2.21.0:compile
+|  |  +- commons-codec:commons-codec:jar:1.21.0:compile
+|  |  +- org.apache.commons:commons-text:jar:1.15.0:compile
+|  |  +- commons-beanutils:commons-beanutils:jar:1.11.0:compile
+|  |  |  \- commons-collections:commons-collections:jar:3.2.2:compile
+|  |  +- io.jsonwebtoken:jjwt-api:jar:0.13.0:compile
+|  |  +- io.jsonwebtoken:jjwt-impl:jar:0.13.0:runtime
+|  |  +- io.jsonwebtoken:jjwt-jackson:jar:0.13.0:runtime
+|  |  +- net.sf.saxon:Saxon-HE:jar:12.9:compile
+|  |  |  +- org.xmlresolver:xmlresolver:jar:5.3.3:compile
+|  |  |  \- org.xmlresolver:xmlresolver:jar:data:5.3.3:compile
+|  |  +- javax.xml.soap:javax.xml.soap-api:jar:1.4.0:compile
+|  |  +- com.sun.xml.messaging.saaj:saaj-impl:jar:3.0.4:runtime
+|  |  |  +- jakarta.xml.soap:jakarta.xml.soap-api:jar:3.0.2:runtime
+|  |  |  +- org.jvnet.staxex:stax-ex:jar:2.1.0:runtime
+|  |  |  \- org.eclipse.angus:angus-activation:jar:2.0.3:runtime
+|  |  +- org.simplejavamail:simple-java-mail:jar:8.12.6:compile
+|  |  |  +- org.simplejavamail:core-module:jar:8.12.6:compile
+|  |  |  |  +- jakarta.mail:jakarta.mail-api:jar:2.1.5:compile
+|  |  |  |  +- org.eclipse.angus:angus-mail:jar:2.0.5:runtime
+|  |  |  |  \- com.sanctionco.jmail:jmail:jar:1.6.3:compile
+|  |  |  +- com.github.bbottema:jetbrains-runtime-annotations:jar:1.0.2:compile
+|  |  |  \- com.pivovarit:throwing-function:jar:1.6.1:compile
+|  |  \- de.mkammerer:argon2-jvm:jar:2.11:runtime
+|  |     \- de.mkammerer:argon2-jvm-nolibs:jar:2.11:runtime
+|  |        \- net.java.dev.jna:jna:jar:5.8.0:runtime
+|  +- org.apache.commons:commons-collections4:jar:4.5.0:compile
+|  +- jaxen:jaxen:jar:1.2.0:compile
+|  \- com.fasterxml.jackson.core:jackson-core:jar:2.19.4:compile
++- io.modelcontextprotocol.sdk:mcp-core:jar:1.0.0:compile
+|  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.19.4:compile
+|  \- io.projectreactor:reactor-core:jar:3.7.0:compile
+|     \- org.reactivestreams:reactive-streams:jar:1.0.4:compile
++- io.modelcontextprotocol.sdk:mcp-json-jackson2:jar:1.0.0:compile
+|  \- com.networknt:json-schema-validator:jar:1.5.7:compile
+|     +- com.ethlo.time:itu:jar:1.10.3:compile
+|     \- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.19.4:compile
++- io.github.a2asdk:a2a-java-sdk-spec:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-common:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-server-common:jar:1.0.0.Alpha2:compile
+|  +- io.github.a2asdk:a2a-java-sdk-spec-grpc:jar:1.0.0.Alpha2:compile
+|  |  \- com.google.api.grpc:proto-google-common-protos:jar:2.63.1:compile
+|  +- io.smallrye.reactive:mutiny-zero:jar:1.1.1:compile
+|  +- jakarta.enterprise:jakarta.enterprise.cdi-api:jar:4.1.0:compile
+|  |  +- jakarta.enterprise:jakarta.enterprise.lang-model:jar:4.1.0:compile
+|  |  +- jakarta.annotation:jakarta.annotation-api:jar:3.0.0:compile
+|  |  +- jakarta.el:jakarta.el-api:jar:6.0.0:compile
+|  |  \- jakarta.interceptor:jakarta.interceptor-api:jar:2.2.0:compile
+|  \- jakarta.inject:jakarta.inject-api:jar:2.0.1:compile
++- io.github.a2asdk:a2a-java-sdk-transport-rest:jar:1.0.0.Alpha2:compile
+|  \- com.google.protobuf:protobuf-java-util:jar:4.32.1:compile
+|     +- com.google.code.findbugs:jsr305:jar:3.0.2:compile
+|     +- com.google.guava:guava:jar:32.0.1-jre:compile
+|     |  +- com.google.guava:failureaccess:jar:1.0.1:compile
+|     |  \- com.google.guava:listenablefuture:jar:9999.0-empty-to-avoid-conflict-with-guava:compile
+|     \- com.google.j2objc:j2objc-annotations:jar:2.8:compile
++- io.github.a2asdk:a2a-java-sdk-http-client:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-client:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-client-transport-jsonrpc:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-client-transport-rest:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-client-transport-grpc:jar:1.0.0.Alpha2:compile
+|  +- io.grpc:grpc-protobuf:jar:1.77.0:compile
+|  |  +- io.grpc:grpc-api:jar:1.77.0:compile
+|  |  \- io.grpc:grpc-protobuf-lite:jar:1.77.0:runtime
+|  \- io.grpc:grpc-stub:jar:1.77.0:compile
+|     \- org.codehaus.mojo:animal-sniffer-annotations:jar:1.24:compile
++- io.github.a2asdk:a2a-java-sdk-client-transport-spi:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-jsonrpc-common:jar:1.0.0.Alpha2:compile
++- io.github.a2asdk:a2a-java-sdk-transport-jsonrpc:jar:1.0.0.Alpha2:compile
++- ai.z.openapi:zai-sdk:jar:0.3.0:compile
+|  +- com.squareup.okhttp3:okhttp-sse:jar:3.14.9:compile
+|  +- com.squareup.okhttp3:logging-interceptor:jar:3.14.9:compile
+|  +- io.reactivex.rxjava3:rxjava:jar:3.1.10:compile
+|  +- com.squareup.retrofit2:adapter-rxjava3:jar:2.12.0:compile
+|  |  \- com.squareup.retrofit2:retrofit:jar:2.12.0:compile
+|  +- com.squareup.retrofit2:converter-jackson:jar:2.12.0:compile
+|  \- org.projectlombok:lombok:jar:1.18.32:compile
++- org.springframework.boot:spring-boot-starter-web:jar:3.5.11:compile
+|  +- org.springframework.boot:spring-boot-starter:jar:3.5.11:compile
+|  |  +- org.springframework.boot:spring-boot:jar:3.5.11:compile
+|  |  +- org.springframework.boot:spring-boot-autoconfigure:jar:3.5.11:compile
+|  |  +- org.springframework.boot:spring-boot-starter-logging:jar:3.5.11:compile
+|  |  |  +- ch.qos.logback:logback-classic:jar:1.5.32:compile
+|  |  |  |  \- ch.qos.logback:logback-core:jar:1.5.32:compile
+|  |  |  \- org.slf4j:jul-to-slf4j:jar:2.0.17:compile
+|  |  +- org.springframework:spring-core:jar:6.2.16:compile
+|  |  |  \- org.springframework:spring-jcl:jar:6.2.16:compile
+|  |  \- org.yaml:snakeyaml:jar:2.4:compile
+|  +- org.springframework.boot:spring-boot-starter-json:jar:3.5.11:compile
+|  |  \- com.fasterxml.jackson.module:jackson-module-parameter-names:jar:2.19.4:compile
+|  +- org.springframework.boot:spring-boot-starter-tomcat:jar:3.5.11:compile
+|  |  +- org.apache.tomcat.embed:tomcat-embed-core:jar:10.1.52:compile
+|  |  +- org.apache.tomcat.embed:tomcat-embed-el:jar:10.1.52:compile
+|  |  \- org.apache.tomcat.embed:tomcat-embed-websocket:jar:10.1.52:compile
+|  +- org.springframework:spring-web:jar:6.2.16:compile
+|  |  \- org.springframework:spring-beans:jar:6.2.16:compile
+|  \- org.springframework:spring-webmvc:jar:6.2.16:compile
+|     +- org.springframework:spring-aop:jar:6.2.16:compile
+|     +- org.springframework:spring-context:jar:6.2.16:compile
+|     \- org.springframework:spring-expression:jar:6.2.16:compile
++- org.springframework.boot:spring-boot-starter-actuator:jar:3.5.11:compile
+|  +- org.springframework.boot:spring-boot-actuator-autoconfigure:jar:3.5.11:compile
+|  |  \- org.springframework.boot:spring-boot-actuator:jar:3.5.11:compile
+|  \- io.micrometer:micrometer-jakarta9:jar:1.15.9:compile
++- io.micrometer:micrometer-core:jar:1.15.9:compile
+|  +- io.micrometer:micrometer-commons:jar:1.15.9:compile
+|  +- io.micrometer:micrometer-observation:jar:1.15.9:compile
+|  +- org.hdrhistogram:HdrHistogram:jar:2.2.2:runtime
+|  \- org.latencyutils:LatencyUtils:jar:2.0.3:runtime
++- com.squareup.okhttp3:okhttp:jar:5.3.2:compile
+|  +- org.jetbrains.kotlin:kotlin-stdlib:jar:2.2.21:compile
+|  |  \- org.jetbrains:annotations:jar:13.0:compile
+|  \- com.squareup.okio:okio:jar:3.16.4:runtime
+|     \- com.squareup.okio:okio-jvm:jar:3.16.4:runtime
++- com.fasterxml.jackson.core:jackson-databind:jar:2.19.4:compile
++- com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.19.4:compile
++- com.google.code.gson:gson:jar:2.13.2:compile
+|  \- com.google.errorprone:error_prone_annotations:jar:2.41.0:compile
++- org.jspecify:jspecify:jar:1.0.0:compile
++- org.apache.commons:commons-lang3:jar:3.20.0:compile
++- org.apache.commons:commons-pool2:jar:2.13.1:compile
++- com.auth0:java-jwt:jar:4.4.0:compile
++- org.apache.logging.log4j:log4j-api:jar:2.25.3:compile
++- org.slf4j:slf4j-api:jar:2.0.17:compile
++- junit:junit:jar:4.13.2:test
++- org.junit.jupiter:junit-jupiter-api:jar:5.12.0:test
+|  +- org.opentest4j:opentest4j:jar:1.3.0:test
+|  +- org.junit.platform:junit-platform-commons:jar:1.12.0:test
+|  \- org.apiguardian:apiguardian-api:jar:1.1.2:test
++- org.junit.jupiter:junit-jupiter-engine:jar:5.12.0:test
+|  \- org.junit.platform:junit-platform-engine:jar:1.12.0:test
++- org.junit.jupiter:junit-jupiter-params:jar:5.12.0:test
++- org.junit.vintage:junit-vintage-engine:jar:5.12.0:test
++- org.junit.platform:junit-platform-suite-api:jar:1.12.0:test
++- org.junit.platform:junit-platform-suite-engine:jar:1.12.0:test
+|  \- org.junit.platform:junit-platform-suite-commons:jar:1.12.0:test
++- org.junit.platform:junit-platform-launcher:jar:1.12.0:test
++- org.hamcrest:hamcrest-core:jar:3.0:test
+|  \- org.hamcrest:hamcrest:jar:3.0:test
++- com.h2database:h2:jar:2.4.240:test
++- io.opentelemetry:opentelemetry-api:jar:1.59.0:compile
+|  \- io.opentelemetry:opentelemetry-context:jar:1.59.0:compile
+|     \- io.opentelemetry:opentelemetry-common:jar:1.59.0:compile
++- io.github.resilience4j:resilience4j-circuitbreaker:jar:2.3.0:compile
+|  \- io.github.resilience4j:resilience4j-core:jar:2.3.0:compile
+|     \- org.jetbrains.kotlin:kotlin-stdlib-jdk8:jar:1.9.0:compile
+|        \- org.jetbrains.kotlin:kotlin-stdlib-jdk7:jar:1.9.0:compile
++- io.github.resilience4j:resilience4j-retry:jar:2.3.0:compile
++- io.github.resilience4j:resilience4j-bulkhead:jar:2.3.0:compile
++- io.github.resilience4j:resilience4j-ratelimiter:jar:2.3.0:compile
+\- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.19.4:compile
