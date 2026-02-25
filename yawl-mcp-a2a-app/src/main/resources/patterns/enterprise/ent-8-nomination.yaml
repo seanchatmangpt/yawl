@@ -39,6 +39,8 @@ tasks:
     flows: [CheckAcceptance]
     split: xor
     join: xor
+    outputs:
+      nominationAccepted: "true()"
     description: "Wait for user response"
 
   - id: CheckAcceptance

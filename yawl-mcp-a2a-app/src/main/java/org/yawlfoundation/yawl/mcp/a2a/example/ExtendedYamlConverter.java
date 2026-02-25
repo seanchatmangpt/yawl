@@ -17,6 +17,8 @@
 package org.yawlfoundation.yawl.mcp.a2a.example;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Extended YAML converter producing YAWL Schema 4.0 compliant XML.
@@ -36,6 +38,11 @@ import java.util.*;
  * @version 6.0.0
  */
 public class ExtendedYamlConverter extends YawlYamlConverter {
+
+    private static final Set<String> XQUERY_KEYWORDS = Set.of(
+            "and", "or", "not", "true", "false", "eq", "ne", "lt", "gt", "le", "ge",
+            "div", "mod", "if", "then", "else", "for", "let", "return", "some", "every"
+    );
 
     public ExtendedYamlConverter() {
         super();
@@ -82,10 +89,36 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         StringBuilder xml = new StringBuilder();
 
         String name = getString(spec, "name", "Workflow");
+        String netName = name + "Net";
         String uri = getString(spec, "uri", name + ".xml");
         String firstTask = getString(spec, "first", null);
         List<Map<String, Object>> tasks = getTasks(spec);
         List<Map<String, Object>> variables = getVariables(spec);
+
+        // Collect variable names for XQuery conversion
+        Set<String> varNames = new LinkedHashSet<>();
+        if (variables != null) {
+            for (Map<String, Object> var : variables) {
+                String vn = getString(var, "name", null);
+                if (vn != null) varNames.add(vn);
+            }
+        }
+
+        // Pass 1: Build condition lookup map (targetTaskId -> predicate expression)
+        // Conditions on target tasks ("condition: expr -> Self") need to be applied
+        // as predicates on the flow FROM the source task TO this target.
+        Map<String, String> targetConditionMap = new LinkedHashMap<>();
+        for (Map<String, Object> task : tasks) {
+            String condition = getString(task, "condition", null);
+            if (condition != null && condition.contains("->")) {
+                String[] parts = condition.split("->");
+                if (parts.length == 2) {
+                    String target = parts[1].trim();
+                    String expr = parts[0].trim();
+                    targetConditionMap.put(target, expr);
+                }
+            }
+        }
 
         xml.append("<specificationSet xmlns=\"").append(NAMESPACE).append("\" ")
            .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
@@ -93,28 +126,22 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
            .append("version=\"4.0\">\n");
         xml.append("  <specification uri=\"").append(escapeXml(uri)).append("\">\n");
 
-        // Add name element (required by schema)
         xml.append("    <name>").append(escapeXml(name)).append("</name>\n");
 
-        // Add documentation if available
         String specDescription = getString(spec, "description", null);
         if (specDescription != null) {
             xml.append("    <documentation>").append(escapeXml(specDescription)).append("</documentation>\n");
         }
 
-        // Add metaData (required by schema)
         xml.append("    <metaData/>\n");
 
-        // Root net as decomposition with isRootNet="true"
-        xml.append("    <decomposition id=\"").append(escapeXml(name)).append("Net\" ")
+        xml.append("    <decomposition id=\"").append(escapeXml(netName)).append("\" ")
            .append("isRootNet=\"true\" ")
            .append("xmlns:xsi=\"").append(XSI_NAMESPACE).append("\" ")
            .append("xsi:type=\"NetFactsType\">\n");
+        xml.append("      <name>").append(escapeXml(netName)).append("</name>\n");
 
-        // decomposition/name element (optional per DecompositionFactsType)
-        xml.append("      <name>").append(escapeXml(name)).append("Net</name>\n");
-
-        // inputParam declarations (per DecompositionFactsType, before localVariable)
+        // inputParam declarations
         if (variables != null && !variables.isEmpty()) {
             int index = 0;
             for (Map<String, Object> var : variables) {
@@ -122,47 +149,37 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 String varType = getString(var, "type", "xs:string");
                 String defaultValue = getString(var, "default", null);
                 boolean isInputParam = getBoolean(var, "input", true);
-
-                if (varName == null) {
-                    continue;
-                }
-
+                if (varName == null) continue;
                 String normalizedType = normalizeTypeName(varType);
-
                 if (isInputParam) {
                     xml.append("      <inputParam>\n");
                     xml.append("        <index>").append(index).append("</index>\n");
                     xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
                     xml.append("        <type>").append(escapeXml(normalizedType)).append("</type>\n");
                     if (defaultValue != null) {
-                        xml.append("        <initialValue>").append(escapeXml(defaultValue)).append("</initialValue>\n");
+                        xml.append("        <initialValue>").append(escapeXml(String.valueOf(defaultValue))).append("</initialValue>\n");
                     }
                     xml.append("      </inputParam>\n");
                 }
                 index++;
             }
 
-            // localVariable declarations (per NetFactsType, after inputParam/outputParam)
+            // localVariable declarations
             index = 0;
             for (Map<String, Object> var : variables) {
                 String varName = getString(var, "name", null);
                 String varType = getString(var, "type", "xs:string");
                 String defaultValue = getString(var, "default", null);
                 boolean isInputParam = getBoolean(var, "input", true);
-
-                if (varName == null) {
-                    continue;
-                }
-
+                if (varName == null) continue;
                 String normalizedType = normalizeTypeName(varType);
-
                 if (!isInputParam) {
                     xml.append("      <localVariable>\n");
                     xml.append("        <index>").append(index).append("</index>\n");
                     xml.append("        <name>").append(escapeXml(varName)).append("</name>\n");
                     xml.append("        <type>").append(escapeXml(normalizedType)).append("</type>\n");
                     if (defaultValue != null) {
-                        xml.append("        <initialValue>").append(escapeXml(defaultValue)).append("</initialValue>\n");
+                        xml.append("        <initialValue>").append(escapeXml(String.valueOf(defaultValue))).append("</initialValue>\n");
                     }
                     xml.append("      </localVariable>\n");
                 }
@@ -172,7 +189,7 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
 
         xml.append("      <processControlElements>\n");
 
-        // Input condition (ExternalConditionFactsType: name?, documentation?, flowsInto+)
+        // Input condition
         xml.append("        <inputCondition id=\"i-top\">\n");
         xml.append("          <name>start</name>\n");
         if (firstTask != null) {
@@ -187,23 +204,14 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         }
         xml.append("        </inputCondition>\n");
 
-        // Tasks - element order per ExternalTaskFactsType:
-        //   name?, documentation?, flowsInto+, join, split, defaultConfiguration?,
-        //   configuration?, removesTokens*, removesTokensFromFlow*,
-        //   startingMappings?, completedMappings?, enablementMappings?,
-        //   timer?, resourcing?, customForm?, decomposesTo?
-        // Multi-instance tasks extend with: minimum, maximum, threshold,
-        //   creationMode, miDataInput, miDataOutput?
+        // Pass 2: Generate tasks with proper condition resolution
         for (Map<String, Object> task : tasks) {
             String taskId = getString(task, "id", null);
-            if (taskId == null) {
-                continue;
-            }
+            if (taskId == null) continue;
 
             Map<String, Object> multiInstance = getMap(task, "multiInstance");
             boolean isMiTask = multiInstance != null;
 
-            // Multi-instance tasks use xsi:type to declare the extended type
             if (isMiTask) {
                 xml.append("        <task id=\"").append(escapeXml(taskId))
                    .append("\" xsi:type=\"MultipleInstanceExternalTaskFactsType\">\n");
@@ -211,36 +219,59 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 xml.append("        <task id=\"").append(escapeXml(taskId)).append("\">\n");
             }
 
-            // 1. name (optional per schema, but always emit for clarity)
             String taskName = getString(task, "name", taskId);
             xml.append("          <name>").append(escapeXml(taskName)).append("</name>\n");
 
-            // 2. documentation (optional)
             String description = getString(task, "description", null);
             if (description != null) {
                 xml.append("          <documentation>").append(escapeXml(description)).append("</documentation>\n");
             }
 
-            // 3. flowsInto+ (required, at least one)
+            // flowsInto with condition resolution
             List<String> flows = getStringList(task, "flows");
             String condition = getString(task, "condition", null);
             String defaultFlow = getString(task, "default", null);
+            String split = normalizeSplitJoin(getString(task, "split", "xor"));
+
+            // For XOR/OR splits, ensure default flow is set
+            if (("xor".equals(split) || "or".equals(split)) && defaultFlow == null && !flows.isEmpty()) {
+                defaultFlow = flows.getLast();
+            }
+
+            // Parse this task's own condition (source-specified)
+            String sourceCondExpr = null;
+            String sourceCondTarget = null;
+            if (condition != null && condition.contains("->")) {
+                String[] parts = condition.split("->");
+                if (parts.length == 2) {
+                    sourceCondExpr = parts[0].trim();
+                    sourceCondTarget = parts[1].trim();
+                }
+            }
 
             for (String flow : flows) {
                 xml.append("          <flowsInto>\n");
                 String targetId = "end".equals(flow) ? "o-top" : flow;
                 xml.append("            <nextElementRef id=\"").append(escapeXml(targetId)).append("\"/>\n");
 
-                if (condition != null && condition.contains("->")) {
-                    String[] parts = condition.split("->");
-                    if (parts.length == 2) {
-                        String conditionTask = parts[1].trim();
-                        if (flow.equals(conditionTask)) {
-                            xml.append("            <predicate>")
-                               .append(escapeXml(parts[0].trim()))
-                               .append("</predicate>\n");
-                        }
-                    }
+                // Resolve predicate: check source condition first, then target condition map
+                String predicate = null;
+                if (sourceCondExpr != null && flow.equals(sourceCondTarget)) {
+                    predicate = sourceCondExpr;
+                } else if (targetConditionMap.containsKey(flow)) {
+                    predicate = targetConditionMap.get(flow);
+                }
+
+                if (predicate != null) {
+                    String xquery = convertToXQuery(predicate, netName, varNames);
+                    xml.append("            <predicate>")
+                       .append(escapeXml(xquery))
+                       .append("</predicate>\n");
+                } else if (("xor".equals(split) || "or".equals(split))
+                        && (defaultFlow == null || !flow.equals(defaultFlow))) {
+                    // In XOR/OR splits, flows without predicates cause NPE in engine evaluation.
+                    // Use false() so the flow is safely unreachable (handles lost YAML duplicate-key conditions).
+                    xml.append("            <predicate>false()</predicate>\n");
                 }
 
                 if (defaultFlow != null && flow.equals(defaultFlow)) {
@@ -250,28 +281,46 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 xml.append("          </flowsInto>\n");
             }
 
-            // 4. join (REQUIRED by ExternalTaskFactsType, default to xor)
-            String join = getString(task, "join", "xor");
+            // join and split with normalization
+            String join = normalizeSplitJoin(getString(task, "join", "xor"));
             xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
-
-            // 5. split (REQUIRED by ExternalTaskFactsType, default to xor)
-            String split = getString(task, "split", "xor");
             xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
 
-            // 6. removesTokens (schema element for cancellation patterns)
+            // removesTokens: support both "cancels" and "cancelRegion" keys
             List<String> cancels = getStringList(task, "cancels");
+            List<String> cancelRegion = getStringList(task, "cancelRegion");
             for (String cancel : cancels) {
                 xml.append("          <removesTokens id=\"").append(escapeXml(cancel)).append("\"/>\n");
             }
+            for (String cancel : cancelRegion) {
+                xml.append("          <removesTokens id=\"").append(escapeXml(cancel)).append("\"/>\n");
+            }
 
-            // 7. timer (optional, per TimerType: trigger + duration/expiry)
+            // completedMappings: variable updates applied when the task completes
+            Map<String, Object> outputs = getMap(task, "outputs");
+            if (outputs != null && !outputs.isEmpty()) {
+                xml.append("          <completedMappings>\n");
+                for (Map.Entry<String, Object> entry : outputs.entrySet()) {
+                    String varName = entry.getKey();
+                    String expr = String.valueOf(entry.getValue());
+                    String xquery = "<" + varName + ">{" + expr + "}</" + varName + ">";
+                    xml.append("            <mapping>\n");
+                    xml.append("              <expression query=\"")
+                       .append(escapeXml(xquery)).append("\"/>\n");
+                    xml.append("              <mapsTo>").append(escapeXml(varName))
+                       .append("</mapsTo>\n");
+                    xml.append("            </mapping>\n");
+                }
+                xml.append("          </completedMappings>\n");
+            }
+
+            // timer
             Map<String, Object> timer = getMap(task, "timer");
             if (timer != null) {
                 xml.append("          <timer>\n");
                 String trigger = normalizeTimerTrigger(getString(timer, "trigger", "OnEnabled"));
                 String duration = getString(timer, "duration", null);
                 String expiry = getString(timer, "expiry", null);
-
                 xml.append("            <trigger>").append(trigger).append("</trigger>\n");
                 if (duration != null) {
                     xml.append("            <duration>").append(duration).append("</duration>\n");
@@ -283,26 +332,29 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 xml.append("          </timer>\n");
             }
 
-            // 8. decomposesTo (optional)
+            // decomposesTo
             xml.append("          <decomposesTo id=\"").append(escapeXml(taskId))
                .append("Decomposition\"/>\n");
 
-            // For multi-instance tasks: minimum, maximum, threshold, creationMode, miDataInput
+            // Multi-instance attributes
             if (isMiTask) {
                 String min = getString(multiInstance, "min", "1");
                 String max = getString(multiInstance, "max", "1");
-                String threshold = getString(multiInstance, "threshold", "1");
-                String mode = getString(multiInstance, "mode", "static");
+                String threshold = normalizeMiThreshold(
+                        getString(multiInstance, "threshold", "1"), max);
+                String mode = normalizeMiMode(getString(multiInstance, "mode", "static"));
 
                 xml.append("          <minimum>").append(min).append("</minimum>\n");
                 xml.append("          <maximum>").append(max).append("</maximum>\n");
                 xml.append("          <threshold>").append(threshold).append("</threshold>\n");
                 xml.append("          <creationMode code=\"").append(escapeXml(mode)).append("\"/>\n");
 
-                // miDataInput is required for MI tasks - generate minimal valid structure
+                // miDataInput is required for MI tasks - generate minimal valid structure.
+                // Default expression selects net root (e.g. /MIStaticPattern) and splits
+                // by all child elements (*), which creates one instance per net variable.
                 String miVar = getString(multiInstance, "variable", "item");
-                String miQuery = getString(multiInstance, "query", "/net/data");
-                String miSplitQuery = getString(multiInstance, "splitQuery", "/data/" + miVar);
+                String miQuery = getString(multiInstance, "query", "/" + netName);
+                String miSplitQuery = getString(multiInstance, "splitQuery", "*");
                 xml.append("          <miDataInput>\n");
                 xml.append("            <expression query=\"").append(escapeXml(miQuery)).append("\"/>\n");
                 xml.append("            <splittingExpression query=\"").append(escapeXml(miSplitQuery)).append("\"/>\n");
@@ -313,7 +365,7 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             xml.append("        </task>\n");
         }
 
-        // Output condition (OutputConditionFactsType: name?, documentation?)
+        // Output condition
         xml.append("        <outputCondition id=\"o-top\">\n");
         xml.append("          <name>end</name>\n");
         xml.append("        </outputCondition>\n");
@@ -321,7 +373,7 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
         xml.append("      </processControlElements>\n");
         xml.append("    </decomposition>\n");
 
-        // Task decomposition definitions (WebServiceGatewayFactsType)
+        // Task decomposition definitions
         for (Map<String, Object> task : tasks) {
             String taskId = getString(task, "id", null);
             if (taskId != null) {
@@ -356,6 +408,98 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             case "onenabled", "on_enabled", "enabled" -> "OnEnabled";
             case "onexecuting", "on_executing", "executing" -> "OnExecuting";
             default -> trigger;
+        };
+    }
+
+    /**
+     * Convert a Java-style predicate expression to valid XQuery.
+     * Handles: == to =, && to and, || to or, bare variable names to XPath paths,
+     * and boolean/string literals.
+     */
+    String convertToXQuery(String predicate, String netName, Set<String> varNames) {
+        if (predicate == null || predicate.isBlank()) return "true()";
+
+        // Replace Java operators with XQuery equivalents
+        String xq = predicate;
+        // == must be replaced before single = (handle != first to avoid mangling)
+        xq = xq.replace("!=", " ne ");
+        xq = xq.replace("==", " = ");
+        xq = xq.replace("&&", " and ");
+        xq = xq.replace("||", " or ");
+        // >= and <= are valid in XQuery, leave them
+
+        // Tokenize and rebuild, replacing variable references with XPath paths
+        StringBuilder result = new StringBuilder();
+        // Match: quoted strings, numbers, operators, identifiers
+        Pattern tokenPattern = Pattern.compile(
+                "\"[^\"]*\"|'[^']*'|\\d+\\.?\\d*|>=|<=|!=|[=<>]|\\b[a-zA-Z_][a-zA-Z0-9_]*\\b|\\S");
+        Matcher m = tokenPattern.matcher(xq);
+        int lastEnd = 0;
+        while (m.find()) {
+            // Preserve whitespace between tokens
+            result.append(xq, lastEnd, m.start());
+            String token = m.group();
+            if (token.startsWith("\"") || token.startsWith("'")) {
+                // String literal — keep as-is
+                result.append(token);
+            } else if (token.matches("\\d+\\.?\\d*")) {
+                // Numeric literal
+                result.append(token);
+            } else if (varNames.contains(token)) {
+                // Variable reference — convert to XPath
+                result.append("/").append(netName).append("/").append(token).append("/text()");
+            } else if ("true".equals(token)) {
+                result.append("'true'");
+            } else if ("false".equals(token)) {
+                result.append("'false'");
+            } else {
+                result.append(token);
+            }
+            lastEnd = m.end();
+        }
+        result.append(xq, lastEnd, xq.length());
+        return result.toString();
+    }
+
+    /**
+     * Normalize join/split type to engine-supported values (and, or, xor).
+     * Maps unsupported types like 'discriminator' and 'partial' to nearest equivalents.
+     */
+    private String normalizeSplitJoin(String type) {
+        if (type == null) return "xor";
+        return switch (type.toLowerCase(Locale.ROOT)) {
+            case "and", "or", "xor" -> type.toLowerCase(Locale.ROOT);
+            case "discriminator" -> "xor";
+            case "partial" -> "or";
+            default -> "xor";
+        };
+    }
+
+    /**
+     * Normalize MI threshold values. Converts symbolic values like "all", "first",
+     * "dynamic" to numeric equivalents based on the max instance count.
+     */
+    private String normalizeMiThreshold(String threshold, String max) {
+        if (threshold == null) return "1";
+        return switch (threshold.toLowerCase(Locale.ROOT)) {
+            case "all" -> max;
+            case "first" -> "1";
+            case "dynamic" -> max;
+            default -> threshold;
+        };
+    }
+
+    /**
+     * Normalize MI creation mode to YAWL schema-valid values (static, dynamic).
+     * Maps extended modes like 'sequential' and 'concurrent' to valid equivalents.
+     */
+    private String normalizeMiMode(String mode) {
+        if (mode == null) return "static";
+        return switch (mode.toLowerCase(Locale.ROOT)) {
+            case "static", "dynamic" -> mode.toLowerCase(Locale.ROOT);
+            case "sequential" -> "static";
+            case "concurrent" -> "dynamic";
+            default -> "static";
         };
     }
 
