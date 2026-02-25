@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.integration.memory;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -134,6 +135,7 @@ public final class UpgradeMemoryStore {
         }
 
         @Override
+        @JsonIgnore
         public boolean isSuccessful() {
             return true;
         }
@@ -187,6 +189,7 @@ public final class UpgradeMemoryStore {
         }
 
         @Override
+        @JsonIgnore
         public boolean isSuccessful() {
             return false;
         }
@@ -196,14 +199,17 @@ public final class UpgradeMemoryStore {
             return "FAILURE [" + errorType + "]: " + errorMessage;
         }
 
+        @JsonProperty("errorMessage")
         public String errorMessage() {
             return errorMessage;
         }
 
+        @JsonProperty("errorType")
         public String errorType() {
             return errorType;
         }
 
+        @JsonProperty("stackTrace")
         public String stackTrace() {
             return stackTrace;
         }
@@ -241,6 +247,7 @@ public final class UpgradeMemoryStore {
         }
 
         @Override
+        @JsonIgnore
         public boolean isSuccessful() {
             return false;
         }
@@ -250,14 +257,17 @@ public final class UpgradeMemoryStore {
             return "PARTIAL: " + completedPhases + "/" + totalPhases + " phases completed (last: " + lastCompletedPhase + ")";
         }
 
+        @JsonProperty("completedPhases")
         public int completedPhases() {
             return completedPhases;
         }
 
+        @JsonProperty("totalPhases")
         public int totalPhases() {
             return totalPhases;
         }
 
+        @JsonProperty("lastCompletedPhase")
         public String lastCompletedPhase() {
             return lastCompletedPhase;
         }
@@ -293,6 +303,7 @@ public final class UpgradeMemoryStore {
         }
 
         @Override
+        @JsonIgnore
         public boolean isSuccessful() {
             return false;
         }
@@ -302,10 +313,12 @@ public final class UpgradeMemoryStore {
             return String.format("IN_PROGRESS: %s (%.1f%%)", currentPhase, progressPercent);
         }
 
+        @JsonProperty("currentPhase")
         public String currentPhase() {
             return currentPhase;
         }
 
+        @JsonProperty("progressPercent")
         public double progressPercent() {
             return progressPercent;
         }
