@@ -1,6 +1,6 @@
 [1m[36m======================================================================
   YAWL PATTERN DEMO REPORT
-  Generated: 2026-02-25T03:40:13Z
+  Generated: 2026-02-25T03:43:51Z
 ======================================================================
 [0m
 [1mSUMMARY[0m
@@ -9,7 +9,7 @@
   Successful:      [32m5[0m
   Failed:          [90m0[0m
   Success Rate:    [32m100.0%[0m
-  Total Duration:  3.374 sec
+  Total Duration:  3.221 sec
 
 [1mTOKEN SAVINGS (YAML vs XML)[0m
 ----------------------------------------
@@ -22,27 +22,27 @@
 ----------------------------------------
   Category               Count Success   Avg Time  Savings
   --------------------------------------------------------
-  [32mBasic Control Flow    [0m     5  100.0%     674 ms    79.8%
+  [32mBasic Control Flow    [0m     5  100.0%     644 ms    79.8%
 
 [1mPATTERN RESULTS[0m
 ----------------------------------------
   [32m[PASS][0m Sequence
-        Duration: 1413 ms | Work Items: 1
+        Duration: 1354 ms | Work Items: 1
         Tokens: 136 (YAML) vs 701 (XML) = 81% saved
   [32m[PASS][0m Parallel Split
-        Duration: 414 ms | Work Items: 1
+        Duration: 404 ms | Work Items: 1
         Tokens: 151 (YAML) vs 822 (XML) = 82% saved
   [32m[PASS][0m Synchronization
-        Duration: 408 ms | Work Items: 1
+        Duration: 398 ms | Work Items: 1
         Tokens: 193 (YAML) vs 913 (XML) = 79% saved
   [32m[PASS][0m Exclusive Choice
-        Duration: 965 ms | Work Items: 1
+        Duration: 912 ms | Work Items: 0
         Tokens: 181 (YAML) vs 885 (XML) = 80% saved
   [32m[PASS][0m Simple Merge
-        Duration: 172 ms | Work Items: 1
+        Duration: 151 ms | Work Items: 1
         Tokens: 195 (YAML) vs 919 (XML) = 79% saved
 
 [90m----------------------------------------------------------------------
   YAWL Foundation - Yet Another Workflow Language v6.0.0
-  Report generated at: 2026-02-25 03:40:13
+  Report generated at: 2026-02-25 03:43:51
 [0m
