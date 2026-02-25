@@ -370,6 +370,8 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/synthesis/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/verification/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/reactor/**</testInclude>
+                        <!-- User-level FMEA unit tests (FM_U1–FM_U7) -->
+                        <testInclude>**/org/yawlfoundation/yawl/integration/fmea/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/SelfPlayTest.java</testExclude>
