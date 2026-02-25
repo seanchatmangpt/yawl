@@ -16,6 +16,7 @@
 
 package org.yawlfoundation.yawl.mcp.a2a.demo.execution;
 
+import org.jdom2.Element;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.stateless.YStatelessEngine;
 import org.yawlfoundation.yawl.stateless.elements.YSpecification;
@@ -23,11 +24,14 @@ import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
 import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
+import org.yawlfoundation.yawl.util.JDOMUtil;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Fluent API for executing YAWL workflow patterns with comprehensive tracing and metrics.
@@ -210,7 +214,7 @@ public class ExecutionHarness {
 
             // Register event listeners if tracing enabled
             if (enableTracing) {
-                engine.addWorkItemEventListener(new WorkItemTraceListener(traceCollector, autoTaskHandler));
+                engine.addWorkItemEventListener(new WorkItemTraceListener(traceCollector, autoTaskHandler, engine, autoComplete));
             }
 
             // Launch case
@@ -285,7 +289,7 @@ public class ExecutionHarness {
         try {
             // Register event listeners if tracing enabled
             if (enableTracing) {
-                engine.addWorkItemEventListener(new WorkItemTraceListener(traceCollector, autoTaskHandler));
+                engine.addWorkItemEventListener(new WorkItemTraceListener(traceCollector, autoTaskHandler, engine, autoComplete));
             }
 
             // Launch case
@@ -453,26 +457,61 @@ public class ExecutionHarness {
     }
 
     /**
-     * Work item event listener that collects trace events.
+     * Work item event listener that drives workflow execution by starting enabled
+     * items and completing started items, following the YSExample pattern.
      */
     private static class WorkItemTraceListener implements YWorkItemEventListener {
+        private static final Logger LOG = Logger.getLogger(WorkItemTraceListener.class.getName());
+
         private final TraceCollector collector;
         private final AutoTaskHandler handler;
+        private final YStatelessEngine engine;
+        private final boolean autoComplete;
 
-        WorkItemTraceListener(TraceCollector collector, AutoTaskHandler handler) {
+        WorkItemTraceListener(TraceCollector collector, AutoTaskHandler handler,
+                            YStatelessEngine engine, boolean autoComplete) {
             this.collector = collector;
             this.handler = handler;
+            this.engine = engine;
+            this.autoComplete = autoComplete;
         }
 
         @Override
         public void handleWorkItemEvent(YWorkItemEvent event) {
-            if (event != null) {
-                YWorkItem item = event.getWorkItem();
-                collector.recordEvent("workItemEvent", item != null ? item.get_thisID() : "unknown");
+            if (event == null) return;
 
+            YWorkItem item = event.getWorkItem();
+            String itemId = item != null ? item.get_thisID() : "unknown";
+            LOG.fine(() -> "Event: " + event.getEventType() + " Item: " + itemId);
+            collector.recordEvent(event.getEventType().toString(), itemId);
+
+            if (!autoComplete || item == null) {
                 if (handler != null && item != null) {
                     handler.handleWorkItem(item);
                 }
+                return;
+            }
+
+            try {
+                switch (event.getEventType()) {
+                    case ITEM_ENABLED -> {
+                        // Skip parent work items (multi-instance) - children get their own events
+                        if (item.isParent()) return;
+                        LOG.fine(() -> "Starting work item: " + itemId);
+                        engine.startWorkItem(item);
+                    }
+                    case ITEM_STARTED -> {
+                        if (!item.hasCompletedStatus() && !item.isParent()) {
+                            Element eData = item.getDataElement();
+                            String data = eData != null ? JDOMUtil.elementToString(eData) : "<data/>";
+                            LOG.fine(() -> "Completing work item: " + itemId);
+                            engine.completeWorkItem(item, data, null);
+                        }
+                    }
+                    default -> { /* other events: just trace */ }
+                }
+            } catch (Exception e) {
+                LOG.fine(() -> "Handled error for " + event.getEventType() + " " + itemId + ": " + e.getMessage());
             }
         }
     }

@@ -226,6 +226,13 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             String condition = getString(task, "condition", null);
             String defaultFlow = getString(task, "default", null);
 
+            // For XOR splits, ensure at least one flow is marked as default.
+            // If no explicit default is specified, the last flow becomes the default.
+            String split = getString(task, "split", "xor");
+            if ("xor".equals(split) && defaultFlow == null && !flows.isEmpty()) {
+                defaultFlow = flows.getLast();
+            }
+
             for (String flow : flows) {
                 xml.append("          <flowsInto>\n");
                 String targetId = "end".equals(flow) ? "o-top" : flow;
@@ -255,7 +262,6 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             xml.append("          <join code=\"").append(escapeXml(join)).append("\"/>\n");
 
             // 5. split (REQUIRED by ExternalTaskFactsType, default to xor)
-            String split = getString(task, "split", "xor");
             xml.append("          <split code=\"").append(escapeXml(split)).append("\"/>\n");
 
             // 6. removesTokens (schema element for cancellation patterns)
