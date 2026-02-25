@@ -72,7 +72,6 @@ import io.opentelemetry.api.common.Attributes;
 public class YNetRunner {
 
 
-    private static final Logger logger = LogManager.getLogger(YNetRunner.class);
     public enum ExecutionStatus { Normal, Suspending, Suspended, Resuming }
 
     private static final Logger _logger = LogManager.getLogger(YNetRunner.class);
