@@ -84,7 +84,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
         <!-- Enable virtual threads and compact object headers -->
@@ -197,6 +197,8 @@
         <!-- ================================================================ -->
         <!-- Observability / metrics                                            -->
         <!-- ================================================================ -->
+        <!-- Pinned at 1.15.9: Spring Boot 3.5.x BOM resolves this version;
+             upgrading to 1.16.x requires Spring Boot 3.6.x. Update both together. -->
         <micrometer.version>1.15.9</micrometer.version>
         <opentelemetry.semconv.version>1.40.0</opentelemetry.semconv.version>
 
