@@ -28,6 +28,7 @@ import org.yawlfoundation.yawl.integration.a2a.auth.CompositeAuthenticationProvi
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffException;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
 import org.yawlfoundation.yawl.integration.a2a.skills.A2ASkill;
 import org.yawlfoundation.yawl.integration.a2a.skills.ConstructCoordinationSkill;
@@ -1084,61 +1085,8 @@ public class YawlA2AServer {
         throw new IllegalArgumentException("Invalid handoff message format");
     }
 
-    /**
-     * Validates the handoff JWT embedded in an A2A handoff message text.
-     *
-     * <p>The message text format is {@code YAWL_HANDOFF:<workItemId>:<jwt>}.
-     * The JWT payload is Base64url-decoded to extract handoff claims
-     * (workItemId, fromAgent, toAgent, engineSession, exp), then
-     * {@link HandoffProtocol#verifyHandoffToken} checks token expiry.
-     * The A2A transport layer has already verified the bearer credential;
-     * this method validates the handoff-specific identity and expiry.
-     *
-     * @param messageText the full handoff text part from the A2A message
-     * @return a verified {@link HandoffToken} ready for use in {@link #processHandoff}
-     * @throws HandoffException if the message format is invalid, the JWT is malformed,
-     *                          or the token has expired
-     */
     private HandoffToken validateHandoffToken(String messageText) throws HandoffException {
-        // Message format: "YAWL_HANDOFF:<workItemId>:<jwt>"
-        String[] parts = messageText.split(":", 3);
-        if (parts.length < 3 || parts[2].isBlank()) {
-            throw new HandoffException(
-                "Handoff message missing JWT: expected format YAWL_HANDOFF:<workItemId>:<jwt>");
-        }
-        String jwtStr = parts[2];
-
-        // Decode JWT payload to extract handoff-specific claims.
-        // The A2A auth layer already verified the transport credential;
-        // here we verify handoff identity claims (workItemId, agents, expiry).
-        String[] jwtParts = jwtStr.split("\\.");
-        if (jwtParts.length < 2) {
-            throw new HandoffException(
-                "Invalid JWT in handoff message: expected header.payload[.signature]");
-        }
-        try {
-            // Base64url-decode payload (pad to 4-byte boundary as required by Java decoder)
-            String encoded = jwtParts[1];
-            encoded = encoded + "=".repeat((4 - encoded.length() % 4) % 4);
-            byte[] decoded = java.util.Base64.getUrlDecoder().decode(encoded);
-            String payloadJson = new String(decoded, StandardCharsets.UTF_8);
-
-            JsonNode claims = new ObjectMapper().readTree(payloadJson);
-            String workItemId    = claims.path("workItemId").asText();
-            String fromAgent     = claims.path("fromAgent").asText();
-            String toAgent       = claims.path("toAgent").asText();
-            String engineSession = claims.path("engineSession").asText();
-            long   expEpochSec   = claims.path("exp").asLong();
-            Instant expiresAt    = Instant.ofEpochSecond(expEpochSec);
-
-            HandoffToken token = new HandoffToken(
-                workItemId, fromAgent, toAgent, engineSession, expiresAt, jwtStr);
-            return handoffProtocol.verifyHandoffToken(token);
-        } catch (HandoffException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new HandoffException("Failed to decode handoff JWT: " + e.getMessage(), e);
-        }
+        return handoffProtocol.parseAndVerifyHandoffMessage(messageText);
     }
 
     private void sendHandoffError(HttpExchange exchange, int statusCode, String message) throws IOException {
