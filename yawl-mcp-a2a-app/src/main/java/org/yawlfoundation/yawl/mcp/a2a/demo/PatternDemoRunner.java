@@ -104,7 +104,7 @@ public class PatternDemoRunner {
     private static final String RESOURCE_PATH = "patterns/";
 
     private static final String ZAI_API_URL = "https://api.z.ai/api/paas/v4/chat/completions";
-    private static final String ZAI_MODEL = "glm-4.5-air";
+    private static final String ZAI_MODEL = "GLM-4.7-Flash";
 
     private final DemoConfig config;
     private final ExtendedYamlConverter yamlConverter;
