@@ -12,7 +12,7 @@
 | **Λ** | Build | DONE | Maven + dx.sh | build/dx-workflow.md |
 | **H** | Guards | DONE | hyper-validate.sh | HYPER_STANDARDS.md |
 | **Q** | Invariants | DONE | q-phase-invariants.sh + design | Q-INVARIANTS-PHASE.md |
-| **Ω** | Git | READY | Standard git workflow | Ω-GIT-PHASE.md (TBD) |
+| **Ω** | Git | DONE | Standard git workflow | Ω-GIT-PHASE.md |
 
 ---
 
@@ -184,9 +184,9 @@ See: "GODSPEED Flow" section, phase Q documentation.
 
 - CLAUDE.md: GODSPEED flow (overall)
 - HYPER_STANDARDS.md: H phase (guards)
-- error-recovery.md: Team error handling
-- session-resumption.md: State persistence
-- team-decision-framework.md: When to use teams
+- TEAMS-GUIDE.md#error-recovery: Team error handling
+- TEAMS-GUIDE.md#session-resumption: State persistence
+- team-decision-framework.md: When to use teams (R RULES trigger for teams/**)
 - .specify/invariants.ttl: SHACL shapes (executable)
 - .claude/hooks/q-phase-invariants.sh: MVP hook (executable)
 

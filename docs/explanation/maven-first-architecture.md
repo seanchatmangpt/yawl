@@ -1,6 +1,6 @@
 # YAWL Maven-First Transition Architecture
 
-**Version:** 5.2 → 5.3
+**Version:** 5.2 → 6.0.0
 **Date:** 2026-02-16
 **Status:** Production-Ready Architecture
 **Author:** YAWL Architecture Team
@@ -118,7 +118,7 @@ yawl-distribution (assembly)
     <!-- Project Coordinates -->
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>5.2</version>
+    <version>6.0.0</version>
     <packaging>pom</packaging>
 
     <name>YAWL - Yet Another Workflow Language (Parent)</name>

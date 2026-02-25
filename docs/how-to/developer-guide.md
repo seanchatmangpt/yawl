@@ -1,6 +1,6 @@
 # YAWL Developer Guide
 
-**Version:** 5.2
+**Version:** 6.0.0
 **Last Updated:** 2026-02-16
 **Target Audience:** Developers extending or modifying YAWL
 

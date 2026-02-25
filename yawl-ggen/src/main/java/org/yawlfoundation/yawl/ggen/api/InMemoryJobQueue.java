@@ -1,6 +1,9 @@
 package org.yawlfoundation.yawl.ggen.api;
 
+import org.yawlfoundation.yawl.ggen.mining.ai.AiValidationLoop;
+import org.yawlfoundation.yawl.ggen.mining.ai.OllamaValidationClient;
 import org.yawlfoundation.yawl.ggen.mining.generators.TerraformGenerator;
+import org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporter;
 import org.yawlfoundation.yawl.ggen.mining.model.PetriNet;
 import org.yawlfoundation.yawl.ggen.mining.parser.BpmnParser;
 import org.yawlfoundation.yawl.ggen.mining.parser.PnmlParser;
@@ -144,7 +147,19 @@ public class InMemoryJobQueue {
                 TerraformGenerator generator = new TerraformGenerator();
                 yield generator.generateTerraform(petriNet, "gcp");
             }
-            case "YAWL", "CAMUNDA", "BPEL" -> {
+            case "YAWL_SPEC" -> {
+                try {
+                    yield new AiValidationLoop(
+                        new YawlSpecExporter(),
+                        new OllamaValidationClient("http://localhost:11434", "qwen2.5-coder", 30),
+                        3
+                    ).generateAndValidate(petriNet);
+                } catch (java.io.IOException e) {
+                    throw new RuntimeException(
+                        "Ollama validation service unavailable: " + e.getMessage(), e);
+                }
+            }
+            case "CAMUNDA", "BPEL" -> {
                 throw new IllegalArgumentException(
                     "Format " + targetFormat + " generation not yet implemented"
                 );

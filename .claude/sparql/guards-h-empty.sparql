@@ -1,0 +1,21 @@
+# H_EMPTY Guard — No-Op Method Bodies
+# Pattern: Empty braces in void methods
+# Severity: FAIL
+# Fix: Implement real logic or throw UnsupportedOperationException
+# Source: H-GUARDS-QUERIES.md Query 4
+
+PREFIX code: <http://ggen.io/code#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  ?method a code:Method ;
+          code:body ?body ;
+          code:lineNumber ?line ;
+          code:returnType "void" .
+
+  FILTER(REGEX(?body, '^\\s*\\{\\s*\\}\\s*$'))
+
+  BIND("H_EMPTY" AS ?pattern)
+  BIND(CONCAT("Empty method body at line ", STR(?line))
+       AS ?violation)
+}

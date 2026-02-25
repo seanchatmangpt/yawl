@@ -1,6 +1,6 @@
 # YAWL Build System Modernization Guide
 
-**Version:** 5.2
+**Version:** 6.0.0
 **Date:** 2026-02-15
 **Status:** Production-Ready
 

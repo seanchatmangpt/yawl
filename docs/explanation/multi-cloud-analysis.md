@@ -1,6 +1,6 @@
 # YAWL Java Workflow Engine - Multi-Cloud Marketplace Readiness Analysis
 
-**Version:** 5.2
+**Version:** 6.0.0
 **Analysis Date:** 2026-02-13
 **Total Source Files:** 858 Java files
 **Total Packages:** 28 top-level packages

@@ -50,6 +50,12 @@ public class WorkletRecord {
     private String workletCaseId;
     private Status status;
 
+    /** A2A agent endpoint, set when this record represents an A2A-delegated worklet. */
+    private final String a2aEndpoint;
+
+    /** A2A skill name, set when this record represents an A2A-delegated worklet. */
+    private final String a2aSkill;
+
     /**
      * Constructs a WorkletRecord representing a selected worklet.
      *
@@ -69,6 +75,41 @@ public class WorkletRecord {
             throw new IllegalArgumentException("Host task ID must not be null or blank");
         }
         this.workletName = workletName.trim();
+        this.hostCaseId = hostCaseId.trim();
+        this.hostTaskId = hostTaskId.trim();
+        this.selectionTime = Instant.now();
+        this.status = Status.PENDING;
+        this.workletCaseId = null;
+        this.a2aEndpoint = null;
+        this.a2aSkill = null;
+    }
+
+    /**
+     * Constructs a WorkletRecord representing an A2A-delegated worklet.
+     *
+     * @param a2aEndpoint the A2A agent HTTP endpoint (must not be null or blank)
+     * @param a2aSkill    the skill name to invoke on the agent (must not be null or blank)
+     * @param hostCaseId  the case ID of the host workflow case (must not be null or blank)
+     * @param hostTaskId  the task ID of the host work item (must not be null or blank)
+     * @throws IllegalArgumentException if any argument is null or blank
+     */
+    public WorkletRecord(String a2aEndpoint, String a2aSkill,
+                         String hostCaseId, String hostTaskId) {
+        if (a2aEndpoint == null || a2aEndpoint.isBlank()) {
+            throw new IllegalArgumentException("A2A endpoint must not be null or blank");
+        }
+        if (a2aSkill == null || a2aSkill.isBlank()) {
+            throw new IllegalArgumentException("A2A skill must not be null or blank");
+        }
+        if (hostCaseId == null || hostCaseId.isBlank()) {
+            throw new IllegalArgumentException("Host case ID must not be null or blank");
+        }
+        if (hostTaskId == null || hostTaskId.isBlank()) {
+            throw new IllegalArgumentException("Host task ID must not be null or blank");
+        }
+        this.a2aEndpoint = a2aEndpoint.trim();
+        this.a2aSkill = a2aSkill.trim();
+        this.workletName = a2aEndpoint.trim() + "/" + a2aSkill.trim();
         this.hostCaseId = hostCaseId.trim();
         this.hostTaskId = hostTaskId.trim();
         this.selectionTime = Instant.now();
@@ -189,6 +230,27 @@ public class WorkletRecord {
      */
     public boolean isPending() {
         return status == Status.PENDING;
+    }
+
+    /**
+     * Returns the A2A agent endpoint, or null if this is not an A2A-delegated worklet.
+     */
+    public String getA2aEndpoint() {
+        return a2aEndpoint;
+    }
+
+    /**
+     * Returns the A2A skill name, or null if this is not an A2A-delegated worklet.
+     */
+    public String getA2aSkill() {
+        return a2aSkill;
+    }
+
+    /**
+     * Returns true if this record represents an A2A agent delegation (not a sub-case worklet).
+     */
+    public boolean isA2aDelegated() {
+        return a2aEndpoint != null;
     }
 
     /**

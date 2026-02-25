@@ -6,9 +6,9 @@
 
 ---
 
-## Current State: v5.2 (February 2026)
+## Current State: v6.0.0 (February 2026)
 
-### Module Inventory (13 modules)
+### Module Inventory (14 modules)
 
 | Module | Tests (scoped) | Source Strategy | Status |
 |--------|---------------|-----------------|--------|
@@ -25,8 +25,9 @@
 | yawl-monitoring | 1 | package_scoped | Active |
 | yawl-webapps | 0 | standard | Active |
 | yawl-control-panel | 0 | package_scoped | Active |
+| yawl-ggen | 0 | package_scoped | Active |
 
-**Total scoped tests**: 39 across 7 modules. Six modules have zero scoped tests.
+**Total scoped tests**: 39 across 7 modules. Seven modules have zero scoped tests.
 
 ### Integration Layer (yawl-integration)
 
@@ -409,10 +410,10 @@ mvn dependency:analyze -DfailOnWarning=true
 
 | Phase | Quarter | Version | Key Outcome |
 |-------|---------|---------|-------------|
-| 1 | Q1 2026 | v5.3 | Virtual threads, sealed events, structured concurrency |
-| 2 | Q2 2026 | v5.4 | Module boundaries, JPMS, CI gate hardening |
-| 3 | Q3 2026 | v5.5 | TLS 1.3, RBAC, SBOM, Prometheus metrics |
-| 4 | Q4 2026 | v6.0 | Engine consolidation, stable API surface |
+| 1 | Q1 2026 | v6.0.0 | Virtual threads, sealed events, structured concurrency (delivered) |
+| 2 | Q2 2026 | v6.1 | Module boundaries, JPMS, CI gate hardening |
+| 3 | Q3 2026 | v6.2 | TLS 1.3, RBAC, SBOM, Prometheus metrics |
+| 4 | Q4 2026 | v6.3 | Engine consolidation, stable API surface |
 | 5 | 2027 | v7.0 | Distributed cases, AI-native patterns, Schema 5.0 |
 
 ---

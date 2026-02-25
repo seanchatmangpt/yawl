@@ -10,6 +10,7 @@ import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.interfce.SpecificationData;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -235,6 +236,137 @@ public final class YawlPromptSpecifications {
                 List.of(new McpSchema.PromptMessage(
                     McpSchema.Role.USER, new McpSchema.TextContent(text))));
         });
+    }
+
+    /**
+     * Create a prompt that runs live process mining analysis and formats the
+     * results as a natural-language performance report for the given specification.
+     *
+     * @param facade          process mining facade connected to the YAWL engine
+     * @param client          InterfaceB client for spec lookup
+     * @param sessionSupplier supplies the current session handle
+     * @return prompt specification for {@code workflow_performance_report}
+     */
+    public static McpServerFeatures.SyncPromptSpecification createWorkflowPerformanceReport(
+            ProcessMiningFacade facade,
+            InterfaceB_EnvironmentBasedClient client,
+            Supplier<String> sessionSupplier) {
+
+        McpSchema.Prompt prompt = new McpSchema.Prompt(
+            "workflow_performance_report",
+            "Generate a natural-language performance and conformance report for a workflow specification",
+            List.of(
+                new McpSchema.PromptArgument("spec_identifier",
+                    "The specification identifier to analyze", true)
+            ));
+
+        return new McpServerFeatures.SyncPromptSpecification(prompt, (exchange, request) -> {
+            Map<String, Object> args = request.arguments();
+            String specIdentifier = (String) args.get("spec_identifier");
+            if (specIdentifier == null) {
+                throw new RuntimeException("Required argument missing: spec_identifier");
+            }
+
+            YSpecificationID specId = findSpecificationId(client, sessionSupplier.get(), specIdentifier);
+
+            ProcessMiningFacade.ProcessMiningReport report;
+            try {
+                report = facade.analyzePerformance(specId, false);
+            } catch (IOException e) {
+                throw new RuntimeException(
+                    "Failed to run performance analysis for '" + specIdentifier + "': "
+                    + e.getMessage(), e);
+            }
+
+            String text = formatPerformanceReport(specIdentifier, report);
+
+            return new McpSchema.GetPromptResult(
+                "Workflow performance report for: " + specIdentifier,
+                List.of(new McpSchema.PromptMessage(
+                    McpSchema.Role.USER, new McpSchema.TextContent(text))));
+        });
+    }
+
+    private static YSpecificationID findSpecificationId(
+            InterfaceB_EnvironmentBasedClient client, String session, String specIdentifier) {
+        try {
+            List<SpecificationData> specs = client.getSpecificationList(session);
+            if (specs != null) {
+                for (SpecificationData spec : specs) {
+                    YSpecificationID specId = spec.getID();
+                    if (specIdentifier.equals(specId.getIdentifier())
+                            || specIdentifier.equals(specId.getUri())) {
+                        return specId;
+                    }
+                }
+            }
+            throw new RuntimeException(
+                "Specification '" + specIdentifier + "' not found in loaded specifications.");
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new RuntimeException(
+                "Failed to fetch specification list: " + e.getMessage(), e);
+        }
+    }
+
+    private static String formatPerformanceReport(
+            String specIdentifier, ProcessMiningFacade.ProcessMiningReport report) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Generate a natural-language workflow performance analysis report for '")
+          .append(specIdentifier).append("'.\n\n");
+        sb.append("## Analysis Data\n\n");
+        sb.append("**Cases Analyzed**: ").append(report.traceCount).append("\n");
+        sb.append("**Analysis Timestamp**: ").append(report.analysisTime).append("\n\n");
+
+        sb.append("### Performance Metrics\n");
+        if (report.performance != null) {
+            sb.append("- Average flow time: ")
+              .append(String.format("%.1f", report.performance.avgFlowTimeMs)).append(" ms\n");
+            sb.append("- Throughput: ")
+              .append(String.format("%.2f", report.performance.throughputPerHour))
+              .append(" cases/hour\n");
+            if (report.performance.activityCounts != null
+                    && !report.performance.activityCounts.isEmpty()) {
+                sb.append("- Activity execution counts:\n");
+                report.performance.activityCounts.entrySet().stream()
+                    .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                    .limit(10)
+                    .forEach(e -> sb.append("  - ").append(e.getKey())
+                                   .append(": ").append(e.getValue()).append("\n"));
+            }
+        } else {
+            sb.append("- Performance metrics not available\n");
+        }
+
+        sb.append("\n### Conformance\n");
+        if (report.conformance != null) {
+            sb.append("- Fitness score: ")
+              .append(String.format("%.3f", report.conformance.computeFitness())).append("\n");
+        } else {
+            sb.append("- Conformance checking not performed (no net model provided)\n");
+        }
+
+        sb.append("\n### Process Variants\n");
+        sb.append("- Distinct variants: ").append(report.variantCount).append("\n");
+        if (!report.variantFrequencies.isEmpty()) {
+            sb.append("- Top variants (by frequency):\n");
+            int count = 0;
+            for (Map.Entry<String, Long> entry : report.variantFrequencies.entrySet()) {
+                if (count++ >= 5) break;
+                sb.append("  - ").append(entry.getKey())
+                  .append(": ").append(entry.getValue()).append(" case(s)\n");
+            }
+        }
+
+        sb.append("\n## Instructions\n");
+        sb.append("Based on the analysis data above, provide:\n");
+        sb.append("1. A natural-language summary of workflow performance and throughput\n");
+        sb.append("2. Key bottlenecks or inefficiencies identified in activity durations\n");
+        sb.append("3. Variant analysis — insights from common vs. rare execution paths\n");
+        sb.append("4. Actionable optimization recommendations with concrete next steps\n");
+        sb.append("5. Process mining insights for workflow redesign or monitoring");
+        return sb.toString();
     }
 
     private static String fetchSpecInfo(

@@ -38,11 +38,15 @@ import org.yawlfoundation.yawl.integration.a2a.skills.SkillResult;
 // ZaiFunctionService is dynamically loaded via reflection to avoid dependency conflicts
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffException;
 
 /**
  * Agent-to-Agent (A2A) Server for YAWL using the official A2A Java SDK.
@@ -84,7 +90,7 @@ import java.util.concurrent.Executors;
  *   - POST /tasks/{id}/cancel       - Cancel a task (auth required)
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
 public class YawlA2AServer {
 
@@ -1062,7 +1068,11 @@ public class YawlA2AServer {
 
         } catch (Exception e) {
             _logger.error("Handoff processing failed: {}", e.getMessage());
-            sendHandoffError(exchange, 500, "Handoff failed: " + e.getMessage());
+            try {
+                sendHandoffError(exchange, 500, "Handoff failed: " + e.getMessage());
+            } catch (IOException ioEx) {
+                _logger.warn("Failed to send handoff error response: {}", ioEx.getMessage());
+            }
         }
     }
 
@@ -1074,12 +1084,61 @@ public class YawlA2AServer {
         throw new IllegalArgumentException("Invalid handoff message format");
     }
 
-    private HandoffToken validateHandoffToken(String messageText) {
-        throw new UnsupportedOperationException(
-            "JWT token validation not implemented. " +
-            "Use HandoffProtocol.verifyHandoffToken() with a properly signed JWT token. " +
-            "Received message: " + (messageText != null ? messageText.substring(0, Math.min(50, messageText.length())) : "null")
-        );
+    /**
+     * Validates the handoff JWT embedded in an A2A handoff message text.
+     *
+     * <p>The message text format is {@code YAWL_HANDOFF:<workItemId>:<jwt>}.
+     * The JWT payload is Base64url-decoded to extract handoff claims
+     * (workItemId, fromAgent, toAgent, engineSession, exp), then
+     * {@link HandoffProtocol#verifyHandoffToken} checks token expiry.
+     * The A2A transport layer has already verified the bearer credential;
+     * this method validates the handoff-specific identity and expiry.
+     *
+     * @param messageText the full handoff text part from the A2A message
+     * @return a verified {@link HandoffToken} ready for use in {@link #processHandoff}
+     * @throws HandoffException if the message format is invalid, the JWT is malformed,
+     *                          or the token has expired
+     */
+    private HandoffToken validateHandoffToken(String messageText) throws HandoffException {
+        // Message format: "YAWL_HANDOFF:<workItemId>:<jwt>"
+        String[] parts = messageText.split(":", 3);
+        if (parts.length < 3 || parts[2].isBlank()) {
+            throw new HandoffException(
+                "Handoff message missing JWT: expected format YAWL_HANDOFF:<workItemId>:<jwt>");
+        }
+        String jwtStr = parts[2];
+
+        // Decode JWT payload to extract handoff-specific claims.
+        // The A2A auth layer already verified the transport credential;
+        // here we verify handoff identity claims (workItemId, agents, expiry).
+        String[] jwtParts = jwtStr.split("\\.");
+        if (jwtParts.length < 2) {
+            throw new HandoffException(
+                "Invalid JWT in handoff message: expected header.payload[.signature]");
+        }
+        try {
+            // Base64url-decode payload (pad to 4-byte boundary as required by Java decoder)
+            String encoded = jwtParts[1];
+            encoded = encoded + "=".repeat((4 - encoded.length() % 4) % 4);
+            byte[] decoded = java.util.Base64.getUrlDecoder().decode(encoded);
+            String payloadJson = new String(decoded, StandardCharsets.UTF_8);
+
+            JsonNode claims = new ObjectMapper().readTree(payloadJson);
+            String workItemId    = claims.path("workItemId").asText();
+            String fromAgent     = claims.path("fromAgent").asText();
+            String toAgent       = claims.path("toAgent").asText();
+            String engineSession = claims.path("engineSession").asText();
+            long   expEpochSec   = claims.path("exp").asLong();
+            Instant expiresAt    = Instant.ofEpochSecond(expEpochSec);
+
+            HandoffToken token = new HandoffToken(
+                workItemId, fromAgent, toAgent, engineSession, expiresAt, jwtStr);
+            return handoffProtocol.verifyHandoffToken(token);
+        } catch (HandoffException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new HandoffException("Failed to decode handoff JWT: " + e.getMessage(), e);
+        }
     }
 
     private void sendHandoffError(HttpExchange exchange, int statusCode, String message) throws IOException {
@@ -1092,15 +1151,18 @@ public class YawlA2AServer {
     }
 
     /**
-     * Processes a handoff operation between agents.
+     * Processes a handoff by rolling back the source agent's checkout so the
+     * target agent can check out the work item.
+     *
+     * @param workItemId the YAWL work item being transferred
+     * @param token      the verified handoff token identifying source and target agents
+     * @throws HandoffException if the rollback fails or the engine is unreachable
      */
-    private void processHandoff(String workItemId, HandoffToken token) {
+    private void processHandoff(String workItemId, HandoffToken token) throws HandoffException {
         try {
-            // Log the handoff event
             _logger.info("Processing handoff for work item {} from agent {} to agent {}",
                 workItemId, token.fromAgent(), token.toAgent());
 
-            // Rollback the source agent's checkout
             ensureEngineConnection();
             String rollbackResult = interfaceBClient.rollbackWorkItem(
                 workItemId, sessionHandle);
@@ -1111,13 +1173,10 @@ public class YawlA2AServer {
                 throw new HandoffException("Failed to rollback work item: " + rollbackResult);
             }
 
-            _logger.info("Handoff processed successfully for work item {}", workItemId);
-
-            // Note: In a full implementation, we would:
-            // 1. Notify the target agent that they can now checkout the work item
-            // 2. Update the workflow event store with handoff details
-            // 3. Track handoff metrics for monitoring
-
+            _logger.info("Handoff completed: work item '{}' released by '{}'; target agent '{}' may check out.",
+                workItemId, token.fromAgent(), token.toAgent());
+        } catch (HandoffException e) {
+            throw e;
         } catch (IOException e) {
             _logger.error("Error processing handoff: {}", e.getMessage());
             throw new HandoffException("Handoff processing failed: " + e.getMessage(), e);

@@ -1,6 +1,6 @@
 # YAWL Quick Start Guide
 
-**Version:** 5.2
+**Version:** 6.0.0
 **Last Updated:** 2026-02-16
 **Target Audience:** New developers and operators
 
