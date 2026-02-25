@@ -398,18 +398,20 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
 
             // contract: all task presetElements are conditions
             switch (_joinType) {
-                case YTask._AND:
+                case YTask._AND -> {
                     for (YExternalNetElement preSetElement : getPresetElements()) {
                         ((YConditionInterface) preSetElement).removeOne(pmgr);
                     }
                     break;
-                case YTask._OR:
+                }
+                case YTask._OR -> {
                     for (YExternalNetElement preSetElement : getPresetElements()) {
                         YConditionInterface condition = ((YConditionInterface) preSetElement);
                         if (condition.containsIdentifier()) condition.removeOne(pmgr);
                     }
                     break;
-                case YTask._XOR:
+                }
+                case YTask._XOR -> {
                     List<YExternalNetElement> conditions =
                             new ArrayList<YExternalNetElement>(getPresetElements());
                     boolean done = false;
@@ -422,6 +424,8 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
                         }
                     } while (!done);
                     break;
+                }
+                default -> throw new IllegalArgumentException("Unknown join type: " + _joinType);
             }
             return childIdentifiers;
         } finally {
@@ -842,28 +846,28 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
             }
 
             YIdentifier i = _i;
-            if (this instanceof YCompositeTask compositeTask) {
-                cancel(pmgr);
+            switch (this) {
+                case YCompositeTask compositeTask -> cancel(pmgr);
+                case YAtomicTask atomicTask -> {
+                    // no special handling for atomic tasks
+                }
+                default -> throw new AssertionError("Unknown task type: " + this.getClass());
             }
             //remove tokens from cancellation set
             for (YExternalNetElement netElement : _removeSet) {
-                if (netElement instanceof YTask task) {
-                    task.cancel(pmgr);
-                } else if (netElement instanceof YCondition cond) {
-                    cond.removeAll(pmgr);
+                switch (netElement) {
+                    case YTask task -> task.cancel(pmgr);
+                    case YCondition cond -> cond.removeAll(pmgr);
+                    default -> {
+                        // ignore other types of elements
+                    }
                 }
             }
             purgeLocations(pmgr);
             switch (_splitType) {
-                case YTask._AND:
-                    doAndSplit(pmgr, i);
-                    break;
-                case YTask._OR:
-                    doOrSplit(pmgr, i);
-                    break;
-                case YTask._XOR:
-                    doXORSplit(pmgr, i);
-                    break;
+                case YTask._AND -> doAndSplit(pmgr, i);
+                case YTask._OR -> doOrSplit(pmgr, i);
+                case YTask._XOR -> doXORSplit(pmgr, i);
             }
             i.removeLocation(pmgr, this);
             _caseToDataMap.remove(i);
@@ -1094,26 +1098,26 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
         try {
             if (_i != null) return false;     // busy tasks are never enabled
 
-            switch (_joinType) {
-                case YTask._AND:
+            return switch (_joinType) {
+                case YTask._AND -> {
                     for (YExternalNetElement condition : getPresetElements()) {
                         if (!((YCondition) condition).containsIdentifier()) {
-                            return false;
+                            yield false;
                         }
                     }
-                    return true;
-                case YTask._OR:
-                    return _net.orJoinEnabled(this, id);
-                case YTask._XOR:
+                    yield true;
+                }
+                case YTask._OR -> _net.orJoinEnabled(this, id);
+                case YTask._XOR -> {
                     for (YExternalNetElement condition : getPresetElements()) {
                         if (((YCondition) condition).containsIdentifier()) {
-                            return true;
+                            yield true;
                         }
                     }
-                    return false;
-                default:
-                    return false;
-            }
+                    yield false;
+                }
+                default -> false;
+            };
         } finally {
             _taskStateLock.unlock();
         }
@@ -1477,9 +1481,8 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
         List<YExternalNetElement> removeList = new ArrayList<YExternalNetElement>(_removeSet);
         Collections.sort(removeList);
         for (YExternalNetElement netElement : removeList) {
-            boolean implicitElement = false;
-            if (netElement instanceof YCondition maybeImplicit) {
-                if (maybeImplicit.isImplicit()) {
+            switch (netElement) {
+                case YCondition maybeImplicit when maybeImplicit.isImplicit() -> {
                     removeTokensFromFlow.append("<removesTokensFromFlow>");
                     YExternalNetElement pre = maybeImplicit.
                             getPresetElements().iterator().next();
@@ -1490,13 +1493,17 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
                     removeTokensFromFlow.append("<flowDestination id=\"").
                             append(post.getID()).append("\"/>");
                     removeTokensFromFlow.append("</removesTokensFromFlow>");
-                    implicitElement = true;
                 }
-            }
-            if (!implicitElement) {
-                xml.append("<removesTokens id=\"").
-                        append(netElement.getID()).
-                        append("\"/>");
+                case YCondition maybeImplicit -> {
+                    xml.append("<removesTokens id=\"").
+                            append(maybeImplicit.getID()).
+                            append("\"/>");
+                }
+                default -> {
+                    xml.append("<removesTokens id=\"").
+                            append(netElement.getID()).
+                            append("\"/>");
+                }
             }
         }
         xml.append(removeTokensFromFlow);
@@ -1571,15 +1578,12 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
     }
 
     private String decoratorTypeToString(int decType) {
-        switch (decType) {
-            case _AND:
-                return "and";
-            case _OR:
-                return "or";
-            case _XOR:
-                return "xor";
-        }
-        return "invalid";
+        return switch (decType) {
+            case _AND -> "and";
+            case _OR -> "or";
+            case _XOR -> "xor";
+            default -> "invalid";
+        };
     }
 
     private String writeExpressionMapping(String expression, String mapsTo) {
@@ -1717,12 +1721,11 @@ public abstract sealed class YTask extends YExternalNetElement implements IMarki
             if (_decompositionPrototype instanceof YAWLServiceGateway wsgw) {
                 YAWLServiceReference ys = wsgw.getYawlService();
                 if (ys != null) {
-                    result.append("<yawlService>");
-                    String ysID = ys.getURI();
-                    result.append("<id>");
-                    result.append(ysID);
-                    result.append("</id>");
-                    result.append("</yawlService>");
+                    result.append("<yawlService>")
+                          .append("<id>")
+                          .append(ys.getURI())
+                          .append("</id>")
+                          .append("</yawlService>");
                 }
             }
         }

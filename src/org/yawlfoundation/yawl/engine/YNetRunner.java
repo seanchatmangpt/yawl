@@ -21,9 +21,12 @@ package org.yawlfoundation.yawl.engine;
 import java.lang.ScopedValue;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -121,17 +124,22 @@ public class YNetRunner {
     protected YNet _net;
     private YWorkItemRepository _workItemRepository;
     private Set<YTask> _netTasks;
-    private Set<YTask> _enabledTasks = new LinkedHashSet<YTask>();
-    private Set<YTask> _busyTasks = new LinkedHashSet<YTask>();
-    private final Set<YTask> _deadlockedTasks = new LinkedHashSet<YTask>();
+    // P1 CRITICAL — Thread-safe concurrent sets for virtual thread compatibility.
+    // LinkedHashSet caused ConcurrentModificationException when virtual threads iterated
+    // while other threads modified. ConcurrentHashMap.newKeySet() is unordered; callers
+    // must not rely on insertion order (none is assumed in this class).
+    private Set<YTask> _enabledTasks = ConcurrentHashMap.newKeySet();
+    private Set<YTask> _busyTasks = ConcurrentHashMap.newKeySet();
+    private final Set<YTask> _deadlockedTasks = ConcurrentHashMap.newKeySet();
     private YIdentifier _caseIDForNet;
     private YSpecificationID _specID;
     private YCompositeTask _containingCompositeTask;
     private YEngine _engine;
     private YAnnouncer _announcer;
     private boolean _cancelling;
-    private Set<String> _enabledTaskNames = new LinkedHashSet<String>();
-    private Set<String> _busyTaskNames = new LinkedHashSet<String>();
+    // Thread-safe concurrent string sets for task name tracking
+    private Set<String> _enabledTaskNames = ConcurrentHashMap.newKeySet();
+    private Set<String> _busyTaskNames = ConcurrentHashMap.newKeySet();
     private String _caseID = null;
     private String _containingTaskID = null;
     private YNetData _netdata = null;
@@ -864,19 +872,143 @@ public class YNetRunner {
             }
             else {
                 String groupID = group.getDeferredChoiceID();       // null if <2 tasks
-                for (YAtomicTask atomic : group.getAtomicTasks()) {
-                    if (! (enabledTasks.contains(atomic) || endOfNetReached())) {
-                        YAnnouncement announcement = fireAtomicTask(atomic, groupID, pmgr);
-                        if (announcement != null) {
-                            _announcements.add(announcement);
-                        }
-                        enabledTasks.add(atomic) ;
+
+                // Use CompletableFuture + virtual-thread executor for parallel execution of atomic tasks
+                List<YAtomicTask> atomicTasks = new ArrayList<>(group.getAtomicTasks());
+                if (atomicTasks.size() > 1) {
+                    fireAtomicTasksInParallel(atomicTasks, groupID, pmgr, enabledTasks);
+                } else if (! (enabledTasks.contains(atomicTasks.get(0)) || endOfNetReached())) {
+                    YAnnouncement announcement = fireAtomicTask(atomicTasks.get(0), groupID, pmgr);
+                    if (announcement != null) {
+                        _announcements.add(announcement);
                     }
+                    enabledTasks.add(atomicTasks.get(0));
                 }
             }
         }
     }
 
+    /**
+     * Helper function to wrap fireAtomicTask with proper exception handling.
+     */
+    private Supplier<YAnnouncement> fireAtomicTaskWrapper(YAtomicTask task, String groupID, YPersistenceManager pmgr) {
+        return () -> {
+            try {
+                return fireAtomicTask(task, groupID, pmgr);
+            } catch (YDataStateException | YStateException | YQueryException | YPersistenceException e) {
+                throw new CompletionException(e);
+            }
+        };
+    }
+
+    /**
+     * Helper function to wrap startCompositeTaskCase with proper exception handling.
+     */
+    private Runnable startCompositeTaskCaseWrapper(YCompositeTask task, YIdentifier id, YPersistenceManager pmgr) {
+        return () -> {
+            try {
+                startCompositeTaskCase(task, id, pmgr);
+            } catch (YDataStateException | YStateException | YPersistenceException | YQueryException e) {
+                throw new CompletionException(e);
+            }
+        };
+    }
+
+    /**
+     * Helper function to wrap updateTimerState with proper exception handling.
+     */
+    private Runnable updateTimerStateWrapper(YTask task, YWorkItemTimer.State state) {
+        return () -> {
+            try {
+                updateTimerState(task, state);
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        };
+    }
+
+    /**
+     * Fires multiple atomic tasks in parallel using CompletableFuture.
+     * This improves performance when multiple independent tasks are enabled.
+     *
+     * @param atomicTasks list of atomic tasks to fire
+     * @param groupID the deferred choice group ID (may be null)
+     * @param pmgr the persistence manager
+     * @param enabledTasks set to track which tasks have been enabled
+     * @throws YDataStateException if data operations fail
+     * @throws YStateException if the net reaches end
+     * @throws YQueryException if queries fail
+     * @throws YPersistenceException if persistence fails
+     */
+    private void fireAtomicTasksInParallel(List<YAtomicTask> atomicTasks, String groupID,
+                                         YPersistenceManager pmgr, Set<YTask> enabledTasks)
+            throws YDataStateException, YStateException, YQueryException,
+            YPersistenceException {
+
+        if (endOfNetReached()) {
+            return;
+        }
+
+        // Use CompletableFuture for parallel execution with proper error handling
+        List<CompletableFuture<YAnnouncement>> futures = new ArrayList<>();
+        List<YAtomicTask> tasksToExecute = new ArrayList<>();
+
+        // Prepare tasks to execute
+        for (YAtomicTask atomic : atomicTasks) {
+            if (!enabledTasks.contains(atomic)) {
+                tasksToExecute.add(atomic);
+                enabledTasks.add(atomic);
+            }
+        }
+
+        // Create futures for each task, wait for completion, then collect announcements.
+        // allFutures.get() must be inside the try block so the executor is still alive
+        // when futures complete; shutdownNow() in the finally is only reached after
+        // all futures have resolved (or been interrupted).
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            for (YAtomicTask atomic : tasksToExecute) {
+                CompletableFuture<YAnnouncement> future = CompletableFuture.supplyAsync(
+                    fireAtomicTaskWrapper(atomic, groupID, pmgr),
+                    executor
+                );
+                futures.add(future);
+            }
+
+            // Wait for all tasks to complete
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[0])
+            );
+            allFutures.get();
+
+            // Collect announcements from successful tasks
+            for (CompletableFuture<YAnnouncement> future : futures) {
+                try {
+                    YAnnouncement announcement = future.get();
+                    if (announcement != null) {
+                        _announcements.add(announcement);
+                    }
+                } catch (ExecutionException e) {
+                    throw new YStateException("Failed to execute atomic task", e.getCause());
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new YStateException("Task execution interrupted", e);
+        } catch (ExecutionException e) {
+            throw new YStateException("Failed to execute atomic tasks in parallel", e.getCause());
+        } finally {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 
     private YAnnouncement fireAtomicTask(YAtomicTask task, String groupID,
                                          YPersistenceManager pmgr)
@@ -912,15 +1044,93 @@ public class YNetRunner {
             if (pmgr != null) pmgr.updateObject(this);
 
             List<YIdentifier> caseIDs = task.t_fire(pmgr);
-            for (YIdentifier id : caseIDs) {
-                try {
-                    task.t_start(pmgr, id);
-                }
-                catch (YDataStateException ydse) {
-                    task.rollbackFired(id, pmgr);
-                    ydse.rethrow();
+
+            // Use CompletableFuture + virtual-thread executor for parallel sub-case startup
+            if (caseIDs.size() > 1) {
+                startCompositeTaskCasesInParallel(task, caseIDs, pmgr);
+            } else {
+                // Single case ID - use original sequential approach
+                for (YIdentifier id : caseIDs) {
+                    startCompositeTaskCase(task, id, pmgr);
                 }
             }
+        }
+    }
+
+    /**
+     * Starts composite task cases in parallel using CompletableFuture.
+     * This improves performance when multiple sub-cases need to be started.
+     *
+     * @param task the composite task
+     * @param caseIDs list of case identifiers to start
+     * @param pmgr the persistence manager
+     * @throws YDataStateException if data operations fail
+     * @throws YStateException if state validation fails
+     * @throws YQueryException if queries fail
+     * @throws YPersistenceException if persistence operations fail
+     */
+    private void startCompositeTaskCasesInParallel(YCompositeTask task,
+                                                  List<YIdentifier> caseIDs,
+                                                  YPersistenceManager pmgr)
+            throws YDataStateException, YStateException, YQueryException,
+                   YPersistenceException {
+
+        // Use CompletableFuture for parallel execution
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+        try {
+            // Create futures for each case startup
+            for (YIdentifier id : caseIDs) {
+                CompletableFuture<Void> future = CompletableFuture.runAsync(
+                    startCompositeTaskCaseWrapper(task, id, pmgr),
+                    executor
+                );
+                futures.add(future);
+            }
+
+            // Wait for all tasks to complete
+            CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[0])
+            );
+            allFutures.get(); // This will throw if any task fails
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new YStateException("Composite task startup interrupted", e);
+        } catch (ExecutionException e) {
+            throw new YStateException("Failed to start composite task cases in parallel", e.getCause());
+        } finally {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /**
+     * Starts a single composite task case with proper error handling.
+     *
+     * @param task the composite task
+     * @param id the case identifier
+     * @param pmgr the persistence manager
+     * @throws YDataStateException if data operations fail
+     * @throws YStateException if state validation fails
+     * @throws YPersistenceException if persistence operations fail
+     */
+    private void startCompositeTaskCase(YCompositeTask task, YIdentifier id,
+                                       YPersistenceManager pmgr)
+            throws YDataStateException, YStateException, YPersistenceException, YQueryException {
+        try {
+            task.t_start(pmgr, id);
+        } catch (YDataStateException ydse) {
+            task.rollbackFired(id, pmgr);
+            throw ydse;
         }
     }
 
@@ -1176,8 +1386,9 @@ public class YNetRunner {
                 cond.removeAll(pmgr);
             }
         }
-        _enabledTasks = new LinkedHashSet<>();
-        _busyTasks = new LinkedHashSet<>();
+        // Re-initialise as unordered concurrent sets (see field declarations above).
+        _enabledTasks = ConcurrentHashMap.newKeySet();
+        _busyTasks = ConcurrentHashMap.newKeySet();
 
         if (_containingCompositeTask == null) {
             _engine.getNetRunnerRepository().remove(_caseIDForNet);
@@ -1456,9 +1667,63 @@ public class YNetRunner {
     // returns all the tasks in this runner's net that have timers
     public void initTimerStates() {
         _timerStates = new ConcurrentHashMap<String, String>();
-        for (YTask task : _netTasks) {
-            if (task.getTimerVariable() != null) {
-                updateTimerState(task, YWorkItemTimer.State.dormant);
+
+        // Use CompletableFuture + virtual-thread executor for parallel timer state initialization
+        // when there are many tasks with timers
+        if (_netTasks.size() > 10) {  // Threshold for parallel processing
+            initTimerStatesInParallel();
+        } else {
+            // Small number of tasks - use sequential approach
+            for (YTask task : _netTasks) {
+                if (task.getTimerVariable() != null) {
+                    updateTimerState(task, YWorkItemTimer.State.dormant);
+                }
+            }
+        }
+    }
+
+    /**
+     * Initializes timer states in parallel using CompletableFuture.
+     * This improves performance when there are many timer-enabled tasks.
+     */
+    private void initTimerStatesInParallel() {
+        // Use CompletableFuture for parallel execution
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+        try {
+            // Create futures for each timer initialization
+            for (YTask task : _netTasks) {
+                if (task.getTimerVariable() != null) {
+                    CompletableFuture<Void> future = CompletableFuture.runAsync(
+                        updateTimerStateWrapper(task, YWorkItemTimer.State.dormant),
+                        executor
+                    );
+                    futures.add(future);
+                }
+            }
+
+            // Wait for all timer initializations to complete
+            if (!futures.isEmpty()) {
+                CompletableFuture<Void> allFutures = CompletableFuture.allOf(
+                    futures.toArray(new CompletableFuture[0])
+                );
+                allFutures.get(); // This will throw if any task fails
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Timer state initialization interrupted", e);
+        } catch (ExecutionException e) {
+            throw new IllegalStateException("Failed to initialize timer states in parallel", e.getCause());
+        } finally {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
             }
         }
     }

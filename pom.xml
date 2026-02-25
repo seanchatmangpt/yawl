@@ -88,16 +88,17 @@
         <maven.compiler.release>25</maven.compiler.release>
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
-        <!-- Default value for JaCoCo late-binding argLine; overridden by jacoco:prepare-agent -->
-        <argLine>-XX:+UseCompactObjectHeaders</argLine>
+        <!-- Enable virtual threads and compact object headers -->
+        <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+UseThreadPriorityQueue</argLine>
 
         <!-- ================================================================ -->
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
         <!-- ================================================================ -->
-        <spring-boot.version>3.5.10</spring-boot.version>
+        <spring-boot.version>3.5.11</spring-boot.version>
         <jakarta-ee.version>10.0.0</jakarta-ee.version>
         <opentelemetry.version>1.59.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>2.25.0</opentelemetry-instrumentation.version>
+        <grpc.version>1.66.0</grpc.version>
         <resilience4j.version>2.3.0</resilience4j.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <jackson.version>2.19.4</jackson.version>
@@ -113,14 +114,17 @@
         <angus.mail.version>2.0.5</angus.mail.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
         <angus.activation.version>2.0.3</angus.activation.version>
+        <kotlin.version>1.9.20</kotlin.version>
         <jakarta.faces.version>4.1.6</jakarta.faces.version>
         <jakarta.cdi.version>4.1.0</jakarta.cdi.version>
         <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
+        <jakarta.validation.version>3.1.1</jakarta.validation.version>
+        <resilience4j.version>2.3.0</resilience4j.version>
 
         <!-- ================================================================ -->
         <!-- ORM                                                                -->
         <!-- ================================================================ -->
-        <hibernate.version>6.6.42.Final</hibernate.version>
+        <hibernate.version>6.6.43.Final</hibernate.version>
 
         <!-- ================================================================ -->
         <!-- Apache Commons                                                     -->
@@ -194,7 +198,9 @@
         <!-- ================================================================ -->
         <!-- Observability / metrics                                            -->
         <!-- ================================================================ -->
-        <micrometer.version>1.16.3</micrometer.version>
+        <!-- Pinned at 1.15.9: Spring Boot 3.5.x BOM resolves this version;
+             upgrading to 1.16.x requires Spring Boot 3.6.x. Update both together. -->
+        <micrometer.version>1.15.9</micrometer.version>
         <opentelemetry.semconv.version>1.40.0</opentelemetry.semconv.version>
 
         <!-- ================================================================ -->
@@ -265,7 +271,7 @@
         <!-- ================================================================ -->
         <!-- Cryptography (BouncyCastle)                                       -->
         <!-- ================================================================ -->
-        <bouncycastle.version>1.77</bouncycastle.version>
+        <bouncycastle.version>1.81</bouncycastle.version>
 
         <!-- ================================================================ -->
         <!-- Static Analysis - Error Prone                                     -->
@@ -508,6 +514,26 @@
                 <version>${jakarta.faces.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk7</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.faces</artifactId>
                 <version>${jakarta.faces.version}</version>
@@ -520,7 +546,7 @@
             <dependency>
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
-                <version>3.1.1</version>
+                <version>${jakarta.validation.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>
@@ -687,6 +713,7 @@
                 <version>${jboss.logging.version}</version>
             </dependency>
 
+            
             <!-- ============================================================== -->
             <!-- 7. JSON / SERIALISATION                                        -->
             <!--    Explicit entries provide offline fallback when the Jackson  -->
@@ -1019,31 +1046,73 @@
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-retry</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-circuitbreaker</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-core</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-micrometer</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-bulkhead</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-ratelimiter</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- ============================================================== -->
@@ -1273,18 +1342,46 @@
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-circuitbreaker</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-retry</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-bulkhead</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-ratelimiter</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Gson - JSON serialisation used by ggen BuildReceipt and JSONL receipt chain -->
@@ -1292,6 +1389,12 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>${gson.version}</version>
+        </dependency>
+
+        <!-- Jackson JSR310 - Java 8+ date/time support for WorkflowEventStore -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
     </dependencies>
 
@@ -1367,7 +1470,7 @@
                              sealed classes, and other preview features used in tests.
                              @{argLine} interpolates JaCoCo's agent argument when
                              jacoco.skip=false; it is empty when JaCoCo is skipped. -->
-                        <argLine>--enable-preview @{argLine}</argLine>
+                        <argLine>@{argLine}</argLine>
                         <!-- useModulePath=false forces classpath mode; prevents Surefire
                              from misidentifying modules and rejecting enable-preview flag. -->
                         <useModulePath>false</useModulePath>
@@ -1419,7 +1522,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven.failsafe.plugin.version}</version>
                     <configuration>
-                        <argLine>--enable-preview</argLine>
+                        <argLine></argLine>
                     </configuration>
                     <executions>
                         <execution>
@@ -1911,7 +2014,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
                 <configuration>
-                    <argLine>--enable-preview</argLine>
+                    <argLine></argLine>
                     <!-- Tests use JUnit 5 which requires surefire-junit-platform.
                          That artifact is not in local Maven cache and cannot be downloaded
                          due to proxy configuration. Tests are skipped for offline builds.
@@ -1966,11 +2069,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <release>${maven.compiler.release}</release>
+                            <release>25</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>
                                 <arg>-parameters</arg>
+                                <arg>--enable-preview</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -2003,8 +2106,7 @@
                         <configuration>
                             <release>24</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
+                                      <arg>-Xlint:all</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -2012,7 +2114,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -2043,7 +2145,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skip>false</skip>
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                         </configuration>
                     </plugin>
                     <!-- Enforcer: stricter convergence checks in CI -->
@@ -2310,7 +2412,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skip>false</skip>
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                         </configuration>
                     </plugin>
 
@@ -2337,8 +2439,7 @@
                             <target>21</target>
                             <release>21</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
+                                      <arg>-Xlint:all</arg>
                                 <arg>-XDcompilePolicy=simple</arg>
                                 <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -XepExcludedPaths:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
                             </compilerArgs>
@@ -2478,7 +2579,7 @@
                             <skip>false</skip>
                             <!-- @{argLine} late-binds the JaCoCo agent set by jacoco:prepare-agent;
                                  without this, the agent is never attached and jacoco.exec is not created -->
-                            <argLine>@{argLine} --enable-preview</argLine>
+                            <argLine>@{argLine}</argLine>
                             <!-- SIGKILL the forked JVM after tests complete; without this
                                  non-daemon virtual-thread executors (YEngine) prevent JVM exit
                                  and the entire Maven build hangs indefinitely -->
@@ -2667,6 +2768,14 @@
                         <groupId>io.opentelemetry.instrumentation</groupId>
                         <artifactId>opentelemetry-instrumentation-bom-alpha</artifactId>
                         <version>${opentelemetry-instrumentation.version}-alpha</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                    <!-- GRPC BOM: manages gRPC dependencies -->
+                    <dependency>
+                        <groupId>io.grpc</groupId>
+                        <artifactId>grpc-bom</artifactId>
+                        <version>${grpc.version}</version>
                         <type>pom</type>
                         <scope>import</scope>
                     </dependency>
@@ -2912,7 +3021,7 @@
                              ensuring integration tests run sequentially to prevent YEngine
                              singleton state corruption between concurrent test classes. -->
                         <configuration combine.self="override">
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                             <useModulePath>false</useModulePath>
                             <groups>integration</groups>
                             <excludedGroups>docker,containers,slow</excludedGroups>
@@ -3086,14 +3195,95 @@
         </profile>
 
         <!-- ================================================================ -->
-        <!-- JMH Benchmarks Profile - Include yawl-benchmark module           -->
-        <!-- Usage: mvn test -P jmh-benchmarks                                -->
+        <!-- Performance benchmark profile                                      -->
         <!-- ================================================================ -->
         <profile>
-            <id>jmh-benchmarks</id>
-            <modules>
-                <module>yawl-benchmark</module>
-            </modules>
+            <id>benchmark</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <maven.compiler.release>8</maven.compiler.release>
+                <benchmark.mode>true</benchmark.mode>
+            </properties>
+            <dependencies>
+                <!-- JMH for benchmarking -->
+                <dependency>
+                    <groupId>org.openjdk.jmh</groupId>
+                    <artifactId>jmh-core</artifactId>
+                    <version>${jmh.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjdk.jmh</groupId>
+                    <artifactId>jmh-generator-annprocess</artifactId>
+                    <version>${jmh.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <!-- JMH Plugin for benchmark execution -->
+                    <plugin>
+                        <groupId>org.openjdk.jmh</groupId>
+                        <artifactId>jmh-maven-plugin</artifactId>
+                        <version>${jmh.version}</version>
+                        <executions>
+                            <execution>
+                                <id>benchmark</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>benchmark</goal>
+                                    <goal>generate-aggregate-reports</goal>
+                                </goals>
+                                <configuration>
+                                    <resultsFormat>JSON</resultsFormat>
+                                    <resultsFile>target/benchmark-results.json</resultsFile>
+                                    <jvmArgs>
+                                        <jvmArg>-XX:+UseCompactObjectHeaders</jvmArg>
+                                        <jvmArg>-Xms2g</jvmArg>
+                                        <jvmArg>-Xmx4g</jvmArg>
+                                        <jvmArg>-XX:+UseG1GC</jvmArg>
+                                        <jvmArg>-XX:+UseZGC</jvmArg>
+                                        <jvmArg>-XX:+ShowCodeCacheOnCompilation</jvmArg>
+                                        <jvmArg>-XX:+PrintGCApplicationStoppedTime</jvmArg>
+                                        <jvmArg>-Xlog:gc*:file=gc-benchmark.log:time,uptime,level</jvmArg>
+                                        <jvmArg>-XX:+HeapDumpOnOutOfMemoryError</jvmArg>
+                                        <jvmArg>-XX:HeapDumpPath=target/heap-dump.hprof</jvmArg>
+                                    </jvmArgs>
+                                    <forkCount>1</forkCount>
+                                    <threads>1</threads>
+                                    <warmupIterations>5</warmupIterations>
+                                    <measurementIterations>10</measurementIterations>
+                                    <timeout>30m</timeout>
+                                    <include>org.yawlfoundation.yawl.performance.*</include>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Additional plugin for CI/CD integration -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>benchmark-report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo>Performance benchmarks completed!</echo>
+                                        <echo>Results available in target/benchmark-results.json</echo>
+                                        <echo>GC logs available in gc-benchmark.log</echo>
+                                        <echo>Heap dump available in target/heap-dump.hprof (if OOM occurred)</echo>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
     </profiles>

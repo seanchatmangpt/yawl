@@ -144,11 +144,6 @@ logs/
 !.claude/**/*.log
 
 # =============================================================================
-# Ephemeral run artifacts (receipts at repo root - correct location: .claude/receipts/)
-# =============================================================================
-/receipts/
-
-# =============================================================================
 # YAWL specification generated schemas (derived from XSD, not source)
 # Exclude generated XSDs but keep official YAWL schemas
 # =============================================================================

@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
@@ -57,6 +58,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  */
 public class InterfaceB_EngineBasedServer extends YHttpServlet {
 
+    private static final ReentrantLock _contextLock = new ReentrantLock();
     private EngineGateway _engine;
     private boolean _gatherPerfStats = false;
 
@@ -72,8 +74,9 @@ public class InterfaceB_EngineBasedServer extends YHttpServlet {
             ExternalDataGatewayFactory.setExternalPaths(pluginPath);
             PredicateEvaluatorFactory.setExternalPaths(pluginPath);
 
-            // init engine reference - synchronize to prevent concurrent initialization
-            synchronized (context) {
+            // init engine reference - lock to prevent concurrent initialization
+            _contextLock.lock();
+            try {
                 _engine = (EngineGateway) context.getAttribute("engine");
                 if (_engine == null) {
                     _log.info("Creating new YAWL engine instance");
@@ -91,6 +94,8 @@ public class InterfaceB_EngineBasedServer extends YHttpServlet {
                 } else {
                     _log.info("Using existing YAWL engine instance from servlet context");
                 }
+            } finally {
+                _contextLock.unlock();
             }
 
             // enable performance statistics gathering if requested

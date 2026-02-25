@@ -46,6 +46,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -375,7 +376,7 @@ public final class AndonCord {
 
     // Singleton instance
     private static volatile AndonCord instance;
-    private static final Object INSTANCE_LOCK = new Object();
+    private static final ReentrantLock _lock = new ReentrantLock();
 
     // Configuration
     private final Configuration config;
@@ -441,10 +442,13 @@ public final class AndonCord {
      */
     public static AndonCord getInstance() {
         if (instance == null) {
-            synchronized (INSTANCE_LOCK) {
+            _lock.lock();
+            try {
                 if (instance == null) {
                     instance = new AndonCord(Configuration.builder().build());
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return instance;
@@ -454,12 +458,15 @@ public final class AndonCord {
      * Initializes the singleton with custom configuration.
      */
     public static void initialize(Configuration config) {
-        synchronized (INSTANCE_LOCK) {
+        _lock.lock();
+        try {
             if (instance != null) {
                 LOGGER.warn("AndonCord already initialized, shutting down and reinitializing");
                 instance.shutdown();
             }
             instance = new AndonCord(config);
+        } finally {
+            _lock.unlock();
         }
     }
 

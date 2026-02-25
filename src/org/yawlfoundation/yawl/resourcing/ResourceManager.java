@@ -45,6 +45,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p>Non-{@code ITEM_ENABLED} events are silently ignored, preserving existing
  * YAWL listener contracts.</p>
  *
+ * <p><strong>Dispatch contract</strong>: ResourceManager and WorkletService are
+ * independent listeners with no coordination between them. Register only one
+ * A2A-dispatching listener per engine instance to avoid double-dispatch of the
+ * same work item.</p>
+ *
  * @since YAWL 6.0
  */
 public final class ResourceManager implements YWorkItemEventListener {
@@ -57,6 +62,7 @@ public final class ResourceManager implements YWorkItemEventListener {
     private final CapabilityMatcher capabilityMatcher;
     private final AtomicLong agentDispatchCount = new AtomicLong(0);
     private final AtomicLong humanRouteCount = new AtomicLong(0);
+    private final AtomicLong agentDispatchFailureCount = new AtomicLong(0);
 
     /**
      * Constructs a resource manager backed by the given capability matcher.
@@ -97,7 +103,15 @@ public final class ResourceManager implements YWorkItemEventListener {
                         : workItem.getTaskID();
                 Thread.ofVirtual()
                         .name("resourcing-dispatch-" + workItemId)
-                        .start(() -> executeDispatch(agentRoute.listing(), workItem));
+                        .start(() -> {
+                            try {
+                                executeDispatch(agentRoute.listing(), workItem);
+                            } catch (AgentRoutingException e) {
+                                agentDispatchFailureCount.incrementAndGet();
+                                log.warn("Agent dispatch failed for work item '{}': {}",
+                                        workItemId, e.getMessage());
+                            }
+                        });
             }
             case RoutingDecision.HumanRoute humanRoute -> {
                 humanRouteCount.incrementAndGet();
@@ -120,6 +134,15 @@ public final class ResourceManager implements YWorkItemEventListener {
      */
     public long getHumanRouteCount() {
         return humanRouteCount.get();
+    }
+
+    /**
+     * Returns the total number of agent dispatch failures since this manager was created.
+     * A failure is counted when {@link AgentRoutingException} is thrown inside the
+     * virtual thread that performs the HTTP dispatch.
+     */
+    public long getAgentDispatchFailureCount() {
+        return agentDispatchFailureCount.get();
     }
 
     /**
