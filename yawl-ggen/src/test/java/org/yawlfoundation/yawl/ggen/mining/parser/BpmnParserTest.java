@@ -1,13 +1,13 @@
 package org.yawlfoundation.yawl.ggen.mining.parser;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.ggen.mining.model.PetriNet;
 import org.yawlfoundation.yawl.ggen.mining.model.Transition;
 
 import java.io.File;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test cases for BPMN 2.0 parser.
@@ -17,7 +17,7 @@ public class BpmnParserTest {
     private BpmnParser parser;
     private static final String FIXTURES_PATH = "src/test/resources/fixtures/";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         parser = new BpmnParser();
     }
@@ -25,13 +25,13 @@ public class BpmnParserTest {
     @Test
     public void testParseLoanProcessingBpmn() throws Exception {
         File bpmnFile = new File(FIXTURES_PATH + "loan-processing.bpmn");
-        assertTrue("Test fixture not found: " + bpmnFile.getAbsolutePath(), bpmnFile.exists());
+        assertTrue(bpmnFile.exists(), "Test fixture not found: " + bpmnFile.getAbsolutePath());
 
         PetriNet net = parser.parse(bpmnFile);
 
-        assertNotNull("PetriNet should not be null", net);
-        assertEquals("Process ID should match", "LoanProcessingBpmn", net.getId());
-        assertEquals("Process name should be parsed", "Loan Processing", net.getName());
+        assertNotNull(net, "PetriNet should not be null");
+        assertEquals("LoanProcessingBpmn", net.getId(), "Process ID should match");
+        assertEquals("Loan Processing", net.getName(), "Process name should be parsed");
     }
 
     @Test
@@ -40,12 +40,12 @@ public class BpmnParserTest {
         PetriNet net = parser.parse(bpmnFile);
 
         // BPMN tasks should be converted to transitions
-        assertTrue("Should have tasks", net.getTransitions().size() >= 5);
+        assertTrue(net.getTransitions().size() >= 5, "Should have tasks");
 
         // Verify specific tasks
         Transition receiveApp = net.getTransition("Task_ReceiveApp");
-        assertNotNull("Receive Application task should exist", receiveApp);
-        assertEquals("Task name should match", "Receive Application", receiveApp.getName());
+        assertNotNull(receiveApp, "Receive Application task should exist");
+        assertEquals("Receive Application", receiveApp.getName(), "Task name should match");
     }
 
     @Test
@@ -54,8 +54,8 @@ public class BpmnParserTest {
         PetriNet net = parser.parse(bpmnFile);
 
         Transition startEvent = net.getTransition("StartEvent_1");
-        assertNotNull("Start event should be converted", startEvent);
-        assertTrue("Start event should be identified", startEvent.isStartTransition());
+        assertNotNull(startEvent, "Start event should be converted");
+        assertTrue(startEvent.isStartTransition(), "Start event should be identified");
     }
 
     @Test
@@ -64,9 +64,9 @@ public class BpmnParserTest {
         PetriNet net = parser.parse(bpmnFile);
 
         Transition gateway = net.getTransition("Gateway_RiskSplit");
-        assertNotNull("Exclusive gateway should exist", gateway);
-        assertTrue("Gateway should be detected as gateway", gateway.isGateway());
-        assertTrue("Gateway should be identified", gateway.getBranchCount() >= 2);
+        assertNotNull(gateway, "Exclusive gateway should exist");
+        assertTrue(gateway.isGateway(), "Gateway should be detected as gateway");
+        assertTrue(gateway.getBranchCount() >= 2, "Gateway should be identified");
     }
 
     @Test
@@ -75,8 +75,8 @@ public class BpmnParserTest {
         PetriNet net = parser.parse(bpmnFile);
 
         Transition endEvent = net.getTransition("EndEvent_1");
-        assertNotNull("End event should be converted", endEvent);
-        assertTrue("End event should be identified", endEvent.isEndTransition());
+        assertNotNull(endEvent, "End event should be converted");
+        assertTrue(endEvent.isEndTransition(), "End event should be identified");
     }
 
     @Test
@@ -85,7 +85,7 @@ public class BpmnParserTest {
         PetriNet net = parser.parse(bpmnFile);
 
         // Should have multiple arcs connecting tasks
-        assertTrue("Should have sequence flows", net.getArcs().size() >= 8);
+        assertTrue(net.getArcs().size() >= 8, "Should have sequence flows");
     }
 
     @Test
@@ -93,7 +93,7 @@ public class BpmnParserTest {
         File bpmnFile = new File(FIXTURES_PATH + "loan-processing.bpmn");
         PetriNet net = parser.parse(bpmnFile);
 
-        assertTrue("Converted net should be valid", net.isValid());
+        assertTrue(net.isValid(), "Converted net should be valid");
     }
 
     @Test
@@ -102,8 +102,8 @@ public class BpmnParserTest {
         PetriNet net = parser.parse(bpmnFile);
 
         Transition parallelGateway = net.getTransition("Gateway_Merge");
-        assertNotNull("Parallel gateway should exist", parallelGateway);
+        assertNotNull(parallelGateway, "Parallel gateway should exist");
         // Should have multiple incoming flows
-        assertTrue("Gateway should have incoming flows", parallelGateway.getIncomingArcs().size() >= 1);
+        assertTrue(parallelGateway.getIncomingArcs().size() >= 1, "Gateway should have incoming flows");
     }
 }

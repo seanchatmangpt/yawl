@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.engine.interfce.interfaceX;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,7 +48,9 @@ public final class InterfaceXMetrics {
     private static final Logger LOGGER = LogManager.getLogger(InterfaceXMetrics.class);
 
     private static volatile InterfaceXMetrics instance;
-    private static final Object INSTANCE_LOCK = new Object();
+    // ReentrantLock for double-checked locking: consistent with virtual-thread
+    // safety policy (synchronized on Object can pin carriers).
+    private static final ReentrantLock INSTANCE_LOCK = new ReentrantLock();
 
     // Atomic counters for metrics
     private final AtomicLong notificationsTotal = new AtomicLong(0);
@@ -69,10 +72,13 @@ public final class InterfaceXMetrics {
      */
     public static InterfaceXMetrics initialize(Object meterRegistry) {
         if (instance == null) {
-            synchronized (INSTANCE_LOCK) {
+            INSTANCE_LOCK.lock();
+            try {
                 if (instance == null) {
                     instance = new InterfaceXMetrics();
                 }
+            } finally {
+                INSTANCE_LOCK.unlock();
             }
         }
         return instance;
@@ -86,10 +92,13 @@ public final class InterfaceXMetrics {
      */
     public static InterfaceXMetrics getInstance() {
         if (instance == null) {
-            synchronized (INSTANCE_LOCK) {
+            INSTANCE_LOCK.lock();
+            try {
                 if (instance == null) {
                     throw new IllegalStateException("InterfaceXMetrics not initialized. Call initialize() first.");
                 }
+            } finally {
+                INSTANCE_LOCK.unlock();
             }
         }
         return instance;
@@ -109,8 +118,11 @@ public final class InterfaceXMetrics {
      * This method is intentionally package-private for test access.
      */
     static void resetSingleton() {
-        synchronized (INSTANCE_LOCK) {
+        INSTANCE_LOCK.lock();
+        try {
             instance = null;
+        } finally {
+            INSTANCE_LOCK.unlock();
         }
     }
 

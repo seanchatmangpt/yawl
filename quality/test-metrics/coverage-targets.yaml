@@ -145,8 +145,8 @@ jacoco_check_configuration:
   # Thresholds are conservative to avoid build failures during ramp-up.
   # Increase by 5% each quarter until Q4 targets are reached.
   current_enforcement:
-    line_ratio: 0.65
-    branch_ratio: 0.55
+    line_ratio: 0.80
+    branch_ratio: 0.70
   next_quarter_enforcement:
     line_ratio: 0.70
     branch_ratio: 0.60

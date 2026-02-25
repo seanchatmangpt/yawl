@@ -1,9 +1,9 @@
 package org.yawlfoundation.yawl.ggen.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for InMemoryJobQueue.
@@ -14,7 +14,7 @@ public class InMemoryJobQueueTest {
     private String samplePnmlContent;
     private String sampleBpmnContent;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         jobQueue = new InMemoryJobQueue();
 

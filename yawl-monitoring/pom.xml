@@ -239,6 +239,7 @@
                                 <exclude>org/yawlfoundation/yawl/exceptions/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/integration/a2a/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/integration/mcp/**</exclude>
+                                <exclude>org/yawlfoundation/yawl/integration/zai/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/logging/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/miscellaneousPrograms/**</exclude>
                                 <exclude>org/yawlfoundation/yawl/parametrized/**</exclude>
