@@ -8,6 +8,15 @@ description = "YAWL native Rust service: process mining + Oxigraph SPARQL engine
 name = "yawl-native"
 path = "src/main.rs"
 
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1   # Better optimization at cost of compile time
+strip = true        # Strip symbols for smaller binary
+
+[profile.dev]
+opt-level = 1       # Faster dev builds
+
 [dependencies]
 axum              = { workspace = true }
 tokio             = { workspace = true }

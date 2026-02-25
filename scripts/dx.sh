@@ -200,8 +200,10 @@ ELAPSED_MS=$((END_MS - START_MS))
 ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 # Parse results from Maven log
-TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || true
-TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || true
+# NOTE: grep -c exits 1 when 0 matches (still outputs "0"), so || must be outside
+# the $() to avoid capturing both grep's "0" output AND the fallback "0" as "0\n0".
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || TEST_COUNT=0
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || TEST_FAILED=0
 if [[ "$SCOPE" == "all" ]]; then
     MODULES_COUNT=${#ALL_MODULES[@]}
 else

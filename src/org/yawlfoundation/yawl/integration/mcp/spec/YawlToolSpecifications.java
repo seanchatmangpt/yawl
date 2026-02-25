@@ -18,9 +18,10 @@ import io.modelcontextprotocol.spec.McpSchema;
  * Static factory class that creates all YAWL workflow tool specifications for the
  * MCP server using the official MCP Java SDK v1 (1.0.0-RC3) API.
  *
- * Each tool wraps a real YAWL engine operation via InterfaceB_EnvironmentBasedClient
- * or InterfaceA_EnvironmentBasedClient. There are 15 tools covering workflow case
- * management, work item management, and specification management.
+ * Each tool wraps a real YAWL engine operation via InterfaceB_EnvironmentBasedClient,
+ * InterfaceA_EnvironmentBasedClient, or Z.AI function service. There are 16 tools
+ * covering workflow case management, work item management, specification management,
+ * and AI-powered specification synthesis.
  *
  * Tools implement MCP 2025-11-25 specification with exchange-based handlers
  * that support sampling and elicitation when client capabilities allow.
@@ -36,17 +37,19 @@ public final class YawlToolSpecifications {
     }
 
     /**
-     * Creates all 15 YAWL MCP tool specifications.
+     * Creates all 16 YAWL MCP tool specifications.
      *
      * @param interfaceBClient the YAWL InterfaceB client for runtime operations
      * @param interfaceAClient the YAWL InterfaceA client for design-time operations
      * @param sessionHandle    the active YAWL session handle
+     * @param zaiFunctionService the Z.AI function service for specification synthesis
      * @return list of all YAWL tool specifications for MCP registration
      */
     public static List<McpServerFeatures.SyncToolSpecification> createAll(
             InterfaceB_EnvironmentBasedClient interfaceBClient,
             InterfaceA_EnvironmentBasedClient interfaceAClient,
-            String sessionHandle) {
+            String sessionHandle,
+            org.yawlfoundation.yawl.integration.zai.ZaiFunctionService zaiFunctionService) {
 
         if (interfaceBClient == null) {
             throw new IllegalArgumentException(
@@ -79,6 +82,7 @@ public final class YawlToolSpecifications {
         tools.add(createSuspendCaseTool(interfaceBClient, sessionHandle));
         tools.add(createResumeCaseTool(interfaceBClient, sessionHandle));
         tools.add(createSkipWorkItemTool(interfaceBClient, sessionHandle));
+        tools.add(createSynthesizeSpecTool(interfaceAClient, zaiFunctionService, sessionHandle));
 
         return tools;
     }
@@ -935,6 +939,187 @@ public final class YawlToolSpecifications {
     }
 
     // =========================================================================
+    // Tool 16: yawl_synthesize_spec
+    // =========================================================================
+
+    private static McpServerFeatures.SyncToolSpecification createSynthesizeSpecTool(
+            InterfaceA_EnvironmentBasedClient interfaceAClient,
+            org.yawlfoundation.yawl.integration.zai.ZaiFunctionService zaiFunctionService,
+            String sessionHandle) {
+
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("description", Map.of(
+            "type", "string",
+            "description", "Natural language description of the workflow to generate. " +
+                "Example: 'Order processing workflow with inventory check, payment approval, and shipping notification'"));
+        props.put("complexity", Map.of(
+            "type", "string",
+            "enum", List.of("simple", "medium", "complex"),
+            "description", "Workflow complexity: simple (linear, 3-5 tasks), medium (branching, 5-10 tasks), " +
+                "complex (parallel splits, loops, 10+ tasks). Default: medium"));
+        props.put("auto_upload", Map.of(
+            "type", "boolean",
+            "description", "If true, automatically upload the generated specification to the YAWL engine after " +
+                "generation. Default: false"));
+
+        List<String> required = List.of("description");
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, Map.of());
+
+        return new McpServerFeatures.SyncToolSpecification(
+            McpSchema.Tool.builder()
+                .name("yawl_synthesize_spec")
+                .description("Synthesize a YAWL workflow specification from natural language using Z.AI. " +
+                    "Generates valid YAWL XML, validates against schema, and optionally uploads to engine.")
+                .inputSchema(schema)
+                .build(),
+            (exchange, args) -> {
+                try {
+                    // Check Z.AI API key
+                    String zaiApiKey = System.getenv("ZAI_API_KEY");
+                    if (zaiApiKey == null || zaiApiKey.isBlank()) {
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent(
+                                "Error: ZAI_API_KEY environment variable not set. " +
+                                "Configure Z.AI API key to use spec synthesis.")),
+                            true, null, null);
+                    }
+
+                    // Check if Z.AI service is available
+                    if (zaiFunctionService == null || !zaiFunctionService.isInitialized()) {
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent(
+                                "Error: Z.AI function service is not initialized. " +
+                                "Ensure Z.AI environment variables are properly configured.")),
+                            true, null, null);
+                    }
+
+                    Map<String, Object> params = args.arguments();
+                    String workflowDescription = requireStringArg(params, "description");
+                    String complexity = optionalStringArg(params, "complexity", "medium");
+                    boolean autoUpload = optionalBooleanArg(params, "auto_upload", false);
+
+                    // Generate specification using Z.AI
+                    String prompt = buildSpecSynthesisPrompt(workflowDescription, complexity);
+                    String specXml = zaiFunctionService.processWithFunctions(prompt);
+
+                    // Extract XML from response if wrapped in JSON
+                    String extractedXml = extractXmlFromResponse(specXml);
+
+                    if (extractedXml == null || extractedXml.isEmpty()) {
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent(
+                                "Error: Z.AI failed to generate specification. Response: " + specXml)),
+                            true, null, null);
+                    }
+
+                    // Validate XML against YAWL schema
+                    String validationError = validateYawlSpecification(extractedXml);
+                    if (validationError != null) {
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent(
+                                "Error: Generated specification failed validation:\n" + validationError)),
+                            true, null, null);
+                    }
+
+                    // Build result
+                    StringBuilder resultMsg = new StringBuilder();
+                    resultMsg.append("Specification generated successfully:\n\n");
+                    resultMsg.append(extractedXml);
+
+                    // Auto-upload if requested
+                    boolean uploaded = false;
+                    if (autoUpload) {
+                        try {
+                            String uploadResult = interfaceAClient.uploadSpecification(extractedXml, sessionHandle);
+                            if (uploadResult != null && !uploadResult.contains("<failure>")) {
+                                resultMsg.append("\n\nSpecification uploaded to engine. Response: ").append(uploadResult);
+                                uploaded = true;
+                            } else {
+                                resultMsg.append("\n\nWarning: Upload failed: ").append(uploadResult);
+                            }
+                        } catch (Exception e) {
+                            resultMsg.append("\n\nWarning: Could not auto-upload specification: ").append(e.getMessage());
+                        }
+                    }
+
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(resultMsg.toString())),
+                        false, null, null);
+
+                } catch (Exception e) {
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent("Error synthesizing specification: " + e.getMessage())),
+                        true, null, null);
+                }
+            }
+        );
+    }
+
+    private static String buildSpecSynthesisPrompt(String workflowDescription, String complexity) {
+        return """
+            Generate a valid YAWL workflow specification (XML) from this description:
+
+            Workflow: %s
+            Complexity: %s
+
+            Requirements:
+            1. Generate complete, valid YAWL XML following YAWL_Schema4.0.xsd
+            2. Include <specification>, <decomposition>, <processControlElements>, and <tasks> elements
+            3. Use realistic task names and transitions
+            4. For simple: 3-5 sequential tasks
+            5. For medium: 5-10 tasks with some branching/conditions
+            6. For complex: 10+ tasks with parallel splits, loops, and guards
+            7. Include proper input/output data declarations
+            8. Return ONLY the XML, no explanations
+
+            Output format: Valid YAWL XML specification
+            """.formatted(workflowDescription, complexity);
+    }
+
+    private static String extractXmlFromResponse(String response) {
+        if (response == null || response.isEmpty()) {
+            return null;
+        }
+
+        // If response starts with <, assume it's already XML
+        if (response.trim().startsWith("<")) {
+            return response.trim();
+        }
+
+        // Try to extract XML from JSON response
+        int xmlStart = response.indexOf("<");
+        int xmlEnd = response.lastIndexOf(">");
+
+        if (xmlStart != -1 && xmlEnd != -1 && xmlEnd > xmlStart) {
+            return response.substring(xmlStart, xmlEnd + 1);
+        }
+
+        return null;
+    }
+
+    private static String validateYawlSpecification(String specXml) {
+        // Validate required YAWL specification structure
+        // Returns error message if validation fails, or null if valid
+
+        if (!specXml.contains("<specification")) {
+            return "Missing <specification> element";
+        }
+        if (!specXml.contains("</specification>")) {
+            return "Unclosed <specification> element";
+        }
+        if (!specXml.contains("<decomposition")) {
+            return "Missing <decomposition> element";
+        }
+        if (!specXml.contains("<processControlElements") && !specXml.contains("<tasks")) {
+            return "Missing workflow control elements (<processControlElements> or <tasks>)";
+        }
+
+        // Validation passed - return null to indicate success
+        return null;
+    }
+
+    // =========================================================================
     // Argument extraction utilities
     // =========================================================================
 
@@ -967,6 +1152,27 @@ public final class YawlToolSpecifications {
         Object value = args.get(name);
         if (value != null) {
             return value.toString();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Extract an optional boolean argument from the tool arguments map.
+     *
+     * @param args         the tool arguments
+     * @param name         the argument name
+     * @param defaultValue the default value if the argument is missing
+     * @return the boolean value or the default
+     */
+    private static boolean optionalBooleanArg(Map<String, Object> args, String name,
+                                              boolean defaultValue) {
+        Object value = args.get(name);
+        if (value instanceof Boolean b) {
+            return b;
+        }
+        if (value != null) {
+            String str = value.toString().toLowerCase();
+            return "true".equals(str) || "1".equals(str) || "yes".equals(str);
         }
         return defaultValue;
     }

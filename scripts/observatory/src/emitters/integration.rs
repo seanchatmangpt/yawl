@@ -56,6 +56,8 @@ fn scan_mcp(disc: &Discovery) -> serde_json::Value {
 
     for file in disc.java_files() {
         let path_str = file.to_string_lossy();
+
+        // Server metadata (name, version, transport) from YawlMcpServer.java
         if path_str.contains("/integration/mcp/YawlMcpServer.java") {
             server = "YawlMcpServer".to_string();
 
@@ -71,6 +73,14 @@ fn scan_mcp(disc: &Discovery) -> serde_json::Value {
                     } else if line.contains("HttpServerTransportProvider") {
                         transport = "HTTP".to_string();
                     }
+                }
+            }
+        }
+
+        // Tool names live in spec/*Specifications.java, not in YawlMcpServer.java
+        if path_str.contains("/integration/mcp/") && path_str.ends_with("Specifications.java") {
+            if let Ok(content) = std::fs::read_to_string(file) {
+                for line in content.lines() {
                     if line.contains(".name(\"yawl_") {
                         if let Some(tool_name) = extract_tool_name(line) {
                             if !tools.contains(&tool_name) {

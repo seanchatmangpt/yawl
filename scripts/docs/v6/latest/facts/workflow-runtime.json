@@ -1,0 +1,11 @@
+{
+  "active_cases": 0,
+  "deadlocked_cases": 0,
+  "enabled_workitems": 0,
+  "engine_status": "offline",
+  "engine_url": "http://localhost:8080/yawl",
+  "executing_workitems": 0,
+  "loaded_specifications": 0,
+  "queried_at": "2026-02-24T21:16:25Z",
+  "reason": "Connection timeout or refused (500ms max wait)"
+}

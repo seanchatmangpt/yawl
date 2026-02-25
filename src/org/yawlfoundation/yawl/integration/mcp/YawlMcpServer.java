@@ -34,9 +34,11 @@ import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowDiffSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.WorkflowGenomeSpecification;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlFactoryToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
+import org.yawlfoundation.yawl.integration.mcp.spec.McpToolRegistry;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
-import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.timeline.CaseTimelineSpecification;
+import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 
 /**
  * Model Context Protocol (MCP) Server for YAWL using the official MCP Java SDK v1 (1.0.0-RC1).
@@ -45,8 +47,9 @@ import org.yawlfoundation.yawl.integration.mcp.timeline.CaseTimelineSpecificatio
  *
  * Tools: Launch/cancel cases, get case status, list specifications, get/complete/checkout/checkin
  *   work items, get specification data/XML/schema, get running cases, upload/unload specifications,
- *   suspend/resume cases, skip work items (YawlToolSpecifications). Plus SPARQL CONSTRUCT
- *   coordination tools for Petri-net token routing at zero inference cost (ConstructCoordinationTools).
+ *   suspend/resume cases, skip work items, and AI-powered specification synthesis (yawl_synthesize_spec).
+ *   Plus SPARQL CONSTRUCT coordination tools for Petri-net token routing at zero inference cost,
+ *   formal Petri-net analysis tools, and blue-ocean innovation tools.
  *
  * Resources (3 static):
  *   - yawl://specifications - All loaded specifications
@@ -86,6 +89,7 @@ public class YawlMcpServer {
     private final String yawlUsername;
     private final String yawlPassword;
     private final McpLoggingHandler loggingHandler;
+    private final ZaiFunctionService zaiService;
     private McpSyncServer mcpServer;
     private String sessionHandle;
 
@@ -116,6 +120,19 @@ public class YawlMcpServer {
         this.yawlUsername = username;
         this.yawlPassword = password;
         this.loggingHandler = new McpLoggingHandler();
+
+        // Initialize Z.AI service (optional - spec synthesis tool will check availability)
+        ZaiFunctionService tempService = null;
+        try {
+            String zaiApiKey = System.getenv("ZAI_API_KEY");
+            if (zaiApiKey != null && !zaiApiKey.isBlank()) {
+                tempService = new ZaiFunctionService(zaiApiKey, yawlEngineUrl, username, password);
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Z.AI service initialization failed: " + e.getMessage() +
+                ". Spec synthesis tool will not be available.");
+        }
+        this.zaiService = tempService;
     }
 
     /**
@@ -136,10 +153,11 @@ public class YawlMcpServer {
         StdioServerTransportProvider transportProvider =
             new StdioServerTransportProvider(jsonMapper);
 
-        // Core workflow tools
-        var workflowTools = YawlToolSpecifications.createAll(
-            interfaceBClient, interfaceAClient, sessionHandle);
-        var allTools = new ArrayList<>(workflowTools);
+        // Core tools via extensible registry (includes ZaI-powered spec synthesis)
+        YawlMcpContext ctx = new YawlMcpContext(
+                interfaceBClient, interfaceAClient, sessionHandle, zaiService);
+        var allTools = new ArrayList<>(McpToolRegistry.createAll(ctx));
+        int coreToolCount = allTools.size();
 
         // Conversational workflow factory tools (NL-to-workflow)
         ConversationalWorkflowFactory workflowFactory = new ConversationalWorkflowFactory(
@@ -192,7 +210,6 @@ public class YawlMcpServer {
                 + "ontology-derived tools not loaded: " + e.getMessage());
         }
 
-        int workflowToolCount = workflowTools.size();
         int constructToolCount = constructTools.size();
 
         mcpServer = McpServer.sync(transportProvider)
@@ -211,7 +228,7 @@ public class YawlMcpServer {
                 semantics, not LLM inference. Tool schemas are SPARQL CONSTRUCT outputs
                 derived from the workflow specification, not hand-authored.
 
-                Capabilities: %d tools (%d workflow + %d CONSTRUCT coordination + %d formal Petri-net + %d ontology-derived),
+                Capabilities: %d tools (%d core + %d CONSTRUCT coordination + %d formal Petri-net + %d ontology-derived),
                 3 static resources, 4 resource templates, 4 prompts, 3 completions,
                 logging (MCP 2025-11-25 compliant).
 
@@ -226,7 +243,7 @@ public class YawlMcpServer {
                   yawl_audit_cancellation_regions — cancellation blast radius: mutual cancel, orphan cancel, live victims
                   yawl_analyze_case_divergence   — cross-case cohort analysis: divergence index, outlier cases, split attribution
                   yawl://cases/{caseId}/mermaid  — live Mermaid flowchart of token positions
-                """.formatted(allTools.size(), workflowToolCount, constructToolCount, formalToolCount, ontologyToolCount))
+                """.formatted(allTools.size(), coreToolCount, constructToolCount, formalToolCount, ontologyToolCount))
             .tools(allTools)
             .resources(YawlResourceProvider.createAllResources(
                 interfaceBClient, sessionHandle))
@@ -240,7 +257,7 @@ public class YawlMcpServer {
         loggingHandler.info(mcpServer, "YAWL MCP Server started");
         System.err.println("YAWL MCP Server v" + SERVER_VERSION + " started on STDIO transport");
         System.err.println("Capabilities: " + allTools.size() + " tools ("
-            + workflowToolCount + " workflow + " + constructToolCount + " CONSTRUCT + "
+            + coreToolCount + " core + " + constructToolCount + " CONSTRUCT + "
             + formalToolCount + " formal Petri-net + " + ontologyToolCount + " ontology-derived), "
             + "3 resources, 4 resource templates, 4 prompts, 3 completions, logging");
     }

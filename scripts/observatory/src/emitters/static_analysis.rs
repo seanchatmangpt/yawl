@@ -7,7 +7,7 @@
 /// Scans for and parses XML reports from SpotBugs, PMD, and Checkstyle.
 /// Health score = 100 - (total issues), min 0, max 100.
 /// Status: GREEN (>=80), YELLOW (50-79), RED (<50).
-use super::{write_json, EmitCtx, EmitResult, ensure_dir};
+use super::{utc_now, write_json, EmitCtx, EmitResult, ensure_dir};
 use crate::{Cache, Discovery};
 use std::path::Path;
 
@@ -116,7 +116,7 @@ fn scan_spotbugs(xml_files: &[std::path::PathBuf]) -> (serde_json::Value, usize)
 
     let count = findings.len();
     let json = serde_json::json!({
-        "generated_at": chrono_timestamp(),
+        "generated_at": utc_now(),
         "commit": "unknown",
         "total_findings": count,
         "by_category": by_category,
@@ -146,7 +146,7 @@ fn scan_pmd(xml_files: &[std::path::PathBuf]) -> (serde_json::Value, usize) {
 
     let count = violations.len();
     let json = serde_json::json!({
-        "generated_at": chrono_timestamp(),
+        "generated_at": utc_now(),
         "commit": "unknown",
         "total_violations": count,
         "by_rule": by_rule,
@@ -182,7 +182,7 @@ fn scan_checkstyle(xml_files: &[std::path::PathBuf]) -> (serde_json::Value, usiz
 
     let count = warnings.len();
     let json = serde_json::json!({
-        "generated_at": chrono_timestamp(),
+        "generated_at": utc_now(),
         "commit": "unknown",
         "total_warnings": count,
         "by_severity": by_severity,
@@ -242,47 +242,3 @@ fn extract_xml_attr(line: &str, attr: &str) -> Option<String> {
     Some(rest[..end].to_string())
 }
 
-fn chrono_timestamp() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    let (y, mo, d, h, mi, sec) = epoch_to_ymd_hms(secs);
-    format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", y, mo, d, h, mi, sec)
-}
-
-fn epoch_to_ymd_hms(epoch: u64) -> (u64, u64, u64, u64, u64, u64) {
-    let sec = epoch % 60;
-    let min = (epoch / 60) % 60;
-    let hour = (epoch / 3600) % 24;
-    let days = epoch / 86400;
-    let (y, doy) = days_to_year_doy(days + 719468);
-    let (mo, d) = doy_to_month_day(doy, is_leap(y));
-    (y, mo, d, hour, min, sec)
-}
-
-fn days_to_year_doy(z: u64) -> (u64, u64) {
-    let era = z / 146097;
-    let doe = z - era * 146097;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    (y, doy)
-}
-
-fn doy_to_month_day(doy: u64, leap: bool) -> (u64, u64) {
-    let days_in_month = [31u64, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let mut remaining = doy;
-    for (i, &dim) in days_in_month.iter().enumerate() {
-        if remaining < dim {
-            return (i as u64 + 1, remaining + 1);
-        }
-        remaining -= dim;
-    }
-    (12, 31)
-}
-
-fn is_leap(y: u64) -> bool {
-    (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
-}

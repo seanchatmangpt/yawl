@@ -121,6 +121,10 @@ public class TimeService extends InterfaceBWebsideController {
     }
 
     public void handleCancelledWorkItemEvent(WorkItemRecord workItemRecord) {
+        throw new UnsupportedOperationException(
+            "Cancellation handling not yet implemented for TimeService. " +
+            "To stop a delayed work item, implement cleanup logic here."
+        );
     }
 
     public String processRequestToCancel(WorkItemRecord workItemRecord) {

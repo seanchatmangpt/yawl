@@ -6,8 +6,9 @@ use cache::{Cache, CacheEvent, CacheStatus};
 use discovery::Discovery;
 use emitters::{
     coverage, deps_conflicts, docker, dual_family, duplicates, gates, integration, modules, reactor, receipt,
-    shared_src, static_analysis, tests, utc_now, EmitCtx,
+    shared_src, static_analysis, tests, workflow_runtime, utc_now, EmitCtx,
 };
+use rayon::prelude::*;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -143,8 +144,6 @@ fn main() {
         let verbose = config.verbose;
 
         // Collect results from parallel emitters using rayon's parallel iterator
-        use rayon::prelude::*;
-
         let emitter_specs: Vec<&str> = vec![
             "modules",
             "reactor",
@@ -159,6 +158,7 @@ fn main() {
             "static-analysis",
             "deps-conflicts",
             "receipt",
+            "workflow-runtime",
         ];
 
         let fact_results: Vec<(String, emitters::EmitResult, u64, CacheStatus)> = emitter_specs
@@ -180,6 +180,7 @@ fn main() {
                     "static-analysis" => static_analysis::emit(&ctx, &discovery, &cache),
                     "deps-conflicts" => deps_conflicts::emit(&ctx, &discovery, &cache),
                     "receipt" => receipt::emit(&ctx, &discovery, &cache),
+                    "workflow-runtime" => workflow_runtime::emit(&ctx, &discovery, &cache),
                     _ => Err("unknown emitter".into()),
                 };
 
