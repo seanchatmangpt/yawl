@@ -382,6 +382,11 @@
             </dependency>
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-ggen</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-monitoring</artifactId>
                 <version>${project.version}</version>
             </dependency>
