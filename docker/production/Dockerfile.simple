@@ -19,4 +19,4 @@ EXPOSE 8080 9090
 # Run with all dependencies
 WORKDIR /app
 COPY --from=builder /build/yawl-engine/target /app/target
-ENTRYPOINT ["sh", "-c", "cd /app/target && java $JAVA_OPTS -jar yawl-engine-6.0.0-Alpha.jar"]
+ENTRYPOINT ["sh", "-c", "cd /app/target && java $JAVA_OPTS -jar yawl-engine-6.0.0-Beta.jar"]

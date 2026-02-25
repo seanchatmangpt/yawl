@@ -23,7 +23,7 @@ variable "IMAGE_NAME" {
 }
 
 variable "VERSION" {
-  default = "6.0.0-Alpha"
+  default = "6.0.0-Beta"
 }
 
 variable "BUILD_DATE" {

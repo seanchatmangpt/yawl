@@ -141,7 +141,7 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            # Explicit version from git tag (v6.0.0-Alpha -> 6.0.0-Alpha)
+            # Explicit version from git tag (v6.0.0-Beta -> 6.0.0-Beta)
             type=match,pattern=v(.*),group=1
             # SHA-based tag for exact traceability
             type=sha,prefix=sha-,format=short

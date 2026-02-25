@@ -52,7 +52,7 @@ oneTimeSetUp() {
 <project>
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>6.0.0-Alpha</version>
+    <version>6.0.0-Beta</version>
     <packaging>pom</packaging>
     <modules>
         <module>yawl-utilities</module>
@@ -315,7 +315,7 @@ test_yawl_xml_has_correct_version() {
     local content
     content=$(cat "${test_output}/yawl/build-and-test.yawl.xml")
     # Version should come from pom.xml
-    assertContains "Should contain version" "${content}" "6.0.0-Alpha"
+    assertContains "Should contain version" "${content}" "6.0.0-Beta"
 }
 
 # ---------------------------------------------------------------------------

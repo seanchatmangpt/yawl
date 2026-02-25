@@ -24,7 +24,7 @@ import java.util.Objects;
  * <p>Specification ID is stored to link this rule set to a particular workflow spec.
  *
  * @author YAWL Foundation
- * @version 6.0.0-Alpha
+ * @version 6.0.0-Beta
  */
 public class RdrSet {
 

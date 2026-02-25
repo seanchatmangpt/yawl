@@ -1,6 +1,6 @@
-# YAWL v6.0.0-Alpha Performance Baseline Metrics
+# YAWL v6.0.0-Beta Performance Baseline Metrics
 
-**Version:** 6.0.0-Alpha  
+**Version:** 6.0.0-Beta  
 **Baseline Date:** 2026-02-18  
 **Platform:** Java 25, 8-core CPU, 16GB RAM, NVMe SSD
 

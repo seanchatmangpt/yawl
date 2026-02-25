@@ -21,28 +21,28 @@
 ### Root POM
 - **Group ID**: org.yawlfoundation
 - **Artifact ID**: yawl-parent
-- **Version**: 6.0.0-Alpha
+- **Version**: 6.0.0-Beta
 - **Packaging**: Multi-module (15 modules)
 - **Status**: ✓ VERIFIED
 
 ### Module Versions
 | Module | Version | Status |
 |--------|---------|--------|
-| yawl-utilities | 6.0.0-Alpha | ✓ Fixed |
-| yawl-elements | 6.0.0-Alpha | ✓ OK |
-| yawl-authentication | 6.0.0-Alpha | ✓ OK |
-| yawl-engine | 6.0.0-Alpha | ✓ OK |
-| yawl-stateless | 6.0.0-Alpha | ✓ OK |
-| yawl-resourcing | 6.0.0-Alpha | ✓ OK |
-| yawl-worklet | 6.0.0-Alpha | ✓ OK |
-| yawl-scheduling | 6.0.0-Alpha | ✓ OK |
-| yawl-security | 6.0.0-Alpha | ✓ FIXED |
-| yawl-integration | 6.0.0-Alpha | ✓ OK |
-| yawl-monitoring | 6.0.0-Alpha | ✓ OK |
-| yawl-webapps | 6.0.0-Alpha | ✓ OK |
-| yawl-control-panel | 6.0.0-Alpha | ✓ OK |
+| yawl-utilities | 6.0.0-Beta | ✓ Fixed |
+| yawl-elements | 6.0.0-Beta | ✓ OK |
+| yawl-authentication | 6.0.0-Beta | ✓ OK |
+| yawl-engine | 6.0.0-Beta | ✓ OK |
+| yawl-stateless | 6.0.0-Beta | ✓ OK |
+| yawl-resourcing | 6.0.0-Beta | ✓ OK |
+| yawl-worklet | 6.0.0-Beta | ✓ OK |
+| yawl-scheduling | 6.0.0-Beta | ✓ OK |
+| yawl-security | 6.0.0-Beta | ✓ FIXED |
+| yawl-integration | 6.0.0-Beta | ✓ OK |
+| yawl-monitoring | 6.0.0-Beta | ✓ OK |
+| yawl-webapps | 6.0.0-Beta | ✓ OK |
+| yawl-control-panel | 6.0.0-Beta | ✓ OK |
 
-**Issue Fixed**: yawl-security had version 5.2 instead of 6.0.0-Alpha. Now corrected.
+**Issue Fixed**: yawl-security had version 5.2 instead of 6.0.0-Beta. Now corrected.
 
 ## 3. Maven Configuration
 
@@ -189,7 +189,7 @@ mvn dependency:purge-local-repository
 ## 10. Validation Checklist
 
 - [x] Root POM correctly formatted
-- [x] Module versions consistent (6.0.0-Alpha)
+- [x] Module versions consistent (6.0.0-Beta)
 - [x] Dependency versions managed centrally
 - [x] Build cache extension disabled for offline mode
 - [x] Maven configuration verified

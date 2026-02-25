@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Configuration
-JAR_PATH="$PROJECT_ROOT/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar"
+JAR_PATH="$PROJECT_ROOT/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar"
 MAIN_CLASS="org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunner"
 
 # Colors
@@ -89,11 +89,11 @@ run_pattern_demo() {
 
         # Add YAWL core dependencies
         local yawl_jars=(
-            "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Alpha.jar"
+            "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Beta.jar"
         )
 
         for jar in "${yawl_jars[@]}"; do
@@ -136,11 +136,11 @@ run_pattern_demo() {
         local build_classpath=""
         local jars=(
             "$JAR_PATH"
-            "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Alpha.jar"
-            "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Alpha.jar"
+            "$PROJECT_ROOT/yawl-engine/target/yawl-engine-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-stateless/target/yawl-stateless-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-elements/target/yawl-elements-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-integration/target/yawl-integration-6.0.0-Beta.jar"
+            "$PROJECT_ROOT/yawl-utilities/target/yawl-utilities-6.0.0-Beta.jar"
             "$PROJECT_ROOT/yawl-mcp-a2a-app/target/dependency/jackson-datatype-jdk8-2.19.4.jar"
             "$PROJECT_ROOT/yawl-mcp-a2a-app/target/dependency/jackson-databind-2.19.4.jar"
             "$PROJECT_ROOT/yawl-mcp-a2a-app/target/dependency/jackson-core-2.19.4.jar"

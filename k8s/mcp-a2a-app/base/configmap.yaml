@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: yawl-mcp-a2a-app
     app.kubernetes.io/component: config
     app.kubernetes.io/part-of: yawl
-    app.kubernetes.io/version: "6.0.0-Alpha"
+    app.kubernetes.io/version: "6.0.0-Beta"
 data:
   # Spring profile activation
   SPRING_PROFILES_ACTIVE: "prod"
@@ -30,7 +30,7 @@ data:
   MCP_HTTP_PORT: "8081"
   MCP_HTTP_PATH: "/mcp"
   MCP_SERVER_NAME: "yawl-mcp-server"
-  MCP_SERVER_VERSION: "6.0.0-Alpha"
+  MCP_SERVER_VERSION: "6.0.0-Beta"
   MCP_LOG_LEVEL: "INFO"
 
   # A2A Agent configuration
@@ -41,7 +41,7 @@ data:
   A2A_JSONRPC_ENABLED: "false"
   A2A_JSONRPC_PORT: "8083"
   A2A_SERVER_NAME: "YAWL Workflow Engine"
-  A2A_SERVER_VERSION: "6.0.0-Alpha"
+  A2A_SERVER_VERSION: "6.0.0-Beta"
   A2A_SPIFFE_TRUST_DOMAIN: "yawl.cluster.local"
   A2A_JWT_ISSUER: "yawl-mcp-a2a"
   A2A_LOG_LEVEL: "INFO"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# YAWL v6.0.0-Alpha Database and Data Restore Script
+# YAWL v6.0.0-Beta Database and Data Restore Script
 # =============================================================================
 # Production-ready restore solution for YAWL workflow engine.
 # Supports: PostgreSQL, MySQL, H2 databases, and file-based data.

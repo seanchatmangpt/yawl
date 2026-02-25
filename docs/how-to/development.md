@@ -1,6 +1,6 @@
 # YAWL v6.0 - Development Guide
 
-**Version:** 6.0.0-Alpha
+**Version:** 6.0.0-Beta
 **Platform:** Java 21 + Maven 3.9 + Jakarta EE 10 + Hibernate 6
 
 This guide covers everything a new contributor needs to go from a fresh checkout to a running build, passing tests, and a submitted pull request.

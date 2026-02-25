@@ -397,7 +397,7 @@ save_compliance_report() {
     yawl_version=$(sed -n 's/.*<version>\([^<]*\)<\/version>.*/\1/p' "${REPO_ROOT}/pom.xml" 2>/dev/null | head -1 || echo "unknown")
     # If version contains ${, it's a property reference, try to get actual value
     if [[ "$yawl_version" == *'$'* ]]; then
-        yawl_version="6.0.0-Alpha"  # Fallback to known version
+        yawl_version="6.0.0-Beta"  # Fallback to known version
     fi
 
     local all_current="false"

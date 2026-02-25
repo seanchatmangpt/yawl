@@ -1,7 +1,7 @@
 # V6 Upgrade - Gap-Fix Patterns & Lessons Learned
 
 **Date:** 2026-02-17
-**Version:** v6.0.0-Alpha -> v6.0.0 Production
+**Version:** v6.0.0-Beta -> v6.0.0 Production
 **Purpose:** Document remediation patterns for future maintainers
 
 ---
