@@ -44,7 +44,12 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     TestYEngineEvent.class,
     TestAnnouncementContext.class,
     // Phase 2 - Lifecycle tests
-    TestYEngineLifecycle.class
+    TestYEngineLifecycle.class,
+    // Track B - New gap-filling tests
+    YNetRunnerDeadlockTest.class,
+    YEngineRestorerTest.class,
+    YEngineNegativePathTest.class,
+    VirtualThreadPinningTest.class
 })
 public class EngineTestSuite {
     // JUnit 5 suite uses annotations - no main method needed
