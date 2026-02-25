@@ -12,7 +12,7 @@
 | **Λ** | Build | DONE | Maven + dx.sh | build/dx-workflow.md |
 | **H** | Guards | DONE | hyper-validate.sh | HYPER_STANDARDS.md |
 | **Q** | Invariants | DONE | q-phase-invariants.sh + design | Q-INVARIANTS-PHASE.md |
-| **Ω** | Git | READY | Standard git workflow | Ω-GIT-PHASE.md (TBD) |
+| **Ω** | Git | DONE | Standard git workflow | Ω-GIT-PHASE.md |
 
 ---
 
