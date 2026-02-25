@@ -28,6 +28,7 @@ import java.lang.ScopedValue;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -39,14 +40,16 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Comprehensive stress test for all virtual thread patterns in the YAWL engine.
  *
- * <p>Tests 6 independent scenarios covering the full virtual thread surface area:</p>
+ * <p>Tests 8 independent scenarios covering the full virtual thread surface area:</p>
  * <ol>
  *   <li>VirtualThreadPool 10K tasks — auto-scaling pool under sustained load</li>
  *   <li>Burst thread creation — 100K threads to verify low memory overhead</li>
  *   <li>Executor lifecycle churn — 1K create/submit/close cycles</li>
  *   <li>Concurrent pool submission — 50 producers × 200 tasks, no data loss</li>
  *   <li>Pinning detection — verify no synchronized-block pinning under stress</li>
- *   <li>Sustained 60s load — throughput and latency distribution</li>
+ *   <li>ScopedValue propagation — 1K concurrent contexts, no leakage</li>
+ *   <li>Sustained 60s load — rolling throughput + p50/p95/p99/p99.9 distribution</li>
+ *   <li>Breaking point ramp — 100→50K threads; saturation curve + breaking point</li>
  * </ol>
  *
  * <p>Chicago TDD: Uses only real engine classes, no mocks.</p>
@@ -63,7 +66,7 @@ class VirtualThreadStressTest {
     private static final List<String> REPORT_LINES = new ArrayList<>();
 
     private static final String HDR = "=== VIRTUAL THREAD STRESS REPORT ===";
-    private static final String FTR_PASS = "=== RESULT: ALL PASS ===";
+    private static final String FTR_PASS = "=== RESULT: S1-S7 PASS | S8 CHARACTERISED ===";
     private static final String FTR_FAIL = "=== RESULT: FAILURES DETECTED ===";
 
     // ScopedValue used directly in tests (mirrors YNetRunner.CASE_CONTEXT pattern)
@@ -77,12 +80,23 @@ class VirtualThreadStressTest {
 
     @AfterAll
     static void printReport() {
-        boolean allPass = REPORT_LINES.stream().allMatch(l -> l.contains("PASS"));
+        // S8 reports CHARACTERISED (not PASS) — both are acceptable outcomes
+        boolean allPass = REPORT_LINES.stream()
+                .allMatch(l -> l.contains("PASS") || l.contains("CHARACTERISED"));
         for (String line : REPORT_LINES) {
             System.out.println(line);
         }
         System.out.println(allPass ? FTR_PASS : FTR_FAIL);
         System.out.println();
+    }
+
+    // =========================================================================
+    // Shared percentile utility — real impl, no external dependencies
+    // =========================================================================
+
+    private static long pct(long[] sorted, double p) {
+        int idx = (int) Math.ceil(p / 100.0 * sorted.length) - 1;
+        return sorted[Math.max(0, Math.min(idx, sorted.length - 1))];
     }
 
     // =========================================================================
@@ -441,6 +455,236 @@ class VirtualThreadStressTest {
                 "Scenario 6  ScopedValue 1K contexts:   rate=%,.0f/s  mismatches=%d" +
                 "  errors=%d  wallClock=%.2fs  PASS",
                 rate, contextMismatches.get(), errors.get(), wallMs / 1000.0);
+        REPORT_LINES.add(result);
+        System.out.println(result);
+    }
+
+    // =========================================================================
+    // Scenario 7: Sustained 60s load with p50/p95/p99/p99.9 distribution
+    // =========================================================================
+
+    @Test
+    @Order(7)
+    @DisplayName("Scenario 7 — Sustained 60s load, full latency distribution")
+    @Timeout(120)
+    void scenario7_sustained60sWithPercentiles() throws Exception {
+        final int DURATION_SECONDS = 60;
+        final int TASKS_PER_SECOND = 2_000;   // target submission rate
+        final int BATCH_SIZE = TASKS_PER_SECOND / 10; // 200 tasks per 100ms batch
+        final long MIN_TPUT_PER_S = 500;
+        final double MAX_ERROR_RATE = 0.001;
+
+        ConcurrentLinkedQueue<Long> latenciesNs = new ConcurrentLinkedQueue<>();
+        AtomicLong completions = new AtomicLong(0);
+        AtomicLong errors = new AtomicLong(0);
+        ExecutorService worker = Executors.newVirtualThreadPerTaskExecutor();
+
+        // Snapshots: completions at 0s, 10s, 20s, 30s, 40s, 50s, 60s
+        long[] snapshots = new long[7];
+        AtomicInteger snapshotIdx = new AtomicInteger(1);
+
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+
+        // Submit batches every 100ms
+        ScheduledFuture<?> submitter = scheduler.scheduleAtFixedRate(() -> {
+            for (int i = 0; i < BATCH_SIZE; i++) {
+                worker.submit(() -> {
+                    long t0 = System.nanoTime();
+                    try {
+                        Thread.sleep(ThreadLocalRandom.current().nextInt(1, 6));
+                        latenciesNs.add(System.nanoTime() - t0);
+                        completions.incrementAndGet();
+                    } catch (InterruptedException e) {
+                        errors.incrementAndGet();
+                        Thread.currentThread().interrupt();
+                    } catch (Exception e) {
+                        errors.incrementAndGet();
+                    }
+                });
+            }
+        }, 0, 100, TimeUnit.MILLISECONDS);
+
+        // Record rolling 10s snapshots
+        ScheduledFuture<?> snapper = scheduler.scheduleAtFixedRate(() -> {
+            int idx = snapshotIdx.getAndIncrement();
+            if (idx < snapshots.length) {
+                snapshots[idx] = completions.get();
+            }
+        }, 10_000, 10_000, TimeUnit.MILLISECONDS);
+
+        Thread.sleep(DURATION_SECONDS * 1000L);
+        submitter.cancel(false);
+        snapper.cancel(false);
+        scheduler.shutdownNow();
+
+        worker.shutdown();
+        worker.awaitTermination(15, TimeUnit.SECONDS);
+
+        // Final snapshot
+        int lastIdx = snapshotIdx.get();
+        if (lastIdx < snapshots.length) {
+            snapshots[lastIdx] = completions.get();
+        } else {
+            snapshots[snapshots.length - 1] = completions.get();
+        }
+
+        // Compute percentiles
+        long[] arr = latenciesNs.stream().mapToLong(Long::longValue).sorted().toArray();
+        long p50 = arr.length > 0 ? pct(arr, 50) / 1_000_000 : 0;
+        long p95 = arr.length > 0 ? pct(arr, 95) / 1_000_000 : 0;
+        long p99 = arr.length > 0 ? pct(arr, 99) / 1_000_000 : 0;
+        long p999 = arr.length > 0 ? pct(arr, 99.9) / 1_000_000 : 0;
+
+        // Min window throughput across 10s windows
+        long minTput = Long.MAX_VALUE;
+        for (int i = 1; i < snapshots.length && snapshots[i] > 0; i++) {
+            long windowTasks = snapshots[i] - snapshots[i - 1];
+            long tput = windowTasks / 10;
+            if (tput > 0) minTput = Math.min(minTput, tput);
+        }
+        if (minTput == Long.MAX_VALUE) minTput = 0;
+
+        long total = completions.get() + errors.get();
+        double errorRate = total > 0 ? (double) errors.get() / total : 0;
+
+        // Print rolling throughput
+        System.out.println("Scenario 7  Sustained 60s rolling throughput:");
+        for (int i = 1; i < snapshots.length && snapshots[i] > 0; i++) {
+            long windowTasks = snapshots[i] - snapshots[i - 1];
+            System.out.printf("  [%2d-%2ds] %,d tasks/s%n", (i - 1) * 10, i * 10, windowTasks / 10);
+        }
+
+        assertTrue(minTput >= MIN_TPUT_PER_S,
+                "Min window throughput must be >= " + MIN_TPUT_PER_S + "/s, got " + minTput);
+        assertTrue(errorRate <= MAX_ERROR_RATE,
+                "Error rate must be <= 0.1%, got " + String.format("%.4f%%", errorRate * 100));
+
+        String result = String.format(
+                "Scenario 7  Sustained 60s:             p50=%dms  p95=%dms  p99=%dms  p99.9=%dms" +
+                "  minTput=%,d/s  err=%.2f%%  PASS",
+                p50, p95, p99, p999, minTput, errorRate * 100);
+        REPORT_LINES.add(result);
+        System.out.println(result);
+    }
+
+    // =========================================================================
+    // Scenario 8: Breaking Point Ramp — 100 → 50K virtual threads
+    // =========================================================================
+
+    @Test
+    @Order(8)
+    @DisplayName("Scenario 8 — Breaking Point Ramp 100→50K virtual threads")
+    @Timeout(480)
+    void scenario8_breakingPointRamp() throws Exception {
+        final int[] LEVELS = {100, 500, 1_000, 5_000, 10_000, 50_000};
+        final long SLA_P99_MS = 500;           // p99 SLA threshold (ms)
+        final double TPUT_DROP_THRESHOLD = 0.95; // 5% throughput drop signals ceiling
+
+        record LevelResult(int level, long throughputOps, long p50Ms, long p95Ms,
+                           long p99Ms, long p999Ms, int errors) {}
+
+        List<LevelResult> results = new ArrayList<>();
+
+        System.out.println("Scenario 8  Breaking Point Ramp:");
+
+        for (int level : LEVELS) {
+            CountDownLatch latch = new CountDownLatch(level);
+            long[] latencies = new long[level];
+            AtomicInteger slotIdx = new AtomicInteger(0);
+            AtomicInteger errors = new AtomicInteger(0);
+
+            long wallStart = System.nanoTime();
+            try (ExecutorService ex = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (int i = 0; i < level; i++) {
+                    ex.submit(() -> {
+                        int slot = slotIdx.getAndIncrement();
+                        long t0 = System.nanoTime();
+                        try {
+                            Thread.sleep(1); // 1ms I/O simulation
+                            if (slot < latencies.length) {
+                                latencies[slot] = System.nanoTime() - t0;
+                            }
+                        } catch (InterruptedException e) {
+                            if (slot < latencies.length) {
+                                latencies[slot] = System.nanoTime() - t0;
+                            }
+                            errors.incrementAndGet();
+                            Thread.currentThread().interrupt();
+                        } catch (Exception e) {
+                            if (slot < latencies.length) {
+                                latencies[slot] = System.nanoTime() - t0;
+                            }
+                            errors.incrementAndGet();
+                        } finally {
+                            latch.countDown();
+                        }
+                    });
+                }
+                latch.await(120, TimeUnit.SECONDS);
+            }
+
+            long wallMs = (System.nanoTime() - wallStart) / 1_000_000;
+            double throughputOps = wallMs > 0 ? (double) level / wallMs * 1000.0 : 0;
+
+            // Sort only the filled portion
+            int filled = Math.min(level, slotIdx.get());
+            long[] sortedLatencies = Arrays.copyOf(latencies, filled);
+            Arrays.sort(sortedLatencies);
+
+            long p50 = sortedLatencies.length > 0 ? pct(sortedLatencies, 50) / 1_000_000 : 0;
+            long p95 = sortedLatencies.length > 0 ? pct(sortedLatencies, 95) / 1_000_000 : 0;
+            long p99 = sortedLatencies.length > 0 ? pct(sortedLatencies, 99) / 1_000_000 : 0;
+            long p999 = sortedLatencies.length > 0 ? pct(sortedLatencies, 99.9) / 1_000_000 : 0;
+
+            results.add(new LevelResult(level, (long) throughputOps, p50, p95, p99, p999,
+                    errors.get()));
+
+            System.out.printf("  threads=%,7d  tput=%,9.0f/s  p50=%3dms  p95=%3dms" +
+                    "  p99=%4dms  p99.9=%4dms  err=%d%n",
+                    level, throughputOps, p50, p95, p99, p999, errors.get());
+        }
+
+        // Breaking point detection
+        long peakThroughput = results.stream().mapToLong(LevelResult::throughputOps).max().orElse(0);
+        int peakLevel = results.stream()
+                .filter(r -> r.throughputOps() == peakThroughput)
+                .mapToInt(LevelResult::level)
+                .findFirst().orElse(0);
+
+        String breakingPoint = "NO BREAK FOUND in tested range";
+        String slaBreachInfo = "P99 SLA (" + SLA_P99_MS + "ms) not breached in tested range";
+
+        for (int i = 1; i < results.size(); i++) {
+            LevelResult prev = results.get(i - 1);
+            LevelResult curr = results.get(i);
+
+            if (prev.throughputOps() > 0
+                    && curr.throughputOps() < prev.throughputOps() * TPUT_DROP_THRESHOLD
+                    && breakingPoint.startsWith("NO")) {
+                long dropPct = Math.round(
+                        (1.0 - (double) curr.throughputOps() / peakThroughput) * 100);
+                breakingPoint = String.format(
+                        "%,d threads — throughput dropped %d%% vs %,d-thread peak",
+                        curr.level(), dropPct, peakLevel);
+            }
+            if (curr.p99Ms() > SLA_P99_MS && slaBreachInfo.startsWith("P99 SLA")) {
+                slaBreachInfo = String.format(
+                        "P99 SLA (%dms) BREACHED at %,d threads (p99=%dms)",
+                        SLA_P99_MS, curr.level(), curr.p99Ms());
+            }
+        }
+
+        System.out.println("  *** BREAKING POINT: " + breakingPoint + " ***");
+        System.out.println("  *** " + slaBreachInfo + " ***");
+
+        // S8 is characterisation — only assert the smallest level succeeds
+        LevelResult baseline = results.get(0);
+        assertEquals(0, baseline.errors(),
+                "Level " + baseline.level() + " (baseline) must complete without errors");
+
+        String result = String.format(
+                "Scenario 8  Breaking Point Ramp:       peakTput=%,d/s @ %,d threads  CHARACTERISED",
+                peakThroughput, peakLevel);
         REPORT_LINES.add(result);
         System.out.println(result);
     }
