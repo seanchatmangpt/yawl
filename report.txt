@@ -1,6 +1,6 @@
 [1m[36m======================================================================
   YAWL PATTERN DEMO REPORT
-  Generated: 2026-02-25T08:49:59Z
+  Generated: 2026-02-25T16:55:39Z
 ======================================================================
 [0m
 [1mSUMMARY[0m
@@ -9,12 +9,12 @@
   Successful:      [32m89[0m
   Failed:          [90m0[0m
   Success Rate:    [32m100.0%[0m
-  Total Duration:  28.966 sec
+  Total Duration:  24.464 sec
 
 [1mTOKEN SAVINGS (YAML vs XML)[0m
 ----------------------------------------
-  YAML Tokens:     30,642
-  XML Tokens:      135,282
+  YAML Tokens:     30,770
+  XML Tokens:      135,356
   Savings:         [32m77.3%[0m
   Compression:     4.4x
 
@@ -22,291 +22,291 @@
 ----------------------------------------
   Category               Count Success   Avg Time  Savings
   --------------------------------------------------------
-  [32mBasic Control Flow    [0m     5  100.0%     305 ms    79.9%
-  [35mMulti-Instance        [0m     8  100.0%     284 ms    76.9%
-  [36mState-Based           [0m     7  100.0%     630 ms    78.3%
-  [33mDistributed           [0m     6  100.0%     311 ms    77.8%
-  [31mEvent-Driven          [0m    13  100.0%     353 ms    78.2%
-  [38;5;208mAI/ML Integration     [0m    12  100.0%     250 ms    77.6%
-  [38;5;93mEnterprise Patterns   [0m    11  100.0%     391 ms    77.4%
-  [38;5;40mAgent Patterns        [0m     5  100.0%     275 ms    73.0%
-  [38;5;69mAdvanced Branching    [0m     5  100.0%     265 ms    78.6%
-  [38;5;102mStructural            [0m     1  100.0%     440 ms    80.8%
-  [38;5;132mIteration             [0m     5  100.0%     286 ms    77.6%
-  [38;5;243mExtended              [0m     4  100.0%     227 ms    77.1%
-  [38;5;197mCancellation          [0m     7  100.0%     211 ms    76.7%
+  [32mBasic Control Flow    [0m     5  100.0%     286 ms    79.9%
+  [35mMulti-Instance        [0m     8  100.0%     232 ms    76.9%
+  [36mState-Based           [0m     7  100.0%     531 ms    77.6%
+  [33mDistributed           [0m     6  100.0%     166 ms    77.8%
+  [31mEvent-Driven          [0m    13  100.0%     228 ms    78.2%
+  [38;5;208mAI/ML Integration     [0m    12  100.0%     212 ms    77.4%
+  [38;5;93mEnterprise Patterns   [0m    11  100.0%     413 ms    77.4%
+  [38;5;40mAgent Patterns        [0m     5  100.0%     211 ms    73.0%
+  [38;5;69mAdvanced Branching    [0m     5  100.0%     235 ms    78.6%
+  [38;5;102mStructural            [0m     1  100.0%     344 ms    80.8%
+  [38;5;132mIteration             [0m     5  100.0%     280 ms    77.6%
+  [38;5;243mExtended              [0m     4  100.0%     255 ms    77.1%
+  [38;5;197mCancellation          [0m     7  100.0%     196 ms    76.7%
 
 [1mPATTERN RESULTS[0m
 ----------------------------------------
   [32m[PASS][0m Static Partial Join
-        Duration: 1636 ms | Work Items: 1
+        Duration: 1249 ms | Work Items: 1
         Tokens: 321 (YAML) vs 1558 (XML) = 79% saved
   [32m[PASS][0m Dynamic Partial Join
-        Duration: 273 ms | Work Items: 1
+        Duration: 303 ms | Work Items: 1
         Tokens: 318 (YAML) vs 1356 (XML) = 77% saved
   [32m[PASS][0m Synchronizing Merge with Cancel
-        Duration: 1017 ms | Work Items: 1
+        Duration: 820 ms | Work Items: 1
         Tokens: 386 (YAML) vs 1770 (XML) = 78% saved
   [32m[PASS][0m Generalized And-Join
-        Duration: 261 ms | Work Items: 1
+        Duration: 269 ms | Work Items: 1
         Tokens: 275 (YAML) vs 1208 (XML) = 77% saved
   [32m[PASS][0m Global Trigger
-        Duration: 367 ms | Work Items: 1
+        Duration: 359 ms | Work Items: 1
         Tokens: 329 (YAML) vs 1445 (XML) = 77% saved
   [32m[PASS][0m Reset Trigger
-        Duration: 387 ms | Work Items: 1
+        Duration: 248 ms | Work Items: 1
         Tokens: 393 (YAML) vs 1620 (XML) = 76% saved
   [32m[PASS][0m Discriminator with Complete MI
-        Duration: 143 ms | Work Items: 0
+        Duration: 141 ms | Work Items: 1
         Tokens: 342 (YAML) vs 1401 (XML) = 76% saved
   [32m[PASS][0m Local Trigger
-        Duration: 243 ms | Work Items: 1
+        Duration: 228 ms | Work Items: 1
         Tokens: 282 (YAML) vs 1260 (XML) = 78% saved
   [32m[PASS][0m Loop with Cancel Region
-        Duration: 248 ms | Work Items: 1
+        Duration: 223 ms | Work Items: 1
         Tokens: 561 (YAML) vs 2531 (XML) = 78% saved
   [32m[PASS][0m Cancel Case (Control Flow)
-        Duration: 225 ms | Work Items: 1
+        Duration: 221 ms | Work Items: 1
         Tokens: 438 (YAML) vs 1682 (XML) = 74% saved
   [32m[PASS][0m Loop with Complete MI
-        Duration: 225 ms | Work Items: 1
+        Duration: 234 ms | Work Items: 1
         Tokens: 570 (YAML) vs 2500 (XML) = 77% saved
   [32m[PASS][0m Saga Choreography
-        Duration: 134 ms | Work Items: 1
+        Duration: 115 ms | Work Items: 1
         Tokens: 315 (YAML) vs 1443 (XML) = 78% saved
   [32m[PASS][0m Agent-to-Agent Handoff
-        Duration: 220 ms | Work Items: 1
+        Duration: 226 ms | Work Items: 1
         Tokens: 675 (YAML) vs 2363 (XML) = 71% saved
   [32m[PASS][0m Two-Phase Commit
-        Duration: 216 ms | Work Items: 1
+        Duration: 125 ms | Work Items: 1
         Tokens: 358 (YAML) vs 1591 (XML) = 77% saved
   [32m[PASS][0m Human-Agent Handoff
-        Duration: 117 ms | Work Items: 1
+        Duration: 127 ms | Work Items: 1
         Tokens: 397 (YAML) vs 1727 (XML) = 77% saved
   [32m[PASS][0m Critical Section with Cancel
-        Duration: 232 ms | Work Items: 1
+        Duration: 217 ms | Work Items: 1
         Tokens: 598 (YAML) vs 2575 (XML) = 77% saved
   [32m[PASS][0m Saga Pattern
-        Duration: 112 ms | Work Items: 1
+        Duration: 244 ms | Work Items: 1
         Tokens: 233 (YAML) vs 839 (XML) = 72% saved
   [32m[PASS][0m Multi-Agent Orchestration
-        Duration: 144 ms | Work Items: 1
+        Duration: 170 ms | Work Items: 1
         Tokens: 1088 (YAML) vs 3543 (XML) = 69% saved
   [32m[PASS][0m Bulkhead
-        Duration: 155 ms | Work Items: 1
+        Duration: 144 ms | Work Items: 0
         Tokens: 261 (YAML) vs 1152 (XML) = 77% saved
   [32m[PASS][0m Cancel Task (Control Flow)
-        Duration: 389 ms | Work Items: 1
+        Duration: 358 ms | Work Items: 1
         Tokens: 314 (YAML) vs 1173 (XML) = 73% saved
   [32m[PASS][0m Circuit Breaker
-        Duration: 156 ms | Work Items: 1
+        Duration: 136 ms | Work Items: 1
         Tokens: 368 (YAML) vs 1661 (XML) = 78% saved
   [32m[PASS][0m LLM Decision
-        Duration: 316 ms | Work Items: 1
+        Duration: 270 ms | Work Items: 1
         Tokens: 308 (YAML) vs 1278 (XML) = 76% saved
   [32m[PASS][0m Retry
-        Duration: 366 ms | Work Items: 1
+        Duration: 265 ms | Work Items: 1
         Tokens: 315 (YAML) vs 1378 (XML) = 77% saved
   [32m[PASS][0m Agent Assisted
-        Duration: 577 ms | Work Items: 1
+        Duration: 261 ms | Work Items: 1
         Tokens: 381 (YAML) vs 1638 (XML) = 77% saved
   [32m[PASS][0m Blocked And-Split
-        Duration: 219 ms | Work Items: 1
+        Duration: 214 ms | Work Items: 1
         Tokens: 494 (YAML) vs 2356 (XML) = 79% saved
   [32m[PASS][0m Critical Section
-        Duration: 347 ms | Work Items: 1
+        Duration: 346 ms | Work Items: 1
         Tokens: 528 (YAML) vs 2338 (XML) = 77% saved
   [32m[PASS][0m Reset Trigger with Cancel Region
-        Duration: 248 ms | Work Items: 1
+        Duration: 210 ms | Work Items: 1
         Tokens: 403 (YAML) vs 1731 (XML) = 77% saved
   [32m[PASS][0m Feature Engineering
-        Duration: 371 ms | Work Items: 1
+        Duration: 335 ms | Work Items: 1
         Tokens: 571 (YAML) vs 2614 (XML) = 78% saved
   [32m[PASS][0m Parallel Split
-        Duration: 375 ms | Work Items: 1
+        Duration: 404 ms | Work Items: 1
         Tokens: 151 (YAML) vs 822 (XML) = 82% saved
   [32m[PASS][0m MI Without Synchronization
-        Duration: 401 ms | Work Items: 1
+        Duration: 318 ms | Work Items: 1
         Tokens: 208 (YAML) vs 817 (XML) = 75% saved
   [32m[PASS][0m CQRS
-        Duration: 150 ms | Work Items: 1
+        Duration: 415 ms | Work Items: 0
         Tokens: 377 (YAML) vs 1864 (XML) = 80% saved
   [32m[PASS][0m Escalation
-        Duration: 730 ms | Work Items: 1
+        Duration: 382 ms | Work Items: 0
         Tokens: 388 (YAML) vs 1796 (XML) = 78% saved
   [32m[PASS][0m Sequence
-        Duration: 113 ms | Work Items: 0
+        Duration: 109 ms | Work Items: 1
         Tokens: 136 (YAML) vs 701 (XML) = 81% saved
   [32m[PASS][0m MI With A Priori Design Time Knowledge
-        Duration: 111 ms | Work Items: 1
+        Duration: 109 ms | Work Items: 1
         Tokens: 128 (YAML) vs 561 (XML) = 77% saved
   [32m[PASS][0m Event Sourcing
-        Duration: 127 ms | Work Items: 1
+        Duration: 126 ms | Work Items: 1
         Tokens: 344 (YAML) vs 1698 (XML) = 80% saved
   [32m[PASS][0m Parallel Approval
-        Duration: 211 ms | Work Items: 0
+        Duration: 209 ms | Work Items: 1
         Tokens: 360 (YAML) vs 1526 (XML) = 76% saved
   [32m[PASS][0m Exclusive Choice
-        Duration: 109 ms | Work Items: 0
+        Duration: 108 ms | Work Items: 0
         Tokens: 181 (YAML) vs 893 (XML) = 80% saved
   [32m[PASS][0m Structured Loop
-        Duration: 494 ms | Work Items: 0
+        Duration: 612 ms | Work Items: 1
         Tokens: 182 (YAML) vs 827 (XML) = 78% saved
   [32m[PASS][0m Event Router
-        Duration: 116 ms | Work Items: 0
+        Duration: 224 ms | Work Items: 1
         Tokens: 317 (YAML) vs 1444 (XML) = 78% saved
   [32m[PASS][0m SLA Monitoring
-        Duration: 371 ms | Work Items: 1
+        Duration: 607 ms | Work Items: 1
         Tokens: 329 (YAML) vs 1490 (XML) = 78% saved
   [32m[PASS][0m Synchronization
-        Duration: 609 ms | Work Items: 1
+        Duration: 561 ms | Work Items: 1
         Tokens: 193 (YAML) vs 913 (XML) = 79% saved
   [32m[PASS][0m Implicit Termination
-        Duration: 440 ms | Work Items: 0
+        Duration: 344 ms | Work Items: 0
         Tokens: 167 (YAML) vs 869 (XML) = 81% saved
   [32m[PASS][0m Event Stream
-        Duration: 149 ms | Work Items: 0
+        Duration: 141 ms | Work Items: 0
         Tokens: 247 (YAML) vs 1101 (XML) = 78% saved
   [32m[PASS][0m Compensation
-        Duration: 180 ms | Work Items: 0
+        Duration: 631 ms | Work Items: 0
         Tokens: 358 (YAML) vs 1637 (XML) = 78% saved
   [32m[PASS][0m Multi-Choice
-        Duration: 538 ms | Work Items: 0
+        Duration: 389 ms | Work Items: 0
         Tokens: 253 (YAML) vs 1163 (XML) = 78% saved
   [32m[PASS][0m MI Without A Priori Knowledge
-        Duration: 532 ms | Work Items: 1
+        Duration: 472 ms | Work Items: 1
         Tokens: 210 (YAML) vs 874 (XML) = 76% saved
   [32m[PASS][0m Four Eyes
-        Duration: 1113 ms | Work Items: 0
+        Duration: 907 ms | Work Items: 0
         Tokens: 376 (YAML) vs 1674 (XML) = 78% saved
   [32m[PASS][0m Simple Merge
-        Duration: 318 ms | Work Items: 1
+        Duration: 249 ms | Work Items: 0
         Tokens: 195 (YAML) vs 926 (XML) = 79% saved
   [32m[PASS][0m Interleaved Parallel Routing
-        Duration: 881 ms | Work Items: 0
-        Tokens: 217 (YAML) vs 1040 (XML) = 79% saved
+        Duration: 736 ms | Work Items: 0
+        Tokens: 281 (YAML) vs 1040 (XML) = 73% saved
   [32m[PASS][0m Delegation
-        Duration: 664 ms | Work Items: 1
+        Duration: 526 ms | Work Items: 0
         Tokens: 300 (YAML) vs 1361 (XML) = 78% saved
   [32m[PASS][0m Multi-Merge
-        Duration: 215 ms | Work Items: 0
+        Duration: 193 ms | Work Items: 0
         Tokens: 174 (YAML) vs 861 (XML) = 80% saved
   [32m[PASS][0m MI With A Priori Runtime Knowledge
-        Duration: 459 ms | Work Items: 0
+        Duration: 229 ms | Work Items: 0
         Tokens: 174 (YAML) vs 832 (XML) = 79% saved
   [32m[PASS][0m Compensating Transaction
-        Duration: 212 ms | Work Items: 0
+        Duration: 221 ms | Work Items: 1
         Tokens: 366 (YAML) vs 1634 (XML) = 78% saved
   [32m[PASS][0m Approval Workflow
-        Duration: 214 ms | Work Items: 1
+        Duration: 212 ms | Work Items: 1
         Tokens: 276 (YAML) vs 1315 (XML) = 79% saved
   [32m[PASS][0m Structured Synchronizing Merge
-        Duration: 223 ms | Work Items: 0
+        Duration: 212 ms | Work Items: 1
         Tokens: 192 (YAML) vs 993 (XML) = 81% saved
   [32m[PASS][0m MI Without A Priori Runtime Knowledge
-        Duration: 120 ms | Work Items: 1
+        Duration: 107 ms | Work Items: 0
         Tokens: 191 (YAML) vs 849 (XML) = 78% saved
   [32m[PASS][0m Side-by-Side
-        Duration: 221 ms | Work Items: 0
+        Duration: 217 ms | Work Items: 0
         Tokens: 318 (YAML) vs 1505 (XML) = 79% saved
   [32m[PASS][0m Nomination
-        Duration: 414 ms | Work Items: 0
-        Tokens: 364 (YAML) vs 1648 (XML) = 78% saved
+        Duration: 423 ms | Work Items: 0
+        Tokens: 376 (YAML) vs 1711 (XML) = 78% saved
   [32m[PASS][0m Outbox
-        Duration: 1286 ms | Work Items: 0
+        Duration: 243 ms | Work Items: 1
         Tokens: 293 (YAML) vs 1414 (XML) = 79% saved
   [32m[PASS][0m Scatter-Gather
-        Duration: 818 ms | Work Items: 0
+        Duration: 230 ms | Work Items: 0
         Tokens: 259 (YAML) vs 1266 (XML) = 80% saved
   [32m[PASS][0m Timeout
-        Duration: 838 ms | Work Items: 0
+        Duration: 209 ms | Work Items: 1
         Tokens: 270 (YAML) vs 1291 (XML) = 79% saved
   [32m[PASS][0m Event Gateway
-        Duration: 262 ms | Work Items: 1
+        Duration: 107 ms | Work Items: 0
         Tokens: 216 (YAML) vs 1046 (XML) = 79% saved
   [32m[PASS][0m Delegation Workflow
-        Duration: 116 ms | Work Items: 0
+        Duration: 369 ms | Work Items: 0
         Tokens: 541 (YAML) vs 2343 (XML) = 77% saved
   [32m[PASS][0m Escalation Workflow
-        Duration: 151 ms | Work Items: 1
+        Duration: 169 ms | Work Items: 0
         Tokens: 539 (YAML) vs 2349 (XML) = 77% saved
   [32m[PASS][0m Data Preprocessing
-        Duration: 233 ms | Work Items: 0
+        Duration: 226 ms | Work Items: 0
         Tokens: 572 (YAML) vs 2665 (XML) = 79% saved
   [32m[PASS][0m Structured Discriminator
-        Duration: 207 ms | Work Items: 0
+        Duration: 237 ms | Work Items: 0
         Tokens: 167 (YAML) vs 846 (XML) = 80% saved
   [32m[PASS][0m Deferred Choice
-        Duration: 120 ms | Work Items: 0
+        Duration: 106 ms | Work Items: 0
         Tokens: 238 (YAML) vs 1127 (XML) = 79% saved
   [32m[PASS][0m Milestone
-        Duration: 222 ms | Work Items: 0
+        Duration: 231 ms | Work Items: 0
         Tokens: 262 (YAML) vs 1219 (XML) = 79% saved
   [32m[PASS][0m Sequential Approval
-        Duration: 136 ms | Work Items: 1
+        Duration: 107 ms | Work Items: 0
         Tokens: 372 (YAML) vs 1446 (XML) = 74% saved
   [32m[PASS][0m Drift Detection
-        Duration: 147 ms | Work Items: 0
+        Duration: 130 ms | Work Items: 1
         Tokens: 328 (YAML) vs 1485 (XML) = 78% saved
   [32m[PASS][0m Cancel Multiple Instances
-        Duration: 142 ms | Work Items: 0
+        Duration: 119 ms | Work Items: 0
         Tokens: 336 (YAML) vs 1435 (XML) = 77% saved
   [32m[PASS][0m Auto-Retrain
-        Duration: 241 ms | Work Items: 1
+        Duration: 226 ms | Work Items: 1
         Tokens: 562 (YAML) vs 2378 (XML) = 76% saved
   [32m[PASS][0m Complete Multiple Instances
-        Duration: 400 ms | Work Items: 0
-        Tokens: 372 (YAML) vs 1577 (XML) = 76% saved
+        Duration: 133 ms | Work Items: 1
+        Tokens: 371 (YAML) vs 1588 (XML) = 77% saved
   [32m[PASS][0m Cancel Case
-        Duration: 210 ms | Work Items: 1
+        Duration: 211 ms | Work Items: 1
         Tokens: 246 (YAML) vs 1237 (XML) = 80% saved
   [32m[PASS][0m Feature Store
-        Duration: 355 ms | Work Items: 0
+        Duration: 307 ms | Work Items: 0
         Tokens: 405 (YAML) vs 1916 (XML) = 79% saved
   [32m[PASS][0m Pipeline
-        Duration: 113 ms | Work Items: 0
+        Duration: 106 ms | Work Items: 0
         Tokens: 385 (YAML) vs 1856 (XML) = 79% saved
   [32m[PASS][0m Cancel Region
         Duration: 107 ms | Work Items: 0
         Tokens: 369 (YAML) vs 1776 (XML) = 79% saved
   [32m[PASS][0m Concurrent MI Without A Priori Knowledge
-        Duration: 128 ms | Work Items: 0
+        Duration: 130 ms | Work Items: 1
         Tokens: 355 (YAML) vs 1542 (XML) = 77% saved
   [32m[PASS][0m Structured Loop (Control Flow)
-        Duration: 220 ms | Work Items: 1
+        Duration: 123 ms | Work Items: 1
         Tokens: 330 (YAML) vs 1485 (XML) = 78% saved
   [32m[PASS][0m Cancel and Complete MI
-        Duration: 180 ms | Work Items: 0
+        Duration: 132 ms | Work Items: 0
         Tokens: 392 (YAML) vs 1601 (XML) = 76% saved
   [32m[PASS][0m Sequential MI Without A Priori Knowledge
-        Duration: 123 ms | Work Items: 0
+        Duration: 360 ms | Work Items: 1
         Tokens: 318 (YAML) vs 1406 (XML) = 77% saved
   [32m[PASS][0m Rules Engine
-        Duration: 479 ms | Work Items: 0
-        Tokens: 309 (YAML) vs 1544 (XML) = 80% saved
+        Duration: 312 ms | Work Items: 0
+        Tokens: 362 (YAML) vs 1544 (XML) = 77% saved
   [32m[PASS][0m Model Fallback
-        Duration: 156 ms | Work Items: 0
+        Duration: 141 ms | Work Items: 1
         Tokens: 315 (YAML) vs 1272 (XML) = 75% saved
   [32m[PASS][0m Cancel Activity
-        Duration: 227 ms | Work Items: 0
+        Duration: 223 ms | Work Items: 0
         Tokens: 225 (YAML) vs 1039 (XML) = 78% saved
   [32m[PASS][0m Confidence Threshold
-        Duration: 257 ms | Work Items: 0
+        Duration: 215 ms | Work Items: 0
         Tokens: 328 (YAML) vs 1365 (XML) = 76% saved
   [32m[PASS][0m ML Model
-        Duration: 252 ms | Work Items: 0
+        Duration: 212 ms | Work Items: 0
         Tokens: 311 (YAML) vs 1323 (XML) = 76% saved
   [32m[PASS][0m Human-AI Handoff
-        Duration: 145 ms | Work Items: 0
+        Duration: 107 ms | Work Items: 1
         Tokens: 404 (YAML) vs 1655 (XML) = 76% saved
   [32m[PASS][0m ML Pipeline
-        Duration: 254 ms | Work Items: 1
+        Duration: 231 ms | Work Items: 0
         Tokens: 587 (YAML) vs 2613 (XML) = 78% saved
   [32m[PASS][0m Loop with Cancel Task
-        Duration: 242 ms | Work Items: 0
+        Duration: 209 ms | Work Items: 1
         Tokens: 542 (YAML) vs 2400 (XML) = 77% saved
 
 [90m----------------------------------------------------------------------
   YAWL Foundation - Yet Another Workflow Language v6.0.0
-  Report generated at: 2026-02-25 08:49:59
+  Report generated at: 2026-02-25 16:55:39
 [0m

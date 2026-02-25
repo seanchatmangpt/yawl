@@ -14,7 +14,7 @@ variables:
     type: xs:string
   - name: nominationAccepted
     type: xs:boolean
-    default: true
+    default: false
 
 tasks:
   - id: CreateTask
@@ -39,6 +39,8 @@ tasks:
     flows: [CheckAcceptance]
     split: xor
     join: xor
+    outputs:
+      nominationAccepted: "true()"
     description: "Wait for user response"
 
   - id: CheckAcceptance

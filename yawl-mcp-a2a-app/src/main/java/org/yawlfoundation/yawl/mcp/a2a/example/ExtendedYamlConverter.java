@@ -296,6 +296,24 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 xml.append("          <removesTokens id=\"").append(escapeXml(cancel)).append("\"/>\n");
             }
 
+            // completedMappings: variable updates applied when the task completes
+            Map<String, Object> outputs = getMap(task, "outputs");
+            if (outputs != null && !outputs.isEmpty()) {
+                xml.append("          <completedMappings>\n");
+                for (Map.Entry<String, Object> entry : outputs.entrySet()) {
+                    String varName = entry.getKey();
+                    String expr = String.valueOf(entry.getValue());
+                    String xquery = "<" + varName + ">{" + expr + "}</" + varName + ">";
+                    xml.append("            <mapping>\n");
+                    xml.append("              <expression query=\"")
+                       .append(escapeXml(xquery)).append("\"/>\n");
+                    xml.append("              <mapsTo>").append(escapeXml(varName))
+                       .append("</mapsTo>\n");
+                    xml.append("            </mapping>\n");
+                }
+                xml.append("          </completedMappings>\n");
+            }
+
             // timer
             Map<String, Object> timer = getMap(task, "timer");
             if (timer != null) {

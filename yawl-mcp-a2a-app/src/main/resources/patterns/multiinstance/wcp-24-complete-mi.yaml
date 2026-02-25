@@ -53,7 +53,7 @@ tasks:
     flows: [AllComplete]
     split: xor
     join: xor
-    completeMI: ProcessItems
+    cancels: [ProcessItems]
     description: "Force complete all instances"
 
   - id: WaitForAll

@@ -1,5 +1,8 @@
 # WCP-17: Interleaved Parallel Routing Pattern
-# Tasks execute in sequence (one valid interleaving order)
+# Tasks execute with mutual exclusion (only one active at a time).
+# True WCP-17 requires YAWL's interleaving router (worklet service) for concurrent
+# enabling with mutual exclusion. This demo uses sequential execution as the closest
+# stateless-engine approximation: one valid ordering of the interleaved tasks.
 
 name: InterleavedRoutingPattern
 uri: interleaved-routing.xml
