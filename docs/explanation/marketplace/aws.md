@@ -1,7 +1,7 @@
 # YAWL on Amazon Web Services (AWS)
 
-**Version:** 5.2
-**Last Updated:** 2026-02-14
+**Version:** 6.0.0
+**Last Updated:** 2026-02-25
 
 ---
 

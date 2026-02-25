@@ -1,6 +1,6 @@
 # YAWL Maven Module Dependency Graph
 
-**Version:** 5.2
+**Version:** 6.0.0
 **Date:** 2026-02-16
 **Related:** MAVEN_MODULE_STRUCTURE.md
 
