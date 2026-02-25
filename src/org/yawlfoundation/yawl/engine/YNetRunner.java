@@ -124,8 +124,10 @@ public class YNetRunner {
     protected YNet _net;
     private YWorkItemRepository _workItemRepository;
     private Set<YTask> _netTasks;
-    // P1 CRITICAL - Thread-safe concurrent sets for virtual thread compatibility
-    // LinkedHashSet causes ConcurrentModificationException with virtual threads
+    // P1 CRITICAL — Thread-safe concurrent sets for virtual thread compatibility.
+    // LinkedHashSet caused ConcurrentModificationException when virtual threads iterated
+    // while other threads modified. ConcurrentHashMap.newKeySet() is unordered; callers
+    // must not rely on insertion order (none is assumed in this class).
     private Set<YTask> _enabledTasks = ConcurrentHashMap.newKeySet();
     private Set<YTask> _busyTasks = ConcurrentHashMap.newKeySet();
     private final Set<YTask> _deadlockedTasks = ConcurrentHashMap.newKeySet();
@@ -871,7 +873,7 @@ public class YNetRunner {
             else {
                 String groupID = group.getDeferredChoiceID();       // null if <2 tasks
 
-                // Use StructuredTaskScope for parallel execution of atomic tasks
+                // Use CompletableFuture + virtual-thread executor for parallel execution of atomic tasks
                 List<YAtomicTask> atomicTasks = new ArrayList<>(group.getAtomicTasks());
                 if (atomicTasks.size() > 1) {
                     fireAtomicTasksInParallel(atomicTasks, groupID, pmgr, enabledTasks);
@@ -959,7 +961,10 @@ public class YNetRunner {
             }
         }
 
-        // Create futures for each task
+        // Create futures for each task, wait for completion, then collect announcements.
+        // allFutures.get() must be inside the try block so the executor is still alive
+        // when futures complete; shutdownNow() in the finally is only reached after
+        // all futures have resolved (or been interrupted).
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
         try {
             for (YAtomicTask atomic : tasksToExecute) {
@@ -970,26 +975,11 @@ public class YNetRunner {
                 futures.add(future);
             }
 
-            // ... rest of the method
-        } finally {
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        // Wait for all tasks to complete and handle errors
-        try {
-            // Wait for all futures to complete
+            // Wait for all tasks to complete
             CompletableFuture<Void> allFutures = CompletableFuture.allOf(
                 futures.toArray(new CompletableFuture[0])
             );
-            allFutures.get(); // This will throw if any task fails
+            allFutures.get();
 
             // Collect announcements from successful tasks
             for (CompletableFuture<YAnnouncement> future : futures) {
@@ -1007,6 +997,16 @@ public class YNetRunner {
             throw new YStateException("Task execution interrupted", e);
         } catch (ExecutionException e) {
             throw new YStateException("Failed to execute atomic tasks in parallel", e.getCause());
+        } finally {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -1045,7 +1045,7 @@ public class YNetRunner {
 
             List<YIdentifier> caseIDs = task.t_fire(pmgr);
 
-            // Use StructuredTaskScope for parallel task startup when multiple case IDs exist
+            // Use CompletableFuture + virtual-thread executor for parallel sub-case startup
             if (caseIDs.size() > 1) {
                 startCompositeTaskCasesInParallel(task, caseIDs, pmgr);
             } else {
@@ -1386,6 +1386,7 @@ public class YNetRunner {
                 cond.removeAll(pmgr);
             }
         }
+        // Re-initialise as unordered concurrent sets (see field declarations above).
         _enabledTasks = ConcurrentHashMap.newKeySet();
         _busyTasks = ConcurrentHashMap.newKeySet();
 
@@ -1667,7 +1668,7 @@ public class YNetRunner {
     public void initTimerStates() {
         _timerStates = new ConcurrentHashMap<String, String>();
 
-        // Use StructuredTaskScope for parallel timer state initialization
+        // Use CompletableFuture + virtual-thread executor for parallel timer state initialization
         // when there are many tasks with timers
         if (_netTasks.size() > 10) {  // Threshold for parallel processing
             initTimerStatesInParallel();
