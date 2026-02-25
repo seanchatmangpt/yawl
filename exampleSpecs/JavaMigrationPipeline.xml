@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  YAWL Specification: Java 11 → 25 Migration Pipeline
+
+  This YAWL workflow formally specifies the migration pipeline execution order:
+
+    Input → Analyze → Detect → Plan (AND-split) → Generate → Validate (XOR-split)
+         → [PASS] Review+Commit → Output
+         → [FAIL] FixAndRetry → Validate
+
+  YAWL firing semantics guarantee:
+  - Analyze completes before Detect starts (data dependency)
+  - All 13 CONSTRUCT queries in Plan run in parallel (AND-split)
+  - AND-join waits for all CONSTRUCT queries before Generate starts
+  - Validate XOR-split routes to commit (PASS) or retry (FAIL)
+  - Deferred choice at Review: auto-commit LOW or queue MEDIUM/HIGH for human
+
+  Soundness: verified — no deadlock, no orphan tokens, completeness.
+-->
+<specificationSet version="4.0"
+                  xmlns="http://www.yawlfoundation.org/yawlschema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+
+  <specification uri="JavaMigrationPipeline">
+    <name>Java 11 → 25 Migration Pipeline</name>
+    <documentation>
+      Ontology-driven Java migration workflow. YAWL coordinates the pipeline:
+      parse source to RDF → SPARQL detect Java 11 patterns → CONSTRUCT Java 25 plan
+      → Tera template rendering → compile + test validation → commit or review queue.
+
+      Powered by: Oxigraph (SPARQL), ggen (Tera templates), ggen-java-migration.toml.
+    </documentation>
+    <metaData>
+      <title>Java 11 → 25 Migration Pipeline</title>
+      <description>Formal YAWL workflow for ontology-driven Java codebase migration</description>
+      <version>1.0</version>
+      <identifier>migration-pipeline-v1</identifier>
+      <creator>YAWL Foundation — Migration Pipeline</creator>
+      <created>2026-02-23</created>
+    </metaData>
+
+    <!-- ===================================================================
+         ROOT NET: MigrationPipelineNet
+         Top-level orchestration of the 5-phase migration pipeline
+    =================================================================== -->
+    <decomposition id="MigrationPipelineNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>Migration Pipeline Process</name>
+      <documentation>
+        Root net coordinating the full Java 11 → 25 migration pipeline.
+        Variables: sourcePath (input), migrationReport (output).
+      </documentation>
+
+      <localVariable>
+        <name>sourcePath</name>
+        <type>string</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue>src/</initialValue>
+        <documentation>Root path of Java source files to migrate</documentation>
+      </localVariable>
+
+      <localVariable>
+        <name>targetJavaVersion</name>
+        <type>integer</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue>25</initialValue>
+      </localVariable>
+
+      <localVariable>
+        <name>detectionResults</name>
+        <type>string</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue></initialValue>
+        <documentation>JSON detection results from Phase 2 SPARQL SELECT queries</documentation>
+      </localVariable>
+
+      <localVariable>
+        <name>validationStatus</name>
+        <type>string</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue>pending</initialValue>
+        <documentation>PASS | FAIL — set by Phase 5 Validate task</documentation>
+      </localVariable>
+
+      <localVariable>
+        <name>migrationReport</name>
+        <type>string</type>
+        <namespace>http://www.w3.org/2001/XMLSchema</namespace>
+        <initialValue></initialValue>
+        <documentation>Path to generated migration-report.md</documentation>
+      </localVariable>
+
+      <processControlElements>
+
+        <!-- Input condition: source ready -->
+        <inputCondition id="start">
+          <name>Codebase Ready</name>
+          <documentation>Start: Java 11 source codebase is available for analysis.</documentation>
+          <flowsInto>
+            <nextElementRef id="Phase1_Analyze"/>
+          </flowsInto>
+        </inputCondition>
+
+        <!-- ============================================================
+             Phase 1: ANALYZE — Parse Java source → RDF codebase graph
+        ============================================================ -->
+        <task id="Phase1_Analyze">
+          <name>Phase 1: Analyze</name>
+          <documentation>
+            Parse Java source files into RDF using the java-code.ttl vocabulary.
+            JavaParser extracts: types, methods, fields, imports, statements, expressions.
+            Output: codebase.trig (RDF graph with java: triples).
+
+            Invokes: ggen run --config ggen-java-migration.toml --phase analyze
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="Phase2_Detect"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <resourcing>
+            <offer initiator="system">
+              <distributionSet>
+                <initialSet>
+                  <role>MigrationEngineer</role>
+                </initialSet>
+              </distributionSet>
+            </offer>
+            <allocate initiator="system"/>
+            <start initiator="system"/>
+          </resourcing>
+          <decomposesTo id="AnalyzeDecomposition"/>
+        </task>
+
+        <!-- ============================================================
+             Phase 2: DETECT — SPARQL SELECT queries → pattern instances
+        ============================================================ -->
+        <task id="Phase2_Detect">
+          <name>Phase 2: Detect Patterns</name>
+          <documentation>
+            Run all 13 SPARQL SELECT queries against the codebase graph.
+            Produces: detection-results.json with all Java 11 pattern instances.
+
+            Patterns detected: ThreadCreation, ThreadPool, ThreadLocal, PojoRecord,
+            AnonymousClass, InstanceofCast, ChainedInstanceof, SwitchStatement,
+            StringFormat, DateCalendar, LegacyCollection, RawType, Synchronized.
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="Phase3_Plan"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="DetectDecomposition"/>
+        </task>
+
+        <!-- ============================================================
+             Phase 3: PLAN — SPARQL CONSTRUCT → migration plan RDF
+             AND-split: all 10 CONSTRUCT queries run in parallel
+        ============================================================ -->
+        <task id="Phase3_Plan">
+          <name>Phase 3: Build Migration Plan</name>
+          <documentation>
+            AND-split: 10 SPARQL CONSTRUCT queries run in parallel, each populating
+            the migration graph with j25: pattern instances.
+            AND-join: waits for all CONSTRUCT queries before proceeding to Generate.
+
+            Output: migration-plan.trig
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="Construct_VirtualThread"/>
+            <nextElementRef id="Construct_Record"/>
+            <nextElementRef id="Construct_PatternMatch"/>
+            <nextElementRef id="Construct_SwitchExpr"/>
+            <nextElementRef id="Construct_TextBlock"/>
+            <nextElementRef id="Construct_JavaTime"/>
+            <nextElementRef id="Construct_ScopedValue"/>
+            <nextElementRef id="Construct_Lambda"/>
+            <nextElementRef id="Construct_Structured"/>
+            <nextElementRef id="Construct_Collections"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- CONSTRUCT tasks (parallel, AND-split from Phase3_Plan) -->
+        <task id="Construct_VirtualThread">
+          <name>CONSTRUCT: Virtual Threads</name>
+          <documentation>R01+R02: new Thread() → virtual thread, Executors pool → virtual executor</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_Record">
+          <name>CONSTRUCT: Records</name>
+          <documentation>R04: Getter/setter POJO → Record</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_PatternMatch">
+          <name>CONSTRUCT: Pattern Matching</name>
+          <documentation>R06+R07: instanceof + cast → pattern matching, chained instanceof → switch pattern</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_SwitchExpr">
+          <name>CONSTRUCT: Switch Expressions</name>
+          <documentation>R08: switch statement → switch expression with arrow cases</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_TextBlock">
+          <name>CONSTRUCT: Text Blocks</name>
+          <documentation>R09: String.format multi-line → text block + .formatted()</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_JavaTime">
+          <name>CONSTRUCT: java.time API</name>
+          <documentation>R10: Date/Calendar/SimpleDateFormat → Instant/LocalDateTime/DateTimeFormatter</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_ScopedValue">
+          <name>CONSTRUCT: Scoped Values</name>
+          <documentation>R03: ThreadLocal → ScopedValue (HIGH: flagged for review)</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_Lambda">
+          <name>CONSTRUCT: Lambdas</name>
+          <documentation>R05: Anonymous class → lambda / method reference</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_Structured">
+          <name>CONSTRUCT: Structured Concurrency</name>
+          <documentation>R13: synchronized → StructuredTaskScope (HIGH: flagged for review)</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <task id="Construct_Collections">
+          <name>CONSTRUCT: Collections</name>
+          <documentation>R11+R12: legacy/raw collections → modern alternatives</documentation>
+          <flowsInto>
+            <nextElementRef id="PlanComplete_Condition"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ConstructQueryDecomposition"/>
+        </task>
+
+        <!-- AND-join condition: all 10 CONSTRUCT tasks must complete -->
+        <condition id="PlanComplete_Condition">
+          <name>Migration Plan Complete</name>
+          <documentation>
+            AND-join: tokens from all 10 CONSTRUCT tasks converge here.
+            Once all 10 CONSTRUCT queries have produced their j25: triples,
+            the migration-plan.trig graph is complete and Generate can proceed.
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="Phase4_Generate"/>
+          </flowsInto>
+        </condition>
+
+        <!-- ============================================================
+             Phase 4: GENERATE — Render Tera templates → Java 25 code
+        ============================================================ -->
+        <task id="Phase4_Generate">
+          <name>Phase 4: Generate Java 25 Code</name>
+          <documentation>
+            For each j25: pattern instance in migration-plan.trig,
+            render the corresponding Tera template with pattern data.
+            Output: generated/java25-migration/**/*.java
+            Also produces: docs/migration-report.md
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="Phase5_Validate"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="and"/>
+          <decomposesTo id="GenerateDecomposition"/>
+        </task>
+
+        <!-- ============================================================
+             Phase 5: VALIDATE — Compile + guard + test
+             XOR-split: PASS → Review+Commit, FAIL → Fix+Retry
+        ============================================================ -->
+        <task id="Phase5_Validate">
+          <name>Phase 5: Validate</name>
+          <documentation>
+            1. mvn compile (Java 25 target)
+            2. hyper-validate.sh (H guard check — no TODO/mock/stub)
+            3. bash scripts/dx.sh all (full YAWL test suite)
+            4. WCPSoundnessTest (YAWL soundness invariants)
+
+            Sets validationStatus to PASS or FAIL.
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="ReviewDecision">
+              <predicate>validationStatus = 'PASS'</predicate>
+              <isDefaultFlow>false</isDefaultFlow>
+            </nextElementRef>
+            <nextElementRef id="Phase5_Fix">
+              <predicate>validationStatus = 'FAIL'</predicate>
+              <isDefaultFlow>false</isDefaultFlow>
+            </nextElementRef>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+          <decomposesTo id="ValidateDecomposition"/>
+        </task>
+
+        <!-- FAIL path: fix validation errors and retry -->
+        <task id="Phase5_Fix">
+          <name>Fix Validation Errors</name>
+          <documentation>
+            Analyze compilation errors and test failures.
+            Fix template rendering issues or add missing imports.
+            Returns to Validate for re-check.
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="Phase5_Validate"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <resourcing>
+            <offer initiator="system">
+              <distributionSet>
+                <initialSet>
+                  <role>MigrationEngineer</role>
+                </initialSet>
+              </distributionSet>
+            </offer>
+            <allocate initiator="system"/>
+            <start initiator="user"/>
+          </resourcing>
+          <decomposesTo id="FixDecomposition"/>
+        </task>
+
+        <!-- ============================================================
+             Phase 6: REVIEW + COMMIT
+             Deferred choice: auto-commit LOW, queue MEDIUM/HIGH for review
+        ============================================================ -->
+        <task id="ReviewDecision">
+          <name>Review and Commit Decision</name>
+          <documentation>
+            Examine migration complexity from migration-report.md.
+            LOW complexity: auto-commit, create PR.
+            MEDIUM complexity: stage for human review.
+            HIGH complexity: schedule for manual implementation.
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="AutoCommit">
+              <predicate>hasLowComplexityMigrations = true</predicate>
+              <isDefaultFlow>false</isDefaultFlow>
+            </nextElementRef>
+            <nextElementRef id="HumanReview">
+              <predicate>hasMediumOrHighComplexityMigrations = true</predicate>
+              <isDefaultFlow>false</isDefaultFlow>
+            </nextElementRef>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+        </task>
+
+        <task id="AutoCommit">
+          <name>Auto-Commit LOW Complexity Migrations</name>
+          <documentation>
+            Apply all LOW complexity migrations to source tree.
+            Create git commit and pull request.
+            Commit message: "migrate(java25): apply LOW complexity migrations"
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="CommitDecomposition"/>
+        </task>
+
+        <task id="HumanReview">
+          <name>Queue for Human Review</name>
+          <documentation>
+            Generate review package for MEDIUM/HIGH complexity migrations.
+            Creates: migration-review/ directory with:
+            - migration-report.md (full report)
+            - Per-file before/after diffs
+            - HIGH complexity implementation guides
+            Assigns to engineering team for manual implementation.
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo id="ReviewDecomposition"/>
+        </task>
+
+        <!-- Output condition -->
+        <outputCondition id="end">
+          <name>Migration Complete</name>
+          <documentation>
+            Migration pipeline complete.
+            - LOW complexity: committed as PR
+            - MEDIUM/HIGH: queued in migration-review/ for engineering team
+          </documentation>
+        </outputCondition>
+
+      </processControlElements>
+    </decomposition>
+
+    <!-- ===================================================================
+         TASK DECOMPOSITIONS (subprocess specifications)
+    =================================================================== -->
+
+    <decomposition id="AnalyzeDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Analyze Java Source</name>
+      <documentation>
+        Parse Java source → RDF codebase graph.
+        Command: ggen run --config ggen-java-migration.toml --phase analyze --source {sourcePath}
+      </documentation>
+    </decomposition>
+
+    <decomposition id="DetectDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Detect Java 11 Patterns</name>
+      <documentation>
+        Run 13 SPARQL SELECT queries against codebase.trig.
+        Command: ggen run --config ggen-java-migration.toml --phase detect
+        Output: docs/migration-detection.json
+      </documentation>
+    </decomposition>
+
+    <decomposition id="ConstructQueryDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Run CONSTRUCT Query</name>
+      <documentation>
+        Execute one SPARQL CONSTRUCT query, adding j25: triples to migration-plan.trig.
+        Parameterized by: query file path from ggen-java-migration.toml [[phases.plan.constructs]].
+      </documentation>
+    </decomposition>
+
+    <decomposition id="GenerateDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Generate Java 25 Code</name>
+      <documentation>
+        For each j25: pattern instance: render Tera template → Java 25 replacement.
+        Command: ggen run --config ggen-java-migration.toml --phase generate
+        Output: generated/java25-migration/ + docs/migration-report.md
+      </documentation>
+    </decomposition>
+
+    <decomposition id="ValidateDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Validate Generated Code</name>
+      <documentation>
+        1. mvn compile -Dmaven.compiler.source=25 -Dmaven.compiler.target=25
+        2. bash .claude/hooks/hyper-validate.sh generated/java25-migration
+        3. bash scripts/dx.sh all
+        Sets validationStatus: PASS | FAIL
+      </documentation>
+    </decomposition>
+
+    <decomposition id="FixDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Fix Validation Errors</name>
+      <documentation>
+        Analyze errors from validation phase.
+        Fix template rendering, missing imports, or query issues.
+        Human task: requires engineer investigation.
+      </documentation>
+    </decomposition>
+
+    <decomposition id="CommitDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Commit Migrations</name>
+      <documentation>
+        Apply LOW complexity migrations to source tree.
+        git add &lt;specific-files&gt; (never git add .)
+        git commit -m "migrate(java25): ..."
+        gh pr create --title "Java 11 → 25: LOW complexity migrations"
+      </documentation>
+    </decomposition>
+
+    <decomposition id="ReviewDecomposition" xsi:type="WebServiceGatewayFactsType">
+      <name>Queue Review Package</name>
+      <documentation>
+        Generate review package for MEDIUM/HIGH complexity migrations.
+        Output: migration-review/ with per-rule guides and before/after diffs.
+      </documentation>
+    </decomposition>
+
+  </specification>
+</specificationSet>

@@ -4,6 +4,7 @@ import org.yawlfoundation.yawl.ggen.mining.model.PetriNet;
 import org.yawlfoundation.yawl.ggen.mining.model.Transition;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -118,7 +119,7 @@ public class BpelExporter {
      */
     public void exportToFile(PetriNet model, Path outputPath) throws IOException {
         String bpelXml = export(model);
-        Files.write(outputPath, bpelXml.getBytes());
+        Files.write(outputPath, bpelXml.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

@@ -33,12 +33,10 @@ public class CelonicsMiningClient implements CloudMiningClient {
     private String clientId;
     private String clientSecret;
     private String apiKey;
-    private String teamId;
 
     /** Construct using direct API key (simplest auth mode). */
     public CelonicsMiningClient(String apiKey, String teamId) {
         this.apiKey = apiKey;
-        this.teamId = teamId;
     }
 
     /** Construct using OAuth 2.0 client credentials (enterprise auth mode). */
@@ -76,7 +74,7 @@ public class CelonicsMiningClient implements CloudMiningClient {
 
     private void authenticateOAuth() throws IOException {
         String auth = clientId + ":" + clientSecret;
-        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 
         URL url = new URL(API_BASE_URL + AUTH_ENDPOINT);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -85,14 +83,14 @@ public class CelonicsMiningClient implements CloudMiningClient {
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
         String body = "grant_type=client_credentials&scope=api";
-        conn.getOutputStream().write(body.getBytes());
+        conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
 
         int statusCode = conn.getResponseCode();
         if (statusCode != 200) {
             throw new IOException("OAuth authentication failed: " + statusCode);
         }
 
-        String responseBody = new String(conn.getInputStream().readAllBytes());
+        String responseBody = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(responseBody).getAsJsonObject();
         this.accessToken = jsonResponse.get("access_token").getAsString();
     }
@@ -117,7 +115,7 @@ public class CelonicsMiningClient implements CloudMiningClient {
             throw new IOException("Failed to list process models: " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         Map<String, Object> models = new HashMap<>();
@@ -154,7 +152,7 @@ public class CelonicsMiningClient implements CloudMiningClient {
             throw new IOException("Failed to get metrics: " + statusCode);
         }
 
-        String response = new String(conn.getInputStream().readAllBytes());
+        String response = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
 
         ConformanceMetrics metrics = new ConformanceMetrics();
@@ -196,7 +194,7 @@ public class CelonicsMiningClient implements CloudMiningClient {
             throw new IOException("Failed to export process: " + statusCode);
         }
 
-        return new String(conn.getInputStream().readAllBytes());
+        return new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     }
 
     /**
@@ -219,7 +217,7 @@ public class CelonicsMiningClient implements CloudMiningClient {
             throw new IOException("Failed to get event log: " + statusCode);
         }
 
-        return new String(conn.getInputStream().readAllBytes());
+        return new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     }
 
     /**

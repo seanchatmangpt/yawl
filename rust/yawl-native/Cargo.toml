@@ -1,0 +1,36 @@
+[package]
+name = "yawl-native"
+version = "0.1.0"
+edition = "2021"
+description = "YAWL native Rust service: process mining + Oxigraph SPARQL engine"
+
+[[bin]]
+name = "yawl-native"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1   # Better optimization at cost of compile time
+strip = true        # Strip symbols for smaller binary
+
+[profile.dev]
+opt-level = 1       # Faster dev builds
+
+[dependencies]
+axum              = { workspace = true }
+tokio             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+tower-http        = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+oxigraph          = { workspace = true }
+
+# Non-workspace deps (specific to yawl-native)
+tower     = "0.4"
+uuid      = { version = "1", features = ["v4", "serde"] }
+chrono    = { version = "0.4", features = ["serde"] }
+petgraph  = "0.6"
+quick-xml = { version = "0.31", features = ["serialize"] }
+regex     = "1"

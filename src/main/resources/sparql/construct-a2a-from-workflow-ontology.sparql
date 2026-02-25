@@ -1,0 +1,104 @@
+# CONSTRUCT: WorkflowPattern → A2A Skill Descriptors
+#
+# Input:  yawl-public-roots.ttl loaded into a Jena Model
+# Output: a2a:Skill instances with tags and examples, ready for
+#         OntologyDrivenSkillFactory to instantiate as A2ASkill implementations.
+#
+# Design intent:
+#   Every yawl:WorkflowPattern that declares rdfs:subClassOf a public root
+#   (schema:Action, schema:CheckAction, prov:Activity, prov:Bundle, foaf:Agent)
+#   becomes an a2a:Skill.
+#
+#   The skill description is composed from:
+#     1. The pattern's rdfs:comment (YAWL-level capability)
+#     2. The public root it extends (making the epistemological ground visible
+#        to every autonomous agent that discovers this skill via the agent card)
+#
+#   Tags, examples, capabilities, and permissions are transferred unchanged
+#   from the pattern declaration.
+#
+#   This means: the A2A agent card grows automatically as new patterns are
+#   declared in the ontology. No Java edits required.
+#
+# Agent card consequence:
+#   When an autonomous agent fetches the YAWL agent card, the skills it sees
+#   are described in terms of Schema.org, PROV-O, FOAF vocabulary it already
+#   understands. The agent does not need to learn a proprietary ontology.
+#   Semantic alignment with the consumer agent is guaranteed by construction
+#   because both speak the same public root language.
+
+PREFIX yawl:   <http://yawlfoundation.org/yawl#>
+PREFIX a2a:    <http://yawlfoundation.org/a2a#>
+PREFIX schema: <https://schema.org/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+
+  # --- a2a:Skill instance derived from each WorkflowPattern ---
+  ?skillNode a a2a:Skill ;
+    a2a:skillId          ?skillId ;
+    a2a:skillName        ?skillName ;
+    a2a:skillDescription ?description ;
+    a2a:capability       ?capability ;
+    a2a:permission       ?permission ;
+    a2a:extendsRoot      ?root ;
+    a2a:rootLabel        ?rootLabel ;
+    a2a:tag              ?tag ;
+    a2a:example          ?example .
+
+}
+WHERE {
+
+  # Every WorkflowPattern that declares a public root and a skillId
+  ?pattern a yawl:WorkflowPattern ;
+           rdfs:subClassOf ?root ;
+           rdfs:comment    ?patternDesc ;
+           a2a:skillId     ?skillId ;
+           a2a:skillName   ?skillName ;
+           a2a:capability  ?capability ;
+           a2a:permission  ?permission .
+
+  # Restrict to known public roots
+  FILTER(?root IN (
+    schema:Action,
+    schema:CheckAction,
+    prov:Activity,
+    prov:Bundle,
+    foaf:Agent
+  ))
+
+  # Readable label for the public root
+  BIND(
+    IF(?root = schema:Action,      "Schema.org Action",
+    IF(?root = schema:CheckAction, "Schema.org CheckAction",
+    IF(?root = prov:Activity,      "W3C PROV-O Activity",
+    IF(?root = prov:Bundle,        "W3C PROV-O Bundle",
+    IF(?root = foaf:Agent,         "FOAF Agent",
+    REPLACE(STR(?root), "^.*/", "")
+    ))))) AS ?rootLabel
+  )
+
+  # Skill description: pattern capability + public root made explicit
+  # Agents that receive this description understand both what the skill does
+  # AND what public standard it implements — no private translation needed.
+  BIND(
+    CONCAT(?patternDesc,
+           " [Extends: ", ?rootLabel, " <", STR(?root), ">]")
+    AS ?description
+  )
+
+  # Skill node IRI is deterministic from the pattern IRI
+  BIND(IRI(CONCAT(STR(?pattern), "/a2aSkill")) AS ?skillNode)
+
+  # Tags: multi-valued, each generates a separate triple
+  OPTIONAL { ?pattern a2a:tag ?tag }
+
+  # Examples: multi-valued, each generates a separate triple
+  OPTIONAL { ?pattern a2a:example ?example }
+
+}
+ORDER BY ?skillId

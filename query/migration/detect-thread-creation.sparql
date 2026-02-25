@@ -1,0 +1,33 @@
+# Detect Java 11 Thread Creation Pattern
+# Finds: new Thread(runnable).start() — candidates for virtual thread migration.
+# Rule: R01_ThreadToVirtualThread
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?file ?method ?line ?snippet
+WHERE {
+  ?expr a java:ObjectCreationExpression ;
+        java:constructedType "java.lang.Thread" ;
+        java:lineNumber ?line .
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?expr ;
+          java:name ?methodName .
+
+  ?class a java:ClassDeclaration ;
+         java:hasMethod ?method ;
+         java:qualifiedName ?className .
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  ?type a java:TypeDeclaration ;
+        java:inFile ?cu .
+
+  FILTER(?type = ?class)
+
+  OPTIONAL { ?expr java:sourceText ?snippet }
+}
+ORDER BY ?file ?line

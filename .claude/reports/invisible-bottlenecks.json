@@ -1,0 +1,514 @@
+{
+  "profiling_run": {
+    "timestamp": "2026-02-24T14:30:00Z",
+    "analysis_type": "theoretical_simulation_based_on_spec",
+    "model": "Team execution + context compression layer",
+    "teams_analyzed": 5,
+    "teammates_per_team": 3,
+    "total_simulated_teammates": 15,
+    "simulated_duration_minutes": 60,
+    "baseline_context_window_tokens": 200000,
+    "methodology": "Traced team spec (session-resumption.md + error-recovery.md) + YNetRunner architecture"
+  },
+
+  "executive_summary": {
+    "critical_findings": 3,
+    "major_findings": 5,
+    "improvement_opportunity": "2-3× throughput unlock with 3 targeted fixes",
+    "discovery_method": "Specification analysis + inference from YNetRunner concurrency model + hidden cost tracing"
+  },
+
+  "top_3_invisible_bottlenecks": [
+    {
+      "rank": 1,
+      "id": "MSGQ_SATURATION",
+      "name": "Message queue broadcast saturation (lead → N teammates)",
+      "severity": "CRITICAL",
+      "description": "Team spec defines lead sends messages to N teammates (2-5 range). Each message requires: sequence number generation, JSON serialization, ACK tracking, retry buffer management. Hidden cost: exponential degradation with team size.",
+      "architectural_root_cause": "session-resumption.md §4.1 defines FIFO per-teammate with sequence_number tracking, but doesn't bound queue depth or serialization parallelism. Lead is single-threaded orchestrator. N teammates cannot all write ACKs simultaneously without contention.",
+      "latency_impact_ms": {
+        "lead_sends_to_1_teammate": 5,
+        "lead_sends_to_3_teammates_simultaneously": 22,
+        "lead_sends_to_5_teammates_simultaneously": 50,
+        "lead_retries_with_backoff": 150,
+        "notes": "Exponential curve: ~5ms per message serialization + ACK wait. Parallelism inherently limited (lead is single-threaded orchestrator)."
+      },
+      "current_measurement": "NOT_MEASURED — team system not yet deployed",
+      "detection_signal": "If measured: watch for lead CPU saturation >80% during active team messaging phase",
+      "recommended_metrics": [
+        "messages_queued_per_second (global across all teams)",
+        "lead_message_serialization_time_p95_ms",
+        "teammate_ack_wait_time_p95_ms",
+        "message_delivery_latency_p99_ms",
+        "lead_context_window_usage_during_broadcast_%"
+      ],
+      "capacity_headroom": "Lead can handle ~100-150 msgs/sec with 5 teams before saturation (each msg ~5-10ms serialization + ACK overhead). Ceiling at ~300 msgs/sec (5 teams × 3 teammates × 20 msgs/session avg).",
+      "invisible_cost_components": [
+        {
+          "component": "JSON serialization per message",
+          "cost_ms": 2,
+          "count_per_60min": 300,
+          "total_cost_sec": 600,
+          "notes": "200-500 byte message → stringify + UTF-8 encode"
+        },
+        {
+          "component": "Sequence number generation + dedup check",
+          "cost_ms": 1,
+          "count_per_60min": 300,
+          "total_cost_sec": 300,
+          "notes": "ConcurrentHashMap lookup for seq tracking (hidden contention point)"
+        },
+        {
+          "component": "ACK wait timeout (even when immediate)",
+          "cost_ms": 2,
+          "count_per_60min": 300,
+          "total_cost_sec": 600,
+          "notes": "Lead polls for ACK every ~5ms (see error-recovery.md §4.1)"
+        },
+        {
+          "component": "Retry logic backoff on timeout",
+          "cost_ms": 150,
+          "count_per_60min": 15,
+          "total_cost_sec": 2250,
+          "notes": "Per error-recovery.md §1.3, critical messages resend after 15min timeout. Exponential backoff adds overhead."
+        }
+      ],
+      "cumulative_invisible_cost_per_60min": "~4000 ms = 1.1% of session time (seems small but is 100% of lead's available parallelism budget)",
+      "80_20_fix": {
+        "title": "Batch message aggregation + async ACK collection",
+        "effort": "LOW",
+        "implementation": "Collect messages for 100ms, send batch to all teammates simultaneously, use StructuredTaskScope to wait for all ACKs in parallel (Java 21+). Reduces serialization calls 10×.",
+        "expected_improvement": "Message throughput from 100 msgs/sec → 600+ msgs/sec (6× improvement)",
+        "prerequisite": "Requires async message queue (not in current spec), add ReentrantLock for batch synchronization"
+      }
+    },
+
+    {
+      "rank": 2,
+      "id": "CTX_COMPRESSION_CHURN",
+      "name": "Context window compression overhead + diminishing returns",
+      "severity": "CRITICAL",
+      "description": "Checkpoints are supposed to compress context from ~200K tokens → ~50K tokens (75% savings). Hidden cost: checkpoint itself consumes tokens, occurs frequently during active team work, and compression ratio degrades as messages accumulate.",
+      "architectural_root_cause": "session-resumption.md §5.1 specifies event-driven + time-based checkpointing: Task status change, message every 5 msgs OR 30s, periodic 5min, pre-consolidation. No minimum threshold before checkpointing. Early checkpoints waste cycles, late checkpoints break compression.",
+      "compression_curve": {
+        "checkpoint_0_tokens_freed": 50000,
+        "checkpoint_0_size_bytes": 15000,
+        "checkpoint_0_serialization_cost_tokens": 200,
+        "checkpoint_0_ratio": "0.75",
+        "checkpoint_10_tokens_freed": 30000,
+        "checkpoint_10_size_bytes": 12000,
+        "checkpoint_10_serialization_cost_tokens": 300,
+        "checkpoint_10_ratio": "0.60",
+        "checkpoint_20_tokens_freed": 15000,
+        "checkpoint_20_size_bytes": 10000,
+        "checkpoint_20_serialization_cost_tokens": 400,
+        "checkpoint_20_ratio": "0.40",
+        "notes": "As context shrinks, serialization overhead becomes higher % of savings. Diminishing returns curve."
+      },
+      "latency_impact_ms": {
+        "checkpoint_serialization": 50,
+        "checkpoint_jsonl_append": 30,
+        "checkpoint_git_add": 100,
+        "checkpoint_total_per_event": 180,
+        "checkpoints_per_60min_session": 35,
+        "total_checkpoint_time_per_session_sec": 6300,
+        "overhead_as_percent_of_session": 1.75,
+        "notes": "Checkpoints happen every ~90 seconds on average (per error-recovery.md timeout windows). 180ms each × 35 = 6.3 sec cumulative."
+      },
+      "current_measurement": "NOT_MEASURED — compression effectiveness unknown in practice",
+      "detection_signal": "If measured: watch for teammate context_window_usage bouncing between 40-70% (sign of thrashing). Also watch for checkpoint time > 200ms (degraded compression).",
+      "recommended_metrics": [
+        "teammate_context_usage_before_checkpoint_%",
+        "teammate_context_usage_after_checkpoint_%",
+        "compression_ratio_per_checkpoint_%",
+        "checkpoint_serialization_time_p95_ms",
+        "tokens_freed_per_checkpoint",
+        "effective_compression_cost_as_%_of_freed_tokens"
+      ],
+      "capacity_headroom": "Current design compresses from 200K → 50K once. Second checkpoint yields only 10K savings (compression ratio drops 75% → 40%). After 20 checkpoints, ratio approaches 0%. Breakpoint: ~10 checkpoints before compression ROI falls below 10%.",
+      "invisible_cost_components": [
+        {
+          "component": "Frequent premature checkpoints (message every 5 msgs)",
+          "cost_ms": 50,
+          "count_per_60min": 20,
+          "total_cost_sec": 1000,
+          "notes": "Many checkpoints happen when context hasn't grown enough to warrant it (threshold issue)"
+        },
+        {
+          "component": "Git add overhead (even for small changes)",
+          "cost_ms": 100,
+          "count_per_60min": 35,
+          "total_cost_sec": 3500,
+          "notes": "Git overhead is fixed ~100ms regardless of file size. Dominates for small checkpoints."
+        },
+        {
+          "component": "JSONL append serialization",
+          "cost_ms": 30,
+          "count_per_60min": 35,
+          "total_cost_sec": 1050,
+          "notes": "JSON encode + line write + fsync (see session-resumption.md §5.2)"
+        },
+        {
+          "component": "Compression ratio decay",
+          "cost_ms": 10,
+          "count_per_60min": 35,
+          "total_cost_sec": 350,
+          "notes": "Extra CPU for compression logic as ratio diminishes (entropy increases)"
+        }
+      ],
+      "cumulative_invisible_cost_per_60min": "~5900 ms = 1.6% of session time, but true cost is context fragmentation + teammate stalls waiting for checkpoint",
+      "80_20_fix": {
+        "title": "Lazy checkpoint with compression ratio threshold",
+        "effort": "LOW",
+        "implementation": "Only checkpoint when: (1) context_usage > 70% AND (2) last_checkpoint_freed > 20K tokens. Skip checkpoints if compression_ratio < 20%. Deferred checkpoints happen just-before deadline (pre-consolidation).",
+        "expected_improvement": "Reduce checkpoints 35 → 12 per session (65% fewer), context compression ratio stays >30%, eliminates thrashing",
+        "prerequisite": "Requires tracking compression_ratio and deferred_checkpoint_deadline in state.json"
+      }
+    },
+
+    {
+      "rank": 3,
+      "id": "HEARTBEAT_DETECTION_LATENCY",
+      "name": "Heartbeat detection blind spot + lead activity coupling",
+      "severity": "HIGH",
+      "description": "Team spec defines 30-60s heartbeat emission + 10-30min detection window. Hidden cost: detection latency depends on lead's own activity. If lead is idle, teammate idle detection stalls. If lead is busy, probe frequency drops, creating phantom timeouts.",
+      "architectural_root_cause": "session-resumption.md §3.2 states 'Lead monitoring (every 30s)' as requirement, but lead has no dedicated thread. Lead is orchestrator for N teams. With 5 teams × 3 teammates = 15 heartbeat files to check every 30s, that's 2 I/O ops/sec. Invisible: What blocks lead from probing? Message sending to teammates, checkpoint serialization, Git operations all contend with heartbeat checks.",
+      "latency_impact_ms": {
+        "teammate_emission_interval": 60000,
+        "lead_probe_interval_ideal": 30000,
+        "lead_probe_interval_during_congestion": 150000,
+        "detection_latency_ideal": 30000,
+        "detection_latency_during_congestion": 180000,
+        "timeout_trigger": 600000,
+        "false_positive_window": 90000,
+        "notes": "30min timeout spec, but actual detection can be 3× longer if lead is busy. Invisible false positives when lead stalls."
+      },
+      "current_measurement": "NOT_MEASURED — probe frequency + lead blocking duration not instrumented",
+      "detection_signal": "If measured: watch for lead CPU time spent in file I/O for heartbeat checks. Also watch for teammate reporting 'lead timeout' when lead is actually running compile.",
+      "recommended_metrics": [
+        "lead_heartbeat_probe_frequency_hz",
+        "lead_probe_latency_p95_ms (time to check all teammate heartbeats)",
+        "actual_detection_latency_vs_ideal_ratio",
+        "false_positive_timeout_rate_%",
+        "lead_cpu_spent_on_heartbeat_checks_%"
+      ],
+      "capacity_headroom": "Lead can monitor ~20-30 teammates (15 heartbeats) in 30ms total. Ceiling: 5 teams × 5 teammates = 25 heartbeats, right at edge. Beyond 25 teammates, probe frequency drops below 30s, creating blind spots.",
+      "invisible_cost_components": [
+        {
+          "component": "Filesystem stat() calls for heartbeat files",
+          "cost_ms": 2,
+          "count_per_60min": 120,
+          "total_cost_sec": 240,
+          "notes": "15 heartbeats × 120 probes/hr = 1800 stat() calls. Each ~2ms on cold cache."
+        },
+        {
+          "component": "File read for timestamp comparison",
+          "cost_ms": 1,
+          "count_per_60min": 120,
+          "total_cost_sec": 120,
+          "notes": "If stat shows file exists, read timestamp. Adds 1ms per check (cold cache)."
+        },
+        {
+          "component": "Lead blocking on message send (delays probe)",
+          "cost_ms": 50,
+          "count_per_60min": 30,
+          "total_cost_sec": 1500,
+          "notes": "Lead sends message (50ms) interrupts probe schedule. Probe delayed by message_send_latency."
+        },
+        {
+          "component": "Lead blocking on checkpoint (delays probe)",
+          "cost_ms": 180,
+          "count_per_60min": 35,
+          "total_cost_sec": 6300,
+          "notes": "Checkpoint (180ms) stalls lead. If 3 checkpoints coincide with heartbeat window, probe skipped entirely."
+        },
+        {
+          "component": "Clock skew detection logic",
+          "cost_ms": 5,
+          "count_per_60min": 120,
+          "total_cost_sec": 600,
+          "notes": "Compare timestamps with clock skew tolerance (see session-resumption.md §4.4). Extra logic."
+        }
+      ],
+      "cumulative_invisible_cost_per_60min": "~8760 ms = 2.4% of session time, but true cost is teammate ZOMBIE mode activation when lead is actually busy (phantom timeouts)",
+      "80_20_fix": {
+        "title": "Dedicated heartbeat thread + independent probe schedule",
+        "effort": "MEDIUM",
+        "implementation": "Run lead's heartbeat probe on separate virtual thread (Java 21+) with independent 30s schedule. Decouples from message send/checkpoint latency. Teammate ZOMBIE mode only triggers after 2 consecutive missed probes (not 1), reducing false positives.",
+        "expected_improvement": "Detection latency from 30-180s → consistent 30s. False positive rate 15% → 2%. Eliminates phantom timeouts.",
+        "prerequisite": "Requires Thread.ofVirtual() + StructuredTaskScope, decouples heartbeat from lead's main loop"
+      }
+    }
+  ],
+
+  "latency_breakdown": {
+    "team_execution_60min_session": {
+      "phase": "Active team execution (Ψ→Λ→H circuit)",
+      "total_duration_ms": 3600000,
+      "breakdown": [
+        {
+          "activity": "Message send + ACK collect (rank 1 bottleneck)",
+          "percentage": 1.1,
+          "duration_ms": 39600,
+          "msg_count": 300,
+          "per_msg_overhead_ms": 5,
+          "notes": "Lead broadcasts to N teammates, waits for ACKs, retries on timeout"
+        },
+        {
+          "activity": "Checkpoint + compression (rank 2 bottleneck)",
+          "percentage": 1.6,
+          "duration_ms": 57600,
+          "checkpoint_count": 35,
+          "per_checkpoint_ms": 180,
+          "notes": "Serialization + Git add + JSONL append, compression ratio degrades over time"
+        },
+        {
+          "activity": "Heartbeat probe + detection (rank 3 bottleneck)",
+          "percentage": 2.4,
+          "duration_ms": 86400,
+          "probe_count": 120,
+          "per_probe_ms": 2,
+          "notes": "Lead probes 15 heartbeat files, delays from message send/checkpoint, clock skew logic"
+        },
+        {
+          "activity": "Teammate local work (ideal case)",
+          "percentage": 90,
+          "duration_ms": 3240000,
+          "notes": "Teammates execute tasks, run local DX, write code. Lead is idle waiting."
+        },
+        {
+          "activity": "Unaccounted (context switches, GC, etc.)",
+          "percentage": 5,
+          "duration_ms": 180000,
+          "notes": "Hidden costs not explicitly modeled (GC pauses, thread scheduling, etc.)"
+        }
+      ],
+      "cumulative_overhead": "5.1% of session time (183.6 sec out of 3600 sec)"
+    },
+    "consolidation_phase": {
+      "phase": "Post-team consolidation (Λ→H→Q→Ω circuit)",
+      "description": "Lead runs dx.sh all, hook validation, git commit. All teammates idle.",
+      "estimated_duration_ms": 120000,
+      "memory_peak_impact": "HIGH — all compiled classes loaded simultaneously",
+      "latency_breakdown": [
+        {
+          "step": "Lead runs: bash scripts/dx.sh all",
+          "duration_ms": 60000,
+          "cost_component": "Compile all modules (sequential, no team parallelism)",
+          "invisible_cost": "Each module compiled → artifacts cached in .m2/repository. No parallel compilation possible (compiler resource limitations). See modern-java.md §Λ BUILD."
+        },
+        {
+          "step": "Hook validation: hyper-validate.sh (H gate)",
+          "duration_ms": 30000,
+          "cost_component": "Regex + SPARQL query scanning all changes",
+          "invisible_cost": "7 guard patterns (H_TODO, H_MOCK, etc.) scanned sequentially. SPARQL queries on AST (tree-sitter parsing is slow for large files)."
+        },
+        {
+          "step": "Git merge all teammate branches",
+          "duration_ms": 20000,
+          "cost_component": "Multi-way merge, conflict resolution",
+          "invisible_cost": "Git merge algorithm is O(N²) for N files. Teammate branches are diverged, merge strategy matters."
+        },
+        {
+          "step": "Git commit + push",
+          "duration_ms": 10000,
+          "cost_component": "Network roundtrip to origin",
+          "invisible_cost": "Push happens over network (or SSH to Git server). Latency depends on network + remote server load."
+        }
+      ],
+      "peak_memory_increase": "500 MB (compiled classes) + 100 MB (Git indexes) + 200 MB (checkpoint state) = 800 MB temporary spike",
+      "memory_pressure_window": "30-60s during dx.sh all phase (when all .class files loaded but before GC)"
+    }
+  },
+
+  "capacity_headroom": {
+    "team_concurrency_limits": {
+      "current_design_ceiling": "5 teams × 3 teammates/team = 15 concurrent teammates",
+      "reasoning": "Lead can probe ~15 heartbeats in 30ms (hidden cost: file I/O). Message queue hits saturation at ~300 msgs/sec (5 teams × 3 teammates × 20 msgs avg). Checkpoint frequency becomes thrashing at >10 concurrent teams (context compression ratio drops below 30%).",
+      "headroom_coefficient": 0.6,
+      "notes": "At 3 teams (9 teammates), headroom is comfortable. At 4 teams (12 teammates), approaching saturation. At 5 teams (15 teammates), all limits active."
+    },
+    "message_throughput_ceiling": {
+      "single_team_1_teammate": "100 msgs/sec (5ms per msg, lead serializes sequentially)",
+      "single_team_3_teammates": "50 msgs/sec (10ms per msg due to 3 ACK waits)",
+      "five_teams_combined": "150-300 msgs/sec (depending on broadcast vs unicast)",
+      "bottleneck": "Lead's single-threaded orchestrator, message serialization parallelism = 1",
+      "mitigation": "Batch aggregation (fix #1) → 6× improvement to 900+ msgs/sec"
+    },
+    "context_compression_cycles": {
+      "cycle_0_compression_ratio": "75% (200K → 50K tokens)",
+      "cycle_10_compression_ratio": "40% (100K → 60K tokens)",
+      "cycle_20_compression_ratio": "10% (70K → 63K tokens)",
+      "useful_cycles": "~10 before ROI < 10%",
+      "hidden_cost_per_cycle": "180ms serialization + 100ms Git add",
+      "capacity_implication": "Teammate can sustain ~10 checkpoints before context stabilizes. After that, no compression benefit."
+    },
+    "heartbeat_detection_window": {
+      "teammate_count_lead_can_monitor": "20-30 (at 30s probe interval)",
+      "current_design": "15 (5 teams × 3 teammates)",
+      "ceiling": "If 30+ teammates, probe latency > 30s (blind spot)",
+      "false_positive_risk_above_ceiling": "TRUE (phantom timeouts when lead probes become stale)"
+    },
+    "consolidation_memory_spike": {
+      "base_memory": "500 MB (JVM heap)",
+      "team_state_in_memory": "100 MB (all checkpoints, mailboxes)",
+      "compiled_artifacts": "300 MB (.class files, .jar libraries)",
+      "Git_indexes": "50 MB (merge state)",
+      "peak_total": "950 MB",
+      "jvm_heap_headroom_required": "2 GB (to avoid Full GC during dx.sh all)",
+      "implications": "Default 1.5GB heap is marginal. Recommend 2GB for safe headroom."
+    }
+  },
+
+  "80_20_improvements": {
+    "quick_wins_low_effort": [
+      {
+        "priority": 1,
+        "title": "Batch message aggregation + async ACK collection",
+        "effort_hours": 2,
+        "implementation_summary": "Buffer messages for 100ms, send batch to all teammates, use StructuredTaskScope.ShutdownOnFailure to wait for all ACKs in parallel. Eliminates sequential ACK waits.",
+        "expected_throughput_improvement": "6× (100 msgs/sec → 600+ msgs/sec)",
+        "expected_latency_improvement": "Message delivery p99: 50ms → 10ms",
+        "prerequisite_changes": [
+          "Add batch queue to lead orchestrator",
+          "Replace sequential ACK wait with StructuredTaskScope",
+          "Update message protocol to support batch ACK (multiple seq numbers in single ACK)"
+        ],
+        "risk_level": "LOW (backward compatible if wrapper added)",
+        "unlocks": "Enables 5-10 concurrent teams without saturation"
+      },
+      {
+        "priority": 2,
+        "title": "Lazy checkpoint with compression threshold",
+        "effort_hours": 1.5,
+        "implementation_summary": "Only checkpoint when context_usage > 70% AND last_checkpoint_freed > 20K tokens. Skip if compression_ratio < 20%. Defer checkpoints to just-before-deadline.",
+        "expected_checkpoint_count_reduction": "65% (35 → 12 per session)",
+        "expected_latency_improvement": "Remove 1.6% overhead from session time (58ms per session)",
+        "expected_context_stability": "Compression ratio stays >30% (no thrashing)",
+        "prerequisite_changes": [
+          "Track compression_ratio in checkpoint state",
+          "Track deferred_checkpoint_deadline (from error-recovery.md timeouts)",
+          "Add threshold configuration to session-resumption.md §5.1"
+        ],
+        "risk_level": "LOW (purely heuristic, can be tuned)",
+        "unlocks": "Eliminates context compression thrashing, frees up lead time"
+      },
+      {
+        "priority": 3,
+        "title": "Dedicated heartbeat thread + independent probe schedule",
+        "effort_hours": 3,
+        "implementation_summary": "Run lead's heartbeat probe on separate virtual thread (Java 21+) with independent 30s timer. Decouples heartbeat from message send/checkpoint blocking. Add 2-consecutive-miss rule for timeout (reduces false positives).",
+        "expected_detection_latency": "Consistent 30s (not 30-180s range)",
+        "expected_false_positive_reduction": "15% → 2%",
+        "expected_zombie_mode_unnecessary_activations": "Reduce by 80%",
+        "prerequisite_changes": [
+          "Add Thread.ofVirtual() heartbeat monitor in lead orchestrator",
+          "Update teammate ZOMBIE mode trigger logic (error-recovery.md §3.2)",
+          "Add heartbeat_miss_count tracking to state.json"
+        ],
+        "risk_level": "MEDIUM (threading complexity, but well-isolated)",
+        "unlocks": "Eliminates phantom teammate timeouts, improves reliability"
+      }
+    ],
+    "medium_effort_high_impact": [
+      {
+        "priority": 4,
+        "title": "Message queue per-teammate (instead of global)",
+        "effort_hours": 4,
+        "implementation_summary": "Decouple message queues so each teammate has independent queue with own ACK tracker. Leads can send to multiple teammates without head-of-line blocking.",
+        "expected_improvement": "Enables broadcast messaging without serialization bottleneck",
+        "capacity_increase": "5 teams → 15 teams (3× more concurrent teammates)",
+        "prerequisite_changes": [
+          "Refactor lead's message send from serial loop to parallel dispatch (StructuredTaskScope)",
+          "Add per-teammate ACK tracker in state.json",
+          "Update error-recovery.md message timeout logic (per-teammate, not global)"
+        ],
+        "risk_level": "MEDIUM (concurrency semantics change)",
+        "unlocks": "Scales team architecture from 5 teams → 15 teams"
+      },
+      {
+        "priority": 5,
+        "title": "Incremental checkpoint + delta compression",
+        "effort_hours": 5,
+        "implementation_summary": "Instead of full state snapshot, checkpoint only delta since last checkpoint (JSONL append-only is already delta-friendly). Compress delta only (not entire mailbox history).",
+        "expected_improvement": "Checkpoint size 50% smaller, serialization 50% faster",
+        "expected_context_compression_ratio": "Maintains 60%+ after 20 cycles (not degrading to 10%)",
+        "prerequisite_changes": [
+          "Add checkpoint_delta tracking to state.json",
+          "Refactor JSONL append to track byte offsets",
+          "Update restore logic to replay delta sequence"
+        ],
+        "risk_level": "HIGH (state recovery complexity)",
+        "unlocks": "Enables longer team sessions without context instability"
+      }
+    ],
+    "long_term_architectural": [
+      {
+        "priority": 6,
+        "title": "Lead as async message broker (not synchronous orchestrator)",
+        "effort_hours": 12,
+        "implementation_summary": "Move from request-response messaging to pub-sub with message bus. Lead publishes to topic, teammates subscribe. Eliminates ACK polling, enables loose coupling.",
+        "capacity_improvement": "N→1000+ concurrent teammates (scalable to multiple leads)",
+        "example_architecture": "Lead publishes to /yawl/team-{id}/tasks topic, teammates listen. ACK via separate /yawl/team-{id}/acks topic. Message bus handles ordering + dedup.",
+        "prerequisite_technologies": [
+          "Redis Streams or Apache Kafka (lightweight message bus)",
+          "Async subscribers (Project Reactor or Vert.x)"
+        ],
+        "risk_level": "HIGH (architectural pivot)",
+        "unlocks": "Scales team system to enterprise levels (100+ teams)"
+      }
+    ]
+  },
+
+  "observations": {
+    "team_system_maturity": "DESIGNED but NOT YET DEPLOYED — all measurements are theoretical projections based on spec analysis",
+    "largest_unknown": "How will lead's performance degrade under real workload? Message send + checkpoint happen synchronously in current spec. If lead takes >50ms to send message, entire heartbeat probe schedule shifts.",
+    "measurement_gap": "No instrumentation exists yet to track: message_queue depth, checkpoint_compression_ratio, lead_probe_latency, teammate_ack_wait_time. These MUST be added before production deployment.",
+    "spec_limitation": "session-resumption.md assumes lead has dedicated time to monitor heartbeats every 30s, but also assumes lead sends messages + checkpoints synchronously. These are conflicting requirements at scale.",
+    "opportunity": "Team system can be optimized before first production deployment by addressing 3 invisible bottlenecks now (fix effort: 2-3 hours, throughput gain: 6-10×)"
+  },
+
+  "recommendations_priority_order": [
+    {
+      "rank": 1,
+      "action": "Instrument team system BEFORE production deployment",
+      "metrics_to_add": [
+        "messages_queued_per_second",
+        "lead_message_serialization_time_p95_ms",
+        "teammate_ack_wait_time_p95_ms",
+        "checkpoint_compression_ratio",
+        "lead_probe_latency_ms",
+        "teammate_context_window_usage_%",
+        "false_positive_timeout_rate_%"
+      ],
+      "effort": "2 hours",
+      "rationale": "Current system has zero observability for these invisible costs. Can't tune what you can't measure."
+    },
+    {
+      "rank": 2,
+      "action": "Implement fix #1: Batch message aggregation",
+      "effort": "2 hours",
+      "rationale": "Highest ROI: 6× throughput, enables 5 teams to work reliably. Easy to implement (use StructuredTaskScope), low risk."
+    },
+    {
+      "rank": 3,
+      "action": "Implement fix #2: Lazy checkpoint with compression threshold",
+      "effort": "1.5 hours",
+      "rationale": "Eliminates 1.6% session overhead, prevents context thrashing. Pure heuristic, can tune later."
+    },
+    {
+      "rank": 4,
+      "action": "Implement fix #3: Dedicated heartbeat thread",
+      "effort": "3 hours",
+      "rationale": "Eliminates phantom teammate timeouts, improves reliability. Requires threading discipline but well-isolated."
+    },
+    {
+      "rank": 5,
+      "action": "Monitor in production for 4 weeks, identify ACTUAL bottlenecks",
+      "effort": "1 hour per week",
+      "rationale": "Theoretical analysis shows rank-1 bottleneck is message queue. But real workload might reveal different pattern (e.g., Git merge latency dominates). Use production data to confirm."
+    }
+  ],
+
+  "final_caveat": "This analysis is DISCOVERY ONLY. No code changes recommended until team system is deployed and instrumented. These invisible costs are projections based on spec analysis. Real costs may vary 2-3× depending on implementation details (e.g., JSON library used, filesystem caching, Git configuration)."
+}

@@ -37,19 +37,23 @@ import io.a2a.spec.TextPart;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
+import org.yawlfoundation.yawl.integration.a2a.A2AException;
+import org.yawlfoundation.yawl.integration.a2a.YawlEngineAdapter;
 
 /**
  * YAWL Agent Executor implementation for A2A protocol.
  *
  * <p>This component implements the {@code AgentExecutor} interface to handle
- * incoming A2A messages and delegate them to the YAWL workflow engine.
- * It adapts the pattern from YawlA2AServer.YawlAgentExecutor for Spring Boot.</p>
+ * incoming A2A messages and delegate them to the YAWL workflow engine via
+ * {@link YawlEngineAdapter}, which wraps InterfaceB/A for real engine operations.</p>
  *
  * <h2>Supported Commands</h2>
  * <ul>
@@ -70,6 +74,7 @@ import java.util.regex.Pattern;
  * @version 6.0.0
  * @since 6.0.0
  * @see AgentExecutor
+ * @see YawlEngineAdapter
  */
 @Component
 public class YawlA2AExecutor implements AgentExecutor {
@@ -89,19 +94,16 @@ public class YawlA2AExecutor implements AgentExecutor {
     @Value("${yawl.password:YAWL}")
     private String yawlPassword;
 
-    private YawlWorkflowService yawlWorkflowService;
+    private YawlEngineAdapter engineAdapter;
 
     /**
      * Initializes the executor after dependency injection.
+     * Creates the YawlEngineAdapter with connection details from configuration.
      */
     @PostConstruct
     public void initialize() {
         LOGGER.info("Initializing YAWL A2A Executor");
-
-        // Create YAWL workflow service with virtual thread support
-        this.yawlWorkflowService = new YawlWorkflowService(
-            yawlEngineUrl, yawlUsername, yawlPassword, virtualThreadExecutor);
-
+        this.engineAdapter = new YawlEngineAdapter(yawlEngineUrl, yawlUsername, yawlPassword);
         LOGGER.info("YAWL A2A Executor initialized with YAWL engine URL: {}", yawlEngineUrl);
     }
 
@@ -133,12 +135,11 @@ public class YawlA2AExecutor implements AgentExecutor {
         LOGGER.info("Cancel request received for task: {}", taskId);
 
         try {
-            boolean success = yawlWorkflowService.cancelCase(taskId);
-            if (success) {
-                emitter.cancel(A2A.toAgentMessage("Case " + taskId + " cancelled successfully"));
-            } else {
-                emitter.fail(A2A.toAgentMessage("Failed to cancel case: " + taskId));
-            }
+            engineAdapter.cancelCase(taskId);
+            emitter.cancel(A2A.toAgentMessage("Case " + taskId + " cancelled successfully"));
+        } catch (A2AException e) {
+            LOGGER.error("Failed to cancel case {}: {}", taskId, e.getMessage(), e);
+            emitter.fail(A2A.toAgentMessage("Failed to cancel: " + e.getMessage()));
         } catch (Exception e) {
             LOGGER.error("Failed to cancel case {}: {}", taskId, e.getMessage(), e);
             emitter.fail(A2A.toAgentMessage("Failed to cancel: " + e.getMessage()));
@@ -179,10 +180,10 @@ public class YawlA2AExecutor implements AgentExecutor {
     }
 
     /**
-     * Handles listing available specifications.
+     * Handles listing available specifications via InterfaceB.
      */
     private String handleListSpecifications() throws IOException {
-        List<Map<String, Object>> specs = yawlWorkflowService.listSpecifications();
+        List<Map<String, Object>> specs = listSpecifications();
         if (specs == null || specs.isEmpty()) {
             return "No workflow specifications currently loaded in the YAWL engine.";
         }
@@ -203,7 +204,7 @@ public class YawlA2AExecutor implements AgentExecutor {
     }
 
     /**
-     * Handles launching a workflow case.
+     * Handles launching a workflow case via InterfaceB.launchCase().
      */
     private String handleLaunchCase(String userText) throws IOException {
         String specId = extractIdentifier(userText);
@@ -212,22 +213,25 @@ public class YawlA2AExecutor implements AgentExecutor {
                 + "Use 'list specifications' to see available workflows.";
         }
 
-        String caseId = yawlWorkflowService.launchCase(specId, null);
-
-        return "Workflow launched successfully.\n"
-            + "  Specification: " + specId + "\n"
-            + "  Case ID: " + caseId + "\n"
-            + "  Status: Running\n"
-            + "Use 'status case " + caseId + "' to check progress.";
+        try {
+            String caseId = engineAdapter.launchCase(specId, null);
+            return "Workflow launched successfully.\n"
+                + "  Specification: " + specId + "\n"
+                + "  Case ID: " + caseId + "\n"
+                + "  Status: Running\n"
+                + "Use 'status case " + caseId + "' to check progress.";
+        } catch (A2AException e) {
+            throw new IOException("Failed to launch case for spec '" + specId + "': " + e.getMessage(), e);
+        }
     }
 
     /**
-     * Handles a case query.
+     * Handles a case query via InterfaceB.getWorkItemsForCase() and getCaseData().
      */
     private String handleCaseQuery(String userText) throws IOException {
         String caseId = extractNumber(userText);
         if (caseId != null) {
-            Map<String, Object> status = yawlWorkflowService.getCaseStatus(caseId);
+            Map<String, Object> status = getCaseStatus(caseId);
 
             StringBuilder sb = new StringBuilder();
             sb.append("Case ").append(caseId).append(":\n");
@@ -252,15 +256,15 @@ public class YawlA2AExecutor implements AgentExecutor {
     }
 
     /**
-     * Handles a work item query.
+     * Handles a work item query via InterfaceB.getWorkItemsForCase() or getCompleteListOfLiveWorkItems().
      */
     private String handleWorkItemQuery(String userText) throws IOException {
         String caseId = extractNumber(userText);
         List<Map<String, Object>> items;
         if (caseId != null) {
-            items = yawlWorkflowService.getWorkItemsForCase(caseId);
+            items = getWorkItemsForCase(caseId);
         } else {
-            items = yawlWorkflowService.getAllWorkItems();
+            items = getAllWorkItems();
         }
 
         if (items == null || items.isEmpty()) {
@@ -279,7 +283,7 @@ public class YawlA2AExecutor implements AgentExecutor {
     }
 
     /**
-     * Handles cancelling a case.
+     * Handles cancelling a case via InterfaceB.cancelCase().
      */
     private String handleCancelCase(String userText) throws IOException {
         String caseId = extractNumber(userText);
@@ -287,11 +291,111 @@ public class YawlA2AExecutor implements AgentExecutor {
             return "Please specify a case ID to cancel.";
         }
 
-        boolean success = yawlWorkflowService.cancelCase(caseId);
-        if (success) {
+        try {
+            engineAdapter.cancelCase(caseId);
             return "Case " + caseId + " cancelled successfully.";
+        } catch (A2AException e) {
+            throw new IOException("Failed to cancel case '" + caseId + "': " + e.getMessage(), e);
         }
-        return "Failed to cancel case " + caseId + ".";
+    }
+
+    // ==================== Engine Operations ====================
+
+    /**
+     * Returns case status and active work items from the YAWL engine.
+     *
+     * @param caseId the case ID to query
+     * @return map with status, caseId, workitems list, and caseData
+     * @throws IOException if engine communication fails
+     */
+    private Map<String, Object> getCaseStatus(String caseId) throws IOException {
+        try {
+            List<WorkItemRecord> wirs = engineAdapter.getWorkItemsForCase(caseId);
+            String caseData = engineAdapter.getCaseData(caseId);
+
+            List<Map<String, Object>> wirMaps = workItemRecordsToMaps(wirs);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("caseId", caseId);
+            result.put("status", wirs.isEmpty() ? "completed" : "running");
+            result.put("workitems", wirMaps);
+            result.put("caseData", caseData);
+            return result;
+        } catch (A2AException e) {
+            throw new IOException("Failed to get case status for '" + caseId + "': " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Returns work items for a specific case from the YAWL engine.
+     *
+     * @param caseId the case ID
+     * @return list of work item detail maps
+     * @throws IOException if engine communication fails
+     */
+    private List<Map<String, Object>> getWorkItemsForCase(String caseId) throws IOException {
+        try {
+            return workItemRecordsToMaps(engineAdapter.getWorkItemsForCase(caseId));
+        } catch (A2AException e) {
+            throw new IOException("Failed to get work items for case '" + caseId + "': " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Returns all live work items from the YAWL engine.
+     *
+     * @return list of work item detail maps
+     * @throws IOException if engine communication fails
+     */
+    private List<Map<String, Object>> getAllWorkItems() throws IOException {
+        try {
+            return workItemRecordsToMaps(engineAdapter.getWorkItems());
+        } catch (A2AException e) {
+            throw new IOException("Failed to get all work items: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Returns available specifications from the YAWL engine.
+     *
+     * @return list of specification detail maps
+     * @throws IOException if engine communication fails
+     */
+    private List<Map<String, Object>> listSpecifications() throws IOException {
+        try {
+            List<String> specIds = engineAdapter.getSpecifications();
+            List<Map<String, Object>> result = new ArrayList<>(specIds.size());
+            for (String specId : specIds) {
+                Map<String, Object> spec = new HashMap<>();
+                spec.put("specId", specId);
+                spec.put("name", specId);
+                result.add(spec);
+            }
+            return result;
+        } catch (A2AException e) {
+            throw new IOException("Failed to list specifications: " + e.getMessage(), e);
+        }
+    }
+
+    // ==================== Utility Methods ====================
+
+    /**
+     * Converts a list of WorkItemRecords to a list of detail maps.
+     *
+     * @param wirs the work item records
+     * @return list of maps with workitemId, caseId, taskId, status
+     */
+    private List<Map<String, Object>> workItemRecordsToMaps(List<WorkItemRecord> wirs) {
+        List<Map<String, Object>> result = new ArrayList<>(wirs.size());
+        for (WorkItemRecord wir : wirs) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("workitemId", wir.getID());
+            map.put("caseId", wir.getCaseID());
+            map.put("taskId", wir.getTaskID());
+            map.put("status", wir.getStatus());
+            result.add(map);
+        }
+        return result;
     }
 
     /**
@@ -314,7 +418,7 @@ public class YawlA2AExecutor implements AgentExecutor {
     }
 
     /**
-     * Extracts an identifier from text.
+     * Extracts an identifier from text (for launch/start commands).
      */
     private String extractIdentifier(String text) {
         String[] parts = text.split("\\s+");
@@ -339,7 +443,7 @@ public class YawlA2AExecutor implements AgentExecutor {
     }
 
     /**
-     * Extracts a number from text.
+     * Extracts a numeric ID from text (for case/task IDs).
      */
     private String extractNumber(String text) {
         Matcher m = Pattern.compile("\\b(\\d+)\\b").matcher(text);
@@ -347,121 +451,5 @@ public class YawlA2AExecutor implements AgentExecutor {
             return m.group(1);
         }
         return null;
-    }
-
-    /**
-     * Internal service class for YAWL workflow operations.
-     *
-     * <p>This class provides the actual integration with the YAWL engine
-     * using InterfaceB client.</p>
-     */
-    private static class YawlWorkflowService {
-        private final String engineUrl;
-        private final String username;
-        private final String password;
-        private final Executor executor;
-        private volatile String sessionHandle;  // VOLATILE: detects MCP reconnection
-        private volatile long lastReconnectTime = 0;
-        private static final long RECONNECT_TIMEOUT_MS = 5000;
-
-        public YawlWorkflowService(String engineUrl, String username, String password, Executor executor) {
-            this.engineUrl = engineUrl;
-            this.username = username;
-            this.password = password;
-            this.executor = executor;
-        }
-
-        public String launchCase(String specId, String caseData) throws IOException {
-            // Real implementation would use InterfaceB_EnvironmentBasedClient
-            // For now, generate a case ID
-            ensureConnection();
-            return "case-" + UUID.randomUUID().toString().substring(0, 8);
-        }
-
-        public boolean cancelCase(String caseId) throws IOException {
-            ensureConnection();
-            return true;
-        }
-
-        public Map<String, Object> checkoutWorkItem(String workitemId, String participantId) throws IOException {
-            ensureConnection();
-            return Map.of(
-                "workitemId", workitemId,
-                "participantId", participantId,
-                "data", "<data>work item data</data>",
-                "status", "offered"
-            );
-        }
-
-        public boolean checkinWorkItem(String workitemId, String participantId, String results) throws IOException {
-            ensureConnection();
-            return true;
-        }
-
-        public Map<String, Object> getCaseStatus(String caseId) throws IOException {
-            ensureConnection();
-            return Map.of(
-                "caseId", caseId,
-                "status", "running",
-                "workitems", List.<Map<String, Object>>of(),
-                "timestamp", java.time.Instant.now().toString()
-            );
-        }
-
-        public List<Map<String, Object>> getWorkItemsForCase(String caseId) throws IOException {
-            ensureConnection();
-            return List.of();
-        }
-
-        public List<Map<String, Object>> getAllWorkItems() throws IOException {
-            ensureConnection();
-            return List.of();
-        }
-
-        public List<Map<String, Object>> listSpecifications() throws IOException {
-            ensureConnection();
-            return List.of(
-                Map.of(
-                    "specId", "simple-process",
-                    "name", "Simple Process",
-                    "version", "1.0"
-                )
-            );
-        }
-
-        /**
-         * Ensures connection to YAWL engine with MCP reconnection recovery.
-         *
-         * <p>The session handle is volatile, allowing detection of stale handles
-         * when MCP session reconnects. If reconnection timeout exceeded, trigger
-         * fresh session negotiation with YAWL engine.</p>
-         */
-        private void ensureConnection() throws IOException {
-            // In production, this would use InterfaceB_EnvironmentBasedClient
-            // to establish and maintain a session with the YAWL engine
-            if (sessionHandle == null || isStaleHandle()) {
-                sessionHandle = "session-" + UUID.randomUUID().toString().substring(0, 8);
-                lastReconnectTime = System.currentTimeMillis();
-            }
-        }
-
-        /**
-         * Detects if current session handle is stale due to MCP reconnection.
-         * Returns true if timeout exceeded without heartbeat.
-         */
-        private boolean isStaleHandle() {
-            return System.currentTimeMillis() - lastReconnectTime > RECONNECT_TIMEOUT_MS
-                && lastReconnectTime > 0;  // Ignore on first connection
-        }
-
-        /**
-         * Explicitly reconnects (called by MCPServer.onMCPRestart()).
-         * Forces fresh session negotiation on next operation.
-         */
-        public void reconnect() throws IOException {
-            sessionHandle = null;
-            lastReconnectTime = 0;
-            ensureConnection();
-        }
     }
 }

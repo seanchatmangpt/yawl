@@ -29,7 +29,12 @@ import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffProtocol;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffMessage;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffToken;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.a2a.skills.A2ASkill;
+import org.yawlfoundation.yawl.integration.a2a.skills.ConstructCoordinationSkill;
+import org.yawlfoundation.yawl.integration.a2a.skills.OntologyDrivenSkillFactory;
 import org.yawlfoundation.yawl.integration.a2a.skills.ProcessMiningSkill;
+import org.yawlfoundation.yawl.integration.a2a.skills.SkillRequest;
+import org.yawlfoundation.yawl.integration.a2a.skills.SkillResult;
 // ZaiFunctionService is dynamically loaded via reflection to avoid dependency conflicts
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
@@ -38,6 +43,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -94,6 +100,10 @@ public class YawlA2AServer {
     private final java.lang.reflect.Method zaiProcessMethod;  // Cached method
     private final A2AAuthenticationProvider authProvider;
     private final ProcessMiningSkill processMiningSkill;
+    private ConstructCoordinationSkill constructCoordinationSkill;
+
+    // Ontology-derived skills (populated at start, empty if Rust service unavailable)
+    private volatile List<A2ASkill> ontologySkills = List.of();
 
     // Handoff services
     private HandoffProtocol handoffProtocol;
@@ -180,6 +190,18 @@ public class YawlA2AServer {
      * @throws IOException if the HTTP server cannot bind to the port
      */
     public void start() throws IOException {
+        // Attempt eager engine connection to populate ontology skills for agent card.
+        // If engine or Rust service is unavailable at startup, server proceeds without
+        // ontology-derived skills — they will not be present in the agent card.
+        try {
+            ensureEngineConnection();
+            ontologySkills = OntologyDrivenSkillFactory.createAll(interfaceBClient, sessionHandle);
+            _logger.info("Loaded {} ontology-derived A2A skills", ontologySkills.size());
+        } catch (Exception e) {
+            _logger.warn("Ontology skills not loaded at startup (engine or ontology service "
+                + "unavailable): {}", e.getMessage());
+        }
+
         AgentCard agentCard = buildAgentCard();
         executorService = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -349,7 +371,13 @@ public class YawlA2AServer {
                 .build())
             .defaultInputModes(List.of("text"))
             .defaultOutputModes(List.of("text"))
-            .skills(List.of(
+            .skills(buildSkillList())
+            .build();
+    }
+
+    /** Merge hardcoded YAWL skills with ontology-derived skills from the Rust service. */
+    private List<AgentSkill> buildSkillList() {
+        List<AgentSkill> skills = new ArrayList<>(List.of(
                 AgentSkill.builder()
                     .id("launch_workflow")
                     .name("Launch Workflow")
@@ -428,9 +456,41 @@ public class YawlA2AServer {
                     ))
                     .inputModes(List.of("text"))
                     .outputModes(List.of("text"))
+                    .build(),
+                AgentSkill.builder()
+                    .id("construct_coordination")
+                    .name("Construct Coordination")
+                    .description("CONSTRUCT-model coordination: Petri net token marking (0 inference tokens), "
+                        + "workflow net as JSON-LD/RDF graph, SPARQL-generated MCP tool schemas. "
+                        + "Operations: query_enabled (enabled tasks for a case), "
+                        + "validate_transition (soundness check), "
+                        + "get_workflow_net (JSON-LD graph), "
+                        + "generate_tools (CONSTRUCT-derived MCP tool schemas from spec). "
+                        + "Little's Law: routing cost W=0, bypasses inference queue entirely. "
+                        + "Formally guaranteed by YAWL Petri net soundness.")
+                    .tags(List.of("construct", "coordination", "petri-net", "sparql",
+                        "zero-token", "rdf", "workflow-net"))
+                    .examples(List.of(
+                        "What tasks are enabled for case 42?",
+                        "Generate MCP tools from workflow specification 'OrderProcessing'",
+                        "Get workflow net graph for specification 'InvoiceApproval'"
+                    ))
+                    .inputModes(List.of("application/json", "text"))
+                    .outputModes(List.of("application/json"))
                     .build()
-            ))
-            .build();
+        ));
+        // Append ontology-derived skills (populated at startup if Rust service available)
+        for (A2ASkill s : ontologySkills) {
+            skills.add(AgentSkill.builder()
+                .id(s.getId())
+                .name(s.getName())
+                .description(s.getDescription())
+                .tags(s.getTags())
+                .inputModes(List.of("text"))
+                .outputModes(List.of("text"))
+                .build());
+        }
+        return skills;
     }
 
     // =========================================================================
@@ -489,6 +549,22 @@ public class YawlA2AServer {
                 }
             }
             ensureEngineConnection();
+            // Route to ontology-derived skill if user text matches skill ID or name
+            String lower = userText.toLowerCase().trim();
+            for (A2ASkill skill : ontologySkills) {
+                String idNorm = skill.getId().replace('_', ' ').toLowerCase();
+                if (lower.contains(idNorm) || lower.contains(skill.getName().toLowerCase())) {
+                    SkillResult result = skill.execute(
+                        SkillRequest.builder(skill.getId())
+                            .parameter("userText", userText)
+                            .build());
+                    if (result.isSuccess()) {
+                        Object msg = result.get("message");
+                        return msg != null ? msg.toString() : "Skill completed successfully.";
+                    }
+                    return "Skill error: " + result.getError();
+                }
+            }
             String lower = userText.toLowerCase().trim();
 
             if (lower.contains("list") && (lower.contains("spec")
@@ -517,6 +593,14 @@ public class YawlA2AServer {
                     || lower.contains("xes") || lower.contains("variant") || lower.contains("performance")
                     || lower.contains("social network") || lower.contains("handover")) {
                 return handleProcessMiningRequest(userText);
+            }
+
+            if (lower.contains("construct") || lower.contains("enabled task")
+                    || lower.contains("enabled tasks") || lower.contains("petri")
+                    || lower.contains("workflow net") || lower.contains("generate tool")
+                    || lower.contains("sparql") || lower.contains("zero token")
+                    || lower.contains("token marking")) {
+                return handleConstructCoordinationRequest(userText);
             }
 
             return handleListSpecifications();
@@ -686,6 +770,56 @@ public class YawlA2AServer {
                     .orElse("Analysis completed");
             } else {
                 return "Process mining analysis failed: " + result.getError();
+            }
+        }
+
+        private String handleConstructCoordinationRequest(String userText) {
+            // sessionHandle is already valid: processWorkflowRequest() called ensureEngineConnection()
+            // Lazy-initialize: requires sessionHandle which is only available post-connection
+            if (constructCoordinationSkill == null) {
+                constructCoordinationSkill = new ConstructCoordinationSkill(
+                    interfaceBClient, sessionHandle);
+            }
+
+            String lower = userText.toLowerCase();
+
+            // Determine operation
+            String operation;
+            if (lower.contains("generate tool") || lower.contains("tool schema")) {
+                operation = "generate_tools";
+            } else if (lower.contains("workflow net") || lower.contains("rdf")
+                    || lower.contains("graph") || lower.contains("json-ld")) {
+                operation = "get_workflow_net";
+            } else if (lower.contains("valid") || lower.contains("transition")) {
+                operation = "validate_transition";
+            } else {
+                operation = "query_enabled";
+            }
+
+            Map<String, String> params = new HashMap<>();
+            params.put("operation", operation);
+
+            // Extract case_id for token-marking operations
+            String caseId = extractIdentifier(userText);
+            if (caseId != null) {
+                params.put("case_id", caseId);
+                params.put("spec_identifier", caseId);
+            }
+            String specId = extractSpecIdentifier(userText);
+            if (specId != null) {
+                params.put("spec_identifier", specId);
+            }
+
+            SkillRequest skillRequest = new SkillRequest(
+                constructCoordinationSkill.getId(), params);
+            SkillResult result = constructCoordinationSkill.execute(skillRequest);
+
+            if (result.isSuccess()) {
+                return result.getData().entrySet().stream()
+                    .map(e -> e.getKey() + ": " + e.getValue())
+                    .collect(java.util.stream.Collectors.joining("\n"));
+            } else {
+                return "CONSTRUCT coordination failed: " + result.getError();
             }
         }
 
@@ -941,14 +1075,10 @@ public class YawlA2AServer {
     }
 
     private HandoffToken validateHandoffToken(String messageText) {
-        // In production, this would parse and validate the JWT token
-        // For now, create a dummy token for demonstration
-        return new HandoffToken(
-            "WI-42",  // extracted from message
-            "source-agent",  // would be parsed from token
-            "target-agent",  // would be parsed from token
-            "session-handle",  // would be parsed from token
-            java.time.Instant.now().plusSeconds(60)  // 60s expiry
+        throw new UnsupportedOperationException(
+            "JWT token validation not implemented. " +
+            "Use HandoffProtocol.verifyHandoffToken() with a properly signed JWT token. " +
+            "Received message: " + (messageText != null ? messageText.substring(0, Math.min(50, messageText.length())) : "null")
         );
     }
 

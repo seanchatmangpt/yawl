@@ -185,7 +185,7 @@ public class MarketplaceElementsIntegrationTest {
         assertEquals("C-11111", order.customerId());
         assertEquals(2, order.getItemCount());
         assertEquals(3, order.getTotalQuantity());
-        assertTrue(order.getOrderTotal().signum() > 0);
+        assertTrue(order.orderTotal().signum() > 0);
     }
 
     @Test

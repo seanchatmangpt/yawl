@@ -34,7 +34,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("ZAI Service Tests")
 public class ZaiServiceTest {
 
-    private static final String TEST_API_KEY = "test-api-key-12345";
+    /** ZAI SDK requires "id.secret" format (exactly one period). This key passes format validation. */
+    private static final String TEST_API_KEY = "testid.testsecret";
 
     // =========================================================================
     // Initialization Tests
@@ -47,7 +48,7 @@ public class ZaiServiceTest {
         @Test
         @DisplayName("Constructor with valid API key should succeed")
         void testConstructorWithValidKey() {
-            ZaiService service = new ZaiService("valid-api-key");
+            ZaiService service = new ZaiService(TEST_API_KEY);
             assertNotNull(service, "Service should be created");
             assertTrue(service.isInitialized(), "Service should be initialized");
         }
@@ -77,7 +78,7 @@ public class ZaiServiceTest {
         @Test
         @DisplayName("Set and get system prompt")
         void testSetGetSystemPrompt() {
-            ZaiService service = new ZaiService("test-key");
+            ZaiService service = new ZaiService(TEST_API_KEY);
 
             assertNull(service.getSystemPrompt(), "Initial prompt should be null");
 
@@ -101,14 +102,14 @@ public class ZaiServiceTest {
         @Test
         @DisplayName("Initial history should be empty")
         void testInitialHistoryEmpty() {
-            ZaiService service = new ZaiService("test-key");
+            ZaiService service = new ZaiService(TEST_API_KEY);
             assertTrue(service.getConversationHistory().isEmpty());
         }
 
         @Test
         @DisplayName("Clear history should empty the history")
         void testClearHistory() {
-            ZaiService service = new ZaiService("test-key");
+            ZaiService service = new ZaiService(TEST_API_KEY);
             service.clearHistory();
             assertTrue(service.getConversationHistory().isEmpty());
         }
@@ -125,14 +126,14 @@ public class ZaiServiceTest {
         @Test
         @DisplayName("Get HTTP client returns non-null")
         void testGetHttpClient() {
-            ZaiService service = new ZaiService("test-key");
+            ZaiService service = new ZaiService(TEST_API_KEY);
             assertNotNull(service.getHttpClient());
         }
 
         @Test
         @DisplayName("Get default model returns correct value")
         void testGetDefaultModel() {
-            ZaiService service = new ZaiService("test-key");
+            ZaiService service = new ZaiService(TEST_API_KEY);
             assertEquals("GLM-4.7-Flash", service.getDefaultModel());
         }
     }

@@ -1,0 +1,80 @@
+# CONSTRUCT: Legacy Collection / Raw Type → Modern Collection Migration Plan
+# Produces j25:ImmutableCollectionPattern instances.
+# Rules: R11_LegacyCollectionToModern, R12_RawTypeToGeneric
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a j25:ImmutableCollectionPattern ;
+    j25:derivedFrom ?field ;
+    j25:templateFile "templates/java25-migration/collections.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule ?appliedRule ;
+    rule:sourcePattern ?sourcePattern ;
+    java:name ?fieldName ;
+    j25:renderedCode ?modernType .
+}
+WHERE {
+  {
+    # Legacy types: Vector, Hashtable, Stack
+    ?field a java:FieldDeclaration ;
+           java:name ?fieldName ;
+           java:lineNumber ?line .
+
+    ?fieldType a java:TypeRef ;
+               java:name ?legacyType .
+
+    ?field java:fieldType ?fieldType .
+
+    FILTER(?legacyType IN ("Vector", "java.util.Vector",
+                           "Hashtable", "java.util.Hashtable",
+                           "Stack", "java.util.Stack"))
+
+    BIND(rule:R11_LegacyCollectionToModern AS ?appliedRule)
+    BIND(j11:LegacyCollectionPattern AS ?sourcePattern)
+
+    BIND(
+      IF(?legacyType IN ("Vector", "java.util.Vector"),
+         "List<E>",
+         IF(?legacyType IN ("Hashtable", "java.util.Hashtable"),
+            "Map<K,V>",
+            "Deque<E>"  # Stack → ArrayDeque used as Deque
+         )
+      ) AS ?modernType
+    )
+  }
+  UNION
+  {
+    # Raw types: List, Map, Set without type parameters
+    ?field a java:FieldDeclaration ;
+           java:name ?fieldName ;
+           java:lineNumber ?line .
+
+    ?fieldType a java:TypeRef ;
+               java:name ?rawType .
+
+    ?field java:fieldType ?fieldType .
+
+    FILTER(?rawType IN ("List", "Map", "Set", "Collection"))
+
+    FILTER NOT EXISTS { ?fieldType java:typeArguments ?args }
+
+    BIND(rule:R12_RawTypeToGeneric AS ?appliedRule)
+    BIND(j11:RawTypePattern AS ?sourcePattern)
+    BIND(CONCAT(?rawType, "</* infer type */>") AS ?modernType)
+  }
+
+  ?class a java:ClassDeclaration ;
+         java:hasField ?field .
+
+  ?class java:inFile ?cu .
+  ?cu java:filePath ?file .
+
+  BIND(IRI(CONCAT(STR(?field), "_modernCollection")) AS ?migrationNode)
+}
+ORDER BY ?file ?line

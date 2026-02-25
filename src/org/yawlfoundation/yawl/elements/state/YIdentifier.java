@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.yawlfoundation.yawl.elements.*;
 import org.yawlfoundation.yawl.engine.YEngine;
@@ -36,6 +37,10 @@ import org.yawlfoundation.yawl.exceptions.YPersistenceException;
  * @author Michael Adams (refactored for v2.0, 06/08 & 04/09)
  */
 public class YIdentifier {
+
+    /** Guards _locations and locationNames. ReentrantLock instead of synchronized
+     *  to avoid virtual-thread pinning when updateThis(pmgr) calls Hibernate JDBC. */
+    private final ReentrantLock _locationLock = new ReentrantLock();
 
     // a location may be a condition or a task
     private List<YNetElement> _locations = new ArrayList<>();
@@ -189,80 +194,104 @@ public class YIdentifier {
     }
 
 
-    public synchronized void addLocation(YPersistenceManager pmgr, YNetElement condition)
+    public void addLocation(YPersistenceManager pmgr, YNetElement condition)
             throws YPersistenceException {
         if (condition == null) {
             throw new RuntimeException("Cannot add null condition to this identifier.");
         }
-        _locations.add(condition);
-
-        if ((condition instanceof YCondition) && !(condition instanceof YInputCondition)) {
-            String locName = condition.toString();
-            locationNames.add(locName.substring(locName.indexOf(":") + 1, locName.length()));
-        } else {
-            locationNames.add(condition.toString());
+        _locationLock.lock();
+        try {
+            _locations.add(condition);
+            if ((condition instanceof YCondition) && !(condition instanceof YInputCondition)) {
+                String locName = condition.toString();
+                locationNames.add(locName.substring(locName.indexOf(":") + 1));
+            } else {
+                locationNames.add(condition.toString());
+            }
+            updateThis(pmgr);
+        } finally {
+            _locationLock.unlock();
         }
-
-        updateThis(pmgr);
     }
 
 
-    public synchronized void clearLocations(YPersistenceManager pmgr)
-            throws YPersistenceException {
-        _locations.clear();
-        locationNames.clear();
-        updateThis(pmgr);
+    public void clearLocations(YPersistenceManager pmgr) throws YPersistenceException {
+        _locationLock.lock();
+        try {
+            _locations.clear();
+            locationNames.clear();
+            updateThis(pmgr);
+        } finally {
+            _locationLock.unlock();
+        }
     }
 
 
-    public synchronized void clearLocation(YPersistenceManager pmgr, YNetElement condition)
+    public void clearLocation(YPersistenceManager pmgr, YNetElement condition)
             throws YPersistenceException {
         removeLocation(pmgr, condition);
     }
 
 
-    public synchronized void removeLocation(YPersistenceManager pmgr,
-                                            YNetElement condition)
+    public void removeLocation(YPersistenceManager pmgr, YNetElement condition)
             throws YPersistenceException {
         if (condition == null) {
             throw new RuntimeException("Cannot remove null condition from this identifier.");
         }
-
-        _locations.remove(condition);
-
-        if (condition instanceof YCondition && !(condition instanceof YInputCondition)) {
-            String locName = condition.toString();
-            locationNames.remove(locName.substring(locName.indexOf(":") + 1, locName.length()));
-        } else {
-            locationNames.remove(condition.toString());
+        _locationLock.lock();
+        try {
+            _locations.remove(condition);
+            if (condition instanceof YCondition && !(condition instanceof YInputCondition)) {
+                String locName = condition.toString();
+                locationNames.remove(locName.substring(locName.indexOf(":") + 1));
+            } else {
+                locationNames.remove(condition.toString());
+            }
+            updateThis(pmgr);
+        } finally {
+            _locationLock.unlock();
         }
-        updateThis(pmgr);
     }
 
 
-    public synchronized void addLocation(YPersistenceManager pmgr, YTask task)
+    public void addLocation(YPersistenceManager pmgr, YTask task)
             throws YPersistenceException {
         if (task == null) {
             throw new RuntimeException("Cannot add null task to this identifier.");
         }
-        _locations.add(task);
-        locationNames.add(task.getID());
-        updateThis(pmgr);
+        _locationLock.lock();
+        try {
+            _locations.add(task);
+            locationNames.add(task.getID());
+            updateThis(pmgr);
+        } finally {
+            _locationLock.unlock();
+        }
     }
 
 
-    public synchronized void removeLocation(YPersistenceManager pmgr, YTask task)
+    public void removeLocation(YPersistenceManager pmgr, YTask task)
             throws YPersistenceException {
         if (task == null) {
             throw new RuntimeException("Cannot remove null task from this identifier.");
         }
-        _locations.remove(task);
-        locationNames.remove(task.getID());
+        _locationLock.lock();
+        try {
+            _locations.remove(task);
+            locationNames.remove(task.getID());
+        } finally {
+            _locationLock.unlock();
+        }
     }
 
 
-    public synchronized List<YNetElement> getLocations() {
-        return _locations;
+    public List<YNetElement> getLocations() {
+        _locationLock.lock();
+        try {
+            return _locations;
+        } finally {
+            _locationLock.unlock();
+        }
     }
 
 

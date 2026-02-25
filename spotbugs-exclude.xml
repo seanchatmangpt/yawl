@@ -119,4 +119,34 @@
         </Or>
     </Match>
 
+    <!-- XesParser.discoverPetriNet: NPath complexity 38220 causes SpotBugs StackOverflowError.
+         The method is too complex for static analysis at the current threshold. Excluded
+         pending refactoring to reduce complexity (tracked in COVERAGE_IMPROVEMENT_PLAN.md).
+         See: yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/parser/XesParser.java -->
+    <Match>
+        <Class name="org.yawlfoundation.yawl.ggen.mining.parser.XesParser"/>
+        <Method name="discoverPetriNet"/>
+    </Match>
+
+    <!-- RdfAstConverter: Apache Jena Model exposure is intentional.
+         Framework classes like Jena Model are designed for direct use and modification.
+         Defensive copying is impractical for complex RDF graph objects, and callers
+         expect direct access for queries and reasoning operations.
+         See: yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/rdf/RdfAstConverter.java -->
+    <Match>
+        <Class name="org.yawlfoundation.yawl.ggen.mining.rdf.RdfAstConverter"/>
+        <Method name="~convertToRdf|getModel"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+
+    <!-- UiPathAutomationClient.wrapXamlAsBpmn: Java text block generates XML content.
+         \n is intentional — XML requires platform-independent Unix line endings.
+         %n would produce OS-specific line endings which breaks XML portability. -->
+    <Match>
+        <Class name="org.yawlfoundation.yawl.ggen.mining.cloud.UiPathAutomationClient"/>
+        <Method name="wrapXamlAsBpmn"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
 </FindBugsFilter>

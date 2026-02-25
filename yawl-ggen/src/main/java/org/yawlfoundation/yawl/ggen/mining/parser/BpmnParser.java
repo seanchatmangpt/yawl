@@ -155,6 +155,8 @@ public class BpmnParser {
                         }
                     }
                     break;
+                default:
+                    break; // Ignore unknown BPMN elements
             }
         }
 

@@ -1,0 +1,61 @@
+# CONSTRUCT: Date/Calendar → java.time Migration Plan
+# Produces j25:InstantPattern and j25:LocalDateTimePattern instances.
+# Rule: R10_DateToInstant
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a ?targetPatternClass ;
+    j25:derivedFrom ?expr ;
+    j25:templateFile "templates/java25-migration/java-time.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R10_DateToInstant ;
+    rule:sourcePattern j11:DateCalendarPattern ;
+    j25:requiresImport ?requiredImport ;
+    j25:renderedCode ?replacement .
+}
+WHERE {
+  {
+    # new Date() → Instant.now()
+    ?expr a java:ObjectCreationExpression ;
+          java:constructedType "java.util.Date" ;
+          java:lineNumber ?line .
+
+    BIND(j25:InstantPattern AS ?targetPatternClass)
+    BIND("java.time.Instant" AS ?requiredImport)
+    BIND("Instant.now()" AS ?replacement)
+  }
+  UNION
+  {
+    # Calendar.getInstance() → LocalDateTime.now()
+    ?expr a java:MethodCallExpression ;
+          java:calleeType "java.util.Calendar" ;
+          java:calleeName "getInstance" ;
+          java:lineNumber ?line .
+
+    BIND(j25:LocalDateTimePattern AS ?targetPatternClass)
+    BIND("java.time.LocalDateTime" AS ?requiredImport)
+    BIND("LocalDateTime.now()" AS ?replacement)
+  }
+  UNION
+  {
+    # new SimpleDateFormat(...) → DateTimeFormatter.ofPattern(...)
+    ?expr a java:ObjectCreationExpression ;
+          java:constructedType "java.text.SimpleDateFormat" ;
+          java:lineNumber ?line .
+
+    BIND(j25:DateTimeFormatterPattern AS ?targetPatternClass)
+    BIND("java.time.format.DateTimeFormatter" AS ?requiredImport)
+    BIND("DateTimeFormatter.ofPattern(/* pattern */)" AS ?replacement)
+  }
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  BIND(IRI(CONCAT(STR(?expr), "_javaTime")) AS ?migrationNode)
+}

@@ -40,11 +40,9 @@ public class PnmlParser {
      */
     private static class PnmlHandler extends DefaultHandler {
         private PetriNet petriNet;
-        private String currentNetId;
         private StringBuilder textBuffer;
         private String currentElementId;
         private String currentElementName;
-        private String currentPlaceId;
         private int currentInitialMarking;
         private boolean insideInitialMarking = false;
         private boolean insideName = false;
@@ -68,12 +66,10 @@ public class PnmlParser {
                     String netId = attributes.getValue("id");
                     String netName = attributes.getValue("name");
                     petriNet = new PetriNet(netId, netName != null ? netName : netId);
-                    currentNetId = netId;
                     inNetScope = true;
                     break;
                 case "place":
                     currentElementId = attributes.getValue("id");
-                    currentPlaceId = currentElementId;
                     currentInitialMarking = 0;
                     inNetScope = false;
                     break;
@@ -96,6 +92,8 @@ public class PnmlParser {
                 case "text":
                     textBuffer.setLength(0);
                     break;
+                default:
+                    break; // Ignore unknown PNML elements
             }
         }
 
@@ -155,6 +153,8 @@ public class PnmlParser {
                     currentElementName = null;
                     inNetScope = true;
                     break;
+                default:
+                    break; // Ignore unknown end elements
             }
         }
 

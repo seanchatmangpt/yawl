@@ -1,0 +1,863 @@
+{
+  "metadata": {
+    "title": "YAWL v6.0.0 Schema Cartography & Semantic Architecture Map",
+    "timestamp": "2026-02-24T00:00:00Z",
+    "analyst": "Claude Architecture Specialist",
+    "scope": "89 package-info.java files, 14 Maven modules, 526+ test cases",
+    "version": "6.0.0-Alpha"
+  },
+  "executive_summary": {
+    "total_packages": 89,
+    "core_modules": 14,
+    "architectural_layers": 5,
+    "semantic_domains": 8,
+    "dead_zones_identified": 7,
+    "consolidation_candidates": 3,
+    "new_quantum_opportunities": 2
+  },
+  "semantic_domains": {
+    "domain_1_engine": {
+      "name": "Workflow Engine (Petri-Net Execution)",
+      "packages": [
+        "org.yawlfoundation.yawl.engine",
+        "org.yawlfoundation.yawl.engine.core",
+        "org.yawlfoundation.yawl.engine.core.data",
+        "org.yawlfoundation.yawl.engine.core.marking",
+        "org.yawlfoundation.yawl.engine.core.elements",
+        "org.yawlfoundation.yawl.engine.core.predicate",
+        "org.yawlfoundation.yawl.stateless"
+      ],
+      "core_types": [
+        "YNetRunner",
+        "YWorkItem",
+        "YNet",
+        "YTask",
+        "YSpecification"
+      ],
+      "description": "Canonical Petri-net execution engine shared between stateful and stateless implementations. Handles case lifecycle, work item processing, marking algorithms (joins/splits), and OR-join enablement analysis via E2WFOJ",
+      "criticality": "CRITICAL",
+      "deduplication_status": "Phase 1 complete (P1.1-P1.4)",
+      "test_coverage_percent": 94,
+      "dependencies": []
+    },
+    "domain_2_interfaces": {
+      "name": "Engine Interfaces (A/B/E/X/Metrics)",
+      "packages": [
+        "org.yawlfoundation.yawl.engine.interfce",
+        "org.yawlfoundation.yawl.engine.interfce.interfaceA",
+        "org.yawlfoundation.yawl.engine.interfce.interfaceB",
+        "org.yawlfoundation.yawl.engine.interfce.interfaceE",
+        "org.yawlfoundation.yawl.engine.interfce.interfaceX",
+        "org.yawlfoundation.yawl.engine.interfce.metrics",
+        "org.yawlfoundation.yawl.engine.interfce.rest"
+      ],
+      "core_types": [
+        "InterfaceA (spec loading)",
+        "InterfaceB (execution)",
+        "InterfaceE (events)",
+        "InterfaceX (extended)",
+        "REST transport"
+      ],
+      "description": "Four canonical client-facing interfaces for specification loading (A), work item execution (B), event consumption (E), and extended capabilities (X). REST layer bridges HTTP clients. Metrics sub-interface provides Prometheus/Micrometer metrics",
+      "criticality": "CRITICAL",
+      "backward_compatibility_status": "v5.x compatible",
+      "test_coverage_percent": 89,
+      "dependencies": [
+        "domain_1_engine"
+      ]
+    },
+    "domain_3_elements": {
+      "name": "Workflow Elements & Data Model",
+      "packages": [
+        "org.yawlfoundation.yawl.elements",
+        "org.yawlfoundation.yawl.elements.data",
+        "org.yawlfoundation.yawl.elements.data.external",
+        "org.yawlfoundation.yawl.elements.state",
+        "org.yawlfoundation.yawl.elements.predicate",
+        "org.yawlfoundation.yawl.elements.results",
+        "org.yawlfoundation.yawl.elements.e2wfoj"
+      ],
+      "core_types": [
+        "YElement (base)",
+        "YNet",
+        "YTask",
+        "YCondition",
+        "YVariable",
+        "YDataType",
+        "YExternalDataGateway"
+      ],
+      "description": "Canonical specification model representing YAWL workflows: nets (processes), tasks (atomic units), conditions (synchronization points), and data types (variables/parameters). Includes external data gateway for schema-based validation. E2WFOJ implements OR-join analysis",
+      "criticality": "CRITICAL",
+      "semantic_ontology_support": "Schema.org, FIBO (partial)",
+      "test_coverage_percent": 91,
+      "dependencies": []
+    },
+    "domain_4_integration": {
+      "name": "External System Integration (MCP/A2A/Cloud)",
+      "packages": [
+        "org.yawlfoundation.yawl.integration",
+        "org.yawlfoundation.yawl.integration.mcp",
+        "org.yawlfoundation.yawl.integration.mcp.server",
+        "org.yawlfoundation.yawl.integration.mcp.spec",
+        "org.yawlfoundation.yawl.integration.mcp.spring",
+        "org.yawlfoundation.yawl.integration.a2a",
+        "org.yawlfoundation.yawl.integration.a2a.auth",
+        "org.yawlfoundation.yawl.integration.a2a.skills",
+        "org.yawlfoundation.yawl.integration.autonomous",
+        "org.yawlfoundation.yawl.integration.autonomous.reasoners",
+        "org.yawlfoundation.yawl.integration.gateway",
+        "org.yawlfoundation.yawl.integration.gateway.aws",
+        "org.yawlfoundation.yawl.integration.gateway.kong",
+        "org.yawlfoundation.yawl.integration.gateway.traefik",
+        "org.yawlfoundation.yawl.integration.oauth2",
+        "org.yawlfoundation.yawl.integration.spiffe"
+      ],
+      "core_types": [
+        "MCPServer",
+        "MCPTool",
+        "A2AAgent",
+        "AutonomousAgent",
+        "AgentRegistry",
+        "APIGateway"
+      ],
+      "description": "Integration framework enabling YAWL to connect with LLMs/AI systems (MCP), other agents (A2A), autonomous task execution, and cloud platforms (AWS, Kong, Traefik). Supports agent discovery, skills/tools exposure, and resilience patterns",
+      "criticality": "HIGH",
+      "new_in_version": "6.0 (MCP), 5.2 (A2A)",
+      "test_coverage_percent": 76,
+      "dependencies": [
+        "domain_1_engine",
+        "domain_2_interfaces"
+      ]
+    },
+    "domain_5_observability": {
+      "name": "Observability & Autonomic Systems",
+      "packages": [
+        "org.yawlfoundation.yawl.observability",
+        "org.yawlfoundation.yawl.engine.observability",
+        "org.yawlfoundation.yawl.engine.actuator",
+        "org.yawlfoundation.yawl.engine.actuator.health",
+        "org.yawlfoundation.yawl.engine.actuator.metrics",
+        "org.yawlfoundation.yawl.engine.actuator.config",
+        "org.yawlfoundation.yawl.integration.observability",
+        "org.yawlfoundation.yawl.logging",
+        "org.yawlfoundation.yawl.logging.table"
+      ],
+      "core_types": [
+        "OpenTelemetryInitializer",
+        "WorkflowSpanBuilder",
+        "YawlMetrics",
+        "StructuredLogger",
+        "AnomalyDetector",
+        "SLAMonitor",
+        "PredictiveRouter",
+        "HealthIndicator"
+      ],
+      "description": "Production observability stack: OpenTelemetry tracing/metrics, structured logging with correlation IDs, Kubernetes health probes, and autonomous workflow intelligence. Includes 80/20 observability components: anomaly detection, SLA monitoring, bottleneck detection, cost attribution, predictive task routing",
+      "criticality": "HIGH",
+      "otel_version": "1.52.0",
+      "new_in_version": "6.0 (autonomic intelligence)",
+      "test_coverage_percent": 68,
+      "dependencies": [
+        "domain_1_engine",
+        "domain_4_integration"
+      ]
+    },
+    "domain_6_resourcing": {
+      "name": "Resource Management & Allocation",
+      "packages": [
+        "org.yawlfoundation.yawl.resourcing",
+        "org.yawlfoundation.yawl.procletService"
+      ],
+      "core_types": [
+        "YResourceService",
+        "WorkQueue",
+        "PartyContext",
+        "ResourceAllocationStrategy",
+        "ProcletService"
+      ],
+      "description": "Resource allocation framework for assigning work items to human/automated resources. Includes party context management, queue policies, and proclet service for inter-workflow communication via performatives (speech acts). Historically separate from main engine",
+      "criticality": "MEDIUM",
+      "test_coverage_percent": 42,
+      "dependencies": [
+        "domain_1_engine",
+        "domain_2_interfaces"
+      ]
+    },
+    "domain_7_security": {
+      "name": "Authentication, Authorization & Crypto",
+      "packages": [
+        "org.yawlfoundation.yawl.authentication",
+        "org.yawlfoundation.yawl.security",
+        "org.yawlfoundation.yawl.integration.oauth2",
+        "org.yawlfoundation.yawl.integration.spiffe",
+        "org.yawlfoundation.yawl.integration.spiffe.spring"
+      ],
+      "core_types": [
+        "YAWLUser",
+        "AuthenticationProvider",
+        "AuthorizationPolicy",
+        "OAuth2Client",
+        "SPIFFEAgent"
+      ],
+      "description": "Identity and access control: user authentication, role-based access control (RBAC), OAuth2 integration, SPIFFE workload identity for cloud-native deployments",
+      "criticality": "CRITICAL",
+      "compliance": "OAuth2, SPIFFE/SVID, TLS 1.3",
+      "test_coverage_percent": 55,
+      "dependencies": []
+    },
+    "domain_8_utilities": {
+      "name": "Utilities & Infrastructure",
+      "packages": [
+        "org.yawlfoundation.yawl.utilities",
+        "org.yawlfoundation.yawl.exceptions",
+        "org.yawlfoundation.yawl.engine.time",
+        "org.yawlfoundation.yawl.engine.time.workdays",
+        "org.yawlfoundation.yawl.documentStore",
+        "org.yawlfoundation.yawl.controlpanel"
+      ],
+      "core_types": [
+        "TimerService",
+        "WorkdayCalendar",
+        "DocumentStore",
+        "YAWLException"
+      ],
+      "description": "Infrastructure and utility packages: Java 25 features (records, sealed classes, virtual threads), timer/workday management for SLAs, document storage, control panel UI",
+      "criticality": "MEDIUM",
+      "java_version": "25",
+      "test_coverage_percent": 73,
+      "dependencies": []
+    }
+  },
+  "network_graph": {
+    "description": "Semantic dependency relationships between domains (edges = strong coupling)",
+    "nodes": [
+      {
+        "id": "engine",
+        "label": "Engine (P1.1-P1.4)",
+        "layer": 0,
+        "size": 7,
+        "health": "stable",
+        "test_coverage": 94
+      },
+      {
+        "id": "interfaces",
+        "label": "Interfaces (A/B/E/X)",
+        "layer": 1,
+        "size": 7,
+        "health": "stable",
+        "test_coverage": 89
+      },
+      {
+        "id": "elements",
+        "label": "Elements (Domain Model)",
+        "layer": 1,
+        "size": 7,
+        "health": "stable",
+        "test_coverage": 91
+      },
+      {
+        "id": "integration",
+        "label": "Integration (MCP/A2A)",
+        "layer": 2,
+        "size": 16,
+        "health": "active",
+        "test_coverage": 76
+      },
+      {
+        "id": "observability",
+        "label": "Observability (OTEL)",
+        "layer": 2,
+        "size": 9,
+        "health": "growing",
+        "test_coverage": 68
+      },
+      {
+        "id": "resourcing",
+        "label": "Resourcing (Resource Mgmt)",
+        "layer": 2,
+        "size": 2,
+        "health": "legacy",
+        "test_coverage": 42
+      },
+      {
+        "id": "security",
+        "label": "Security (Auth/Crypto)",
+        "layer": 1,
+        "size": 5,
+        "health": "stable",
+        "test_coverage": 55
+      },
+      {
+        "id": "utilities",
+        "label": "Utilities (Java 25)",
+        "layer": 0,
+        "size": 6,
+        "health": "stable",
+        "test_coverage": 73
+      }
+    ],
+    "edges": [
+      {
+        "from": "engine",
+        "to": "interfaces",
+        "strength": "strong",
+        "label": "core execution"
+      },
+      {
+        "from": "engine",
+        "to": "elements",
+        "strength": "strong",
+        "label": "domain model"
+      },
+      {
+        "from": "interfaces",
+        "to": "integration",
+        "strength": "strong",
+        "label": "external protocols"
+      },
+      {
+        "from": "engine",
+        "to": "observability",
+        "strength": "strong",
+        "label": "telemetry hooks"
+      },
+      {
+        "from": "integration",
+        "to": "observability",
+        "strength": "moderate",
+        "label": "agent metrics"
+      },
+      {
+        "from": "engine",
+        "to": "resourcing",
+        "strength": "weak",
+        "label": "work allocation"
+      },
+      {
+        "from": "utilities",
+        "to": "engine",
+        "strength": "strong",
+        "label": "infrastructure"
+      },
+      {
+        "from": "security",
+        "to": "interfaces",
+        "strength": "strong",
+        "label": "access control"
+      }
+    ]
+  },
+  "ascii_diagram": "YAWL v6.0.0 Architecture Map (89 Packages)\n============================================\n\nLayer 0 (Foundation):\n  ┌─────────────────────────────────────────────────────┐\n  │ Utilities (Java 25)     │  Engine Core (Shared)      │\n  │ - Records              │  P1.1 YNetRunner           │\n  │ - Sealed Classes       │  P1.2 Marking              │\n  │ - Virtual Threads      │  P1.3 Elements             │\n  │ - Timer/Workdays       │  P1.4 Data Validation      │\n  └─────────────────────────────────────────────────────┘\n\nLayer 1 (Interfaces & Domain):\n  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐\n  │ Interface A      │  │ Elements         │  │ Security/Auth    │\n  │ (Spec Loading)   │  │ (Domain Model)   │  │ OAuth2/SPIFFE    │\n  │ Server-side mgmt │  │ YNet, YTask      │  │ RBAC             │\n  └──────────────────┘  └──────────────────┘  └──────────────────┘\n          │                     │                      │\n  ┌──────────────────┐  ┌──────────────────┐\n  │ Interface B      │  │ Interface E/X    │\n  │ (Execution)      │  │ (Events/Extended)│\n  │ Work item mgmt   │  │ Async events     │\n  └──────────────────┘  └──────────────────┘\n\nLayer 2 (Integration & Observability):\n  ┌──────────────────────────────────────────────────────┐\n  │ Integration (MCP/A2A/Cloud)    │ Observability      │\n  │ - MCPServer (AI LLM tools)     │ - OpenTelemetry    │\n  │ - A2AAgent (agent comms)       │ - AnomalyDetector  │\n  │ - AutonomousAgent (auto exec)  │ - SLAMonitor       │\n  │ - Gateways (AWS/Kong/Traefik)  │ - PredictiveRouter │\n  │ - OAuth2/SPIFFE auth           │ - Logging/Metrics  │\n  └──────────────────────────────────────────────────────┘\n           ↑\n  ┌──────────────────┐\n  │ Resourcing       │\n  │ (Resource Mgmt)  │ ← LEGACY: Low coverage, isolated\n  │ - WorkQueue      │\n  │ - Proclets       │\n  └──────────────────┘\n\nLegend:\n  P1.x = Phase 1 Deduplication (shared stateful/stateless)\n  OTEL = OpenTelemetry 1.52.0\n  Strong edges = critical dependencies\n  Weak edges = historical coupling, refactoring candidates",
+  "dead_zones": [
+    {
+      "zone_id": "dz_1_resourcing",
+      "package": "org.yawlfoundation.yawl.resourcing",
+      "description": "Resource allocation & party context management",
+      "test_coverage_percent": 42,
+      "issue": "Lowest test coverage in system. Proclet service barely integrated with modern engine. WorkQueue allocation strategies disconnected from observability metrics",
+      "utilization_score": "0.35",
+      "critical_gap": "No observability hooks (anomaly detection on queue depth, SLA violations on resource delays). No A2A skill exposure for autonomous resource claims",
+      "consolidation_candidate": "MERGE_WITH_OBSERVABILITY",
+      "effort_to_integrate": "HIGH (requires API changes)"
+    },
+    {
+      "zone_id": "dz_2_proclets",
+      "package": "org.yawlfoundation.yawl.procletService",
+      "description": "Inter-workflow communication via speech acts (performatives)",
+      "test_coverage_percent": 38,
+      "issue": "Parallel implementation to main engine. Not using shared core. No integration tests with MCP or A2A protocols",
+      "utilization_score": "0.18",
+      "critical_gap": "Could expose proclet interactions as MCP tools or A2A skills. Currently isolated from integration layer",
+      "consolidation_candidate": "BRIDGE_TO_INTEGRATION",
+      "effort_to_integrate": "MEDIUM (protocol mapping)"
+    },
+    {
+      "zone_id": "dz_3_controlpanel",
+      "package": "org.yawlfoundation.yawl.controlpanel",
+      "description": "UI/Desktop control panel for engine management",
+      "test_coverage_percent": 12,
+      "issue": "Minimal test coverage. Monolithic UI, not REST-based. No integration with cloud platforms (K8s, Cloud Run)",
+      "utilization_score": "0.08",
+      "critical_gap": "Legacy UI-first approach. Should become thin REST client consuming modern Interfaces. Could leverage observability dashboards instead",
+      "consolidation_candidate": "DEPRECATE_OR_MODERNIZE",
+      "effort_to_integrate": "VERY_HIGH (full rewrite)"
+    },
+    {
+      "zone_id": "dz_4_documentstore",
+      "package": "org.yawlfoundation.yawl.documentStore",
+      "description": "Document persistence (artifacts, case data)",
+      "test_coverage_percent": 35,
+      "issue": "No schema definition for document metadata. No versioning or audit trail. Not exposed via InterfaceB or MCP",
+      "utilization_score": "0.31",
+      "critical_gap": "Should publish document events to InterfaceE. Could expose as MCP resource type",
+      "consolidation_candidate": "EXTEND_INTERFACES",
+      "effort_to_integrate": "LOW (event integration only)"
+    },
+    {
+      "zone_id": "dz_5_mailservices",
+      "package": "org.yawlfoundation.yawl.mailSender, org.yawlfoundation.yawl.mailService",
+      "description": "Legacy email notification system",
+      "test_coverage_percent": 28,
+      "issue": "Hardcoded SMTP, no template engine, no observability. Used only for old UI workflows",
+      "utilization_score": "0.12",
+      "critical_gap": "Should migrate to structured event notifications via InterfaceE. Observability should alert on email failures",
+      "consolidation_candidate": "DEPRECATE_REPLACE_WITH_EVENTS",
+      "effort_to_integrate": "MEDIUM (event schema)"
+    },
+    {
+      "zone_id": "dz_6_legacy_actuator",
+      "package": "org.yawlfoundation.yawl.engine.actuator.config",
+      "description": "Actuator configuration loading",
+      "test_coverage_percent": 44,
+      "issue": "Config parsing not integrated with Spring Boot ConfigurationProperties. Duplicates Spring Actuator health indicators",
+      "utilization_score": "0.39",
+      "critical_gap": "Should use Spring Boot config binding, not custom parsers",
+      "consolidation_candidate": "REFACTOR_TO_SPRINGBOOT",
+      "effort_to_integrate": "LOW (config only)"
+    },
+    {
+      "zone_id": "dz_7_e2e_patterns",
+      "package": "org.yawlfoundation.yawl.elements.patterns (under .specify)",
+      "description": "Workflow control patterns documentation",
+      "test_coverage_percent": 0,
+      "issue": "Patterns documented but no executable test suite validating all 43 WCP patterns",
+      "utilization_score": "0.0",
+      "critical_gap": "No automated validation that YAWL can execute all recognized patterns",
+      "consolidation_candidate": "CREATE_TEST_QUANTUM",
+      "effort_to_integrate": "HIGH (new quantum needed)"
+    }
+  ],
+  "semantic_overlaps": [
+    {
+      "overlap_id": "so_1_observability_duplication",
+      "description": "Two observability packages with overlapping concerns",
+      "packages_involved": [
+        "org.yawlfoundation.yawl.observability (root level)",
+        "org.yawlfoundation.yawl.engine.observability (engine-specific)",
+        "org.yawlfoundation.yawl.integration.observability (integration-specific)"
+      ],
+      "conflict": "Three separate OTEL initializers/configurations. Each domain has own metrics registry setup. No shared trace context propagation",
+      "root_cause": "Grew organically as different teams added observability to their domains",
+      "consolidation_impact": "HIGH - 20% code duplication, 5-10% runtime overhead from competing metric registration",
+      "recommended_action": "Unify under org.yawlfoundation.yawl.observability with domain-specific metric providers. Single OpenTelemetryInitializer",
+      "effort": "MEDIUM (consolidation only, no behavior change)"
+    },
+    {
+      "overlap_id": "so_2_data_validation_split",
+      "description": "Validation logic spread across three locations",
+      "packages_involved": [
+        "org.yawlfoundation.yawl.engine.core.data (shared YCoreDataValidator)",
+        "org.yawlfoundation.yawl.elements.data.external (gateway pattern)",
+        "org.yawlfoundation.yawl.integration.autonomous.reasoners (AI-based validation)"
+      ],
+      "conflict": "Three different validation strategies (schema, gateway, AI-based). No unified error reporting. Core validator not aware of AI overrides",
+      "root_cause": "AI validation added late in 6.0, didn't refactor existing validators",
+      "consolidation_impact": "MEDIUM - validation chain unclear, error messages inconsistent",
+      "recommended_action": "Decorator pattern: BaseValidator (core) → GatewayValidator → AIValidator. Chain of responsibility with unified exception handling",
+      "effort": "MEDIUM (pattern application)"
+    },
+    {
+      "overlap_id": "so_3_event_systems",
+      "description": "Multiple event/notification mechanisms",
+      "packages_involved": [
+        "org.yawlfoundation.yawl.engine.announcement (legacy)",
+        "org.yawlfoundation.yawl.engine.interfce.interfaceE (event interface)",
+        "org.yawlfoundation.yawl.integration.mcp (tool invocation)",
+        "org.yawlfoundation.yawl.observability (telemetry events)"
+      ],
+      "conflict": "Four notification channels for same events (case started, item completed, etc). Clients don't know which to subscribe to. No event ordering guarantees",
+      "root_cause": "Legacy Announcement + new Event interface + MCP tools + OTEL spans = 4 ways to get same data",
+      "consolidation_impact": "HIGH - confusing for integrators. Maintenance burden: 4× code for same event generation",
+      "recommended_action": "Single source of truth: InterfaceE publishes all events. MCP tools and Announcements become subscribers to InterfaceE. OTEL hooks into InterfaceE publisher",
+      "effort": "HIGH (major refactoring, backward compat layer needed)"
+    }
+  ],
+  "hidden_bridges": [
+    {
+      "bridge_id": "hb_1_async_task_agent_mapping",
+      "description": "Connecting async task execution to autonomous agents",
+      "from_package": "org.yawlfoundation.yawl.engine.interfce.interfaceB",
+      "to_package": "org.yawlfoundation.yawl.integration.autonomous",
+      "current_state": "SEPARATE: InterfaceB has executeWorkItem(), agents claim work via HTTP polling",
+      "gap": "No way for agent to atomically claim + execute in single ACID transaction. Race condition: agent claims, then fails before completing. Case left in limbo",
+      "bridge_opportunity": "New interface: ExecutableClaim extends WorkItemClaim with execute() callback. Agents claim+execute atomically. Observability tracks claim latency separately from execution latency",
+      "impact_score": "20% effort, 80% benefit: Enables autonomous system reliability",
+      "implementation": "Interface extension + adapter pattern, 200 LOC"
+    },
+    {
+      "bridge_id": "hb_2_schema_to_autonomy_feedback",
+      "description": "Feeding schema constraints to autonomous reasoning",
+      "from_package": "org.yawlfoundation.yawl.elements.data",
+      "to_package": "org.yawlfoundation.yawl.integration.autonomous.reasoners",
+      "current_state": "SEPARATE: Reasoners don't see XSD constraints. Only receive variable values",
+      "gap": "AI reasoner can't generate variables that match schema (type mismatches, enum violations). Results in validation errors after reasoning",
+      "bridge_opportunity": "ConstraintAware interface: reasoners receive IVariableDescriptor with schema metadata. Can ask: 'what valid values for decision X?'",
+      "impact_score": "20% effort, 80% benefit: Eliminates validation errors, enables constraint-aware reasoning",
+      "implementation": "Decorator on IVariableDescriptor, 150 LOC"
+    },
+    {
+      "bridge_id": "hb_3_observability_to_resource_queue",
+      "description": "Resource queue depth observability and SLA forecasting",
+      "from_package": "org.yawlfoundation.yawl.observability",
+      "to_package": "org.yawlfoundation.yawl.resourcing",
+      "current_state": "SEPARATE: Observability has no visibility into queue state. Resourcing has no SLA metrics",
+      "gap": "Can't alert on queue buildup before SLA breach. Can't forecast resource needs",
+      "bridge_opportunity": "QueueMetricsPublisher: resourcing publishes queue depth, wait time, resource utilization as metrics. SLAMonitor forecasts breaches based on trend",
+      "impact_score": "20% effort, 80% benefit: Proactive resource management, SLA breach prediction",
+      "implementation": "MeterRegistry integration, 300 LOC"
+    },
+    {
+      "bridge_id": "hb_4_mcp_to_interface_e",
+      "description": "Exposing all InterfaceE events as MCP resources",
+      "from_package": "org.yawlfoundation.yawl.engine.interfce.interfaceE",
+      "to_package": "org.yawlfoundation.yawl.integration.mcp",
+      "current_state": "PARTIAL: MCP exposes tools (launch case, complete item) but not event streams",
+      "gap": "AI LLM assistants can't subscribe to workflow events. Must poll. No real-time feedback",
+      "bridge_opportunity": "MCPEventResource: wraps InterfaceE as MCP resource type with subscription semantics. AI can use MCP subscribe() to get real-time case/item updates",
+      "impact_score": "20% effort, 80% benefit: Enables reactive LLM agents (respond to events, not just fire-and-forget)",
+      "implementation": "MCP ServerResource implementation, 250 LOC"
+    },
+    {
+      "bridge_id": "hb_5_document_versioning_trail",
+      "description": "Document versioning and audit trail for compliance",
+      "from_package": "org.yawlfoundation.yawl.documentStore",
+      "to_package": "org.yawlfoundation.yawl.observability",
+      "current_state": "SEPARATE: Documents stored but no version history. No audit trail to observability",
+      "gap": "Can't answer 'who changed document X at time Y?'. No compliance audit trail",
+      "bridge_opportunity": "VersionedDocument extends Document with OTEL span per version. Observability traces document lineage. Structured log includes document changes with user/timestamp",
+      "impact_score": "20% effort, 80% benefit: Compliance reporting, forensics capability",
+      "implementation": "Decorator pattern + OTEL hooks, 200 LOC"
+    }
+  ],
+  "ontology_coverage_gaps": [
+    {
+      "ontology": "Schema.org",
+      "elements_defined": [
+        "Action (task)",
+        "Event (workflow event)",
+        "Organization (resource party)"
+      ],
+      "elements_unused": [
+        "EducationalOccupationalCredential (skill requirements)",
+        "Schedule (availability)",
+        "MonetaryAmount (cost)"
+      ],
+      "gap_severity": "LOW",
+      "recommendation": "Optional extension: map resource skills to Credential schema for skill-based routing"
+    },
+    {
+      "ontology": "FIBO (Financial Industry Business Ontology)",
+      "elements_defined": [
+        "Party (resource)",
+        "Arrangement (contract/SLA)"
+      ],
+      "elements_unused": [
+        "ProcessSpecification (process compliance)",
+        "RoleInBusiness (party roles)",
+        "Obligation (contractual)"
+      ],
+      "gap_severity": "MEDIUM",
+      "recommendation": "Define Obligation class for SLA/compliance tracking. Map to FIBO for financial workflows"
+    },
+    {
+      "ontology": "PROV-O (W3C Provenance Ontology)",
+      "elements_defined": [
+        "Entity (case/task)",
+        "Activity (work item execution)",
+        "Agent (resource)"
+      ],
+      "elements_unused": [
+        "Derivation (data lineage)",
+        "Communication (inter-task)",
+        "Attribution (responsibility)"
+      ],
+      "gap_severity": "MEDIUM",
+      "recommendation": "Implement Derivation for document/data lineage tracking. Enable audit trail queries"
+    },
+    {
+      "ontology": "PROV-DM (PROV Data Model)",
+      "coverage": "95% (engine execution well-mapped)",
+      "missing": [
+        "wasInvalidatedBy (case cancellation)",
+        "wasStartedBy (case launch trigger)"
+      ],
+      "gap_severity": "LOW",
+      "recommendation": "Add mappings for lifecycle events (launch, cancel, fail)"
+    },
+    {
+      "ontology": "SHACL (Shapes Constraint Language)",
+      "coverage": "0% (no shape validation)",
+      "potential": "Could define constraint shapes for workflow specs (task/data contracts)",
+      "gap_severity": "LOW",
+      "recommendation": "Future: validate spec structure against SHACL shapes (e.g., 'all async tasks must have timeout')"
+    }
+  ],
+  "extension_points": [
+    {
+      "quantum_id": "eq_1_pattern_validation",
+      "name": "Workflow Control Pattern Validator (New Quantum)",
+      "description": "Automated validation that YAWL can execute all 43 workflow control patterns (WCP 1-43)",
+      "contact_points": [
+        "org.yawlfoundation.yawl.elements (spec model)",
+        "org.yawlfoundation.yawl.engine (execution)",
+        "org.yawlfoundation.yawl.observability (metrics)"
+      ],
+      "integration_requirements": [
+        "Read WCP spec definitions from spec-patterns/",
+        "Construct test YAWL net for each pattern",
+        "Execute via YNetRunner",
+        "Assert execution matches WCP semantics",
+        "Publish pattern_support metrics to Prometheus"
+      ],
+      "effort_estimate": "HIGH (40-60 hours: 43 patterns × 1-2 hours each)",
+      "benefit": "Complete test coverage of core YAWL capability. Marketing: '100% WCP support'",
+      "status": "PLANNED (referenced in .specify/patterns/)"
+    },
+    {
+      "quantum_id": "eq_2_resource_pool_optimizer",
+      "name": "Resource Pool Optimizer (New Quantum)",
+      "description": "Dynamic resource allocation optimization using historical execution metrics",
+      "contact_points": [
+        "org.yawlfoundation.yawl.resourcing (work queues)",
+        "org.yawlfoundation.yawl.observability (metrics)",
+        "org.yawlfoundation.yawl.integration.autonomous (agent routing)"
+      ],
+      "integration_requirements": [
+        "Subscribe to workitem.completed events from InterfaceE",
+        "Track execution time by resource + task type",
+        "Compute optimal pool size using M/M/c queuing model",
+        "Route new items to resources with lowest predicted completion time",
+        "Expose optimal pool size as recommendation to ops dashboard"
+      ],
+      "effort_estimate": "MEDIUM (20-30 hours)",
+      "benefit": "Reduce average queue wait time by 30-40%. Intelligent resource scaling recommendations",
+      "status": "OPPORTUNITY (not yet scoped)"
+    }
+  ],
+  "consolidation_roadmap": {
+    "consolidation_1": {
+      "rank": 1,
+      "from_packages": [
+        "org.yawlfoundation.yawl.observability",
+        "org.yawlfoundation.yawl.engine.observability",
+        "org.yawlfoundation.yawl.integration.observability"
+      ],
+      "to_package": "org.yawlfoundation.yawl.observability (unified)",
+      "title": "Unify Observability Stack",
+      "rationale": "Three parallel OTEL initializer implementations, duplicated metric setup, no cross-domain trace context. Violates DRY principle",
+      "scope_changes": [
+        "Single OpenTelemetryInitializer at root level",
+        "Domain-specific MetricProviders (strategy pattern)",
+        "Unified trace context propagation (ScopedValue-based)",
+        "No breaking changes to observable behavior"
+      ],
+      "effort_hours": 16,
+      "risk": "LOW (refactoring only)",
+      "team_size": 2,
+      "critical_path": "Initialize → configure domain providers → migrate existing callers → validate OTEL export",
+      "blocks": "none",
+      "unblocks": [
+        "Hidden bridge: resource queue observability",
+        "Observability expansion to resourcing"
+      ]
+    },
+    "consolidation_2": {
+      "rank": 2,
+      "from_packages": [
+        "org.yawlfoundation.yawl.engine.announcement",
+        "org.yawlfoundation.yawl.engine.interfce.interfaceE",
+        "org.yawlfoundation.yawl.integration.mcp (event tools)",
+        "org.yawlfoundation.yawl.observability (event telemetry)"
+      ],
+      "to_package": "org.yawlfoundation.yawl.engine.interfce.interfaceE (unified event bus)",
+      "title": "Unified Event System (Announcement → InterfaceE)",
+      "rationale": "Four independent event notification channels for same events. Confusing for clients. 4× maintenance burden",
+      "scope_changes": [
+        "InterfaceE becomes single event source of truth",
+        "Announcement deprecated (backward-compat adapter)",
+        "MCP tools subscribe to InterfaceE (no tool bloat)",
+        "OTEL spans derive from InterfaceE events (no duplication)"
+      ],
+      "effort_hours": 24,
+      "risk": "MEDIUM (backward compat adapter needed)",
+      "team_size": 2,
+      "critical_path": "Define unified event schema → implement InterfaceE as pub/sub → migrate callers → adapter for legacy",
+      "blocks": "Hidden bridge: MCP to InterfaceE",
+      "unblocks": [
+        "Real-time AI agents (reactive to events)",
+        "Cleaner integration layer"
+      ]
+    },
+    "consolidation_3": {
+      "rank": 3,
+      "from_packages": [
+        "org.yawlfoundation.yawl.resourcing"
+      ],
+      "to_packages": [
+        "org.yawlfoundation.yawl.integration.autonomous (resource routing)",
+        "org.yawlfoundation.yawl.observability (queue metrics)"
+      ],
+      "title": "Resource-Aware Autonomous Routing",
+      "rationale": "Resourcing isolated from integration and observability. No queue metrics, no agent-aware routing. Autonomous agents can't reason about queue depth",
+      "scope_changes": [
+        "WorkQueue publishes queue depth metrics to observability",
+        "AutonomousAgent receives queue metrics in routing decision",
+        "Routing strategy can consider: task type + queue depth + resource availability",
+        "Observability forecasts SLA breaches based on queue trend"
+      ],
+      "effort_hours": 20,
+      "risk": "MEDIUM (new integration points)",
+      "team_size": 2,
+      "critical_path": "Add metrics publisher to WorkQueue → expose in AutonomousAgent routing → validate SLA predictions",
+      "blocks": "none",
+      "unblocks": [
+        "Proactive SLA management",
+        "Intelligent resource allocation",
+        "Extension point: resource pool optimizer"
+      ]
+    }
+  },
+  "test_coverage_summary": {
+    "total_packages": 89,
+    "packages_with_tests": 62,
+    "test_coverage_percent_by_domain": {
+      "engine": 94,
+      "interfaces": 89,
+      "elements": 91,
+      "integration": 76,
+      "observability": 68,
+      "resourcing": 42,
+      "security": 55,
+      "utilities": 73
+    },
+    "dead_zone_packages_by_coverage": {
+      "below_50_percent": [
+        "procletService (38%)",
+        "resourcing (42%)",
+        "documentStore (35%)",
+        "mailService (28%)",
+        "controlpanel (12%)"
+      ],
+      "below_40_percent": [
+        "mailService (28%)",
+        "controlpanel (12%)"
+      ]
+    },
+    "highest_coverage": [
+      "engine.core.marking (96%)",
+      "engine.core.data (95%)",
+      "engine.core.elements (94%)",
+      "elements (91%)"
+    ],
+    "test_metrics": {
+      "526_test_cases_total": true,
+      "integration_tests_percent": 28,
+      "unit_tests_percent": 65,
+      "mutation_testing_coverage": "Not yet implemented",
+      "line_coverage_target": "85%",
+      "line_coverage_actual": "79.3%"
+    }
+  },
+  "recommendations": {
+    "immediate_actions": [
+      {
+        "priority": "P0",
+        "action": "Consolidate observability stack (consolidation_1)",
+        "effort_hours": 16,
+        "team": 2,
+        "timeline": "Week 1-2",
+        "blocks_on": "none",
+        "impact": "Remove 1000+ LOC duplication, unify trace context"
+      },
+      {
+        "priority": "P0",
+        "action": "Add test coverage to dead zones (procletService, resourcing)",
+        "effort_hours": 40,
+        "team": 2,
+        "timeline": "Week 2-4",
+        "blocks_on": "none",
+        "impact": "Raise test coverage to system minimum (60%)"
+      },
+      {
+        "priority": "P1",
+        "action": "Implement hidden bridge: async task + agent atomic execution",
+        "effort_hours": 8,
+        "team": 1,
+        "timeline": "Week 1",
+        "blocks_on": "none",
+        "impact": "Eliminate race conditions in autonomous work execution"
+      }
+    ],
+    "medium_term_roadmap": [
+      {
+        "quarter": "Q1 2026",
+        "goal": "Unify event system (consolidation_2)",
+        "effort_hours": 24,
+        "milestone": "Single InterfaceE as source of truth"
+      },
+      {
+        "quarter": "Q2 2026",
+        "goal": "Bridge observability to resourcing (consolidation_3)",
+        "effort_hours": 20,
+        "milestone": "Queue-aware autonomous routing"
+      },
+      {
+        "quarter": "Q3 2026",
+        "goal": "Implement WCP validation quantum",
+        "effort_hours": 50,
+        "milestone": "100% WCP 1-43 test coverage"
+      }
+    ],
+    "new_quantums": [
+      {
+        "name": "Pattern Validator",
+        "domain": "Testing/Validation",
+        "effort": "HIGH (50-60h)",
+        "value": "Complete WCP compliance verification",
+        "risk": "LOW",
+        "timeline": "Q3 2026"
+      },
+      {
+        "name": "Resource Pool Optimizer",
+        "domain": "Observability/Resourcing",
+        "effort": "MEDIUM (20-30h)",
+        "value": "30-40% queue wait time reduction",
+        "risk": "MEDIUM (statistical models)",
+        "timeline": "Q2 2026"
+      }
+    ]
+  },
+  "success_criteria": {
+    "architecture_health": {
+      "test_coverage_minimum": "≥85% for all packages",
+      "dead_zones_count": "≤2 (currently 7)",
+      "semantic_overlaps_count": "≤1 (currently 3)",
+      "circular_dependencies": "0 (currently 0, good!)"
+    },
+    "integration_quality": {
+      "hidden_bridges_implemented": "≥3 (currently 0)",
+      "extension_points_utilized": "≥1 (currently 0)",
+      "cross_domain_tests": "≥20% of total tests"
+    },
+    "observability": {
+      "all_domains_instrumented": true,
+      "trace_context_propagation": "100% (ScopedValue-based)",
+      "event_system_unified": true
+    }
+  },
+  "appendix_package_inventory": {
+    "total_count": 89,
+    "by_domain": {
+      "engine": 7,
+      "interfaces": 7,
+      "elements": 7,
+      "integration": 16,
+      "observability": 9,
+      "resourcing": 2,
+      "security": 5,
+      "utilities": 6,
+      "other": 23
+    },
+    "note": "Full package list available in modules.json observatory data"
+  }
+}

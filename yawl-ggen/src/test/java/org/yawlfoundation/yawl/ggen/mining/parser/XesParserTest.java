@@ -4,20 +4,20 @@ import org.yawlfoundation.yawl.ggen.mining.model.PetriNet;
 import org.yawlfoundation.yawl.ggen.mining.model.XesEvent;
 import org.yawlfoundation.yawl.ggen.mining.model.XesLog;
 import org.yawlfoundation.yawl.ggen.mining.model.XesTrace;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class XesParserTest {
 
     private static File getTestResource(String filename) {
         URL url = XesParserTest.class.getClassLoader().getResource("fixtures/" + filename);
-        assertNotNull("Test resource not found: " + filename, url);
+        assertNotNull(url, "Test resource not found: " + filename);
         return new File(url.getFile());
     }
 
@@ -28,8 +28,8 @@ public class XesParserTest {
 
         XesLog log = parser.parse(xesFile);
 
-        assertNotNull("XesLog should not be null", log);
-        assertFalse("Log should have traces", log.getTraces().isEmpty());
+        assertNotNull(log, "XesLog should not be null");
+        assertFalse(log.getTraces().isEmpty(), "Log should have traces");
     }
 
     @Test
@@ -39,7 +39,7 @@ public class XesParserTest {
 
         XesLog log = parser.parse(xesFile);
 
-        assertEquals("Log should have 2 traces", 2, log.getTraces().size());
+        assertEquals(2, log.getTraces().size(), "Log should have 2 traces");
     }
 
     @Test
@@ -54,7 +54,7 @@ public class XesParserTest {
             totalEvents += trace.getEvents().size();
         }
 
-        assertEquals("Log should have 8 total events", 8, totalEvents);
+        assertEquals(8, totalEvents, "Log should have 8 total events");
     }
 
     @Test
@@ -65,7 +65,7 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
 
         for (XesTrace trace : log.getTraces()) {
-            assertEquals("Each trace should have 4 events", 4, trace.getEvents().size());
+            assertEquals(4, trace.getEvents().size(), "Each trace should have 4 events");
         }
     }
 
@@ -77,11 +77,11 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
         Set<String> activities = log.getActivities();
 
-        assertTrue("Should contain 'Receive Application'", activities.contains("Receive Application"));
-        assertTrue("Should contain 'Assess Risk'", activities.contains("Assess Risk"));
-        assertTrue("Should contain 'Approve Application'", activities.contains("Approve Application"));
-        assertTrue("Should contain 'Reject Application'", activities.contains("Reject Application"));
-        assertTrue("Should contain 'Send Notification'", activities.contains("Send Notification"));
+        assertTrue(activities.contains("Receive Application"), "Should contain 'Receive Application'");
+        assertTrue(activities.contains("Assess Risk"), "Should contain 'Assess Risk'");
+        assertTrue(activities.contains("Approve Application"), "Should contain 'Approve Application'");
+        assertTrue(activities.contains("Reject Application"), "Should contain 'Reject Application'");
+        assertTrue(activities.contains("Send Notification"), "Should contain 'Send Notification'");
     }
 
     @Test
@@ -92,7 +92,7 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
         Set<String> activities = log.getActivities();
 
-        assertEquals("Should have 5 distinct activities", 5, activities.size());
+        assertEquals(5, activities.size(), "Should have 5 distinct activities");
     }
 
     @Test
@@ -107,9 +107,9 @@ public class XesParserTest {
             caseIds.add(trace.getCaseId());
         }
 
-        assertTrue("Should contain Case1", caseIds.contains("Case1"));
-        assertTrue("Should contain Case2", caseIds.contains("Case2"));
-        assertEquals("Should have 2 case IDs", 2, caseIds.size());
+        assertTrue(caseIds.contains("Case1"), "Should contain Case1");
+        assertTrue(caseIds.contains("Case2"), "Should contain Case2");
+        assertEquals(2, caseIds.size(), "Should have 2 case IDs");
     }
 
     @Test
@@ -121,9 +121,9 @@ public class XesParserTest {
 
         for (XesTrace trace : log.getTraces()) {
             for (XesEvent event : trace.getEvents()) {
-                assertNotNull("Event should have timestamp", event.getTimestamp());
-                assertTrue("Timestamp should be non-empty", !event.getTimestamp().isEmpty());
-                assertTrue("Timestamp should contain T (ISO format)", event.getTimestamp().contains("T"));
+                assertNotNull(event.getTimestamp(), "Event should have timestamp");
+                assertTrue(!event.getTimestamp().isEmpty(), "Timestamp should be non-empty");
+                assertTrue(event.getTimestamp().contains("T"), "Timestamp should contain T (ISO format)");
             }
         }
     }
@@ -137,7 +137,7 @@ public class XesParserTest {
 
         for (XesTrace trace : log.getTraces()) {
             for (XesEvent event : trace.getEvents()) {
-                assertEquals("All events should have 'complete' lifecycle", "complete", event.getLifecycle());
+                assertEquals("complete", event.getLifecycle(), "All events should have 'complete' lifecycle");
             }
         }
     }
@@ -150,12 +150,12 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
 
         XesTrace firstTrace = log.getTraces().get(0);
-        assertEquals("First event should be Receive Application",
-            "Receive Application", firstTrace.getEvents().get(0).getActivityName());
-        assertEquals("Second event should be Assess Risk",
-            "Assess Risk", firstTrace.getEvents().get(1).getActivityName());
-        assertEquals("Fourth event should be Send Notification",
-            "Send Notification", firstTrace.getEvents().get(3).getActivityName());
+        assertEquals("Receive Application", firstTrace.getEvents().get(0).getActivityName(),
+            "First event should be Receive Application");
+        assertEquals("Assess Risk", firstTrace.getEvents().get(1).getActivityName(),
+            "Second event should be Assess Risk");
+        assertEquals("Send Notification", firstTrace.getEvents().get(3).getActivityName(),
+            "Fourth event should be Send Notification");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class XesParserTest {
         for (XesTrace trace : log.getTraces()) {
             long duration = trace.getDuration();
             // Trace spans from 10:00 to 13:00 = 3 hours = 10800000 milliseconds
-            assertEquals("Trace should have 3-hour duration", 10800000, duration);
+            assertEquals(10800000, duration, "Trace should have 3-hour duration");
         }
     }
 
@@ -180,8 +180,8 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
         PetriNet net = parser.discoverPetriNet(log);
 
-        assertNotNull("Discovered PetriNet should not be null", net);
-        assertTrue("Petri net should be valid", net.isValid());
+        assertNotNull(net, "Discovered PetriNet should not be null");
+        assertTrue(net.isValid(), "Petri net should be valid");
     }
 
     @Test
@@ -192,9 +192,8 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
         PetriNet net = parser.discoverPetriNet(log);
 
-        assertFalse("Net should have transitions", net.getTransitions().isEmpty());
-        assertTrue("Net should have at least 5 transitions (one per activity)",
-            net.getTransitions().size() >= 5);
+        assertFalse(net.getTransitions().isEmpty(), "Net should have transitions");
+        assertTrue(net.getTransitions().size() >= 5, "Net should have at least 5 transitions (one per activity)");
     }
 
     @Test
@@ -205,9 +204,8 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
         PetriNet net = parser.discoverPetriNet(log);
 
-        assertFalse("Net should have places", net.getPlaces().isEmpty());
-        assertTrue("Net should have at least 2 places (start and end)",
-            net.getPlaces().size() >= 2);
+        assertFalse(net.getPlaces().isEmpty(), "Net should have places");
+        assertTrue(net.getPlaces().size() >= 2, "Net should have at least 2 places (start and end)");
     }
 
     @Test
@@ -218,7 +216,7 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
         PetriNet net = parser.discoverPetriNet(log);
 
-        assertFalse("Net should have arcs", net.getArcs().isEmpty());
+        assertFalse(net.getArcs().isEmpty(), "Net should have arcs");
     }
 
     @Test
@@ -228,7 +226,7 @@ public class XesParserTest {
 
         PetriNet net = parser.discoverPetriNet(log);
 
-        assertNotNull("Net should not be null even for empty log", net);
+        assertNotNull(net, "Net should not be null even for empty log");
     }
 
     @Test
@@ -237,7 +235,7 @@ public class XesParserTest {
 
         PetriNet net = parser.discoverPetriNet(null);
 
-        assertNotNull("Net should not be null for null log", net);
+        assertNotNull(net, "Net should not be null for null log");
     }
 
     @Test
@@ -251,9 +249,9 @@ public class XesParserTest {
         XesTrace firstTrace = log.getTraces().get(0);
         XesEvent firstEvent = firstTrace.getEvents().get(0);
 
-        assertEquals("Event should have activity name", "Receive Application", firstEvent.getActivityName());
-        assertEquals("Event should have lifecycle", "complete", firstEvent.getLifecycle());
-        assertNotNull("Event should have timestamp", firstEvent.getTimestamp());
+        assertEquals("Receive Application", firstEvent.getActivityName(), "Event should have activity name");
+        assertEquals("complete", firstEvent.getLifecycle(), "Event should have lifecycle");
+        assertNotNull(firstEvent.getTimestamp(), "Event should have timestamp");
     }
 
     @Test
@@ -263,7 +261,7 @@ public class XesParserTest {
 
         XesLog log = parser.parse(xesFile);
 
-        assertEquals("Log should report 8 total events", 8, log.getEventCount());
+        assertEquals(8, log.getEventCount(), "Log should report 8 total events");
     }
 
     @Test
@@ -274,9 +272,9 @@ public class XesParserTest {
         XesLog log = parser.parse(xesFile);
         String str = log.toString();
 
-        assertNotNull("toString should not be null", str);
-        assertTrue("toString should contain trace count", str.contains("traces=2"));
-        assertTrue("toString should contain event count", str.contains("events=8"));
+        assertNotNull(str, "toString should not be null");
+        assertTrue(str.contains("traces=2"), "toString should contain trace count");
+        assertTrue(str.contains("events=8"), "toString should contain event count");
     }
 
     @Test
@@ -288,9 +286,9 @@ public class XesParserTest {
         XesTrace trace = log.getTraces().get(0);
         String str = trace.toString();
 
-        assertNotNull("toString should not be null", str);
-        assertTrue("toString should contain case ID", str.contains("Case1"));
-        assertTrue("toString should contain event count", str.contains("events=4"));
+        assertNotNull(str, "toString should not be null");
+        assertTrue(str.contains("Case1"), "toString should contain case ID");
+        assertTrue(str.contains("events=4"), "toString should contain event count");
     }
 
     @Test
@@ -303,8 +301,8 @@ public class XesParserTest {
         XesEvent event = trace.getEvents().get(0);
         String str = event.toString();
 
-        assertNotNull("toString should not be null", str);
-        assertTrue("toString should contain activity", str.contains("Receive Application"));
+        assertNotNull(str, "toString should not be null");
+        assertTrue(str.contains("Receive Application"), "toString should contain activity");
     }
 
     @Test
@@ -314,7 +312,7 @@ public class XesParserTest {
 
         XesLog log = parser.parse(new java.io.FileInputStream(xesFile));
 
-        assertNotNull("XesLog should not be null", log);
-        assertEquals("Log should have 2 traces", 2, log.getTraces().size());
+        assertNotNull(log, "XesLog should not be null");
+        assertEquals(2, log.getTraces().size(), "Log should have 2 traces");
     }
 }

@@ -75,8 +75,8 @@ fi
 ALL_MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
     yawl-stateless yawl-resourcing yawl-scheduling
-    yawl-security yawl-integration yawl-monitoring yawl-webapps
-    yawl-control-panel
+    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-webapps
+    yawl-control-panel yawl-mcp-a2a-app
 )
 
 detect_changed_modules() {
@@ -204,7 +204,11 @@ ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 # the $() to avoid capturing both grep's "0" output AND the fallback "0" as "0\n0".
 TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || TEST_COUNT=0
 TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || TEST_FAILED=0
-MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l | xargs)
+if [[ "$SCOPE" == "all" ]]; then
+    MODULES_COUNT=${#ALL_MODULES[@]}
+else
+    MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l | tr -d ' ')
+fi
 
 # Enhanced status with metrics
 echo ""

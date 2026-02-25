@@ -17,10 +17,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for ProcessMiningSkill A2A Skill implementation.
@@ -48,7 +48,7 @@ public class ProcessMiningSkillTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_PASSWORD = "testpass";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // Create skill with unreachable engine URL (localhost:9999)
         // This allows testing error paths without mocking
@@ -72,27 +72,26 @@ public class ProcessMiningSkillTest {
     @Test
     public void testGetDescription_NotEmpty() {
         String description = skill.getDescription();
-        assertNotNull("Description should not be null", description);
-        assertFalse("Description should not be empty", description.isEmpty());
-        assertTrue("Description should mention process mining",
-                   description.toLowerCase().contains("process mining") ||
-                   description.toLowerCase().contains("analysis"));
+        assertNotNull(description, "Description should not be null");
+        assertFalse(description.isEmpty(), "Description should not be empty");
+        assertTrue(
+            description.toLowerCase().contains("process mining") ||
+            description.toLowerCase().contains("analysis"),
+            "Description should mention process mining");
     }
 
     @Test
     public void testGetRequiredPermissions_ContainsWorkflowRead() {
         Set<String> permissions = skill.getRequiredPermissions();
-        assertNotNull("Permissions should not be null", permissions);
-        assertTrue("Permissions should contain 'workflow:read'",
-                   permissions.contains("workflow:read"));
+        assertNotNull(permissions, "Permissions should not be null");
+        assertTrue(permissions.contains("workflow:read"), "Permissions should contain 'workflow:read'");
     }
 
     @Test
     public void testGetRequiredPermissions_ContainsProcessMiningRead() {
         Set<String> permissions = skill.getRequiredPermissions();
-        assertNotNull("Permissions should not be null", permissions);
-        assertTrue("Permissions should contain 'process-mining:read'",
-                   permissions.contains("process-mining:read"));
+        assertNotNull(permissions, "Permissions should not be null");
+        assertTrue(permissions.contains("process-mining:read"), "Permissions should contain 'process-mining:read'");
     }
 
     // =========================================================================
@@ -102,29 +101,25 @@ public class ProcessMiningSkillTest {
     @Test
     public void testCanExecute_WithAllPermission() {
         Set<String> permissions = Set.of("*");
-        assertTrue("canExecute should return true with wildcard permission",
-                   skill.canExecute(permissions));
+        assertTrue(skill.canExecute(permissions), "canExecute should return true with wildcard permission");
     }
 
     @Test
     public void testCanExecute_WithRequiredPermissions() {
         Set<String> permissions = Set.of("workflow:read", "process-mining:read");
-        assertTrue("canExecute should return true with all required permissions",
-                   skill.canExecute(permissions));
+        assertTrue(skill.canExecute(permissions), "canExecute should return true with all required permissions");
     }
 
     @Test
     public void testCanExecute_WithInsufficientPermissions() {
         Set<String> permissions = Set.of("workflow:read");
-        assertFalse("canExecute should return false with incomplete permissions",
-                    skill.canExecute(permissions));
+        assertFalse(skill.canExecute(permissions), "canExecute should return false with incomplete permissions");
     }
 
     @Test
     public void testCanExecute_WithEmptyPermissions() {
         Set<String> permissions = Set.of();
-        assertFalse("canExecute should return false with empty permissions",
-                    skill.canExecute(permissions));
+        assertFalse(skill.canExecute(permissions), "canExecute should return false with empty permissions");
     }
 
     // =========================================================================
@@ -138,9 +133,8 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error when specIdentifier is missing",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
+        assertTrue(result.isError(), "Result should indicate error when specIdentifier is missing");
+        assertNotNull(result.getError(), "Error message should be provided");
     }
 
     @Test
@@ -151,9 +145,8 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error when specIdentifier is empty",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
+        assertTrue(result.isError(), "Result should indicate error when specIdentifier is empty");
+        assertNotNull(result.getError(), "Error message should be provided");
     }
 
     // =========================================================================
@@ -168,10 +161,9 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error when engine is unreachable",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
-        assertFalse("Should not throw exception on network failure", false);
+        assertTrue(result.isError(), "Result should indicate error when engine is unreachable");
+        assertNotNull(result.getError(), "Error message should be provided");
+        assertFalse(false, "Should not throw exception on network failure");
     }
 
     @Test
@@ -184,9 +176,8 @@ public class ProcessMiningSkillTest {
         SkillResult result = skill.execute(request);
 
         // With unreachable engine, expect error
-        assertTrue("Result should indicate error with unreachable engine",
-                   result.isError());
-        assertNotNull("Error message should be non-null", result.getError());
+        assertTrue(result.isError(), "Result should indicate error with unreachable engine");
+        assertNotNull(result.getError(), "Error message should be non-null");
     }
 
     // =========================================================================
@@ -202,9 +193,8 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error for full analysis with unreachable engine",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
+        assertTrue(result.isError(), "Result should indicate error for full analysis with unreachable engine");
+        assertNotNull(result.getError(), "Error message should be provided");
     }
 
     @Test
@@ -216,9 +206,8 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error for performance analysis with unreachable engine",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
+        assertTrue(result.isError(), "Result should indicate error for performance analysis with unreachable engine");
+        assertNotNull(result.getError(), "Error message should be provided");
     }
 
     @Test
@@ -230,9 +219,8 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error for variants analysis with unreachable engine",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
+        assertTrue(result.isError(), "Result should indicate error for variants analysis with unreachable engine");
+        assertNotNull(result.getError(), "Error message should be provided");
     }
 
     @Test
@@ -244,9 +232,8 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error for xes analysis with unreachable engine",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
+        assertTrue(result.isError(), "Result should indicate error for xes analysis with unreachable engine");
+        assertNotNull(result.getError(), "Error message should be provided");
     }
 
     @Test
@@ -258,9 +245,8 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error for social_network analysis with unreachable engine",
-                   result.isError());
-        assertNotNull("Error message should be provided", result.getError());
+        assertTrue(result.isError(), "Result should indicate error for social_network analysis with unreachable engine");
+        assertNotNull(result.getError(), "Error message should be provided");
     }
 
     // =========================================================================
@@ -277,7 +263,7 @@ public class ProcessMiningSkillTest {
         SkillResult result = skill.execute(request);
 
         // Even with optional parameters, should fail gracefully with unreachable engine
-        assertTrue("Result should indicate error", result.isError());
+        assertTrue(result.isError(), "Result should indicate error");
     }
 
     @Test
@@ -289,7 +275,7 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error", result.isError());
+        assertTrue(result.isError(), "Result should indicate error");
     }
 
     @Test
@@ -301,7 +287,7 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error", result.isError());
+        assertTrue(result.isError(), "Result should indicate error");
     }
 
     @Test
@@ -316,8 +302,7 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertTrue("Result should indicate error with all parameters and unreachable engine",
-                   result.isError());
+        assertTrue(result.isError(), "Result should indicate error with all parameters and unreachable engine");
     }
 
     // =========================================================================
@@ -326,23 +311,23 @@ public class ProcessMiningSkillTest {
 
     @Test
     public void testConstructorRejectsNullUrl() {
-        assertThrows("Constructor should reject null engine URL",
-                     IllegalArgumentException.class,
-                     () -> new ProcessMiningSkill(null, TEST_USERNAME, TEST_PASSWORD));
+        assertThrows(IllegalArgumentException.class,
+            () -> new ProcessMiningSkill(null, TEST_USERNAME, TEST_PASSWORD),
+            "Constructor should reject null engine URL");
     }
 
     @Test
     public void testConstructorRejectsNullUsername() {
-        assertThrows("Constructor should reject null username",
-                     IllegalArgumentException.class,
-                     () -> new ProcessMiningSkill(UNREACHABLE_ENGINE_URL, null, TEST_PASSWORD));
+        assertThrows(IllegalArgumentException.class,
+            () -> new ProcessMiningSkill(UNREACHABLE_ENGINE_URL, null, TEST_PASSWORD),
+            "Constructor should reject null username");
     }
 
     @Test
     public void testConstructorRejectsNullPassword() {
-        assertThrows("Constructor should reject null password",
-                     IllegalArgumentException.class,
-                     () -> new ProcessMiningSkill(UNREACHABLE_ENGINE_URL, TEST_USERNAME, null));
+        assertThrows(IllegalArgumentException.class,
+            () -> new ProcessMiningSkill(UNREACHABLE_ENGINE_URL, TEST_USERNAME, null),
+            "Constructor should reject null password");
     }
 
     // =========================================================================
@@ -351,18 +336,16 @@ public class ProcessMiningSkillTest {
 
     @Test
     public void testImplementsA2ASkill() {
-        assertTrue("ProcessMiningSkill should implement A2ASkill",
-                   skill instanceof A2ASkill);
+        assertTrue(skill instanceof A2ASkill, "ProcessMiningSkill should implement A2ASkill");
     }
 
     @Test
     public void testImplementsA2ASkillInterface() {
         // Verify all required interface methods are callable
-        assertNotNull("getId() should return non-null", skill.getId());
-        assertNotNull("getName() should return non-null", skill.getName());
-        assertNotNull("getDescription() should return non-null", skill.getDescription());
-        assertNotNull("getRequiredPermissions() should return non-null",
-                      skill.getRequiredPermissions());
+        assertNotNull(skill.getId(), "getId() should return non-null");
+        assertNotNull(skill.getName(), "getName() should return non-null");
+        assertNotNull(skill.getDescription(), "getDescription() should return non-null");
+        assertNotNull(skill.getRequiredPermissions(), "getRequiredPermissions() should return non-null");
     }
 
     // =========================================================================
@@ -377,7 +360,7 @@ public class ProcessMiningSkillTest {
 
         SkillResult result = skill.execute(request);
 
-        assertNotNull("Result should never be null", result);
+        assertNotNull(result, "Result should never be null");
     }
 
     @Test
@@ -389,8 +372,8 @@ public class ProcessMiningSkillTest {
         SkillResult result = skill.execute(request);
 
         if (result.isError()) {
-            assertNotNull("Error result should have error message", result.getError());
-            assertTrue("Error message should not be empty", !result.getError().isEmpty());
+            assertNotNull(result.getError(), "Error result should have error message");
+            assertTrue(!result.getError().isEmpty(), "Error message should not be empty");
         }
     }
 
@@ -411,8 +394,8 @@ public class ProcessMiningSkillTest {
         SkillResult result1 = skill.execute(request1);
         SkillResult result2 = skill.execute(request2);
 
-        assertTrue("First execution should error with unreachable engine", result1.isError());
-        assertTrue("Second execution should error with unreachable engine", result2.isError());
+        assertTrue(result1.isError(), "First execution should error with unreachable engine");
+        assertTrue(result2.isError(), "Second execution should error with unreachable engine");
     }
 
     // =========================================================================
@@ -428,8 +411,7 @@ public class ProcessMiningSkillTest {
         SkillResult result = skill.execute(request);
 
         // Should be treated as empty/invalid
-        assertTrue("Result should indicate error for whitespace-only specIdentifier",
-                   result.isError());
+        assertTrue(result.isError(), "Result should indicate error for whitespace-only specIdentifier");
     }
 
     @Test
@@ -441,8 +423,7 @@ public class ProcessMiningSkillTest {
         SkillResult result = skill.execute(request);
 
         // Special characters are allowed in identifiers, should fail due to unreachable engine
-        assertTrue("Result should indicate error with unreachable engine",
-                   result.isError());
+        assertTrue(result.isError(), "Result should indicate error with unreachable engine");
     }
 
     @Test
@@ -455,8 +436,7 @@ public class ProcessMiningSkillTest {
         SkillResult result = skill.execute(request);
 
         // Long identifier should be accepted, fail due to unreachable engine
-        assertTrue("Result should indicate error with unreachable engine",
-                   result.isError());
+        assertTrue(result.isError(), "Result should indicate error with unreachable engine");
     }
 
     @Test
@@ -469,8 +449,7 @@ public class ProcessMiningSkillTest {
         SkillResult result = skill.execute(request);
 
         // Should handle gracefully (either reject invalid type or attempt analysis)
-        assertTrue("Result should be either error or success",
-                   result.isError() || result.isSuccess());
+        assertTrue(result.isError() || result.isSuccess(), "Result should be either error or success");
     }
 
     // =========================================================================
@@ -481,39 +460,38 @@ public class ProcessMiningSkillTest {
     public void testIdConsistency() {
         String id1 = skill.getId();
         String id2 = skill.getId();
-        assertEquals("getId() should return consistent value", id1, id2);
+        assertEquals(id1, id2, "getId() should return consistent value");
     }
 
     @Test
     public void testNameConsistency() {
         String name1 = skill.getName();
         String name2 = skill.getName();
-        assertEquals("getName() should return consistent value", name1, name2);
+        assertEquals(name1, name2, "getName() should return consistent value");
     }
 
     @Test
     public void testPermissionsConsistency() {
         Set<String> perms1 = skill.getRequiredPermissions();
         Set<String> perms2 = skill.getRequiredPermissions();
-        assertEquals("getRequiredPermissions() should return consistent value",
-                     perms1, perms2);
+        assertEquals(perms1, perms2, "getRequiredPermissions() should return consistent value");
     }
 
     @Test
     public void testPermissionsNotEmpty() {
         Set<String> permissions = skill.getRequiredPermissions();
-        assertFalse("Required permissions should not be empty", permissions.isEmpty());
+        assertFalse(permissions.isEmpty(), "Required permissions should not be empty");
     }
 
     @Test
     public void testIdNotEmpty() {
         String id = skill.getId();
-        assertFalse("ID should not be empty", id.isEmpty());
+        assertFalse(id.isEmpty(), "ID should not be empty");
     }
 
     @Test
     public void testNameNotEmpty() {
         String name = skill.getName();
-        assertFalse("Name should not be empty", name.isEmpty());
+        assertFalse(name.isEmpty(), "Name should not be empty");
     }
 }

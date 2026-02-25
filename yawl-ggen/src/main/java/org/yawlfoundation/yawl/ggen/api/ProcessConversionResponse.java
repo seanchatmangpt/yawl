@@ -48,7 +48,7 @@ public class ProcessConversionResponse {
     }
 
     public Map<String, Object> getMetrics() {
-        return metrics;
+        return java.util.Collections.unmodifiableMap(metrics);
     }
 
     public void setMetrics(Map<String, Object> metrics) {

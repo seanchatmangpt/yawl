@@ -261,6 +261,8 @@ public class XesParser {
                         }
                     }
                     break;
+                default:
+                    break; // Ignore unknown XES elements
             }
         }
 

@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Intelligent work item batching for autonomous throughput optimization.
@@ -91,6 +92,10 @@ public class WorkItemBatcher {
 
     // Batch accumulation
     private final Map<String, List<PendingItem>> batchMap = new ConcurrentHashMap<>();
+    // Per-key locks: ReentrantLock instead of synchronized(batch) so that
+    // processBatch() — which may invoke handler I/O — can run outside the lock
+    // without pinning the virtual-thread carrier.
+    private final Map<String, ReentrantLock> batchLocks = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // Metrics
@@ -137,15 +142,27 @@ public class WorkItemBatcher {
         String groupKey = extractGroupKey(workItem);
         PendingItem item = new PendingItem(workItem, handler);
 
-        // Add to batch
-        List<PendingItem> batch = batchMap.computeIfAbsent(groupKey, key -> new ArrayList<>());
-        synchronized (batch) {
-            batch.add(item);
+        // Per-key ReentrantLock: holds only during list mutation, NOT during
+        // processBatch() — handler I/O runs outside the lock so virtual-thread
+        // carriers are never pinned by blocking handler calls.
+        ReentrantLock lock = batchLocks.computeIfAbsent(groupKey, k -> new ReentrantLock());
+        List<PendingItem> toFlush = null;
 
-            // Flush if batch is full
+        lock.lock();
+        try {
+            List<PendingItem> batch = batchMap.computeIfAbsent(groupKey, k -> new ArrayList<>());
+            batch.add(item);
             if (batch.size() >= maxBatchSize) {
-                flushBatch(groupKey);
+                toFlush = batchMap.remove(groupKey);
+                batchLocks.remove(groupKey);
             }
+        } finally {
+            lock.unlock();
+        }
+
+        // Process outside the lock — I/O in handlers must not pin the carrier
+        if (toFlush != null) {
+            processBatch(toFlush);
         }
 
         itemsProcessed.incrementAndGet();

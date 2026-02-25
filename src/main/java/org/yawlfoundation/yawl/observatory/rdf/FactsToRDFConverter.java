@@ -45,6 +45,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Converts observatory facts to RDF/Turtle for code generation context.
@@ -566,8 +567,9 @@ public class FactsToRDFConverter {
         return resourceCache.computeIfAbsent(moduleName, name -> {
             // Convert kebab-case to CamelCase for resource name
             String camelCase = name.substring(0, 1).toUpperCase()
-                + name.substring(1)
-                    .replaceAll("-(.)", m -> m.group(1).toUpperCase())
+                + Pattern.compile("-(.)")
+                    .matcher(name.substring(1))
+                    .replaceAll(m -> m.group(1).toUpperCase())
                     .replaceAll("-", "");
 
             return model.createResource(EXAMPLE_NS + camelCase);

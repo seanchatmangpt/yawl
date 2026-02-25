@@ -13,14 +13,14 @@
 
 package org.yawlfoundation.yawl.integration.mcp;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -68,8 +68,8 @@ public class YawlProcessMiningMcpToolsTest {
 
         List<McpServerFeatures.SyncToolSpecification> tools = specs.createAll();
 
-        assertNotNull("createAll() should return non-null list", tools);
-        assertEquals("Should return exactly 5 process mining tools", 5, tools.size());
+        assertNotNull(tools, "createAll() should return non-null list");
+        assertEquals(5, tools.size(), "Should return exactly 5 process mining tools");
     }
 
     @Test
@@ -82,10 +82,10 @@ public class YawlProcessMiningMcpToolsTest {
         HashSet<String> names = new HashSet<>();
         for (McpServerFeatures.SyncToolSpecification tool : tools) {
             String name = tool.tool().name();
-            assertFalse("Tool name should be unique: " + name, names.contains(name));
+            assertFalse(names.contains(name), "Tool name should be unique: " + name);
             names.add(name);
         }
-        assertEquals("All tool names should be unique", 5, names.size());
+        assertEquals(5, names.size(), "All tool names should be unique");
     }
 
     @Test
@@ -97,8 +97,7 @@ public class YawlProcessMiningMcpToolsTest {
 
         for (McpServerFeatures.SyncToolSpecification tool : tools) {
             String name = tool.tool().name();
-            assertTrue("Tool name should start with 'yawl_pm_': " + name,
-                name.startsWith("yawl_pm_"));
+            assertTrue(name.startsWith("yawl_pm_"), "Tool name should start with 'yawl_pm_': " + name);
         }
     }
 
@@ -111,10 +110,8 @@ public class YawlProcessMiningMcpToolsTest {
 
         for (McpServerFeatures.SyncToolSpecification tool : tools) {
             String description = tool.tool().description();
-            assertNotNull("Tool should have a description: " + tool.tool().name(),
-                description);
-            assertFalse("Tool description should not be empty: " + tool.tool().name(),
-                description.trim().isEmpty());
+            assertNotNull(description, "Tool should have a description: " + tool.tool().name());
+            assertFalse(description.trim().isEmpty(), "Tool description should not be empty: " + tool.tool().name());
         }
     }
 
@@ -127,8 +124,7 @@ public class YawlProcessMiningMcpToolsTest {
 
         for (McpServerFeatures.SyncToolSpecification tool : tools) {
             McpSchema.JsonSchema schema = tool.tool().inputSchema();
-            assertNotNull("Tool should have inputSchema: " + tool.tool().name(),
-                schema);
+            assertNotNull(schema, "Tool should have inputSchema: " + tool.tool().name());
         }
     }
 
@@ -144,9 +140,9 @@ public class YawlProcessMiningMcpToolsTest {
         List<McpServerFeatures.SyncToolSpecification> tools = specs.createAll();
         McpServerFeatures.SyncToolSpecification exportXesTool = findToolByName(tools, "yawl_pm_export_xes");
 
-        assertNotNull("Should have yawl_pm_export_xes tool", exportXesTool);
-        assertEquals("Tool name should be yawl_pm_export_xes", "yawl_pm_export_xes",
-            exportXesTool.tool().name());
+        assertNotNull(exportXesTool, "Should have yawl_pm_export_xes tool");
+        assertEquals("yawl_pm_export_xes", exportXesTool.tool().name(),
+            "Tool name should be yawl_pm_export_xes");
     }
 
     @Test
@@ -157,9 +153,8 @@ public class YawlProcessMiningMcpToolsTest {
         List<McpServerFeatures.SyncToolSpecification> tools = specs.createAll();
         McpServerFeatures.SyncToolSpecification analyzeTool = findToolByName(tools, "yawl_pm_analyze");
 
-        assertNotNull("Should have yawl_pm_analyze tool", analyzeTool);
-        assertEquals("Tool name should be yawl_pm_analyze", "yawl_pm_analyze",
-            analyzeTool.tool().name());
+        assertNotNull(analyzeTool, "Should have yawl_pm_analyze tool");
+        assertEquals("yawl_pm_analyze", analyzeTool.tool().name(), "Tool name should be yawl_pm_analyze");
     }
 
     @Test
@@ -170,9 +165,8 @@ public class YawlProcessMiningMcpToolsTest {
         List<McpServerFeatures.SyncToolSpecification> tools = specs.createAll();
         McpServerFeatures.SyncToolSpecification perfTool = findToolByName(tools, "yawl_pm_performance");
 
-        assertNotNull("Should have yawl_pm_performance tool", perfTool);
-        assertEquals("Tool name should be yawl_pm_performance", "yawl_pm_performance",
-            perfTool.tool().name());
+        assertNotNull(perfTool, "Should have yawl_pm_performance tool");
+        assertEquals("yawl_pm_performance", perfTool.tool().name(), "Tool name should be yawl_pm_performance");
     }
 
     @Test
@@ -183,9 +177,8 @@ public class YawlProcessMiningMcpToolsTest {
         List<McpServerFeatures.SyncToolSpecification> tools = specs.createAll();
         McpServerFeatures.SyncToolSpecification variantsTool = findToolByName(tools, "yawl_pm_variants");
 
-        assertNotNull("Should have yawl_pm_variants tool", variantsTool);
-        assertEquals("Tool name should be yawl_pm_variants", "yawl_pm_variants",
-            variantsTool.tool().name());
+        assertNotNull(variantsTool, "Should have yawl_pm_variants tool");
+        assertEquals("yawl_pm_variants", variantsTool.tool().name(), "Tool name should be yawl_pm_variants");
     }
 
     @Test
@@ -196,9 +189,9 @@ public class YawlProcessMiningMcpToolsTest {
         List<McpServerFeatures.SyncToolSpecification> tools = specs.createAll();
         McpServerFeatures.SyncToolSpecification socialTool = findToolByName(tools, "yawl_pm_social_network");
 
-        assertNotNull("Should have yawl_pm_social_network tool", socialTool);
-        assertEquals("Tool name should be yawl_pm_social_network", "yawl_pm_social_network",
-            socialTool.tool().name());
+        assertNotNull(socialTool, "Should have yawl_pm_social_network tool");
+        assertEquals("yawl_pm_social_network", socialTool.tool().name(),
+            "Tool name should be yawl_pm_social_network");
     }
 
     // =========================================================================
@@ -215,11 +208,10 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = exportXesTool.handler().call(null, args);
+        McpSchema.CallToolResult result = exportXesTool.callHandler().apply(null, new McpSchema.CallToolRequest(exportXesTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for missing specIdentifier",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
     }
 
     @Test
@@ -232,11 +224,10 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = analyzeTool.handler().call(null, args);
+        McpSchema.CallToolResult result = analyzeTool.callHandler().apply(null, new McpSchema.CallToolRequest(analyzeTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for missing specIdentifier",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
     }
 
     @Test
@@ -249,11 +240,10 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = perfTool.handler().call(null, args);
+        McpSchema.CallToolResult result = perfTool.callHandler().apply(null, new McpSchema.CallToolRequest(perfTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for missing specIdentifier",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
     }
 
     @Test
@@ -266,11 +256,10 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = variantsTool.handler().call(null, args);
+        McpSchema.CallToolResult result = variantsTool.callHandler().apply(null, new McpSchema.CallToolRequest(variantsTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for missing specIdentifier",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
     }
 
     @Test
@@ -283,11 +272,10 @@ public class YawlProcessMiningMcpToolsTest {
 
         // Call with empty args (missing specIdentifier)
         Map<String, Object> args = new HashMap<>();
-        McpSchema.CallToolResult result = socialTool.handler().call(null, args);
+        McpSchema.CallToolResult result = socialTool.callHandler().apply(null, new McpSchema.CallToolRequest(socialTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for missing specIdentifier",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for missing specIdentifier");
     }
 
     // =========================================================================
@@ -306,11 +294,10 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = exportXesTool.handler().call(null, args);
+        McpSchema.CallToolResult result = exportXesTool.callHandler().apply(null, new McpSchema.CallToolRequest(exportXesTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for unreachable engine",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
     }
 
     @Test
@@ -325,11 +312,10 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = analyzeTool.handler().call(null, args);
+        McpSchema.CallToolResult result = analyzeTool.callHandler().apply(null, new McpSchema.CallToolRequest(analyzeTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for unreachable engine",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
     }
 
     @Test
@@ -344,11 +330,10 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = perfTool.handler().call(null, args);
+        McpSchema.CallToolResult result = perfTool.callHandler().apply(null, new McpSchema.CallToolRequest(perfTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for unreachable engine",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
     }
 
     @Test
@@ -363,11 +348,10 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = variantsTool.handler().call(null, args);
+        McpSchema.CallToolResult result = variantsTool.callHandler().apply(null, new McpSchema.CallToolRequest(variantsTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for unreachable engine",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
     }
 
     @Test
@@ -382,45 +366,50 @@ public class YawlProcessMiningMcpToolsTest {
         Map<String, Object> args = new HashMap<>();
         args.put("specIdentifier", "test.specification");
 
-        McpSchema.CallToolResult result = socialTool.handler().call(null, args);
+        McpSchema.CallToolResult result = socialTool.callHandler().apply(null, new McpSchema.CallToolRequest(socialTool.tool().name(), args));
 
-        assertNotNull("Result should not be null", result);
-        assertTrue("Should be error result (isError=true) for unreachable engine",
-            result.isError());
+        assertNotNull(result, "Result should not be null");
+        assertTrue(result.isError(), "Should be error result (isError=true) for unreachable engine");
     }
 
     // =========================================================================
     // Constructor Validation Tests
     // =========================================================================
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorRejectsNullEngineUrl() {
-        new YawlProcessMiningToolSpecifications(null, TEST_USERNAME, TEST_PASSWORD);
+        assertThrows(IllegalArgumentException.class,
+            () -> new YawlProcessMiningToolSpecifications(null, TEST_USERNAME, TEST_PASSWORD));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorRejectsEmptyEngineUrl() {
-        new YawlProcessMiningToolSpecifications("", TEST_USERNAME, TEST_PASSWORD);
+        assertThrows(IllegalArgumentException.class,
+            () -> new YawlProcessMiningToolSpecifications("", TEST_USERNAME, TEST_PASSWORD));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorRejectsNullUsername() {
-        new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, null, TEST_PASSWORD);
+        assertThrows(IllegalArgumentException.class,
+            () -> new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, null, TEST_PASSWORD));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorRejectsEmptyUsername() {
-        new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, "", TEST_PASSWORD);
+        assertThrows(IllegalArgumentException.class,
+            () -> new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, "", TEST_PASSWORD));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorRejectsNullPassword() {
-        new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, TEST_USERNAME, null);
+        assertThrows(IllegalArgumentException.class,
+            () -> new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, TEST_USERNAME, null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructorRejectsEmptyPassword() {
-        new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, TEST_USERNAME, "");
+        assertThrows(IllegalArgumentException.class,
+            () -> new YawlProcessMiningToolSpecifications(UNREACHABLE_ENGINE_URL, TEST_USERNAME, ""));
     }
 
     // =========================================================================

@@ -65,11 +65,11 @@ def handle(client):
             upstream.setblocking(False)
             client.setblocking(False)
             while True:
-                r, _, _ = select.select([client, upstream], [], [], 30)
+                r, _, _ = select.select([client, upstream], [], [], 300)
                 if not r:
                     break
                 for s in r:
-                    data = s.recv(8192)
+                    data = s.recv(65536)
                     if not data:
                         return
                     (upstream if s is client else client).sendall(data)

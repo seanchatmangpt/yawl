@@ -23,6 +23,7 @@ import static org.yawlfoundation.yawl.engine.announcement.YEngineEvent.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,6 +58,10 @@ public class YAnnouncer {
     private final Set<InterfaceX_EngineSideClient> _interfaceXListeners;
 
     private AnnouncementContext _announcementContext;
+    // Protects first-gateway registration + reannounceRestoredItems() HTTP calls.
+    // ReentrantLock (not synchronized) prevents virtual-thread carrier pinning
+    // during the HTTP I/O inside reannounceRestoredItems().
+    private final ReentrantLock _gatewayLock = new ReentrantLock();
 
 
     protected YAnnouncer(YEngine engine) {
@@ -84,11 +89,18 @@ public class YAnnouncer {
     }
 
 
-    public synchronized void registerInterfaceBObserverGateway(ObserverGateway gateway)
+    public void registerInterfaceBObserverGateway(ObserverGateway gateway)
             throws YAWLException {
-        boolean firstGateway = _controller.isEmpty();
-        _controller.addGateway(gateway);
-        if (firstGateway) reannounceRestoredItems();
+        // ReentrantLock: reannounceRestoredItems() makes HTTP calls — synchronized
+        // would pin the virtual-thread carrier during that I/O.
+        _gatewayLock.lock();
+        try {
+            boolean firstGateway = _controller.isEmpty();
+            _controller.addGateway(gateway);
+            if (firstGateway) reannounceRestoredItems();
+        } finally {
+            _gatewayLock.unlock();
+        }
     }
 
 

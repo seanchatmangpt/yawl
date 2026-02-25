@@ -1,0 +1,64 @@
+# CONSTRUCT: Getter/Setter POJO → Record Migration Plan
+# Produces j25:RecordPattern instances from detected j11:GetterSetterPojoPattern sources.
+# Rule: R04_PojoToRecord
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a j25:RecordPattern ;
+    j25:derivedFrom ?class ;
+    j25:templateFile "templates/java25-migration/record.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R04_PojoToRecord ;
+    rule:sourcePattern j11:GetterSetterPojoPattern ;
+
+    # Record declaration metadata
+    java:name ?simpleName ;
+    java:qualifiedName ?className ;
+    java:fieldCount ?fieldCount ;
+
+    # The record will need these imports removed (no more getters/setters needed)
+    j25:renderedCode ?recordDecl .
+
+  # Link fields for template iteration
+  ?migrationNode java:hasField ?field .
+  ?field java:name ?fieldName ;
+         java:fieldType ?fieldType .
+}
+WHERE {
+  ?class a java:ClassDeclaration ;
+         java:qualifiedName ?className ;
+         java:hasOnlyGettersSetters true ;
+         java:hasNoMutableFields true ;
+         java:fieldCount ?fieldCount ;
+         java:lineNumber ?line .
+
+  # Exclude classes extending non-Object
+  FILTER NOT EXISTS {
+    ?class java:superClass ?parent .
+    ?parent java:name ?parentName .
+    FILTER(?parentName != "Object" && ?parentName != "java.lang.Object")
+  }
+
+  ?class java:inFile ?cu .
+  ?cu java:filePath ?file .
+
+  # Extract simple name from qualified name
+  BIND(REPLACE(?className, "^.*\\.", "") AS ?simpleName)
+
+  # Collect fields for record component list
+  ?class java:hasField ?field .
+  ?field java:name ?fieldName .
+  ?field java:fieldType ?fieldType .
+
+  BIND(IRI(CONCAT(STR(?class), "_record")) AS ?migrationNode)
+
+  # Synthesize record declaration header
+  BIND(CONCAT("record ", ?simpleName, "(/* components from ", STR(?fieldCount), " fields */)") AS ?recordDecl)
+}
+ORDER BY ?file ?line

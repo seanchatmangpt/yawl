@@ -1,0 +1,55 @@
+{# ============================================================================
+   pattern-matching.tera
+   Renders Java 16+ pattern matching instanceof or Java 21+ switch pattern.
+
+   Variables:
+     - pattern_type: "instanceof_single" | "instanceof_switch"
+     - subject_var: variable being tested (e.g., "element")
+     - subject_type: declared type of the subject (e.g., "NetElement")
+     - cases: list of {type, var_name, guard, body} for switch pattern
+     - instanceof_type: for single case — the type being matched
+     - instanceof_var: binding variable name
+     - instanceof_body: the body in the true branch
+     - has_default: boolean — whether to include a default case
+     - default_body: body of the default case
+   ============================================================================ #}
+
+{% if pattern_type == "instanceof_single" %}
+{# Single instanceof + cast → pattern matching instanceof
+   Before: if ({{ subject_var }} instanceof {{ instanceof_type }}) {
+               {{ instanceof_type }} {{ instanceof_var }} = ({{ instanceof_type }}) {{ subject_var }};
+               ...
+           }
+   After:  if ({{ subject_var }} instanceof {{ instanceof_type }} {{ instanceof_var }}) {
+               ...
+           }
+#}
+if ({{ subject_var }} instanceof {{ instanceof_type }} {{ instanceof_var }}) {
+{{ instanceof_body }}
+}
+
+{% elif pattern_type == "instanceof_switch" %}
+{# Chained instanceof → switch pattern matching (Java 21+)
+   Enables exhaustive checking and guard (when) clauses.
+   Sealed types give compiler-verified exhaustiveness.
+#}
+return switch ({{ subject_var }}) {
+{% for case in cases %}
+{% if case.guard is defined %}
+    case {{ case.type }} {{ case.var_name }} when {{ case.guard }} ->
+{% else %}
+    case {{ case.type }} {{ case.var_name }} ->
+{% endif %}
+{% if case.body | length > 60 %}{
+{{ case.body | indent(width=8) }}
+    };
+{% else %}
+        {{ case.body }};
+{% endif %}
+{% endfor %}
+{% if has_default %}
+    default -> {{ default_body | default(value='throw new IllegalStateException("Unexpected: " + ' ~ subject_var ~ ')') }};
+{% endif %}
+};
+
+{% endif %}

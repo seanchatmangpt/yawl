@@ -1,0 +1,55 @@
+# CONSTRUCT: instanceof + Cast → Pattern Matching Migration Plan
+# Produces j25:PatternMatchingInstanceofPattern instances.
+# Also handles chained instanceof → switch pattern matching.
+# Rules: R06, R07
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  # --- Single instanceof + cast replacement ---
+  ?singleMigration a j25:PatternMatchingInstanceofPattern ;
+    j25:derivedFrom ?checkExpr ;
+    j25:templateFile "templates/java25-migration/pattern-matching.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R06_InstanceofCastToPatternMatching ;
+    rule:sourcePattern j11:InstanceofCastPattern ;
+    java:checkedType ?checkedType ;
+    j25:renderedCode ?patternCode .
+}
+WHERE {
+  ?checkExpr a java:InstanceofExpression ;
+             java:checkedType ?checkedType ;
+             java:lineNumber ?line .
+
+  # Only non-pattern instanceof (not already migrated)
+  FILTER NOT EXISTS { ?checkExpr a java:PatternInstanceofExpression }
+
+  ?method a java:MethodDeclaration ;
+          java:containsExpression ?checkExpr .
+
+  # Only methods with a single instanceof (chained handled separately)
+  {
+    SELECT ?method (COUNT(?c) AS ?checkCount)
+    WHERE {
+      ?c a java:InstanceofExpression .
+      FILTER NOT EXISTS { ?c a java:PatternInstanceofExpression }
+      ?method java:containsExpression ?c .
+    }
+    GROUP BY ?method
+    HAVING (?checkCount < 3)
+  }
+
+  ?cu a java:CompilationUnit ;
+      java:filePath ?file .
+
+  BIND(IRI(CONCAT(STR(?checkExpr), "_patternMatch")) AS ?singleMigration)
+
+  # Derive binding variable name from type name (lowercase first char)
+  BIND(LCASE(SUBSTR(REPLACE(?checkedType, "^.*\\.", ""), 1, 1)) AS ?varLetter)
+  BIND(CONCAT("if (element instanceof ", ?checkedType, " ", ?varLetter, ") { ... }") AS ?patternCode)
+}

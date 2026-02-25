@@ -94,10 +94,10 @@
         <!-- ================================================================ -->
         <spring-boot.version>3.5.10</spring-boot.version>
         <jakarta-ee.version>10.0.0</jakarta-ee.version>
-        <opentelemetry.version>1.52.0</opentelemetry.version>
-        <opentelemetry-instrumentation.version>2.18.1</opentelemetry-instrumentation.version>
+        <opentelemetry.version>1.59.0</opentelemetry.version>
+        <opentelemetry-instrumentation.version>2.25.0</opentelemetry-instrumentation.version>
         <resilience4j.version>2.3.0</resilience4j.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <jackson.version>2.19.4</jackson.version>
 
         <!-- ================================================================ -->
@@ -111,7 +111,7 @@
         <angus.mail.version>2.0.5</angus.mail.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
         <angus.activation.version>2.0.3</angus.activation.version>
-        <jakarta.faces.version>4.1.2</jakarta.faces.version>
+        <jakarta.faces.version>4.1.6</jakarta.faces.version>
         <jakarta.cdi.version>4.1.0</jakarta.cdi.version>
         <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
 
@@ -125,9 +125,9 @@
         <!-- ================================================================ -->
         <commons.lang3.version>3.20.0</commons.lang3.version>
         <commons.io.version>2.21.0</commons.io.version>
-        <commons.codec.version>1.19.0</commons.codec.version>
+        <commons.codec.version>1.21.0</commons.codec.version>
         <commons.vfs2.version>2.10.0</commons.vfs2.version>
-        <commons.collections4.version>4.5.0-M2</commons.collections4.version>
+        <commons.collections4.version>4.5.0</commons.collections4.version>
         <commons.dbcp2.version>2.14.0</commons.dbcp2.version>
         <commons.fileupload.version>1.6.0</commons.fileupload.version>
         <commons.pool2.version>2.13.1</commons.pool2.version>
@@ -138,8 +138,8 @@
         <!-- Database drivers                                                   -->
         <!-- ================================================================ -->
         <h2.version>2.4.240</h2.version>
-        <postgresql.version>42.7.7</postgresql.version>
-        <mysql.version>9.4.0</mysql.version>
+        <postgresql.version>42.7.10</postgresql.version>
+        <mysql.version>9.6.0</mysql.version>
         <derby.version>10.17.1.0</derby.version>
         <hsqldb.version>2.7.4</hsqldb.version>
         <hikaricp.version>7.0.2</hikaricp.version>
@@ -149,7 +149,7 @@
         <!-- ================================================================ -->
         <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <jboss.logging.version>3.6.1.Final</jboss.logging.version>
+        <jboss.logging.version>3.6.2.Final</jboss.logging.version>
 
         <!-- ================================================================ -->
         <!-- JSON / serialisation                                               -->
@@ -169,19 +169,19 @@
         <!-- ================================================================ -->
         <!-- HTTP clients                                                       -->
         <!-- ================================================================ -->
-        <okhttp.version>5.1.0</okhttp.version>
+        <okhttp.version>5.3.2</okhttp.version>
 
         <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
         <!-- ================================================================ -->
-        <mcp.version>1.0.0-RC3</mcp.version>
+        <mcp.version>1.0.0</mcp.version>
         <a2a.version>1.0.0.Alpha2</a2a.version>
 
         <!-- ================================================================ -->
         <!-- Security / auth                                                    -->
         <!-- ================================================================ -->
         <jjwt.version>0.13.0</jjwt.version>
-        <microsoft.graph.version>6.61.0</microsoft.graph.version>
+        <microsoft.graph.version>6.62.0</microsoft.graph.version>
         <azure.identity.version>1.18.2</azure.identity.version>
 
         <!-- ================================================================ -->
@@ -193,13 +193,13 @@
         <!-- Observability / metrics                                            -->
         <!-- ================================================================ -->
         <micrometer.version>1.16.3</micrometer.version>
-        <opentelemetry.semconv.version>1.39.0</opentelemetry.semconv.version>
+        <opentelemetry.semconv.version>1.40.0</opentelemetry.semconv.version>
 
         <!-- ================================================================ -->
         <!-- Misc runtime support                                               -->
         <!-- ================================================================ -->
         <jspecify.version>1.0.0</jspecify.version>
-        <jandex.version>3.3.1</jandex.version>
+        <jandex.version>3.5.3</jandex.version>
         <byte.buddy.version>1.18.5</byte.buddy.version>
         <classmate.version>1.7.3</classmate.version>
         <istack.version>4.2.0</istack.version>
@@ -214,7 +214,7 @@
         <junit.jupiter.version>5.12.0</junit.jupiter.version>
         <junit.platform.version>1.12.0</junit.platform.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <quartz.version>2.5.0</quartz.version>
+        <quartz.version>2.5.2</quartz.version>
         <xmlunit.version>1.6</xmlunit.version>
         <jmh.version>1.37</jmh.version>
 
@@ -233,8 +233,9 @@
         <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
         <versions.maven.plugin.version>2.18.0</versions.maven.plugin.version>
-        <jacoco.plugin.version>0.8.15</jacoco.plugin.version>
-        <jacoco.version>0.8.15</jacoco.version>
+        <jacoco.plugin.version>0.8.14</jacoco.plugin.version>
+        <jacoco.version>0.8.14</jacoco.version>
+        <jacoco.skip>false</jacoco.skip>
         <jacoco.line.coverage>0.80</jacoco.line.coverage>
         <jacoco.branch.coverage>0.70</jacoco.branch.coverage>
         <maven.javadoc.version>3.11.1</maven.javadoc.version>
@@ -791,15 +792,16 @@
                 <artifactId>mcp-json-jackson2</artifactId>
                 <version>${mcp.version}</version>
             </dependency>
+            <!-- Spring adapters max out at 0.18.1 on Maven Central; no 1.0.0 release -->
             <dependency>
                 <groupId>io.modelcontextprotocol.sdk</groupId>
                 <artifactId>mcp-spring-webmvc</artifactId>
-                <version>${mcp.version}</version>
+                <version>0.18.1</version>
             </dependency>
             <dependency>
                 <groupId>io.modelcontextprotocol.sdk</groupId>
                 <artifactId>mcp-spring-webflux</artifactId>
-                <version>${mcp.version}</version>
+                <version>0.18.1</version>
             </dependency>
             <dependency>
                 <groupId>io.github.a2asdk</groupId>
@@ -1377,7 +1379,11 @@
                         <perCoreThreadCount>true</perCoreThreadCount>
                         <forkCount>1</forkCount>
                         <reuseForks>true</reuseForks>
-                        <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
+                        <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
+                        <!-- SIGKILL forked JVMs after tests complete; prevents non-daemon
+                             virtual-thread executors (YEngine ThreadPerTaskExecutor) from
+                             blocking JVM exit and causing the Maven build to hang -->
+                        <shutdown>kill</shutdown>
                         <skipAfterFailureCount>5</skipAfterFailureCount>
                         <classpathDependencyExcludes>
                             <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl across all modules -->
@@ -1654,7 +1660,9 @@
                         <printFailingErrors>true</printFailingErrors>
                         <includeTests>false</includeTests>
                         <excludeFromFailureFile>${maven.multiModuleProjectDirectory}/pmd-exclusions.properties</excludeFromFailureFile>
-                        <targetJdk>25</targetJdk>
+                        <!-- PMD 7.7.0 supports up to Java 21; set to LTS baseline.
+                             Java 25 source compiles fine; PMD analyses at 21 compatibility level. -->
+                        <targetJdk>21</targetJdk>
                     </configuration>
                 </plugin>
 
@@ -2320,7 +2328,7 @@
                                 <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>
                                 <arg>-XDcompilePolicy=simple</arg>
-                                <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -Xep:ExcludedPath:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
+                                <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -XepExcludedPaths:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
                             </compilerArgs>
                             <annotationProcessorPaths>
                                 <path>
@@ -2456,7 +2464,15 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skip>false</skip>
-                            <argLine>--enable-preview</argLine>
+                            <!-- @{argLine} late-binds the JaCoCo agent set by jacoco:prepare-agent;
+                                 without this, the agent is never attached and jacoco.exec is not created -->
+                            <argLine>@{argLine} --enable-preview</argLine>
+                            <!-- SIGKILL the forked JVM after tests complete; without this
+                                 non-daemon virtual-thread executors (YEngine) prevent JVM exit
+                                 and the entire Maven build hangs indefinitely -->
+                            <shutdown>kill</shutdown>
+                            <!-- Safety net: kill the forked JVM if tests take > 2 minutes total -->
+                            <forkedProcessTimeoutInSeconds>120</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
                     <!-- JaCoCo: instrument tests and generate coverage report -->
@@ -2890,7 +2906,7 @@
                             <excludedGroups>docker,containers,slow</excludedGroups>
                             <forkCount>1</forkCount>
                             <reuseForks>true</reuseForks>
-                            <forkedProcessTimeoutSeconds>600</forkedProcessTimeoutSeconds>
+                            <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
                             <classpathDependencyExcludes>
                                 <classpathDependencyExclude>org.apache.logging.log4j:log4j-to-slf4j</classpathDependencyExclude>
                             </classpathDependencyExcludes>

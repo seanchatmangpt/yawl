@@ -1,5 +1,6 @@
 package org.yawlfoundation.yawl.ggen.mining.model;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -46,7 +47,7 @@ public class XesEvent {
     }
 
     public Map<String, String> getAttributes() {
-        return attributes;
+        return Collections.unmodifiableMap(attributes);
     }
 
     public void setAttribute(String key, String value) {

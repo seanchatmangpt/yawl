@@ -1,0 +1,51 @@
+# CONSTRUCT: Synchronized Engine Methods → StructuredTaskScope Migration Plan
+# Produces j25:StructuredTaskScopePattern instances for HIGH complexity concurrent code.
+# Rule: R13_SynchronizedToStructuredScope
+
+PREFIX java: <http://yawl.io/java#>
+PREFIX j11:  <http://yawl.io/java/pattern/java11#>
+PREFIX j25:  <http://yawl.io/java/pattern/java25#>
+PREFIX rule: <http://yawl.io/java/migration/rule#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?migrationNode a j25:StructuredTaskScopePattern ;
+    j25:derivedFrom ?method ;
+    j25:templateFile "templates/java25-migration/structured-concurrency.tera" ;
+    j25:targetFile ?file ;
+    j25:targetLine ?line ;
+    rule:appliedRule rule:R13_SynchronizedToStructuredScope ;
+    rule:sourcePattern j11:YawlSynchronizedEnginePattern ;
+    rule:requiresReview true ;
+    rule:complexity "HIGH" ;
+    java:name ?methodName ;
+    j25:requiresImport "java.util.concurrent.StructuredTaskScope" ;
+    j25:renderedCode ?structuredCode ;
+    rule:migrationNote "HIGH COMPLEXITY: YAWL soundness properties (soundness, completeness, absence of deadlock) must be preserved when converting synchronized engine methods to StructuredTaskScope. Verify firing semantics are equivalent before merging." .
+}
+WHERE {
+  ?method a java:MethodDeclaration ;
+          java:name ?methodName ;
+          java:isSynchronized true ;
+          java:lineNumber ?line .
+
+  ?class a java:ClassDeclaration ;
+         java:hasMethod ?method .
+
+  ?class java:inFile ?cu .
+  ?cu java:filePath ?file .
+
+  BIND(IRI(CONCAT(STR(?method), "_structuredScope")) AS ?migrationNode)
+
+  BIND(
+    CONCAT(
+      "// HIGH COMPLEXITY: Review YAWL soundness before applying\n",
+      "// Replace synchronized ", ?methodName, "() with:\n",
+      "try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {\n",
+      "    var result = scope.fork(() -> /* task body */);\n",
+      "    scope.join().throwIfFailed();\n",
+      "    return result.get();\n",
+      "}"
+    ) AS ?structuredCode
+  )
+}

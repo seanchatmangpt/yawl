@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.yawlfoundation.yawl.elements.GroupedMIOutputData;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.YWorkItemID;
@@ -131,7 +132,7 @@ class TestGroupedMIOutputData {
         @Test
         @DisplayName("SetCompletedItemsString and GetCompletedItemsString roundtrip")
         void completedItemsStringRoundtrip() {
-            GroupedMIOutputData data = new TestableGroupedMIOutputData(caseId, TASK_ID, ROOT_NAME);
+            TestableGroupedMIOutputData data = new TestableGroupedMIOutputData(caseId, TASK_ID, ROOT_NAME);
 
             String xml = "<items><item>test</item></items>";
             data.setCompletedItemsString(xml);
@@ -147,6 +148,9 @@ class TestGroupedMIOutputData {
         TestableGroupedMIOutputData(YIdentifier caseID, String taskID, String rootName) {
             super(caseID, taskID, rootName);
         }
+
+        @Override public String getCompletedItemsString() { return super.getCompletedItemsString(); }
+        @Override public void setCompletedItemsString(String xml) { super.setCompletedItemsString(xml); }
     }
 
     /**
