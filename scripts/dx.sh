@@ -75,8 +75,8 @@ fi
 ALL_MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
     yawl-stateless yawl-resourcing yawl-scheduling
-    yawl-security yawl-integration yawl-monitoring yawl-webapps
-    yawl-control-panel
+    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-webapps
+    yawl-control-panel yawl-mcp-a2a-app
 )
 
 detect_changed_modules() {
@@ -200,9 +200,13 @@ ELAPSED_MS=$((END_MS - START_MS))
 ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 # Parse results from Maven log
-TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null || echo 0)
-TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null || echo 0)
-MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l)
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || true
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || true
+if [[ "$SCOPE" == "all" ]]; then
+    MODULES_COUNT=${#ALL_MODULES[@]}
+else
+    MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l | tr -d ' ')
+fi
 
 # Enhanced status with metrics
 echo ""
