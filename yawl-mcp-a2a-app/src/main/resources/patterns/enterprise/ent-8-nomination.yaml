@@ -14,7 +14,7 @@ variables:
     type: xs:string
   - name: nominationAccepted
     type: xs:boolean
-    default: false
+    default: true
 
 tasks:
   - id: CreateTask

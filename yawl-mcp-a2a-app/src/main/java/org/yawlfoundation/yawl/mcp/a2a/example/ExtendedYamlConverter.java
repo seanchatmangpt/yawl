@@ -267,6 +267,11 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                     xml.append("            <predicate>")
                        .append(escapeXml(xquery))
                        .append("</predicate>\n");
+                } else if (("xor".equals(split) || "or".equals(split))
+                        && (defaultFlow == null || !flow.equals(defaultFlow))) {
+                    // In XOR/OR splits, flows without predicates cause NPE in engine evaluation.
+                    // Use false() so the flow is safely unreachable (handles lost YAML duplicate-key conditions).
+                    xml.append("            <predicate>false()</predicate>\n");
                 }
 
                 if (defaultFlow != null && flow.equals(defaultFlow)) {
@@ -319,17 +324,19 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
                 String max = getString(multiInstance, "max", "1");
                 String threshold = normalizeMiThreshold(
                         getString(multiInstance, "threshold", "1"), max);
-                String mode = getString(multiInstance, "mode", "static");
+                String mode = normalizeMiMode(getString(multiInstance, "mode", "static"));
 
                 xml.append("          <minimum>").append(min).append("</minimum>\n");
                 xml.append("          <maximum>").append(max).append("</maximum>\n");
                 xml.append("          <threshold>").append(threshold).append("</threshold>\n");
                 xml.append("          <creationMode code=\"").append(escapeXml(mode)).append("\"/>\n");
 
-                // miDataInput is required for MI tasks - generate minimal valid structure
+                // miDataInput is required for MI tasks - generate minimal valid structure.
+                // Default expression selects net root (e.g. /MIStaticPattern) and splits
+                // by all child elements (*), which creates one instance per net variable.
                 String miVar = getString(multiInstance, "variable", "item");
-                String miQuery = getString(multiInstance, "query", "/net/data");
-                String miSplitQuery = getString(multiInstance, "splitQuery", "/data/" + miVar);
+                String miQuery = getString(multiInstance, "query", "/" + netName);
+                String miSplitQuery = getString(multiInstance, "splitQuery", "*");
                 xml.append("          <miDataInput>\n");
                 xml.append("            <expression query=\"").append(escapeXml(miQuery)).append("\"/>\n");
                 xml.append("            <splittingExpression query=\"").append(escapeXml(miSplitQuery)).append("\"/>\n");
@@ -461,6 +468,20 @@ public class ExtendedYamlConverter extends YawlYamlConverter {
             case "first" -> "1";
             case "dynamic" -> max;
             default -> threshold;
+        };
+    }
+
+    /**
+     * Normalize MI creation mode to YAWL schema-valid values (static, dynamic).
+     * Maps extended modes like 'sequential' and 'concurrent' to valid equivalents.
+     */
+    private String normalizeMiMode(String mode) {
+        if (mode == null) return "static";
+        return switch (mode.toLowerCase(Locale.ROOT)) {
+            case "static", "dynamic" -> mode.toLowerCase(Locale.ROOT);
+            case "sequential" -> "static";
+            case "concurrent" -> "dynamic";
+            default -> "static";
         };
     }
 

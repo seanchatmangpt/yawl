@@ -23,4 +23,5 @@ tasks:
       max: 3
       mode: static
       threshold: all
+      splitQuery: "/*/*"
     description: "Process exactly 3 items in parallel"

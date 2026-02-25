@@ -17,6 +17,7 @@
 package org.yawlfoundation.yawl.mcp.a2a.demo.execution;
 
 import org.jdom2.Element;
+import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.exceptions.YSyntaxException;
 import org.yawlfoundation.yawl.stateless.YStatelessEngine;
 import org.yawlfoundation.yawl.stateless.elements.YSpecification;
@@ -495,10 +496,20 @@ public class ExecutionHarness {
             try {
                 switch (event.getEventType()) {
                     case ITEM_ENABLED -> {
-                        // Skip parent work items (multi-instance) - children get their own events
-                        if (item.isParent()) return;
+                        // Start all enabled items (including MI parents - starting parent creates children)
                         LOG.fine(() -> "Starting work item: " + itemId);
                         engine.startWorkItem(item);
+                        // For MI parents: the engine starts only the first child automatically.
+                        // Any remaining children in statusFired must be started explicitly.
+                        Set<YWorkItem> children = item.getChildren();
+                        if (children != null) {
+                            for (YWorkItem child : new ArrayList<>(children)) {
+                                if (YWorkItemStatus.statusFired.equals(child.getStatus())) {
+                                    LOG.fine(() -> "Starting fired MI child: " + child.get_thisID());
+                                    engine.startWorkItem(child);
+                                }
+                            }
+                        }
                     }
                     case ITEM_STARTED -> {
                         if (!item.hasCompletedStatus() && !item.isParent()) {
@@ -511,7 +522,10 @@ public class ExecutionHarness {
                     default -> { /* other events: just trace */ }
                 }
             } catch (Exception e) {
-                LOG.fine(() -> "Handled error for " + event.getEventType() + " " + itemId + ": " + e.getMessage());
+                LOG.warning("Error handling " + event.getEventType() + " for item " + itemId + ": " + e.getMessage());
+                if (LOG.isLoggable(Level.FINE)) {
+                    LOG.log(Level.FINE, "Stack trace:", e);
+                }
             }
         }
     }
