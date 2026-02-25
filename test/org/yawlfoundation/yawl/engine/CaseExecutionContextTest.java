@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -249,7 +250,7 @@ class CaseExecutionContextTest {
         void callWhereBindsContextInsideScope() throws Exception {
             CaseExecutionContext ctx = CaseExecutionContext.of("case-10", "spec:1.0");
 
-            CaseExecutionContext observed = ScopedValue.callWhere(EXEC_CTX, ctx, () -> {
+            CaseExecutionContext observed = ScopedValue.where(EXEC_CTX, ctx).call(() -> {
                 assertTrue(EXEC_CTX.isBound(), "ScopedValue must be bound inside scope");
                 return EXEC_CTX.get();
             });
@@ -262,28 +263,31 @@ class CaseExecutionContextTest {
         void unboundOutsideScope() throws Exception {
             assertFalse(EXEC_CTX.isBound(), "ScopedValue must not be bound before callWhere");
 
-            ScopedValue.callWhere(EXEC_CTX, CaseExecutionContext.of("case-11", "spec:1.0"),
-                    () -> null);
+            ScopedValue.where(EXEC_CTX, CaseExecutionContext.of("case-11", "spec:1.0"))
+                    .call(() -> null);
 
             assertFalse(EXEC_CTX.isBound(), "ScopedValue must not be bound after callWhere exits");
         }
 
         @Test
-        @DisplayName("ScopedValue is inherited by child virtual thread")
+        @DisplayName("ScopedValue is inherited by child virtual thread via StructuredTaskScope")
         void inheritedByChildVirtualThread() throws Exception {
             CaseExecutionContext ctx = CaseExecutionContext.of("case-12", "spec:1.0");
             AtomicReference<CaseExecutionContext> childObserved = new AtomicReference<>();
-            CountDownLatch latch = new CountDownLatch(1);
 
-            ScopedValue.callWhere(EXEC_CTX, ctx, () -> {
-                Thread.ofVirtual().name("child-vt").start(() -> {
-                    childObserved.set(EXEC_CTX.orElse(null));
-                    latch.countDown();
-                });
+            ScopedValue.where(EXEC_CTX, ctx).call(() -> {
+                // Java 25: ScopedValue bindings are propagated to StructuredTaskScope.fork()
+                // subtasks, NOT to Thread.ofVirtual() — use the correct structured concurrency API.
+                try (var scope = StructuredTaskScope.open()) {
+                    scope.fork(() -> {
+                        childObserved.set(EXEC_CTX.get());
+                        return null;
+                    });
+                    scope.join();
+                }
                 return null;
             });
 
-            assertTrue(latch.await(5, TimeUnit.SECONDS), "Child thread must complete");
             assertEquals(ctx, childObserved.get(),
                     "Child virtual thread must inherit parent ScopedValue binding");
         }
@@ -309,7 +313,7 @@ class CaseExecutionContextTest {
                     vte.submit(() -> {
                         try {
                             CaseExecutionContext c = contexts.get(idx);
-                            CaseExecutionContext seen = ScopedValue.callWhere(EXEC_CTX, c, () -> {
+                            CaseExecutionContext seen = ScopedValue.where(EXEC_CTX, c).call(() -> {
                                 // Yield to let other virtual threads interleave
                                 Thread.yield();
                                 return EXEC_CTX.get();
@@ -339,9 +343,9 @@ class CaseExecutionContextTest {
 
             CaseExecutionContext[] captured = new CaseExecutionContext[2];
 
-            ScopedValue.callWhere(EXEC_CTX, outer, () -> {
+            ScopedValue.where(EXEC_CTX, outer).call(() -> {
                 captured[0] = EXEC_CTX.get();
-                ScopedValue.callWhere(EXEC_CTX, inner, () -> {
+                ScopedValue.where(EXEC_CTX, inner).call(() -> {
                     captured[1] = EXEC_CTX.get();
                     return null;
                 });
@@ -375,8 +379,8 @@ class CaseExecutionContextTest {
         void caseContextBindsString() throws Exception {
             String caseID = "case-production-99";
 
-            String observed = ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, caseID,
-                    () -> YNetRunner.CASE_CONTEXT.get());
+            String observed = ScopedValue.where(YNetRunner.CASE_CONTEXT, caseID)
+                    .call(() -> YNetRunner.CASE_CONTEXT.get());
 
             assertEquals(caseID, observed);
         }
@@ -389,21 +393,24 @@ class CaseExecutionContextTest {
         }
 
         @Test
-        @DisplayName("CASE_CONTEXT propagates to forked virtual thread")
+        @DisplayName("CASE_CONTEXT propagates to StructuredTaskScope-forked virtual thread")
         void caseContextPropagatestoVirtualThread() throws Exception {
             String caseID = "case-forked-42";
             AtomicReference<String> childSeen = new AtomicReference<>();
-            CountDownLatch done = new CountDownLatch(1);
 
-            ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, caseID, () -> {
-                Thread.ofVirtual().name("vt-case-forked").start(() -> {
-                    childSeen.set(YNetRunner.CASE_CONTEXT.orElse(null));
-                    done.countDown();
-                });
+            ScopedValue.where(YNetRunner.CASE_CONTEXT, caseID).call(() -> {
+                // Java 25: ScopedValue bindings propagate via StructuredTaskScope.fork(),
+                // not via Thread.ofVirtual() — use the structured concurrency pattern.
+                try (var scope = StructuredTaskScope.open()) {
+                    scope.fork(() -> {
+                        childSeen.set(YNetRunner.CASE_CONTEXT.get());
+                        return null;
+                    });
+                    scope.join();
+                }
                 return null;
             });
 
-            assertTrue(done.await(5, TimeUnit.SECONDS));
             assertEquals(caseID, childSeen.get(),
                     "Forked virtual thread must inherit CASE_CONTEXT binding");
         }
