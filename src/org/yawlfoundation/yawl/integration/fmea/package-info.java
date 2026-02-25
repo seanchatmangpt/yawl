@@ -17,13 +17,14 @@
  */
 
 /**
- * Runtime Failure Mode and Effects Analysis (FMEA) for YAWL v6 users.
+ * Runtime Failure Mode and Effects Analysis (FMEA) for YAWL v6 users and A2A agents.
  *
  * <p>Extends the observatory FMEA framework (FM1–FM7, build/infra risks) with
- * seven user-level failure modes (FM_U1–FM_U7) covering authentication,
- * authorisation, tenant isolation, and resource allocation.
+ * user-level failure modes (FM_U1–FM_U7) covering authentication, authorisation,
+ * tenant isolation, and resource allocation, and A2A-level failure modes (FM_A1–FM_A7)
+ * covering agent credentials, handoff protocol, skill access, and server configuration.
  *
- * <h2>Failure Mode Inventory</h2>
+ * <h2>User Failure Mode Inventory (FM_U1–FM_U7)</h2>
  * <table>
  *   <tr><th>ID</th><th>Name</th><th>S</th><th>O</th><th>D</th><th>RPN</th></tr>
  *   <tr><td>FM_U1</td><td>Credential Expiry</td><td>8</td><td>4</td><td>3</td><td>96</td></tr>
@@ -35,31 +36,65 @@
  *   <tr><td>FM_U7</td><td>Resource Unavailable</td><td>8</td><td>3</td><td>5</td><td>120</td></tr>
  * </table>
  *
+ * <h2>A2A Failure Mode Inventory (FM_A1–FM_A7)</h2>
+ * <table>
+ *   <tr><th>ID</th><th>Name</th><th>S</th><th>O</th><th>D</th><th>RPN</th></tr>
+ *   <tr><td>FM_A1</td><td>Agent Credential Expiry</td><td>9</td><td>4</td><td>2</td><td>72</td></tr>
+ *   <tr><td>FM_A2</td><td>Missing Skill Permission</td><td>8</td><td>5</td><td>3</td><td>120</td></tr>
+ *   <tr><td>FM_A3</td><td>Handoff Token Expiry</td><td>7</td><td>5</td><td>3</td><td>105</td></tr>
+ *   <tr><td>FM_A4</td><td>Handoff Self-Reference</td><td>8</td><td>2</td><td>5</td><td>80</td></tr>
+ *   <tr><td>FM_A5</td><td>Skill Not Registered</td><td>6</td><td>4</td><td>2</td><td>48</td></tr>
+ *   <tr><td>FM_A6</td><td>Insufficient Skill Permission</td><td>7</td><td>4</td><td>3</td><td>84</td></tr>
+ *   <tr><td>FM_A7</td><td>No Auth Scheme Configured</td><td>10</td><td>2</td><td>5</td><td>100</td></tr>
+ * </table>
+ *
  * <h2>RPN Formula</h2>
  * <pre>
  *   RPN = Severity × Occurrence × Detection   (each 1–10, 10 = worst)
  * </pre>
  *
- * <h2>Key Types</h2>
+ * <h2>Key Types — User FMEA</h2>
  * <ul>
  *   <li>{@link org.yawlfoundation.yawl.integration.fmea.UserFailureModeType}
  *       — enum of FM_U1–FM_U7 with embedded S/O/D scores</li>
  *   <li>{@link org.yawlfoundation.yawl.integration.fmea.UserFmeaViolation}
- *       — record representing one detected violation</li>
+ *       — record representing one detected user violation</li>
  *   <li>{@link org.yawlfoundation.yawl.integration.fmea.UserFmeaReport}
- *       — record carrying the full analysis result (GREEN / RED)</li>
+ *       — record carrying the user analysis result (GREEN / RED)</li>
  *   <li>{@link org.yawlfoundation.yawl.integration.fmea.UserFmeaAnalyzer}
- *       — stateless analyser; call once per request boundary</li>
+ *       — stateless user analyser; call once per request boundary</li>
  * </ul>
  *
- * <h2>Usage</h2>
+ * <h2>Key Types — A2A FMEA</h2>
+ * <ul>
+ *   <li>{@link org.yawlfoundation.yawl.integration.fmea.A2AFailureModeType}
+ *       — enum of FM_A1–FM_A7 with embedded S/O/D scores</li>
+ *   <li>{@link org.yawlfoundation.yawl.integration.fmea.A2AFmeaViolation}
+ *       — record representing one detected A2A violation</li>
+ *   <li>{@link org.yawlfoundation.yawl.integration.fmea.A2AFmeaReport}
+ *       — record carrying the A2A analysis result (GREEN / RED)</li>
+ *   <li>{@link org.yawlfoundation.yawl.integration.fmea.A2AFmeaAnalyzer}
+ *       — stateless A2A analyser; call once per request boundary</li>
+ * </ul>
+ *
+ * <h2>Usage — User FMEA</h2>
  * <pre>{@code
  * UserFmeaAnalyzer analyzer = new UserFmeaAnalyzer();
  *
- * // Check an A2A principal before delegating a skill
  * UserFmeaReport report = analyzer.analyzePrincipal(principal, "workflow:launch");
  * if (!report.isClean()) {
  *     throw new SecurityException("User FMEA: " + report.status()
+ *         + " (RPN=" + report.totalRpn() + ")");
+ * }
+ * }</pre>
+ *
+ * <h2>Usage — A2A FMEA</h2>
+ * <pre>{@code
+ * A2AFmeaAnalyzer analyzer = new A2AFmeaAnalyzer();
+ *
+ * A2AFmeaReport report = analyzer.analyzeAgentPrincipal(principal, "workflow:launch");
+ * if (!report.isClean()) {
+ *     throw new SecurityException("A2A FMEA: " + report.status()
  *         + " (RPN=" + report.totalRpn() + ")");
  * }
  * }</pre>
