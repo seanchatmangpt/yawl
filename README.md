@@ -1,9 +1,9 @@
 # YAWL (Yet Another Workflow Language) v6.0.0
 
-![Version](https://img.shields.io/badge/version-6.0.0--Beta-blue)
+![Version](https://img.shields.io/badge/version-6.0.0--GA-blue)
 ![Java](https://img.shields.io/badge/Java-25-blue)
 ![License](https://img.shields.io/badge/license-LGPL--3.0-green)
-![Status](https://img.shields.io/badge/status-Beta-blue)
+![Status](https://img.shields.io/badge/status-GA-brightgreen)
 ![Build](https://img.shields.io/badge/build-GREEN-brightgreen)
 
 **[YAWL](https://yawlfoundation.github.io)** is a BPM/Workflow system based on rigorous Petri net semantics, with:
@@ -243,11 +243,11 @@ java -jar reviewer-agent.jar --partition index=2,total=3
 ### Build Images
 ```bash
 # YAWL Engine
-docker build -t yawl-engine:6.0.0-alpha \
+docker build -t yawl-engine:6.0.0 \
   -f docker/production/Dockerfile.engine .
 
 # MCP-A2A Application
-docker build -t yawl-mcp-a2a-app:6.0.0-alpha \
+docker build -t yawl-mcp-a2a-app:6.0.0 \
   -f docker/production/Dockerfile.mcp-a2a-app .
 ```
 
@@ -258,7 +258,7 @@ docker run -d --name yawl-engine \
   -p 8080:8080 -p 9090:9090 \
   -e YAWL_USERNAME=admin \
   -e YAWL_PASSWORD_FILE=/run/secrets/yawl_password \
-  yawl-engine:6.0.0-alpha
+  yawl-engine:6.0.0
 
 # MCP-A2A (ports: 8080=spring, 8081=mcp, 8082=a2a)
 docker run -d --name yawl-mcp-a2a \
@@ -266,7 +266,7 @@ docker run -d --name yawl-mcp-a2a \
   -e YAWL_ENGINE_URL=http://yawl-engine:8080/yawl \
   -e YAWL_USERNAME=admin \
   -e YAWL_PASSWORD_FILE=/run/secrets/yawl_password \
-  yawl-mcp-a2a-app:6.0.0-alpha
+  yawl-mcp-a2a-app:6.0.0
 ```
 
 ### Health Checks
@@ -311,9 +311,10 @@ JAVA_OPTS="
 
 | Document | Purpose |
 |----------|---------|
-| **[docs/v6/DEFINITION-OF-DONE.md](docs/v6/DEFINITION-OF-DONE.md)** | v6.0.0-Beta completion criteria and gate status |
+| **[docs/v6/DEFINITION-OF-DONE.md](docs/v6/DEFINITION-OF-DONE.md)** | v6.0.0-GA completion criteria and gate status |
 | **[docs/v6/BETA-READINESS-REPORT.md](docs/v6/BETA-READINESS-REPORT.md)** | Beta readiness gates (B1–B6) |
-| **[docs/v6/V6-BETA-RELEASE-NOTES.md](docs/v6/V6-BETA-RELEASE-NOTES.md)** | v6.0.0-Beta release notes |
+| **[docs/v6/V6-GA-RELEASE-NOTES.md](docs/v6/V6-GA-RELEASE-NOTES.md)** | v6.0.0-GA release notes |
+| **[docs/v6/V6-BETA-RELEASE-NOTES.md](docs/v6/V6-BETA-RELEASE-NOTES.md)** | v6.0.0-Beta release notes (historical) |
 | **[docs/v6/PERFORMANCE-BASELINE-V6-BETA.md](docs/v6/PERFORMANCE-BASELINE-V6-BETA.md)** | Performance baselines and targets |
 | **[docs/v6/TEST-COVERAGE-BASELINE.md](docs/v6/TEST-COVERAGE-BASELINE.md)** | Test coverage targets and results |
 | **[docs/v6/INTEGRATION-ARCHITECTURE-REFERENCE.md](docs/v6/INTEGRATION-ARCHITECTURE-REFERENCE.md)** | MCP/A2A architecture reference |
