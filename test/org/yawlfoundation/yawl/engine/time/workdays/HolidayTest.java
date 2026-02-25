@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class HolidayTest {
 
     private Holiday newYearsDay;
-    private christmasDay;
+    private Holiday christmasDay;
     private static final int TEST_YEAR = 2023;
 
     @BeforeEach

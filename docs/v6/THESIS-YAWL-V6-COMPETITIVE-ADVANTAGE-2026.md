@@ -849,6 +849,6 @@ curl http://localhost:8080/yawl/health
 ---
 
 *Whitepaper Version: 1.0*
-*YAWL Version: 6.0.0-Alpha*
+*YAWL Version: 6.0.0-Beta*
 *Date: 2026-02-17*
 *Classification: Public*

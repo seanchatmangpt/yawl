@@ -2,7 +2,7 @@
  * Copyright (c) 2004-2025 The YAWL Foundation. All rights reserved.
  *
  * Behavioral Test Suite for Van Der Aalst Petri Net Semantics
- * Purpose: Lock core YNetRunner execution semantics for v6.0.0-Alpha
+ * Purpose: Lock core YNetRunner execution semantics for v6.0.0-Beta
  *
  * These tests verify the invariants of YAWL net runner execution based on
  * Petri net semantics as defined by Prof. Wil van der Aalst.

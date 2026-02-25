@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Alpha - Prometheus Configuration
+# YAWL v6.0.0-Beta - Prometheus Configuration
 # =============================================================================
 # Production-ready Prometheus scrape configuration for YAWL workflow engine.
 # Includes: YAWL engine metrics, JVM metrics, OpenTelemetry exporters,

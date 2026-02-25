@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Uses Chicago TDD style (real HTTP endpoints, no mocks).
  *
  * @author YAWL Test Agent
- * @since YAWL 6.0.0-Alpha
+ * @since YAWL 6.0.0-Beta
  */
 @DisplayName("HttpURLValidator")
 class TestHttpURLValidator {

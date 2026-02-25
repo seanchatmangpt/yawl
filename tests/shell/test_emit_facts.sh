@@ -61,7 +61,7 @@ oneTimeSetUp() {
 <project>
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>6.0.0-Alpha</version>
+    <version>6.0.0-Beta</version>
     <packaging>pom</packaging>
     <modules>
         <module>yawl-utilities</module>
@@ -87,7 +87,7 @@ POM
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Alpha</version>
+        <version>6.0.0-Beta</version>
     </parent>
     <artifactId>yawl-utilities</artifactId>
     <sourceDirectory>../src</sourceDirectory>
@@ -100,7 +100,7 @@ POM
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Alpha</version>
+        <version>6.0.0-Beta</version>
     </parent>
     <artifactId>yawl-engine</artifactId>
     <sourceDirectory>../src</sourceDirectory>
@@ -125,7 +125,7 @@ POM
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Alpha</version>
+        <version>6.0.0-Beta</version>
     </parent>
     <artifactId>yawl-elements</artifactId>
     <sourceDirectory>../src</sourceDirectory>
@@ -348,7 +348,7 @@ test_emit_modules_handles_missing_pom() {
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Alpha</version>
+        <version>6.0.0-Beta</version>
     </parent>
     <artifactId>yawl-elements</artifactId>
     <sourceDirectory>../src</sourceDirectory>

@@ -1,7 +1,7 @@
 # YAWL v6.0.0 — HYPER_STANDARDS Violation Tracker
 
 **Date**: 2026-02-22
-**Version**: 6.0.0-Alpha
+**Version**: 6.0.0-Beta
 **Total Violations**: 61 (12 BLOCKER + 31 HIGH + 18 MEDIUM)
 **Enforcement Standard**: `.claude/HYPER_STANDARDS.md` § 14 anti-patterns
 **Last Updated**: 2026-02-22T14:00:00Z

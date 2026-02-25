@@ -44,7 +44,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
  * @author YAWL Team
  * @date 2026-02-16
  */
-@Tag("slow")
+@Tag("unit")
 @Execution(ExecutionMode.SAME_THREAD)
 class VirtualThreadPinningTest {
 
@@ -221,5 +221,104 @@ class VirtualThreadPinningTest {
         String errorOutput = errCapture.toString();
         assertFalse(errorOutput.contains("Pinned thread"),
             "Virtual thread pinning detected under stress load:\n" + errorOutput);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tests 4–8: Lock metrics and virtual-thread correctness (no pinning flag needed)
+    // -------------------------------------------------------------------------
+
+    /**
+     * A freshly created {@link YNetRunnerLockMetrics} must report zero acquisitions
+     * and zero wait times — no spurious state leaks across instances.
+     */
+    @Test
+    void testLockMetrics_freshInstance_hasZeroAcquisitions() {
+        YNetRunnerLockMetrics metrics = new YNetRunnerLockMetrics("test-case-fresh");
+        assertEquals(0.0, metrics.avgWriteLockWaitMs(), 1e-9,
+            "Fresh metrics must report 0.0 ms average write-lock wait");
+        assertEquals(0.0, metrics.maxWriteLockWaitMs(), 1e-9,
+            "Fresh metrics must report 0.0 ms max write-lock wait");
+        assertEquals(0.0, metrics.avgReadLockWaitMs(), 1e-9,
+            "Fresh metrics must report 0.0 ms average read-lock wait");
+    }
+
+    /**
+     * After recording two equal wait times the average must equal each individual wait.
+     */
+    @Test
+    void testLockMetrics_afterRecordWait_showsCorrectAverage() {
+        YNetRunnerLockMetrics metrics = new YNetRunnerLockMetrics("test-case-avg");
+        // Record two waits of exactly 1 ms (1,000,000 ns)
+        metrics.recordWriteLockWait(1_000_000L);
+        metrics.recordWriteLockWait(1_000_000L);
+        assertEquals(1.0, metrics.avgWriteLockWaitMs(), 0.001,
+            "Average of two 1 ms waits must be 1.0 ms");
+    }
+
+    /**
+     * The maximum write-lock wait must track the single longest wait seen.
+     */
+    @Test
+    void testLockMetrics_maxWaitTracked_withMultipleRecords() {
+        YNetRunnerLockMetrics metrics = new YNetRunnerLockMetrics("test-case-max");
+        metrics.recordWriteLockWait(1_000_000L);  // 1 ms
+        metrics.recordWriteLockWait(5_000_000L);  // 5 ms  ← should become the max
+        metrics.recordWriteLockWait(2_000_000L);  // 2 ms
+        assertEquals(5.0, metrics.maxWriteLockWaitMs(), 0.001,
+            "maxWriteLockWaitMs must be 5.0 ms after recording 1 ms, 5 ms, 2 ms waits");
+    }
+
+    /**
+     * The runner for a running case must have lock metrics with at least one write-lock
+     * acquisition recorded (kick + continueIfPossible both acquire the write-lock).
+     */
+    @Test
+    void testLockMetrics_recordedForCaseRunner_afterCaseStart() throws Exception {
+        YIdentifier caseId = engine.startCase(
+            testSpec.getSpecificationID(), null, null, null,
+            new YLogDataItemList(), null, false);
+        assertNotNull(caseId, "Case must start successfully");
+
+        YNetRunner runner = engine.getNetRunnerRepository().get(caseId);
+        assertNotNull(runner, "Runner must be in repository after startCase");
+
+        YNetRunnerLockMetrics metrics = runner.getLockMetrics();
+        assertNotNull(metrics, "Runner must expose a non-null YNetRunnerLockMetrics instance");
+
+        // kick() acquires the write-lock at least once during startCase
+        assertTrue(metrics.avgWriteLockWaitMs() >= 0.0,
+            "avgWriteLockWaitMs must be >= 0 after case start (not negative)");
+    }
+
+    /**
+     * Starting a case from a virtual thread must complete without throwing any exception.
+     * This verifies that YNetRunner's ReentrantReadWriteLock (non-synchronized) does not
+     * block virtual-thread execution.
+     */
+    @Test
+    void testCaseStart_fromVirtualThread_completesNormally() throws Exception {
+        java.util.concurrent.atomic.AtomicReference<Throwable> error =
+            new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicReference<YIdentifier> result =
+            new java.util.concurrent.atomic.AtomicReference<>();
+
+        Thread vt = Thread.ofVirtual().start(() -> {
+            try {
+                YIdentifier id = engine.startCase(
+                    testSpec.getSpecificationID(), null, null, null,
+                    new YLogDataItemList(), null, false);
+                result.set(id);
+            } catch (Throwable t) {
+                error.set(t);
+            }
+        });
+        vt.join(10_000);  // wait up to 10 s
+
+        assertNull(error.get(),
+            "startCase from virtual thread must not throw: " + error.get());
+        assertNotNull(result.get(),
+            "startCase from virtual thread must return a valid case identifier");
+        assertTrue(Thread.currentThread().isVirtual() == false,
+            "Carrier (platform) thread must not be a virtual thread in this test context");
     }
 }

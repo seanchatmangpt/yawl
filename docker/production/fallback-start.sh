@@ -29,9 +29,9 @@ check_jars() {
 
     local jars=()
 
-    if [[ -f "./yawl-mcp-a2a-app/yawl-mcp-a2a-app/target/dependency/yawl-engine-6.0.0-Alpha.jar" ]]; then
-        jars+=("./yawl-mcp-a2a-app/yawl-mcp-a2a-app/target/dependency/yawl-engine-6.0.0-Alpha.jar")
-        success "Found: yawl-engine-6.0.0-Alpha.jar"
+    if [[ -f "./yawl-mcp-a2a-app/yawl-mcp-a2a-app/target/dependency/yawl-engine-6.0.0-Beta.jar" ]]; then
+        jars+=("./yawl-mcp-a2a-app/yawl-mcp-a2a-app/target/dependency/yawl-engine-6.0.0-Beta.jar")
+        success "Found: yawl-engine-6.0.0-Beta.jar"
     fi
 
     if [[ -f "./yawl-engine/target/yawl-engine-*.jar" ]]; then
@@ -117,8 +117,8 @@ COPY --chown=1000:1000 \
     /app/ || true
 
 # Use the first available JAR
-RUN if [ -f /app/yawl-engine-6.0.0-Alpha.jar ]; then \
-    mv /app/yawl-engine-6.0.0-Alpha.jar /app/yawl-engine.jar; \
+RUN if [ -f /app/yawl-engine-6.0.0-Beta.jar ]; then \
+    mv /app/yawl-engine-6.0.0-Beta.jar /app/yawl-engine.jar; \
     elif [ -f /app/yawl-engine-*.jar ]; then \
     mv /app/yawl-engine-*.jar /app/yawl-engine.jar; \
     else \

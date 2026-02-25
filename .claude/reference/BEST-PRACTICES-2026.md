@@ -793,7 +793,7 @@ Claude searches for relevant tools instead of loading all descriptions.
 
 **Pattern**: Large-scale breaking changes (Java 25, Jakarta EE 10, records) can be **managed by Claude** with proper documentation and atomic transformations.
 
-**From YAWL v6.0.0 → v6.0.0-Alpha Migration:**
+**From YAWL v6.0.0 → v6.0.0-Beta Migration:**
 
 **Breaking Change 1: Namespace Migration**
 - Scope: 589 Java files
@@ -845,7 +845,7 @@ for (int i = 0; i < 10000; i++) {
 }
 ```
 
-**After (v6.0.0-Alpha - Virtual Threads)**:
+**After (v6.0.0-Beta - Virtual Threads)**:
 ```java
 // Pattern 1: Per-task virtual threads
 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -924,7 +924,7 @@ public class CaseExecutionEvent {
 }
 ```
 
-**After (v6.0.0-Alpha - Record)**:
+**After (v6.0.0-Beta - Record)**:
 ```java
 public record CaseExecutionEvent(
     String caseID,
@@ -968,7 +968,7 @@ if (element instanceof YAtomicTask) {
 }
 ```
 
-**After (v6.0.0-Alpha - Pattern Matching)**:
+**After (v6.0.0-Beta - Pattern Matching)**:
 ```java
 if (element instanceof YAtomicTask task) {
     // task is already cast, use directly
@@ -1027,7 +1027,7 @@ The YAWL project now serves as a **reference implementation** for Claude Code be
 
 ### V6-Specific Next Steps
 
-For teams upgrading to v6.0.0-Alpha:
+For teams upgrading to v6.0.0-Beta:
 
 1. **Read the V6 Documentation** (in order):
    - V6_UPGRADE_GUIDE.md (comprehensive technical reference)

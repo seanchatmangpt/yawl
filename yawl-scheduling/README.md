@@ -1,6 +1,6 @@
 # yawl-scheduling
 
-**Artifact:** `org.yawlfoundation:yawl-scheduling:6.0.0-Alpha` | `packaging: jar`
+**Artifact:** `org.yawlfoundation:yawl-scheduling:6.0.0-Beta` | `packaging: jar`
 **Parent:** `yawl-parent`
 
 ## Purpose

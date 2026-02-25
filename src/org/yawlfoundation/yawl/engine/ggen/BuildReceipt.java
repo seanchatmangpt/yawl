@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -151,7 +152,8 @@ public class BuildReceipt {
             json.add("details", gson.toJsonTree(details));
         }
 
-        try (Writer writer = Files.newBufferedWriter(receiptFile)) {
+        try (Writer writer = Files.newBufferedWriter(receiptFile,
+                StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             gson.toJson(json, writer);
             writer.write("\n");
         }

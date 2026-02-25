@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Alpha - Grafana Dashboard Provisioning
+# YAWL v6.0.0-Beta - Grafana Dashboard Provisioning
 # =============================================================================
 # Dashboard provisioning configuration for YAWL monitoring.
 # Automatically loads dashboards from /etc/grafana/provisioning/dashboards/yawl/

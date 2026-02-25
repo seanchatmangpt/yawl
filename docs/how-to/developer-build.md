@@ -1,6 +1,6 @@
 # YAWL Developer Build Guide
 
-**Version**: 6.0.0-Alpha | **Java**: 25 | **Maven**: 4.x | **Updated**: 2026-02-18
+**Version**: 6.0.0-Beta | **Java**: 25 | **Maven**: 4.x | **Updated**: 2026-02-18
 
 This guide covers every build and test scenario for the YAWL project, from the fastest
 compilation check to a full analysis run. All timings are measured on an 8-core machine

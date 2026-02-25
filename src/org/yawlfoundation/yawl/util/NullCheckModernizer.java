@@ -67,7 +67,7 @@ import java.util.function.Supplier;
  * </pre>
  *
  * @author YAWL Foundation
- * @since YAWL 6.0.0-Alpha (null-modernization Phase 1, 2026)
+ * @since YAWL 6.0.0-Beta (null-modernization Phase 1, 2026)
  */
 public final class NullCheckModernizer {
 

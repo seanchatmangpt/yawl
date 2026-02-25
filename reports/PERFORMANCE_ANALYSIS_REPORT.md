@@ -1,4 +1,4 @@
-# YAWL v6.0.0-Alpha Performance Analysis & Benchmarking Report
+# YAWL v6.0.0-Beta Performance Analysis & Benchmarking Report
 
 **Report Date:** 2026-02-18  
 **Analysis Scope:** Static code analysis + existing benchmark infrastructure  
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This report provides a comprehensive performance analysis of the YAWL v6.0.0-Alpha codebase, including:
+This report provides a comprehensive performance analysis of the YAWL v6.0.0-Beta codebase, including:
 
 1. **Virtual Thread vs Thread Pool Performance** - Analysis of Java 25 virtual thread adoption
 2. **Memory Usage Comparison** - Java 25 features impact on memory footprint
