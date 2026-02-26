@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Ψ refreshing facts..."
           }
@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Checking shared-src blast radius..."
           }
@@ -79,7 +79,7 @@
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 30,
             "async": true,
             "statusMessage": "Refreshing Ψ facts in background..."
@@ -98,7 +98,7 @@
           },
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Ψ quality gate..."
           }
@@ -110,7 +110,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/scripts/observatory/target/release/yawl-hooks",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Preserving Ψ facts across context compression..."
           }

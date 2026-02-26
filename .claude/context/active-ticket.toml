@@ -1,0 +1,34 @@
+[ticket]
+id = "YAWL-247"
+title = "Implement YAWL Intelligence Layer (yawl-hooks workspace)"
+status = "IN_PROGRESS"
+priority = "P1"
+quantum = "MCP/A2A + Engine-semantic"
+spr_section = "ι INTELLIGENCE"
+
+[ticket.acceptance_criteria]
+"yawl-jira inject --session completes in < 50ms" = false
+"yawl-jira inject --prompt completes in < 20ms" = false
+"Scout fetch respects watermark TTL" = false
+"Typed delta contains no line numbers" = false
+"Receipt chain is reproducible" = false
+"Ticket correction survives context window boundary" = false
+"cargo test green" = false
+"cargo clippy -- -D warnings green" = false
+
+[ticket.context_refs]
+files = [
+  ".claude/hooks/yawl-jira",
+  ".claude/hooks/yawl-scout",
+  "yawl-hooks/Cargo.toml",
+]
+docs = [".claude/HYPER_STANDARDS.md", "PRD: YAWL Intelligence Layer"]
+
+[ticket.depends_on]
+ids = []
+
+[[ticket.corrections]]
+timestamp = "2026-02-26T00:00:00Z"
+hash = "initial"
+text = "Intelligence layer PRD specifies typed deltas, not line diffs. Delta = typed fact transition."
+rule_added = "¬line_diff ∧ ¬unified_patch; diff is a typed fact transition, not a text mutation"

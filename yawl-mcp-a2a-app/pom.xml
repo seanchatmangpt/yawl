@@ -8,6 +8,7 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
+
         <version>6.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -24,13 +25,15 @@
     </properties>
 
     <dependencies>
-        <!-- ============================================================== -->
         <!-- YAWL INTER-MODULE DEPENDENCIES                                 -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-integration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-pi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yawlfoundation</groupId>
@@ -53,9 +56,7 @@
             <artifactId>yawl-ggen</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- SPRING BOOT STARTERS                                           -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -117,9 +118,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- MCP SDK - Model Context Protocol                               -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>io.modelcontextprotocol.sdk</groupId>
@@ -138,9 +137,7 @@
             <artifactId>mcp-spring-webmvc</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- A2A SDK - Agent-to-Agent Protocol                              -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>io.github.a2asdk</groupId>
@@ -187,9 +184,7 @@
             <artifactId>a2a-java-sdk-transport-jsonrpc</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- JAKARTA EE APIs                                                -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>jakarta.servlet</groupId>
@@ -205,9 +200,7 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- RESILIENCE4j - Circuit Breaker, Retry                          -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>io.github.resilience4j</groupId>
@@ -222,9 +215,7 @@
             <artifactId>resilience4j-micrometer</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- OBSERVABILITY - Micrometer                                     -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -235,9 +226,7 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- OPENTELEMETRY                                                  -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -266,9 +255,7 @@
             <artifactId>opentelemetry-exporter-logging</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- HTTP CLIENT                                                    -->
-        <!-- ============================================================== -->
 
         <!-- zai-sdk 0.3.0 was compiled against okhttp 3.14.9 (uses okhttp3/internal/Util
              removed in 5.x). Pin to 3.14.9 so ZaiService can initialize at runtime. -->
@@ -278,9 +265,7 @@
             <version>3.14.9</version>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- JSON PROCESSING                                                -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -303,18 +288,14 @@
             <artifactId>gson</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- XML PROCESSING                                                 -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.jdom</groupId>
             <artifactId>jdom2</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- APACHE COMMONS                                                 -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -325,9 +306,7 @@
             <artifactId>commons-pool2</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- AOP - AspectJ for Metrics Aspects                              -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -340,18 +319,14 @@
             </exclusions>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- NULL SAFETY                                                    -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.jspecify</groupId>
             <artifactId>jspecify</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- LOGGING                                                        -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -366,9 +341,7 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- DATABASE - H2 for development/testing                          -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>com.h2database</groupId>
@@ -376,9 +349,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ============================================================== -->
         <!-- TESTING                                                        -->
-        <!-- ============================================================== -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

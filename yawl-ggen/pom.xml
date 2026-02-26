@@ -8,6 +8,7 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
+
         <version>6.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -52,10 +53,27 @@
 
         <!-- Servlet API (provided — runtime container supplies it) -->
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>${jakarta.servlet.version}</version>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- yawl-graalpy: canonical Java-Python bridge via PythonExecutionEngine -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-graalpy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- JUNG graph library: in-memory process knowledge graph (OpenSage-inspired memory) -->
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-graph-impl</artifactId>
         </dependency>
 
         <!-- Testing — versions inherited from parent BOM (${junit.jupiter.version} = 5.12.0) -->
@@ -129,7 +147,7 @@
         </plugins>
 
         <resources>
-            <!-- Include RDF ontologies, SPARQL queries, templates -->
+            <!-- Include RDF ontologies, SPARQL queries, templates, polyglot scripts, sandbox resources -->
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
@@ -138,6 +156,8 @@
                     <include>**/*.sparql</include>
                     <include>**/*.tera</include>
                     <include>**/*.json</include>
+                    <include>**/*.py</include>
+                    <include>**/*.js</include>
                 </includes>
             </resource>
         </resources>
@@ -156,5 +176,7 @@
             </testResource>
         </testResources>
     </build>
+
+
 
 </project>

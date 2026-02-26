@@ -279,4 +279,20 @@ public final class JwtAuthenticationProvider implements A2AAuthenticationProvide
 
         return builder.compact();
     }
+
+    /**
+     * Parse and verify the signature of a compact JWT string.
+     *
+     * @param jwt the compact JWT to parse
+     * @return the verified claims payload
+     * @throws io.jsonwebtoken.JwtException if signature is invalid, JWT is malformed,
+     *         or the token has expired
+     */
+    public Claims parseClaims(String jwt) {
+        return Jwts.parser()
+                   .verifyWith(signingKey)
+                   .build()
+                   .parseSignedClaims(jwt)
+                   .getPayload();
+    }
 }
