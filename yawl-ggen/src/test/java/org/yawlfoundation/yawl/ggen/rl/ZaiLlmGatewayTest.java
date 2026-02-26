@@ -136,8 +136,8 @@ class ZaiLlmGatewayTest {
     }
 
     @Test
-    void defaultBaseUrl_pointsToOpenBigmodel() {
-        assertTrue(ZaiLlmGateway.DEFAULT_BASE_URL.contains("open.bigmodel.cn"),
-            "Default base URL must point to open.bigmodel.cn");
+    void defaultBaseUrl_pointsToZai() {
+        assertTrue(ZaiLlmGateway.DEFAULT_BASE_URL.startsWith("https://api.z.ai/api/coding/paas/v4"),
+            "Default base URL must point to api.z.ai coding endpoint");
     }
 }

@@ -22,12 +22,12 @@ import java.util.Objects;
  * {@link LlmGateway} implementation backed by Z.AI's GLM-4.7-Flash model.
  *
  * <p>Calls the OpenAI-compatible chat completions endpoint at
- * {@code https://open.bigmodel.cn/api/paas/v4/chat/completions} using
+ * {@code https://api.z.ai/api/coding/paas/v4/chat/completions} using
  * a Bearer token read from the {@code ZAI_API_KEY} environment variable.
  *
  * <p>Request format:
  * <pre>{@code
- * POST /api/paas/v4/chat/completions
+ * POST /api/coding/paas/v4/chat/completions
  * Authorization: Bearer <ZAI_API_KEY>
  * Content-Type: application/json
  *
@@ -45,7 +45,7 @@ import java.util.Objects;
  */
 public class ZaiLlmGateway implements LlmGateway {
 
-    static final String DEFAULT_BASE_URL = "https://open.bigmodel.cn/api/paas/v4";
+    static final String DEFAULT_BASE_URL = "https://api.z.ai/api/coding/paas/v4";
     static final String DEFAULT_MODEL    = "glm-4.7-flash";
     private static final String CHAT_PATH = "/chat/completions";
 
@@ -86,7 +86,7 @@ public class ZaiLlmGateway implements LlmGateway {
         if (key == null || key.isBlank()) {
             throw new IllegalStateException(
                 "ZAI_API_KEY environment variable is not set. " +
-                "Obtain your key from https://open.bigmodel.cn and run: " +
+                "Obtain your key from https://api.z.ai and run: " +
                 "export ZAI_API_KEY=<your-key>");
         }
         return new ZaiLlmGateway(key, DEFAULT_MODEL, timeout);
