@@ -17,6 +17,7 @@ dependency-reduced-pom.xml
 maven_compile.log
 maven*.log
 build-log.txt
+report.txt
 
 # Maven cache (local only)
 .m2/
