@@ -90,6 +90,17 @@ tasks/todo.md ← checkable_items; tasks/lessons.md ← corrections; review_sect
 simplicity_first: |Δcode| → min; impact(change) ⊆ necessary. ¬lazy: root_cause only; ¬temp_fix; senior_dev_standard.
 minimal_impact: change ∩ unnecessary = ∅; ¬introduce_bugs.
 
+## ι INTELLIGENCE
+
+scout(session) = fetch(specs ∪ deps ∪ changelogs, ttl=watermarks.json) → live-intelligence.md; async at SessionStart.
+inject(prompt) = select(live-intelligence.md ∪ deltas/, keywords(prompt)) → UserPromptSubmit stdout; sync.
+δ(A, B) = typed_delta(A, B) → Vec<Delta>; semantic_unit(artifact) ∈ {declaration, rule, criterion, dependency, behavior, quad}.
+¬line_diff ∧ ¬unified_patch; diff is a typed fact transition, not a text mutation.
+receipt(δ) = blake3(canonical_json(δ)) → receipts/{session}.receipt.json; ∀write w: receipt(δ(w)) committed.
+watermark(fetch) = blake3(response) ∧ timestamp; skip_fetch iff now < fetched_at + ttl ∧ hash_unchanged.
+Binaries: .claude/hooks/yawl-jira (ticket+delta) | .claude/hooks/yawl-scout (live intelligence).
+Source: yawl-hooks/ Cargo workspace | Context: .claude/context/ | Tickets: .claude/jira/tickets/*.toml.
+
 ## SKILLS + REFS
 
 /yawl-build|/yawl-test|/yawl-validate|/yawl-deploy|/yawl-review|/yawl-integrate|/yawl-spec|/yawl-pattern
