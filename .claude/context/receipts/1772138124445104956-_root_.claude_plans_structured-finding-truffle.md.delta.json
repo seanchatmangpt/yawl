@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772138124445104956,
+  "timestamp_rfc": "2026-02-26T20:35:24.445104956Z",
+  "session_id": "95906a4f-4916-4679-b61f-335f68a1419a",
+  "file_path": "/root/.claude/plans/structured-finding-truffle.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4e866d80a7157f38e9d6d28ace2d6f4155a800c854f6b79f9fd520cdd20ab9b3",
+  "delta_hash": "846656d05c9e6f071d7efc8f8150fddee60c37a06c40c19b1f83f9a257cc8de6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Selective Merge from `claude/jak",
+        "change": "Added"
+      }
+    }
+  ]
+}
