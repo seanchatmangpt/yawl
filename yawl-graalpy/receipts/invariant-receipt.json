@@ -1,8 +1,8 @@
 {
   "phase": "invariants",
-  "timestamp": "2026-02-26T03:06:48Z",
-  "code_directory": ".",
-  "java_files_scanned": 2609,
+  "timestamp": "2026-02-26T04:04:45Z",
+  "code_directory": "/home/user/yawl/src/org/yawlfoundation/yawl/graalpy/",
+  "java_files_scanned": 10,
   "violations_found": 0,
   "violations_by_type": {
     "Q1_empty_methods": 0,

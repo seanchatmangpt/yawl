@@ -416,7 +416,8 @@ class JavaMigrationAnalyzerTest {
                             Thread.ofVirtual().start(() -> doWork(item));
                         }
 
-                        private void doWork(WorkItem item) {}
+                        private void doWork(WorkItem item) {
+                        }
                     }
                     """);
 
