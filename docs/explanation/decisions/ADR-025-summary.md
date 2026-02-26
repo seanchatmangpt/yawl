@@ -7,7 +7,7 @@ This document summarizes the implementation of ADR-025: Agent Coordination Proto
 ## Primary Implementation: classifyHandoffIfNeeded Method
 
 ### Location
-`src/org/yawlfoundation/yawl/integration/autonomous/GenericPartyAgent.java:273-325`
+`src/org/yawlfoundation/yawl/integration/autonomous/GenericPartyAgent.java:325-373`
 
 ### Method Overview
 The `classifyHandoffIfNeeded` method implements the complete work handoff protocol as specified in ADR-025. It provides structured functionality when an agent determines it cannot complete a work item and needs to transfer it to a capable substitute agent.
@@ -15,39 +15,44 @@ The `classifyHandoffIfNeeded` method implements the complete work handoff protoc
 ### Detailed Functionality
 The method implements a comprehensive handoff workflow:
 
-1. **Agent Registry Query** (lines 279-282)
-   - Queries the AgentRegistry for capable substitute agents
-   - Uses workItem's data fields to find agents with matching capabilities
+1. **Agent Registry Query** (lines 331-334)
+   - Queries the AgentRegistry for capable substitute agents using `config.registryClient().findAgentsByCapability()`
+   - Uses the agent's domain name to find matching agents
    - Returns a list of available agents capable of handling the work item
 
-2. **Agent Filtering** (lines 284-288)
-   - Filters out this agent from the candidate list
-   - Sorts remaining agents by name for deterministic selection
-   - Ensures no self-handoff scenarios
+2. **Agent Filtering** (lines 336-340)
+   - Filters out this agent from the candidate list to prevent self-handoff
+   - Uses stream-based filtering for efficiency
+   - Ensures no circular handoff scenarios
 
-3. **Target Agent Selection** (lines 290-292)
+3. **Target Agent Selection** (lines 343-346)
    - Uses simple strategy: selects first capable agent (deterministic)
-   - Implements fallback logic for robust error handling
-   - Includes configuration-based handoff enablement check
+   - Logs the selected agent for debugging and monitoring
+   - Implements basic error handling for empty candidate lists
 
-4. **Handoff Protocol Initiation** (lines 294-299)
-   - Creates HandoffRequest with detailed information
-   - Uses HandoffService for A2A communication
-   - Implements JWT-based authentication through HandoffToken
+4. **Handoff Protocol Initiation** (lines 348-353)
+   - Uses `HandoffRequestService` from configuration for A2A communication
+   - Initiates handoff with 30-second timeout
+   - Waits for acknowledgment with proper exception handling
 
-5. **Response Handling** (lines 301-308)
-   - Waits for acknowledgment with configurable timeout (default: 30s)
+5. **Response Handling** (lines 355-363)
    - Processes handshake response to determine success/failure
-   - Includes rollback capability if handoff fails
+   - Logs appropriate messages for success and rejection scenarios
+   - Throws `HandoffException` for failed handoffs with detailed error messages
 
 ### Integration in processWorkItem Workflow
 The method is strategically integrated into the main processing workflow:
 
 ```java
-// Called from processWorkItem() when decision reasoning fails
-if (decisionResult == null) {
-    // Check if handoff is enabled and other agents are available
-    HandoffResponse handoffResult = classifyHandoffIfNeeded(workItem, null);
+// Called from processWorkItem() when work item processing fails
+try {
+    classifyHandoffIfNeeded(workItemId, sessionHandle);
+    logger.info("Work item {} successfully handed off", workItemId);
+} catch (HandoffException handoffEx) {
+    // Handoff failed, log but don't break the workflow
+    logger.error("Failed to process work item {} (handoff failed): {}",
+        workItemId, handoffEx.getMessage());
+}
 
     if (handoffResult != null && handoffResult.isSuccess()) {
         // Work item successfully handed off to another agent
