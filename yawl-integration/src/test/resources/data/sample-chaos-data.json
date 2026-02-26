@@ -1,0 +1,67 @@
+[
+  {
+    "id": "test-001",
+    "payload": {
+      "data": "test-data-1",
+      "timestamp": "2026-02-25T10:00:00Z",
+      "metadata": {
+        "source": "chaos-test",
+        "priority": "high",
+        "retryCount": 0
+      }
+    },
+    "expectedOutcome": "success"
+  },
+  {
+    "id": "test-002",
+    "payload": {
+      "data": "test-data-2",
+      "timestamp": "2026-02-25T10:01:00Z",
+      "metadata": {
+        "source": "chaos-test",
+        "priority": "medium",
+        "retryCount": 0
+      }
+    },
+    "expectedOutcome": "recovery"
+  },
+  {
+    "id": "test-003",
+    "payload": {
+      "data": "test-data-3",
+      "timestamp": "2026-02-25T10:02:00Z",
+      "metadata": {
+        "source": "chaos-test",
+        "priority": "low",
+        "retryCount": 0
+      }
+    },
+    "expectedOutcome": "timeout"
+  },
+  {
+    "id": "test-004",
+    "payload": {
+      "data": "test-data-4",
+      "timestamp": "2026-02-25T10:03:00Z",
+      "metadata": {
+        "source": "chaos-test",
+        "priority": "high",
+        "retryCount": 0
+      }
+    },
+    "expectedOutcome": "success"
+  },
+  {
+    "id": "test-005",
+    "payload": {
+      "data": "test-data-5",
+      "timestamp": "2026-02-25T10:04:00Z",
+      "metadata": {
+        "source": "chaos-test",
+        "priority": "critical",
+        "retryCount": 0
+      }
+    },
+    "expectedOutcome": "recovery"
+  }
+]

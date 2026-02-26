@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,6 +33,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffException;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService;
+import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffResult;
+import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
+import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
+import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.integration.autonomous.AgentInfoStore;
+import org.yawlfoundation.yawl.integration.autonomous.AgentContext;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -301,6 +310,68 @@ public final class GenericPartyAgent {
         }
     }
 
+    /**
+     * Attempts to hand off a work item to another capable agent when the current
+     * agent cannot handle it, following the ADR-025 agent coordination protocol.
+     *
+     * <p>This method queries the agent registry for substitute agents capable of
+     * handling the work item, generates a secure handoff token, and initiates
+     * the transfer process with a 30-second timeout for acknowledgment.
+     *
+     * @param workItemId the ID of the work item to classify and potentially hand off
+     * @param sessionHandle the Interface B session handle for the work item
+     * @throws HandoffException if no capable agents are available or the handoff fails
+     */
+    private void classifyHandoffIfNeeded(String workItemId, String sessionHandle) throws HandoffException {
+        try {
+            // Query agent registry for capable substitute agents
+            List<AgentInfo> capableAgents = config.registryClient().findAgentsByCapability(
+                config.getCapability().getDomainName());
+
+            // Filter out this agent
+            String currentAgentId = config.getAgentName();
+            List<AgentInfo> substituteAgents = capableAgents.stream()
+                .filter(agent -> !agent.getId().equals(currentAgentId))
+                .toList();
+
+            if (substituteAgents.isEmpty()) {
+                logger.info("[{}] No substitute agents available for capability: {}",
+                    currentAgentId, config.getCapability().getDomainName());
+                throw new HandoffException("No substitute agents available for work item: " + workItemId);
+            }
+
+            // Select first capable agent (simple strategy - could be enhanced with scoring)
+            AgentInfo targetAgent = substituteAgents.get(0);
+            logger.info("[{}] Selected agent {} as potential substitute for work item {}",
+                currentAgentId, targetAgent.getId(), workItemId);
+
+            // Use existing HandoffRequestService from configuration
+            HandoffRequestService handoffService = config.handoffService();
+
+            // Initiate handoff with 30-second timeout
+            HandoffRequestService.HandoffResult result = handoffService.initiateHandoff(
+                workItemId, currentAgentId).get(30, TimeUnit.SECONDS);
+
+            if (result.isAccepted()) {
+                logger.info("[{}] Successfully handed off work item {} to agent {}",
+                    currentAgentId, workItemId, targetAgent.getId());
+            } else {
+                logger.warn("[{}] Handoff of work item {} rejected: {}",
+                    currentAgentId, workItemId, result.getMessage());
+                // Fall back to error logging
+                throw new HandoffException("Handoff rejected: " + result.getMessage());
+            }
+
+        } catch (Exception e) {
+            if (e instanceof HandoffException) {
+                throw (HandoffException) e;
+            }
+            logger.error("[{}] Failed to classify and hand off work item {}: {}",
+                config.getAgentName(), workItemId, e.getMessage());
+            throw new HandoffException("Handoff failed: " + e.getMessage(), e);
+        }
+    }
+
     private void processWorkItem(WorkItemRecord workItem) {
         String workItemId = workItem.getID();
         String taskName = workItem.getTaskName();
@@ -343,8 +414,19 @@ public final class GenericPartyAgent {
             }
 
         } catch (Exception e) {
-            logger.error("[{}] Failed to process work item {}: {}",
-                config.getAgentName(), workItemId, e.getMessage(), e);
+            logger.info("[{}] Processing work item {} failed, attempting handoff: {}",
+                config.getAgentName(), workItemId, e.getMessage());
+
+            try {
+                // Attempt to classify and hand off to another capable agent
+                classifyHandoffIfNeeded(workItemId, sessionHandle);
+                logger.info("[{}] Work item {} successfully handed off",
+                    config.getAgentName(), workItemId);
+            } catch (HandoffException handoffEx) {
+                // Handoff failed, log original error
+                logger.error("[{}] Failed to process work item {} (handoff failed): {}",
+                    config.getAgentName(), workItemId, e.getMessage(), e);
+            }
         }
     }
 
