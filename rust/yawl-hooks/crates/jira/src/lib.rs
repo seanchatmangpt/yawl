@@ -249,6 +249,74 @@ impl Ticket {
             }
         }
     }
+
+    /// Save ticket back to TOML file
+    pub fn save_to_file(&self, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        // Convert to TOML format
+        let mut content = String::from("[ticket]\n");
+        content.push_str(&format!("id = \"{}\"\n", self.id));
+        content.push_str(&format!("title = \"{}\"\n", self.title));
+        content.push_str(&format!("status = \"{}\"\n", self.status));
+        content.push_str(&format!("priority = \"{}\"\n", self.priority));
+        content.push_str(&format!("quantum = \"{}\"\n", self.quantum));
+        content.push_str(&format!("spr_section = \"{}\"\n", self.spr_section));
+
+        // Write acceptance criteria
+        if !self.acceptance_criteria.is_empty() {
+            content.push_str("\n[ticket.acceptance_criteria]\n");
+            for (crit, satisfied) in &self.acceptance_criteria {
+                content.push_str(&format!("\"{}\" = {}\n", crit.replace("\"", "\\\""), satisfied));
+            }
+        }
+
+        // Write context refs
+        if !self.context_refs.files.is_empty() || !self.context_refs.docs.is_empty() {
+            content.push_str("\n[ticket.context_refs]\n");
+            if !self.context_refs.files.is_empty() {
+                content.push_str("files = [\n");
+                for file in &self.context_refs.files {
+                    content.push_str(&format!("    \"{}\",\n", file));
+                }
+                content.push_str("]\n");
+            }
+            if !self.context_refs.docs.is_empty() {
+                content.push_str("docs = [\n");
+                for doc in &self.context_refs.docs {
+                    content.push_str(&format!("    \"{}\",\n", doc));
+                }
+                content.push_str("]\n");
+            }
+        }
+
+        // Write depends_on
+        if !self.depends_on.ids.is_empty() {
+            content.push_str("\n[ticket.depends_on]\n");
+            content.push_str("ids = [\n");
+            for id in &self.depends_on.ids {
+                content.push_str(&format!("    \"{}\",\n", id));
+            }
+            content.push_str("]\n");
+        }
+
+        // Write corrections
+        if !self.corrections.is_empty() {
+            content.push_str("\n[[ticket.corrections]]\n");
+            for (i, corr) in self.corrections.iter().enumerate() {
+                if i > 0 {
+                    content.push_str("\n[[ticket.corrections]]\n");
+                }
+                content.push_str(&format!("timestamp = \"{}\"\n", corr.timestamp));
+                content.push_str(&format!("hash = \"{}\"\n", corr.hash));
+                content.push_str(&format!("text = \"{}\"\n", corr.text.replace("\"", "\\\"")));
+                if let Some(rule) = &corr.rule_added {
+                    content.push_str(&format!("rule_added = \"{}\"\n", rule.replace("\"", "\\\"")));
+                }
+            }
+        }
+
+        fs::write(path, content)?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

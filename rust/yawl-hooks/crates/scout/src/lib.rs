@@ -47,6 +47,25 @@ pub struct FetchResult {
     pub error: Option<String>,
 }
 
+/// Fetch URL using curl as subprocess (fallback approach)
+fn fetch_url_via_curl(url: &str) -> Option<String> {
+    use std::process::Command;
+
+    let output = Command::new("curl")
+        .arg("-s")
+        .arg("--max-time")
+        .arg("10")
+        .arg(url)
+        .output()
+        .ok()?;
+
+    if output.status.success() {
+        String::from_utf8(output.stdout).ok()
+    } else {
+        None
+    }
+}
+
 /// Load watermarks from JSON file
 pub fn load_watermarks(path: &Path) -> Result<Vec<Watermark>, Box<dyn std::error::Error>> {
     if !path.exists() {
@@ -68,7 +87,7 @@ pub fn save_watermarks(
     Ok(())
 }
 
-/// Fetch from a single target (simplified for v1)
+/// Fetch from a single target via HTTP
 pub fn fetch_target(target: &FetchTarget, watermark: Option<&Watermark>) -> FetchResult {
     // Check if we should skip based on watermark
     if let Some(wm) = watermark {
@@ -83,14 +102,38 @@ pub fn fetch_target(target: &FetchTarget, watermark: Option<&Watermark>) -> Fetc
         }
     }
 
-    // For v1, return skipped - actual HTTP fetching will be done via shell
-    // This allows us to validate structure without HTTP library complexity
-    FetchResult {
-        target_name: target.name.clone(),
-        success: true,
-        new_content: false,
-        content: None,
-        error: None,
+    // Attempt HTTP fetch with ureq—fallback gracefully
+    // ureq Response doesn't provide a simple .text() in all versions
+    // So we'll use curl as a subprocess fallback if ureq fails
+
+    let body: Option<String> = fetch_url_via_curl(&target.url);
+
+    if let Some(body) = body {
+        // Hash the content
+        let hash = blake3::hash(body.as_bytes()).to_hex().to_string();
+
+        // Check if content changed
+        let new_content = if let Some(wm) = watermark {
+            wm.content_changed(&hash)
+        } else {
+            true // First fetch
+        };
+
+        FetchResult {
+            target_name: target.name.clone(),
+            success: true,
+            new_content,
+            content: if new_content { Some(body) } else { None },
+            error: None,
+        }
+    } else {
+        FetchResult {
+            target_name: target.name.clone(),
+            success: false,
+            new_content: false,
+            content: None,
+            error: Some("HTTP fetch failed".to_string()),
+        }
     }
 }
 
