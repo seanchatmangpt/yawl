@@ -1,0 +1,323 @@
+{
+  "benchmark_run": {
+    "timestamp": "2026-02-26T11:07:50.423309Z",
+    "java_version": "25.0.2",
+    "os": "Mac OS X 26.2",
+    "warmup_iterations": 500,
+    "measured_iterations": 5000
+  },
+  "results": [
+    {
+      "name": "GroupAdvantage.compute_K1",
+      "latency_ns": {
+        "min": 666,
+        "max": 5187292,
+        "mean": 7129.49,
+        "std": 101068.61,
+        "p50": 750,
+        "p95": 10625,
+        "p99": 85208
+      }
+    },
+    {
+      "name": "GroupAdvantage.compute_K2",
+      "latency_ns": {
+        "min": 1458,
+        "max": 27292,
+        "mean": 1911.11,
+        "std": 863.21,
+        "p50": 1625,
+        "p95": 3000,
+        "p99": 3500
+      }
+    },
+    {
+      "name": "GroupAdvantage.compute_K4",
+      "latency_ns": {
+        "min": 375,
+        "max": 624417,
+        "mean": 1416.11,
+        "std": 15136.43,
+        "p50": 459,
+        "p95": 1958,
+        "p99": 2417
+      }
+    },
+    {
+      "name": "GroupAdvantage.compute_K8",
+      "latency_ns": {
+        "min": 583,
+        "max": 20667,
+        "mean": 982.02,
+        "std": 675.52,
+        "p50": 666,
+        "p95": 2000,
+        "p99": 2292
+      }
+    },
+    {
+      "name": "GroupAdvantage.compute_K16",
+      "latency_ns": {
+        "min": 916,
+        "max": 98167,
+        "mean": 1420.42,
+        "std": 1544.13,
+        "p50": 1000,
+        "p95": 2334,
+        "p99": 2625
+      }
+    },
+    {
+      "name": "Footprint.extract_SIMPLE",
+      "latency_ns": {
+        "min": 1125,
+        "max": 778292,
+        "mean": 3102.55,
+        "std": 23493.48,
+        "p50": 1542,
+        "p95": 3000,
+        "p99": 9125
+      }
+    },
+    {
+      "name": "Footprint.extract_MEDIUM",
+      "latency_ns": {
+        "min": 3750,
+        "max": 24643625,
+        "mean": 9440.93,
+        "std": 348473.22,
+        "p50": 3917,
+        "p95": 5625,
+        "p99": 7166
+      }
+    },
+    {
+      "name": "Footprint.extract_COMPLEX",
+      "latency_ns": {
+        "min": 5208,
+        "max": 3311000,
+        "mean": 14231.12,
+        "std": 88956.08,
+        "p50": 7875,
+        "p95": 11042,
+        "p99": 215125
+      }
+    },
+    {
+      "name": "Footprint.extract_VERY_COMPLEX",
+      "latency_ns": {
+        "min": 139333,
+        "max": 10298583,
+        "mean": 177733.63,
+        "std": 240366.22,
+        "p50": 174000,
+        "p95": 187292,
+        "p99": 218750
+      }
+    },
+    {
+      "name": "GrpoOptimizer.optimize_K1",
+      "latency_ns": {
+        "min": 1833,
+        "max": 8897084,
+        "mean": 69391.70,
+        "std": 392380.78,
+        "p50": 5458,
+        "p95": 243834,
+        "p99": 1336500
+      }
+    },
+    {
+      "name": "GrpoOptimizer.optimize_K2",
+      "latency_ns": {
+        "min": 3291,
+        "max": 37291,
+        "mean": 8359.44,
+        "std": 5829.83,
+        "p50": 4958,
+        "p95": 18042,
+        "p99": 19125
+      }
+    },
+    {
+      "name": "GrpoOptimizer.optimize_K4",
+      "latency_ns": {
+        "min": 6041,
+        "max": 34917,
+        "mean": 15277.11,
+        "std": 6495.81,
+        "p50": 17875,
+        "p95": 22292,
+        "p99": 23792
+      }
+    },
+    {
+      "name": "GrpoOptimizer.optimize_K8",
+      "latency_ns": {
+        "min": 25625,
+        "max": 51084,
+        "mean": 29322.31,
+        "std": 4255.73,
+        "p50": 27666,
+        "p95": 38584,
+        "p99": 40750
+      }
+    },
+    {
+      "name": "GrpoOptimizer.optimize_K16",
+      "latency_ns": {
+        "min": 36500,
+        "max": 2756875,
+        "mean": 50945.93,
+        "std": 106733.31,
+        "p50": 41250,
+        "p95": 63167,
+        "p99": 137167
+      }
+    },
+    {
+      "name": "ProcessKnowledgeGraph.remember_SINGLE",
+      "latency_ns": {
+        "min": 1291,
+        "max": 1470916,
+        "mean": 2746.06,
+        "std": 33281.92,
+        "p50": 1417,
+        "p95": 1709,
+        "p99": 2291
+      }
+    },
+    {
+      "name": "ProcessKnowledgeGraph.biasHint_K10",
+      "latency_ns": {
+        "min": 1875,
+        "max": 10877292,
+        "mean": 14421.64,
+        "std": 241258.89,
+        "p50": 2667,
+        "p95": 3375,
+        "p99": 84208
+      }
+    },
+    {
+      "name": "ProcessKnowledgeGraph.fingerprint_COMPLEX",
+      "latency_ns": {
+        "min": 666,
+        "max": 330167,
+        "mean": 961.99,
+        "std": 6151.13,
+        "p50": 791,
+        "p95": 875,
+        "p99": 1042
+      }
+    },
+    {
+      "name": "Sweep_GroupAdvantage_K1",
+      "latency_ns": {
+        "min": 83,
+        "max": 212292,
+        "mean": 499.74,
+        "std": 4581.02,
+        "p50": 125,
+        "p95": 208,
+        "p99": 16667
+      }
+    },
+    {
+      "name": "Sweep_GroupAdvantage_K2",
+      "latency_ns": {
+        "min": 125,
+        "max": 111958,
+        "mean": 167.36,
+        "std": 1581.33,
+        "p50": 125,
+        "p95": 167,
+        "p99": 209
+      }
+    },
+    {
+      "name": "Sweep_GroupAdvantage_K4",
+      "latency_ns": {
+        "min": 125,
+        "max": 8250,
+        "mean": 193.84,
+        "std": 117.16,
+        "p50": 208,
+        "p95": 209,
+        "p99": 250
+      }
+    },
+    {
+      "name": "Sweep_GroupAdvantage_K8",
+      "latency_ns": {
+        "min": 208,
+        "max": 9291,
+        "mean": 299.90,
+        "std": 134.03,
+        "p50": 292,
+        "p95": 334,
+        "p99": 334
+      }
+    },
+    {
+      "name": "Sweep_GroupAdvantage_K16",
+      "latency_ns": {
+        "min": 416,
+        "max": 9959,
+        "mean": 503.75,
+        "std": 238.08,
+        "p50": 500,
+        "p95": 542,
+        "p99": 625
+      }
+    },
+    {
+      "name": "Sweep_Footprint_3act",
+      "latency_ns": {
+        "min": 250,
+        "max": 219416,
+        "mean": 761.55,
+        "std": 4303.15,
+        "p50": 334,
+        "p95": 2000,
+        "p99": 3250
+      }
+    },
+    {
+      "name": "Sweep_Footprint_5act",
+      "latency_ns": {
+        "min": 958,
+        "max": 281791,
+        "mean": 1181.36,
+        "std": 4416.93,
+        "p50": 1041,
+        "p95": 1250,
+        "p99": 2709
+      }
+    },
+    {
+      "name": "Sweep_Footprint_10act",
+      "latency_ns": {
+        "min": 2000,
+        "max": 221000,
+        "mean": 2271.08,
+        "std": 5267.83,
+        "p50": 2084,
+        "p95": 2250,
+        "p99": 2417
+      }
+    },
+    {
+      "name": "Sweep_Footprint_25act",
+      "latency_ns": {
+        "min": 136333,
+        "max": 6877500,
+        "mean": 147531.75,
+        "std": 135279.03,
+        "p50": 139541,
+        "p95": 171417,
+        "p99": 177875
+      }
+    }
+  ]
+}
