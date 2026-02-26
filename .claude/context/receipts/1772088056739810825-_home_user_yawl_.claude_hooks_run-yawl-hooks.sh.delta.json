@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772088056739810825,
+  "timestamp_rfc": "2026-02-26T06:40:56.739810825Z",
+  "session_id": "unknown",
+  "file_path": "/home/user/yawl/.claude/hooks/run-yawl-hooks.sh",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6a103f84241ee51d0bd74d0f025d6f5eb045422cf830a4be136daec786145167",
+  "delta_hash": "c1a2fb3bc496e52b0403d17ded6a59b2a697e5629e000692636498b4cf2f26f5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "#!/bin/bash",
+        "change": "Added"
+      }
+    }
+  ]
+}
