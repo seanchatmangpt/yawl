@@ -240,3 +240,4 @@ checksums/*.md5
 docs/v6/latest/
 docs/v6/performance-history/
 docs/v6/static-analysis-history/
+META-INF/

@@ -59,6 +59,23 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- yawl-graalpy: canonical Java-Python bridge via PythonExecutionEngine -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-graalpy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- JUNG graph library: in-memory process knowledge graph (OpenSage-inspired memory) -->
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-graph-impl</artifactId>
+        </dependency>
+
         <!-- Testing — versions inherited from parent BOM (${junit.jupiter.version} = 5.12.0) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -130,7 +147,7 @@
         </plugins>
 
         <resources>
-            <!-- Include RDF ontologies, SPARQL queries, templates -->
+            <!-- Include RDF ontologies, SPARQL queries, templates, polyglot scripts, sandbox resources -->
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
@@ -139,6 +156,8 @@
                     <include>**/*.sparql</include>
                     <include>**/*.tera</include>
                     <include>**/*.json</include>
+                    <include>**/*.py</include>
+                    <include>**/*.js</include>
                 </includes>
             </resource>
         </resources>
@@ -157,5 +176,7 @@
             </testResource>
         </testResources>
     </build>
+
+
 
 </project>

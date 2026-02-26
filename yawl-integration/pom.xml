@@ -29,6 +29,12 @@
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-stateless</artifactId>
         </dependency>
+        <dependency>
+            <!-- RL process generation engine: POWL model, GRPO optimizer, reward scoring -->
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-ggen</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- MCP SDK (io.modelcontextprotocol.sdk 1.0.0-RC3 from GitHub releases)
              The official SDK v1 provides server-side transport with STDIO, SSE, and HTTP support.
