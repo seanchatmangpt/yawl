@@ -7,26 +7,26 @@ quantum = "MCP/A2A + Engine-semantic"
 spr_section = "ι INTELLIGENCE"
 
 [ticket.acceptance_criteria]
-"Rust workspace compiles with zero clippy warnings" = true
 "All 8 unit tests pass" = true
 "Both binaries (yawl-jira, yawl-scout) execute correctly" = true
-"Hook integration scripts created (.claude/hooks/)" = true
 "CLAUDE.md updated with ι INTELLIGENCE section" = true
 "Cargo.lock committed to version control" = true
+"Hook integration scripts created (.claude/hooks/)" = true
 "Receipt chain (blake3) implemented and tested" = true
+"Rust workspace compiles with zero clippy warnings" = true
 "Watermark protocol prevents fetch thrashing" = true
 
 [ticket.context_refs]
 files = [
-  "rust/yawl-hooks/crates/delta/src/lib.rs",
-  "rust/yawl-hooks/crates/jira/src/lib.rs",
-  "rust/yawl-hooks/bin/yawl-jira/src/main.rs",
-  "rust/yawl-hooks/bin/yawl-scout/src/main.rs",
+    "rust/yawl-hooks/crates/delta/src/lib.rs",
+    "rust/yawl-hooks/crates/jira/src/lib.rs",
+    "rust/yawl-hooks/bin/yawl-jira/src/main.rs",
+    "rust/yawl-hooks/bin/yawl-scout/src/main.rs",
 ]
-docs = [".claude/rules/HYPER_STANDARDS.md", "CLAUDE.md"]
-
-[ticket.depends_on]
-ids = []
+docs = [
+    ".claude/rules/HYPER_STANDARDS.md",
+    "CLAUDE.md",
+]
 
 [[ticket.corrections]]
 timestamp = "2026-02-26T01:30:00Z"
