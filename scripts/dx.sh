@@ -79,6 +79,12 @@ ALL_MODULES=(
     yawl-control-panel yawl-mcp-a2a-app
 )
 
+# In remote/CI environments, skip modules with heavy ML dependencies (>50MB JARs)
+# that cannot be downloaded through the egress proxy (onnxruntime = 89MB).
+if [[ "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
+    ALL_MODULES=($(printf '%s\n' "${ALL_MODULES[@]}" | grep -v '^yawl-pi$'))
+fi
+
 detect_changed_modules() {
     local changed_files
     # Get files changed relative to HEAD (staged + unstaged + untracked in src/)
@@ -153,6 +159,12 @@ esac
 # Module targeting
 if [[ "$SCOPE" == "explicit" && -n "$EXPLICIT_MODULES" ]]; then
     MVN_ARGS+=("-pl" "$EXPLICIT_MODULES" "-amd")
+elif [[ "$SCOPE" == "all" && "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
+    # In remote/CI mode ALL_MODULES may have been filtered (e.g. yawl-pi excluded
+    # because onnxruntime:1.19.2 is 89MB and cannot be fetched via egress proxy).
+    # Pass explicit -pl list so Maven reactor honours the filtered set.
+    REMOTE_MODULES=$(IFS=','; echo "${ALL_MODULES[*]}")
+    MVN_ARGS+=("-pl" "$REMOTE_MODULES")
 fi
 
 # Fail strategy
