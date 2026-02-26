@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Beta - Grafana Datasources Configuration
+# YAWL v6.0.0-GA - Grafana Datasources Configuration
 # =============================================================================
 # Pre-configured datasources for YAWL monitoring stack.
 # Includes: Prometheus, AlertManager, PostgreSQL, Loki (optional).

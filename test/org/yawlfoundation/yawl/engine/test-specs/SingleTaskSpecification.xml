@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl YAWL_Schema.xsd">
+  <specification uri="SingleTaskSpecification.xml">
+    <metaData />
+    <rootNet id="top">
+      <processControlElements>
+        <inputCondition id="i-top">
+          <name>start</name>
+          <flowsInto>
+            <nextElementRef id="task1" />
+          </flowsInto>
+        </inputCondition>
+        <task id="task1">
+          <name>Single Task</name>
+          <dataPrecondition>
+            <dataCondition>
+              <variable ref="inputData"/>
+              <operator>equal</operator>
+              <value>testValue</value>
+            </dataCondition>
+          </dataPrecondition>
+          <dataPostcondition>
+            <dataCondition>
+              <variable ref="outputData"/>
+              <operator>equal</operator>
+              <value>processedValue</value>
+            </dataCondition>
+          </dataPostcondition>
+          <decomposesTo id="TaskDecomposition" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="o-top" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <outputCondition id="o-top">
+          <name>end</name>
+        </outputCondition>
+      </processControlElements>
+      <dataElements>
+        <variable id="inputData" type="xs:string" />
+        <variable id="outputData" type="xs:string" />
+      </dataElements>
+      <decomposition id="TaskDecomposition" xsi:type="WebServiceGatewayFactsType" />
+    </rootNet>
+  </specification>
+</specificationSet>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="Beta 4" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl d:/yawl/schema/YAWL_SchemaBeta4.xsd">
+  <specification uri="ORJoin_CancelDuringDeadlock.yawl">
+    <metaData />
+    <schema xmlns="http://www.w3.org/2001/XMLSchema" />
+    <decomposition id="Cancel_During_Deadlock" isRootNet="true" xsi:type="NetFactsType">
+      <processControlElements>
+        <inputCondition id="0_InputCondition">
+          <flowsInto>
+            <nextElementRef id="1_A" />
+          </flowsInto>
+        </inputCondition>
+        <task id="1_A">
+          <flowsInto>
+            <nextElementRef id="2_c1" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="and" />
+        </task>
+        <condition id="2_c1">
+          <flowsInto>
+            <nextElementRef id="3_B" />
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="4_c2" />
+          </flowsInto>
+        </condition>
+        <task id="3_B">
+          <flowsInto>
+            <nextElementRef id="5_c3" />
+          </flowsInto>
+          <join code="or" />
+          <split code="and" />
+        </task>
+        <condition id="4_c2">
+          <flowsInto>
+            <nextElementRef id="6_C" />
+          </flowsInto>
+        </condition>
+        <task id="6_C">
+          <flowsInto>
+            <nextElementRef id="7_c4" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="and" />
+        </task>
+        <condition id="5_c3">
+          <flowsInto>
+            <nextElementRef id="7_c4" />
+          </flowsInto>
+        </condition>
+        <condition id="7_c4">
+          <flowsInto>
+            <nextElementRef id="8_D" />
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="9_c5" />
+          </flowsInto>
+        </condition>
+        <task id="8_D">
+          <flowsInto>
+            <nextElementRef id="10_c6" />
+          </flowsInto>
+          <join code="or" />
+          <split code="and" />
+        </task>
+        <condition id="9_c5">
+          <flowsInto>
+            <nextElementRef id="10_c6" />
+          </flowsInto>
+        </condition>
+        <condition id="10_c6">
+          <flowsInto>
+            <nextElementRef id="11_E" />
+          </flowsInto>
+        </condition>
+        <task id="11_E">
+          <flowsInto>
+            <nextElementRef id="12_c7" />
+          </flowsInto>
+          <join code="and" />
+          <split code="and" />
+        </task>
+        <condition id="12_c7">
+          <flowsInto>
+            <nextElementRef id="13_F" />
+          </flowsInto>
+        </condition>
+        <task id="13_F">
+          <flowsInto>
+            <nextElementRef id="14_c8" />
+          </flowsInto>
+          <join code="or" />
+          <split code="and" />
+        </task>
+        <condition id="14_c8">
+          <flowsInto>
+            <nextElementRef id="15_G" />
+          </flowsInto>
+        </condition>
+        <task id="15_G">
+          <flowsInto>
+            <nextElementRef id="16_c9" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="and" />
+        </task>
+        <condition id="16_c9">
+          <flowsInto>
+            <nextElementRef id="17_H" />
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="18_c10" />
+          </flowsInto>
+        </condition>
+        <task id="17_H">
+          <flowsInto>
+            <nextElementRef id="19_c11" />
+          </flowsInto>
+          <join code="and" />
+          <split code="and" />
+        </task>
+        <condition id="18_c10">
+          <flowsInto>
+            <nextElementRef id="19_c11" />
+          </flowsInto>
+        </condition>
+        <condition id="19_c11">
+          <flowsInto>
+            <nextElementRef id="20_OutputCondition" />
+          </flowsInto>
+        </condition>
+        <outputCondition id="20_OutputCondition" />
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

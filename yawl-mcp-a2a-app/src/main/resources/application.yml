@@ -42,7 +42,7 @@ yawl:
     enabled: ${MCP_ENABLED:true}
     transport: ${MCP_TRANSPORT:stdio}
     server-name: "yawl-mcp-server"
-    server-version: "6.0.0-Beta"
+    server-version: "6.0.0-GA"
 
     # HTTP transport settings (when transport=http)
     http:
@@ -54,7 +54,7 @@ yawl:
   a2a:
     enabled: ${A2A_ENABLED:true}
     agent-name: ${A2A_AGENT_NAME:yawl-workflow-agent}
-    agent-version: "6.0.0-Beta"
+    agent-version: "6.0.0-GA"
     agent-description: "YAWL workflow management agent with MCP tool support"
 
     # Agent capabilities
@@ -135,7 +135,7 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-      version: "6.0.0-Beta"
+      version: "6.0.0-GA"
     distribution:
       percentiles-histogram:
         yawl_mcp_tool_duration_seconds: true

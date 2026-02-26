@@ -8,7 +8,7 @@
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
 
-    <version>6.0.0</version>
+    <version>6.0.0-GA</version>
     <packaging>pom</packaging>
 
     <name>YAWL Parent</name>
@@ -181,7 +181,7 @@
         <!-- Misc runtime support                                               -->
         <jspecify.version>1.0.0</jspecify.version>
         <jandex.version>3.5.3</jandex.version>
-        <byte.buddy.version>1.18.5</byte.buddy.version>
+        <byte.buddy.version>1.15.11</byte.buddy.version>
         <classmate.version>1.7.3</classmate.version>
         <istack.version>4.2.0</istack.version>
         <jung.version>2.1.1</jung.version>

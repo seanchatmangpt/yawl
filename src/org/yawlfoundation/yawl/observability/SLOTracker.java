@@ -95,6 +95,61 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public final class SLOTracker {
 
+    // SLO Type String Constants for external reference
+    /** String constant for case completion SLO type */
+    public static final String SLO_CASE_COMPLETION = "case_completion";
+    /** String constant for task execution SLO type */
+    public static final String SLO_TASK_EXECUTION = "task_execution";
+    /** String constant for queue response SLO type */
+    public static final String SLO_QUEUE_RESPONSE = "queue_response";
+    /** String constant for virtual thread pinning SLO type */
+    public static final String SLO_VT_PINNING = "vt_pinning";
+    /** String constant for lock contention SLO type */
+    public static final String SLO_LOCK_CONTENTION = "lock_contention";
+
+    /**
+     * Compliance status classification for SLO reporting.
+     */
+    public enum ComplianceStatus {
+        /** SLO is being met - compliance rate is above target threshold */
+        COMPLIANT,
+        /** SLO is at risk - approaching threshold (within 5% of target) */
+        AT_RISK,
+        /** SLO is being violated - compliance rate is below target threshold */
+        VIOLATION;
+
+        /**
+         * Determines compliance status based on actual vs target values.
+         *
+         * @param actualValue the actual compliance percentage (0-100)
+         * @param targetValue the target percentage (0-100)
+         * @param higherIsBetter true if higher values are better (e.g., availability)
+         * @return the compliance status
+         */
+        public static ComplianceStatus fromValues(double actualValue, double targetValue, boolean higherIsBetter) {
+            double margin = 5.0; // 5% margin for AT_RISK
+
+            if (higherIsBetter) {
+                if (actualValue >= targetValue) {
+                    return COMPLIANT;
+                } else if (actualValue >= targetValue - margin) {
+                    return AT_RISK;
+                } else {
+                    return VIOLATION;
+                }
+            } else {
+                // For metrics where lower is better (e.g., error rate, latency)
+                if (actualValue <= targetValue) {
+                    return COMPLIANT;
+                } else if (actualValue <= targetValue + margin) {
+                    return AT_RISK;
+                } else {
+                    return VIOLATION;
+                }
+            }
+        }
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SLOTracker.class);
 
     // Default window sizes for compliance tracking
