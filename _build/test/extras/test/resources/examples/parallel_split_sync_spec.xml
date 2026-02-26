@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="parallelSplitSync">
+    <metaData>
+      <title>Parallel Split and Sync Workflow</title>
+      <creator>YAWL Z.ai Generator</creator>
+      <description>Parallel execution pattern with synchronization</description>
+      <version>1.0</version>
+    </metaData>
+    <decomposition id="parallelFlow" xsi:type="NetFactsType" isRootNet="true">
+      <name>Parallel Flow</name>
+      <processControlElements>
+        <inputCondition id="start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="splitTask"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="splitTask">
+          <name>Split Task</name>
+          <documentation>Task before parallel split</documentation>
+          <flowsInto>
+            <nextElementRef id="taskA"/>
+            <predicate>conditionA</predicate>
+            <isDefaultFlow/>
+          </flowsInto>
+          <flowsInto>
+            <nextElementRef id="taskB"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="taskA">
+          <name>Task A</name>
+          <documentation>First parallel task</documentation>
+          <flowsInto>
+            <nextElementRef id="sync"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="taskB">
+          <name>Task B</name>
+          <documentation>Second parallel task</documentation>
+          <flowsInto>
+            <nextElementRef id="sync"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <task id="sync">
+          <name>Synchronization Task</name>
+          <documentation>Waits for both parallel tasks to complete</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="and"/>
+        </task>
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

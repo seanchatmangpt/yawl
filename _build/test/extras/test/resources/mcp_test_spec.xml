@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema schema/YAWL_Schema4.0.xsd"
+                  version="4.0">
+    <specification uri="mcp_test_spec.xml">
+        <name>MCP Test Specification</name>
+        <documentation>YAWL specification for testing MCP integration with work item processing, cancellation patterns, and timer events.</documentation>
+        <metaData>
+            <title>MCP Test Workflow</title>
+            <creator>YAWL Test Suite</creator>
+            <subject>MCP Integration Test</subject>
+            <description>Test workflow for MCP tool integration</description>
+            <created>2026-02-18</created>
+            <version>1.0</version>
+            <status>Test</status>
+        </metaData>
+
+        <rootNet id="mcp_test_workflow" isRootNet="true">
+            <!-- Input Parameters -->
+            <inputParam name="caseId">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="userId">
+                <type>xs:string</type>
+                <mandatory/>
+            </inputParam>
+            <inputParam name="dataInput">
+                <type>xs:string</type>
+                <initialValue>&lt;data/&gt;</initialValue>
+            </inputParam>
+
+            <!-- Local Variables -->
+            <localVariable name="workflowStatus">
+                <type>xs:string</type>
+                <initialValue>pending</initialValue>
+            </localVariable>
+            <localVariable name="timestamp">
+                <type>xs:dateTime</type>
+                <initialValue>2026-02-18T00:00:00</initialValue>
+            </localVariable>
+            <localVariable name="processedItems">
+                <type>xs:integer</type>
+                <initialValue>0</initialValue>
+            </localVariable>
+
+            <processControlElements>
+                <!-- Start Node -->
+                <inputCondition id="start">
+                    <name>Start</name>
+                    <flowsInto>
+                        <nextElementRef id="validate_input"/>
+                    </flowsInto>
+                </inputCondition>
+
+                <!-- Input Validation Task -->
+                <task id="validate_input">
+                    <name>Validate Input Data</name>
+                    <flowsInto>
+                        <nextElementRef id="create_work_items"/>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="handle_error"/>
+                        <predicate ordering="1">/data/dataInput = 'invalid'</predicate>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <decomposesTo id="validate_input_decomposition"/>
+                    <!-- Timer for validation timeout -->
+                    <timer>
+                        <trigger>OnEnabled</trigger>
+                        <duration>PT30S</duration>
+                        <workdays>false</workdays>
+                    </timer>
+                </task>
+
+                <!-- Error Handling Task -->
+                <task id="handle_error">
+                    <name>Handle Validation Error</name>
+                    <flowsInto>
+                        <nextElementRef id="log_error"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <decomposesTo id="error_handler"/>
+                </task>
+
+                <!-- Error Logging -->
+                <task id="log_error">
+                    <name>Log Error</name>
+                    <flowsInto>
+                        <nextElementRef id="finish"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <decomposesTo id="error_logger"/>
+                </task>
+
+                <!-- Create Work Items (Multiple Instance) -->
+                <task id="create_work_items" xsi:type="MultipleInstanceExternalTaskFactsType">
+                    <name>Create MCP Work Items</name>
+                    <flowsInto>
+                        <nextElementRef id="process_items_parallel"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <decomposesTo id="create_work_items_decomposition"/>
+                    <!-- Multiple Instance Configuration -->
+                    <minimum>1</minimum>
+                    <maximum>5</maximum>
+                    <threshold>3</threshold>
+                    <creationMode code="dynamic"/>
+                    <!-- Data Input Splitting -->
+                    <miDataInput>
+                        <expression query="for $i in (1 to 5) return concat('item', $i)"/>
+                        <splittingExpression query="for $item in /data/dataInput/item return $item"/>
+                        <formalInputParam>workItem</formalInputParam>
+                    </miDataInput>
+                    <!-- Variable Mapping for Completion -->
+                    <completedMappings>
+                        <mapping>
+                            <expression query="/data/processedItems + 1"/>
+                            <mapsTo>processedItems</mapsTo>
+                        </mapping>
+                    </completedMappings>
+                </task>
+
+                <!-- Process Work Items in Parallel -->
+                <task id="process_items_parallel">
+                    <name>Process Items via MCP</name>
+                    <flowsInto>
+                        <nextElementRef id="synchronization"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <decomposesTo id="mcp_processor"/>
+                </task>
+
+                <!-- Synchronization Point -->
+                <task id="synchronization">
+                    <name>Synchronize Results</name>
+                    <flowsInto>
+                        <nextElementRef id="decision"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="xor"/>
+                    <decomposesTo id="synchronizer"/>
+                    <!-- Timer for synchronization timeout -->
+                    <timer>
+                        <trigger>OnEnabled</trigger>
+                        <duration>PT2M</duration>
+                        <workdays>false</workdays>
+                    </timer>
+                </task>
+
+                <!-- Decision Point -->
+                <task id="decision">
+                    <name>Check Processing Status</name>
+                    <flowsInto>
+                        <nextElementRef id="complete_workflow"/>
+                        <isDefaultFlow/>
+                    </flowsInto>
+                    <flowsInto>
+                        <nextElementRef id="retry_processing"/>
+                        <predicate ordering="1">/data/processedItems &lt; 3</predicate>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="xor"/>
+                </task>
+
+                <!-- Retry Processing (for failed items) -->
+                <task id="retry_processing">
+                    <name>Retry Failed Items</name>
+                    <flowsInto>
+                        <nextElementRef id="process_items_parallel"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <decomposesTo id="retry_handler"/>
+                </task>
+
+                <!-- Complete Workflow -->
+                <task id="complete_workflow">
+                    <name>Complete Workflow</name>
+                    <flowsInto>
+                        <nextElementRef id="generate_report"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <decomposesTo id="workflow_completer"/>
+                </task>
+
+                <!-- Generate Report -->
+                <task id="generate_report">
+                    <name>Generate MCP Report</name>
+                    <flowsInto>
+                        <nextElementRef id="finish"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                    <decomposesTo id="report_generator"/>
+                </task>
+
+                <!-- Finish Node -->
+                <outputCondition id="finish">
+                    <name>Complete</name>
+                </outputCondition>
+
+                <!-- Cancellation Task (Pattern: Cancel Activity) -->
+                <task id="cancel_activity">
+                    <name>Cancel Activity</name>
+                    <flowsInto>
+                        <nextElementRef id="cancellation_handler"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <removesTokens id="process_items_parallel"/>
+                    <removesTokens id="decision"/>
+                    <decomposesTo id="activity_cancellation"/>
+                </task>
+
+                <!-- Timeout Timer Task -->
+                <task id="timeout_timer">
+                    <name>Timeout Handler</name>
+                    <flowsInto>
+                        <nextElementRef id="cancellation_handler"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <decomposesTo id="timeout_handler"/>
+                </task>
+
+                <!-- Cancellation Handler -->
+                <task id="cancellation_handler">
+                    <name>Cancellation Handler</name>
+                    <flowsInto>
+                        <nextElementRef id="finish"/>
+                    </flowsInto>
+                    <join code="or"/>
+                    <split code="and"/>
+                    <decomposesTo id="cancellation_processor"/>
+                </task>
+
+                <!-- Failed Task (for retry pattern) -->
+                <task id="failed_task">
+                    <name>Failed Task</name>
+                    <flowsInto>
+                        <nextElementRef id="retry_processing"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <decomposesTo id="task_failure"/>
+                </task>
+            </processControlElements>
+        </rootNet>
+
+        <!-- Decomposition Definitions -->
+        <decomposition id="validate_input_decomposition" xsi:type="NetFactsType">
+            <inputParam name="caseId">
+                <type>xs:string</type>
+            </inputParam>
+            <inputParam name="dataInput">
+                <type>xs:string</type>
+            </inputParam>
+            <localVariable name="validationResult">
+                <type>xs:boolean</type>
+                <initialValue>false</initialValue>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="start_validate">
+                    <name>Start Validation</name>
+                    <flowsInto>
+                        <nextElementRef id="check_format"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="check_format">
+                    <name>Check Data Format</name>
+                    <flowsInto>
+                        <nextElementRef id="end_validate"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="end_validate">
+                    <name>Validation Complete</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <decomposition id="create_work_items_decomposition" xsi:type="NetFactsType">
+            <inputParam name="workItem">
+                <type>xs:string</type>
+            </inputParam>
+            <localVariable name="itemStatus">
+                <type>xs:string</type>
+                <initialValue>created</initialValue>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="start_create">
+                    <name>Start Creation</name>
+                    <flowsInto>
+                        <nextElementRef id="register_mcp"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="register_mcp">
+                    <name>Register with MCP Server</name>
+                    <flowsInto>
+                        <nextElementRef id="schedule_processing"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                    <decomposesTo id="mcp_registration"/>
+                </task>
+                <task id="schedule_processing">
+                    <name>Schedule Item Processing</name>
+                    <flowsInto>
+                        <nextElementRef id="end_create"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="end_create">
+                    <name>Creation Complete</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <decomposition id="mcp_processor" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="caseId">
+                <type>xs:string</type>
+            </inputParam>
+            <inputParam name="workItem">
+                <type>xs:string</type>
+            </inputParam>
+            <yawlService id="mcp://process-work-item">
+                <documentation>Process work item using MCP tools</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="synchronizer" xsi:type="NetFactsType">
+            <localVariable name="results">
+                <type>xs:string</type>
+                <initialValue>&lt;results/&gt;</initialValue>
+            </localVariable>
+            <processControlElements>
+                <inputCondition id="start_sync">
+                    <name>Start Synchronization</name>
+                    <flowsInto>
+                        <nextElementRef id="collect_results"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="collect_results">
+                    <name>Collect MCP Results</name>
+                    <flowsInto>
+                        <nextElementRef id="end_sync"/>
+                    </flowsInto>
+                    <join code="and"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="end_sync">
+                    <name>Synchronization Complete</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <decomposition id="error_handler" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="errorCode">
+                <type>xs:string</type>
+            </inputParam>
+            <yawlService id="mcp://handle-error">
+                <documentation>Handle processing errors via MCP</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="error_logger" xsi:type="WebServiceGatewayFactsType">
+            <yawlService id="mcp://log-error">
+                <documentation>Log errors using MCP logging tools</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="report_generator" xsi:type="WebServiceGatewayFactsType">
+            <inputParam name="caseId">
+                <type>xs:string</type>
+            </inputParam>
+            <inputParam name="processedItems">
+                <type>xs:integer</type>
+            </inputParam>
+            <yawlService id="mcp://generate-report">
+                <documentation>Generate workflow completion report</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="workflow_completer" xsi:type="WebServiceGatewayFactsType">
+            <yawlService id="mcp://complete-workflow">
+                <documentation>Complete workflow via MCP</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="activity_cancellation" xsi:type="NetFactsType">
+            <processControlElements>
+                <inputCondition id="start_cancel">
+                    <name>Start Cancellation</name>
+                    <flowsInto>
+                        <nextElementRef id="notify_mcp"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="notify_mcp">
+                    <name>Notify MCP of Cancellation</name>
+                    <flowsInto>
+                        <nextElementRef id="end_cancel"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="end_cancel">
+                    <name>Cancellation Complete</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <decomposition id="timeout_handler" xsi:type="WebServiceGatewayFactsType">
+            <yawlService id="mcp://handle-timeout">
+                <documentation>Handle timeout events via MCP</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="cancellation_processor" xsi:type="WebServiceGatewayFactsType">
+            <yawlService id="mcp://process-cancellation">
+                <documentation>Process cancellation events</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="retry_handler" xsi:type="NetFactsType">
+            <inputParam name="retryCount">
+                <type>xs:integer</type>
+                <initialValue>0</initialValue>
+            </inputParam>
+            <processControlElements>
+                <inputCondition id="start_retry">
+                    <name>Start Retry</name>
+                    <flowsInto>
+                        <nextElementRef id="delay_retry"/>
+                    </flowsInto>
+                </inputCondition>
+                <task id="delay_retry">
+                    <name>Delay Before Retry</name>
+                    <flowsInto>
+                        <nextElementRef id="end_retry"/>
+                    </flowsInto>
+                    <join code="xor"/>
+                    <split code="and"/>
+                </task>
+                <outputCondition id="end_retry">
+                    <name>Retry Ready</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <decomposition id="task_failure" xsi:type="WebServiceGatewayFactsType">
+            <yawlService id="mcp://handle-failure">
+                <documentation>Handle task failures</documentation>
+            </yawlService>
+        </decomposition>
+
+        <decomposition id="mcp_registration" xsi:type="WebServiceGatewayFactsType">
+            <yawlService id="mcp://register-service">
+                <documentation>Register with MCP server</documentation>
+            </yawlService>
+        </decomposition>
+    </specification>
+</specificationSet>
