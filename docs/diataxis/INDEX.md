@@ -20,6 +20,9 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | 08 | [MCP Agent Integration](../tutorials/08-mcp-agent-integration.md) | Connect an AI agent via the MCP server |
 | 09 | [Marketplace Quick Start](../tutorials/09-marketplace-quick-start.md) | Deploy YAWL to a cloud marketplace |
 | 10 | [Getting Started (User Guide)](../tutorials/10-getting-started.md) | End-to-end user perspective walkthrough |
+| 11 | [GRPO Workflow Generation](../tutorials/11-grpo-workflow-generation.md) | Generate optimal workflows using Reinforcement Learning |
+| 12 | [OpenSage Memory System](../tutorials/12-opensage-memory.md) | Configure and operate persistent learning memory |
+| 13 | [Virtual Threads Performance](../tutorials/13-virtual-threads-performance.md) | Boost throughput with Java 21+ virtual thread pools |
 
 ---
 
@@ -35,6 +38,9 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Configure SPIFFE](../how-to/configure-spiffe.md) | Enable workload identity with SPIFFE/SVID |
 | [Enable Stateless Persistence](../how-to/enable-stateless-persistence.md) | Switch to event-sourced stateless mode |
 | [Setup Org Model](../how-to/setup-org-model.md) | Define organizational hierarchy |
+| [Configure GRPO](../how-to/configure-grpo.md) | Configure GRPO workflow generation with Reinforcement Learning |
+| [Configure OpenSage](../how-to/configure-opensage.md) | Configure OpenSage persistent memory system |
+| [Configure Virtual Threads](../how-to/configure-virtual-threads.md) | Configure Java 21+ virtual thread pools |
 
 ### Workflow Patterns
 | Guide | Task |
@@ -122,6 +128,7 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [REST API Reference](../reference/api-reference.md) | Full REST API surface |
 | [REST API Configuration](../reference/rest-api-config.md) | JAX-RS configuration |
 | [MCP Tools](../reference/mcp-tools.md) | MCP tool definitions |
+| [GRPO Endpoints](../reference/api/grpo-endpoints.md) | GRPO workflow generation API endpoints |
 
 ### Build & Infrastructure
 | Reference | Contents |
@@ -130,6 +137,7 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Maven Module Structure](../reference/maven-module-structure.md) | Module graph |
 | [JUnit 5 Quick Reference](../reference/junit5.md) | Test annotation cheat sheet |
 | [Virtual Threads](../reference/virtual-threads.md) | Java 21+ virtual thread APIs |
+| [GRPO Configuration](../reference/rl-config-reference.md) | Reinforcement Learning hyperparameters |
 | [Quality Standards](../reference/quality/) | Architecture tests, shell tests |
 | [SLOs](../reference/slos/) | Service-level objectives |
 | [Patterns Catalog](../reference/patterns/) | Reusable workflow pattern definitions |
@@ -148,6 +156,13 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [OR-Join Semantics](../explanation/or-join-semantics.md) | Non-local synchronisation semantics |
 | [Multi-Instance Tasks](../explanation/multi-instance-tasks.md) | Parallel execution of task instances |
 | [Execution Profiles](../explanation/execution-profiles.md) | Deferred, continuous, and persistent modes |
+
+### Reinforcement Learning
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [Reinforcement Learning Concepts](../explanation/reinforcement-learning-concepts.md) | GRPO workflow generation fundamentals |
+| [GRPO Workflow Generation](../explanation/grpo-workflow-generation.md) | RL-based workflow optimization and generation |
+| [Learning Memory System](../explanation/learning-memory-system.md) | OpenSage persistent memory and learning mechanisms |
 
 ### Architecture
 | Explanation | What it addresses |
@@ -171,5 +186,22 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 See [../archive/index.md](../archive/index.md) for the full list.
 
 ---
+
+## YAWL v6.0.0-GA Documentation
+
+Released 2026-02-26, YAWL v6.0.0-GA includes:
+
+- **GRPO/RL**: Workflow generation with Reinforcement Learning (`yawl-ggen` module)
+- **MCP/A2A**: Enhanced autonomous agent integration
+- **OpenSage**: Persistent learning memory system
+- **Java 25**: Full virtual thread support
+- **Performance**: 43+ optimized workflow patterns
+
+### Validation Status
+- ✅ Full compatibility with Java 25
+- ✅ Virtual thread pool performance optimization
+- ✅ GRPO workflow generation verified
+- ✅ OpenSage memory system tested
+- ✅ All tutorials and guides updated for v6
 
 *This index is generated and maintained as part of the Diataxis restructure. To add a document, place it in the correct quadrant directory and add a row to the relevant table above.*

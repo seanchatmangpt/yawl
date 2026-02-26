@@ -82,6 +82,14 @@ Understanding-oriented content that illuminates the context, concepts, and reaso
 | [mvp-architecture.md](mvp-architecture.md) | MVP architecture decisions |
 | [architecture-refactoring.md](architecture-refactoring.md) | Architecture refactoring patterns |
 
+## Reinforcement Learning & AI
+
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [reinforcement-learning-concepts.md](reinforcement-learning-concepts.md) | GRPO (Groupwise Reward Policy Optimization) workflow generation concepts |
+| [grpo-workflow-generation.md](grpo-workflow-generation.md) | How RL generates optimal YAWL workflows |
+| [learning-memory-system.md](learning-memory-system.md) | OpenSage persistent memory and learning mechanisms |
+
 ## Architecture Decision Records (ADRs)
 
 All ADRs are in [decisions/](decisions/). They document the why behind specific technical choices and are permanent records.
@@ -91,3 +99,7 @@ All ADRs are in [decisions/](decisions/). They document the why behind specific 
 | ADR-001 to ADR-010 | Engine architecture, build system, infrastructure |
 | ADR-011 to ADR-020 | Jakarta EE, OpenAPI, persistence, authentication |
 | ADR-021 to ADR-030 | Engine selection, deployment, Java 25 patterns |
+
+---
+
+**Version**: v6.0.0-GA (2026-02-26)

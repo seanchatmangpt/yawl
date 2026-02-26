@@ -1,4 +1,6 @@
-# Tutorial: Write a YAWL Specification
+# Tutorial: Write a YAWL Specification - v6.0.0-GA
+
+> **Note**: This tutorial has been updated for YAWL v6.0.0-GA, featuring enhanced XML schema, GRPO integration, structured concurrency, and Java 25 support.
 
 By the end of this tutorial you will have authored a minimal YAWL workflow specification from scratch in XML, validated it against the YAWL schema, loaded it into the engine, and confirmed the engine accepted it. You will understand every element in the file and why it is there.
 
@@ -31,10 +33,28 @@ Each task has two decomposition entries: one inside the net that describes its f
 
 The repository ships two schema files:
 
-- `schema/YAWL_Schema4.0.xsd` — current version, requires `version="4.0"` on `specificationSet`
+- `schema/YAWL_Schema6.0.xsd` — v6.0.0-GA version, requires `version="6.0"` on `specificationSet`
+- `schema/YAWL_Schema4.0.xsd` — legacy version, requires `version="4.0"` on `specificationSet`
 - Sample files in `build/workletService/samples/` use `version="3.0"` with a 3.0 schema URL
 
-This tutorial targets the current 4.0 schema. Your spec must declare `version="4.0"` on the `specificationSet` root element or validation will fail with an enumeration constraint error.
+This tutorial targets the v6.0.0-GA schema. Your spec must declare `version="6.0"` on the `specificationSet` root element or validation will fail with an enumeration constraint error.
+
+### v6.0.0-GA Schema Features
+
+The v6.0 schema introduces:
+- GRPO (Groupwise Reinforcement Policy Optimization) support
+- Enhanced resourcing with AI-based allocation
+- Structured concurrency scope declarations
+- Enhanced data validation and transformation
+- New XML namespace: `http://www.yawlfoundation.org/yawlschema/6.0`
+
+Check that the v6.0 schema file exists in the repository:
+
+```bash
+ls schema/YAWL_Schema6.0.xsd
+```
+
+Expected: the path prints without error.
 
 Check that the schema file exists in the repository:
 
@@ -53,11 +73,11 @@ Create a file named `my-first-spec.yawl` in a working directory. The complete co
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <specificationSet
-    xmlns="http://www.yawlfoundation.org/yawlschema"
+    xmlns="http://www.yawlfoundation.org/yawlschema/6.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    version="4.0"
-    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema
-                        http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+    version="6.0"
+    xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema/6.0
+                        http://www.yawlfoundation.org/yawlschema/YAWL_Schema6.0.xsd">
 
   <specification uri="MyFirstSpec">
     <name>My First Specification</name>
@@ -307,6 +327,20 @@ The engine's `EngineGatewayImpl.loadSpecification()` method parsed the XML into 
 
 When you later launch a case from this specification (see Tutorial 3), the engine creates a `YNetRunner` that holds a token set and evaluates firing rules against this graph in real time.
 
+### v6.0.0-GA Enhancements
+
+In v6.0.0-GA, the specification loading process includes:
+1. **GRPO Validation**: If present, workflow optimization policies are validated against the specification structure
+2. **Structured Concurrency**: The engine validates scope declarations and concurrent execution plans
+3. **Enhanced Resourcing**: AI-based resourcing algorithms validate role and capability mappings
+4. **OpenSage Integration**: Specifications are registered with the OpenSage memory system for distributed tracing
+
+The `YNetRunner` now supports enhanced execution modes including:
+- **Virtual Thread Execution**: Tasks run on virtual threads for improved scalability
+- **Structured Scopes**: Tasks execute in controlled scopes for isolation and error handling
+- **GRPO Integration**: The runner can apply reinforcement learning optimization models
+- **Memory Profiling**: OpenSage tracks execution patterns and performance metrics
+
 ---
 
 ## What next
@@ -314,4 +348,39 @@ When you later launch a case from this specification (see Tutorial 3), the engin
 - [Tutorial 3: Run Your First Workflow](03-run-your-first-workflow.md) — use the specification you just wrote to run a full case through the engine.
 - **Add data variables** — extend the spec by adding `inputParam` and `outputParam` elements to the net decomposition, and `startingMappings`/`completedMappings` XQuery expressions to each task. The `BobOne.yawl` sample in `build/workletService/samples/worklets/` shows the complete pattern.
 - **Add resourcing** — add a `<resourcing>` block inside each task in the net decomposition to specify how the work item is offered, allocated, and started. The `resourcing` element's schema type is `ResourcingFactsType`.
-- **Schema reference** — `schema/YAWL_Schema4.0.xsd` is the authoritative document for every element and attribute name. Read it alongside the specs in `build/workletService/samples/` to understand the full feature set.
+- **Add structured concurrency** — add `<concurrencyScope>` elements to enable parallel execution with controlled isolation.
+- **Add GRPO optimization** — add `<grpo>` elements to enable reinforcement learning-based workflow optimization.
+- **Schema reference** — `schema/YAWL_Schema6.0.xsd` is the authoritative document for every element and attribute name. Read it alongside the specs in `build/workletService/samples/` to understand the full feature set.
+
+### v6.0.0-GA Specification Features
+
+#### GRPO Integration Example
+
+```xml
+<decomposition id="ApproveRequestGateway"
+               xsi:type="WebServiceGatewayFactsType">
+  <externalInteraction>manual</externalInteraction>
+  <grpo>
+    <optimizationTarget>completionTime</optimizationTarget>
+    <modelReference>GRPO_ApprovalModel_v2</modelReference>
+    <parameters>
+      <parameter name="learningRate">0.01</parameter>
+      <parameter name="maxEpisodes">1000</parameter>
+    </parameters>
+  </grpo>
+</decomposition>
+```
+
+#### Structured Concurrency Example
+
+```xml
+<decomposition id="ProcessApprovalGateway"
+               xsi:type="WebServiceGatewayFactsType">
+  <externalInteraction>automated</externalInteraction>
+  <concurrencyScope>
+    <maxParallelTasks>5</maxParallelTasks>
+    <timeoutDuration>PT30M</timeoutDuration>
+    <exceptionHandling>propagate</exceptionHandling>
+  </concurrencyScope>
+</decomposition>
+```

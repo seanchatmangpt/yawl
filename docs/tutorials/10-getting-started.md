@@ -1,7 +1,7 @@
 # YAWL Getting Started Guide
 
-**Version:** 6.0.0
-**Last Updated:** 2026-02-14
+**Version:** 6.0.0-GA
+**Last Updated:** 2026-02-25
 
 ---
 
@@ -13,10 +13,11 @@ Welcome to YAWL (Yet Another Workflow Language), a powerful BPM/Workflow engine 
 
 YAWL is a workflow management system based on Petri Nets, offering:
 - Formal workflow specification language
-- Support for 36+ workflow patterns
+- Support for 43+ workflow patterns
 - Dynamic workflow adaptation via Worklets
 - Human and automated task management
 - Integration with web services and external systems
+- **v6.0.0-GA Features**: GRPO/RL (Generate, Run, Optimize/Reinforce Learning), MCP/A2A server for autonomous agents, OpenSage integration, and Java 25 virtual thread optimization
 
 ### 1.2 Key Concepts
 
@@ -40,6 +41,12 @@ After deployment, access YAWL at:
 ```
 https://yawl.yourdomain.com
 ```
+
+> **v6.0.0-GA Build Instructions**:
+> For new installations, ensure Java 25+ is installed and use:
+> ```bash
+> mvn clean install -T 1.5C -P ga-release
+> ```
 
 Default credentials (change immediately):
 - **Username**: admin
@@ -353,6 +360,41 @@ curl -X POST "https://yawl.yourdomain.com/ib/api/authenticate" \
   -d '{"username":"admin","password":"password"}'
 ```
 
+### 10.2 Autonomous Agent Integration (v6.0.0-GA)
+
+YAWL v6.0.0-GA includes MCP/A2A server capabilities for autonomous agent integration:
+
+```bash
+# Start MCP server for autonomous agents
+java -cp yawl-integration.jar -Dmcp.server.port=8001 org.yawlfoundation.yawl.integration.mcp.MCPServer
+
+# Connect OpenSage agent
+agent connect --type yawl --endpoint http://localhost:8001 --case-id {caseId}
+```
+
+### 10.3 GRPO/RL Quick Example
+
+```java
+// Example using yawl-ggen for workflow generation and optimization
+import org.yawlfoundation.yawl.ggen.*;
+
+public class GRPORLExample {
+    public void generateAndOptimize() {
+        // Generate workflow pattern
+        WorkflowPatternGenerator generator = new WorkflowPatternGenerator();
+        YAWLNet workflow = generator.generatePattern("cancellation_with_retry");
+
+        // Run simulation
+        WorkflowSimulator simulator = new WorkflowSimulator(workflow);
+        PerformanceMetrics metrics = simulator.runSimulation();
+
+        // Apply reinforcement learning optimization
+        WorkflowOptimizer optimizer = new WorkflowOptimizer();
+        YAWLNet optimized = optimizer.optimize(workflow, metrics);
+    }
+}
+```
+
 ### 10.2 Common Operations
 
 ```bash
@@ -413,6 +455,7 @@ curl -X PUT "https://yawl.yourdomain.com/ib/api/workitems/{itemId}/complete" \
 3. Implement Worklets for dynamic adaptation
 4. Integrate with external systems
 5. Set up monitoring and alerting
+6. **v6.0.0-GA Features**: Experiment with GRPO/RL in `yawl-ggen`, configure MCP/A2A for autonomous agents, and leverage Java 25 virtual threads for high-performance workflow execution
 
 ---
 

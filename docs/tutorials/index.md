@@ -18,15 +18,29 @@ Work through these in order for the best introduction to YAWL:
 | [06](06-write-a-custom-work-item-handler.md) | Custom Work Item Handler | Extend the engine with domain-specific task execution logic |
 | [07](07-docker-dev-environment.md) | Docker Dev Environment | Set up a fully containerized local development stack |
 | [08](08-mcp-agent-integration.md) | MCP Agent Integration | Connect an LLM-powered AI agent to YAWL via the MCP server |
+| [09](09-marketplace-quick-start.md) | Marketplace Quick Start | Deploy YAWL to a cloud marketplace (GCP/AWS/Azure) |
+| [10](10-getting-started.md) | Getting Started (User Guide) | End-to-end user perspective: navigate the control panel and run cases |
+| [11](11-grpo-workflow-generation.md) | GRPO Workflow Generation | Generate optimal workflows using Reinforcement Learning |
+| [12](12-opensage-memory.md) | OpenSage Memory System | Configure and operate the persistent learning memory store |
+| [13](13-virtual-threads-performance.md) | Virtual Threads Performance | Boost throughput with Java 25+ virtual thread pools |
+
+## v6.0.0-GA Features
+
+YAWL v6.0.0-GA introduces several major enhancements:
+- **GRPO/RL**: Generate, Run, Optimize workflow patterns with Reinforcement Learning (`yawl-ggen` module)
+- **MCP/A2A**: Enhanced autonomous agent integration via the Model Context Protocol
+- **OpenSage**: Persistent learning system for workflow optimization
+- **Java 25**: Full virtual thread support for improved concurrency
+- **Performance**: 43+ workflow patterns with optimized execution
 
 ## Topic-Specific Entry Points
 
 | Tutorial | When to use it |
 |----------|----------------|
-| [09-marketplace-quick-start.md](09-marketplace-quick-start.md) | Deploy YAWL to a cloud marketplace (GCP/AWS/Azure) |
-| [10-getting-started.md](10-getting-started.md) | End-user perspective: navigate the control panel and run cases |
 | [quick-start-users.md](quick-start-users.md) | 5-minute "does it work?" check for new installations |
 
 ---
+
+**Version**: v6.0.0-GA (2026-02-26)
 
 After completing the tutorials, continue to the **[How-To Guides](../how-to/index.md)** for task-specific instructions.

@@ -17,6 +17,9 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 | [configure-autonomous-agents.md](configure-autonomous-agents.md) | Configure autonomous agent integration |
 | [java25-setup.md](java25-setup.md) | Set up Java 25 development environment |
 | [validate-spec.md](validate-spec.md) | Validate a YAWL specification against the schema |
+| [configure-grpo.md](configure-grpo.md) | Configure GRPO workflow generation with Reinforcement Learning |
+| [configure-opensage.md](configure-opensage.md) | Configure OpenSage persistent memory system |
+| [configure-virtual-threads.md](configure-virtual-threads.md) | Configure Java 21+ virtual thread pools |
 
 ## Deployment
 
@@ -31,7 +34,6 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 | [deployment/checklist.md](deployment/checklist.md) | Pre-deployment checklist |
 | [deployment/java25-upgrade.md](deployment/java25-upgrade.md) | Migrate from Java 21 to Java 25 |
 | [deployment/spring-boot.md](deployment/spring-boot.md) | Migrate to Spring Boot 3.x |
-| [deployment/virtual-threads.md](deployment/virtual-threads.md) | Enable Java virtual threads |
 | [deployment/cloud-runbooks.md](deployment/cloud-runbooks.md) | Cloud deployment runbooks |
 
 ## CI/CD
@@ -122,3 +124,7 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 | [resilience/overview.md](resilience/overview.md) | Resilience patterns overview |
 | [resilience/operations.md](resilience/operations.md) | Resilience operations guide |
 | [resilience/quick-start.md](resilience/quick-start.md) | Get started with resilience patterns |
+
+---
+
+**Version**: v6.0.0-GA (2026-02-26)

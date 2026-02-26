@@ -5,7 +5,7 @@
 This document describes the comprehensive production deployment process for the YAWL Workflow Engine, including validation gates, readiness checks, deployment strategies, and rollback procedures.
 
 **Last Updated:** February 18, 2026
-**YAWL Version:** 5.2+
+**YAWL Version:** 6.0.0-GA
 
 ## Table of Contents
 
@@ -97,6 +97,8 @@ The `validate-production-readiness.sh` script performs comprehensive validation:
 #### 1. Java Version & Compilation (Stage 1)
 
 - **Java 25+ required** for all production deployments
+- **GRPO (Generational Reference Processing Optimization)** recommended
+- **Preview features enabled for virtual threads**
 - Full Maven compilation with `mvn clean compile`
 - Zero compilation errors mandatory
 
@@ -169,6 +171,53 @@ Checking for deferred work markers...
 - No pending migrations blocking deployment
 - Database connection verified
 
+## OpenSage Memory Configuration
+
+For YAWL 6.0.0-GA with Java 25, configure OpenSage memory settings in `src/main/resources/application-production.yml`:
+
+```yaml
+spring:
+  datasource:
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 50  # Optimal for virtual threads
+      minimum-idle: 10
+
+yawl:
+  opensage:
+    memory:
+      # Virtual thread optimized settings
+      heap-alloc: "256M"
+      direct-alloc: "512M"
+      stack-alloc: "1G"
+      gc:
+        young-gen: "30%"
+        old-gen: "60%"
+        metaspace: "256M"
+        g1-rset-region: "256M"
+        g1-h-region-threads: "4"
+
+    # GRPO (Generational Reference Processing Optimization)
+    gc:
+      grpo:
+        enabled: true
+        young-gc-interval: "4s"
+        old-gc-threshold: "75%"
+        gc-thread-pinning: true
+        reference-queue-processing: true
+```
+
+**Memory Allocation Recommendations:**
+
+| Component | Recommendation | Virtual Thread Benefit |
+|-----------|----------------|------------------------|
+| Heap Size | 8GB initial, 16GB max | 50-70% more efficient |
+| Metaspace | 256MB initial, 512MB max | Lower with virtual threads |
+| G1 Heap | 30% young, 60% old | Optimized for short-lived objects |
+| Virtual Stack | 256KB per thread | 200 bytes, ~10,000 per 256MB |
+
 #### 6. Secret Management (Stage 6)
 
 - **Zero hardcoded credentials** in source code
@@ -187,28 +236,35 @@ Checking for deferred work markers...
 - Timeout configurations present
 - Connection pool settings defined
 - Resource limits specified:
-  - CPU: minimum 500m, maximum 2000m
-  - Memory: minimum 512Mi, maximum 2Gi
+  - CPU: minimum 1000m, maximum 4000m (virtual thread optimized)
+  - Memory: minimum 4Gi, maximum 8Gi (OpenSage optimized)
 
-#### 9. Documentation & Artifacts (Stage 9)
+#### 9. Virtual Thread Configuration (Stage 9)
+
+- **Virtual thread executor configured** for I/O-bound operations
+- **Carrier thread pool tuned** for optimal performance
+- **Structured concurrency implemented** for coordinated execution
+- **Pinning detection enabled** for monitoring
+
+#### 10. Documentation & Artifacts (Stage 9)
 
 - `README.md` present and current
 - `CHANGELOG.md` updated for release
 - SBOM (CycloneDX) generated
 
-#### 10. Integration Tests (Stage 10)
+#### 11. Integration Tests (Stage 10)
 
 - Integration test suite present
 - All integration tests passing
 - Smoke test suite available
 
-#### 11. Kubernetes/Container Readiness (Stage 11)
+#### 12. Kubernetes/Container Readiness (Stage 11)
 
 - Dockerfile configured and tested
 - Kubernetes manifests valid (validated with kubeval/kubeconform)
 - Helm chart present and lints successfully
 
-#### 12. Monitoring & Observability (Stage 12)
+#### 13. Monitoring & Observability (Stage 12)
 
 - Health check endpoints configured
 - Prometheus metrics enabled
@@ -273,7 +329,7 @@ The readiness validation automatically runs as the first stage of the production
 gh workflow run production-deployment.yml \
   -f deployment_env=production \
   -f deployment_strategy=blue-green \
-  -f version=5.2.0
+  -f version=6.0.0-GA
 ```
 
 ### Canary Deployment
@@ -301,7 +357,7 @@ gh workflow run production-deployment.yml \
 gh workflow run production-deployment.yml \
   -f deployment_env=production \
   -f deployment_strategy=canary \
-  -f version=5.2.0
+  -f version=6.0.0-GA
 ```
 
 ### Rolling Deployment
@@ -329,7 +385,7 @@ strategy:
 gh workflow run production-deployment.yml \
   -f deployment_env=production \
   -f deployment_strategy=rolling \
-  -f version=5.2.0
+  -f version=6.0.0-GA
 ```
 
 ---
@@ -346,7 +402,7 @@ For **production** deployments, manual approval is required from code owners:
 gh workflow run production-deployment.yml \
   -f deployment_env=production \
   -f deployment_strategy=canary \
-  -f version=5.2.0
+  -f version=6.0.0-GA
 ```
 
 #### Step 2: Approval Issue Created
@@ -608,6 +664,10 @@ Configure alerts for immediate notification:
 | Database Connection Loss | > 0 for 1 min | Critical alert |
 | Memory Pressure | > 90% for 5 min | Scale up or rollback |
 | Health Check Failure | 5+ consecutive | Evict and restart pod |
+| Virtual Thread Pinning | > 1000/hour | Warning alert |
+| Carrier Thread Starvation | > 90% utilization | Critical alert |
+| GC GRPO Overhead | > 20% | Warning alert |
+| Virtual Thread Creation Rate | > 10,000/min | Critical alert |
 
 ### Log Aggregation
 

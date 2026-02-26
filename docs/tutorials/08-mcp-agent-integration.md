@@ -56,7 +56,7 @@ mvn -T 1.5C clean package -pl yawl-integration \
 The `-am` flag builds all modules that `yawl-integration` depends on. The resulting JAR is at:
 
 ```
-yawl-integration/target/yawl-integration-6.0.0-Beta.jar
+yawl-integration/target/yawl-integration-6.0.0-GA.jar
 ```
 
 However, `YawlMcpServer.main()` needs all its runtime dependencies on the classpath. The easiest way to run it is from the reactor root with the full classpath assembled by Maven:
@@ -79,16 +79,22 @@ This writes the full dependency classpath to `yawl-integration/target/integratio
 | `YAWL_ENGINE_URL` | Yes | Base URL of the YAWL engine, e.g. `http://localhost:8080/yawl` |
 | `YAWL_USERNAME` | Yes | YAWL admin username, e.g. `admin` |
 | `YAWL_PASSWORD` | Yes | YAWL admin password |
-| `ZAI_API_KEY` | No | Z.AI API key; when set adds a 16th natural-language tool (`yawl_natural_language`) |
+| `ZAI_API_KEY` | No | Z.AI API key; when set adds a 17th natural-language tool (`yawl_natural_language`) |
 | `ZHIPU_API_KEY` | No | Alias for `ZAI_API_KEY` |
+| `GRPO_ENABLED` | No | Enable GRPO optimization (v6.0.0-GA, default false) |
+| `OPENSAGE_ENABLED` | No | Enable OpenSage memory (v6.0.0-GA, default false) |
 
-When `ZAI_API_KEY` is absent the server starts with 15 tools (case management, work item management, specification management). Setting `ZAI_API_KEY` adds the `yawl_natural_language` tool which accepts free-form text and routes it through Z.AI function calling to YAWL operations.
+When `ZAI_API_KEY` is absent the server starts with 16 tools (case management, work item management, specification management). Setting `ZAI_API_KEY` adds the `yawl_natural_language` tool which accepts free-form text and routes it through Z.AI function calling to YAWL operations.
+
+For v6.0.0-GA, setting `GRPO_ENABLED=true` enables Group Relative Policy Optimization for AI agent coordination, and `OPENSAGE_ENABLED=true` enables persistent memory across workflow sessions.
 
 The server uses **STDIO transport** (the official MCP Java SDK 0.17.2 `StdioServerTransportProvider`). The MCP client (Claude desktop or another MCP host) launches the server process and communicates over stdin/stdout. The server writes status messages to stderr.
 
+For v6.0.0-GA, the server also supports enhanced logging and GRPO/RL (Reinforcement Learning) integration for workflow optimization when enabled through environment variables.
+
 Capabilities registered on startup:
 
-- **Tools (15):** `yawl_launch_case`, `yawl_cancel_case`, `yawl_get_case_status`, `yawl_list_specifications`, `yawl_get_work_items`, `yawl_complete_work_item`, `yawl_checkout_work_item`, `yawl_checkin_work_item`, `yawl_get_specification_data`, `yawl_get_specification_xml`, `yawl_get_specification_schema`, `yawl_get_running_cases`, `yawl_upload_specification`, `yawl_unload_specification`, `yawl_get_work_item_data`
+- **Tools (16+):** `yawl_launch_case`, `yawl_cancel_case`, `yawl_get_case_status`, `yawl_list_specifications`, `yawl_get_work_items`, `yawl_complete_work_item`, `yawl_checkout_work_item`, `yawl_checkin_work_item`, `yawl_get_specification_data`, `yawl_get_specification_xml`, `yawl_get_specification_schema`, `yawl_get_running_cases`, `yawl_upload_specification`, `yawl_unload_specification`, `yawl_get_work_item_data`, and `yawl_natural_language` (if ZAI_API_KEY is set)
 - **Resources (3):** `yawl://specifications`, `yawl://cases`, `yawl://workitems`
 - **Resource templates (3):** `yawl://cases/{caseId}`, `yawl://cases/{caseId}/data`, `yawl://workitems/{workItemId}`
 - **Prompts (4):** `workflow_analysis`, `task_completion_guide`, `case_troubleshooting`, `workflow_design_review`
@@ -105,7 +111,7 @@ export YAWL_ENGINE_URL=http://localhost:8080/yawl
 export YAWL_USERNAME=admin
 export YAWL_PASSWORD=YAWL
 
-CLASSPATH="yawl-integration/target/yawl-integration-6.0.0-Beta.jar:$(cat yawl-integration/target/integration-cp.txt)"
+CLASSPATH="yawl-integration/target/yawl-integration-6.0.0-GA.jar:$(cat yawl-integration/target/integration-cp.txt)"
 
 java -cp "$CLASSPATH" \
   org.yawlfoundation.yawl.integration.mcp.YawlMcpServer
@@ -114,12 +120,12 @@ java -cp "$CLASSPATH" \
 Expected output on stderr:
 
 ```
-Starting YAWL MCP Server v5.2.0
+Starting YAWL MCP Server v6.0.0-GA
 Engine URL: http://localhost:8080/yawl
 Transport: STDIO (official MCP SDK 0.17.2)
 Connected to YAWL engine (session established)
-YAWL MCP Server v5.2.0 started on STDIO transport
-Capabilities: 15 tools, 3 resources, 3 resource templates, 4 prompts, 3 completions, logging
+YAWL MCP Server v6.0.0-GA started on STDIO transport
+Capabilities: 16+ tools, 3 resources, 3 resource templates, 4 prompts, 3 completions, logging, GRPO, OpenSage
 ```
 
 The process now waits on stdin for JSON-RPC 2.0 messages from an MCP client. Do not type into the terminal; the MCP client manages that channel. Press Ctrl+C to stop the server later.
@@ -156,7 +162,7 @@ Claude desktop and Claude CLI support MCP servers via a JSON configuration file.
 
 Replace `/absolute/path/to/yawl` with the actual absolute path to your YAWL checkout. The `command` and `args` array is how Claude Desktop launches the MCP server process; it manages the stdin/stdout channel automatically.
 
-After saving this file, restart Claude Desktop. You will see a hammer icon in the Claude chat interface confirming that YAWL tools are available.
+After saving this file, restart Claude Desktop. You will see a hammer icon in the Claude chat interface confirming that YAWL tools are available. For v6.0.0-GA, you may also see indicators for GRPO and OpenSage features when enabled.
 
 **For Claude CLI (claude-code or claude-cli) using the `--mcp-config` flag:**
 
@@ -285,12 +291,14 @@ java -cp "$CLASSPATH" \
 Expected startup log:
 
 ```
-INFO: Starting YAWL MCP Spring Application
+INFO: Starting YAWL MCP Spring Application v6.0.0-GA
 INFO: Configuration loaded:
 INFO:   Engine URL: http://localhost:8080/yawl
 INFO:   Username: admin
 INFO:   Transport: STDIO
 INFO:   Z.AI enabled: false
+INFO:   GRPO enabled: false
+INFO:   OpenSage enabled: false
 INFO: Registered custom tool: yawl_launch_case_spring
 INFO: Registered custom resource: yawl://custom/specifications
 INFO: Starting MCP server...
@@ -332,13 +340,14 @@ java -cp "$CLASSPATH" \
 Expected output:
 
 ```
-Starting YAWL A2A Server v5.2.0
+Starting YAWL A2A Server v6.0.0-GA
 Engine URL: http://localhost:8080/yawl
 A2A Port: 8082
 Auth schemes: api-key
-YAWL A2A Server v5.2.0 started on port 8082
+YAWL A2A Server v6.0.0-GA started on port 8082
 Agent card: http://localhost:8082/.well-known/agent.json
 Authentication: api-key
+GRPO: disabled, OpenSage: disabled
 ```
 
 Fetch the agent card (no authentication required for this endpoint):
@@ -415,5 +424,9 @@ Note: The A2A module source is currently excluded from the default Maven build (
 - To add a custom MCP tool backed by YAWL business logic, implement `YawlMcpTool` and register it with `YawlMcpToolRegistry` as shown in `LaunchCaseTool`.
 - To add a custom MCP resource, implement `YawlMcpResource` and register it with `YawlMcpResourceRegistry` as shown in `SpecificationsResource`.
 - To enable natural language routing through Z.AI, set `ZAI_API_KEY` before starting the server. The `yawl_natural_language` tool will appear and accept free-form workflow requests.
-- To deploy the MCP server alongside the engine in Docker, add a second service to `docker-compose.yml` using the same `yawl-engine:6.0.0-alpha` image with `ENTRYPOINT` overriding to run `YawlMcpServer.main()` instead of the Spring Boot application.
+- To enable GRPO optimization in v6.0.0-GA, set `GRPO_ENABLED=true` to enable AI agent coordination through reinforcement learning.
+- To enable OpenSage memory in v6.0.0-GA, set `OPENSAGE_ENABLED=true` for persistent agent context and case-based reasoning.
+- To deploy the MCP server alongside the engine in Docker, add a second service to `docker-compose.yml` using the same `yawl-engine:6.0.0-GA` image with `ENTRYPOINT` overriding to run `YawlMcpServer.main()` instead of the Spring Boot application.
 - For production A2A deployments, see `YawlA2AServer` and `CompositeAuthenticationProvider.production()`, which selects JWT, API key, and SPIFFE mTLS schemes from environment variables.
+
+See the [GA_RELEASE_GUIDE.md](../../GA_RELEASE_GUIDE.md) for detailed configuration of v6.0.0-GA features including GRPO and OpenSage integration patterns.

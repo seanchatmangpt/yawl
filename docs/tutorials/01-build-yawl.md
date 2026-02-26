@@ -6,13 +6,13 @@ By the end of this tutorial you will have cloned the YAWL repository, run the Ob
 
 ## Step 1: Verify prerequisites
 
-You need Java 21 or later, Maven 3.9 or later, and Git. Run each command and confirm the version shown meets the minimum.
+You need Java 25 or later, Maven 3.9 or later, and Git. Run each command and confirm the version shown meets the minimum.
 
 ```bash
 java -version
 ```
 
-Expected: `openjdk version "21.x.x"` or higher.
+Expected: `openjdk version "25.x.x"` or higher.
 
 ```bash
 mvn -version
@@ -26,7 +26,35 @@ git --version
 
 Expected: `git version 2.x.x` or higher.
 
-If any tool is missing or too old, install it before continuing. YAWL will not compile on Java 11 or Maven 3.6.
+If any tool is missing or too old, install it before continuing. YAWL will not compile on Java 21 or Maven 3.6.
+
+## v6.0.0-GA New Features
+
+This version includes two major new features available in GA release:
+
+### 1. GRPO Integration (Group Relative Policy Optimization)
+YAWL v6.0.0-GA integrates GRPO for AI agent workflow optimization. The system now supports:
+- Policy gradient optimization for multi-agent coordination
+- Reinforcement learning for workflow routing decisions
+- Automatic policy fine-tuning based on execution traces
+
+### 2. OpenSage Memory System
+The OpenSage memory system provides:
+- Persistent agent context across workflow sessions
+- Long-term memory for workflow patterns and decisions
+- Memory retrieval for similar workflow cases
+- Personalization based on historical interaction patterns
+
+To enable these features, ensure you have:
+```bash
+# GRPO requires Python 3.11+ with PyTorch
+python3 --version  # Should be 3.11.x or higher
+
+# OpenSage requires additional configuration
+# See GA_RELEASE_GUIDE.md for setup instructions
+```
+
+See [GA_RELEASE_GUIDE.md](../../GA_RELEASE_GUIDE.md) for detailed configuration.
 
 ---
 
@@ -82,6 +110,13 @@ The `-T 1.5C` flag runs the Maven reactor in parallel using 1.5 threads per CPU 
 
 Maven processes modules in reactor order (utilities → elements → authentication → engine → stateless → resourcing → worklet → scheduling → security → integration → monitoring → webapps → control-panel). Each module depends only on modules that appear before it.
 
+**Note:** For v6.0.0-GA, compile with `-T 1.5C` flag to enable parallel builds with optimal thread utilization:
+```bash
+mvn -T 1.5C clean compile
+```
+
+The `-T 1.5C` flag runs the Maven reactor in parallel using 1.5 threads per CPU core. On a modern laptop this reduces compile time from roughly three minutes to under one minute.
+
 If your Maven local repository is already populated from a previous build, add `-o` to compile fully offline:
 
 ```bash
@@ -113,15 +148,17 @@ A successful compile ends with output similar to the following:
 [INFO] yawl-webapps ....................................... SUCCESS [  0.4 s]
 [INFO] yawl-control-panel ................................. SUCCESS [  3.1 s]
 [INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
+[INFO] BUILD SUCCESS - YAWL v6.0.0-GA
 [INFO] ------------------------------------------------------------------------
 ```
 
 Every module must show `SUCCESS`. If any module shows `FAILURE`, the line immediately above the failure message names the offending source file and the compilation error.
 
 The two most common first-time failures are:
-- A Java version below 21 (fix: install Java 21+, set `JAVA_HOME`).
+- A Java version below 25 (fix: install Java 25+, set `JAVA_HOME`).
 - Missing Maven dependencies due to an empty local repository (fix: remove `-o` and let Maven download them).
+
+For v6.0.0-GA, ensure all Java modules target Java 25 bytecode. If compilation fails with unsupported class versions, verify your JDK is correctly set to Java 25.
 
 ---
 
@@ -135,3 +172,8 @@ The two most common first-time failures are:
 ## What next
 
 Continue with [Tutorial 2: Navigate the YAWL Module System](02-understand-the-build.md) to learn how Maven's reactor order, the shared-source strategy, and the Observatory facts fit together. Once you understand the module system, the how-to guides will show you how to run specific test suites, add a new module, and configure deployment targets.
+
+For v6.0.0-GA, see the [GA_RELEASE_GUIDE.md](../../GA_RELEASE_GUIDE.md) for:
+- GRPO and OpenSage feature activation
+- Production deployment patterns
+- Migration from v5.x to v6.0.0-GA

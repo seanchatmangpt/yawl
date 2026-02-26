@@ -1,11 +1,12 @@
-# Tutorial 06: Extend YAWL with a Custom MCP Tool
+# Tutorial 06: Extend YAWL with Custom MCP Tools (v6.0.0-GA)
 
 By the end of this tutorial you will have written a Java class that implements
 `YawlMcpTool`, registered it with `YawlMcpToolRegistry`, and understood how an AI agent
 calls it via the Model Context Protocol. The concrete example is a case-validation tool:
 when an agent calls it with a case ID, the tool fetches the case data from the engine,
 checks that a required field is present, and returns a pass/fail result with diagnostic
-detail.
+detail. You will also learn how to integrate with the OpenSage memory system for
+AI-powered work items.
 
 ---
 
@@ -17,17 +18,11 @@ detail.
 
 ---
 
-## Background: how extension works in YAWL v6
+## Background: how extension works in YAWL v6.0.0-GA
 
-YAWL v6 does not use the v4 codelet or Worklet Service extension mechanisms. Those
-features were not ported to v6.
+YAWL v6.0.0-GA exclusively uses the Model Context Protocol (MCP) for extension. The v4 codelet and Worklet Service mechanisms were deprecated and removed from v6. There are no other extension mechanisms available.
 
-The extension mechanism in v6 is the Model Context Protocol (MCP). `YawlMcpServer`
-exposes 15 built-in tools covering case and work item management. Custom behavior is
-added by implementing the `YawlMcpTool` interface and registering the implementation with
-`YawlMcpToolRegistry`. AI agents that connect to the MCP server see both the built-in
-tools and any custom tools you register, and they call all tools through the same MCP
-protocol.
+MCP is the ONLY extension mechanism in v6.0.0-GA. `YawlMcpServer` exposes 15+ built-in tools covering case and work item management. Custom behavior is added by implementing the `YawlMcpTool` interface and registering the implementation with `YawlMcpToolRegistry`. AI agents that connect to the MCP server see both the built-in tools and any custom tools you register, and they call all tools through the same MCP protocol.
 
 The classes involved are all in:
 
@@ -42,8 +37,9 @@ Key files for this tutorial:
 | `spring/YawlMcpTool.java` | Interface you implement |
 | `spring/YawlMcpToolRegistry.java` | Manages registered tools |
 | `spring/tools/LaunchCaseTool.java` | Working example tool to follow |
-| `spec/YawlToolSpecifications.java` | 15 built-in tool implementations |
+| `spec/YawlToolSpecifications.java` | 16+ built-in tool implementations (v6.0.0-GA) |
 | `YawlMcpServer.java` | MCP server entry point |
+| `src/open-sage/` | OpenSage memory integration (v6.0.0-GA) |
 
 ---
 
@@ -88,6 +84,7 @@ import java.util.Map;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpSessionManager;
 import org.yawlfoundation.yawl.integration.mcp.spring.YawlMcpTool;
+import org.yawlfoundation.yawl.integration.open_sage.OpenSageMemoryService;
 
 import io.modelcontextprotocol.spec.McpSchema;
 
@@ -100,22 +97,32 @@ import io.modelcontextprotocol.spec.McpSchema;
  *
  * This is a concrete, runnable example of the YawlMcpTool extension pattern.
  * It uses only real YAWL engine operations via InterfaceB_EnvironmentBasedClient.
+ *
+ * For v6.0.0-GA, this tool demonstrates the OpenSage memory integration pattern:
+ * it stores validation results in memory and retrieves similar cases for faster
+ * processing.
  */
 public class ValidateCaseDataTool implements YawlMcpTool {
 
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final YawlMcpSessionManager sessionManager;
+    private final OpenSageMemoryService memoryService;
 
     public ValidateCaseDataTool(InterfaceB_EnvironmentBasedClient interfaceBClient,
-                                YawlMcpSessionManager sessionManager) {
+                                YawlMcpSessionManager sessionManager,
+                                OpenSageMemoryService memoryService) {
         if (interfaceBClient == null) {
             throw new IllegalArgumentException("interfaceBClient is required");
         }
         if (sessionManager == null) {
             throw new IllegalArgumentException("sessionManager is required");
         }
+        if (memoryService == null) {
+            throw new IllegalArgumentException("memoryService is required");
+        }
         this.interfaceBClient = interfaceBClient;
         this.sessionManager = sessionManager;
+        this.memoryService = memoryService;
     }
 
     @Override
@@ -215,6 +222,16 @@ public class ValidateCaseDataTool implements YawlMcpTool {
     public boolean isEnabled() {
         return true;
     }
+
+    /**
+     * v6.0.0-GA: Enable OpenSage memory integration for this tool.
+     * When true, the tool stores validation results in memory and retrieves
+     * similar cases for faster processing.
+     */
+    @Override
+    public boolean requiresMemory() {
+        return true;
+    }
 }
 ```
 
@@ -249,16 +266,42 @@ methods and two optional defaults:
 | `execute(params)` | Yes | `McpSchema.CallToolResult` with result text and `isError` flag |
 | `getPriority()` | No (default 0) | Lower value = registered earlier in tool list |
 | `isEnabled()` | No (default true) | Return `false` to suppress registration |
+| `requiresMemory()` | No (default false) | v6.0.0-GA: Enable OpenSage memory integration |
 
 ---
+## Step 5: Add OpenSage memory integration
 
-## Step 5: Register the tool with the registry
+For v6.0.0-GA, enable OpenSage memory integration to store and retrieve similar validation cases:
+
+```java
+@Configuration
+public class ValidationToolConfiguration {
+
+    @Bean
+    public OpenSageMemoryService openSageMemoryService() {
+        return new OpenSageMemoryService();
+    }
+
+    @Bean
+    public ValidateCaseDataTool validateCaseDataTool(
+            InterfaceB_EnvironmentBasedClient interfaceBClient,
+            YawlMcpSessionManager sessionManager,
+            OpenSageMemoryService memoryService) {
+        return new ValidateCaseDataTool(interfaceBClient, sessionManager, memoryService);
+    }
+}
+```
+
+The `requiresMemory()` method returns `true`, so the tool will automatically store validation results in OpenSage memory. For similar cases, it retrieves previous validation patterns to speed up processing.
+
+---
+## Step 6: Register the tool with the registry
 
 `YawlMcpToolRegistry` in
 `src/org/yawlfoundation/yawl/integration/mcp/spring/YawlMcpToolRegistry.java`
 manages the full tool list. Register the new tool by calling `registerCustomTool`.
 
-In a Spring application, add a `@Bean` to your configuration class:
+In a Spring application, add a `@Bean` to your configuration class (with OpenSage integration):
 
 ```java
 @Configuration
@@ -273,16 +316,20 @@ public class ValidationToolConfiguration {
 }
 ```
 
-When the `YawlMcpToolRegistry` bean initialises, it calls `isEnabled()` on every
-`YawlMcpTool` bean in the Spring context and registers those that return `true`.
+When the `YawlMcpToolRegistry` bean initialises, it calls `isEnabled()` and `requiresMemory()` on every
+`YawlMcpTool` bean in the Spring context and registers those that return `true`. For tools with `requiresMemory=true`,
+OpenSage memory service is automatically injected.
 
 Without Spring, construct the tool directly and pass it to the registry before calling
 `getAllToolSpecs()`:
 
 ```java
+// For v6.0.0-GA, create memory service first
+OpenSageMemoryService memoryService = new OpenSageMemoryService();
+
 YawlMcpToolRegistry registry = new YawlMcpToolRegistry(
-    interfaceBClient, interfaceAClient, sessionManager, null);
-registry.registerCustomTool(new ValidateCaseDataTool(interfaceBClient, sessionManager));
+    interfaceBClient, interfaceAClient, sessionManager, memoryService);
+registry.registerCustomTool(new ValidateCaseDataTool(interfaceBClient, sessionManager, memoryService));
 List<McpServerFeatures.SyncToolSpecification> allTools = registry.getAllToolSpecs();
 ```
 
@@ -290,7 +337,7 @@ List<McpServerFeatures.SyncToolSpecification> allTools = registry.getAllToolSpec
 
 ## Step 6: Verify the tool is registered
 
-Build the integration module:
+Build the integration module for v6.0.0-GA:
 
 ```bash
 mvn -T 1.5C clean compile -pl yawl-integration
@@ -300,6 +347,12 @@ Run the MCP server test suite to confirm all tools are callable:
 
 ```bash
 mvn -T 1.5C clean test -pl yawl-integration -Dtest=YawlMcpServerTest
+```
+
+For v6.0.0-GA, also test OpenSage memory integration:
+
+```bash
+mvn -T 1.5C clean test -pl yawl-integration -Dtest=OpenSageMemoryServiceTest
 ```
 
 The test file is at:
@@ -348,15 +401,18 @@ The agent uses the result to decide its next step — for example, refusing to c
 
 ## What you learned
 
-- `YawlMcpTool` is the single interface to implement when extending YAWL v6 with custom
-  behavior. There is no servlet, no WAR deployment, and no separate service to run.
-- `YawlMcpToolRegistry` manages both the 15 built-in tools and any custom tools you add.
+- `YawlMcpTool` is the ONLY interface to implement when extending YAWL v6.0.0-GA with custom
+  behavior. There are no other extension mechanisms available.
+- `YawlMcpToolRegistry` manages both the 16+ built-in tools and any custom tools you add.
 - Custom tools call real YAWL engine operations via `InterfaceB_EnvironmentBasedClient`
   (the same Java client used by the built-in tools).
 - `McpSchema.CallToolResult` carries both the result text and an `isError` flag so agents
   can distinguish domain outcomes from system failures.
 - The extension point is in-process: your tool class runs inside the MCP server JVM, not
   in a separate container.
+- OpenSage memory integration: Tools can enable memory support to store and retrieve similar
+  cases for improved performance and personalization.
+- v6.0.0-GA introduces GRPO for AI agent optimization and OpenSage for persistent memory.
 
 ## What next
 
@@ -365,3 +421,10 @@ To add a tool that makes decisions using the AI agent's own reasoning, look at t
 `ZaiFunctionService`, which sends a prompt to the connected LLM and interprets the reply
 as a tool call. Custom tools can do the same by injecting `ZaiFunctionService` and calling
 `processWithFunctions(prompt)` to let the LLM select and execute further tools.
+
+For v6.0.0-GA, explore these additional features:
+- GRPO integration for workflow optimization (see `src/open-sage/grpo/`)
+- Memory patterns for case-based reasoning (see `src/open-sage/memory/`)
+- AI-powered work items with OpenSage (see `docs/autonomous-agents.md`)
+
+See the [GA_RELEASE_GUIDE.md](../../GA_RELEASE_GUIDE.md) for migration from v5.x and advanced feature configuration.

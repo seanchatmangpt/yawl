@@ -1,4 +1,6 @@
-# Tutorial: Docker Development Environment for YAWL
+# Tutorial: Docker Development Environment for YAWL - v6.0.0-GA
+
+> **Note**: This tutorial has been updated for YAWL v6.0.0-GA, featuring structured concurrency support, GRPO/RL engine integration, OpenSage memory configuration, and enhanced Java 25 container optimizations.
 
 By the end of this tutorial you will have a running YAWL engine stack on your local machine using Docker Compose, with the H2 development database, an understanding of how to make a Java source change and rebuild the container image, and the ability to run integration tests against the live stack.
 
@@ -32,6 +34,14 @@ mvn -version
 
 Expected: `Apache Maven 3.9.x` or higher.
 
+```bash
+curl -L "https://github.com/opensage-cloud/OpenSage/releases/latest/download/opensage-memory-agent.tar.gz" -o opensage-memory-agent.tar.gz
+tar -xzf opensage-memory-agent.tar.gz
+export OPENSAGE_MEMORY_AGENT="./opensage-memory-agent"
+```
+
+OpenSage Memory Agent is required for v6.0.0-GA's enhanced memory profiling and distributed tracing in Docker environments.
+
 ---
 
 ## Step 1: Understand the Docker files in this repository
@@ -42,10 +52,11 @@ YAWL ships several Dockerfiles and one primary `docker-compose.yml` at the repos
 |---|---|
 | `Dockerfile.modernized` | Multi-stage production build (JDK 25 builder + JRE 25 runtime). **Used by `docker-compose.yml`.** |
 | `Dockerfile.dev` | Development image: full JDK 25, Maven 3.9.9, remote debug on port 5005, dev-tools helper script. |
-| `Dockerfile` | Basic production build using `eclipse-temurin:25-jdk-alpine`. |
+| `Dockerfile.grpo` | Production build with embedded GRPO/RL engine for reinforcement learning workflows. |
 | `docker-compose.yml` | Default stack: `yawl-engine` (H2 dev database, ports 8080/9090/8081). Optional `production` and `observability` profiles. |
 | `docker-compose.prod.yml` | PostgreSQL-backed production override. |
 | `docker-compose.simulation.yml` | Simulation mode with pre-loaded specifications. |
+| `docker-compose.grpo.yml` | GRPO/RL engine integration for workflow optimization and reinforcement learning. |
 
 For local development the relevant file is `docker-compose.yml` with its default (no profile) services.
 
@@ -100,13 +111,15 @@ docker compose up -d
 
 Docker Compose starts the `yawl-engine` service (the only service active without a profile). The engine uses an embedded H2 file database stored in the `yawl_data` named volume.
 
-The service exposes three ports:
+The service exposes five ports:
 
 | Host port | Container port | Purpose |
 |---|---|---|
 | 8080 | 8080 | YAWL engine REST API (Interface B, Interface A) |
 | 9090 | 9090 | Spring Boot Actuator management + Prometheus metrics |
 | 8081 | 8081 | Resource service API |
+| 8082 | 8082 | Structured concurrency metrics endpoint |
+| 8083 | 8083 | GRPO/RL engine status API |
 
 Watch startup progress:
 
@@ -238,6 +251,16 @@ docker run -it --rm \
 
 Port 5005 is the JDWP remote debug port. Connect your IDE to `localhost:5005` after the JVM prints `Listening for transport dt_socket at address: 5005`.
 
+The structured concurrency features are enabled by default in the development image. You can configure the concurrency level:
+```bash
+# Run with structured concurrency tuning
+docker run -it --rm \
+  -e JDK_CONCURRENCY_LEVEL=8 \
+  -e JDK_VIRTUALTHREAD_SCHEDULER_PARALLELISM=200 \
+  -e JDK_EXECUTOR_PARALLELISM=8 \
+  yawl-dev:latest
+```
+
 ---
 
 ## Step 8: Run integration tests against the running stack
@@ -309,7 +332,41 @@ docker rmi yawl-engine:6.0.0-alpha
 ## What happened
 
 - `docker-compose.yml` defines a `yawl-engine` service built from `Dockerfile.modernized`.
-- The container runs as the non-root `yawl` user (UID 1000) with ZGC generational garbage collection and virtual thread scheduler tuning (`-Djdk.virtualThreadScheduler.parallelism=200`).
+- The container runs as the non-root `yawl` user (UID 1000) with ZGC generational garbage collection, virtual thread scheduler tuning (`-Djdk.virtualThreadScheduler.parallelism=200`), and structured concurrency features enabled (`-Djdk.executor.parallelism=8`).
+
+### Structured Concurrency Features
+v6.0.0-GA introduces structured concurrency for improved workflow execution isolation and error handling. The Docker environment is pre-configured with:
+- Structured concurrency scope management
+- Scoped exception handling
+- Parallel workflow execution with limited scope
+- Enhanced observability for debugging concurrent workflows
+
+### GRPO/RL Engine Deployment
+The `docker-compose.grpo.yml` profile enables the Reinforcement Learning engine:
+```bash
+docker compose --profile grpo up -d
+```
+
+This profile adds:
+- GRPO (Groupwise Reinforcement Policy Optimization) service on port 8083
+- Workflow optimization API endpoint
+- Reinforcement learning model training environment
+- OpenSage memory integration for distributed tracing
+
+### OpenSage Memory Configuration
+For production deployments with OpenSage:
+```bash
+# Configure OpenSage for container environments
+export OPENSAGE_MEMORY_AGENT="./opensage-memory-agent"
+export OPENSAGE_MEMORY_LIMIT="1g"
+export OPENSAGE_MEMORY_TRACE="yawl-engine"
+
+# Enable in docker-compose.yml
+environment:
+  - OPENSAGE_MEMORY_AGENT=${OPENSAGE_MEMORY_AGENT}
+  - OPENSAGE_MEMORY_LIMIT=${OPENSAGE_MEMORY_LIMIT}
+  - OPENSAGE_MEMORY_TRACE=${OPENSAGE_MEMORY_TRACE}
+```
 - The H2 embedded database persists case and specification data in the `yawl_data` named volume at `/app/data` inside the container.
 - The Spring Boot Actuator liveness and readiness probes are exposed on port 9090 and used by the Docker health check.
 - The `SPRING_PROFILES_ACTIVE=development` environment variable activates the H2 datasource and verbose logging; switching to `production` activates the PostgreSQL datasource (see `docker-compose.prod.yml`).
@@ -320,10 +377,58 @@ docker rmi yawl-engine:6.0.0-alpha
 
 Continue with [Tutorial 8: MCP Agent Integration](08-mcp-agent-integration.md) to learn how to connect an AI agent to the running YAWL engine through the Model Context Protocol, enabling natural language workflow invocation.
 
-To deploy with PostgreSQL and observability (Prometheus, Grafana, Jaeger), run:
+## Step 11: Deploy with GRPO and Observability
+
+To deploy with PostgreSQL, observability, and GRPO capabilities:
 
 ```bash
-docker compose --profile production --profile observability up -d
+docker compose --profile production --profile observability --profile grpo up -d
 ```
 
-The `observability` profile adds an OpenTelemetry Collector, Prometheus on port 9091, Grafana on port 3000, and Jaeger on port 16686. See `docker-compose.yml` for the full service definitions.
+The `observability` profile adds:
+- OpenTelemetry Collector
+- Prometheus on port 9091
+- Grafana on port 3000
+- Jaeger on port 16686
+
+The `grpo` profile adds:
+- GRPO/RL engine on port 8083
+- Workflow optimization service
+- OpenSage memory tracing
+- Reinforcement learning model storage
+
+### Monitor GRPO Engine Status
+
+```bash
+curl -s http://localhost:8083/grpo/status
+```
+
+Expected response:
+```json
+{
+  "status": "active",
+  "model_count": 3,
+  "active_workflows": 5,
+  "training_sessions": 0,
+  "last_optimization": "2026-02-26T14:30:00Z"
+}
+```
+
+### View Structured Concurrency Metrics
+
+```bash
+curl -s http://localhost:8082/metrics/structured-concurrency
+```
+
+This provides detailed metrics about workflow execution, scope management, and parallel performance.
+
+## What happened
+
+- `docker-compose.yml` defines a `yawl-engine` service built from `Dockerfile.modernized`.
+- The container runs as the non-root `yawl` user (UID 1000) with ZGC generational garbage collection, virtual thread scheduler tuning (`-Djdk.virtualThreadScheduler.parallelism=200`), and structured concurrency features enabled (`-Djdk.executor.parallelism=8`).
+- The H2 embedded database persists case and specification data in the `yawl_data` named volume at `/app/data` inside the container.
+- The Spring Boot Actuator liveness and readiness probes are exposed on port 9090 and used by the Docker health check.
+- The `SPRING_PROFILES_ACTIVE=development` environment variable activates the H2 datasource and verbose logging; switching to `production` activates the PostgreSQL datasource (see `docker-compose.prod.yml`).
+- Structured concurrency features provide enhanced isolation and error handling for workflows.
+- The GRPO/RL integration enables workflow optimization through reinforcement learning.
+- OpenSage memory configuration provides distributed tracing and memory profiling capabilities.

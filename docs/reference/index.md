@@ -34,6 +34,7 @@ Information-oriented content for practitioners who need to look up a specific te
 | [a2a-server.md](a2a-server.md) | A2A server specification |
 | [mcp-server.md](mcp-server.md) | MCP server specification |
 | [api/](api/) | OpenAPI YAML and Postman collection |
+| [api/grpo-endpoints.md](api/grpo-endpoints.md) | GRPO (Groupwise Reward Policy Optimization) API endpoints |
 | [autonomous-agents-api.md](autonomous-agents-api.md) | Autonomous agents API reference |
 | [actuator.md](actuator.md) | Spring Boot Actuator endpoints |
 | [actuator-quickref.md](actuator-quickref.md) | Actuator quick reference card |
@@ -54,6 +55,13 @@ Information-oriented content for practitioners who need to look up a specific te
 | [capacity-planning.md](capacity-planning.md) | Resource sizing guidelines |
 | [performance-targets.md](performance-targets.md) | Performance SLA targets |
 
+## Reinforcement Learning & AI
+
+| Reference | Contents |
+|-----------|----------|
+| [rl-config-reference.md](rl-config-reference.md) | GRPO configuration and hyperparameters |
+| [virtual-threads.md](virtual-threads.md) | Java 21+ virtual thread configuration and tuning |
+
 ## Build & Infrastructure
 
 | Reference | Contents |
@@ -68,6 +76,10 @@ Information-oriented content for practitioners who need to look up a specific te
 | [quality/](quality/) | Architecture test rules, shell test reference |
 | [slos/](slos/) | Service-level objectives |
 | [templates/](templates/) | CI/CD templates and configuration examples |
+
+---
+
+**Version**: v6.0.0-GA (2026-02-26)
 
 ## Quality & Standards
 

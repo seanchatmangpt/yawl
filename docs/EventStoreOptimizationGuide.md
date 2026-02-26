@@ -285,8 +285,8 @@ void testEndToEndWorkflow() {
 
 1. **Virtual Thread Not Supported**
    ```java
-   // Ensure Java 21+ with preview features
-   java --version  // Should show 21+
+   // Ensure Java 25+ with preview features
+   java --version  // Should show 25+
    ```
 
 2. **High Memory Usage**

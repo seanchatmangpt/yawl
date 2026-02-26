@@ -1,8 +1,20 @@
-# YAWL v6.0.0 Documentation Index
+# YAWL v6.0.0-GA Documentation Index
 
-**Version**: 6.0.0 | **Updated**: 2026-02-24 | **Framework**: [Diataxis](https://diataxis.fr/)
+**Version**: 6.0.0-GA | **Updated**: 2026-02-26 | **Framework**: [Diataxis](https://diataxis.fr/)
 
 Documentation is organized into four Diataxis quadrants. For the full cross-quadrant map, see [diataxis/INDEX.md](diataxis/INDEX.md).
+
+---
+
+## What's New in v6.0.0-GA
+
+| Guide | Description |
+|-------|-------------|
+| [GA_RELEASE_GUIDE.md](GA_RELEASE_GUIDE.md) | Key features, breaking changes, upgrade path |
+| [RL_USER_GUIDE.md](RL_USER_GUIDE.md) | GRPO workflow generation from natural language |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Docker, Kubernetes, production deployment |
+| [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | v5→v6 migration matrix and procedures |
+| [QUICK-START.md](QUICK-START.md) | 5-minute setup (updated for Java 25) |
 
 ---
 

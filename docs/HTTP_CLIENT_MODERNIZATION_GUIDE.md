@@ -29,10 +29,10 @@ This document describes the migration from blocking HTTP clients to modern virtu
 ## Migration Path
 
 ### Step 1: Update Java Version
-Ensure Java 21+ is configured in `pom.xml`:
+Ensure Java 25+ is configured in `pom.xml`:
 ```xml
 <properties>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>25</maven.compiler.release>
     <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+UseThreadPriorityQueue</argLine>
 </properties>
 ```
@@ -271,7 +271,7 @@ public Map<String, CircuitBreakerStatus> getCircuitBreakerStatus() {
 1. **Virtual Thread JVM Flags**
    ```bash
    # Error: UnsupportedClassVersionError
-   # Fix: Ensure Java 21+ and proper JVM flags
+   # Fix: Ensure Java 25+ and proper JVM flags
    ```
 
 2. **Circuit Breaker Stuck Open**

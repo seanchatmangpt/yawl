@@ -1,10 +1,10 @@
-# YAWL v6.0.0 Quick Start Guide
+# YAWL v6.0.0-GA Quick Start Guide
 **5-Minute Setup for New Developers**
 
 ## Prerequisites
 
 Ensure you have:
-- **Java 21+** (OpenJDK recommended)
+- **Java 25+** (OpenJDK or GraalVM recommended)
 - **Maven 3.9.11+**
 - **Git**
 - **4GB+ RAM** (8GB recommended)
@@ -21,7 +21,7 @@ cd yawl
 ### 2. Verify Environment
 ```bash
 # Check Java
-java -version          # Should show OpenJDK 21+
+java -version          # Should show OpenJDK 25+
 
 # Check Maven
 mvn -version           # Should show 3.9.11+
@@ -158,10 +158,10 @@ mvn clean install   # Downloads all dependencies
 ```
 
 ### "Java version mismatch"
-**Solution**: Verify Java 21 is default
+**Solution**: Verify Java 25 is default
 ```bash
-java -version      # Should show 21.x.x
-javac -version     # Should show 21.x.x
+java -version      # Should show 25.x.x
+javac -version     # Should show 25.x.x
 ```
 
 ### "Tests timeout"
@@ -194,6 +194,31 @@ All commits must follow HYPER_STANDARDS:
 - Return empty strings or null values as placeholders
 - Skip error handling
 - Lie about what your code does
+
+## Java 25 Features You'll Use
+
+YAWL v6.0.0-GA leverages modern Java 25 features:
+
+| Feature | Benefit | Where Used |
+|---------|---------|------------|
+| **Virtual Threads** | 1000× concurrency | GRPO candidate sampling |
+| **Structured Concurrency** | Clean parallel code | Parallel task execution |
+| **Scoped Values** | Thread-safe context | Engine state management |
+| **Records** | Immutable data | PowlModel, RlConfig, etc. |
+| **Sealed Classes** | Type-safe hierarchies | PowlNode hierarchy |
+| **Pattern Matching** | Exhaustive switches | Node traversal |
+
+### Virtual Threads Example
+
+```java
+// YAWL uses virtual threads for concurrent LLM calls
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    // K candidates sampled in parallel
+    IntStream.range(0, k)
+        .mapToObj(i -> executor.submit(() -> sampleOne(description)))
+        .toList();
+}
+```
 
 ## Getting Help
 

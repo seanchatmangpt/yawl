@@ -1,7 +1,7 @@
 # YAWL Deployment Guide
 
-**Version:** 6.0.0
-**Last Updated:** 2026-02-14
+**Version:** 6.0.0-GA
+**Last Updated:** 2026-02-26
 
 ---
 
@@ -100,41 +100,60 @@ kubectl create secret generic yawl-admin-credentials \
 global:
   environment: production
   imageRegistry: your-registry.io/yawl
-  imageTag: "5.2.0"
+  imageTag: "6.0.0-GA"
 
 engine:
   replicaCount: 2
   resources:
     requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      cpu: 2000m
+      cpu: 1000m
       memory: 4Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+    # Java 25 Virtual Threads Configuration
+    livenessProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readinessProbe:
+      initialDelaySeconds: 20
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 2
 
 resourceService:
   replicaCount: 2
   resources:
     requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
-      cpu: 2000m
+      cpu: 1000m
       memory: 4Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+    # Java 25 Virtual Threads Configuration
 
 workletService:
   replicaCount: 1
   resources:
     requests:
-      cpu: 250m
-      memory: 512Mi
-    limits:
-      cpu: 1000m
+      cpu: 500m
       memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
 
 monitorService:
   enabled: true
   replicaCount: 1
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 3000m
+      memory: 6Gi
 
 schedulingService:
   enabled: true
@@ -727,7 +746,7 @@ helm search repo yawl --versions
 helm upgrade yawl yawl/yawl-stack \
   --namespace yawl \
   --values values.yaml \
-  --version 5.3.0
+  --version 6.0.0-GA
 ```
 
 ### 9.3 Verify Upgrade
@@ -738,6 +757,7 @@ kubectl rollout status deployment/yawl-engine -n yawl
 
 # Verify version
 curl https://yawl.yourdomain.com/ib/api/version
+# Expected: 6.0.0-GA
 ```
 
 ---
