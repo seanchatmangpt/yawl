@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772092009213249078,
+  "timestamp_rfc": "2026-02-26T07:46:49.213249078Z",
+  "session_id": "cd13eb70-dc14-45da-b6f5-4ba9f9900470",
+  "file_path": "/home/user/yawl/yawl-ggen/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "cb5585f630ab6289ac17112d33e11d8b928a46a6bd92a6a4baa9d371a1e672fc",
+  "delta_hash": "d90be2bc64ef8dbfeb1026ae3bf2f1686a795c5fd42e3b084023718fa7801b2e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "<!-- Servlet API",
+        "change": "Added"
+      }
+    }
+  ]
+}
