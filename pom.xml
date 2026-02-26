@@ -86,7 +86,7 @@
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
         <!-- Enable virtual threads and compact object headers -->
-        <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC -XX:+UseThreadPriorityQueue</argLine>
+        <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC</argLine>
 
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
         <spring-boot.version>3.5.11</spring-boot.version>
