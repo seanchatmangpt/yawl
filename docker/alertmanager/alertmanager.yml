@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Beta - AlertManager Configuration
+# YAWL v6.0.0-GA - AlertManager Configuration
 # =============================================================================
 # Alert routing, grouping, and notification configuration for YAWL.
 # Supports: Slack, Email, PagerDuty, OpsGenie, Webhooks

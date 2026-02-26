@@ -81,8 +81,9 @@ ALL_MODULES=(
 
 # In remote/CI environments, skip modules with heavy ML dependencies (>50MB JARs)
 # that cannot be downloaded through the egress proxy (onnxruntime = 89MB).
+# yawl-mcp-a2a-app depends on yawl-pi, so must also be excluded transitively.
 if [[ "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
-    ALL_MODULES=($(printf '%s\n' "${ALL_MODULES[@]}" | grep -v '^yawl-pi$'))
+    ALL_MODULES=($(printf '%s\n' "${ALL_MODULES[@]}" | grep -v '^yawl-pi$' | grep -v '^yawl-mcp-a2a-app$'))
 fi
 
 detect_changed_modules() {

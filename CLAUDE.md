@@ -32,16 +32,6 @@ Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE
 Blocked: {TODO,FIXME,mock,stub,fake,empty_return,silent_fallback,lie} — hyper-validate.sh checks 14 patterns on Write|Edit → exit 2.
 Fix violations for real. Never work around hooks. Hard blocks only: harm|deception|illegal|minors.
 
-## ι INTELLIGENCE
-
-Typed deltas (no line-diffs): δ(A, B) = Vec<Delta> with semantic units {declaration, rule, criterion, dependency, behavior, quad}.
-Receipt chain: blake3(canonical_json(δ)) → receipts/intelligence.jsonl; auditable, reproducible.
-Watermark protocol: fetch() respects ttl; skip if content_hash unchanged. Prevents thrashing.
-Binaries: yawl-jira (hook orchestrator <50ms) | yawl-scout (async fetcher, non-blocking).
-Injection: SessionStart (ticket context) | UserPromptSubmit (relevant delta slice) | PreToolUse | PostToolUse (record correction).
-Tickets: TOML-based (.claude/jira/*.toml), no external DB. Acceptance criteria auto-satisfied on declaration match.
-¬line_diff ∧ ¬unified_patch; all artifacts parsed into semantic units before diff. DeclKind ∈ {Function, Type, Constant, Import, Module, Field}.
-
 ## Q INVARIANTS
 
 real_impl ∨ throw UnsupportedOperationException. No third option. ¬mock ∧ ¬stub ∧ ¬silent_fallback ∧ ¬lie.
@@ -80,36 +70,6 @@ scripts/**|*.sh → shell-conventions.md | yawl/authentication/** → crypto-and
 Unknown module → modules.json | >3 files for 1 answer → observatory.sh | context >70% → checkpoint + batch remaining.
 Team >5 teammates → reduce scope | teammates never message → use subagents | lead DX fails after teammates green → identify + reassign.
 Tempted "for now" → throw UnsupportedOperationException. Unsure emit vs ⊗ → ask user.
-
-## φ WORKFLOW ORCHESTRATION
-
-plan(task) iff |steps(task)| ≥ 3 ∨ arch(task); sideways(task) → stop ∧ replan; ¬push-through.
-σ(task) = offload(research ∪ explore ∪ parallel_analysis); one_task_per_σ; complex → throw_compute_at(σ).
-∀correction c: lessons.md ← pattern(c) ∧ rule(¬repeat(c)); ruthless_iterate until error_rate → 0; review(lessons) at session_start.
-done(task) ⟺ proved(works(task)) ∧ diff(main, changes) ∧ staff_engineer_approves ∧ tests_green.
-∀non-trivial t: elegant?(t) before present(t); hacky?(t) → rewrite(t, knowing_all); skip iff obvious_fix(t).
-bug → fix ∧ ¬ask ∧ ¬hand-hold; point(logs ∪ errors ∪ failing_tests) → resolve; zero_context_switch_from_user.
-
-## π TASK LIFECYCLE
-
-plan → verify_plan → implement → track(progress) → explain(Δ) → document(results) → capture(lessons).
-tasks/todo.md ← checkable_items; tasks/lessons.md ← corrections; review_section → todo.md on complete.
-
-## κ CORE PRINCIPLES
-
-simplicity_first: |Δcode| → min; impact(change) ⊆ necessary. ¬lazy: root_cause only; ¬temp_fix; senior_dev_standard.
-minimal_impact: change ∩ unnecessary = ∅; ¬introduce_bugs.
-
-## ι INTELLIGENCE
-
-scout(session) = fetch(specs ∪ deps ∪ changelogs, ttl=watermarks.json) → live-intelligence.md; async at SessionStart.
-inject(prompt) = select(live-intelligence.md ∪ deltas/, keywords(prompt)) → UserPromptSubmit stdout; sync.
-δ(A, B) = typed_delta(A, B) → Vec<Delta>; semantic_unit(artifact) ∈ {declaration, rule, criterion, dependency, behavior, quad}.
-¬line_diff ∧ ¬unified_patch; diff is a typed fact transition, not a text mutation.
-receipt(δ) = blake3(canonical_json(δ)) → receipts/{session}.receipt.json; ∀write w: receipt(δ(w)) committed.
-watermark(fetch) = blake3(response) ∧ timestamp; skip_fetch iff now < fetched_at + ttl ∧ hash_unchanged.
-Binaries: .claude/hooks/yawl-jira (ticket+delta) | .claude/hooks/yawl-scout (live intelligence).
-Source: yawl-hooks/ Cargo workspace | Context: .claude/context/ | Tickets: .claude/jira/tickets/*.toml.
 
 ## SKILLS + REFS
 
