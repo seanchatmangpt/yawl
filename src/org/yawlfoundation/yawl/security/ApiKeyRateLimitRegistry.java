@@ -277,7 +277,7 @@ public final class ApiKeyRateLimitRegistry {
      * @return count of rate limiters
      */
     public int getLimiterCount() {
-        return configs.size();
+        return registry.getAllRateLimiters().size();
     }
 
     /**

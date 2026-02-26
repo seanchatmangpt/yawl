@@ -39,7 +39,7 @@ COPY --from=builder /build/yawl-integration/target/dependency/*.jar /app/libs/ 2
 COPY --from=builder /build/yawl-mcp-a2a-app/target/dependency/*.jar /app/libs/ 2>/dev/null || true
 
 # Copy the MCP-A2A app JAR
-COPY --from=builder /build/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar /app/libs/
+COPY --from=builder /build/yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar /app/libs/
 
 # Environment variables
 ENV JAVA_OPTS="-XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75.0"

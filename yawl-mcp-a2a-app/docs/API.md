@@ -58,7 +58,7 @@ Initialize the MCP session.
     },
     "serverInfo": {
       "name": "yawl-mcp-server",
-      "version": "6.0.0-Alpha"
+      "version": "6.0.0-Beta"
     }
   }
 }

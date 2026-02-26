@@ -1,0 +1,54 @@
+The following files have been resolved:
+   none
+
+The following files have NOT been resolved:
+   org.apache.jena:jena-core:jar:4.8.0:compile -- module org.apache.jena.core [auto]
+   org.apache.jena:jena-base:jar:4.8.0:compile -- module org.apache.jena.base [auto]
+   org.apache.jena:jena-shaded-guava:jar:4.8.0:compile -- module org.apache.jena.ext.com.google [auto]
+   org.apache.commons:commons-csv:jar:1.10.0:compile -- module org.apache.commons.csv [auto]
+   commons-io:commons-io:jar:2.21.0:compile -- module org.apache.commons.io
+   commons-codec:commons-codec:jar:1.21.0:compile -- module org.apache.commons.codec
+   org.apache.commons:commons-compress:jar:1.23.0:compile -- module org.apache.commons.compress [auto]
+   com.github.andrewoma.dexx:collection:jar:0.7:compile -- module collection (auto)
+   org.apache.jena:jena-iri:jar:4.8.0:compile -- module org.apache.jena.iri [auto]
+   commons-cli:commons-cli:jar:1.5.0:compile -- module commons.cli (auto)
+   org.apache.jena:jena-arq:jar:4.8.0:compile -- module org.apache.jena.arq [auto]
+   com.github.jsonld-java:jsonld-java:jar:0.13.4:compile -- module jsonld.java (auto)
+   org.apache.httpcomponents:httpclient-cache:jar:4.5.14:compile -- module org.apache.httpcomponents.httpclient.cache [auto]
+   org.apache.httpcomponents:httpclient:jar:4.5.14:compile -- module org.apache.httpcomponents.httpclient [auto]
+   org.apache.httpcomponents:httpcore:jar:4.4.16:compile -- module org.apache.httpcomponents.httpcore [auto]
+   org.slf4j:jcl-over-slf4j:jar:1.7.36:compile -- module org.apache.commons.logging [auto]
+   com.fasterxml.jackson.core:jackson-core:jar:2.19.4:compile -- module com.fasterxml.jackson.core
+   com.fasterxml.jackson.core:jackson-databind:jar:2.19.4:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.19.4:compile -- module com.fasterxml.jackson.annotation
+   com.apicatalog:titanium-json-ld:jar:1.3.2:compile -- module titanium.json.ld (auto)
+   org.glassfish:jakarta.json:jar:2.0.1:compile -- module jakarta.json
+   com.google.protobuf:protobuf-java:jar:3.22.2:compile -- module protobuf.java (auto)
+   org.apache.thrift:libthrift:jar:0.18.1:compile -- module org.apache.thrift [auto]
+   org.apache.commons:commons-lang3:jar:3.20.0:compile -- module org.apache.commons.lang3
+   org.apache.jena:jena-shacl:jar:4.8.0:compile -- module org.apache.jena.shacl [auto]
+   com.google.code.gson:gson:jar:2.13.2:compile -- module com.google.gson
+   com.google.errorprone:error_prone_annotations:jar:2.41.0:compile -- module com.google.errorprone.annotations
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   javax.servlet:javax.servlet-api:jar:4.0.1:provided -- module javax.servlet.api (auto)
+   org.junit.jupiter:junit-jupiter-api:jar:5.12.0:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:1.12.0:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-engine:jar:5.12.0:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:1.12.0:test -- module org.junit.platform.engine
+   org.jspecify:jspecify:jar:1.0.0:compile -- module org.jspecify
+   io.opentelemetry:opentelemetry-api:jar:1.59.0:compile -- module io.opentelemetry.api [auto]
+   io.opentelemetry:opentelemetry-context:jar:1.59.0:compile -- module io.opentelemetry.context [auto]
+   io.opentelemetry:opentelemetry-common:jar:1.59.0:compile -- module io.opentelemetry.common [auto]
+   io.github.resilience4j:resilience4j-circuitbreaker:jar:2.3.0:compile -- module io.github.resilience4j.circuitbreaker [auto]
+   io.github.resilience4j:resilience4j-core:jar:2.3.0:compile -- module io.github.resilience4j.core [auto]
+   org.jetbrains.kotlin:kotlin-stdlib-jdk8:jar:1.9.0:compile -- module kotlin.stdlib.jdk8
+   org.jetbrains.kotlin:kotlin-stdlib:jar:1.9.0:compile -- module kotlin.stdlib
+   org.jetbrains.kotlin:kotlin-stdlib-common:jar:1.9.0:compile -- module kotlin.stdlib.common (auto)
+   org.jetbrains:annotations:jar:13.0:compile -- module annotations (auto)
+   org.jetbrains.kotlin:kotlin-stdlib-jdk7:jar:1.9.0:compile -- module kotlin.stdlib.jdk7
+   io.github.resilience4j:resilience4j-retry:jar:2.3.0:compile -- module io.github.resilience4j.retry [auto]
+   io.github.resilience4j:resilience4j-bulkhead:jar:2.3.0:compile -- module io.github.resilience4j.bulkhead [auto]
+   io.github.resilience4j:resilience4j-ratelimiter:jar:2.3.0:compile -- module io.github.resilience4j.ratelimiter [auto]
+

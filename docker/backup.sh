@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# YAWL v6.0.0-Alpha Database and Data Backup Script
+# YAWL v6.0.0-Beta Database and Data Backup Script
 # =============================================================================
 # Production-ready backup solution for YAWL workflow engine.
 # Supports: PostgreSQL, MySQL, H2 databases, and file-based data.

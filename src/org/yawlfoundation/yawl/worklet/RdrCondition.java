@@ -26,7 +26,7 @@ import java.util.Objects;
  * </ul>
  *
  * @author YAWL Foundation
- * @version 6.0.0-Alpha
+ * @version 6.0.0-Beta
  */
 public class RdrCondition {
 

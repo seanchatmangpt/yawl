@@ -1,4 +1,0 @@
-pm4py>=2.7.0
-mcp[cli]>=1.0.0
-a2a-sdk[http-server]>=0.3.0
-uvicorn[standard]>=0.30.0

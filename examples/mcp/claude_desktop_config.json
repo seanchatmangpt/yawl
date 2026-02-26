@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "yawl": {
+      "command": "java",
+      "args": [
+        "-cp",
+        "/path/to/yawl/target/yawl-6.0.0-Beta.jar",
+        "org.yawlfoundation.yawl.integration.mcp.YawlMcpServer"
+      ],
+      "env": {
+        "YAWL_ENGINE_URL": "http://localhost:8080/yawl",
+        "YAWL_USERNAME": "admin",
+        "YAWL_PASSWORD": "YAWL"
+      }
+    }
+  }
+}

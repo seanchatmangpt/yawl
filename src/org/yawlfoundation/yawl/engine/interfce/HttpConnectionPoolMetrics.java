@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.engine.interfce;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -77,7 +78,7 @@ public final class HttpConnectionPoolMetrics {
     private static final Logger _logger = LogManager.getLogger(HttpConnectionPoolMetrics.class);
 
     private static volatile HttpConnectionPoolMetrics _instance;
-    private static final Object _instanceLock = new Object();
+    private static final ReentrantLock _lock = new ReentrantLock();
 
     // ------------------------------------------------------------------ counters
 
@@ -110,10 +111,13 @@ public final class HttpConnectionPoolMetrics {
      */
     public static HttpConnectionPoolMetrics getInstance() {
         if (_instance == null) {
-            synchronized (_instanceLock) {
+            _lock.lock();
+            try {
                 if (_instance == null) {
                     _instance = new HttpConnectionPoolMetrics();
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return _instance;

@@ -7,12 +7,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
  * Comprehensive tests for YCaseNbrStore class using Chicago TDD methodology.
  * Tests real YCaseNbrStore instances with various scenarios.
+ *
+ * Must run SAME_THREAD because YCaseNbrStore is a singleton whose AtomicInteger
+ * state leaks between tests when tests run concurrently.
  */
+@Execution(ExecutionMode.SAME_THREAD)
 @DisplayName("YCaseNbrStore Tests")
 @Tag("unit")
 class YCaseNbrStoreTest {
@@ -259,9 +265,8 @@ class YCaseNbrStoreTest {
         void getNextCaseNumberIncrementsCurrentValue() throws YPersistenceException {
             int initialCaseNbr = caseNbrStore.getCaseNbr();
 
-            // Create a real YPersistenceManager instance
-            YPersistenceManager realPmgr = new RealYPersistenceManager();
-            String nextCaseNbr = caseNbrStore.getNextCaseNbr(realPmgr);
+            // Pass null since YCaseNbrStore.getNextCaseNbr works with isPersisting == false
+            String nextCaseNbr = caseNbrStore.getNextCaseNbr(null);
 
             assertEquals(initialCaseNbr + 1, caseNbrStore.getCaseNbr(),
                         "Case number should be incremented");
@@ -274,10 +279,9 @@ class YCaseNbrStoreTest {
         @DisplayName("Get next case number multiple times increments correctly")
         void getNextCaseNumberMultipleTimesIncrementsCorrectly() throws YPersistenceException {
             int initialCaseNbr = caseNbrStore.getCaseNbr();
-            YPersistenceManager realPmgr = new RealYPersistenceManager();
 
             for (int i = 1; i <= 5; i++) {
-                String nextCaseNbr = caseNbrStore.getNextCaseNbr(realPmgr);
+                String nextCaseNbr = caseNbrStore.getNextCaseNbr(null);
                 assertEquals(initialCaseNbr + i, caseNbrStore.getCaseNbr(),
                            "Case number should be incremented after " + i + " calls");
                 assertEquals(String.valueOf(initialCaseNbr + i), nextCaseNbr,
@@ -289,9 +293,8 @@ class YCaseNbrStoreTest {
         @DisplayName("Get next case number with zero initial value")
         void getNextCaseNumberWithZeroInitialValue() throws YPersistenceException {
             caseNbrStore.setCaseNbr(0);
-            YPersistenceManager realPmgr = new RealYPersistenceManager();
 
-            String nextCaseNbr = caseNbrStore.getNextCaseNbr(realPmgr);
+            String nextCaseNbr = caseNbrStore.getNextCaseNbr(null);
 
             assertEquals(1, caseNbrStore.getCaseNbr(), "Case number should be incremented from 0");
             assertEquals("1", nextCaseNbr, "Next case number should be '1'");
@@ -301,9 +304,8 @@ class YCaseNbrStoreTest {
         @DisplayName("Get next case number with negative initial value")
         void getNextCaseNumberWithNegativeInitialValue() throws YPersistenceException {
             caseNbrStore.setCaseNbr(-100);
-            YPersistenceManager realPmgr = new RealYPersistenceManager();
 
-            String nextCaseNbr = caseNbrStore.getNextCaseNbr(realPmgr);
+            String nextCaseNbr = caseNbrStore.getNextCaseNbr(null);
 
             assertEquals(-99, caseNbrStore.getCaseNbr(), "Case number should be incremented from -100");
             assertEquals("-99", nextCaseNbr, "Next case number should be '-99'");
@@ -314,9 +316,8 @@ class YCaseNbrStoreTest {
         void getNextCaseNumberReturnsStringRepresentation() throws YPersistenceException {
             int initialCaseNbr = 1234;
             caseNbrStore.setCaseNbr(initialCaseNbr);
-            YPersistenceManager realPmgr = new RealYPersistenceManager();
 
-            String nextCaseNbr = caseNbrStore.getNextCaseNbr(realPmgr);
+            String nextCaseNbr = caseNbrStore.getNextCaseNbr(null);
 
             assertTrue(nextCaseNbr instanceof String, "Next case number should be string");
             assertEquals(String.valueOf(initialCaseNbr + 1), nextCaseNbr,
@@ -395,31 +396,4 @@ class YCaseNbrStoreTest {
         }
     }
 
-    // =========================================================================
-    // Real Implementation or Exception
-    // =========================================================================
-
-    /**
-     * Real YPersistenceManager implementation for testing purposes.
-     * This provides a working implementation required for getNextCaseNbr.
-     */
-    private static class RealYPersistenceManager {
-        /**
-         * Load case number from persistence layer.
-         * This mimics real persistence behavior.
-         */
-        public int loadLastCaseNbr() throws YPersistenceException {
-            // Return the current case number from YCaseNbrStore to simulate persistence
-            return caseNbrStore.getCaseNbr();
-        }
-
-        /**
-         * Save case number to persistence layer.
-         * This mimics real persistence behavior.
-         */
-        public void saveLastCaseNbr(int caseNbr) throws YPersistenceException {
-            // Update the YCaseNbrStore to simulate persistence
-            caseNbrStore.setCaseNbr(caseNbr);
-        }
-    }
 }

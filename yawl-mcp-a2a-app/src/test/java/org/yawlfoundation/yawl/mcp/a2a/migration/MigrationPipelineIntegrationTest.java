@@ -101,7 +101,8 @@ class MigrationPipelineIntegrationTest {
                     return String.format("Case %s failed at task %s: %s", caseId, taskId, reason);
                 }
 
-                private void processCase(String caseId) {}
+                private void processCase(String caseId) {
+                }
                 interface YTask { void fire(); }
                 interface YCondition { void mark(); }
             }

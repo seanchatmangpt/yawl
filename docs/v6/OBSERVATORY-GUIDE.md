@@ -439,7 +439,7 @@ graph TD
     classDef fullshared fill:#e53e3e,stroke:#c53030,color:#fff
     classDef pkgscoped fill:#3182ce,stroke:#2b6cb0,color:#fff
 
-    PARENT[yawl-parent<br/>6.0.0-Alpha]:::parent
+    PARENT[yawl-parent<br/>6.0.0-Beta]:::parent
 
     yawl_engine[yawl-engine]:::fullshared
     yawl_elements[yawl-elements]:::fullshared

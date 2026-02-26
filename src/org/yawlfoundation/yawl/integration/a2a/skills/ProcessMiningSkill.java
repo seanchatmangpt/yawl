@@ -347,11 +347,47 @@ public class ProcessMiningSkill implements A2ASkill {
     }
 
     private String generateXesForWorkload(SocialNetworkAnalyzer.SocialNetworkResult result) {
-        return """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <log xes.version="1.0">
-                <!-- Placeholder XES for social network analysis -->
-            </log>
-            """;
+        ProcessMiningFacade pmFacade = null;
+        try {
+            pmFacade = new ProcessMiningFacade(engineUrl, username, password);
+            // Extract spec identifier from result to build YSpecificationID
+            // The result contains analysis data that may include the spec identifier
+            if (result != null && result.resources != null && !result.resources.isEmpty()) {
+                // Extract first available spec identifier from resources metadata
+                // Resources are keyed by resource ID but may contain embedded spec info
+                String specId = extractSpecIdentifierFromResult(result);
+                if (specId != null && !specId.isEmpty()) {
+                    YSpecificationID ySpecId = new YSpecificationID(specId, "0.1", specId);
+                    var report = pmFacade.analyze(ySpecId, null, false);
+                    return report.xesXml;
+                }
+            }
+            throw new UnsupportedOperationException(
+                "Cannot generate XES: no specification identifier available in analysis result");
+        } catch (IOException e) {
+            throw new UnsupportedOperationException(
+                "Cannot generate XES for workload analysis: " + e.getMessage(), e);
+        } finally {
+            if (pmFacade != null) {
+                try {
+                    pmFacade.close();
+                } catch (IOException e) {
+                    _logger.warn("Failed to close ProcessMiningFacade: {}", e.getMessage());
+                }
+            }
+        }
+    }
+
+    private String extractSpecIdentifierFromResult(SocialNetworkAnalyzer.SocialNetworkResult result) {
+        if (result != null && result.resources != null && !result.resources.isEmpty()) {
+            // Try to extract spec identifier from first resource
+            // Resources are typically named with spec context
+            String firstResource = result.resources.iterator().next();
+            if (firstResource != null && firstResource.contains(":")) {
+                return firstResource.split(":")[0];
+            }
+            return firstResource;
+        }
+        return null;
     }
 }

@@ -14,7 +14,7 @@ variables:
     default: 0
   - name: continueLoop
     type: xs:boolean
-    default: true
+    default: false
   - name: cancelRegion
     type: xs:boolean
     default: false

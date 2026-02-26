@@ -1,6 +1,6 @@
 # YAWL Docker Configuration
 
-This directory contains Docker configurations for YAWL v6.0.0-Alpha.
+This directory contains Docker configurations for YAWL v6.0.0-Beta.
 
 ## Quick Start
 

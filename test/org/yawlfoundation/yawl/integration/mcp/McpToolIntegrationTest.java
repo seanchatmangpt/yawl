@@ -135,7 +135,7 @@ class McpToolIntegrationTest {
 
         // Create all tool specifications
         if (sessionHandle != null) {
-            tools = YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle);
+            tools = YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle, null);
         } else {
             tools = createLocalToolSpecifications();
         }

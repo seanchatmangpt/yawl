@@ -96,7 +96,11 @@ public class YInternalCondition extends YNetElement implements YConditionInterfa
      */
     public YIdentifier removeOne(YPersistenceManager pmgr) throws YPersistenceException {
         YIdentifier id = getIdentifiers().get(0);
-        _bag.remove(pmgr, id, 1);
+        try {
+            _bag.remove(pmgr, id, 1);
+        } catch (YStateException e) {
+            throw new RuntimeException(e); // Should not happen: id was just retrieved from bag
+        }
         return id;
     }
 
@@ -106,7 +110,11 @@ public class YInternalCondition extends YNetElement implements YConditionInterfa
      * @param identifier
      */
     public void removeOne(YPersistenceManager pmgr, YIdentifier identifier) throws YPersistenceException {
-        _bag.remove(pmgr, identifier, 1);
+        try {
+            _bag.remove(pmgr, identifier, 1);
+        } catch (YStateException e) {
+            throw new RuntimeException(e); // Should not happen: caller must ensure identifier is in bag
+        }
     }
 
     /**
@@ -125,7 +133,14 @@ public class YInternalCondition extends YNetElement implements YConditionInterfa
      * @param identifier
      */
     public void removeAll(YPersistenceManager pmgr, YIdentifier identifier) throws YPersistenceException {
-        _bag.remove(pmgr, identifier, _bag.getAmount(identifier));
+        int amount = _bag.getAmount(identifier);
+        if (amount > 0) {
+            try {
+                _bag.remove(pmgr, identifier, amount);
+            } catch (YStateException e) {
+                throw new RuntimeException(e); // Should not happen: amount was just retrieved
+            }
+        }
     }
 
     public void removeAll(YPersistenceManager pmgr) throws YPersistenceException {

@@ -155,7 +155,7 @@ mvn clean package -DskipTests=false
 **Note**: The demo requires Java 21+ with preview features enabled:
 ```bash
 # Run with Java 25 and preview features
-java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --help
+java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --help
 ```
 
 ### Run the Demo
@@ -163,7 +163,7 @@ java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.
 #### 1. Run All Patterns
 ```bash
 # Run all patterns with console output
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar
 
 # Or with Maven
 mvn exec:java -pl yawl-mcp-a2a-app -Dexec.mainClass="org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunner"
@@ -172,31 +172,31 @@ mvn exec:java -pl yawl-mcp-a2a-app -Dexec.mainClass="org.yawlfoundation.yawl.mcp
 #### 2. Run Specific Patterns
 ```bash
 # Run specific pattern IDs
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --patterns WCP-1,WCP-2,WCP-3
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --patterns WCP-1,WCP-2,WCP-3
 
 # Run with JSON output
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --patterns WCP-1 --format json
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --patterns WCP-1 --format json
 ```
 
 #### 3. Run by Category
 ```bash
 # Run all basic patterns
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --categories BASIC
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --categories BASIC
 
 # Run multiple categories
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --categories BASIC,BRANCHING
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --categories BASIC,BRANCHING
 ```
 
 #### 4. Advanced Options
 ```bash
 # HTML report with commentary
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --format html --commentary --output patterns-report
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --format html --commentary --output patterns-report
 
 # Fast execution (60s timeout, sequential)
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --timeout 60 --no-parallel
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --timeout 60 --no-parallel
 
 # Include token analysis
-java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --token-report
+java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --token-report
 ```
 
 ## Example Output
@@ -229,13 +229,13 @@ Total duration: 135ms
 
 ```bash
 # Run a quick demo with basic patterns
-java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --patterns WCP-1,WCP-2,WCP-3 --timeout 10
+java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --patterns WCP-1,WCP-2,WCP-3 --timeout 10
 
 # Generate HTML report for all basic patterns
-java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --categories BASIC --format html --output basic-patterns-report
+java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --categories BASIC --format html --output basic-patterns-report
 
 # Run with commentary and detailed output
-java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --patterns WCP-1 --commentary --with-tracing
+java --enable-preview -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --patterns WCP-1 --commentary --with-tracing
 ```
 
 ### JSON Output
@@ -531,16 +531,16 @@ tasks:
 1. **Out of Memory**
    ```bash
    # Increase JVM memory
-   java -Xmx2g -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar
+   java -Xmx2g -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar
    ```
 
 2. **Pattern Not Found**
    ```bash
    # Get help with pattern IDs
-   java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --help
+   java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --help
 
    # Check available patterns
-   java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar --categories ALL
+   java -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar --categories ALL
    ```
 
 3. **Build Issues**
@@ -553,7 +553,7 @@ tasks:
 ### Debug Mode
 ```bash
 # Enable verbose logging
-java -Dlogging.level=DEBUG -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Alpha.jar
+java -Dlogging.level=DEBUG -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-Beta.jar
 ```
 
 ## References
@@ -566,4 +566,4 @@ java -Dlogging.level=DEBUG -jar yawl-mcp-a2a-app/target/yawl-mcp-a2a-app-6.0.0-A
 
 **Document Version**: 1.0
 **Last Updated**: 2026-02-22
-**YAWL Version**: 6.0.0-Alpha
+**YAWL Version**: 6.0.0-Beta

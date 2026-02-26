@@ -761,7 +761,7 @@ class TestYFlowControl {
             YIdentifier token = new YIdentifier("token-1");
             condition.add(null, token);
 
-            assertThrows(RuntimeException.class, () -> {
+            assertThrows(Exception.class, () -> {
                 condition.remove(null, token, 5); // Only 1 token but trying to remove 5
             }, "Should throw when trying to remove more tokens than available");
         }

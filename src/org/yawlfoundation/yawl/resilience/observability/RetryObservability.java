@@ -36,6 +36,7 @@ import org.yawlfoundation.yawl.engine.observability.YAWLTelemetry;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * OpenTelemetry-based observability for retry operations across YAWL components.
@@ -114,6 +115,7 @@ public final class RetryObservability {
     private static final Logger LOGGER = LoggerFactory.getLogger(RetryObservability.class);
 
     private static volatile RetryObservability instance;
+    private static final ReentrantLock _lock = new ReentrantLock();
 
     // Metric names
     private static final String METRIC_RETRY_ATTEMPTS = "yawl_retry_attempts_total";
@@ -189,10 +191,13 @@ public final class RetryObservability {
      */
     public static RetryObservability getInstance() {
         if (instance == null) {
-            synchronized (RetryObservability.class) {
+            _lock.lock();
+            try {
                 if (instance == null) {
                     instance = new RetryObservability();
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return instance;

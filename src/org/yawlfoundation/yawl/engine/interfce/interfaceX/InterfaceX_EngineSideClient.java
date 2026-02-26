@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -124,6 +125,9 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
     // Dead letter queue instance (initialized lazily)
     private InterfaceXDeadLetterQueue deadLetterQueue;
 
+    // ReentrantLock for virtual thread safety (replaces synchronized blocks)
+    private final ReentrantLock _lock = new ReentrantLock();
+
     /**
      * Creates a new InterfaceX_EngineSideClient with the specified observer URI.
      *
@@ -212,7 +216,8 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
      */
     private InterfaceXMetrics getMetrics() {
         if (metrics == null) {
-            synchronized (this) {
+            _lock.lock();
+            try {
                 if (metrics == null) {
                     if (InterfaceXMetrics.isInitialized()) {
                         metrics = InterfaceXMetrics.getInstance();
@@ -220,6 +225,8 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
                         metrics = InterfaceXMetrics.initialize(null);
                     }
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return metrics;
@@ -232,10 +239,13 @@ public class InterfaceX_EngineSideClient extends Interface_Client implements Exc
      */
     private InterfaceXDeadLetterQueue getDeadLetterQueue() {
         if (deadLetterQueue == null) {
-            synchronized (this) {
+            _lock.lock();
+            try {
                 if (deadLetterQueue == null) {
                     deadLetterQueue = InterfaceXDeadLetterQueue.getInstance();
                 }
+            } finally {
+                _lock.unlock();
             }
         }
         return deadLetterQueue;

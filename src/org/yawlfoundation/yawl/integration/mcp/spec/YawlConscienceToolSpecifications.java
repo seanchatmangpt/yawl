@@ -32,13 +32,14 @@ import java.util.Map;
 /**
  * Agent Conscience Graph tool specifications for YAWL MCP server.
  *
- * <p>Provides 3 tools for agents to record decisions, recall similar decisions,
- * and explain routing behavior via the persistent conscience graph backed by
- * a SPARQL 1.1 RDF store (Oxigraph):</p>
+ * <p>Provides 4 tools for agents to record decisions, recall similar decisions,
+ * explain routing behavior, and generate compliance reports via the persistent
+ * conscience graph backed by a SPARQL 1.1 RDF store (Oxigraph):</p>
  * <ul>
  *   <li>yawl_publish_decision - Record a decision to the conscience graph</li>
  *   <li>yawl_recall_similar_decisions - Query decisions by task type</li>
  *   <li>yawl_explain_routing - Audit agent routing decisions</li>
+ *   <li>yawl_compliance_report - Generate compliance report with decision analytics</li>
  * </ul>
  *
  * <p>All tools return graceful error results if the SPARQL engine is unavailable.
@@ -64,7 +65,7 @@ public final class YawlConscienceToolSpecifications {
     }
 
     /**
-     * Creates all 3 YAWL conscience MCP tool specifications.
+     * Creates all 4 YAWL conscience MCP tool specifications.
      *
      * @return list of all conscience tool specifications for MCP registration
      */
@@ -73,6 +74,7 @@ public final class YawlConscienceToolSpecifications {
         tools.add(createPublishDecisionTool());
         tools.add(createRecallSimilarTool());
         tools.add(createExplainRoutingTool());
+        tools.add(createComplianceReportTool());
         return tools;
     }
 
@@ -281,6 +283,59 @@ public final class YawlConscienceToolSpecifications {
                     return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(
                             "Failed to explain routing: " + e.getMessage()
+                        )),
+                        true, null, null);
+                }
+            });
+    }
+
+    // =========================================================================
+    // Tool 4: yawl_compliance_report
+    // =========================================================================
+
+    private McpServerFeatures.SyncToolSpecification createComplianceReportTool() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("confidenceThreshold", Map.of(
+            "type", "number",
+            "description", "Decisions below this confidence level are flagged for review (default: 0.5)"));
+
+        List<String> required = List.of();
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, required, false, null, Map.of());
+
+        return new McpServerFeatures.SyncToolSpecification(
+            McpSchema.Tool.builder()
+                .name("yawl_compliance_report")
+                .description("Generate a compliance report from the agent conscience graph. " +
+                    "Analyzes decision patterns: frequency by agent, confidence distribution, " +
+                    "and flags low-confidence decisions for audit review.")
+                .inputSchema(schema)
+                .build(),
+            (exchange, args) -> {
+                try {
+                    if (!graph.isAvailable()) {
+                        return new McpSchema.CallToolResult(
+                            List.of(new McpSchema.TextContent(
+                                "Conscience graph unavailable. SPARQL engine is not reachable."
+                            )),
+                            true, null, null);
+                    }
+
+                    Map<String, Object> params = args.arguments();
+                    double threshold = params.containsKey("confidenceThreshold")
+                        ? ((Number) params.get("confidenceThreshold")).doubleValue()
+                        : 0.5;
+
+                    String report = graph.complianceReport(threshold);
+
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(report)),
+                        false, null, null);
+
+                } catch (Exception e) {
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(
+                            "Failed to generate compliance report: " + e.getMessage()
                         )),
                         true, null, null);
                 }

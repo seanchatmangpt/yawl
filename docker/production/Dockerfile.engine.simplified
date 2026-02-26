@@ -102,7 +102,7 @@ set -euo pipefail
 # TODO: Add database connection check here
 
 # Start the YAWL Engine
-echo "Starting YAWL Engine v6.0.0-Alpha..."
+echo "Starting YAWL Engine v6.0.0-Beta..."
 echo "JVM Options: $JAVA_OPTS"
 
 # Run the engine with JVM options

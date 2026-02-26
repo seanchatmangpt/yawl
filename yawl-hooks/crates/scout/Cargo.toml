@@ -1,0 +1,16 @@
+[package]
+name = "scout"
+version = "0.1.0"
+edition = "2021"
+description = "YAWL Intelligence Layer — live intelligence fetcher with watermark protocol"
+
+[dependencies]
+delta       = { path = "../delta" }
+differ      = { path = "../differ" }
+ureq        = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+toml        = { workspace = true }
+chrono      = { workspace = true }
+anyhow      = { workspace = true }
+thiserror   = { workspace = true }

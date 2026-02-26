@@ -7,7 +7,8 @@
 
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>6.0.0-Alpha</version>
+
+    <version>6.0.0</version>
     <packaging>pom</packaging>
 
     <name>YAWL Parent</name>
@@ -43,11 +44,9 @@
         </contributor>
     </contributors>
 
-    <!-- ======================================================================
-         DISTRIBUTION MANAGEMENT
+    <!-- DISTRIBUTION MANAGEMENT
          For deploying releases and snapshots to Maven Central via Sonatype OSSRH.
-         Usage: mvn deploy -P release
-         ====================================================================== -->
+         Usage: mvn deploy -P release -->
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -72,38 +71,35 @@
         <module>yawl-integration</module>
         <module>yawl-monitoring</module>
         <module>yawl-ggen</module>
+        <module>yawl-pi</module>
         <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>
+        <module>yawl-graalpy</module>
     </modules>
 
-    <!-- ======================================================================
-         PROPERTIES - single source of truth for all dependency versions.
-         All child modules inherit these; never redeclare versions in children.
-         ====================================================================== -->
+    <!-- PROPERTIES - single source of truth for all dependency versions.
+         All child modules inherit these; never redeclare versions in children. -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>25</maven.compiler.release>
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
-        <!-- Default value for JaCoCo late-binding argLine; overridden by jacoco:prepare-agent -->
-        <argLine>-XX:+UseCompactObjectHeaders</argLine>
+        <!-- Enable virtual threads and compact object headers -->
+        <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC</argLine>
 
-        <!-- ================================================================ -->
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
-        <!-- ================================================================ -->
-        <spring-boot.version>3.5.10</spring-boot.version>
+        <spring-boot.version>3.5.11</spring-boot.version>
         <jakarta-ee.version>10.0.0</jakarta-ee.version>
         <opentelemetry.version>1.59.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>2.25.0</opentelemetry-instrumentation.version>
+        <grpc.version>1.66.0</grpc.version>
         <resilience4j.version>2.3.0</resilience4j.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <jackson.version>2.19.4</jackson.version>
 
-        <!-- ================================================================ -->
         <!-- Jakarta EE standalone artifacts (not covered by Jakarta EE BOM)   -->
-        <!-- ================================================================ -->
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
         <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
@@ -112,18 +108,17 @@
         <angus.mail.version>2.0.5</angus.mail.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
         <angus.activation.version>2.0.3</angus.activation.version>
+        <kotlin.version>1.9.20</kotlin.version>
         <jakarta.faces.version>4.1.6</jakarta.faces.version>
         <jakarta.cdi.version>4.1.0</jakarta.cdi.version>
         <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
+        <jakarta.validation.version>3.1.1</jakarta.validation.version>
+        <resilience4j.version>2.3.0</resilience4j.version>
 
-        <!-- ================================================================ -->
         <!-- ORM                                                                -->
-        <!-- ================================================================ -->
-        <hibernate.version>6.6.42.Final</hibernate.version>
+        <hibernate.version>6.6.43.Final</hibernate.version>
 
-        <!-- ================================================================ -->
         <!-- Apache Commons                                                     -->
-        <!-- ================================================================ -->
         <commons.lang3.version>3.20.0</commons.lang3.version>
         <commons.io.version>2.21.0</commons.io.version>
         <commons.codec.version>1.21.0</commons.codec.version>
@@ -135,9 +130,7 @@
         <commons.text.version>1.15.0</commons.text.version>
         <commons.beanutils.version>1.11.0</commons.beanutils.version>
 
-        <!-- ================================================================ -->
         <!-- Database drivers                                                   -->
-        <!-- ================================================================ -->
         <h2.version>2.4.240</h2.version>
         <postgresql.version>42.7.10</postgresql.version>
         <mysql.version>9.6.0</mysql.version>
@@ -145,60 +138,47 @@
         <hsqldb.version>2.7.4</hsqldb.version>
         <hikaricp.version>7.0.2</hikaricp.version>
 
-        <!-- ================================================================ -->
         <!-- Logging                                                            -->
-        <!-- ================================================================ -->
         <log4j.version>2.25.3</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <jboss.logging.version>3.6.2.Final</jboss.logging.version>
 
-        <!-- ================================================================ -->
         <!-- JSON / serialisation                                               -->
-        <!-- ================================================================ -->
         <gson.version>2.13.2</gson.version>
         <networknt.json.schema.validator.version>1.5.7</networknt.json.schema.validator.version>
 
-        <!-- ================================================================ -->
         <!-- XML processing                                                     -->
-        <!-- ================================================================ -->
         <jdom.version>2.0.6.1</jdom.version>
         <jaxen.version>1.2.0</jaxen.version>
         <saxon.version>12.9</saxon.version>
         <saaj.api.version>1.4.0</saaj.api.version>
         <saaj.impl.version>3.0.4</saaj.impl.version>
 
-        <!-- ================================================================ -->
         <!-- HTTP clients                                                       -->
-        <!-- ================================================================ -->
         <okhttp.version>5.3.2</okhttp.version>
 
-        <!-- ================================================================ -->
         <!-- MCP / A2A integration SDKs                                        -->
-        <!-- ================================================================ -->
         <mcp.version>1.0.0</mcp.version>
         <a2a.version>1.0.0.Alpha2</a2a.version>
 
-        <!-- ================================================================ -->
         <!-- Security / auth                                                    -->
-        <!-- ================================================================ -->
         <jjwt.version>0.13.0</jjwt.version>
         <microsoft.graph.version>6.62.0</microsoft.graph.version>
         <azure.identity.version>1.18.2</azure.identity.version>
 
-        <!-- ================================================================ -->
         <!-- REST                                                               -->
-        <!-- ================================================================ -->
         <jersey.version>4.0.2</jersey.version>
 
-        <!-- ================================================================ -->
         <!-- Observability / metrics                                            -->
-        <!-- ================================================================ -->
-        <micrometer.version>1.16.3</micrometer.version>
+        <!-- Pinned at 1.15.9: Spring Boot 3.5.x BOM resolves this version;
+             upgrading to 1.16.x requires Spring Boot 3.6.x. Update both together. -->
+        <micrometer.version>1.15.9</micrometer.version>
         <opentelemetry.semconv.version>1.40.0</opentelemetry.semconv.version>
 
-        <!-- ================================================================ -->
+        <!-- GraalVM Polyglot / GraalPy                                         -->
+        <graalvm.version>24.1.2</graalvm.version>
+
         <!-- Misc runtime support                                               -->
-        <!-- ================================================================ -->
         <jspecify.version>1.0.0</jspecify.version>
         <jandex.version>3.5.3</jandex.version>
         <byte.buddy.version>1.18.5</byte.buddy.version>
@@ -208,9 +188,7 @@
         <ant.version>1.10.15</ant.version>
         <simple-java-mail.version>8.12.6</simple-java-mail.version>
 
-        <!-- ================================================================ -->
         <!-- Testing                                                            -->
-        <!-- ================================================================ -->
         <junit.version>4.13.2</junit.version>
         <junit.jupiter.version>5.12.0</junit.jupiter.version>
         <junit.platform.version>1.12.0</junit.platform.version>
@@ -219,9 +197,7 @@
         <xmlunit.version>1.6</xmlunit.version>
         <jmh.version>1.37</jmh.version>
 
-        <!-- ================================================================ -->
         <!-- Build plugins (pinned for reproducibility)                        -->
-        <!-- ================================================================ -->
         <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
         <maven.surefire.plugin.version>3.5.4</maven.surefire.plugin.version>
         <maven.failsafe.plugin.version>3.5.4</maven.failsafe.plugin.version>
@@ -261,19 +237,13 @@
              JUnit 5 parallel execution is controlled by junit-platform.properties. -->
         <surefire.threadCount>4</surefire.threadCount>
 
-        <!-- ================================================================ -->
         <!-- Cryptography (BouncyCastle)                                       -->
-        <!-- ================================================================ -->
-        <bouncycastle.version>1.77</bouncycastle.version>
+        <bouncycastle.version>1.81</bouncycastle.version>
 
-        <!-- ================================================================ -->
         <!-- Static Analysis - Error Prone                                     -->
-        <!-- ================================================================ -->
         <error.prone.version>2.38.0</error.prone.version>
 
-        <!-- ================================================================ -->
         <!-- Static Analysis - NullAway with JSpecify                          -->
-        <!-- ================================================================ -->
         <nullaway.version>0.12.3</nullaway.version>
     </properties>
 
@@ -290,8 +260,7 @@
         </repository>
     </repositories>
 
-    <!-- ======================================================================
-         DEPENDENCY MANAGEMENT
+    <!-- DEPENDENCY MANAGEMENT
          Order of sections:
            1.  Jakarta EE
            2.  ORM
@@ -323,14 +292,11 @@
            The default build uses explicit version pins (this section) for
            offline/air-gapped compatibility. When network is available, activate
            the online profile: mvn -P online clean compile
-           The BOMs then take precedence and reduce duplication.
-         ====================================================================== -->
+           The BOMs then take precedence and reduce duplication. -->
     <dependencyManagement>
         <dependencies>
 
-            <!-- ============================================================== -->
             <!-- 0. YAWL INTERNAL MODULES                                      -->
-            <!-- ============================================================== -->
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-utilities</artifactId>
@@ -388,6 +354,11 @@
             </dependency>
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-pi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-monitoring</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -397,11 +368,9 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 0. SPRING BOOT STARTERS                                       -->
             <!--    Explicit entries provide offline fallback when the Spring   -->
             <!--    Boot BOM (online profile) is not active.                   -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -446,9 +415,7 @@
                 <optional>true</optional>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 1. JAKARTA EE                                                  -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>jakarta.servlet</groupId>
@@ -502,6 +469,26 @@
                 <version>${jakarta.faces.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk7</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.faces</artifactId>
                 <version>${jakarta.faces.version}</version>
@@ -514,7 +501,7 @@
             <dependency>
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
-                <version>3.1.1</version>
+                <version>${jakarta.validation.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>
@@ -523,9 +510,7 @@
                 <scope>provided</scope>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 3. ORM                                                         -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
@@ -543,9 +528,7 @@
                 <version>${hibernate.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 4. APACHE COMMONS                                              -->
-            <!-- ============================================================== -->
 
             <!-- commons-lang3 uses org.apache.commons groupId -->
             <dependency>
@@ -606,9 +589,7 @@
                 <version>${commons.beanutils.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 5. DATABASE DRIVERS                                            -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -641,9 +622,7 @@
                 <version>${hikaricp.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 6. LOGGING                                                     -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -681,11 +660,11 @@
                 <version>${jboss.logging.version}</version>
             </dependency>
 
+
             <!-- ============================================================== -->
             <!-- 7. JSON / SERIALISATION                                        -->
             <!--    Explicit entries provide offline fallback when the Jackson  -->
             <!--    BOM (online profile) is not active.                        -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -735,9 +714,7 @@
                 <version>${networknt.json.schema.validator.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 8. XML PROCESSING                                              -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.jdom</groupId>
@@ -766,9 +743,7 @@
                 <version>${saaj.impl.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 9. HTTP CLIENTS                                                -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
@@ -776,12 +751,10 @@
                 <version>${okhttp.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 10. MCP / A2A INTEGRATION SDKs                                -->
             <!--     Both SDKs are installed from local JARs (not Maven         -->
             <!--     Central). Versions are pinned here so child modules do     -->
             <!--     not repeat them.                                           -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>io.modelcontextprotocol.sdk</groupId>
@@ -870,9 +843,7 @@
                 <version>${a2a.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 11. SECURITY / AUTH                                            -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -919,9 +890,7 @@
                 <version>${bouncycastle.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 12. REST                                                       -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
@@ -944,11 +913,9 @@
                 <version>${jersey.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 13. OBSERVABILITY / METRICS                                    -->
             <!--     OTel artifacts version-managed by opentelemetry-bom above. -->
             <!--     Semconv and Micrometer are not in that BOM.               -->
-            <!-- ============================================================== -->
 
             <!-- OpenTelemetry Core - explicit versions for offline builds -->
             <dependency>
@@ -1013,36 +980,76 @@
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-retry</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-circuitbreaker</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-core</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-micrometer</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-bulkhead</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-ratelimiter</artifactId>
                 <version>${resilience4j.version}</version>
+                <exclusions>
+                    <!-- Exclude old SLF4J versions to prevent conflicts -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 14. GRAPH ALGORITHMS                                           -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>net.sf.jung</groupId>
@@ -1060,9 +1067,7 @@
                 <version>${jung.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 15. SUPPORT LIBRARIES                                          -->
-            <!-- ============================================================== -->
 
             <dependency>
                 <groupId>org.jspecify</groupId>
@@ -1100,9 +1105,7 @@
                 <version>${ant.version}</version>
             </dependency>
 
-            <!-- ============================================================== -->
             <!-- 16. TESTING  (all test-scoped by default)                     -->
-            <!-- ============================================================== -->
 
             <!-- JUnit 4 - legacy tests (still widely used in the codebase) -->
             <dependency>
@@ -1228,11 +1231,23 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- GraalVM Polyglot API - compile-time API for multi-language execution -->
+            <!-- GraalPy runtime requires GraalVM JDK or standalone launcher at runtime -->
+            <dependency>
+                <groupId>org.graalvm.polyglot</groupId>
+                <artifactId>polyglot</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>nativeimage</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
-    <!-- ======================================================================
-         DIRECT DEPENDENCIES
+    <!-- DIRECT DEPENDENCIES
          The parent POM does NOT declare direct compile-scope dependencies.
          Each child module declares exactly what it needs; this avoids
          putting every library on every module's classpath and keeps
@@ -1240,8 +1255,7 @@
 
          The only direct parent-level dependencies are universal concerns
          that literally every module requires: compilation annotations and
-         logging API.
-         ====================================================================== -->
+         logging API. -->
     <dependencies>
         <!-- SLF4J API - logging facade required by every module -->
         <dependency>
@@ -1267,18 +1281,46 @@
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-circuitbreaker</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-retry</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-bulkhead</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-ratelimiter</artifactId>
+            <exclusions>
+                <!-- Exclude old SLF4J versions to prevent conflicts -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Gson - JSON serialisation used by ggen BuildReceipt and JSONL receipt chain -->
@@ -1287,11 +1329,15 @@
             <artifactId>gson</artifactId>
             <version>${gson.version}</version>
         </dependency>
+
+        <!-- Jackson JSR310 - Java 8+ date/time support for WorkflowEventStore -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
     </dependencies>
 
-    <!-- ======================================================================
-         BUILD
-         ====================================================================== -->
+    <!-- BUILD -->
     <build>
         <!-- Default goal when running `mvn` without arguments -->
         <defaultGoal>clean compile</defaultGoal>
@@ -1312,11 +1358,9 @@
             </testResource>
         </testResources>
 
-        <!-- ================================================================ -->
         <!-- PLUGIN MANAGEMENT                                                  -->
         <!-- All plugins used anywhere in this multi-module build are listed    -->
         <!-- here with explicit versions so child modules inherit them.         -->
-        <!-- ================================================================ -->
         <pluginManagement>
             <plugins>
 
@@ -1361,7 +1405,7 @@
                              sealed classes, and other preview features used in tests.
                              @{argLine} interpolates JaCoCo's agent argument when
                              jacoco.skip=false; it is empty when JaCoCo is skipped. -->
-                        <argLine>--enable-preview @{argLine}</argLine>
+                        <argLine>@{argLine}</argLine>
                         <!-- useModulePath=false forces classpath mode; prevents Surefire
                              from misidentifying modules and rejecting enable-preview flag. -->
                         <useModulePath>false</useModulePath>
@@ -1413,7 +1457,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven.failsafe.plugin.version}</version>
                     <configuration>
-                        <argLine>--enable-preview</argLine>
+                        <argLine></argLine>
                     </configuration>
                     <executions>
                         <execution>
@@ -1879,9 +1923,7 @@
             </plugins>
         </pluginManagement>
 
-        <!-- ================================================================ -->
         <!-- ACTIVE PLUGINS (applied to every module)                           -->
-        <!-- ================================================================ -->
         <plugins>
 
             <!-- Compiler - applies global settings defined in pluginManagement -->
@@ -1905,7 +1947,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
                 <configuration>
-                    <argLine>--enable-preview</argLine>
+                    <argLine></argLine>
                     <!-- Tests use JUnit 5 which requires surefire-junit-platform.
                          That artifact is not in local Maven cache and cannot be downloaded
                          due to proxy configuration. Tests are skipped for offline builds.
@@ -1935,14 +1977,10 @@
         </plugins>
     </build>
 
-    <!-- ======================================================================
-         BUILD PROFILES
-         ====================================================================== -->
+    <!-- BUILD PROFILES -->
     <profiles>
 
-        <!-- ================================================================ -->
         <!-- Default profile: Java 21 compatible (JDK 21 available)            -->
-        <!-- ================================================================ -->
         <profile>
             <id>java25</id>
             <activation>
@@ -1960,11 +1998,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <release>${maven.compiler.release}</release>
+                            <release>25</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
                                 <arg>-Xlint:all</arg>
                                 <arg>-parameters</arg>
+                                <arg>--enable-preview</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -1979,9 +2017,7 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Java 24 forward-compatibility testing                              -->
-        <!-- ================================================================ -->
         <profile>
             <id>java24</id>
             <properties>
@@ -1997,8 +2033,7 @@
                         <configuration>
                             <release>24</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
+                                      <arg>-Xlint:all</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -2006,18 +2041,16 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- CI profile: adds coverage and static analysis                      -->
         <!-- Usage: mvn -P ci clean verify                                      -->
         <!-- Auto-activates when the CI environment variable is set.            -->
-        <!-- ================================================================ -->
         <profile>
             <id>ci</id>
             <activation>
@@ -2037,7 +2070,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skip>false</skip>
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                         </configuration>
                     </plugin>
                     <!-- Enforcer: stricter convergence checks in CI -->
@@ -2086,11 +2119,9 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Production profile: CVE scan fails build on CVSS >= 7             -->
         <!-- Usage: mvn -P prod clean verify                                    -->
         <!--         NVD_API_KEY env var required for NVD data feed.            -->
-        <!-- ================================================================ -->
         <profile>
             <id>prod</id>
             <properties>
@@ -2134,7 +2165,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Security audit: comprehensive CVE scanning and SBOM generation    -->
         <!--                                                                     -->
         <!-- Purpose:                                                             -->
@@ -2167,7 +2197,6 @@
         <!-- CI/CD Integration:                                                   -->
         <!--   Runs in GitHub Actions on every commit (see cve-scanning.yml).    -->
         <!--   Fails build on CVSS >= 7.0 for production quality enforcement.    -->
-        <!-- ================================================================ -->
         <profile>
             <id>security-audit</id>
             <build>
@@ -2209,7 +2238,6 @@
         </profile>
 
 
-        <!-- ================================================================ -->
         <!-- CI/CD Security Profile: automated CVE scanning on every commit     -->
         <!--                                                                     -->
         <!-- Purpose:                                                             -->
@@ -2230,7 +2258,6 @@
         <!--   CVSS >= 7.0  : FAIL (High/Critical - must remediate)             -->
         <!--   CVSS 4-6.9   : PASS (Medium - track for next release)             -->
         <!--   CVSS < 4.0   : PASS (Low - monitor)                               -->
-        <!-- ================================================================ -->
         <profile>
             <id>ci-security</id>
             <activation>
@@ -2277,7 +2304,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Analysis profile: full static analysis suite                       -->
         <!-- Runs: SpotBugs + Checkstyle + PMD + JaCoCo + Error Prone           -->
         <!-- Usage: mvn clean package -P analysis                               -->
@@ -2288,7 +2314,6 @@
         <!--   target/pmd.xml                                                   -->
         <!--   target/site/jacoco/                                              -->
         <!--   Error Prone warnings in compile output                           -->
-        <!-- ================================================================ -->
         <profile>
             <id>analysis</id>
             <properties>
@@ -2304,7 +2329,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skip>false</skip>
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                         </configuration>
                     </plugin>
 
@@ -2331,8 +2356,7 @@
                             <target>21</target>
                             <release>21</release>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>-Xlint:all</arg>
+                                      <arg>-Xlint:all</arg>
                                 <arg>-XDcompilePolicy=simple</arg>
                                 <arg>-Xplugin:ErrorProne -Xep:ThreadJoinTimeout:ERROR -Xep:ThreadLocalCleanup:WARN -Xep:SwitchDefaultOnlyCase:WARN -Xep:FunctionalInterfaceMethodChanged:WARN -Xep:OptionalMapUnusedValue:WARN -Xep:ImmutableMemberCollection:WARN -Xep:UnnecessaryParentheses:OFF -XepExcludedPaths:(^|.*/)(target/|build/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=org.yawlfoundation.yawl -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CheckOptionalEmptiness=true</arg>
                             </compilerArgs>
@@ -2449,13 +2473,11 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Coverage profile: dedicated JaCoCo coverage with threshold check  -->
         <!-- Usage: mvn -T 1.5C clean verify -P coverage                       -->
         <!--                                                                    -->
         <!-- This profile focuses purely on coverage without other analysis    -->
         <!-- tools, making it faster for coverage-only requirements.           -->
-        <!-- ================================================================ -->
         <profile>
             <id>coverage</id>
             <properties>
@@ -2472,7 +2494,7 @@
                             <skip>false</skip>
                             <!-- @{argLine} late-binds the JaCoCo agent set by jacoco:prepare-agent;
                                  without this, the agent is never attached and jacoco.exec is not created -->
-                            <argLine>@{argLine} --enable-preview</argLine>
+                            <argLine>@{argLine}</argLine>
                             <!-- SIGKILL the forked JVM after tests complete; without this
                                  non-daemon virtual-thread executors (YEngine) prevent JVM exit
                                  and the entire Maven build hangs indefinitely -->
@@ -2532,7 +2554,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- SonarQube profile: push analysis to SonarQube/SonarCloud          -->
         <!-- Usage: mvn -P sonar clean verify sonar:sonar                       -->
         <!--                                                                    -->
@@ -2540,7 +2561,6 @@
         <!--   SONAR_TOKEN  - authentication token from SonarQube              -->
         <!--   SONAR_HOST_URL - e.g. https://sonarcloud.io (SonarCloud)        -->
         <!--                   or http://localhost:9000 (local SonarQube)       -->
-        <!-- ================================================================ -->
         <profile>
             <id>sonar</id>
             <properties>
@@ -2621,13 +2641,11 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Online profile: activates BOM imports when network is available. -->
         <!-- BOM imports take version-precedence over explicit pins in         -->
         <!-- dependencyManagement, reducing maintenance for transitive deps.  -->
         <!-- Usage: mvn -P online clean compile                               -->
         <!--        mvn -P online,ci clean verify                             -->
-        <!-- ================================================================ -->
         <profile>
             <id>online</id>
             <dependencyManagement>
@@ -2664,6 +2682,14 @@
                         <type>pom</type>
                         <scope>import</scope>
                     </dependency>
+                    <!-- GRPC BOM: manages gRPC dependencies -->
+                    <dependency>
+                        <groupId>io.grpc</groupId>
+                        <artifactId>grpc-bom</artifactId>
+                        <version>${grpc.version}</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
                     <!-- Resilience4j BOM: manages resilience4j-circuitbreaker, retry, etc. -->
                     <dependency>
                         <groupId>io.github.resilience4j</groupId>
@@ -2692,13 +2718,11 @@
             </dependencyManagement>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Fast profile: excludes slow integration tests for CI             -->
         <!-- This profile is active by default for quick feedback loops.      -->
         <!-- Usage: mvn clean test                   (fast - default)         -->
         <!--        mvn clean test -P docker         (full integration)       -->
         <!-- Excluded groups: integration, docker, containers                 -->
-        <!-- ================================================================ -->
         <profile>
             <id>fast</id>
             <activation>
@@ -2723,12 +2747,10 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Agent DX profile: fastest possible build-test loop for AI agents -->
         <!-- Maximizes parallelism, disables all overhead, fails fast.        -->
         <!-- Usage: mvn compile test -P agent-dx                              -->
         <!--        mvn compile test -P agent-dx -pl module -amd              -->
-        <!-- ================================================================ -->
         <profile>
             <id>agent-dx</id>
             <properties>
@@ -2758,7 +2780,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- quick-test profile: unit tests only, maximum local dev speed    -->
         <!--                                                                  -->
         <!-- Differences from the default "fast" profile:                    -->
@@ -2786,7 +2807,6 @@
         <!--   mvn clean test -P docker                    (docker tests)     -->
         <!--   mvn clean test -P quick-test -pl yawl-engine                  -->
         <!--   ./scripts/test-fast.sh                                         -->
-        <!-- ================================================================ -->
         <profile>
             <id>quick-test</id>
             <properties>
@@ -2827,12 +2847,10 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Docker profile: includes all integration and container tests     -->
         <!-- Requires Docker daemon running for testcontainers.               -->
         <!-- Usage: mvn clean test -P docker                                   -->
         <!-- Included groups: integration, docker (excludes slow containers)   -->
-        <!-- ================================================================ -->
         <profile>
             <id>docker</id>
             <properties>
@@ -2887,11 +2905,9 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Integration-test profile: runs v5.2 integration tests           -->
         <!-- No testcontainers required; excludes slow/chaos/containers.      -->
         <!-- Usage: mvn test -P integration-test                              -->
-        <!-- ================================================================ -->
         <profile>
             <id>integration-test</id>
             <properties>
@@ -2906,7 +2922,7 @@
                              ensuring integration tests run sequentially to prevent YEngine
                              singleton state corruption between concurrent test classes. -->
                         <configuration combine.self="override">
-                            <argLine>--enable-preview</argLine>
+                            <argLine></argLine>
                             <useModulePath>false</useModulePath>
                             <groups>integration</groups>
                             <excludedGroups>docker,containers,slow</excludedGroups>
@@ -2936,7 +2952,6 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Release profile: deploys to Maven Central via Sonatype OSSRH     -->
         <!-- Signs artifacts with GPG and stages to Nexus repository.         -->
         <!-- Usage: mvn clean deploy -P release                                -->
@@ -2953,7 +2968,6 @@
         <!--       <gpg.keyname>YOUR_GPG_KEY_ID</gpg.keyname>                 -->
         <!--     </properties>                                                -->
         <!--   </profile>                                                     -->
-        <!-- ================================================================ -->
         <profile>
             <id>release</id>
             <build>
@@ -2991,9 +3005,7 @@
             </build>
         </profile>
 
-        <!-- ================================================================ -->
         <!-- Observatory Analysis Profile - Generate SpotBugs, PMD, Checkstyle reports -->
-        <!-- ================================================================ -->
         <profile>
             <id>observatory-analysis</id>
             <activation>
@@ -3072,6 +3084,98 @@
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ================================================================ -->
+        <!-- Performance benchmark profile                                      -->
+        <!-- ================================================================ -->
+        <profile>
+            <id>benchmark</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <maven.compiler.release>8</maven.compiler.release>
+                <benchmark.mode>true</benchmark.mode>
+            </properties>
+            <dependencies>
+                <!-- JMH for benchmarking -->
+                <dependency>
+                    <groupId>org.openjdk.jmh</groupId>
+                    <artifactId>jmh-core</artifactId>
+                    <version>${jmh.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjdk.jmh</groupId>
+                    <artifactId>jmh-generator-annprocess</artifactId>
+                    <version>${jmh.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <!-- JMH Plugin for benchmark execution -->
+                    <plugin>
+                        <groupId>org.openjdk.jmh</groupId>
+                        <artifactId>jmh-maven-plugin</artifactId>
+                        <version>${jmh.version}</version>
+                        <executions>
+                            <execution>
+                                <id>benchmark</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>benchmark</goal>
+                                    <goal>generate-aggregate-reports</goal>
+                                </goals>
+                                <configuration>
+                                    <resultsFormat>JSON</resultsFormat>
+                                    <resultsFile>target/benchmark-results.json</resultsFile>
+                                    <jvmArgs>
+                                        <jvmArg>-XX:+UseCompactObjectHeaders</jvmArg>
+                                        <jvmArg>-Xms2g</jvmArg>
+                                        <jvmArg>-Xmx4g</jvmArg>
+                                        <jvmArg>-XX:+UseG1GC</jvmArg>
+                                        <jvmArg>-XX:+UseZGC</jvmArg>
+                                        <jvmArg>-XX:+ShowCodeCacheOnCompilation</jvmArg>
+                                        <jvmArg>-XX:+PrintGCApplicationStoppedTime</jvmArg>
+                                        <jvmArg>-Xlog:gc*:file=gc-benchmark.log:time,uptime,level</jvmArg>
+                                        <jvmArg>-XX:+HeapDumpOnOutOfMemoryError</jvmArg>
+                                        <jvmArg>-XX:HeapDumpPath=target/heap-dump.hprof</jvmArg>
+                                    </jvmArgs>
+                                    <forkCount>1</forkCount>
+                                    <threads>1</threads>
+                                    <warmupIterations>5</warmupIterations>
+                                    <measurementIterations>10</measurementIterations>
+                                    <timeout>30m</timeout>
+                                    <include>org.yawlfoundation.yawl.performance.*</include>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Additional plugin for CI/CD integration -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>benchmark-report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo>Performance benchmarks completed!</echo>
+                                        <echo>Results available in target/benchmark-results.json</echo>
+                                        <echo>GC logs available in gc-benchmark.log</echo>
+                                        <echo>Heap dump available in target/heap-dump.hprof (if OOM occurred)</echo>
+                                    </target>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

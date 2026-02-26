@@ -37,6 +37,21 @@ public final class YawlToolSpecifications {
     }
 
     /**
+     * Creates all YAWL MCP tool specifications without Z.AI function service.
+     *
+     * @param interfaceBClient the YAWL InterfaceB client for runtime operations
+     * @param interfaceAClient the YAWL InterfaceA client for design-time operations
+     * @param sessionHandle    the active YAWL session handle
+     * @return list of all YAWL tool specifications for MCP registration
+     */
+    public static List<McpServerFeatures.SyncToolSpecification> createAll(
+            InterfaceB_EnvironmentBasedClient interfaceBClient,
+            InterfaceA_EnvironmentBasedClient interfaceAClient,
+            String sessionHandle) {
+        return createAll(interfaceBClient, interfaceAClient, sessionHandle, null);
+    }
+
+    /**
      * Creates all 16 YAWL MCP tool specifications.
      *
      * @param interfaceBClient the YAWL InterfaceB client for runtime operations

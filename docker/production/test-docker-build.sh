@@ -56,7 +56,7 @@ check_prerequisites() {
     fi
 
     # Check if JAR exists
-    if [[ -f "${PROJECT_DIR}/yawl-mcp-a2a-app/yawl-mcp-a2a-app/target/dependency/yawl-engine-6.0.0-Alpha.jar" ]]; then
+    if [[ -f "${PROJECT_DIR}/yawl-mcp-a2a-app/yawl-mcp-a2a-app/target/dependency/yawl-engine-6.0.0-Beta.jar" ]]; then
         success "Found pre-built JAR at yawl-mcp-a2a-app/target/dependency/"
     else
         warn "No pre-built JAR found. Build might fail."

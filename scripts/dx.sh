@@ -75,9 +75,15 @@ fi
 ALL_MODULES=(
     yawl-utilities yawl-elements yawl-authentication yawl-engine
     yawl-stateless yawl-resourcing yawl-scheduling
-    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-webapps
+    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-pi yawl-webapps
     yawl-control-panel yawl-mcp-a2a-app
 )
+
+# In remote/CI environments, skip modules with heavy ML dependencies (>50MB JARs)
+# that cannot be downloaded through the egress proxy (onnxruntime = 89MB).
+if [[ "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
+    ALL_MODULES=($(printf '%s\n' "${ALL_MODULES[@]}" | grep -v '^yawl-pi$'))
+fi
 
 detect_changed_modules() {
     local changed_files
@@ -153,6 +159,12 @@ esac
 # Module targeting
 if [[ "$SCOPE" == "explicit" && -n "$EXPLICIT_MODULES" ]]; then
     MVN_ARGS+=("-pl" "$EXPLICIT_MODULES" "-amd")
+elif [[ "$SCOPE" == "all" && "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
+    # In remote/CI mode ALL_MODULES may have been filtered (e.g. yawl-pi excluded
+    # because onnxruntime:1.19.2 is 89MB and cannot be fetched via egress proxy).
+    # Pass explicit -pl list so Maven reactor honours the filtered set.
+    REMOTE_MODULES=$(IFS=','; echo "${ALL_MODULES[*]}")
+    MVN_ARGS+=("-pl" "$REMOTE_MODULES")
 fi
 
 # Fail strategy
@@ -200,8 +212,10 @@ ELAPSED_MS=$((END_MS - START_MS))
 ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
 
 # Parse results from Maven log
-TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || true
-TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || true
+# NOTE: grep -c exits 1 when 0 matches (still outputs "0"), so || must be outside
+# the $() to avoid capturing both grep's "0" output AND the fallback "0" as "0\n0".
+TEST_COUNT=$(grep -c "Running " /tmp/dx-build-log.txt 2>/dev/null) || TEST_COUNT=0
+TEST_FAILED=$(grep -c "FAILURE" /tmp/dx-build-log.txt 2>/dev/null) || TEST_FAILED=0
 if [[ "$SCOPE" == "all" ]]; then
     MODULES_COUNT=${#ALL_MODULES[@]}
 else

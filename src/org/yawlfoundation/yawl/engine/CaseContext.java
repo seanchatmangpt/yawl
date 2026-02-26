@@ -21,37 +21,6 @@ package org.yawlfoundation.yawl.engine;
 import java.time.Instant;
 
 /**
- * Immutable snapshot of the execution context for a single YAWL case invocation.
- *
- * <p>CaseExecutionContext is a Java 25 record that captures the identifiers needed to
- * correlate a unit of work (case start, task kick, or task completion) with its
- * surrounding engine context. It is designed to be bound via
- * {@link java.lang.ScopedValue} so that every virtual thread participating in the
- * execution of one case can read the same immutable context without synchronisation.</p>
- *
- * <h2>Usage pattern</h2>
- * <pre>{@code
- * CaseExecutionContext ctx = new CaseExecutionContext(caseID, specID, Instant.now());
- * ScopedValue.callWhere(YNetRunner.CASE_CONTEXT, ctx.caseID(), () -> {
- *     runner.kick(pmgr);
- *     return null;
- * });
- * }</pre>
- *
- * <h2>Thread safety</h2>
- * <p>Records are inherently immutable. The ScopedValue binding is inherited
- * automatically by child virtual threads (e.g., {@code StructuredTaskScope} subtasks)
- * and released when the enclosing {@code ScopedValue.callWhere()} scope exits.</p>
- *
- * @param caseID   the string representation of the YAWL case identifier
- * @param specID   the string representation of the specification identifier (key:version)
- * @param startedAt the instant at which this execution context was created
- *
- * @author YAWL Foundation
- * @see YNetRunner#CASE_CONTEXT
- */
-
-/**
  * ScopedValue context bindings for YAWL case execution.
  *
  * <p>CaseContext provides scoped values for context propagation across virtual threads

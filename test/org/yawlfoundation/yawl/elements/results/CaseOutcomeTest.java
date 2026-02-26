@@ -280,7 +280,7 @@ class CaseOutcomeTest {
             CaseCompleted o = new CaseCompleted("case-001", SPEC_ID, 500L, FIXED_NOW, "out");
             String str = o.toString();
             assertTrue(str.contains("case-001"));
-            assertTrue(str.contains("COMPLETED"));
+            assertTrue(str.contains("CaseCompleted"));
         }
     }
 

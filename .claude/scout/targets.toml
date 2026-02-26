@@ -1,0 +1,53 @@
+[[target]]
+name = "eye-reasoner-releases"
+url = "https://github.com/eyereasoner/eye/releases"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 24
+
+[[target]]
+name = "mcp-spec"
+url = "https://spec.modelcontextprotocol.io/specification/"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 48
+
+[[target]]
+name = "maven-central-owlrl"
+url = "https://search.maven.org/solrsearch/select?q=g:net.sourceforge.owlapi+a:owlapi-distribution&rows=1"
+semantic_unit = "Dependency"
+watermark_ttl_hours = 12
+
+[[target]]
+name = "yawl-mcp-spec"
+url = "https://spec.modelcontextprotocol.io/specification/server/"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 48
+
+[[target]]
+name = "rust-blake3"
+url = "https://crates.io/api/v1/crates/blake3"
+semantic_unit = "Dependency"
+watermark_ttl_hours = 24
+# Scout Intelligence Fetch Targets
+# Watermark protocol: fetch respects TTL; skips if content hash unchanged
+# Semantic units: BehaviorDelta (changelog), Dependency (version), SpecChange (API changes)
+
+[[target]]
+name = "java-25-release-notes"
+url = "https://jdk.java.net/25/release-notes"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 168  # 1 week
+
+[[target]]
+name = "maven-central-latest-releases"
+url = "https://repo.maven.apache.org/maven2/.index/nexus-maven-repository-index.gz"
+semantic_unit = "Dependency"
+watermark_ttl_hours = 24  # 1 day
+
+[[target]]
+name = "mcp-specification"
+url = "https://spec.modelcontextprotocol.io/specification/"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 48  # 2 days
+
+# Note: In v1, actual HTTP fetching is stubbed out
+# Real fetching will be implemented in future versions with proper error handling and retry logic

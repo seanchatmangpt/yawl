@@ -32,6 +32,7 @@ tasks:
       max: 5
       mode: dynamic
       threshold: all
+      splitQuery: "/*/*"
     description: "Process items in parallel"
 
   - id: CheckForceComplete
@@ -52,7 +53,7 @@ tasks:
     flows: [AllComplete]
     split: xor
     join: xor
-    completeMI: ProcessItems
+    cancels: [ProcessItems]
     description: "Force complete all instances"
 
   - id: WaitForAll

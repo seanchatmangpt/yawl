@@ -64,7 +64,9 @@ echo ""
 echo "[Q] Step 1/3: Scanning for empty methods (invariant Q1: real_impl ∨ throw)..."
 
 # Find empty method bodies: public void foo() { }
+# Exclude _build/ (build artifacts) and target/ (Maven output) directories
 EMPTY_METHODS=$(find "$CODE_DIR" -name "*.java" -type f \
+  -not -path "*/_build/*" -not -path "*/target/*" \
   -exec grep -l "public.*\s\+void\s\+\w\+([^)]*)\s*{\s*}" {} \; 2>/dev/null | wc -l)
 
 if [ "$EMPTY_METHODS" -gt 0 ]; then
@@ -73,8 +75,9 @@ fi
 
 echo "[Q] Step 2/3: Scanning for mock/stub/fake patterns (invariant Q2: ¬mock)..."
 
-# Find mock class names
+# Find mock class names (exclude _build/ and target/)
 MOCK_CLASSES=$(find "$CODE_DIR" -name "*.java" -type f \
+  -not -path "*/_build/*" -not -path "*/target/*" \
   -exec grep -h "^\s*\(public\|private\)\s*\(class\|interface\)\s*\(Mock\|Stub\|Fake\|Demo\)" {} \; 2>/dev/null | wc -l)
 
 if [ "$MOCK_CLASSES" -gt 0 ]; then
@@ -83,8 +86,9 @@ fi
 
 echo "[Q] Step 3/3: Scanning for silent fallbacks (invariant Q3: ¬silent_fallback)..."
 
-# Find catch blocks returning fake data
+# Find catch blocks returning fake data (exclude _build/ and target/)
 SILENT_FALLBACKS=$(find "$CODE_DIR" -name "*.java" -type f \
+  -not -path "*/_build/*" -not -path "*/target/*" \
   -exec grep -E "catch\s*\([^)]+\)\s*\{[^}]*(return\s+(mock|fake|test|stub|demo))" {} \; 2>/dev/null | wc -l)
 
 if [ "$SILENT_FALLBACKS" -gt 0 ]; then
