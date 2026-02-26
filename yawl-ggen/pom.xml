@@ -130,7 +130,7 @@
         </plugins>
 
         <resources>
-            <!-- Include RDF ontologies, SPARQL queries, templates -->
+            <!-- Include RDF ontologies, SPARQL queries, templates, polyglot scripts, sandbox resources -->
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
@@ -139,6 +139,8 @@
                     <include>**/*.sparql</include>
                     <include>**/*.tera</include>
                     <include>**/*.json</include>
+                    <include>**/*.py</include>
+                    <include>**/*.js</include>
                 </includes>
             </resource>
         </resources>
@@ -157,5 +159,29 @@
             </testResource>
         </testResources>
     </build>
+
+
+    <profiles>
+        <!-- Activate with -P graalpy to enable GraalPy/Python polyglot support.
+             Requires GraalVM JDK 25 or GraalPy standalone JARs on the classpath.
+             Without this profile, GraalPyRuntime.isAvailable() returns false and
+             the system falls back to Java-only POWL generation. -->
+        <profile>
+            <id>graalpy</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>polyglot</artifactId>
+                    <version>25.0.2</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>python</artifactId>
+                    <version>25.0.2</version>
+                    <type>pom</type>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>
