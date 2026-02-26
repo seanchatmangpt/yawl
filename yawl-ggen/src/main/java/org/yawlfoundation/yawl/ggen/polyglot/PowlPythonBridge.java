@@ -18,9 +18,23 @@ import java.util.Objects;
 /**
  * Bridges POWL generation to the Python pm4py library via GraalPy.
  *
+ * <p>Implements the {@link PowlGenerator} interface, making the Python-backed generation
+ * available as a typed, injectable component following the OpenSage "typed tool synthesis"
+ * pattern: every Python function has a corresponding strongly-typed Java method.</p>
+ *
  * <p>Uses the canonical {@link PythonExecutionEngine} from {@code yawl-graalpy} as the
  * single Java-Python integration pattern in YAWL. The engine's context pool is shared
  * across calls; construction is thread-safe and the engine should be reused.</p>
+ *
+ * <h2>Two-layer API</h2>
+ * <ul>
+ *   <li><strong>Raw layer</strong> ({@link PowlGenerator} interface): {@link #generatePowlJson}
+ *       and {@link #mineFromXes} return the JSON string exactly as the Python script produces
+ *       it — useful for testing and typed injection.</li>
+ *   <li><strong>Parsed layer</strong>: {@link #generate} and {@link #mineFromLog} delegate to
+ *       the raw layer and then unmarshal the JSON into {@link PowlModel} via
+ *       {@link PowlJsonMarshaller}.</li>
+ * </ul>
  *
  * <h2>Runtime requirement</h2>
  * <p>GraalVM JDK 24.1+ must be present at runtime. On standard JDK (e.g., Temurin),
@@ -39,7 +53,7 @@ import java.util.Objects;
  * }
  * }</pre>
  */
-public class PowlPythonBridge implements AutoCloseable {
+public class PowlPythonBridge implements PowlGenerator, AutoCloseable {
 
     private static final String SCRIPT_RESOURCE = "polyglot/powl_generator.py";
 
@@ -63,6 +77,48 @@ public class PowlPythonBridge implements AutoCloseable {
         this.engine = Objects.requireNonNull(engine, "engine must not be null");
     }
 
+    // ─── PowlGenerator interface — raw JSON layer ─────────────────────────────
+
+    /**
+     * Returns the raw JSON string from the Python {@code generate_powl_json()} function.
+     *
+     * <p>This is the typed-interface layer (OpenSage "tool synthesis"): callers that need
+     * the JSON directly (e.g., for forwarding to another service) use this method.
+     * For a fully-parsed {@link PowlModel}, use {@link #generate(String)} instead.</p>
+     *
+     * @param description natural language process description; must not be blank
+     * @return JSON string conforming to the POWL wire format; never null
+     * @throws IllegalArgumentException if description is blank
+     * @throws PythonException if GraalPy is unavailable or Python execution fails
+     */
+    @Override
+    public String generatePowlJson(String description) {
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("description must not be blank");
+        }
+        String escaped = description.replace("\\", "\\\\").replace("'", "\\'");
+        return engine.evalToString(loadScript() + "\ngenerate_powl_json('" + escaped + "')");
+    }
+
+    /**
+     * Returns the raw JSON string from the Python {@code mine_from_xes()} function.
+     *
+     * @param xesContent complete XES XML string of the event log; must not be blank
+     * @return JSON string conforming to the POWL wire format; never null
+     * @throws IllegalArgumentException if xesContent is blank
+     * @throws PythonException if GraalPy is unavailable or Python execution fails
+     */
+    @Override
+    public String mineFromXes(String xesContent) {
+        if (xesContent == null || xesContent.isBlank()) {
+            throw new IllegalArgumentException("xesContent must not be blank");
+        }
+        String escaped = xesContent.replace("\\", "\\\\").replace("'", "\\'");
+        return engine.evalToString(loadScript() + "\nmine_from_xes('" + escaped + "')");
+    }
+
+    // ─── Parsed layer ─────────────────────────────────────────────────────────
+
     /**
      * Generates a POWL model from a natural language process description using pm4py.
      *
@@ -73,13 +129,7 @@ public class PowlPythonBridge implements AutoCloseable {
      * @throws PowlParseException       if the Python result cannot be parsed as a POWL model
      */
     public PowlModel generate(String processDescription) throws PowlParseException {
-        if (processDescription == null || processDescription.isBlank()) {
-            throw new IllegalArgumentException("processDescription must not be blank");
-        }
-        String script = loadScript();
-        String escapedDesc = processDescription.replace("\\", "\\\\").replace("'", "\\'");
-        String source = script + "\ngenerate_powl_json('" + escapedDesc + "')";
-        String json = engine.evalToString(source);
+        String json = generatePowlJson(processDescription);
         return PowlJsonMarshaller.fromJson(json, processDescription);
     }
 
@@ -93,13 +143,7 @@ public class PowlPythonBridge implements AutoCloseable {
      * @throws PowlParseException       if the Python result cannot be parsed as a POWL model
      */
     public PowlModel mineFromLog(String xesContent) throws PowlParseException {
-        if (xesContent == null || xesContent.isBlank()) {
-            throw new IllegalArgumentException("xesContent must not be blank");
-        }
-        String script = loadScript();
-        String escapedXes = xesContent.replace("\\", "\\\\").replace("'", "\\'");
-        String source = script + "\nmine_from_xes('" + escapedXes + "')";
-        String json = engine.evalToString(source);
+        String json = mineFromXes(xesContent);
         return PowlJsonMarshaller.fromJson(json, "mined-from-xes-" + System.currentTimeMillis());
     }
 

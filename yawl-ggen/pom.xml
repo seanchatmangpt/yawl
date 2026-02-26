@@ -66,6 +66,16 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- JUNG graph library: in-memory process knowledge graph (OpenSage-inspired memory) -->
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jung</groupId>
+            <artifactId>jung-graph-impl</artifactId>
+        </dependency>
+
         <!-- Testing — versions inherited from parent BOM (${junit.jupiter.version} = 5.12.0) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
