@@ -52,6 +52,11 @@ import java.util.stream.IntStream;
  * memory graph can be injected to bias the generation prompt with patterns that
  * yielded high rewards in previous GRPO rounds.
  *
+ * <p><strong>Z.AI GLM-4.7-Flash (Phase 5c)</strong>: When the {@code ZAI_API_KEY}
+ * environment variable is set, the sampler automatically uses {@link ZaiLlmGateway}
+ * (GLM-4.7-Flash via {@code open.bigmodel.cn}) instead of Ollama. If the variable is
+ * absent, it falls back to Ollama HTTP at the configured base URL.
+ *
  * <p><strong>ProMoAI Prompt Suite (Phase 5a)</strong>: Prompts are constructed by
  * {@link ProMoAIPromptBuilder} using all six strategies from Kourani et al. (2024):
  * role prompting, knowledge injection, few-shot learning, negative prompting,
@@ -122,9 +127,15 @@ public class OllamaCandidateSampler implements CandidateSampler {
         this.parser = new PowlTextParser();
         this.knowledgeGraph = knowledgeGraph;
         if (gateway != null) {
-            this.httpClient = null;  // not used when gateway is injected
+            // Explicit injection (testing or programmatic override)
+            this.httpClient = null;
             this.gateway = gateway;
+        } else if (ZaiLlmGateway.isAvailable()) {
+            // ZAI_API_KEY is set — auto-select GLM-4.7-Flash (Phase 5c)
+            this.httpClient = null;
+            this.gateway = ZaiLlmGateway.fromEnv(this.timeout);
         } else {
+            // Fallback: Ollama HTTP at configured baseUrl
             this.httpClient = HttpClient.newBuilder().connectTimeout(this.timeout).build();
             this.gateway = this::callOllamaHttp;
         }
