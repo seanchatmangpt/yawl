@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  versions-maven-plugin rules for YAWL v6.0.0-Beta
+  versions-maven-plugin rules for YAWL v6.0.0-GA
 
   Controls which version patterns are suggested when running:
     mvn versions:display-dependency-updates

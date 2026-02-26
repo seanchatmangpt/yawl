@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl YAWL_Schema.xsd">
+  <specification uri="MemoryPressureSpecification.xml">
+    <metaData />
+    <rootNet id="top">
+      <processControlElements>
+        <inputCondition id="i-top">
+          <name>start</name>
+          <flowsInto>
+            <nextElementRef id="split_memory" />
+          </flowsInto>
+        </inputCondition>
+        <xorSplit id="split_memory">
+          <name>Memory Pressure Split</name>
+          <flowsInto>
+            <nextElementRef id="data_task1" />
+            <nextElementRef id="data_task2" />
+            <nextElementRef id="data_task3" />
+            <nextElementRef id="data_task4" />
+            <nextElementRef id="data_task5" />
+          </flowsInto>
+        </xorSplit>
+        <task id="data_task1">
+          <name>Data Task 1 - Large Processing</name>
+          <dataPrecondition>
+            <dataCondition>
+              <variable ref="inputData1"/>
+              <operator>equal</operator>
+              <value>largeDataset</value>
+            </dataCondition>
+          </dataPrecondition>
+          <decomposesTo id="DataDecomposition1" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join_memory" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="data_task2">
+          <name>Data Task 2 - Complex Structures</name>
+          <dataPrecondition>
+            <dataCondition>
+              <variable ref="inputData2"/>
+              <operator>equal</operator>
+              <value>complexStructure</value>
+            </dataCondition>
+          </dataPrecondition>
+          <decomposesTo id="DataDecomposition2" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join_memory" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="data_task3">
+          <name>Data Task 3 - Nested Arrays</name>
+          <dataPrecondition>
+            <dataCondition>
+              <variable ref="inputData3"/>
+              <operator>equal</operator>
+              <value>nestedArray</value>
+            </dataCondition>
+          </dataPrecondition>
+          <decomposesTo id="DataDecomposition3" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join_memory" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="data_task4">
+          <name>Data Task 4 - Deep Objects</name>
+          <dataPrecondition>
+            <dataCondition>
+              <variable ref="inputData4"/>
+              <operator>equal</operator>
+              <value>deepObject</value>
+            </dataCondition>
+          </dataPrecondition>
+          <decomposesTo id="DataDecomposition4" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join_memory" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="data_task5">
+          <name>Data Task 5 - Heavy Computation</name>
+          <dataPrecondition>
+            <dataCondition>
+              <variable ref="inputData5"/>
+              <operator>equal</operator>
+              <value>heavyCompute</value>
+            </dataCondition>
+          </dataPrecondition>
+          <decomposesTo id="DataDecomposition5" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join_memory" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <andJoin id="join_memory">
+          <name>Memory Pressure Join</name>
+          <flowsInto>
+            <nextElementRef id="nested_split" />
+          </flowsInto>
+        </andJoin>
+        <xorSplit id="nested_split">
+          <name>Nested Memory Operations</name>
+          <flowsInto>
+            <nextElementRef id="nested_task1" />
+            <nextElementRef id="nested_task2" />
+            <nextElementRef id="nested_task3" />
+          </flowsInto>
+        </xorSplit>
+        <task id="nested_task1">
+          <name>Nested Task 1</name>
+          <decomposesTo id="NestedDecomposition1" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="nested_join" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="nested_task2">
+          <name>Nested Task 2</name>
+          <decomposesTo id="NestedDecomposition2" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="nested_join" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="nested_task3">
+          <name>Nested Task 3</name>
+          <decomposesTo id="NestedDecomposition3" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="nested_join" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <andJoin id="nested_join">
+          <name>Nested Join</name>
+          <flowsInto>
+            <nextElementRef id="o-top" />
+          </flowsInto>
+        </andJoin>
+        <outputCondition id="o-top">
+          <name>end</name>
+        </outputCondition>
+      </processControlElements>
+      <dataElements>
+        <variable id="inputData1" type="xs:string" />
+        <variable id="inputData2" type="xs:string" />
+        <variable id="inputData3" type="xs:string" />
+        <variable id="inputData4" type="xs:string" />
+        <variable id="inputData5" type="xs:string" />
+      </dataElements>
+      <decomposition id="DataDecomposition1" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="DataDecomposition2" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="DataDecomposition3" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="DataDecomposition4" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="DataDecomposition5" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="NestedDecomposition1" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="NestedDecomposition2" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="NestedDecomposition3" xsi:type="WebServiceGatewayFactsType" />
+    </rootNet>
+  </specification>
+</specificationSet>

@@ -1,4 +1,4 @@
-# YAWL v6.0.0-Beta - Diagram Generation Workflow
+# YAWL v6.0.0-GA - Diagram Generation Workflow
 #
 # Generates architecture diagrams, YAWL specifications, and observatory analysis
 # on every push. Commits generated artifacts back to the repository.
