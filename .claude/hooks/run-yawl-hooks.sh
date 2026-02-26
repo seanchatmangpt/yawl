@@ -28,6 +28,13 @@ INPUT=$(cat)
 # Determine which hook event fired
 HOOK_EVENT=$(printf '%s' "$INPUT" | jq -r '.hook_event_name // empty' 2>/dev/null)
 
+# Extract session_id from hook input and forward it to the binaries.
+# Claude Code sets it in the JSON payload but not always as CLAUDE_SESSION_ID env var.
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)
+if [[ -n "$SESSION_ID" ]]; then
+    export CLAUDE_SESSION_ID="$SESSION_ID"
+fi
+
 case "$HOOK_EVENT" in
 
     "UserPromptSubmit")
