@@ -75,6 +75,7 @@
         <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>
+        <module>yawl-graalpy</module>
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.
@@ -173,6 +174,9 @@
              upgrading to 1.16.x requires Spring Boot 3.6.x. Update both together. -->
         <micrometer.version>1.15.9</micrometer.version>
         <opentelemetry.semconv.version>1.40.0</opentelemetry.semconv.version>
+
+        <!-- GraalVM Polyglot / GraalPy                                         -->
+        <graalvm.version>24.1.2</graalvm.version>
 
         <!-- Misc runtime support                                               -->
         <jspecify.version>1.0.0</jspecify.version>
@@ -1225,6 +1229,19 @@
                 <artifactId>mysql</artifactId>
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- GraalVM Polyglot API - compile-time API for multi-language execution -->
+            <!-- GraalPy runtime requires GraalVM JDK or standalone launcher at runtime -->
+            <dependency>
+                <groupId>org.graalvm.polyglot</groupId>
+                <artifactId>polyglot</artifactId>
+                <version>${graalvm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>nativeimage</artifactId>
+                <version>${graalvm.version}</version>
             </dependency>
 
         </dependencies>
