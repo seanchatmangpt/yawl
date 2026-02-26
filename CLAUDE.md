@@ -32,6 +32,16 @@ Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE
 Blocked: {TODO,FIXME,mock,stub,fake,empty_return,silent_fallback,lie} — hyper-validate.sh checks 14 patterns on Write|Edit → exit 2.
 Fix violations for real. Never work around hooks. Hard blocks only: harm|deception|illegal|minors.
 
+## ι INTELLIGENCE
+
+Typed deltas (no line-diffs): δ(A, B) = Vec<Delta> with semantic units {declaration, rule, criterion, dependency, behavior, quad}.
+Receipt chain: blake3(canonical_json(δ)) → receipts/intelligence.jsonl; auditable, reproducible.
+Watermark protocol: fetch() respects ttl; skip if content_hash unchanged. Prevents thrashing.
+Binaries: yawl-jira (hook orchestrator <50ms) | yawl-scout (async fetcher, non-blocking).
+Injection: SessionStart (ticket context) | UserPromptSubmit (relevant delta slice) | PreToolUse | PostToolUse (record correction).
+Tickets: TOML-based (.claude/jira/*.toml), no external DB. Acceptance criteria auto-satisfied on declaration match.
+¬line_diff ∧ ¬unified_patch; all artifacts parsed into semantic units before diff. DeclKind ∈ {Function, Type, Constant, Import, Module, Field}.
+
 ## Q INVARIANTS
 
 real_impl ∨ throw UnsupportedOperationException. No third option. ¬mock ∧ ¬stub ∧ ¬silent_fallback ∧ ¬lie.
