@@ -20,6 +20,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -50,11 +51,26 @@ import java.util.stream.IntStream;
  * <p><strong>ProcessKnowledgeGraph (Phase 4a)</strong>: An optional cross-round
  * memory graph can be injected to bias the generation prompt with patterns that
  * yielded high rewards in previous GRPO rounds.
+ *
+ * <p><strong>ProMoAI Prompt Suite (Phase 5a)</strong>: Prompts are constructed by
+ * {@link ProMoAIPromptBuilder} using all six strategies from Kourani et al. (2024):
+ * role prompting, knowledge injection, few-shot learning, negative prompting,
+ * least-to-most decomposition, and feedback integration.
+ *
+ * <p><strong>Iterative Self-Correction (Phase 5b)</strong>: When
+ * {@link PowlTextParser} fails to parse an LLM response, the sampler retries up to
+ * {@link #MAX_CORRECTION_RETRIES} times by sending a correction prompt that embeds
+ * the parse error and the malformed previous attempt. This mirrors the ProMoAI
+ * paper's "critical error → up to 5 iterations with refined prompt" mechanism,
+ * which achieves success within 2 iterations on average with GPT-4.
  */
 public class OllamaCandidateSampler implements CandidateSampler {
 
     private static final String GENERATE_PATH = "/api/generate";
     private static final double[] TEMPERATURES = {0.5, 0.7, 0.9, 1.0, 0.6, 0.8, 0.95, 0.75};
+
+    /** ProMoAI Phase 5b: max critical-error correction retries per candidate. */
+    static final int MAX_CORRECTION_RETRIES = 3;
 
     private final String baseUrl;
     private final String model;
@@ -62,6 +78,8 @@ public class OllamaCandidateSampler implements CandidateSampler {
     private final HttpClient httpClient;
     private final PowlTextParser parser;
     private final ProcessKnowledgeGraph knowledgeGraph;
+    /** LLM backend gateway — default uses Ollama HTTP; overridden in tests. */
+    private final LlmGateway gateway;
 
     /**
      * Creates a sampler without a knowledge graph (no cross-round memory bias).
@@ -78,18 +96,38 @@ public class OllamaCandidateSampler implements CandidateSampler {
      */
     public OllamaCandidateSampler(String baseUrl, String model, int timeoutSecs,
                                   ProcessKnowledgeGraph knowledgeGraph) {
+        this(baseUrl, model, timeoutSecs, knowledgeGraph, null);
+        // gateway is set via the delegate below; null triggers the HTTP default
+    }
+
+    /**
+     * Package-private constructor for testing: injects a custom {@link LlmGateway}
+     * in place of the Ollama HTTP client. Allows deterministic testing of the retry
+     * and self-correction logic without a live Ollama server.
+     *
+     * @param gateway the LLM backend to use (required, non-null)
+     */
+    OllamaCandidateSampler(String baseUrl, String model, int timeoutSecs,
+                           ProcessKnowledgeGraph knowledgeGraph, LlmGateway gateway) {
         if (baseUrl == null || baseUrl.isBlank())
             throw new IllegalArgumentException("baseUrl must not be blank");
         if (model == null || model.isBlank())
             throw new IllegalArgumentException("model must not be blank");
         if (timeoutSecs <= 0)
             throw new IllegalArgumentException("timeoutSecs must be positive");
+        Objects.requireNonNull(knowledgeGraph, "knowledgeGraph must not be null");
         this.baseUrl = baseUrl;
         this.model = model;
         this.timeout = Duration.ofSeconds(timeoutSecs);
-        this.httpClient = HttpClient.newBuilder().connectTimeout(timeout).build();
         this.parser = new PowlTextParser();
         this.knowledgeGraph = knowledgeGraph;
+        if (gateway != null) {
+            this.httpClient = null;  // not used when gateway is injected
+            this.gateway = gateway;
+        } else {
+            this.httpClient = HttpClient.newBuilder().connectTimeout(this.timeout).build();
+            this.gateway = this::callOllamaHttp;
+        }
     }
 
     @Override
@@ -107,7 +145,7 @@ public class OllamaCandidateSampler implements CandidateSampler {
         // All K threads share the same graph-derived bias (graph is read-only during sampling).
         String graphBias = knowledgeGraph.biasHint(processDescription, 3);
 
-        // Submit K Ollama HTTP calls as concurrent virtual threads (Java 21+).
+        // Submit K LLM calls as concurrent virtual threads (Java 21+).
         // Each call uses a different temperature for candidate diversity.
         // Virtual threads prevent carrier thread pinning during network I/O —
         // K=4 yields ~4× throughput vs the sequential baseline.
@@ -123,12 +161,26 @@ public class OllamaCandidateSampler implements CandidateSampler {
                             String boardBias = board.isEmpty()
                                     ? null
                                     : formatBoardBias(board.topK(1));
-                            String response = callOllama(
-                                    processDescription, temperature, graphBias, boardBias);
-                            PowlModel candidate = parser.parse(response, modelId);
-                            // Publish so later threads can steer away from this pattern
-                            board.publish(candidate);
-                            return candidate;
+
+                            // Phase 5a: ProMoAI prompt suite (all 6 strategies)
+                            String initialPrompt = ProMoAIPromptBuilder.buildInitialPrompt(
+                                    processDescription, graphBias, boardBias);
+                            String lastResponse = gateway.send(initialPrompt, temperature);
+
+                            // Phase 5b: iterative self-correction on parse failure
+                            for (int attempt = 0; ; attempt++) {
+                                try {
+                                    PowlModel candidate = parser.parse(lastResponse, modelId);
+                                    // Publish so later threads can steer away from this pattern
+                                    board.publish(candidate);
+                                    return candidate;
+                                } catch (PowlParseException e) {
+                                    if (attempt >= MAX_CORRECTION_RETRIES) throw e;
+                                    String correctionPrompt = ProMoAIPromptBuilder.buildCorrectionPrompt(
+                                            processDescription, lastResponse, e.getMessage());
+                                    lastResponse = gateway.send(correctionPrompt, temperature);
+                                }
+                            }
                         });
                     })
                     .toList();
@@ -143,7 +195,7 @@ public class OllamaCandidateSampler implements CandidateSampler {
                 Throwable cause = e.getCause();
                 parseErrors.add("Candidate " + i + ": " + cause.getMessage());
                 if (cause instanceof IOException ioe) throw ioe;
-                // PowlParseException from parser.parse — collect and continue
+                // PowlParseException after all retries exhausted — collect and continue
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IOException("Candidate sampling interrupted", e);
@@ -152,7 +204,8 @@ public class OllamaCandidateSampler implements CandidateSampler {
 
         if (candidates.isEmpty()) {
             throw new PowlParseException(
-                "All " + k + " candidates failed to parse. Errors: " + parseErrors,
+                "All " + k + " candidates failed to parse after " + MAX_CORRECTION_RETRIES
+                    + " correction retries each. Errors: " + parseErrors,
                 processDescription
             );
         }
@@ -160,9 +213,11 @@ public class OllamaCandidateSampler implements CandidateSampler {
         return candidates;
     }
 
-    private String callOllama(String description, double temperature,
-                               String graphBias, String boardBias) throws IOException {
-        String prompt = buildGenerationPrompt(description, graphBias, boardBias);
+    /**
+     * Sends a prompt to the Ollama HTTP API and returns the response text.
+     * Used as the default {@link LlmGateway} implementation.
+     */
+    private String callOllamaHttp(String prompt, double temperature) throws IOException {
         String requestBody = buildRequestBody(prompt, temperature);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -182,37 +237,6 @@ public class OllamaCandidateSampler implements CandidateSampler {
             Thread.currentThread().interrupt();
             throw new IOException("Ollama call interrupted", e);
         }
-    }
-
-    private String buildGenerationPrompt(String description, String graphBias, String boardBias) {
-        StringBuilder prompt = new StringBuilder("""
-            Generate a POWL (Partially Ordered Workflow Language) process model for this description:
-            %s
-
-            Output ONLY a POWL expression using this exact format:
-            SEQUENCE(ACTIVITY(Step1), ACTIVITY(Step2), ...)
-            Or use XOR(...), PARALLEL(...), LOOP(do_activity, redo_activity)
-
-            Rules:
-            1. Use ACTIVITY(label) for leaf activities
-            2. Use SEQUENCE for sequential steps
-            3. Use XOR for exclusive choices
-            4. Use PARALLEL for concurrent activities
-            5. Use LOOP(do, redo) for repetitive activities
-            6. Output ONLY the POWL expression, no explanation
-            """.formatted(description));
-
-        // Cross-round memory: steer away from already-rewarded patterns (OpenSage long-term memory)
-        if (graphBias != null && !graphBias.isBlank()) {
-            prompt.append("\n").append(graphBias).append("\n");
-        }
-        // Within-round ensemble: steer away from peer discoveries (OpenSage horizontal ensemble)
-        if (boardBias != null && !boardBias.isBlank()) {
-            prompt.append("\n").append(boardBias).append("\n");
-        }
-
-        prompt.append("\nPOWL model:");
-        return prompt.toString();
     }
 
     private static String formatBoardBias(List<PowlModel> peerModels) {
