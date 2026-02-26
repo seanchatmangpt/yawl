@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<net id="ChaosTestWorkflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns="http://www.yawlfoundation.org/yawl/2.0/workflowPattern">
+
+    <process id="ChaosTestProcess">
+        <inputParams>
+            <data id="start" type="String" />
+        </inputParams>
+        <outputParams>
+            <data id="end" type="String" />
+        </outputParams>
+        <tasks>
+            <task id="StartTask" name="Start">
+                <inputPredicate>condition</inputPredicate>
+                <outputPredicate>proceed</outputPredicate>
+                <decompositionRef>dec-Start</decompositionRef>
+                <flows>
+                    <flow into="ConditionCheck" />
+                </flows>
+            </task>
+
+            <task id="ConditionCheck" name="CheckCondition">
+                <inputPredicate>proceed</inputPredicate>
+                <outputPredicate>success|failure</outputPredicate>
+                <flows>
+                    <flow into="SuccessTask" condition="success" />
+                    <flow into="FailureTask" condition="failure" />
+                </flows>
+            </task>
+
+            <task id="SuccessTask" name="SuccessHandler">
+                <outputPredicate>completed</outputPredicate>
+                <flows>
+                    <flow into="EndTask" />
+                </flows>
+            </task>
+
+            <task id="FailureTask" name="FailureHandler">
+                <outputPredicate>recoveryAttempt</outputPredicate>
+                <flows>
+                    <flow into="RecoveryTask" />
+                </flows>
+            </task>
+
+            <task id="RecoveryTask" name="Recovery">
+                <outputPredicate>recovered|failed</outputPredicate>
+                <flows>
+                    <flow into="EndTask" condition="recovered" />
+                    <flow into="FailureTask" condition="failed" />
+                </flows>
+            </task>
+
+            <task id="EndTask" name="End">
+                <outputPredicate>finished</outputPredicate>
+            </task>
+        </tasks>
+    </process>
+
+    <decomposition id="dec-Start">
+        <start ref="StartTask" />
+    </decomposition>
+
+    <constraints>
+        <!-- Base flow constraints -->
+        <constraint id="c1" source="StartTask" target="ConditionCheck" />
+        <constraint id="c2" source="ConditionCheck" target="SuccessTask" />
+        <constraint id="c3" source="ConditionCheck" target="FailureTask" />
+        <constraint id="c4" source="SuccessTask" target="EndTask" />
+        <constraint id="c5" source="FailureTask" target="RecoveryTask" />
+        <constraint id="c6" source="RecoveryTask" target="EndTask" />
+        <constraint id="c7" source="RecoveryTask" target="FailureTask" />
+
+        <!-- Exclusive choice between Success and Failure -->
+        <constraint id="c8" xor="ConditionCheck" />
+    </constraints>
+</net>
