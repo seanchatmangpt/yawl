@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -29,5 +29,20 @@
  *   <li>{@link org.yawlfoundation.yawl.engine.observability.YAWLTracing} - Distributed tracing support</li>
  *   <li>{@link org.yawlfoundation.yawl.engine.observability.OpenTelemetryConfig} - OTLP configuration</li>
  * </ul>
+ *
+ * <h3>Virtual Thread Metrics Documentation (v6.0.0-GA)</h3>
+ * <p>Enhanced observability for Java 21+ virtual thread environments:
+ * <ul>
+ *   <li>Virtual thread count, creation, and termination metrics</li>
+ *   <li>Per-workflow virtual thread utilization tracking</li>
+ *   <li>Virtual thread pinning detection and alerting</li>
+ *   <li>Virtual thread pool monitoring and optimization metrics</li>
+ *   <li>Structured concurrency visualization in distributed traces</li>
+ * </ul>
+ * Virtual thread metrics provide insights into workflow scalability and
+ * resource utilization patterns.</p>
+ *
+ * @since 6.0.0-GA
+ * @author YAWL Foundation
  */
 package org.yawlfoundation.yawl.engine.observability;

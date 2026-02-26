@@ -1292,3 +1292,54 @@ rotation = "daily"
 enable_metrics = true
 enable_tracing = true
 otel_endpoint = "http://localhost:4317"
+
+# =============================================================================
+# PHASE 12: DIATAXIS PACKAGE DOCUMENTATION GENERATION
+# Generates documentation starters from package-info.java files
+# Each package gets 4 documentation files: tutorial, how-to, reference, explanation
+# =============================================================================
+
+# --- Tutorial Documentation (Learning-oriented) ---
+[[generation.rules]]
+name = "diataxis-tutorial"
+description = "Generate diataxis tutorial for each package (learning-oriented)"
+query = { file = ".ggen/sparql/extract-package-metadata.sparql" }
+template = { file = "templates/yawl-diataxis/tutorial.tera" }
+output_file = "docs/packages/{{ package_path }}/tutorials/01-getting-started.md"
+mode = "Overwrite"
+
+# --- How-To Documentation (Task-oriented) ---
+[[generation.rules]]
+name = "diataxis-howto"
+description = "Generate diataxis how-to guide for each package (task-oriented)"
+query = { file = ".ggen/sparql/extract-package-metadata.sparql" }
+template = { file = "templates/yawl-diataxis/how-to.tera" }
+output_file = "docs/packages/{{ package_path }}/how-to/index.md"
+mode = "Overwrite"
+
+# --- Reference Documentation (Information-oriented) ---
+[[generation.rules]]
+name = "diataxis-reference"
+description = "Generate diataxis reference for each package (information-oriented)"
+query = { file = ".ggen/sparql/extract-package-metadata.sparql" }
+template = { file = "templates/yawl-diataxis/reference.tera" }
+output_file = "docs/packages/{{ package_path }}/reference/api.md"
+mode = "Overwrite"
+
+# --- Explanation Documentation (Understanding-oriented) ---
+[[generation.rules]]
+name = "diataxis-explanation"
+description = "Generate diataxis explanation for each package (understanding-oriented)"
+query = { file = ".ggen/sparql/extract-package-metadata.sparql" }
+template = { file = "templates/yawl-diataxis/explanation.tera" }
+output_file = "docs/packages/{{ package_path }}/explanation/architecture.md"
+mode = "Overwrite"
+
+# --- Package Index (Master Index) ---
+[[generation.rules]]
+name = "diataxis-package-index"
+description = "Generate master index for all package documentation"
+query = { file = ".ggen/sparql/list-all-packages.sparql" }
+template = { file = "templates/yawl-diataxis/package-index.tera" }
+output_file = "docs/packages/INDEX.md"
+mode = "Overwrite"

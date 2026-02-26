@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -19,5 +19,14 @@
 /**
  * Contains classes that define process specifications and decompositions, and the
  * process elements therein.
+ *
+ * <p><b>Since:</b> 6.0.0-GA</p>
+ * <p>This package includes support for Java 25 sealed class hierarchies for
+ * domain models, enabling exhaustive pattern matching with switch expressions.
+ * It also provides integration points for marketplace extensions that extend
+ * standard YAWL functionality.</p>
+ * <p>Enhancements in version 6.0.0-GA utilize Java 25 features including
+ * virtual threads for scalable execution, scoped values for thread-local state,
+ * and pattern matching for type-safe code.</p>
  */
 package org.yawlfoundation.yawl.elements;

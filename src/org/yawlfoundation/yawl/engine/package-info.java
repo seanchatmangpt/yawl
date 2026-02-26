@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -19,5 +19,29 @@
 /**
  * The main engine package, handling the execution of process instances, their
  * nets and tasks. Also responsible for process persistence and event announcements.
+ *
+ * <h3>Virtual Thread Support (v6.0.0-GA)</h3>
+ * <p>The YAWL engine now supports Java 21+ virtual threads for improved scalability:
+ * <ul>
+ *   <li>Per-case virtual threads for task execution</li>
+ *   <li>Virtual thread pools for work item processing</li>
+ *   <li>Structured concurrency for parallel task processing</li>
+ *   <li>Efficient thread management without manual pooling</li>
+ * </ul>
+ * Virtual threads enable handling of millions of concurrent workflow instances
+ * with minimal resource consumption.</p>
+ *
+ * <h3>GRPO Integration (v6.0.0-GA)</h3>
+ * <p>Support for Guarded Resource Pool Optimization (GRPO) patterns:
+ * <ul>
+ *   <li>Resource-aware task scheduling with QoS guarantees</li>
+ *   <li>Dynamic resource allocation based on case priorities</li>
+ *   <li>Resource contention management and deadlock prevention</li>
+ *   <li>Resource usage metrics and optimization feedback loops</li>
+ * </ul>
+ * GRPO ensures optimal resource utilization while maintaining workflow integrity.</p>
+ *
+ * @since 6.0.0-GA
+ * @author YAWL Foundation
  */
 package org.yawlfoundation.yawl.engine;

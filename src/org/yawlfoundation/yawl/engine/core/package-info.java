@@ -46,7 +46,19 @@
  * both engine trees implement, enabling code sharing without coupling to either
  * tree's concrete types.</p>
  *
- * @since 5.2 (Phase 1 deduplication)
+ * <h3>Virtual Thread Optimization Notes (v6.0.0-GA)</h3>
+ * <p>Core engine abstractions optimized for Java 21+ virtual thread environments:
+ * <ul>
+ *   <li>Virtual thread-safe implementations of shared data structures</li>
+ *   <li>Lock-free marking algorithms optimized for virtual thread scheduling</li>
+ *   <li>Immutable data structures to prevent virtual thread pinning</li>
+ *   <li>Optimized predicate evaluation for virtual thread context switching</li>
+ *   <li>Core interfaces designed to avoid blocking in virtual threads</li>
+ * </ul>
+ * These optimizations ensure maximum throughput when using virtual threads
+ * for workflow execution at scale.</p>
+ *
+ * @since 6.0.0-GA (5.2 - Phase 1 deduplication)
  * @author YAWL Foundation
  */
 package org.yawlfoundation.yawl.engine.core;

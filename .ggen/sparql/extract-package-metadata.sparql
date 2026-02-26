@@ -1,0 +1,76 @@
+# Extract Package Metadata for Diataxis Documentation Generation
+#
+# This query extracts metadata from package-info.java files that have been
+# converted to RDF format by the ggen-parse-packages.sh script.
+#
+# Output variables:
+#   - package_name: Full package name (e.g., org.yawlfoundation.yawl.engine.core)
+#   - package_short: Short name for display (e.g., engine.core)
+#   - package_path: File system path (e.g., org/yawlfoundation/yawl/engine/core)
+#   - description: Package description from Javadoc
+#   - since_version: Version when package was introduced
+#   - author: Package author
+#   - key_classes: Comma-separated list of key class names
+#   - subpackages: Comma-separated list of subpackage names
+#   - category: Package category (core, engine, elements, integration, etc.)
+
+PREFIX javadoc: <http://ggen.io/javadoc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?package_name ?package_short ?package_path ?description ?since_version ?author
+       (GROUP_CONCAT(DISTINCT ?className; separator=",") AS ?key_classes)
+       (GROUP_CONCAT(DISTINCT ?subpkgName; separator=",") AS ?subpackages)
+       ?category
+WHERE {
+  ?package a javadoc:Package ;
+           javadoc:name ?package_name ;
+           javadoc:description ?description .
+
+  # Convert package name to path
+  BIND(REPLACE(?package_name, "\\.", "/") AS ?package_path)
+
+  # Extract short name (last 2-3 segments)
+  BIND(
+    IF(CONTAINS(?package_name, "."),
+       REPLACE(?package_name, "^.*\\.([^.]+\\.[^.]+)$", "$1"),
+       ?package_name
+    ) AS ?package_short
+  )
+
+  # Determine category based on package name
+  BIND(
+    CASE
+      WHEN CONTAINS(?package_name, ".engine.core") THEN "core"
+      WHEN CONTAINS(?package_name, ".engine") THEN "engine"
+      WHEN CONTAINS(?package_name, ".elements") THEN "elements"
+      WHEN CONTAINS(?package_name, ".integration") THEN "integration"
+      WHEN CONTAINS(?package_name, ".resilience") THEN "resilience"
+      WHEN CONTAINS(?package_name, ".security") THEN "security"
+      WHEN CONTAINS(?package_name, ".stateless") THEN "stateless"
+      ELSE "other"
+    END AS ?category
+  )
+
+  # Optional metadata
+  OPTIONAL { ?package javadoc:since ?since_version }
+  OPTIONAL { ?package javadoc:author ?author }
+
+  # Optional key classes (public classes in this package)
+  OPTIONAL {
+    ?package javadoc:containsClass ?class .
+    ?class javadoc:name ?className .
+    ?class javadoc:isPublic true .
+    FILTER(!CONTAINS(?className, "$"))  # Exclude inner classes
+  }
+
+  # Optional subpackages
+  OPTIONAL {
+    ?subpkg a javadoc:Package ;
+            javadoc:name ?subpkgName .
+    FILTER(STRSTARTS(?subpkgName, CONCAT(?package_name, ".")))
+    FILTER(!CONTAINS(SUBSTR(?subpkgName, STRLEN(?package_name) + 2), "."))
+  }
+}
+GROUP BY ?package_name ?package_short ?package_path ?description ?since_version ?author ?category
+ORDER BY ?category ?package_name

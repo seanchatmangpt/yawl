@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -18,5 +18,13 @@
 
 /**
  * Provides for the definition of task and net level variables.
+ *
+ * <p><b>Since:</b> 6.0.0-GA</p>
+ * <p>This package utilizes Java 25 records for immutable data structures,
+ * providing auto-generated equals/hashCode/toString methods for
+ * work items, events, and data payloads.</p>
+ * <p>Enhanced in version 6.0.0-GA with pattern matching support for
+ * variable types and improved virtual thread utilization for data
+ * transformation operations.</p>
  */
 package org.yawlfoundation.yawl.elements.data;

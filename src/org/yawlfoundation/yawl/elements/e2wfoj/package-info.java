@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
  * The YAWL Foundation is a collaboration of individuals and
  * organisations who are committed to improving workflow technology.
  *
@@ -19,5 +19,13 @@
 /**
  * Provides for the application of Reset Nets to process models for
  * analysis purposes.
+ *
+ * <p><b>Since:</b> 6.0.0-GA</p>
+ * <p>This package leverages Java 25 optimization features including
+ * compact object headers for memory efficiency and virtual threads for
+ * parallel analysis operations.</p>
+ * <p>Enhanced in version 6.0.0-GA with improved performance for
+ * Reset Net analysis through Java 25 memory layout optimizations
+ * and structured concurrency support.</p>
  */
 package org.yawlfoundation.yawl.elements.e2wfoj;

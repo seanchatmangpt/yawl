@@ -1,0 +1,185 @@
+{#
+ Diataxis Reference Template
+ Generates information-oriented API documentation for YAWL packages.
+
+ Context Variables:
+   - package_name: Full package name
+   - package_short: Short name
+   - package_description: Description from package-info.java
+   - key_classes: Array of important classes with metadata
+   - subpackages: Array of subpackage names
+   - since_version: Version when package was introduced
+   - author: Package author
+   - version: YAWL version
+ #}
+# API Reference - {{ package_short | replace(from=".", to=" ") | title }}
+
+{{ package_description | default(value="This package is part of the YAWL workflow engine.", safe=true) }}
+
+## Package Summary
+
+| Property | Value |
+|----------|-------|
+| **Package** | `{{ package_name }}` |
+| **Since** | {{ since_version | default(value="6.0.0-GA") }} |
+| **Author** | {{ author | default(value="YAWL Foundation") }} |
+| **License** | LGPL 3.0 |
+
+{% if subpackages %}
+## Subpackages
+
+| Package | Description |
+|---------|-------------|
+{% for subpkg in subpackages %}
+| [`{{ package_name }}.{{ subpkg }}`](./{{ subpkg }}/reference/api.md) | TODO: Add description |
+{% endfor %}
+
+{% endif %}
+{% if key_classes %}
+## Classes
+
+{% for class in key_classes %}
+### {{ class.name | default(value=class) }}
+
+{{ class.description | default(value="TODO: Add class description") }}
+
+{% if class.methods %}
+| Modifier | Method | Description |
+|----------|--------|-------------|
+{% for method in class.methods %}
+| `{{ method.modifier | default(value="public") }}` | `{{ method.signature }}` | {{ method.description | default(value="TODO") }} |
+{% endfor %}
+
+{% else %}
+#### Key Methods
+
+| Method | Description |
+|--------|-------------|
+| `getInstance()` | Returns singleton instance (if applicable) |
+| `toString()` | Returns string representation |
+| `equals(Object)` | Compares for equality |
+| `hashCode()` | Returns hash code |
+
+{% endif %}
+{% if class.example %}
+#### Example
+
+```java
+{{ class.example }}
+```
+
+{% endif %}
+{% endfor %}
+{% else %}
+## Key Classes
+
+| Class | Description |
+|-------|-------------|
+| TODO | Add key classes for this package |
+
+{% endif %}
+## Interfaces
+
+{% if package_name contains "engine" %}
+| Interface | Implementations | Purpose |
+|-----------|-----------------|---------|
+| `YEngineObserver` | User implementations | Subscribe to engine events |
+| `YWorkItemHandler` | User implementations | Handle work item lifecycle |
+| `YCaseListener` | User implementations | Listen for case events |
+
+{% elif package_name contains "elements" %}
+| Interface | Implementations | Purpose |
+|-----------|-----------------|---------|
+| `YDecomposition` | YNet, YCompositeTask | Define process structure |
+| `YFlowHandler` | User implementations | Custom flow routing |
+
+{% elif package_name contains "integration.mcp" %}
+| Interface | Implementations | Purpose |
+|-----------|-----------------|---------|
+| `YawlMcpTool` | User implementations | MCP tool definition |
+| `YawlMcpResource` | User implementations | MCP resource provider |
+| `YawlMcpPrompt` | User implementations | MCP prompt template |
+
+{% elif package_name contains "integration.a2a" %}
+| Interface | Implementations | Purpose |
+|-----------|-----------------|---------|
+| `YawlA2AHandler` | User implementations | A2A message handling |
+| `YawlA2ACapability` | User implementations | Agent capability |
+
+{% else %}
+| Interface | Description |
+|-----------|-------------|
+| TODO | Add interfaces for this package |
+
+{% endif %}
+
+## Enums
+
+{% if package_name contains "engine" %}
+| Enum | Values | Purpose |
+|------|--------|---------|
+| `YWorkItemStatus` | `Enabled`, `Fired`, `Started`, `Suspended`, `Complete`, `Dead` | Work item lifecycle states |
+| `YTaskStatus` | `Waiting`, `Ready`, `Executing`, `Complete` | Task execution states |
+
+{% elif package_name contains "elements" %}
+| Enum | Values | Purpose |
+|------|--------|---------|
+| `YTask.JoinType` | `AND`, `OR`, `XOR` | Task join semantics |
+| `YTask.SplitType` | `AND`, `OR`, `XOR` | Task split semantics |
+
+{% else %}
+| Enum | Values | Purpose |
+|------|--------|---------|
+| TODO | Add enums for this package |
+
+{% endif %}
+
+## Exceptions
+
+{% if package_name contains "engine" %}
+| Exception | When Thrown |
+|-----------|-------------|
+| `YEngineException` | General engine error |
+| `YStateException` | Invalid workflow state |
+| `YDataStateException` | Data validation failure |
+
+{% elif package_name contains "elements" %}
+| Exception | When Thrown |
+|-----------|-------------|
+| `YSyntaxException` | Invalid specification syntax |
+| `YSchemaElementException` | Schema validation failure |
+
+{% else %}
+| Exception | When Thrown |
+|-----------|-------------|
+| TODO | Add exceptions for this package |
+
+{% endif %}
+
+## Related Packages
+
+{% if package_name contains "engine.core" %}
+- [`org.yawlfoundation.yawl.engine`](../../engine/reference/api.md) - Stateful engine
+- [`org.yawlfoundation.yawl.stateless.engine`](../../stateless/engine/reference/api.md) - Stateless engine
+
+{% elif package_name contains "engine" %}
+- [`org.yawlfoundation.yawl.elements`](../elements/reference/api.md) - Specification elements
+- [`org.yawlfoundation.yawl.engine.core`](./core/reference/api.md) - Shared core abstractions
+
+{% elif package_name contains "elements" %}
+- [`org.yawlfoundation.yawl.engine`](../engine/reference/api.md) - Engine implementation
+- [`org.yawlfoundation.yawl.schema`](../schema/reference/api.md) - Schema validation
+
+{% elif package_name contains "integration" %}
+- [`org.yawlfoundation.yawl.engine`](../engine/reference/api.md) - Engine implementation
+- [`org.yawlfoundation.yawl.resilience`](../resilience/reference/api.md) - Resilience features
+
+{% else %}
+- [YAWL Engine](../../engine/reference/api.md)
+- [YAWL Elements](../../elements/reference/api.md)
+
+{% endif %}
+
+---
+*Generated by ggen from package-info.java*
+*Package: `{{ package_name }}`*

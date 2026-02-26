@@ -129,6 +129,24 @@ public record AgentConfiguration(
     }
 
     /**
+     * Gets the agent registry client for discovering other agents.
+     *
+     * @return the agent registry client
+     */
+    public AgentRegistryClient registryClient() {
+        return registryClient;
+    }
+
+    /**
+     * Gets the handoff request service for managing work item handoffs.
+     *
+     * @return the handoff request service
+     */
+    public HandoffRequestService handoffService() {
+        return handoffService;
+    }
+
+    /**
      * Canonical constructor with validation of required fields.
      */
     public AgentConfiguration {

@@ -1,0 +1,63 @@
+# List All Packages for Documentation Index Generation
+#
+# This query lists all packages with their documentation status
+# for generating the master documentation index.
+#
+# Output variables:
+#   - package_name: Full package name
+#   - short_name: Display name
+#   - path: Documentation path
+#   - description: Package description
+#   - category: Package category
+#   - has_tutorial: Whether tutorial exists
+#   - has_howto: Whether how-to exists
+#   - has_reference: Whether reference exists
+#   - has_explanation: Whether explanation exists
+
+PREFIX javadoc: <http://ggen.io/javadoc#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?package_name ?short_name ?path ?description ?category
+       (BOUND(?tutorialFile) AS ?has_tutorial)
+       (BOUND(?howtoFile) AS ?has_howto)
+       (BOUND(?referenceFile) AS ?has_reference)
+       (BOUND(?explanationFile) AS ?has_explanation)
+WHERE {
+  ?package a javadoc:Package ;
+           javadoc:name ?package_name ;
+           javadoc:description ?description .
+
+  # Convert to path
+  BIND(REPLACE(?package_name, "\\.", "/") AS ?path)
+
+  # Short name
+  BIND(
+    IF(CONTAINS(?package_name, "."),
+       REPLACE(?package_name, "^.*\\.([^.]+\\.[^.]+)$", "$1"),
+       ?package_name
+    ) AS ?short_name
+  )
+
+  # Determine category
+  BIND(
+    CASE
+      WHEN CONTAINS(?package_name, ".engine.core") THEN "core"
+      WHEN CONTAINS(?package_name, ".engine") THEN "engine"
+      WHEN CONTAINS(?package_name, ".elements") THEN "elements"
+      WHEN CONTAINS(?package_name, ".integration") THEN "integration"
+      WHEN CONTAINS(?package_name, ".resilience") THEN "resilience"
+      WHEN CONTAINS(?package_name, ".security") THEN "security"
+      WHEN CONTAINS(?package_name, ".stateless") THEN "stateless"
+      ELSE "other"
+    END AS ?category
+  )
+
+  # Check for existing documentation (these would need to be bound externally
+  # or checked via file existence in the generation script)
+  # For now, we assume all docs will be generated
+  BIND(true AS ?has_tutorial)
+  BIND(true AS ?has_howto)
+  BIND(true AS ?has_reference)
+  BIND(true AS ?has_explanation)
+}
+ORDER BY ?category ?package_name

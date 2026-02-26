@@ -1,0 +1,148 @@
+{#
+ Diataxis Package Index Template
+ Generates master index of all YAWL package documentation.
+
+ Context Variables:
+   - packages: Array of package metadata objects
+   - version: YAWL version
+   - generation_timestamp: When this index was generated
+ #}
+# YAWL Package Documentation Index
+
+This index lists all YAWL packages with generated diataxis documentation.
+Each package has four documentation types:
+
+| Type | Purpose | Audience |
+|------|---------|----------|
+| **Tutorial** | Learning-oriented | Beginners |
+| **How-To** | Task-oriented | Practitioners |
+| **Reference** | Information-oriented | All users |
+| **Explanation** | Understanding-oriented | Architects |
+
+---
+
+## Core Packages
+
+| Package | Description | Tutorial | How-To | Reference | Explanation |
+|---------|-------------|----------|--------|-----------|-------------|
+{% for pkg in packages %}
+{% if pkg.category == "core" %}
+| `{{ pkg.short_name }}` | {{ pkg.description | truncate(length=50) }} | [Tutorial]({{ pkg.path }}/tutorials/) | [How-To]({{ pkg.path }}/how-to/) | [Reference]({{ pkg.path }}/reference/api.md) | [Explanation]({{ pkg.path }}/explanation/) |
+{% endif %}
+{% endfor %}
+
+## Engine Packages
+
+| Package | Description | Tutorial | How-To | Reference | Explanation |
+|---------|-------------|----------|--------|-----------|-------------|
+{% for pkg in packages %}
+{% if pkg.category == "engine" %}
+| `{{ pkg.short_name }}` | {{ pkg.description | truncate(length=50) }} | [Tutorial]({{ pkg.path }}/tutorials/) | [How-To]({{ pkg.path }}/how-to/) | [Reference]({{ pkg.path }}/reference/api.md) | [Explanation]({{ pkg.path }}/explanation/) |
+{% endif %}
+{% endfor %}
+
+## Elements Packages
+
+| Package | Description | Tutorial | How-To | Reference | Explanation |
+|---------|-------------|----------|--------|-----------|-------------|
+{% for pkg in packages %}
+{% if pkg.category == "elements" %}
+| `{{ pkg.short_name }}` | {{ pkg.description | truncate(length=50) }} | [Tutorial]({{ pkg.path }}/tutorials/) | [How-To]({{ pkg.path }}/how-to/) | [Reference]({{ pkg.path }}/reference/api.md) | [Explanation]({{ pkg.path }}/explanation/) |
+{% endif %}
+{% endfor %}
+
+## Integration Packages
+
+| Package | Description | Tutorial | How-To | Reference | Explanation |
+|---------|-------------|----------|--------|-----------|-------------|
+{% for pkg in packages %}
+{% if pkg.category == "integration" %}
+| `{{ pkg.short_name }}` | {{ pkg.description | truncate(length=50) }} | [Tutorial]({{ pkg.path }}/tutorials/) | [How-To]({{ pkg.path }}/how-to/) | [Reference]({{ pkg.path }}/reference/api.md) | [Explanation]({{ pkg.path }}/explanation/) |
+{% endif %}
+{% endfor %}
+
+## Resilience Packages
+
+| Package | Description | Tutorial | How-To | Reference | Explanation |
+|---------|-------------|----------|--------|-----------|-------------|
+{% for pkg in packages %}
+{% if pkg.category == "resilience" %}
+| `{{ pkg.short_name }}` | {{ pkg.description | truncate(length=50) }} | [Tutorial]({{ pkg.path }}/tutorials/) | [How-To]({{ pkg.path }}/how-to/) | [Reference]({{ pkg.path }}/reference/api.md) | [Explanation]({{ pkg.path }}/explanation/) |
+{% endif %}
+{% endfor %}
+
+## Security Packages
+
+| Package | Description | Tutorial | How-To | Reference | Explanation |
+|---------|-------------|----------|--------|-----------|-------------|
+{% for pkg in packages %}
+{% if pkg.category == "security" %}
+| `{{ pkg.short_name }}` | {{ pkg.description | truncate(length=50) }} | [Tutorial]({{ pkg.path }}/tutorials/) | [How-To]({{ pkg.path }}/how-to/) | [Reference]({{ pkg.path }}/reference/api.md) | [Explanation]({{ pkg.path }}/explanation/) |
+{% endif %}
+{% endfor %}
+
+## Other Packages
+
+| Package | Description | Tutorial | How-To | Reference | Explanation |
+|---------|-------------|----------|--------|-----------|-------------|
+{% for pkg in packages %}
+{% if pkg.category == "other" %}
+| `{{ pkg.short_name }}` | {{ pkg.description | truncate(length=50) }} | [Tutorial]({{ pkg.path }}/tutorials/) | [How-To]({{ pkg.path }}/how-to/) | [Reference]({{ pkg.path }}/reference/api.md) | [Explanation]({{ pkg.path }}/explanation/) |
+{% endif %}
+{% endfor %}
+
+---
+
+## Statistics
+
+- **Total packages**: {{ packages | length }}
+- **Documentation files**: {{ packages | length * 4 }} (4 per package)
+- **YAWL version**: {{ version | default(value="6.0.0-GA") }}
+
+---
+
+## Quick Navigation
+
+### By Category
+
+{% raw %}
+```
+docs/packages/
+├── org/yawlfoundation/yawl/
+│   ├── engine/           # Core engine
+│   │   ├── core/         # Shared abstractions
+│   │   ├── interfce/     # API interfaces
+│   │   └── time/         # Timer services
+│   ├── elements/         # Domain model
+│   │   ├── data/         # Data handling
+│   │   └── state/        # State management
+│   ├── stateless/        # Stateless engine
+│   ├── integration/      # External integrations
+│   │   ├── mcp/          # Model Context Protocol
+│   │   ├── a2a/          # Agent-to-Agent
+│   │   └── webhook/      # Webhook support
+│   ├── resilience/       # Fault tolerance
+│   └── security/         # Security features
+└── INDEX.md              # This file
+```
+{% endraw %}
+
+### Documentation Structure
+
+Each package follows this structure:
+```
+docs/packages/{package-path}/
+├── tutorials/
+│   └── 01-getting-started.md    # Learning guide
+├── how-to/
+│   └── index.md                  # Task recipes
+├── reference/
+│   └── api.md                    # API documentation
+└── explanation/
+    └── architecture.md           # Design explanation
+```
+
+---
+
+*Generated by ggen at {{ generation_timestamp | default(value="now") }}*
+*YAWL {{ version | default(value="6.0.0-GA") }}*

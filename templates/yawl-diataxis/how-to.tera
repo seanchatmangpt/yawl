@@ -1,0 +1,282 @@
+{#
+ Diataxis How-To Template
+ Generates task-oriented documentation for YAWL packages.
+
+ Context Variables:
+   - package_name: Full package name
+   - package_short: Short name
+   - package_description: Description from package-info.java
+   - key_classes: Array of important classes
+   - version: YAWL version
+ #}
+# How-To Guide - {{ package_short | replace(from=".", to=" ") | title }}
+
+{{ package_description | default(value="This package is part of the YAWL workflow engine.", safe=true) }}
+
+## Quick Links
+
+| Task | Difficulty |
+|------|------------|
+| [Getting Started](#getting-started) | Beginner |
+{% if package_name contains "engine" %}
+| [Starting a Case](#starting-a-case) | Beginner |
+| [Querying Work Items](#querying-work-items) | Intermediate |
+| [Handling Events](#handling-events) | Intermediate |
+{% elif package_name contains "elements" %}
+| [Creating a Specification](#creating-a-specification) | Beginner |
+| [Defining Tasks](#defining-tasks) | Intermediate |
+| [Adding Conditions](#adding-conditions) | Intermediate |
+{% elif package_name contains "integration.mcp" %}
+| [Exposing MCP Tools](#exposing-mcp-tools) | Intermediate |
+| [Configuring Resources](#configuring-resources) | Beginner |
+{% elif package_name contains "integration.a2a" %}
+| [Setting Up A2A Protocol](#setting-up-a2a-protocol) | Intermediate |
+| [Agent Communication](#agent-communication) | Advanced |
+{% endif %}
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Java 25 or later
+- Maven 3.9+
+- YAWL {{ version | default(value="6.0.0-GA") }}
+
+### Installation
+
+Add the YAWL dependency to your `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>org.yawlfoundation</groupId>
+    <artifactId>yawl-engine</artifactId>
+    <version>{{ version | default(value="6.0.0-GA") }}</version>
+</dependency>
+```
+
+### Basic Setup
+
+```java
+import {{ package_name }}.*;
+
+// TODO: Add package-specific initialization
+```
+
+{% if package_name contains "engine" %}
+---
+
+## Starting a Case
+
+**Goal**: Start a new workflow case from a specification
+
+```java
+import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.elements.YSpecification;
+
+// Load specification
+YSpecification spec = engine.loadSpecification("my-workflow.yawl");
+
+// Start a case
+String caseId = engine.launchCase(spec.getID(), null, null);
+
+System.out.println("Started case: " + caseId);
+```
+
+**Explanation**: The engine parses the YAWL specification and creates a new case instance.
+
+---
+
+## Querying Work Items
+
+**Goal**: Get all work items for a case or user
+
+```java
+import org.yawlfoundation.yawl.engine.YWorkItem;
+
+// Get all enabled work items
+Set<YWorkItem> items = engine.getEnabledWorkItems(caseId);
+
+for (YWorkItem item : items) {
+    System.out.println("Task: " + item.getTaskID());
+    System.out.println("Status: " + item.getStatus());
+}
+```
+
+---
+
+## Handling Events
+
+**Goal**: Subscribe to workflow lifecycle events
+
+```java
+import org.yawlfoundation.yawl.engine.YEngineObserver;
+
+engine.registerObserver(new YEngineObserver() {
+    @Override
+    public void caseStarted(String caseId) {
+        System.out.println("Case started: " + caseId);
+    }
+
+    @Override
+    public void workItemCreated(YWorkItem item) {
+        System.out.println("Work item created: " + item.getTaskID());
+    }
+});
+```
+{% elif package_name contains "elements" %}
+---
+
+## Creating a Specification
+
+**Goal**: Programmatically create a YAWL specification
+
+```java
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.YNet;
+
+// Create specification
+YSpecification spec = new YSpecification("my-spec");
+spec.setName("My Workflow");
+
+// Create root net
+YNet net = new YNet("main", spec);
+spec.setRootNet(net);
+```
+
+---
+
+## Defining Tasks
+
+**Goal**: Add tasks to a workflow net
+
+```java
+import org.yawlfoundation.yawl.elements.YAtomicTask;
+import org.yawlfoundation.yawl.elements.YCompositeTask;
+
+// Create atomic task (single action)
+YAtomicTask task1 = new YAtomicTask("Task1", YTask._AND, YTask._AND, net);
+
+// Create composite task (subnet)
+YCompositeTask task2 = new YCompositeTask("Task2", YTask._AND, YTask._AND, net);
+```
+
+---
+
+## Adding Conditions
+
+**Goal**: Add conditions (places) to control flow
+
+```java
+import org.yawlfoundation.yawl.elements.YInputCondition;
+import org.yawlfoundation.yawl.elements.YOutputCondition;
+import org.yawlfoundation.yawl.elements.YCondition;
+
+// Input condition (start)
+YInputCondition input = new YInputCondition("start", net);
+
+// Output condition (end)
+YOutputCondition output = new YOutputCondition("end", net);
+
+// Intermediate condition
+YCondition mid = new YCondition("mid", net);
+```
+{% elif package_name contains "integration.mcp" %}
+---
+
+## Exposing MCP Tools
+
+**Goal**: Create an MCP tool for YAWL operations
+
+```java
+import org.yawlfoundation.yawl.integration.mcp.YawlMcpTool;
+import org.yawlfoundation.yawl.integration.mcp.annotations.McpTool;
+
+@McpTool(name = "start_case", description = "Start a new workflow case")
+public class StartCaseTool implements YawlMcpTool {
+
+    @Override
+    public Object execute(Map<String, Object> params) {
+        String specId = (String) params.get("specification_id");
+        // Start the case
+        return engine.launchCase(specId, null, null);
+    }
+}
+```
+
+---
+
+## Configuring Resources
+
+**Goal**: Set up MCP resources for specifications
+
+```java
+import org.yawlfoundation.yawl.integration.mcp.YawlMcpResource;
+
+// Register a specification as a resource
+server.registerResource(new YawlMcpResource(
+    "specification://my-workflow",
+    "My Workflow Specification",
+    "application/yawl+xml",
+    specContent
+));
+```
+{% elif package_name contains "integration.a2a" %}
+---
+
+## Setting Up A2A Protocol
+
+**Goal**: Configure A2A for autonomous agent communication
+
+```java
+import org.yawlfoundation.yawl.integration.a2a.YawlA2AServer;
+import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
+
+// Start A2A server
+YawlA2AServer server = new YawlA2AServer(8080);
+server.start();
+
+// Create client
+YawlA2AClient client = new YawlA2AClient("http://localhost:8080");
+```
+
+---
+
+## Agent Communication
+
+**Goal**: Enable agent-to-agent workflow coordination
+
+```java
+// Register agent capability
+client.registerCapability("workflow-executor", (task) -> {
+    return engine.executeTask(task);
+});
+
+// Discover other agents
+List<Agent> agents = client.discoverAgents("workflow-executor");
+```
+{% endif %}
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `ClassNotFoundException` | Ensure YAWL JAR is on classpath |
+| `NullPointerException` in engine | Check that engine is initialized before use |
+| Specification won't load | Validate XML against YAWL XSD schema |
+| Virtual thread pinning | Replace `synchronized` with `ReentrantLock` |
+
+---
+
+## Related Guides
+
+- [Tutorial](../tutorials/01-getting-started.md) - Learning-oriented introduction
+- [API Reference](../reference/api.md) - Detailed API documentation
+- [Architecture](../explanation/architecture.md) - Design decisions
+
+---
+*Generated by ggen*
+*Package: `{{ package_name }}`*

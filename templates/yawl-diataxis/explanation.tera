@@ -1,0 +1,243 @@
+{#
+ Diataxis Explanation Template
+ Generates understanding-oriented documentation for YAWL packages.
+
+ Context Variables:
+   - package_name: Full package name
+   - package_short: Short name
+   - package_description: Description from package-info.java
+   - key_classes: Array of important classes
+   - subpackages: Array of subpackage names
+   - since_version: Version when package was introduced
+   - version: YAWL version
+ #}
+# {{ package_short | replace(from=".", to=" ") | title }} - Architecture Explanation
+
+{{ package_description | default(value="This package is part of the YAWL workflow engine.", safe=true) }}
+
+## Design Philosophy
+
+{% if package_name contains "engine.core" %}
+This package embodies the **engine deduplication principle** introduced in v6.0.0-GA.
+The goal is to maintain a single canonical implementation of core algorithms that
+both stateful and stateless engines can share through well-defined interfaces.
+
+**Key principles:**
+1. **Tree-neutrality**: Classes depend only on interfaces, not concrete implementations
+2. **Immutability**: Shared data structures are immutable to prevent thread-safety issues
+3. **Virtual thread optimization**: All algorithms are designed for Java 21+ virtual threads
+
+{% elif package_name contains "engine" %}
+The YAWL engine implements a **Petri net-based workflow execution model** with
+YAWL-specific extensions for advanced control-flow patterns.
+
+**Key principles:**
+1. **Stateful execution**: Maintains case state across transactions
+2. **OR-join semantics**: Supports YAWL's extended OR-join with removalless analysis
+3. **Cancellation regions**: Supports cancelation sets for exception handling
+
+{% elif package_name contains "elements" %}
+The elements package defines the **domain model** for YAWL specifications,
+following the YAWL 4.0 XSD schema.
+
+**Key principles:**
+1. **Sealed class hierarchies**: Java 25 sealed classes enable exhaustive pattern matching
+2. **Immutable specifications**: Once loaded, specifications cannot be modified
+3. **Validation-first**: All elements validate constraints at construction time
+
+{% elif package_name contains "integration.mcp" %}
+The MCP integration follows the **Model Context Protocol specification** for
+exposing YAWL capabilities to AI assistants and other MCP clients.
+
+**Key principles:**
+1. **STDIO transport**: Primary communication over standard input/output
+2. **Tool-centric**: Expose workflow operations as discoverable tools
+3. **Resource model**: Specifications and cases as addressable resources
+
+{% elif package_name contains "integration.a2a" %}
+The A2A (Agent-to-Agent) integration implements **autonomous agent communication**
+for distributed workflow coordination.
+
+**Key principles:**
+1. **Capability discovery**: Agents advertise and discover capabilities
+2. **Loose coupling**: Agents communicate without direct dependencies
+3. **Fault tolerance**: Resilient to agent failures with automatic recovery
+
+{% elif package_name contains "resilience" %}
+The resilience package implements **fault tolerance patterns** for the YAWL engine.
+
+**Key principles:**
+1. **Circuit breaker**: Prevent cascading failures
+2. **Retry with backoff**: Automatic retry with exponential backoff
+3. **Health checking**: Continuous monitoring of engine health
+
+{% else %}
+This package follows YAWL's core design principles:
+
+1. **Separation of concerns**: Each package has a single responsibility
+2. **Interface-driven design**: Depend on abstractions, not implementations
+3. **Testability**: All components are designed for unit testing
+
+{% endif %}
+
+## Key Concepts
+
+{% if key_classes %}
+{% for class in key_classes %}
+### {{ class.name | default(value=class) }}
+
+{% if class.name contains "Engine" or class contains "Engine" %}
+The engine is the central orchestrator for workflow execution. It manages:
+- **Case lifecycle**: From launch to completion
+- **Work item scheduling**: Assigning tasks to resources
+- **State transitions**: Tracking work item status changes
+- **Event propagation**: Notifying observers of changes
+
+{% elif class.name contains "Specification" or class contains "Specification" %}
+A specification defines a complete workflow process including:
+- **Nets**: Workflow graphs with tasks and conditions
+- **Decompositions**: Task implementations (atomic or composite)
+- **Variables**: Process-level and local data
+- **Resources**: Participant definitions
+
+{% elif class.name contains "Net" or class contains "Net" %}
+A net is a workflow graph following Petri net semantics:
+- **Input condition**: The starting place
+- **Output condition**: The ending place
+- **Tasks**: Transitions that perform work
+- **Conditions**: Places that hold tokens
+
+{% elif class.name contains "Task" or class contains "Task" %}
+Tasks are the active elements of a workflow:
+- **Join type**: How multiple incoming flows synchronize
+- **Split type**: How multiple outgoing flows are triggered
+- **Decomposition**: The implementation (atomic or subnet)
+- **Cancellation set**: Tasks/conditions to cancel on completion
+
+{% elif class.name contains "WorkItem" or class contains "WorkItem" %}
+Work items represent instances of tasks in a running case:
+- **Status lifecycle**: Enabled → Fired → Started → Complete
+- **Data bindings**: Input and output parameter values
+- **Resource allocation**: Assigned participant or role
+
+{% else %}
+TODO: Add concept explanation for {{ class.name | default(value=class) }}
+
+{% endif %}
+{% endfor %}
+{% else %}
+### Core Concepts
+
+1. **TODO**: Add concept 1
+2. **TODO**: Add concept 2
+3. **TODO**: Add concept 3
+
+{% endif %}
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph "{{ package_short }}"
+{% if key_classes %}
+{% for class in key_classes[:3] %}
+        {{ class.name | default(value=class) }}["{{ class.name | default(value=class) }}"]
+{% endfor %}
+{% else %}
+        Class1["Class 1"]
+        Class2["Class 2"]
+        Class3["Class 3"]
+{% endif %}
+    end
+
+{% if package_name contains "engine" %}
+    Engine --> |"uses"| Elements
+    Engine --> |"notifies"| Observers
+{% elif package_name contains "elements" %}
+    Elements --> |"parsed by"| Engine
+    Elements --> |"validated by"| Schema
+{% elif package_name contains "integration" %}
+    Integration --> |"calls"| Engine
+    Integration --> |"exposes"| External
+{% endif %}
+```
+
+## Design Decisions
+
+| Decision | Rationale | Alternatives Considered |
+|----------|-----------|------------------------|
+{% if package_name contains "engine" %}
+| Singleton engine | Single point of coordination | Multiple engine instances (too complex) |
+| Virtual threads | Scalable to millions of concurrent cases | Platform threads (limited scalability) |
+| Observer pattern | Loose coupling for event handling | Direct callbacks (tight coupling) |
+
+{% elif package_name contains "elements" %}
+| Sealed classes | Exhaustive pattern matching | Open class hierarchies (less type-safe) |
+| Immutable specs | Thread safety, predictability | Mutable specs (concurrency issues) |
+| Builder pattern | Fluent API for complex objects | Telescoping constructors (unreadable) |
+
+{% elif package_name contains "integration.mcp" %}
+| STDIO transport | Universal compatibility | HTTP/WebSocket (more complex setup) |
+| JSON-RPC | Standard protocol | Custom protocol (reinventing wheel) |
+| Tool abstraction | Discoverable capabilities | Direct function calls (less flexible) |
+
+{% else %}
+| TODO | Add design decision | Alternative |
+
+{% endif %}
+
+## Performance Considerations
+
+{% if package_name contains "engine" %}
+- **Virtual thread pinning**: Avoid `synchronized` blocks; use `ReentrantLock`
+- **Memory footprint**: Each case has minimal overhead due to compact object headers
+- **Throughput**: Optimized for high-concurrency scenarios with millions of cases
+
+{% elif package_name contains "elements" %}
+- **Parsing**: Specifications are parsed once and cached
+- **Validation**: Eager validation at construction prevents runtime errors
+- **Memory**: Immutable objects enable efficient sharing
+
+{% elif package_name contains "integration" %}
+- **Connection pooling**: Reuse connections to external services
+- **Async I/O**: Non-blocking operations for high throughput
+- **Serialization**: Efficient JSON/RDF serialization
+
+{% else %}
+- **TODO**: Add performance considerations for this package
+
+{% endif %}
+
+## Security Considerations
+
+{% if package_name contains "security" %}
+- **PKI integration**: X.509 certificates for authentication
+- **TLS 1.3**: Encrypted communication channels
+- **Key management**: Secure key storage and rotation
+
+{% elif package_name contains "integration" %}
+- **Input validation**: All external inputs are validated
+- **Authentication**: MCP/A2A require proper authentication
+- **Authorization**: Role-based access control
+
+{% else %}
+- **TODO**: Add security considerations for this package
+
+{% endif %}
+
+## Evolution History
+
+| Version | Changes |
+|---------|---------|
+| {{ since_version | default(value="6.0.0-GA") }} | Initial package creation |
+| 6.0.0-GA | Java 25 features: virtual threads, sealed classes, pattern matching |
+
+## Related Explanations
+
+- [YAWL Architecture Overview](../../../architecture/overview.md)
+- [Petri Net Semantics](../../../architecture/petri-nets.md)
+- [Virtual Thread Optimization Guide](../../../architecture/virtual-threads.md)
+
+---
+*Generated by ggen from package-info.java*
+*Package: `{{ package_name }}`*
