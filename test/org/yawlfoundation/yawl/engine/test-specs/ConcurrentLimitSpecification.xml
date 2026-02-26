@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl YAWL_Schema.xsd">
+  <specification uri="ConcurrentLimitSpecification.xml">
+    <metaData />
+    <rootNet id="top">
+      <processControlElements>
+        <inputCondition id="i-top">
+          <name>start</name>
+          <flowsInto>
+            <nextElementRef id="split1" />
+          </flowsInto>
+        </inputCondition>
+        <xorSplit id="split1">
+          <name>Concurrent Split</name>
+          <flowsInto>
+            <nextElementRef id="task1" />
+            <nextElementRef id="task2" />
+            <nextElementRef id="task3" />
+            <nextElementRef id="task4" />
+            <nextElementRef id="task5" />
+          </flowsInto>
+        </xorSplit>
+        <task id="task1">
+          <name>Concurrent Task 1</name>
+          <decomposesTo id="Task1Decomposition" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join1" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="task2">
+          <name>Concurrent Task 2</name>
+          <decomposesTo id="Task2Decomposition" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join1" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="task3">
+          <name>Concurrent Task 3</name>
+          <decomposesTo id="Task3Decomposition" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join1" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="task4">
+          <name>Concurrent Task 4</name>
+          <decomposesTo id="Task4Decomposition" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join1" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="task5">
+          <name>Concurrent Task 5</name>
+          <decomposesTo id="Task5Decomposition" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="join1" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <andJoin id="join1">
+          <name>Concurrent Join</name>
+          <flowsInto>
+            <nextElementRef id="o-top" />
+          </flowsInto>
+        </andJoin>
+        <outputCondition id="o-top">
+          <name>end</name>
+        </outputCondition>
+      </processControlElements>
+      <decomposition id="Task1Decomposition" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="Task2Decomposition" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="Task3Decomposition" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="Task4Decomposition" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="Task5Decomposition" xsi:type="WebServiceGatewayFactsType" />
+    </rootNet>
+  </specification>
+</specificationSet>

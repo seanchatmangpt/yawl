@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Beta - Prometheus Alert Rules
+# YAWL v6.0.0-GA - Prometheus Alert Rules
 # =============================================================================
 # Standard infrastructure and application alert rules for YAWL deployment.
 # Includes: container health, resource usage, service availability alerts.

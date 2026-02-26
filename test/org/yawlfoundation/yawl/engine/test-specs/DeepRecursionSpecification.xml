@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl YAWL_Schema.xsd">
+  <specification uri="DeepRecursionSpecification.xml">
+    <metaData />
+    <rootNet id="top">
+      <processControlElements>
+        <inputCondition id="i-top">
+          <name>start</name>
+          <flowsInto>
+            <nextElementRef id="recursion1" />
+          </flowsInto>
+        </inputCondition>
+        <task id="recursion1">
+          <name>Level 1 Task</name>
+          <decomposesTo id="RecursionDecomposition1" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion2" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion2">
+          <name>Level 2 Task</name>
+          <decomposesTo id="RecursionDecomposition2" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion3" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion3">
+          <name>Level 3 Task</name>
+          <decomposesTo id="RecursionDecomposition3" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion4" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion4">
+          <name>Level 4 Task</name>
+          <decomposesTo id="RecursionDecomposition4" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion5" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion5">
+          <name>Level 5 Task</name>
+          <decomposesTo id="RecursionDecomposition5" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion6" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion6">
+          <name>Level 6 Task</name>
+          <decomposesTo id="RecursionDecomposition6" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion7" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion7">
+          <name>Level 7 Task</name>
+          <decomposesTo id="RecursionDecomposition7" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion8" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion8">
+          <name>Level 8 Task</name>
+          <decomposesTo id="RecursionDecomposition8" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion9" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion9">
+          <name>Level 9 Task</name>
+          <decomposesTo id="RecursionDecomposition9" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="recursion10" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <task id="recursion10">
+          <name>Level 10 Task</name>
+          <decomposesTo id="RecursionDecomposition10" xsi:type="WebServiceGatewayFactsType" />
+          <flowsInto>
+            <nextElementRef id="o-top" />
+          </flowsInto>
+          <join code="xor" />
+          <split code="xor" />
+        </task>
+        <outputCondition id="o-top">
+          <name>end</name>
+        </outputCondition>
+      </processControlElements>
+      <decomposition id="RecursionDecomposition1" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition2" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition3" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition4" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition5" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition6" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition7" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition8" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition9" xsi:type="WebServiceGatewayFactsType" />
+      <decomposition id="RecursionDecomposition10" xsi:type="WebServiceGatewayFactsType" />
+    </rootNet>
+  </specification>
+</specificationSet>

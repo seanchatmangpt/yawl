@@ -1,4 +1,4 @@
-# YAWL v6.0.0-Beta - Unified CI/CD Pipeline
+# YAWL v6.0.0-GA - Unified CI/CD Pipeline
 #
 # Optimized for Java 25 builds with:
 # - Maven dependency caching
@@ -8,7 +8,7 @@
 # - Trivy security scanning
 # - Container-based test execution
 # - Layer caching for faster builds
-# - Version tagging (6.0.0-Beta, latest, sha)
+# - Version tagging (6.0.0-GA, latest, sha)
 #
 # Consolidated from:
 # - build-maven.yaml
@@ -60,7 +60,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   JAVA_VERSION: 25
-  VERSION: 6.0.0-Beta
+  VERSION: 6.0.0-GA
 
 jobs:
   # ============================================================================
@@ -456,7 +456,7 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Docker Build - Multi-Arch with GitHub Actions Cache (v6.0.0-Beta)
+  # Docker Build - Multi-Arch with GitHub Actions Cache (v6.0.0-GA)
   # Builds only on: main/master branches OR version tags OR manual dispatch
   # ============================================================================
   docker-build:
@@ -526,7 +526,7 @@ jobs:
           flavor: |
             latest=auto
           tags: |
-            # Version tag from git tag (e.g., v6.0.0-Beta -> 6.0.0-Beta)
+            # Version tag from git tag (e.g., v6.0.0-GA -> 6.0.0-GA)
             type=match,pattern=v(.*),group=1,prefix=
             # Major.Minor version (e.g., 6.0)
             type=match,pattern=v(\d+\.\d+),group=1,prefix=
@@ -534,8 +534,8 @@ jobs:
             type=match,pattern=v(\d+),group=1,prefix=
             # Latest tag for default branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
-            # v6.0.0-Beta explicit tag
-            type=raw,value=6.0.0-Beta,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v6') }}
+            # v6.0.0-GA explicit tag
+            type=raw,value=6.0.0-GA,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v6') }}
             # v6 tag for major version tracking
             type=raw,value=v6,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v6') }}
             # SHA-based tag for traceability
@@ -616,7 +616,7 @@ jobs:
       - name: Run Trivy Vulnerability Scanner (SARIF)
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
@@ -634,7 +634,7 @@ jobs:
       - name: Run Trivy Vulnerability Scanner (JSON Report)
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }}
           format: 'json'
           output: 'trivy-results.json'
           severity: 'CRITICAL,HIGH,MEDIUM'
@@ -645,7 +645,7 @@ jobs:
       - name: Run Trivy Vulnerability Scanner (Table Summary)
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }}
           format: 'table'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
@@ -667,7 +667,7 @@ jobs:
         run: |
           echo "## Container Security Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -f "trivy-results.json" ]; then
             CRITICAL=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' 2>/dev/null || echo "0")
@@ -704,11 +704,11 @@ jobs:
 
       - name: Pull Docker Image
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }}
 
       - name: Verify Image Architecture
         run: |
-          docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }} | jq '.[0].Architecture'
+          docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }} | jq '.[0].Architecture'
 
       - name: Run Container Health Check Test
         run: |
@@ -717,7 +717,7 @@ jobs:
             -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=test \
             -e LOGGING_LEVEL_ROOT=INFO \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }}
 
           # Wait for container to start
           echo "Waiting for container to start..."
@@ -750,7 +750,7 @@ jobs:
         run: |
           echo "## Container Integration Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tested:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-Beta' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tested:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build.outputs.image-tag || '6.0.0-GA' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** Container started and health check executed" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================
@@ -1131,7 +1131,7 @@ jobs:
     steps:
       - name: Create Job Summary
         run: |
-          echo "# YAWL v6.0.0-Beta CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# YAWL v6.0.0-GA CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Build Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
