@@ -173,7 +173,7 @@ public final class AllBenchmarks {
                     () -> {
                         try {
                             return optimizer.optimize("test");
-                        } catch (java.io.IOException e) {
+                        } catch (java.io.IOException | org.yawlfoundation.yawl.ggen.rl.PowlParseException e) {
                             throw new RuntimeException(e);
                         }
                     },

@@ -277,7 +277,7 @@ public final class ParameterSweepBenchmark {
         return RlBenchmarkRunner.run("GrpoOptimizer.optimize_K" + k, () -> {
             try {
                 return optimizer.optimize("test");
-            } catch (IOException e) {
+            } catch (IOException | org.yawlfoundation.yawl.ggen.rl.PowlParseException e) {
                 throw new RuntimeException(e);
             }
         }, WARMUP / 2, ITERATIONS / 2);

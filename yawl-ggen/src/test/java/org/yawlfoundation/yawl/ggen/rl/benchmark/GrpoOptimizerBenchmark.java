@@ -132,7 +132,7 @@ public final class GrpoOptimizerBenchmark {
                 () -> {
                     try {
                         return optimizer.optimize("simple test");
-                    } catch (IOException e) {
+                    } catch (IOException | org.yawlfoundation.yawl.ggen.rl.PowlParseException e) {
                         throw new RuntimeException(e);
                     }
                 }, WARMUP, ITERATIONS);
@@ -149,7 +149,7 @@ public final class GrpoOptimizerBenchmark {
                 () -> {
                     try {
                         return optimizer.optimize("complex test");
-                    } catch (IOException e) {
+                    } catch (IOException | org.yawlfoundation.yawl.ggen.rl.PowlParseException e) {
                         throw new RuntimeException(e);
                     }
                 }, WARMUP, ITERATIONS);
@@ -166,7 +166,7 @@ public final class GrpoOptimizerBenchmark {
         return RlBenchmarkRunner.run(name, () -> {
             try {
                 return optimizer.optimize("test process");
-            } catch (IOException e) {
+            } catch (IOException | org.yawlfoundation.yawl.ggen.rl.PowlParseException e) {
                 throw new RuntimeException(e);
             }
         }, WARMUP, ITERATIONS);
@@ -181,7 +181,7 @@ public final class GrpoOptimizerBenchmark {
         return RlBenchmarkRunner.run(name, () -> {
             try {
                 return optimizer.evaluateCandidates("test process");
-            } catch (IOException e) {
+            } catch (IOException | org.yawlfoundation.yawl.ggen.rl.PowlParseException e) {
                 throw new RuntimeException(e);
             }
         }, WARMUP, ITERATIONS);
@@ -285,7 +285,7 @@ public final class GrpoOptimizerBenchmark {
                 System.out.println("✗ bestIndex() did not identify highest reward");
             }
 
-        } catch (IOException e) {
+        } catch (IOException | org.yawlfoundation.yawl.ggen.rl.PowlParseException e) {
             System.out.println("✗ Exception during verification: " + e.getMessage());
         }
 
