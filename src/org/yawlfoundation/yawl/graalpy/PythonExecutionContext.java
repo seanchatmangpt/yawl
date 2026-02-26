@@ -76,7 +76,7 @@ public final class PythonExecutionContext implements AutoCloseable {
             // Trigger Python runtime initialisation eagerly to detect missing GraalPy early
             this.graalContext.initialize(PYTHON_LANGUAGE_ID);
             log.debug("PythonExecutionContext initialised with sandbox={}", sandboxConfig.getMode());
-        } catch (PolyglotException e) {
+        } catch (PolyglotException | IllegalStateException | IllegalArgumentException e) {
             throw new PythonException(
                     "GraalPy runtime initialisation failed. "
                     + "Ensure GraalVM JDK 24.1+ is used at runtime "
