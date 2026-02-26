@@ -1,3 +1,32 @@
+[[target]]
+name = "eye-reasoner-releases"
+url = "https://github.com/eyereasoner/eye/releases"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 24
+
+[[target]]
+name = "mcp-spec"
+url = "https://spec.modelcontextprotocol.io/specification/"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 48
+
+[[target]]
+name = "maven-central-owlrl"
+url = "https://search.maven.org/solrsearch/select?q=g:net.sourceforge.owlapi+a:owlapi-distribution&rows=1"
+semantic_unit = "Dependency"
+watermark_ttl_hours = 12
+
+[[target]]
+name = "yawl-mcp-spec"
+url = "https://spec.modelcontextprotocol.io/specification/server/"
+semantic_unit = "BehaviorDelta"
+watermark_ttl_hours = 48
+
+[[target]]
+name = "rust-blake3"
+url = "https://crates.io/api/v1/crates/blake3"
+semantic_unit = "Dependency"
+watermark_ttl_hours = 24
 # Scout Intelligence Fetch Targets
 # Watermark protocol: fetch respects TTL; skips if content hash unchanged
 # Semantic units: BehaviorDelta (changelog), Dependency (version), SpecChange (API changes)
