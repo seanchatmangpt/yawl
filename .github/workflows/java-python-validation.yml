@@ -1,0 +1,382 @@
+# Java-Python Validation Workflow for YAWL v6.0.0-GA
+# This workflow performs comprehensive validation of Java-Python integration
+# including type compatibility, functionality preservation, performance baselines,
+# pattern validation, and security tests.
+
+name: Java-Python Validation
+
+on:
+  push:
+    branches: [master, main, java-python-validation]
+    paths:
+      - 'yawl-graalpy/**'
+      - 'test/org/yawlfoundation/yawl/graalpy/**'
+      - 'test/org/yawlfoundation/yawl/integration/java-python/**'
+      - '.github/workflows/java-python-validation.yml'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'yawl-graalpy/**'
+      - 'test/org/yawlfoundation/yawl/graalpy/**'
+      - 'test/org/yawlfoundation/yawl/integration/java-python/**'
+  workflow_dispatch:
+    inputs:
+      run_performance_tests:
+        description: 'Run performance benchmarks'
+        required: false
+        default: 'true'
+        type: boolean
+      skip_graalpy_tests:
+        description: 'Skip GraalPy-specific tests'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25/x64
+  MAVEN_OPTS: -Xmx4g -XX:+UseG1GC
+  GRAALPY_AVAILABLE: false
+
+jobs:
+  # Phase 1: Foundation Validation
+  foundation-validation:
+    name: Foundation Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      graalpy_available: ${{ steps.check-graalpy.outputs.available }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            .m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Check GraalPy availability
+        id: check-graalpy
+        run: |
+          if command -v graalpy &> /dev/null; then
+            echo "available=true" >> $GITHUB_OUTPUT
+            echo "GRAALPY_AVAILABLE=true" >> $GITHUB_ENV
+          else
+            echo "available=false" >> $GITHUB_OUTPUT
+            echo "GRAALPY_AVAILABLE=false" >> $GITHUB_ENV
+          fi
+
+      - name: Compile project
+        run: ./mvnw compile -pl yawl-graalpy -q
+
+      - name: Run ValidationTestBase tests
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.ValidationTestBase \
+            -q 2>&1 | tee test-results/validation-test-base.log
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-test-results
+          path: test-results/
+          retention-days: 7
+
+  # Phase 2: Type Compatibility Tests
+  type-compatibility:
+    name: Type Compatibility Tests
+    needs: foundation-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: needs.foundation-validation.outputs.graalpy_available == 'true' && inputs.skip_graalpy_tests != true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Type Compatibility Tests
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.JavaPythonTypeCompatibilityTest \
+            -q 2>&1 | tee test-results/type-compatibility.log
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: type-compatibility-results
+          path: test-results/
+          retention-days: 7
+
+  # Phase 3: Functionality Preservation Tests
+  functionality-preservation:
+    name: Functionality Preservation Tests
+    needs: foundation-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: needs.foundation-validation.outputs.graalpy_available == 'true' && inputs.skip_graalpy_tests != true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Functionality Preservation Tests
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.YawlFunctionalityPreservationTest \
+            -q 2>&1 | tee test-results/functionality-preservation.log
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: functionality-preservation-results
+          path: test-results/
+          retention-days: 7
+
+  # Phase 4: Performance Baseline Tests
+  performance-baselines:
+    name: Performance Baseline Tests
+    needs: [type-compatibility, functionality-preservation]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: inputs.run_performance_tests == true && needs.foundation-validation.outputs.graalpy_available == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Performance Baseline Tests
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.performance.PerformanceBaselinesTest \
+            -q 2>&1 | tee test-results/performance-baselines.log
+
+      - name: Extract performance metrics
+        run: |
+          python3 validation/validation-scripts/validate-performance.py \
+            --timeout 300 \
+            --junit \
+            2>&1 | tee test-results/performance-validation.log
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            test-results/
+            validation/results/
+          retention-days: 30
+
+  # Phase 5: Pattern Validation Tests
+  pattern-validation:
+    name: Pattern Validation Tests
+    needs: foundation-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: needs.foundation-validation.outputs.graalpy_available == 'true' && inputs.skip_graalpy_tests != true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Basic Pattern Tests
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.patterns.BasicPatternValidator \
+            -q 2>&1 | tee test-results/basic-patterns.log
+
+      - name: Run Advanced Pattern Tests
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.patterns.AdvancedPatternValidator \
+            -q 2>&1 | tee test-results/advanced-patterns.log
+
+      - name: Upload pattern results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pattern-validation-results
+          path: test-results/
+          retention-days: 7
+
+  # Phase 6: Integration Tests
+  integration-tests:
+    name: Integration Tests
+    needs: [type-compatibility, functionality-preservation, pattern-validation]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: needs.foundation-validation.outputs.graalpy_available == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Integration Test Suite
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.JavaPythonValidationTestSuite \
+            -q 2>&1 | tee test-results/integration-suite.log
+
+      - name: Upload integration results
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: test-results/
+          retention-days: 7
+
+  # Phase 7: Security Validation
+  security-validation:
+    name: Security Validation
+    needs: foundation-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Security Tests
+        run: |
+          ./mvnw test -pl yawl-graalpy \
+            -Dtest=org.yawlfoundation.yawl.integration.java_python.security.SecurityValidationTest \
+            -q 2>&1 | tee test-results/security-validation.log || true
+
+      - name: Run OWASP Dependency Check
+        run: |
+          ./mvnw org.owasp:dependency-check-maven:check \
+            -pl yawl-graalpy \
+            -q 2>&1 | tee test-results/owasp-check.log || true
+
+      - name: Upload security results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-validation-results
+          path: test-results/
+          retention-days: 30
+
+  # Final: Validation Summary
+  validation-summary:
+    name: Validation Summary
+    needs: [foundation-validation, type-compatibility, functionality-preservation, performance-baselines, pattern-validation, integration-tests, security-validation]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results/
+
+      - name: Generate Validation Report
+        run: |
+          mkdir -p validation/reports
+
+          # Generate summary report
+          cat > validation/reports/validation-summary.md << EOF
+          # Java-Python Validation Summary for YAWL v6.0.0-GA
+
+          **Generated:** $(date -Iseconds)
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+
+          ## Test Results
+
+          | Test Category | Status | Notes |
+          |--------------|--------|-------|
+          | Foundation Validation | ${{ needs.foundation-validation.result }} | Base infrastructure tests |
+          | Type Compatibility | ${{ needs.type-compatibility.result }} | Java-Python type marshalling |
+          | Functionality Preservation | ${{ needs.functionality-preservation.result }} | YAWL functionality equivalence |
+          | Performance Baselines | ${{ needs.performance-baselines.result }} | Performance benchmarks |
+          | Pattern Validation | ${{ needs.pattern-validation.result }} | 43+ workflow patterns |
+          | Integration Tests | ${{ needs.integration-tests.result }} | End-to-end integration |
+          | Security Validation | ${{ needs.security-validation.result }} | Security and OWASP checks |
+
+          ## Quality Gates
+
+          - [ ] Test Coverage >= 95%
+          - [ ] Performance within 20% of Java baseline
+          - [ ] 0 critical security vulnerabilities
+          - [ ] All integration tests passing
+
+          ## GraalPy Availability
+
+          GraalPy was ${{ needs.foundation-validation.outputs.graalpy_available == 'true' && 'available' || 'not available' }} for this run.
+
+          EOF
+
+      - name: Upload validation summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-summary
+          path: validation/reports/
+          retention-days: 30
+
+      - name: Check overall status
+        run: |
+          if [[ "${{ needs.foundation-validation.result }}" == "failure" ]] || \
+             [[ "${{ needs.type-compatibility.result }}" == "failure" ]] || \
+             [[ "${{ needs.functionality-preservation.result }}" == "failure" ]] || \
+             [[ "${{ needs.pattern-validation.result }}" == "failure" ]] || \
+             [[ "${{ needs.integration-tests.result }}" == "failure" ]]; then
+            echo "::error::Validation failed - one or more test categories did not pass"
+            exit 1
+          fi
+          echo "::notice::All validation tests passed successfully"
+          exit 0

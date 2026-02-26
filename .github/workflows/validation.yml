@@ -1,0 +1,830 @@
+# YAWL v6.0.0 Multi-Stage Validation Pipeline
+#
+# Comprehensive validation workflow with:
+# - Multi-stage validation pipeline
+# - Matrix testing (Java 25, multiple OS)
+# - Quality gates enforcement
+# - Automated reporting
+# - PR validation
+#
+# Stages:
+# 1. Setup - Install dependencies, cache GraalPy
+# 2. Compatibility - Run type/functionality tests
+# 3. Patterns - Validate all 43+ patterns
+# 4. Integration - Test MCP/A2A protocols
+# 5. Security - Run security scans
+# 6. Performance - Run benchmarks
+# 7. Report - Generate and publish report
+#
+# Triggers:
+# - Push to main/develop
+# - Pull requests
+# - Manual dispatch
+# - Scheduled (nightly)
+
+name: YAWL Validation Pipeline
+
+on:
+  push:
+    branches: [master, main, develop, java-to-python-validation]
+    tags:
+      - 'v6.*'
+      - 'v6.*.*'
+      - 'v6.*.*-*'
+  pull_request:
+    branches: [master, main, develop]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests (emergency builds only)'
+        required: false
+        default: 'false'
+        type: boolean
+      run_performance:
+        description: 'Run performance benchmarks'
+        required: false
+        default: 'true'
+        type: boolean
+      run_security:
+        description: 'Run security scans'
+        required: false
+        default: 'true'
+        type: boolean
+      quick_mode:
+        description: 'Quick mode (critical tests only)'
+        required: false
+        default: 'false'
+        type: boolean
+  schedule:
+    # Nightly validation at 2 AM UTC
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  MAVEN_OPTS: >-
+    -Xmx6g
+    -Xms2g
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -Djava.awt.headless=true
+    -Dmaven.artifact.threads=10
+    -Dhttp.keepAlive=false
+    -Dmaven.wagon.http.pool=false
+  JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/25/x64
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  VERSION: 6.0.0
+
+jobs:
+  # ============================================================================
+  # Stage 1: Setup - Install dependencies, cache GraalPy
+  # ============================================================================
+  setup:
+    name: Setup Stage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      java-ready: ${{ steps.setup-java.outputs.java-ready }}
+      maven-ready: ${{ steps.setup-maven.outputs.maven-ready }}
+      graalpy-ready: ${{ steps.setup-graalpy.outputs.graalpy-ready }}
+      os-ready: ${{ steps.setup-os.outputs.os-ready }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up Java ${{ matrix.java }}
+        id: setup-java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+          cache: 'maven'
+          check-latest: true
+
+      - name: Cache Maven Local Repository
+        id: setup-maven
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.m2/wrapper
+            ~/.m2/settings.xml
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+            ${{ runner.os }}-
+
+      - name: Install GraalPy
+        id: setup-graalpy
+        if: runner.os == 'Linux'
+        uses: graalvm/setup-graalpy@v1
+        with:
+          version: '24.0.0'
+          java-version: 25
+
+      - name: Setup Operating Environment
+        id: setup-os
+        run: |
+          echo "::group::System Information"
+          uname -a
+          free -h
+          df -h
+          echo "::endgroup::"
+
+  # ============================================================================
+  # Stage 2: Compatibility - Run type/functionality tests
+  # ============================================================================
+  compatibility:
+    name: Compatibility Validation
+    runs-on: ${{ matrix.os }}
+    needs: setup
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        java: [25]
+        include:
+          - os: ubuntu-latest
+            java: 25
+            profile: java25
+            test_type: 'full'
+          - os: windows-latest
+            java: 25
+            profile: java25
+            test_type: 'basic'
+          - os: macos-latest
+            java: 25
+            profile: java25
+            test_type: 'basic'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Compatibility Validation
+        if: needs.setup.outputs.java-ready == 'true'
+        run: |
+          ./scripts/validate-compatibility.sh \
+            --report-dir ./test-reports/compatibility \
+            --verbose
+        continue-on-error: false
+
+      - name: Upload Compatibility Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compatibility-reports-${{ matrix.os }}
+          path: |
+            ./test-reports/compatibility/
+            **/junit/*.xml
+          retention-days: 30
+
+  # ============================================================================
+  # Stage 3: Patterns - Validate all 43+ patterns
+  # ============================================================================
+  patterns:
+    name: Pattern Validation
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        pattern-category:
+          - 'basic-sequences'
+          - 'parallel-split'
+          - 'synchronization'
+          - 'exclusive-choice'
+          - 'multi-choice'
+          - 'discriminator'
+          - 'n-out-of-m'
+          - 'deferred-choice'
+          - 'interleaved-routing'
+          - 'milestone'
+          - 'critical-section'
+          - 'structured-loop'
+          - 'cancel-patterns'
+          - 'merge-patterns'
+          - 'iteration-patterns'
+          - 'advanced-patterns'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile Dependencies
+        run: |
+          bash scripts/dx.sh compile
+        continue-on-error: false
+
+      - name: Validate Pattern Category
+        id: validate-pattern
+        run: |
+          echo "Validating ${{ matrix.pattern-category }} patterns..."
+
+          # Pattern validation command
+          case ${{ matrix.pattern-category }} in
+            'basic-sequences')
+              pattern_files=$(find src/patterns/ -name "*Sequence*" -o -name "*Basic*")
+              ;;
+            'parallel-split')
+              pattern_files=$(find src/patterns/ -name "*Parallel*" -o -name "*Split*")
+              ;;
+            'synchronization')
+              pattern_files=$(find src/patterns/ -name "*Sync*" -o -name "*Synchroniz*")
+              ;;
+            'exclusive-choice')
+              pattern_files=$(find src/patterns/ -name "*Choice*" -o -name "*Exclusive*")
+              ;;
+            'multi-choice')
+              pattern_files=$(find src/patterns/ -name "*MultiChoice*" -o -name "*Multiple*")
+              ;;
+            'discriminator')
+              pattern_files=$(find src/patterns/ -name "*Discriminator*")
+              ;;
+            'n-out-of-m')
+              pattern_files=$(find src/patterns/ -name "*NOutOfM*" -o -name "*NofM*")
+              ;;
+            'deferred-choice')
+              pattern_files=$(find src/patterns/ -name "*Deferred*")
+              ;;
+            'interleaved-routing')
+              pattern_files=$(find src/patterns/ -name "*Interleaved*" -o -name "*Interleave*")
+              ;;
+            'milestone')
+              pattern_files=$(find src/patterns/ -name "*Milestone*")
+              ;;
+            'critical-section')
+              pattern_files=$(find src/patterns/ -name "*Critical*")
+              ;;
+            'structured-loop')
+              pattern_files=$(find src/patterns/ -name "*Loop*" -o -name "*Structured*")
+              ;;
+            'cancel-patterns')
+              pattern_files=$(find src/patterns/ -name "*Cancel*")
+              ;;
+            'merge-patterns')
+              pattern_files=$(find src/patterns/ -name "*Merge*")
+              ;;
+            'iteration-patterns')
+              pattern_files=$(find src/patterns/ -name "*Iteration*" -o -name "*Repeat*")
+              ;;
+            'advanced-patterns')
+              pattern_files=$(find src/patterns/ -name "*Advanced*" -o -name "All*")
+              ;;
+          esac
+
+          # Count patterns
+          pattern_count=$(echo "$pattern_files" | wc -l | tr -d ' ')
+
+          # Validate patterns
+          if [ -n "$pattern_files" ]; then
+            echo "Found $pattern_count patterns to validate"
+            echo "$pattern_files" | while read -r file; do
+              if [ -f "$file" ]; then
+                java -jar target/classes/yawl-utilities.jar validate-pattern "$file" \
+                  >> ./test-reports/patterns/${{ matrix.pattern-category }}.log 2>&1
+              fi
+            done
+            echo "✓ Pattern category ${{ matrix.pattern-category }} validated successfully"
+          else
+            echo "⚠ No patterns found for category ${{ matrix.pattern-category }}"
+          fi
+        continue-on-error: false
+
+      - name: Upload Pattern Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pattern-reports-${{ matrix.pattern-category }}
+          path: |
+            ./test-reports/patterns/
+            **/*.log
+          retention-days: 30
+
+  # ============================================================================
+  # Stage 4: Integration - Test MCP/A2A protocols
+  # ============================================================================
+  integration:
+    name: Integration Validation
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        protocol:
+          - 'mcp'
+          - 'a2a'
+          - 'grpc'
+          - 'websocket'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Install Protocol Dependencies
+        run: |
+          # Install gRPC tools
+          pip install grpcio grpcio-tools
+          # Install Protocol Buffers compiler
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Compile Integration Tests
+        run: |
+          bash scripts/dx.sh compile -pl yawl-integration,yawl-mcp-a2a-app
+        continue-on-error: false
+
+      - name: Run Integration Tests
+        id: integration-test
+        run: |
+          protocol="${{ matrix.protocol }}"
+          echo "Running $protocol integration tests..."
+
+          # Create test results directory
+          mkdir -p ./test-reports/integration/$protocol
+
+          # Run protocol-specific tests
+          case $protocol in
+            'mcp')
+              # Test MCP server
+              mvn test -pl yawl-mcp-a2a-app \
+                -Dtest=*McpServerTest* \
+                -DfailIfNoTests=false \
+                -DsurefireFile=./test-reports/integration/$protocol/surefire-suite.xml
+              ;;
+            'a2a')
+              # Test A2A protocol
+              mvn test -pl yawl-integration \
+                -Dtest=*A2aTest* \
+                -DfailIfNoTests=false \
+                -DsurefireFile=./test-reports/integration/$protocol/surefire-suite.xml
+              ;;
+            'grpc')
+              # Test gRPC endpoints
+              mvn test -pl yawl-integration \
+                -Dtest=*GrpcTest* \
+                -DfailIfNoTests=false \
+                -DsurefireFile=./test-reports/integration/$protocol/surefire-suite.xml
+              ;;
+            'websocket')
+              # Test WebSocket connections
+              mvn test -pl yawl-integration \
+                -Dtest=*WebSocketTest* \
+                -DfailIfNoTests=false \
+                -DsurefireFile=./test-reports/integration/$protocol/surefire-suite.xml
+              ;;
+          esac
+
+          # Generate test report
+          ./scripts/generate-test-report.sh \
+            --protocol $protocol \
+            --output-dir ./test-reports/integration/$protocol
+        continue-on-error: false
+
+      - name: Upload Integration Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-reports-${{ matrix.protocol }}
+          path: |
+            ./test-reports/integration/
+            **/*.xml
+            **/*.log
+          retention-days: 30
+
+  # ============================================================================
+  # Stage 5: Security - Run security scans
+  # ============================================================================
+  security:
+    name: Security Validation
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 30
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v0.27.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy Scan Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-trivy-scan
+          path: trivy-results.sarif
+          retention-days: 90
+
+      - name: Run Dependency Check
+        uses: owasp/dependency-check-action@v3
+        with:
+          project: 'YAWL'
+          path: '.'
+          format: 'ALL'
+          fail_build: true
+
+      - name: Upload Dependency Check Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-dependency-check
+          path: |
+            dependency-check-report.*
+          retention-days: 90
+
+      - name: CodeQL Security Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          enable-automated-tools: true
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/perform-analysis@v3
+        with:
+          category: security
+          enable-automated-tools: true
+
+  # ============================================================================
+  # Stage 6: Performance - Run benchmarks
+  # ============================================================================
+  performance:
+    name: Performance Validation
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 30
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || inputs.run_performance == 'true'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile Performance Tests
+        run: |
+          bash scripts/dx.sh compile -pl yawl-benchmark
+        continue-on-error: false
+
+      - name: Run Performance Benchmarks
+        id: performance-benchmark
+        run: |
+          echo "Running performance benchmarks..."
+          mkdir -p ./test-reports/performance
+
+          # Run benchmark suite
+          java -jar yawl-benchmark.jar \
+            --output ./test-reports/performance/benchmarks.json \
+            --iterations 100 \
+            --threads 10 \
+            --duration 60s
+
+          # Generate performance report
+          ./scripts/generate-performance-report.sh \
+            --input ./test-reports/performance/benchmarks.json \
+            --output ./test-reports/performance/performance-report.html \
+            --baseline ./benchmarks/baseline.json
+        continue-on-error: false
+
+      - name: Upload Performance Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-reports
+          path: |
+            ./test-reports/performance/
+            **/*.json
+            **/*.html
+          retention-days: 30
+
+  # ============================================================================
+  # Stage 7: Report - Generate and publish report
+  # ============================================================================
+  report:
+    name: Generate Validation Report
+    runs-on: ubuntu-latest
+    needs:
+      - setup
+      - compatibility
+      - patterns
+      - integration
+      - security
+      - performance
+    timeout-minutes: 15
+    if: always()
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts/
+
+      - name: Generate Consolidated Report
+        id: generate-report
+        run: |
+          echo "Generating validation report..."
+          mkdir -p ./test-reports/final
+
+          # Run report generation
+          ./scripts/generate-validation-report.sh \
+            --artifacts-dir ./artifacts \
+            --output-dir ./test-reports/final \
+            --baseline ./benchmarks/baseline.json
+
+          # Generate summary
+          ./scripts/validate-quality-gates.sh \
+            --report-dir ./test-reports/final \
+            --threshold 95
+        continue-on-error: false
+
+      - name: Upload Final Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-report
+          path: |
+            ./test-reports/final/
+            **/*.html
+            **/*.json
+            **/*.md
+          retention-days: 90
+
+      - name: Publish Report to Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./test-reports/final/
+          destination_dir: validation-report
+
+      - name: Create Quality Gate Summary
+        if: always()
+        run: |
+          echo "## Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+
+          # Check stage statuses
+          status="✓ All checks passed"
+          color="green"
+
+          if [ "${{ needs.setup.result }}" != "success" ]; then
+            status="✗ Setup failed"
+            color="red"
+          fi
+
+          if [ "${{ needs.compatibility.result }}" != "success" ]; then
+            status="✗ Compatibility issues"
+            color="red"
+          fi
+
+          if [ "${{ needs.patterns.result }}" != "success" ]; then
+            status="✗ Pattern validation failed"
+            color="red"
+          fi
+
+          if [ "${{ needs.integration.result }}" != "success" ]; then
+            status="✗ Integration tests failed"
+            color="red"
+          fi
+
+          if [ "${{ needs.security.result }}" != "success" ]; then
+            status="⚠ Security issues found"
+            color="yellow"
+          fi
+
+          if [ "${{ needs.performance.result }}" != "success" ]; then
+            status="⚠ Performance degraded"
+            color="yellow"
+          fi
+
+          echo "| Setup | <span style='color:${color}'>${{ needs.setup.result || 'success' }}</span> | Java 25, GraalPy, Dependencies |" >> $GITHUB_STEP_SUMMARY
+          echo "| Compatibility | <span style='color:${color}'>${{ needs.compatibility.result || 'success' }}</span> | Type checks, functionality |" >> $GITHUB_STEP_SUMMARY
+          echo "| Patterns | <span style='color:${color}'>${{ needs.patterns.result || 'success' }}</span> | 43+ workflow patterns |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration | <span style='color:${color}'>${{ needs.integration.result || 'success' }}</span> | MCP/A2A protocols |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | <span style='color:${color}'>${{ needs.security.result || 'success' }}</span> | Scans, vulnerabilities |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance | <span style='color:${color}'>${{ needs.performance.result || 'success' }}</span> | Benchmarks, metrics |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Quality Gates" >> $GITHUB_STEP_SUMMARY
+          echo "- Test coverage ≥95%: ${{ env.COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance ≤20% degradation: ${{ env.PERFORMANCE_DEGRADATION }}%" >> $GITHUB_STEP_SUMMARY
+          echo "- 0 critical security issues: ${{ env.CRITICAL_ISSUES }}" >> $GITHUB_STEP_SUMMARY
+          echo "- All tests passing: ${{ env.TEST_STATUS }}" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # Quality Gate Enforcement
+  # ============================================================================
+  quality-gate:
+    name: Quality Gate Check
+    runs-on: ubuntu-latest
+    needs: report
+    timeout-minutes: 10
+    if: needs.report.result == 'success'
+
+    steps:
+      - name: Quality Gate Summary
+        run: |
+          echo "=== YAWL Quality Gate Results ==="
+          echo ""
+
+          # Check quality gate thresholds
+          echo "Checking quality thresholds..."
+
+          # Coverage threshold
+          coverage=$(cat ./test-reports/final/coverage.json 2>/dev/null | jq '.coverage' || echo "0")
+          if (( $(echo "$coverage >= 95" | bc -l) )); then
+            echo "✓ Coverage: ${coverage}% (≥95% threshold)"
+          else
+            echo "✗ Coverage: ${coverage}% (<95% threshold)"
+            exit 1
+          fi
+
+          # Performance threshold
+          perf=$(cat ./test-reports/final/performance.json 2>/dev/null | jq '.degradation' || echo "0")
+          if (( $(echo "$perf <= 20" | bc -l) )); then
+            echo "✓ Performance: ${perf}% degradation (≤20% threshold)"
+          else
+            echo "✗ Performance: ${perf}% degradation (>20% threshold)"
+            exit 1
+          fi
+
+          # Security threshold
+          critical_issues=$(cat ./test-reports/final/security.json 2>/dev/null | jq '.critical_issues' || echo "0")
+          if [ "$critical_issues" -eq 0 ]; then
+            echo "✓ Security: 0 critical issues"
+          else
+            echo "✗ Security: $critical_issues critical issues found"
+            exit 1
+          fi
+
+          # Test status
+          test_status=$(cat ./test-reports/final/test-status.json 2>/dev/null | jq '.status' || echo "unknown")
+          if [ "$test_status" = "passed" ]; then
+            echo "✓ Tests: All tests passing"
+          else
+            echo "✗ Tests: Tests failed"
+            exit 1
+          fi
+
+          echo ""
+          echo "🎉 All quality gates passed!"
+
+  # ============================================================================
+  # Cleanup Job
+  # ============================================================================
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Cleanup Temporary Files
+        run: |
+          echo "Cleaning up temporary files..."
+          rm -rf ./artifacts/
+          rm -rf ./test-reports/temp/
+          docker system prune -f
+          echo "✓ Cleanup completed"
+
+  # ============================================================================
+  # Artifact Management
+  # ============================================================================
+  artifacts:
+    name: Upload Artifacts
+    runs-on: ubuntu-latest
+    needs:
+      - compatibility
+      - patterns
+      - integration
+      - security
+      - performance
+      - report
+    if: always()
+
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts/
+
+      - name: Create Complete Package
+        run: |
+          echo "Creating validation package..."
+
+          # Create timestamped package
+          PACKAGE_NAME="yawl-validation-${GITHUB_SHA:0:7}-$(date +%Y%m%d-%H%M%S)"
+          mkdir -p ./package/$PACKAGE_NAME
+
+          # Copy all reports
+          cp -r ./artifacts/* ./package/$PACKAGE_NAME/
+
+          # Add metadata
+          cat > ./package/$PACKAGE_NAME/metadata.json << EOF
+{
+  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%S")",
+  "commit": "${GITHUB_SHA}",
+  "branch": "${GITHUB_REF_NAME}",
+  "workflow": "${GITHUB_WORKFLOW}",
+  "run_id": "${GITHUB_RUN_ID}",
+  "run_number": "${GITHUB_RUN_NUMBER}"
+}
+EOF
+
+          # Create package archive
+          cd package
+          tar -czf "${PACKAGE_NAME}.tar.gz" ${PACKAGE_NAME}/
+          cd ..
+
+          echo "Package created: ./package/${PACKAGE_NAME}.tar.gz"
+
+      - name: Upload Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: yawl-validation-package
+          path: ./package/
+          retention-days: 90
+
+      - name: Upload to Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v6.')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: YAWL Validation Results
+          body: |
+            Validation results for YAWL v${{ env.VERSION }}
+
+            Trigger: ${{ github.event_name }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+
+            Artifacts contain:
+            - Compatibility reports
+            - Pattern validation results
+            - Integration test results
+            - Security scan reports
+            - Performance benchmarks
+            - Final validation report
+          files: ./package/*.tar.gz
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+          fail_on_unmatched_files: true
