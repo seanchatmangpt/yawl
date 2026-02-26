@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772092854800138635,
+  "timestamp_rfc": "2026-02-26T08:00:54.800138635Z",
+  "session_id": "cd13eb70-dc14-45da-b6f5-4ba9f9900470",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/observability/SLODashboard.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f56a867a578b1d51b3547788da4b85c01939c274482df9cea36c0e0a8d398133",
+  "delta_hash": "b095405da3cf89b953e9a531fef2e8913287a894fe76321ff0910207b7f7aa66",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Map<String, Double> values = new HashMap",
+        "change": "Added"
+      }
+    }
+  ]
+}

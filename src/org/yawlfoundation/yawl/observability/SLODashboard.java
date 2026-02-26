@@ -383,7 +383,7 @@ public final class SLODashboard {
      */
     private void collectSnapshot() {
         try {
-            Map<String, Double> values = new EnumMap<>(SLOTracker.SLOType.class);
+            Map<String, Double> values = new HashMap<>();
             for (SLOTracker.SLOType type : SLOTracker.SLOType.values()) {
                 values.put(type.name(), sloTracker.getComplianceRate(type, Duration.ofHours(1)));
             }

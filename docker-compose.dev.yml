@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Beta - Development Docker Compose Configuration
+# YAWL v6.0.0-GA - Development Docker Compose Configuration
 # =============================================================================
 # Simplified configuration for development with H2 database
 #
@@ -20,7 +20,7 @@ services:
       context: .
       dockerfile: docker/production/Dockerfile.engine
       args:
-        VERSION: 6.0.0-Beta
+        VERSION: 6.0.0-GA
         BUILD_DATE: ${BUILD_DATE:-2026-02-21}
         VCS_REF: ${VCS_REF:-}
     image: yawl-engine:6.0.0-alpha

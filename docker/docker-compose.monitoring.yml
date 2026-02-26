@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Beta - Docker Compose Monitoring Override
+# YAWL v6.0.0-GA - Docker Compose Monitoring Override
 # =============================================================================
 # Usage:
 #   docker compose -f docker-compose.yml -f docker/docker-compose.monitoring.yml up -d

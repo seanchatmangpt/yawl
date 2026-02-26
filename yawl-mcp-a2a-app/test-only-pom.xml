@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent-pom</artifactId>
-        <version>6.0.0-Beta</version>
+        <version>6.0.0-GA</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-mcp-a2a-app</artifactId>
-    <version>6.0.0-Beta</version>
+    <version>6.0.0-GA</version>
     <packaging>jar</packaging>
 
     <build>

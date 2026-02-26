@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772093158053517650,
+  "timestamp_rfc": "2026-02-26T08:05:58.053517650Z",
+  "session_id": "cd13eb70-dc14-45da-b6f5-4ba9f9900470",
+  "file_path": "/home/user/yawl/scripts/dx.sh",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ff557099480ffdc31b0c597da974ab3559ffbe5f1508cf6c6083094b90554d57",
+  "delta_hash": "4f2d3013f849295a01ad7f7a6de31a20d377ff0ff58a91673f9a2ba40d8faec1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "# In remote/CI environments, skip module",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -226,6 +226,47 @@ public final class HandoffProtocol {
     }
 
     /**
+     * Parse a raw A2A handoff message text and verify the embedded JWT.
+     *
+     * <p>Expected format: {@code YAWL_HANDOFF:<workItemId>:<jwt>:<fromAgent>}
+     *
+     * @param messageText the raw handoff message received over A2A
+     * @return a verified HandoffToken whose {@link HandoffToken#isValid()} returns true
+     * @throws HandoffException if the message format is invalid, the JWT signature
+     *         fails verification, or the token has expired
+     */
+    public HandoffToken parseAndVerifyHandoffMessage(String messageText) throws HandoffException {
+        if (messageText == null || messageText.isBlank()) {
+            throw new HandoffException("Handoff message text is null or blank");
+        }
+        String[] parts = messageText.split(":", 4);
+        if (parts.length < 4 || !"YAWL_HANDOFF".equals(parts[0])) {
+            throw new HandoffException(
+                "Invalid handoff message format. Expected YAWL_HANDOFF:<workItemId>:<jwt>:<fromAgent>. Got: "
+                + messageText.substring(0, Math.min(80, messageText.length())));
+        }
+        String workItemId = parts[1];
+        String jwt        = parts[2];
+        String fromAgent  = parts[3];
+
+        io.jsonwebtoken.Claims claims;
+        try {
+            claims = jwtProvider.parseClaims(jwt);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            throw new HandoffException("Handoff token has expired");
+        } catch (io.jsonwebtoken.JwtException e) {
+            throw new HandoffException("Handoff token signature invalid or malformed: " + e.getMessage());
+        }
+
+        java.time.Instant expiresAt = claims.getExpiration() != null
+            ? claims.getExpiration().toInstant()
+            : java.time.Instant.now().minusSeconds(1); // treat missing exp as expired
+
+        HandoffToken token = new HandoffToken(workItemId, fromAgent, "", "", expiresAt, jwt);
+        return verifyHandoffToken(token);
+    }
+
+    /**
      * Creates a handoff session from a verified token.
      *
      * @param token the verified handoff token

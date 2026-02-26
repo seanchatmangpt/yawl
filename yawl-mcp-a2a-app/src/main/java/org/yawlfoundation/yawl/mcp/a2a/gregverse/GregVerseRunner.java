@@ -179,7 +179,10 @@ public class GregVerseRunner {
                 report = runDefaultSimulation();
             }
 
-            outputReport(report);
+            // Self-play mode writes custom JSON via writeDemoResults(); skip generic outputReport.
+            if (!config.isSelfPlayMode()) {
+                outputReport(report);
+            }
 
             printSummary(report, Duration.between(startTime, Instant.now()));
 

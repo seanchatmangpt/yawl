@@ -703,7 +703,7 @@ public class E2ESelfUpgradeIntegrationTest {
         Path srcDir = testProjectDir.resolve("src/main/java");
         Files.createDirectories(srcDir);
         Files.writeString(srcDir.resolve("Example.java"),
-            "public class Example { public static void main(String[] args) {} }");
+            "public class Example { public static void main(String[] args) {" + "} }");
     }
 
     private void createMavenProjectWithPassingTest() throws Exception {
