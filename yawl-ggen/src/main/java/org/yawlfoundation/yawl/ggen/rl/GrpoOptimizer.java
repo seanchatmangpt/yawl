@@ -83,7 +83,8 @@ public class GrpoOptimizer {
             throw new IllegalArgumentException("processDescription must not be blank");
         }
 
-        // Sample K candidates
+        // Sample K candidates. OllamaCandidateSampler makes the K HTTP calls
+        // concurrently via virtual threads internally; GrpoOptimizer stays single-threaded.
         List<PowlModel> rawCandidates = sampler.sample(processDescription, config.k());
 
         // Filter to structurally valid candidates

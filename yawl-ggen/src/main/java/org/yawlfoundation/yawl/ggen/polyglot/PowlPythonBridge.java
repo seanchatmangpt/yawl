@@ -5,58 +5,82 @@
  */
 package org.yawlfoundation.yawl.ggen.polyglot;
 
-import org.yawlfoundation.yawl.ggen.powl.PowlActivity;
 import org.yawlfoundation.yawl.ggen.powl.PowlModel;
-import org.yawlfoundation.yawl.ggen.powl.PowlNode;
-import org.yawlfoundation.yawl.ggen.powl.PowlOperatorNode;
-import org.yawlfoundation.yawl.ggen.powl.PowlOperatorType;
+import org.yawlfoundation.yawl.ggen.rl.PowlParseException;
+import org.yawlfoundation.yawl.graalpy.PythonException;
+import org.yawlfoundation.yawl.graalpy.PythonExecutionEngine;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 /**
  * Bridges POWL generation to the Python pm4py library via GraalPy.
- * Loads the powl_generator.py Python script from the classpath resource
- * polyglot/powl_generator.py and evaluates it in a GraalPy context
- * to generate POWL models from process descriptions or XES logs.
+ *
+ * <p>Uses the canonical {@link PythonExecutionEngine} from {@code yawl-graalpy} as the
+ * single Java-Python integration pattern in YAWL. The engine's context pool is shared
+ * across calls; construction is thread-safe and the engine should be reused.</p>
+ *
+ * <h2>Runtime requirement</h2>
+ * <p>GraalVM JDK 24.1+ must be present at runtime. On standard JDK (e.g., Temurin),
+ * all methods throw {@link PythonException} with kind
+ * {@link PythonException.ErrorKind#RUNTIME_NOT_AVAILABLE}. Callers should handle
+ * this by falling back to the {@code OllamaCandidateSampler} or similar Java-only path.</p>
+ *
+ * <h2>Usage</h2>
+ * <pre>{@code
+ * try (PowlPythonBridge bridge = new PowlPythonBridge()) {
+ *     PowlModel model = bridge.generate("loan application approval process");
+ * } catch (PythonException e) {
+ *     if (e.getErrorKind() == PythonException.ErrorKind.RUNTIME_NOT_AVAILABLE) {
+ *         // fall back to OllamaCandidateSampler
+ *     }
+ * }
+ * }</pre>
  */
-public class PowlPythonBridge {
+public class PowlPythonBridge implements AutoCloseable {
 
-    private final GraalPyRuntime runtime;
+    private static final String SCRIPT_RESOURCE = "polyglot/powl_generator.py";
+
+    private final PythonExecutionEngine engine;
 
     /**
-     * Constructs a PowlPythonBridge with the given GraalPy runtime.
-     *
-     * @param runtime the GraalPyRuntime to use for Python evaluation
-     * @throws NullPointerException if runtime is null
+     * Constructs a PowlPythonBridge backed by a sandboxed {@link PythonExecutionEngine}
+     * with a pool of 4 GraalPy contexts. Thread-safe; reuse across calls.
      */
-    public PowlPythonBridge(GraalPyRuntime runtime) {
-        this.runtime = Objects.requireNonNull(runtime, "runtime must not be null");
+    public PowlPythonBridge() {
+        this(PythonExecutionEngine.builder()
+                .sandboxed(true)
+                .contextPoolSize(4)
+                .build());
     }
 
     /**
-     * Generates a POWL model from a natural language process description.
-     * Uses pm4py via GraalPy if available.
+     * Package-private constructor for testing: inject a pre-built engine.
+     */
+    PowlPythonBridge(PythonExecutionEngine engine) {
+        this.engine = Objects.requireNonNull(engine, "engine must not be null");
+    }
+
+    /**
+     * Generates a POWL model from a natural language process description using pm4py.
      *
      * @param processDescription natural language description of the process
      * @return PowlModel representing the described process
      * @throws IllegalArgumentException if processDescription is blank
-     * @throws PolyglotException if GraalPy is unavailable or Python evaluation fails
+     * @throws PythonException          if GraalPy is unavailable or Python execution fails
+     * @throws PowlParseException       if the Python result cannot be parsed as a POWL model
      */
-    public PowlModel generate(String processDescription) {
+    public PowlModel generate(String processDescription) throws PowlParseException {
         if (processDescription == null || processDescription.isBlank()) {
             throw new IllegalArgumentException("processDescription must not be blank");
         }
-        String script = loadScript("polyglot/powl_generator.py");
-        // Inject description and call generate function
-        String callScript = script + "\nimport json\nresult = generate_powl_json('''" +
-            processDescription.replace("'", "\\'") + "''')\nresult";
-        String jsonResult = runtime.eval(callScript);
-        return parsePowlJson(jsonResult, processDescription);
+        String script = loadScript();
+        String escapedDesc = processDescription.replace("\\", "\\\\").replace("'", "\\'");
+        String source = script + "\ngenerate_powl_json('" + escapedDesc + "')";
+        String json = engine.evalToString(source);
+        return PowlJsonMarshaller.fromJson(json, processDescription);
     }
 
     /**
@@ -65,130 +89,39 @@ public class PowlPythonBridge {
      * @param xesContent XES event log XML content
      * @return PowlModel discovered from the log
      * @throws IllegalArgumentException if xesContent is blank
-     * @throws PolyglotException if GraalPy is unavailable or Python evaluation fails
+     * @throws PythonException          if GraalPy is unavailable or Python execution fails
+     * @throws PowlParseException       if the Python result cannot be parsed as a POWL model
      */
-    public PowlModel mineFromLog(String xesContent) {
+    public PowlModel mineFromLog(String xesContent) throws PowlParseException {
         if (xesContent == null || xesContent.isBlank()) {
             throw new IllegalArgumentException("xesContent must not be blank");
         }
-        String script = loadScript("polyglot/powl_generator.py");
+        String script = loadScript();
         String escapedXes = xesContent.replace("\\", "\\\\").replace("'", "\\'");
-        String callScript = script + "\nimport json\nresult = mine_from_xes('''" + escapedXes + "''')\nresult";
-        String jsonResult = runtime.eval(callScript);
-        return parsePowlJson(jsonResult, "mined-from-xes-" + System.currentTimeMillis());
+        String source = script + "\nmine_from_xes('" + escapedXes + "')";
+        String json = engine.evalToString(source);
+        return PowlJsonMarshaller.fromJson(json, "mined-from-xes-" + System.currentTimeMillis());
     }
 
-    /**
-     * Loads a Python script from the classpath resources.
-     *
-     * @param resourcePath the path to the resource (e.g., "polyglot/powl_generator.py")
-     * @return the content of the script as a String
-     * @throws PolyglotException if the resource cannot be found or loaded
-     */
-    private String loadScript(String resourcePath) {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+    @Override
+    public void close() {
+        engine.close();
+    }
+
+    // ─── private helpers ───────────────────────────────────────────────────
+
+    private String loadScript() {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(SCRIPT_RESOURCE)) {
             if (is == null) {
-                throw new PolyglotException("Python resource not found on classpath: " + resourcePath);
+                throw new PythonException(
+                        "Python resource not found on classpath: " + SCRIPT_RESOURCE,
+                        PythonException.ErrorKind.RUNTIME_ERROR);
             }
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new PolyglotException("Failed to load Python resource: " + resourcePath, e);
+            throw new PythonException(
+                    "Failed to load Python resource: " + SCRIPT_RESOURCE,
+                    PythonException.ErrorKind.RUNTIME_ERROR, e);
         }
-    }
-
-    /**
-     * Parses POWL JSON structure and returns a PowlModel.
-     * Expected format: {"type":"ACTIVITY|SEQUENCE|XOR|PARALLEL|LOOP","id":"...","label":"...","children":[...]}
-     *
-     * @param json    the JSON string to parse
-     * @param modelId the identifier for the resulting model
-     * @return a PowlModel constructed from the JSON
-     * @throws PolyglotException if JSON parsing fails
-     */
-    private PowlModel parsePowlJson(String json, String modelId) {
-        json = json.trim();
-        PowlNode root = parseNode(json);
-        return PowlModel.of(modelId, root);
-    }
-
-    /**
-     * Recursively parses a POWL node from JSON.
-     *
-     * @param json the JSON string representing a single node
-     * @return a PowlNode (either PowlActivity or PowlOperatorNode)
-     * @throws PolyglotException if JSON parsing fails
-     */
-    private PowlNode parseNode(String json) {
-        // Extract "type" field
-        String type = extractStringField(json, "type");
-        String id = extractStringField(json, "id");
-        if ("ACTIVITY".equals(type)) {
-            String label = extractStringField(json, "label");
-            return new PowlActivity(id, label);
-        }
-        // Operator node: parse children array
-        PowlOperatorType opType = PowlOperatorType.valueOf(type);
-        List<String> childJsons = extractChildJsons(json);
-        List<PowlNode> children = new ArrayList<>();
-        for (String childJson : childJsons) {
-            children.add(parseNode(childJson));
-        }
-        return new PowlOperatorNode(id, opType, children);
-    }
-
-    /**
-     * Extracts a string field value from JSON.
-     * Assumes format: "key":"value"
-     *
-     * @param json the JSON string
-     * @param key  the field name
-     * @return the extracted value
-     * @throws PolyglotException if the field is not found or malformed
-     */
-    private String extractStringField(String json, String key) {
-        String search = "\"" + key + "\":\"";
-        int start = json.indexOf(search);
-        if (start == -1) {
-            throw new PolyglotException("Field '" + key + "' not found in JSON: "
-                + json.substring(0, Math.min(json.length(), 100)));
-        }
-        start += search.length();
-        int end = json.indexOf('"', start);
-        if (end == -1) {
-            throw new PolyglotException("Unterminated string for field '" + key + "'");
-        }
-        return json.substring(start, end);
-    }
-
-    /**
-     * Extracts child node JSON objects from a parent's "children" array.
-     * Uses bracket-matching to extract individual JSON objects.
-     *
-     * @param json the parent JSON string containing a "children" array
-     * @return a list of child JSON object strings
-     */
-    private List<String> extractChildJsons(String json) {
-        List<String> results = new ArrayList<>();
-        int childrenStart = json.indexOf("\"children\":[");
-        if (childrenStart == -1) return results;
-        int arrayStart = json.indexOf('[', childrenStart) + 1;
-        int depth = 0;
-        int nodeStart = -1;
-        for (int i = arrayStart; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (c == '{') {
-                if (depth == 0) nodeStart = i;
-                depth++;
-            } else if (c == '}') {
-                depth--;
-                if (depth == 0 && nodeStart != -1) {
-                    results.add(json.substring(nodeStart, i + 1));
-                    nodeStart = -1;
-                }
-            } else if (c == ']' && depth == 0) {
-                break;
-            }
-        }
-        return results;
     }
 }

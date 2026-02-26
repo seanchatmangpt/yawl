@@ -96,6 +96,7 @@ public class GenerateSkill implements A2ASkill {
 
             RlGenerationEngine engine = new RlGenerationEngine(config);
             String yawlSpec = engine.generateYawlSpec(processDescription);
+
             long duration = System.currentTimeMillis() - startTime;
 
             Map<String, Object> result = new HashMap<>();

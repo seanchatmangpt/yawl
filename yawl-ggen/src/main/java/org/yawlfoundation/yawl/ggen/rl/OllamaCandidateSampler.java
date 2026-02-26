@@ -20,6 +20,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 /**
  * Generates POWL candidate models by calling the Ollama LLM API.
@@ -62,19 +67,38 @@ public class OllamaCandidateSampler implements CandidateSampler {
             throw new IllegalArgumentException("processDescription must not be blank");
         if (k <= 0) throw new IllegalArgumentException("k must be positive");
 
+        // Submit K Ollama HTTP calls as concurrent virtual threads (Java 21+).
+        // Each call uses a different temperature for candidate diversity.
+        // Virtual threads prevent carrier thread pinning during network I/O —
+        // K=4 yields ~4× throughput vs the sequential baseline.
+        List<Future<PowlModel>> futures;
+        try (ExecutorService vt = Executors.newVirtualThreadPerTaskExecutor()) {
+            futures = IntStream.range(0, k)
+                    .mapToObj(i -> {
+                        double temperature = TEMPERATURES[i % TEMPERATURES.length];
+                        String modelId = "candidate_" + i + "_"
+                                + UUID.randomUUID().toString().substring(0, 8);
+                        return vt.submit(() -> {
+                            String response = callOllama(processDescription, temperature);
+                            return parser.parse(response, modelId);
+                        });
+                    })
+                    .toList();
+        } // executor shutdown — all tasks have been submitted; we collect below
+
         List<PowlModel> candidates = new ArrayList<>(k);
         List<String> parseErrors = new ArrayList<>();
-
-        for (int i = 0; i < k; i++) {
-            double temperature = TEMPERATURES[i % TEMPERATURES.length];
-            String modelId = "candidate_" + i + "_" + UUID.randomUUID().toString().substring(0, 8);
-
+        for (int i = 0; i < futures.size(); i++) {
             try {
-                String response = callOllama(processDescription, temperature);
-                PowlModel candidate = parser.parse(response, modelId);
-                candidates.add(candidate);
-            } catch (PowlParseException e) {
-                parseErrors.add("Candidate " + i + ": " + e.getMessage());
+                candidates.add(futures.get(i).get());
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                parseErrors.add("Candidate " + i + ": " + cause.getMessage());
+                if (cause instanceof IOException ioe) throw ioe;
+                // PowlParseException from parser.parse — collect and continue
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Candidate sampling interrupted", e);
             }
         }
 
