@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772224543939514502,
+  "timestamp_rfc": "2026-02-27T20:35:43.939514502Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JavaScriptSandboxConfig.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3ad060898aacfe771756e08970b00aaef7321aa50e1563c0b5be50526973d79e",
+  "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

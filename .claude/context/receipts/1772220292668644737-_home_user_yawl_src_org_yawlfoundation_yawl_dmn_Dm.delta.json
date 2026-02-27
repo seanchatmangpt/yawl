@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220292668644737,
+  "timestamp_rfc": "2026-02-27T19:24:52.668644737Z",
+  "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnCollectAggregation.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1a1ea245796afff64f07817139809f7f15b5ede80dbb74a744284e8bcaa7a197",
+  "delta_hash": "3946bd7dad414e7c49f5d70a8451184f66415dfe19d0c5fcacc6fbf7fa4d1eaf",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "try",
+        "change": "Added"
+      }
+    }
+  ]
+}

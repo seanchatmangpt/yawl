@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.graaljs;
 
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.io.IOAccess;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -103,7 +104,7 @@ public final class JavaScriptSandboxConfig {
                    .allowNativeAccess(false)
                    .allowCreateProcess(false)
                    .allowExperimentalOptions(allowExperimentalOptions)
-                   .option("js.ECMAScript-version", ecmaScriptVersion);
+                   .option("js.ecmascript-version", ecmaScriptVersion);
         } else if (mode == SandboxMode.STANDARD) {
             builder.allowHostAccess(HostAccess.EXPLICIT)
                    .allowAllAccess(false)
@@ -111,7 +112,7 @@ public final class JavaScriptSandboxConfig {
                    .allowNativeAccess(false)
                    .allowCreateProcess(false)
                    .allowExperimentalOptions(allowExperimentalOptions)
-                   .option("js.ECMAScript-version", ecmaScriptVersion);
+                   .option("js.ecmascript-version", ecmaScriptVersion);
         } else {
             // PERMISSIVE
             builder.allowHostAccess(HostAccess.ALL)
@@ -120,7 +121,18 @@ public final class JavaScriptSandboxConfig {
                    .allowNativeAccess(true)
                    .allowCreateProcess(true)
                    .allowExperimentalOptions(allowExperimentalOptions)
-                   .option("js.ECMAScript-version", ecmaScriptVersion);
+                   .option("js.ecmascript-version", ecmaScriptVersion);
+        }
+
+        // ES module eval must return the module namespace object (needed for wasm-bindgen glue).
+        if (wasmEnabled) {
+            builder.option("js.esm-eval-returns-exports", "true");
+        }
+
+        // Apply file I/O access: required for GraalJS to resolve module URIs when loading
+        // ES modules from file paths, and to allow explicit read-path access.
+        if (!allowedReadPaths.isEmpty() || wasmEnabled) {
+            builder.allowIO(IOAccess.newBuilder().allowHostFileAccess(true).build());
         }
 
         if (nodeModulesPath != null) {

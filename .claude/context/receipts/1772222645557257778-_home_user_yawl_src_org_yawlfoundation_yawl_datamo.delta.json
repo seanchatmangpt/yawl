@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222645557257778,
+  "timestamp_rfc": "2026-02-27T20:04:05.557257778Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/datamodelling/package-info.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "bc2728a7d78e5b105a5d36dced51030b3575cbc6081126e21455223a7a3d52ab",
+  "delta_hash": "55b31a2cf3e758853a0bf94d17aba6585c8164cbd8ae6a0dc50d4a1d4845d684",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772223255479078342,
+  "timestamp_rfc": "2026-02-27T20:14:15.479078342Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/yawl-data-modelling/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5403b20865983a1604c31c629df4d3cc19db8d161c9df11ead498926723c5072",
+  "delta_hash": "883107a38b36804292b7db593fd8c4aed4fb2cde4fbe8e9ea7af6a2b77f77da4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "<!-- GraalVM Polyglot API",
+        "change": "Added"
+      }
+    }
+  ]
+}

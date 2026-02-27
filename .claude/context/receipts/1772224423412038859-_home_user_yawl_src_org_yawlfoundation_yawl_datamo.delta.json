@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772224423412038859,
+  "timestamp_rfc": "2026-02-27T20:33:43.412038859Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/datamodelling/DataModellingBridge.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "547b7760b00b833a3950bcfa0db7349607440435bdf8e275c45866f7983078e7",
+  "delta_hash": "3197658373664d489c994b2e15380aba5e0cc72fa23e14a62b2a7ce3aa8e7550",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Constant",
+        "name": "c",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "const c=s.charCodeAt",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "const b =",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "// Polyfills for Web APIs used by wasm-b",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final String WEB_API_POLY",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Constant",
+        "name": "o",
+        "change": "Added"
+      }
+    }
+  ]
+}

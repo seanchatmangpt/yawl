@@ -70,6 +70,8 @@
         <module>yawl-elements</module>
         <module>yawl-ggen</module>
         <module>yawl-graalwasm</module>
+        <module>yawl-dmn</module>
+        <module>yawl-data-modelling</module>
 
         <!-- Layer 2: Core engine -->
         <module>yawl-engine</module>
@@ -391,6 +393,16 @@
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-graalwasm</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-dmn</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-data-modelling</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
