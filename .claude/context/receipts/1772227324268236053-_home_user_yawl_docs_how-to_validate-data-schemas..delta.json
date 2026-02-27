@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772227324268236053,
+  "timestamp_rfc": "2026-02-27T21:22:04.268236053Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/how-to/validate-data-schemas.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0a5abdd3d1b6e0985535b6d9126820624c2f2c0f157f18f61f23e3b2904bfb8d",
+  "delta_hash": "484deec9dd655a81559e407d0507c6471bca62d3b398dd94ea07e6a8579d2693",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Validate Data Schema Quality",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public ValidationResult validateSchema(D",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "record",
+        "change": "Added"
+      }
+    }
+  ]
+}
