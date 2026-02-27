@@ -1,0 +1,75 @@
+{
+  "timestamp_ns": 1772172331110448220,
+  "timestamp_rfc": "2026-02-27T06:05:31.110448220Z",
+  "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/scheduling/SchedulerCancelFireRaceTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "99ff8988efaf11f3c1e740ae478df60f7b4587e1a16e3912eb5a691b29269a91",
+  "delta_hash": "9abb914b4c78cebc7291d421235c0c1ce6287c6a591ed744378cd37282409ac7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "SchedulerCancelFireRaceTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@RepeatedTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Tag",
+        "change": "Added"
+      }
+    }
+  ]
+}

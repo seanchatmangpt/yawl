@@ -1,0 +1,68 @@
+{
+  "timestamp_ns": 1772172182016910665,
+  "timestamp_rfc": "2026-02-27T06:03:02.016910665Z",
+  "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/auth/SimpleVerificationTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6c3e515a7771ccc5aadb2787d4aa240f100fc39461097e4ebf568efb97ca299c",
+  "delta_hash": "a6f8aa4c8ae9903a97ff9b767cba2f8ea36d24976fea2f76c8d6eabf9f551d5d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "SimpleVerificationTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final String MINIMAL_SPEC",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "package org.yawlfoundation.yawl.integrat",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172707202648455,
+  "timestamp_rfc": "2026-02-27T06:11:47.202648455Z",
+  "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/invariant/RunnerTaskSetInvariantTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "21c12e85040db22f3f85bc120dcd3e1837cc25e4ea89ddeaf735e86cc9a56cb0",
+  "delta_hash": "f56e8094e9c35bc33b2815f167071400dccff9d4a4c3989b3ad55723fac0be4f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "YWorkItem started = runner.getWorkItemRe",
+        "change": "Added"
+      }
+    }
+  ]
+}

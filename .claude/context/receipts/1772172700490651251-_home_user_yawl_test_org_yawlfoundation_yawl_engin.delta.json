@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172700490651251,
+  "timestamp_rfc": "2026-02-27T06:11:40.490651251Z",
+  "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/invariant/RunnerTaskSetInvariantTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b32d73ea0f248e301fdd4aa3fc2f77d0b1f5caa387e57e7de0401ef8d90b947c",
+  "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

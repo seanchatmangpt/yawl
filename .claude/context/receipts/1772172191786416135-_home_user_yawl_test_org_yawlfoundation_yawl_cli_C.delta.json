@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772172191786416135,
+  "timestamp_rfc": "2026-02-27T06:03:11.786416135Z",
+  "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/cli/CliIntegrationTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ad9d96e83ade3f74fcac3987b23fbe343d8c799d02f4ed9cfdde0ea9411fe0ab",
+  "delta_hash": "e93053126863ca409546131992dc4c36d6be7ae1eecbbb2fbe22a17c21395f22",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    }
+  ]
+}
