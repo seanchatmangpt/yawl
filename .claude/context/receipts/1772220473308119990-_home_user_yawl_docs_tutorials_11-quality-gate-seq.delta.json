@@ -1,0 +1,75 @@
+{
+  "timestamp_ns": 1772220473308119990,
+  "timestamp_rfc": "2026-02-27T19:27:53.308119990Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/tutorials/11-quality-gate-sequence.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1f13d2530c96825955806b0ba321f5694581d0759212b9a1aafb86fd68a090af",
+  "delta_hash": "447616e0316e9cdccf9fc6a6a75ce6c6c425f5558f99200f2a4088bca6edf32e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Tag",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Test void mixedReturnsFalse",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Test void emptyReturnsFalse",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial 11 — Walk the Full Quality Ga",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "StringUtilIsDigitsOnlyTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Test void nullReturnsFalse",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Test void digitsReturnsTrue",
+        "change": "Added"
+      }
+    }
+  ]
+}

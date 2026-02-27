@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221058591131625,
+  "timestamp_rfc": "2026-02-27T19:37:38.591131625Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/reference/fmea-risk-table.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a8ed45742d0d2238f483d48bb6f6243920d0783733db4287f2af3fe2b0f1debd",
+  "delta_hash": "e91642f6d28a2c6f636ab8585582a6f75b33a82b0a9f931a709793b48a5e3604",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# FMEA Risk Table",
+        "change": "Added"
+      }
+    }
+  ]
+}

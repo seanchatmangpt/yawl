@@ -1,9 +1,9 @@
 {
   "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
-  "started_at": "2026-02-27T18:26:41.491483660Z",
-  "ended_at": "2026-02-27T18:26:41.665244571Z",
-  "receipt_count": 171,
-  "chain_hash": "66f3185b9a564ec9cb6be11ec307531b7d4d1fd0f7fe588287777dc35a39a743",
+  "started_at": "2026-02-27T19:31:58.030647041Z",
+  "ended_at": "2026-02-27T19:31:58.070543367Z",
+  "receipt_count": 179,
+  "chain_hash": "f07db44bb7db4d01b95988e89c7de8f9f026152afc07fd398ce026f9c27b902a",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -8870,6 +8870,256 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "**Conditions**:",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220473308119990,
+      "timestamp_rfc": "2026-02-27T19:27:53.308119990Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/tutorials/11-quality-gate-sequence.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1f13d2530c96825955806b0ba321f5694581d0759212b9a1aafb86fd68a090af",
+      "delta_hash": "447616e0316e9cdccf9fc6a6a75ce6c6c425f5558f99200f2a4088bca6edf32e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Test void mixedReturnsFalse",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Test void emptyReturnsFalse",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 11 — Walk the Full Quality Ga",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "StringUtilIsDigitsOnlyTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Test void nullReturnsFalse",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Test void digitsReturnsTrue",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220509818031069,
+      "timestamp_rfc": "2026-02-27T19:28:29.818031069Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/tutorials/12-fix-hyper-standards-violation.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "00e60e6f84b63fc40d41c20406f94cf86eb20afa1e951a03cb825022ddcd1664",
+      "delta_hash": "572f721550877a7dd7e3bbda84a6bc6fc7af89b608e3e3a91eb580fb5d02ba2a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final DataRepository repo;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 12 — Fix Your First HYPER_STA",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "BadService",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220575113892714,
+      "timestamp_rfc": "2026-02-27T19:29:35.113892714Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/how-to/build/add-maven-module.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2dc07c5770de3430c0f3218465b57062cef1aa6917481b7f31edff4b32934b39",
+      "delta_hash": "6dc1d8a301858c222382d68f54f141a9ddcd98f40fffbb56e0ac2f3059a510f2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Add a New Maven Module",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220593021320291,
+      "timestamp_rfc": "2026-02-27T19:29:53.021320291Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/how-to/build/target-module-build.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b478ebdbf82ca8e1a023a375dc6fb1b4a7ed9cf9940cccfde71323fc9c2d2a95",
+      "delta_hash": "7df4d728bf7f793bcf6e154a767a84a29994b7797246075a7ba712163869bc6b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Target a Specific Module with d",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220617756395880,
+      "timestamp_rfc": "2026-02-27T19:30:17.756395880Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/how-to/build/run-release-validation.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "15a67750d9a97a989cd044817dd9d5e5793f5d0c60c60a37a3af6355efca3f73",
+      "delta_hash": "c891594ca5d701de154433b444b06b35f293c0528c794c7633bce4d28d627155",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Run Release Validation Gates",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220641084047310,
+      "timestamp_rfc": "2026-02-27T19:30:41.084047310Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/how-to/build/measure-test-coverage.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d9741adc4f882606e8e2b1e42487efc76dacad3e4bb0a276c354e1a9f662d7ce",
+      "delta_hash": "5d893dbda1f38b9bae57532643d9236a5bb18d6aef912bb4fa8f027e117a2c6a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Measure Test Coverage",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220672082380085,
+      "timestamp_rfc": "2026-02-27T19:31:12.082380085Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/how-to/build/fix-h-guard-violations.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "71c4254ca2968b4e173d9dcaf047f8b427c786c726f5727fd135843573fb3914",
+      "delta_hash": "194c6a0a39eae1d845401c297963dcb4cdc0eaf164d4e5b5268a38b5435b4300",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Fix H-Guard Violations at Scale",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220717711073201,
+      "timestamp_rfc": "2026-02-27T19:31:57.711073201Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/reference/build-sequences.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7c6a872af6312179adfab533b70ea89a6a5f8f78c787799eb20f00250b62b433",
+      "delta_hash": "9cd7319e4398b488d176521bbd3224dc39f0d9ce856be3ff3ad29676372061ae",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Build Sequences Reference",
             "change": "Added"
           }
         }
