@@ -143,7 +143,7 @@ public class CaseOutcomePredictorTest {
     private static WorkflowEventStore createTestEventStore() throws Exception {
         // Create H2 in-memory datasource
         org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
-        ds.setURL("jdbc:h2:mem:test-case-outcome-" + System.nanoTime());
+        ds.setURL("jdbc:h2:mem:test-case-outcome-" + System.nanoTime() + ";MODE=MySQL;DB_CLOSE_DELAY=-1");
         ds.setUser("sa");
         ds.setPassword("");
 

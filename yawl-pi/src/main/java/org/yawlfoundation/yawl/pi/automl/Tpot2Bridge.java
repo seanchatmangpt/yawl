@@ -73,8 +73,9 @@ public final class Tpot2Bridge implements AutoCloseable {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String RUNNER_RESOURCE = "tpot2/tpot2_runner.py";
 
-    private final Path bridgeTempDir;  // created once at construction, deleted on close()
+    private final Path bridgeTempDir;  // created once at construction, deleted on close() only if owned
     private final Path runnerScript;   // bridgeTempDir/tpot2_runner.py
+    private final boolean ownsDir;     // true only when this bridge created the dir
 
     /**
      * Constructs a bridge, extracting {@code tpot2_runner.py} from the classpath to a temp dir.
@@ -86,6 +87,7 @@ public final class Tpot2Bridge implements AutoCloseable {
         try {
             this.bridgeTempDir = Files.createTempDirectory("yawl-tpot2-");
             this.runnerScript = bridgeTempDir.resolve("tpot2_runner.py");
+            this.ownsDir = true;
             extractRunner(runnerScript);
             log.info("Tpot2Bridge initialised at {}", bridgeTempDir);
         } catch (IOException e) {
@@ -103,6 +105,7 @@ public final class Tpot2Bridge implements AutoCloseable {
     Tpot2Bridge(Path bridgeTempDir, Path runnerScript) {
         this.bridgeTempDir = bridgeTempDir;
         this.runnerScript = runnerScript;
+        this.ownsDir = false;  // caller (test) owns the directory; do not delete on close()
     }
 
     /**
@@ -167,7 +170,9 @@ public final class Tpot2Bridge implements AutoCloseable {
      */
     @Override
     public void close() {
-        deleteTempDir(bridgeTempDir);
+        if (ownsDir) {
+            deleteTempDir(bridgeTempDir);
+        }
     }
 
     // ── private helpers ──────────────────────────────────────────────────────

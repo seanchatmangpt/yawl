@@ -99,8 +99,9 @@ public class ConflictEventLogger {
      * Create a new conflict event logger with the specified event store.
      *
      * @param dataSource JDBC data source for event storage (must not be null)
+     * @throws WorkflowEventStore.EventStoreException if event store initialization fails
      */
-    public ConflictEventLogger(DataSource dataSource) {
+    public ConflictEventLogger(DataSource dataSource) throws WorkflowEventStore.EventStoreException {
         this.eventStore = new WorkflowEventStore(dataSource);
         this.metrics = new EventMetrics();
         this.filter = new EventFilter();

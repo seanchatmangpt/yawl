@@ -28,6 +28,7 @@ import org.yawlfoundation.yawl.pi.PIException;
 import org.yawlfoundation.yawl.pi.predictive.CaseOutcomePrediction;
 import org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -52,7 +53,7 @@ public class PrescriptiveEngineTest {
     private ProcessConstraintModel constraintModel;
 
     @BeforeEach
-    public void setUp() throws PIException {
+    public void setUp() throws PIException, IOException {
         Path tempDir = Files.createTempDirectory("pi-models-test");
         modelRegistry = new PredictiveModelRegistry(tempDir);
         dnaOracle = new WorkflowDNAOracle(new XesToYawlSpecGenerator(1));
