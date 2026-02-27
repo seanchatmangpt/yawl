@@ -19,9 +19,16 @@
 package org.yawlfoundation.yawl.engine;
 
 import org.junit.jupiter.api.*;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.logging.YLogDataItemList;
+import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.util.StringUtil;
 
+import java.io.File;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,6 +88,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Memory Leak Detection under Sustained Load")
 class MemoryLeakStressTest {
 
+    // ── Engine state ───────────────────────────────────────────────────────────
+
+    private YEngine engine;
+    private YSpecification spec;
+
     // ── Configuration ──────────────────────────────────────────────────────────
 
     /** Maximum allowed heap growth rate. Exceeding this indicates a memory leak. */
@@ -112,6 +124,31 @@ class MemoryLeakStressTest {
      * @param batchesComplete cumulative number of task batches finished
      */
     record HeapSnapshot(long heapUsedBytes, long timestamp, long gcCollections, long batchesComplete) {}
+
+    // ── Setup / Teardown ───────────────────────────────────────────────────────
+
+    /**
+     * Initialize YEngine and load test specification.
+     */
+    @BeforeEach
+    void setUpEngine() throws Exception {
+        engine = YEngine.getInstance();
+        EngineClearer.clear(engine);
+        URL url = getClass().getResource("YAWL_Specification2.xml");
+        File file = new File(url.getFile());
+        List<YSpecification> specs = YMarshal.unmarshalSpecifications(
+            StringUtil.fileToString(file.getAbsolutePath()), false);
+        spec = specs.get(0);
+        engine.loadSpecification(spec);
+    }
+
+    /**
+     * Clear engine state after test completes.
+     */
+    @AfterEach
+    void tearDownEngine() throws Exception {
+        EngineClearer.clear(engine);
+    }
 
     // ── Test ───────────────────────────────────────────────────────────────────
 
@@ -179,13 +216,21 @@ class MemoryLeakStressTest {
                     StructuredTaskScope.Joiner.<Void>awaitAllSuccessfulOrThrow())) {
                 for (int i = 0; i < BATCH_SIZE; i++) {
                     scope.fork(() -> {
-                        Thread.sleep(IO_LATENCY_MS);
+                        YIdentifier id = engine.startCase(spec.getSpecificationID(), null, null, null,
+                                new YLogDataItemList(), null, false);
+                        if (id != null) {
+                            engine.cancelCase(id);
+                        }
                         return null;
                     });
                 }
                 scope.join();
                 // awaitAllSuccessfulOrThrow joins and discards result; batch counter advances
                 batchCounter.incrementAndGet();
+
+                // Monitor orphan work items to detect leaks
+                int orphanCount = engine.getWorkItemRepository().getWorkItems().size();
+                System.out.printf("[MemoryLeakStressTest] Post-batch orphan work items: %d%n", orphanCount);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772160795466926421,
+  "timestamp_rfc": "2026-02-27T02:53:15.466926421Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/mossy-greeting-valiant-agent-ace18b859ae2ebe31.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d503349ff2eaadea9f54e1cabee2cf46f080cabcf6bb50589049f57cd69213b1",
+  "delta_hash": "1d32ad35d94434c3c8e8d5a6580cd45c83a77e798ab8e1bc7a20655ef53dfab7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "## Task P2: Rewrite BenchmarkSuite.java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "record ValidationResult(",
+        "change": "Added"
+      }
+    }
+  ]
+}

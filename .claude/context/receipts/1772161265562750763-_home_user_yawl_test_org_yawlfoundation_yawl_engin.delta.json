@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772161265562750763,
+  "timestamp_rfc": "2026-02-27T03:01:05.562750763Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/MemoryLeakStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3f2b436e8b4e05aaa8b35e4eeb2d41f49c5bae52f4b4722a9cd2b3190b6409a5",
+  "delta_hash": "49a8209e7a4ac460839d75d284ee792272454573d8ad55155bc3544abd997a60",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "try (var scope = StructuredTaskScope.ope",
+        "change": "Added"
+      }
+    }
+  ]
+}
