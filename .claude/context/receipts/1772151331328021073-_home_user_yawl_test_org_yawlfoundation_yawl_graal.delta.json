@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772151331328021073,
+  "timestamp_rfc": "2026-02-27T00:15:31.328021073Z",
+  "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/BytecodeCacheConcurrencyStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a9fa80b89c0422407c891b76fa91da2887ab06a4257a1e03b697e440cce52b92",
+  "delta_hash": "fca83454e688c44e0497c1d74b9a71ebc98c66b0d4fba1875e5aa00456462d9a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "assertFalse",
+        "change": "Added"
+      }
+    }
+  ]
+}

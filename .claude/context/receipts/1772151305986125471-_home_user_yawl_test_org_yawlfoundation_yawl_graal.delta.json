@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772151305986125471,
+  "timestamp_rfc": "2026-02-27T00:15:05.986125471Z",
+  "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/BytecodeCacheConcurrencyStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e01c76fa694a03c710a43160522ebf64d5353e0aeb0f52399d9cefb45f5ca530",
+  "delta_hash": "086ec513f9e70bb76afcfb4241199344b31ffb84ee6f1729ef6b0905035d3259",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Path scriptPath = createTempPyFile",
+        "change": "Added"
+      }
+    }
+  ]
+}

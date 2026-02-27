@@ -1,0 +1,912 @@
+{
+  "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+  "started_at": "2026-02-27T00:32:00.796677232Z",
+  "ended_at": "2026-02-27T00:32:00.820035219Z",
+  "receipt_count": 14,
+  "chain_hash": "8d8b77b7ccd282ac03435e647ccb78d1b15f9ad1e36222005c33f7e4f3f98a72",
+  "receipts": [
+    {
+      "timestamp_ns": 1772088056739810825,
+      "timestamp_rfc": "2026-02-26T06:40:56.739810825Z",
+      "session_id": "unknown",
+      "file_path": "/home/user/yawl/.claude/hooks/run-yawl-hooks.sh",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6a103f84241ee51d0bd74d0f025d6f5eb045422cf830a4be136daec786145167",
+      "delta_hash": "c1a2fb3bc496e52b0403d17ded6a59b2a697e5629e000692636498b4cf2f26f5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "#!/bin/bash",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772088330630879218,
+      "timestamp_rfc": "2026-02-26T06:45:30.630879218Z",
+      "session_id": "e3ef074f-2810-4fa6-8a77-b5f2cc3eb438",
+      "file_path": "/home/user/yawl/.claude/hooks/run-yawl-hooks.sh",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "376bc871b9104f87eae0c08aa960c60cbc6ae51467cd6a33e0272a2cf4a39842",
+      "delta_hash": "2c05c495ac52599d02ff121884ceee545d09c6141809a04d2ff2ff0897fb53db",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "# Read hook input once",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772138045598775339,
+      "timestamp_rfc": "2026-02-26T20:34:05.598775339Z",
+      "session_id": "95906a4f-4916-4679-b61f-335f68a1419a",
+      "file_path": "/root/.claude/plans/structured-finding-truffle.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c7364c07c4b88f94a032c212b7157c6846ce4ab6446792a8f7d6b6a504091720",
+      "delta_hash": "846656d05c9e6f071d7efc8f8150fddee60c37a06c40c19b1f83f9a257cc8de6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Plan: Selective Merge from `claude/jak",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772138124445104956,
+      "timestamp_rfc": "2026-02-26T20:35:24.445104956Z",
+      "session_id": "95906a4f-4916-4679-b61f-335f68a1419a",
+      "file_path": "/root/.claude/plans/structured-finding-truffle.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4e866d80a7157f38e9d6d28ace2d6f4155a800c854f6b79f9fd520cdd20ab9b3",
+      "delta_hash": "846656d05c9e6f071d7efc8f8150fddee60c37a06c40c19b1f83f9a257cc8de6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Plan: Selective Merge from `claude/jak",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151119329927175,
+      "timestamp_rfc": "2026-02-27T00:11:59.329927175Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/ContextPoolVirtualThreadStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "84c2177453909c128bbc9d3d9de57a017f997b04e8c08ec874f20fcc820717cf",
+      "delta_hash": "b1c38faaededb5ade6b52d5563d111f7daabea03f488952644f493e4d1bea7ae",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ContextPoolVirtualThreadStressTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private PythonContextPool pool;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final long SCENARIO_WALL_",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Execution",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@AfterEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestMethodOrder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int POOL_SIZE = 4;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151174388345455,
+      "timestamp_rfc": "2026-02-27T00:12:54.388345455Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/ContextPoolSaturationStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8d1030dd67fa9367a996c5d7a2cc38f4f0df14f6028998d4207425deda5110fa",
+      "delta_hash": "0f6804fc87aace9a3050ecaa79cfd93b5d9a0a5954cfc8a39a0a799df5a499f4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ContextPoolSaturationStressTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@ValueSource",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestMethodOrder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final long     WALL_MS   ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@ParameterizedTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151229001838749,
+      "timestamp_rfc": "2026-02-27T00:13:49.001838749Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/ContextLifecycleCyclingStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "aa746668efa4c4278d32d5c09d0c77c72048f2d418f1b200689fa44669eeabfe",
+      "delta_hash": "ca00d50ba8703535d852cb277829492dcc97b49b3ac822dbec891884d8a827fa",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int MEDIUM_CYCLES =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int LONG_CYCLES   =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ContextLifecycleCyclingStressTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestMethodOrder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@ValueSource",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int SHORT_CYCLES  =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@ParameterizedTest",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151296336235787,
+      "timestamp_rfc": "2026-02-27T00:14:56.336235787Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/BytecodeCacheConcurrencyStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "24377349c2caf2a40388d7cacf30f64abd97ddc9d13651657c8b615087fe450e",
+      "delta_hash": "42bfd76f98d4c675581de3478440f7200c6bc27a144bb93942aeeb487cade510",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "BytecodeCacheConcurrencyStressTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@AfterEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private Path tempCacheDir;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Path",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private PythonBytecodeCache cache;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestMethodOrder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private Path tempSourceDir;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151305986125471,
+      "timestamp_rfc": "2026-02-27T00:15:05.986125471Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/BytecodeCacheConcurrencyStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e01c76fa694a03c710a43160522ebf64d5353e0aeb0f52399d9cefb45f5ca530",
+      "delta_hash": "086ec513f9e70bb76afcfb4241199344b31ffb84ee6f1729ef6b0905035d3259",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Path scriptPath = createTempPyFile",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151315381994058,
+      "timestamp_rfc": "2026-02-27T00:15:15.381994058Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/BytecodeCacheConcurrencyStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "73685deb6ccb07039c4c61fb3fab3b0a0169943567dbbc358b4aefae230c008a",
+      "delta_hash": "086ec513f9e70bb76afcfb4241199344b31ffb84ee6f1729ef6b0905035d3259",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Path scriptPath = createTempPyFile",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151323196710788,
+      "timestamp_rfc": "2026-02-27T00:15:23.196710788Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/BytecodeCacheConcurrencyStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "09aaa81a6666682108099833dac94271789ed9a72b071df9a437c4812c4eb4fd",
+      "delta_hash": "086ec513f9e70bb76afcfb4241199344b31ffb84ee6f1729ef6b0905035d3259",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Path scriptPath = createTempPyFile",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151331328021073,
+      "timestamp_rfc": "2026-02-27T00:15:31.328021073Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/BytecodeCacheConcurrencyStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a9fa80b89c0422407c891b76fa91da2887ab06a4257a1e03b697e440cce52b92",
+      "delta_hash": "fca83454e688c44e0497c1d74b9a71ebc98c66b0d4fba1875e5aa00456462d9a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "assertFalse",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151401945465763,
+      "timestamp_rfc": "2026-02-27T00:16:41.945465763Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/ScopedValuePythonContextPropagationTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "923ed4de740e99c60c01a117aec2d2074a377c479bf13f61cfd83913b501d1d9",
+      "delta_hash": "7131d0054040c71c7ff8b56a6c6b0436f42d993242ce3f9786e3e08abdc282ff",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Execution",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final ScopedValue<PythonS",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final long WALL_MS = 30_0",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestMethodOrder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ScopedValuePythonContextPropagationTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final ScopedValue<String>",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "PythonSandboxConfig",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772151469054806655,
+      "timestamp_rfc": "2026-02-27T00:17:49.054806655Z",
+      "session_id": "d80c9c14-a987-4b15-bd8f-b99ec6457e29",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalpy/stress/GraalPyPoolThroughputBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5e7e4ce51d733004a013ee1dfbd46c58f259e266a4a5713675e4f610519d7fd9",
+      "delta_hash": "e945784f1a069a9c2a2eb3e485fcea05b01ceaaedbb6a96222db03eb6f4e51e6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int WARMUP_CYCLES  ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "record",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final long WALL_MS       ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "BenchmarkResult",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final long MEASURE_MS    ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestMethodOrder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "GraalPyPoolThroughputBenchmark",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int[] CONCURRENCY_L",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private BenchmarkResult measureCacheIsVa",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    }
+  ]
+}
