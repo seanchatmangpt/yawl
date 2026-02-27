@@ -69,6 +69,13 @@
  *   <li>{@link org.yawlfoundation.yawl.observability.AutoRemediationLog} -
  *       Captures all self-healing actions: timeout recovery, resource mitigation,
  *       deadlock resolution, state reconciliation. Structured JSON for root cause analysis.</li>
+ *   <li>{@link org.yawlfoundation.yawl.observability.BlackSwanDetector} -
+ *       Detects extreme workflow events: single-metric outliers &gt;5σ ({@link org.yawlfoundation.yawl.observability.BlackSwanEvent.ExtremeOutlier}),
+ *       anomaly storms — 5+ anomalies within 60s ({@link org.yawlfoundation.yawl.observability.BlackSwanEvent.AnomalyStorm}),
+ *       and systemic failures — same metric deviating in 3+ independent cases
+ *       ({@link org.yawlfoundation.yawl.observability.BlackSwanEvent.SystemicFailure}).
+ *       Auto-fires P0 {@link org.yawlfoundation.yawl.observability.AndonCord} alert.
+ *       Emits {@code yawl.blackswan.detected} Micrometer counter.</li>
  * </ul>
  *
  * <h2>Configuration (Environment Variables)</h2>
@@ -141,6 +148,7 @@
  *   <li><b>yawl.remediation.success</b> - Counter of successful remediation actions</li>
  *   <li><b>yawl.remediation.failure</b> - Counter of failed remediation actions</li>
  *   <li><b>yawl.remediation.total</b> - Gauge of total remediations since startup</li>
+ *   <li><b>yawl.blackswan.detected</b> - Counter of black swan events by type and metric</li>
  * </ul>
  *
  * <h2>Trace Attributes</h2>
