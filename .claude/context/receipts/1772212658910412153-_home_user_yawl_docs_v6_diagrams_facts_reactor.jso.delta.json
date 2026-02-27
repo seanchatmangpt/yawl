@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212658910412153,
+  "timestamp_rfc": "2026-02-27T17:17:38.910412153Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/v6/diagrams/facts/reactor.json",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5fbadc905c2fce795dfa2ad833f3c07db9275721f4313aa2e51e7d1fe2efe98e",
+  "delta_hash": "cd6d7f29ce193c8c5a571b276bd5f645fb4b9da06c07d4d69cba43fd0a23d784",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "{",
+        "change": "Added"
+      }
+    }
+  ]
+}
