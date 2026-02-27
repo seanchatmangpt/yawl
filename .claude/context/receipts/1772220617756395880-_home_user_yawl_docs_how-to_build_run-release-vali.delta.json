@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220617756395880,
+  "timestamp_rfc": "2026-02-27T19:30:17.756395880Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/how-to/build/run-release-validation.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "15a67750d9a97a989cd044817dd9d5e5793f5d0c60c60a37a3af6355efca3f73",
+  "delta_hash": "c891594ca5d701de154433b444b06b35f293c0528c794c7633bce4d28d627155",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Run Release Validation Gates",
+        "change": "Added"
+      }
+    }
+  ]
+}

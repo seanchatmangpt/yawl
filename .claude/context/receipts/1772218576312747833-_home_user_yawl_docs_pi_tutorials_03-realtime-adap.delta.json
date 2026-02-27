@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218576312747833,
+  "timestamp_rfc": "2026-02-27T18:56:16.312747833Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/tutorials/03-realtime-adaptive.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "178cf62dcff2a4cc395560e698ddb5b65e84a57e84a00d4ff0c33e3e5d6b6ebe",
+  "delta_hash": "bb5d2730cc47908738a6a5bcaf1ce9941bc2436db83e6e8d9f8b1ebb88d81738",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial 3 — Build a Real-Time Adaptiv",
+        "change": "Added"
+      }
+    }
+  ]
+}

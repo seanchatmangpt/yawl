@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218600962153094,
+  "timestamp_rfc": "2026-02-27T18:56:40.962153094Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "846064b5546025bc16ab99bca860d843e614ae6f3cbe8acaadd09df42b3be3d0",
+  "delta_hash": "f074679e82d70a90effce6c4cab83ef7b4ea2baba46f956a8af1fc9458c5bffc",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "*   <li><b>Joiner Policy Comparison</b> ",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "timestamp_ns": 1772218948219182223,
+  "timestamp_rfc": "2026-02-27T19:02:28.219182223Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/spi/WorkflowEventSubscriber.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e1b58804009f8ed7347011ad43ae3744010f4cf0f32bf06e382da396c7e395e6",
+  "delta_hash": "7c5a2f1a614ee1fbf4e8d09a5399db9d079128ed86dca0a6b8ee1b18df8a08d7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final Consumer<WorkflowEvent> _h",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private Flow.Subscription _subscription;",
+        "change": "Added"
+      }
+    }
+  ]
+}

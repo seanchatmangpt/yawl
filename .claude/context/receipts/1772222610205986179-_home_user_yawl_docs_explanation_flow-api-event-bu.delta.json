@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772222610205986179,
+  "timestamp_rfc": "2026-02-27T20:03:30.205986179Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/explanation/flow-api-event-bus.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9e07313a30eeb41ffa6f943e86900e8d6f72cf6f0fff15535c9a2f406b53e1f6",
+  "delta_hash": "89c0ee4635e07d1fe7d5f1a0ba2388d32cb50fbf8a83dcc956efbcbf217a330b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "FlowWorkflowEventBus",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final EnumMap<YEventType, Submis",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Why Flow API Is the Default Event Bus,",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "WorkflowEventBus",
+        "change": "Added"
+      }
+    }
+  ]
+}

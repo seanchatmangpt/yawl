@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.lang.ScopedValue;
+import java.time.Duration;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -599,7 +600,7 @@ public class VirtualThreadPool {
 
         while (running) {
             try {
-                Thread.sleep(samplingIntervalSeconds * 1000);
+                Thread.sleep(Duration.ofSeconds(samplingIntervalSeconds));
 
                 long currentTaskCount = tasksCompleted.sum();
                 long tasksInInterval = currentTaskCount - taskCountSnapshot;

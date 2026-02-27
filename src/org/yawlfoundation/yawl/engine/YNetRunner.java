@@ -136,7 +136,7 @@ public class YNetRunner {
     private YCompositeTask _containingCompositeTask;
     private YEngine _engine;
     private YAnnouncer _announcer;
-    private boolean _cancelling;
+    private volatile boolean _cancelling;  // FM-13 FIX: volatile ensures cross-thread visibility
     // Thread-safe concurrent string sets for task name tracking
     private Set<String> _enabledTaskNames = ConcurrentHashMap.newKeySet();
     private Set<String> _busyTaskNames = ConcurrentHashMap.newKeySet();
@@ -1595,20 +1595,51 @@ public class YNetRunner {
 
 
     /** cancels the specified task */
+    /**
+     * TPS FIX E — Poka-yoke: acquires the write-lock with a bounded timeout.
+     *
+     * <p>Replaces bare {@code _writeLock.lock()} calls in high-risk paths (e.g., cancelTask)
+     * where an infinite wait would be silently invisible. If the lock cannot be acquired within
+     * {@code WRITE_LOCK_TIMEOUT_MS}, fires a P1 Andon alert and throws to surface the stall.</p>
+     *
+     * @param operation the caller's name for Andon alert context
+     * @throws IllegalStateException if the lock times out or thread is interrupted
+     */
+    private static final long WRITE_LOCK_TIMEOUT_MS = 5_000;
+
+    private void acquireWriteLockOrThrow(String operation) {
+        long waitStart = System.nanoTime();
+        try {
+            boolean locked = _writeLock.tryLock(WRITE_LOCK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            if (!locked) {
+                AndonAlert.lockContention(_caseID,
+                    WRITE_LOCK_TIMEOUT_MS * 1_000_000L, operation).fire();
+                throw new IllegalStateException(
+                    "YNetRunner[" + _caseID + "] write-lock timeout after " +
+                    WRITE_LOCK_TIMEOUT_MS + "ms in " + operation);
+            }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                "Interrupted waiting for write-lock in " + operation, ie);
+        }
+        if (_lockMetrics != null) _lockMetrics.recordWriteLockWait(System.nanoTime() - waitStart);
+    }
+
+
     public void cancelTask(YPersistenceManager pmgr, String taskID) {
-        long lockWaitStart = System.nanoTime();
-        _writeLock.lock();
-        if (_lockMetrics != null) _lockMetrics.recordWriteLockWait(System.nanoTime() - lockWaitStart);
+        acquireWriteLockOrThrow("cancelTask");  // TPS FIX E — poka-yoke timeout
         try {
             YAtomicTask task = (YAtomicTask) getNetElement(taskID);
+            // FM-06 FIX: widen catch to Exception so state cleanup always runs
             try {
                 task.cancel(pmgr, this.getCaseID());
-                _busyTasks.remove(task);
-                _busyTaskNames.remove(task.getID());
+            } catch (Exception ex) {
+                _logger.fatal("Failure whilst cancelling task: {}", taskID, ex);
             }
-            catch (YPersistenceException ype) {
-                _logger.fatal("Failure whilst cancelling task: " + taskID, ype);
-            }
+            // Always remove from busy sets regardless of persistence failure
+            _busyTasks.remove(task);
+            _busyTaskNames.remove(task.getID());
         } finally {
             _writeLock.unlock();
         }

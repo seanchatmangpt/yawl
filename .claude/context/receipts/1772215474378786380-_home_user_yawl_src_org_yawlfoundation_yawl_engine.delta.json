@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215474378786380,
+  "timestamp_rfc": "2026-02-27T18:04:34.378786380Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0076e7f2c5b6620f8967a8036e091eef4879608d493bbff13871f9473c5978cc",
+  "delta_hash": "a5923ec15be768c70e33163b4c7a2051eef9bfe2fe2f38dc8fd6f708c3a215ed",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "// JEP 491",
+        "change": "Added"
+      }
+    }
+  ]
+}

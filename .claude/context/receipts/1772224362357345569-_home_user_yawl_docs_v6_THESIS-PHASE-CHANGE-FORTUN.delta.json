@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772224362357345569,
+  "timestamp_rfc": "2026-02-27T20:32:42.357345569Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/v6/THESIS-PHASE-CHANGE-FORTUNE500.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c72eab9b0a10cd4f11f65a2ad675d0823be73eff0af3f7a644ce1ad725707883",
+  "delta_hash": "dd42fc1b8f6bad0098430bd91e7a6bd909d57c4e51f27f1300d9f58feb6e4fe1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Phase Change: How YAWL v6.0 Transforms",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "GlobalCaseRegistry",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "WorkflowEventBus",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "WorkflowEventLog",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "RunnerEvictionStore",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -20,6 +20,9 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | 08 | [MCP Agent Integration](../tutorials/08-mcp-agent-integration.md) | Connect an AI agent via the MCP server |
 | 09 | [Marketplace Quick Start](../tutorials/09-marketplace-quick-start.md) | Deploy YAWL to a cloud marketplace |
 | 10 | [Getting Started (User Guide)](../tutorials/10-getting-started.md) | End-to-end user perspective walkthrough |
+| 11 | [Walk All 7 Quality Gates](../tutorials/11-quality-gate-sequence.md) | Run G_compile through G_release in the correct order |
+| 12 | [Fix Your First HYPER_STANDARDS Violation](../tutorials/12-fix-hyper-standards-violation.md) | Read violation output, understand H-patterns, apply both fix options |
+| 13 | [Scale to 1M Cases](../tutorials/11-scale-to-million-cases.md) | Deploy and verify a 1M-case YAWL cluster end-to-end |
 
 ---
 
@@ -86,6 +89,24 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 |-------|------|
 | [Security Testing](../how-to/security/testing.md) | Run security test suite |
 
+### Build & Test
+| Guide | Task |
+|-------|------|
+| [Add a Maven Module](../how-to/build/add-maven-module.md) | Register a new module in the correct reactor position |
+| [Target a Module Build](../how-to/build/target-module-build.md) | Use dx.sh -pl to build one module and its dependencies |
+| [Run Release Validation](../how-to/build/run-release-validation.md) | Run all six poka-yoke checks before a release tag |
+| [Measure Test Coverage](../how-to/build/measure-test-coverage.md) | Generate JaCoCo aggregate report and verify ≥55% threshold |
+| [Fix H-Guard Violations at Scale](../how-to/build/fix-h-guard-violations.md) | Batch remediation of HYPER_STANDARDS violations by severity |
+
+### 1M Cases Support
+| Guide | Task |
+|-------|------|
+| [Configure ZGC & Compact Headers](../how-to/configure-zgc-compact-headers.md) | Enable low-latency GC on engine pods |
+| [Implement Custom Case Registry](../how-to/implement-custom-case-registry.md) | Plug in Redis-backed GlobalCaseRegistry |
+| [Subscribe to Workflow Events](../how-to/subscribe-workflow-events.md) | Register WorkflowEventBus subscribers |
+| [Migrate to UUID Case IDs](../how-to/migrate-uuid-case-ids.md) | Remove integer counter, enable UUID generation |
+| [Tune HPA for Cases](../how-to/operations/tune-hpa-for-cases.md) | Right-size Kubernetes autoscaling |
+
 ---
 
 ## Reference — Accurate Technical Information
@@ -116,6 +137,13 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Performance Baselines](../reference/performance-baselines.md) | Benchmark results by version |
 | [Capacity Planning](../reference/capacity-planning.md) | Resource sizing guidelines |
 
+### 1M Cases Support
+| Reference | Contents |
+|-----------|----------|
+| [SPI Interfaces](../reference/spi-million-cases.md) | WorkflowEventBus, GlobalCaseRegistry, RunnerEvictionStore contracts |
+| [JEP Index](../reference/java25-jep-index.md) | All Java 25 JEPs used (ScopedValue, FFM, ZGC, JEP 491) |
+| [Capacity Planning (1M)](../reference/capacity-planning-1m.md) | Node sizing, heap/off-heap math, throughput model |
+
 ### API
 | Reference | Contents |
 |-----------|----------|
@@ -133,6 +161,11 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Quality Standards](../reference/quality/) | Architecture tests, shell tests |
 | [SLOs](../reference/slos/) | Service-level objectives |
 | [Patterns Catalog](../reference/patterns/) | Reusable workflow pattern definitions |
+| [Build Sequences](../reference/build-sequences.md) | 19-module canonical order, parallel groups, critical path, -pl lists |
+| [HYPER_STANDARDS Patterns](../reference/hyper-standards.md) | All 14 forbidden patterns: regex, severity, example, fix |
+| [Quality Gates](../reference/quality-gates.md) | G_compile through G_release: predicates, thresholds, commands |
+| [dx.sh CLI Reference](../reference/dx-sh.md) | All flags, env vars, exit codes, module ordering |
+| [FMEA Risk Table](../reference/fmea-risk-table.md) | 16 failure modes with S/O/D/RPN and mitigations |
 
 ---
 
@@ -157,10 +190,25 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Shared-Src Build Strategy](../explanation/shared-src-build-strategy.md) | Why shared-src exists and how it works |
 | [Worklet Service](../explanation/worklet-service.md) | RDR-based runtime adaptation |
 
+### Build System
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [Why Reactor Ordering Matters](../explanation/reactor-ordering.md) | Topological ordering, FM7, parallelism, critical path |
+| [Why H-Guards Exist](../explanation/h-guards-philosophy.md) | Zero-tolerance philosophy, Jidoka, the two legal outcomes |
+| [The Chatman Equation: A = μ(O)](../explanation/chatman-equation.md) | How observation drives artifact quality; the 5-gate pipeline |
+
 ### Decisions (ADRs)
 | ADR | Decision |
 |-----|----------|
 | [decisions/](../explanation/decisions/) | All Architecture Decision Records |
+
+### 1M Cases Support
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [Why ScopedValue?](../explanation/why-scoped-values.md) | ScopedValue vs ThreadLocal on virtual threads |
+| [Flow API Event Bus](../explanation/flow-api-event-bus.md) | Why Flow API by default, not Kafka |
+| [Off-Heap Runner Store](../explanation/offheap-runner-store.md) | Why store snapshots off-heap via FFM API |
+| [1M Case Architecture](../explanation/million-case-architecture.md) | How 5 Java 25 features compose to reach 1M |
 
 ---
 

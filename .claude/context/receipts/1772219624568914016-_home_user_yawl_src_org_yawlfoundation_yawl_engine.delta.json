@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772219624568914016,
+  "timestamp_rfc": "2026-02-27T19:13:44.568914016Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/spi/GlobalCaseRegistry.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "fb407b1e27c3213d71e520e6b523c5d78f0e6a65b6fc943f7e6c942314b90f6b",
+  "delta_hash": "95ce3e16c7c21c1d13362a30f5b4dd0f85cc288b2ca7cc91bac17c9dc8a39e85",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "GlobalCaseRegistry",
+        "change": "Added"
+      }
+    }
+  ]
+}

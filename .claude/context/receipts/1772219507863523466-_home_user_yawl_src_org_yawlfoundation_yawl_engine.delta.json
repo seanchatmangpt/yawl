@@ -1,0 +1,75 @@
+{
+  "timestamp_ns": 1772219507863523466,
+  "timestamp_rfc": "2026-02-27T19:11:47.863523466Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YAnnouncer.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3d7a7a152a6f0809de1c70da42d4f6ba119abf1cb7b3dfe6e36de9e40f87b5d8",
+  "delta_hash": "640e6d2cc83032129234b6fb3d7d9f1a7c6cbad58862c3e12c726970423a8e56",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final Logger _logger;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final WorkflowEventBus _eventBus",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private AnnouncementContext _announcemen",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final Set<InterfaceX_EngineSideC",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final YEngine _engine;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final ObserverGatewayController ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "YAnnouncer",
+        "change": "Added"
+      }
+    }
+  ]
+}

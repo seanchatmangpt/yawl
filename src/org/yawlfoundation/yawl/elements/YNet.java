@@ -89,7 +89,11 @@ public final class YNet extends YDecomposition {
             new HashMap<>();
     private Map<String, YVariable> _localVariables = new HashMap<>();
     private String _externalDataGateway;
-    private YNet _clone;
+    // ThreadLocal ensures each thread has its own clone-in-progress slot.
+    // The original instance field caused a race condition: concurrent startCase() calls
+    // on the same specification's root net would overwrite each other's _clone value,
+    // producing NullPointerException in element.clone() → getCloneContainer().
+    private final ThreadLocal<YNet> _clone = new ThreadLocal<>();
 
     private static final Logger _log = LogManager.getLogger(YNet.class);
 
@@ -340,8 +344,8 @@ public final class YNet extends YDecomposition {
     @Override
     public Object clone() {
         try {
-            _clone = (YNet) super.clone();
-            _clone._netElements = new HashMap<>();
+            _clone.set((YNet) super.clone());
+            _clone.get()._netElements = new HashMap<>();
 
             Set<YExternalNetElement> visited = new HashSet<>();
             Set<YExternalNetElement> visiting = new HashSet<>();
@@ -358,17 +362,17 @@ public final class YNet extends YDecomposition {
                 visiting.removeAll(visited);
             } while (visiting.size() > 0);
 
-            _clone._localVariables = new HashMap<>();
+            _clone.get()._localVariables = new HashMap<>();
             for (YVariable variable : _localVariables.values()) {
                 YVariable copyVar = (YVariable) variable.clone();
-                _clone.setLocalVariable(copyVar);
+                _clone.get().setLocalVariable(copyVar);
             }
-            _clone._externalDataGateway = _externalDataGateway;
-            _clone._data = (Document) this._data.clone();
+            _clone.get()._externalDataGateway = _externalDataGateway;
+            _clone.get()._data = (Document) this._data.clone();
 
-            //do cleanup of class variable _clone before returning.
-            Object temp = _clone;
-            _clone = null;
+            //do cleanup of thread-local _clone before returning.
+            YNet temp = _clone.get();
+            _clone.remove();
             return temp;
         }
         catch (CloneNotSupportedException e) {
@@ -379,7 +383,7 @@ public final class YNet extends YDecomposition {
 
 
     protected YNet getCloneContainer() {
-        return _clone;
+        return _clone.get();
     }
 
 

@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772217270381620445,
+  "timestamp_rfc": "2026-02-27T18:34:30.381620445Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/MigrationHelper.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c5275f45f3eb943441b3743533e5a92a140aea03596f250bf34e7c4dd3d6bc59",
+  "delta_hash": "8e941841cb94a19381f8da0f15069e0bac537f5ac74aa16ecd6f5d24b5ee690c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "MigrationHelper",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}

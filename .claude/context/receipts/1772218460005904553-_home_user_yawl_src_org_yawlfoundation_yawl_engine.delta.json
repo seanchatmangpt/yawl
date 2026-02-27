@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218460005904553,
+  "timestamp_rfc": "2026-02-27T18:54:20.005904553Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YNetRunner.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "17c3443ac61871a2ea6fd92b011df66fa3b4f3d798acfed56fe396b088382ae7",
+  "delta_hash": "8d37919b127e41611896f217643fe72945a645af76bc19e408f5002b919f69bc",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private volatile boolean _cancelling;  /",
+        "change": "Added"
+      }
+    }
+  ]
+}

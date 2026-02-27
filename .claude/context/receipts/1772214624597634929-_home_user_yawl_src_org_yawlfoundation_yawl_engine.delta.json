@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772214624597634929,
+  "timestamp_rfc": "2026-02-27T17:50:24.597634929Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/ScopedTenantContext.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e0cd407180377dd964ae6f2a2454b43e1310c8cd0dbbd9c6f4563f1e5b2b00f8",
+  "delta_hash": "a9e4d1e51219539795aa93f96e6a589b21921d1ff8c7c476a0f6d4e889c1cf65",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@SuppressWarnings",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "private ScopedTenantContext() { /* utili",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "ScopedTenantContext",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772220147991299187,
+  "timestamp_rfc": "2026-02-27T19:22:27.991299187Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9653a815db9a2280aaeff4fd45f75b6086d87b18d905d595955feb9a576b5aab",
+  "delta_hash": "895bf9ec8904ed576225cb9438dd991bf0ae08b4c5e28242de2171dac639f9c3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "YSpecification",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// =====================================",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Test @Order",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Timeout",
+        "change": "Added"
+      }
+    }
+  ]
+}

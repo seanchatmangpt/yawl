@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772220509818031069,
+  "timestamp_rfc": "2026-02-27T19:28:29.818031069Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/tutorials/12-fix-hyper-standards-violation.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "00e60e6f84b63fc40d41c20406f94cf86eb20afa1e951a03cb825022ddcd1664",
+  "delta_hash": "572f721550877a7dd7e3bbda84a6bc6fc7af89b608e3e3a91eb580fb5d02ba2a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final DataRepository repo;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial 12 — Fix Your First HYPER_STA",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "BadService",
+        "change": "Added"
+      }
+    }
+  ]
+}

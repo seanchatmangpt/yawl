@@ -71,13 +71,25 @@ elif [[ "${DX_OFFLINE:-auto}" == "auto" ]]; then
 fi
 
 # ── Detect changed modules ───────────────────────────────────────────────
-# NOTE: yawl-worklet removed - not in pom.xml
+# Topological order: every module appears after all its YAWL dependencies.
+# See docs/build-sequences.md and docs/v6/diagrams/facts/reactor.json for
+# the full dependency graph. Order matters for detect_changed_modules().
 ALL_MODULES=(
-    yawl-graaljs yawl-graalwasm yawl-dmn yawl-data-modelling
-    yawl-utilities yawl-elements yawl-authentication yawl-engine
-    yawl-stateless yawl-resourcing yawl-scheduling
-    yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-pi yawl-webapps
-    yawl-control-panel yawl-mcp-a2a-app
+    # Layer 0 — Foundation (no YAWL deps, parallel)
+    yawl-utilities yawl-security yawl-graalpy yawl-graaljs
+    # Layer 1 — First consumers (parallel)
+    yawl-elements yawl-ggen yawl-graalwasm yawl-dmn yawl-data-modelling
+    # Layer 2 — Core engine
+    yawl-engine
+    # Layer 3 — Engine extension
+    yawl-stateless
+    # Layer 4 — Services (parallel); authentication now AFTER engine (bug fix)
+    yawl-authentication yawl-scheduling yawl-monitoring
+    yawl-worklet yawl-control-panel yawl-integration yawl-webapps
+    # Layer 5 — Advanced services (parallel)
+    yawl-pi yawl-resourcing
+    # Layer 6 — Top-level application
+    yawl-mcp-a2a-app
 )
 
 # In remote/CI environments, skip modules with heavy ML dependencies (>50MB JARs)

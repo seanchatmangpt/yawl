@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212607606244008,
+  "timestamp_rfc": "2026-02-27T17:16:47.606244008Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/v6/diagrams/reactor-map.mmd",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "82ec49c881046ae36832d648a80f6a752e5f54f0781b8566427d83086422a8c6",
+  "delta_hash": "ccc78c0211c89e72a544309f91b879d51dca4619e3d0a8f1e8437efaed0dff52",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "graph TD",
+        "change": "Added"
+      }
+    }
+  ]
+}

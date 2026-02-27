@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221249767613682,
+  "timestamp_rfc": "2026-02-27T19:40:49.767613682Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "83a330d23b08c281a73d91b89676de07e553bfb321a0f9b2538e7db7cb6f1658",
+  "delta_hash": "3d73e486f42637df109adca903e517007365c290d5c44ecf003283b89c798bb6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Build System",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218022491505857,
+  "timestamp_rfc": "2026-02-27T18:47:02.491505857Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/explanation/co-located-automl.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "79d8add4978a0c3390a1f2c265d2d6b2e8aa5a2be0adb6fe399107c3db6748b6",
+  "delta_hash": "81b2a722ac15d467e06ad2e345bc7712315584db4edde743ca7ba7e007ac407b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Co-located AutoML — Why Zero-ETL Predi",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    }
+  ]
+}

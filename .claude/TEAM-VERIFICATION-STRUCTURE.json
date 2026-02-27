@@ -1,0 +1,335 @@
+{
+  "team_metadata": {
+    "team_id": "τ-build-verification-synthesis",
+    "purpose": "Comprehensive audit of build system documentation consistency (dx.sh, pom.xml, reactor.json, DEFINITION-OF-DONE.md, Mermaid diagrams) against 15 new Diátaxis documents",
+    "team_size": 5,
+    "expected_duration_minutes": 120,
+    "formation_date": "2026-02-27",
+    "status": "READY_FOR_EXECUTION"
+  },
+  "quantum_1": {
+    "name": "Reactor Order & Dependency Graph Quantum",
+    "engineer": "Engineer A — Reactor/Dependency Specialist",
+    "quantum_focus": "Maven reactor sequencing, module dependencies, topological correctness",
+    "responsibilities": [
+      "Parse root pom.xml <modules> section and extract module list",
+      "Extract all <dependency> declarations from yawl-parent and child POMs (focus: inter-module deps)",
+      "Compare pom.xml module order vs reactor.json FM7 ordering",
+      "Verify topological sort: dependencies always precede dependents",
+      "Check DEFINITION-OF-DONE.md §3.1 G_compile layer definitions (Layer 0-6)",
+      "Verify dx-workflow.md build order recommendations match reactor.json",
+      "Check for missing modules or cyclical dependencies"
+    ],
+    "success_criteria": [
+      "pom.xml module count matches reactor.json (both = 19 modules)",
+      "Module order in pom.xml matches topological sort of reactor.json",
+      "All inter-module dependencies in child POMs are satisfied before module position in order",
+      "No cycles detected in dependency graph",
+      "DEFINITION-OF-DONE.md layer definitions (Layer 0-6) align with reactor.json layers",
+      "dx-workflow.md 'Build Order' section matches reactor.json positions",
+      "All 19 modules accounted for: {yawl-utilities, yawl-elements, yawl-authentication, yawl-engine, yawl-stateless, yawl-resourcing, yawl-scheduling, yawl-security, yawl-integration, yawl-monitoring, yawl-webapps, yawl-control-panel, yawl-mcp-a2a-app, yawl-worklet, yawl-pi, yawl-graalpy, yawl-graaljs, yawl-graalwasm, yawl-ggen}"
+    ],
+    "key_files_to_verify": [
+      "/home/user/yawl/pom.xml (lines 61-81: <modules> section)",
+      "/home/user/yawl/docs/v6/diagrams/facts/reactor.json (entire structure)",
+      "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (§3.1 G_compile, layers)",
+      "/home/user/yawl/.claude/rules/build/dx-workflow.md ('Build Order' section)"
+    ],
+    "expected_findings": {
+      "pass_scenario": "Reactor order is canonical; all dependencies satisfy topological sort; 19 modules verified; no cycles",
+      "potential_issues": [
+        "pom.xml module order differs from reactor.json (would indicate inconsistent source of truth)",
+        "Missing module in pom.xml or reactor.json",
+        "Layer assignments in DEFINITION-OF-DONE.md don't match reactor.json (confusing parallelization)",
+        "Cyclical dependency or out-of-order module (blocks parallel builds)"
+      ]
+    },
+    "integration_point_1": "Reports reactor order canonical form to Quantum 3 (ParallelGroups) for comparison with dx.sh parallelism",
+    "integration_point_2": "Reports module dependencies to Quantum 4 (BuildProfilesAndGates) for gate sequence validation",
+    "estimated_duration_minutes": 25
+  },
+  "quantum_2": {
+    "name": "CLI Flags & Environment Variables Quantum",
+    "engineer": "Engineer B — CLI/Scripting Specialist",
+    "quantum_focus": "dx.sh command-line interface, argument parsing, environment variable handling",
+    "responsibilities": [
+      "Parse dx.sh script entirely (all invocations and branching logic)",
+      "Extract all supported command formats and flags",
+      "Extract all environment variables (DX_*, JAVA_HOME, etc.) and document their effect",
+      "Cross-reference dx.sh behavior against dx-workflow.md CLI documentation",
+      "Verify environment variable descriptions match actual script behavior",
+      "Check dx.sh sets correct JAVA_HOME for Java 25 (lines 38-47)",
+      "Verify all flags/modes documented in REFERENCE docs match actual implementation"
+    ],
+    "success_criteria": [
+      "All dx.sh command formats documented in dx-workflow.md (compile, test, all, -pl, compile all, test all)",
+      "All environment variables (DX_OFFLINE, DX_FAIL_AT, DX_VERBOSE, DX_CLEAN) documented with correct defaults",
+      "Java 25 enforcement block matches documentation (Java 25 required, auto-detect JAVA_HOME)",
+      "Offline/online mode behavior matches documented defaults (auto-detect)",
+      "Fail-fast behavior matches documented fast-loop philosophy",
+      "Module targeting (-pl) behavior matches documentation examples",
+      "dx.sh exit codes documented and consistent with behavior"
+    ],
+    "key_files_to_verify": [
+      "/home/user/yawl/scripts/dx.sh (entire, especially argument parsing block)",
+      "/home/user/yawl/.claude/rules/build/dx-workflow.md (CLI reference section)"
+    ],
+    "expected_findings": {
+      "pass_scenario": "dx.sh command formats, flags, env vars all documented; Java 25 requirement enforced correctly",
+      "potential_issues": [
+        "dx.sh supports flags not documented in dx-workflow.md (e.g., undocumented -vv flag)",
+        "Environment variable defaults in dx.sh differ from documentation",
+        "Java version check fails on some systems or doesn't enforce Java 25",
+        "Offline mode behavior not documented or inconsistent",
+        "Exit codes not documented but used in automation"
+      ]
+    },
+    "integration_point_1": "Reports CLI argument contracts to Quantum 3 (parallelism) for validation of -pl flag behavior",
+    "integration_point_2": "Reports environment variable effects to Quantum 5 (DoD gates) for error handling documentation",
+    "estimated_duration_minutes": 22
+  },
+  "quantum_3": {
+    "name": "Parallel Build Groups & Critical Path Quantum",
+    "engineer": "Engineer C — Build Parallelism Specialist",
+    "quantum_focus": "Parallel execution, critical path, -T 1.5C flag correctness, layer-based parallelism",
+    "responsibilities": [
+      "Verify -T 1.5C flag definition and behavior in dx.sh and DEFINITION-OF-DONE.md",
+      "Extract all parallelization directives from reactor.json (layer definitions)",
+      "Validate critical path analysis: which module sequence determines total build time?",
+      "Cross-reference DEFINITION-OF-DONE.md parallelization groups vs reactor.json layers",
+      "Check for documented build time targets (<90s clean build per G_compile)",
+      "Verify that parallel groups don't violate dependency constraints",
+      "Analyze how dx.sh --all parallelizes vs incremental builds"
+    ],
+    "success_criteria": [
+      "1.5x CPU parallelism flag clearly explained (-T 1.5C) in both dx.sh and documentation",
+      "Reactor layer definitions (Layer 0-6) enable valid parallel compilation",
+      "All modules in same layer have zero inter-dependencies",
+      "Critical path identified and documented: longest dependency chain determines build time",
+      "Build time targets documented (<90s clean build) and feasible given parallelization",
+      "Incremental vs full build parallelism strategy explained",
+      "No dependency violations when layers compile in parallel"
+    ],
+    "key_files_to_verify": [
+      "/home/user/yawl/docs/v6/diagrams/facts/reactor.json (layer structure and depends_on fields)",
+      "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (§3.1 G_compile layer definitions and <90s target)",
+      "/home/user/yawl/.claude/rules/build/dx-workflow.md ('Maven Commands' and 'Build Profiles' sections)",
+      "/home/user/yawl/scripts/dx.sh (lines with -T 1.5C flag and parallelism logic)"
+    ],
+    "expected_findings": {
+      "pass_scenario": "Layer parallelism is valid; 1.5C parallelism clearly documented; <90s target feasible",
+      "potential_issues": [
+        "Modules in same layer have undeclared dependencies (blocks parallel execution)",
+        "Parallelism flag not enforced or documented incorrectly",
+        "Critical path not identified; build time target unrealistic",
+        "Documentation claims parallelism but pom.xml has cycles"
+      ]
+    },
+    "integration_point_1": "Receives reactor order from Quantum 1; verifies layers respect dependencies",
+    "integration_point_2": "Cross-validates with Quantum 5 (DoD gates) on test parallelization and time constraints",
+    "estimated_duration_minutes": 25
+  },
+  "quantum_4": {
+    "name": "Build Profiles & Quality Gates Quantum",
+    "engineer": "Engineer D — Profiles & Gates Specialist",
+    "quantum_focus": "Maven profiles (java25, agent-dx, ci, analysis, security, prod), quality gate definitions, enforcement",
+    "responsibilities": [
+      "Extract all profile definitions from root pom.xml (if present) or child POMs",
+      "Map profiles mentioned in dx-workflow.md to actual pom.xml implementations",
+      "Verify DEFINITION-OF-DONE.md gate taxonomy (G_compile, G_test, G_guard, G_analysis, G_security, G_documentation, G_release) against actual Maven commands",
+      "Validate that each gate predicate is measurable and executable",
+      "Cross-reference 'analysis' profile (JaCoCo + SpotBugs) with gate definitions",
+      "Verify 'security' profile implementation (SBOM, OWASP dependency check, TLS enforcement)",
+      "Check that profile selection doesn't override dependency versions (centralized in parent POM)"
+    ],
+    "success_criteria": [
+      "All 6 profiles documented in dx-workflow.md exist in pom.xml: java25, agent-dx, ci, analysis, security, prod",
+      "G_compile gate: mvn -T 1.5C clean compile exits 0 (no compiler warnings as errors)",
+      "G_test gate: mvn -T 1.5C clean test exits 0, 100% pass",
+      "G_guard gate: 14 anti-patterns absent (mapped to hyper-validate.sh or equivalent)",
+      "G_analysis gate: SpotBugs, PMD, Checkstyle zero violations via 'analysis' profile",
+      "G_security gate: SBOM clean, no critical CVEs, TLS 1.3 enforced via 'security' profile",
+      "G_documentation gate: all new packages have package-info.java",
+      "G_release gate: all above + integration tests + performance baseline",
+      "Profile selection doesn't override centralized version properties"
+    ],
+    "key_files_to_verify": [
+      "/home/user/yawl/pom.xml (all <profile> sections and <properties>)",
+      "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (§2.1 Gate Summary Table and §3 Gate Specifications)",
+      "/home/user/yawl/.claude/rules/build/dx-workflow.md ('Build Profiles' section)",
+      "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (§1.2 Guard Invariant, H-set definition)"
+    ],
+    "expected_findings": {
+      "pass_scenario": "All 7 gates are defined, measurable, and enforceable; profiles match documentation",
+      "potential_issues": [
+        "Profiles exist but gate definitions are vague or unmeasurable",
+        "G_guard gate doesn't map to actual hook implementation",
+        "Security profile doesn't enforce TLS 1.3 or OWASP checks",
+        "Analysis profile missing PMD or Checkstyle",
+        "Version properties can be overridden by profile selections (violates centralization)"
+      ]
+    },
+    "integration_point_1": "Receives module dependencies from Quantum 1; validates gates respect build order",
+    "integration_point_2": "Receives parallelism constraints from Quantum 3; validates gate execution within time budgets",
+    "estimated_duration_minutes": 28
+  },
+  "quantum_5": {
+    "name": "Definition of Done & Enforcement Hooks Quantum",
+    "engineer": "Engineer E — DoD & Automation Specialist",
+    "quantum_focus": "DEFINITION-OF-DONE.md completeness, hook integration, acceptance criteria enforcement",
+    "responsibilities": [
+      "Verify all 7 gates (G_compile through G_release) have measurable predicates in DEFINITION-OF-DONE.md",
+      "Cross-reference DEFINITION-OF-DONE.md gate definitions with actual automation (hooks, Maven commands)",
+      "Validate H-set (TODO, FIXME, mock, stub, fake, empty_return, silent_fallback, lie) implementation",
+      "Verify hyper-validate.sh hook implementation covers all 14 anti-patterns mentioned in DEFINITION-OF-DONE.md §1.2",
+      "Check Q-invariant (real_impl OR throw UnsupportedOperationException) is documented and enforceable",
+      "Validate package-info.java requirement for G_documentation gate",
+      "Cross-reference DEFINITION-OF-DONE.md with HYPER_STANDARDS docs for consistency"
+    ],
+    "success_criteria": [
+      "All 7 gates have clear, measurable predicates: compile, test, guard, analysis, security, documentation, release",
+      "Gate ordering matches DEFINITION-OF-DONE.md partial order: G_compile < G_test < ... < G_release",
+      "H-set (8 items) properly defined and mapped to hyper-validate.sh checks",
+      "Q-invariant documented: every public method performs real work or throws UnsupportedOperationException",
+      "Gate commands are actual, executable Maven/bash commands (not aspirational)",
+      "Package-info.java requirement is documented and enforceable",
+      "G_release gate includes integration tests and performance baseline",
+      "hyper-validate.sh hook is integrated into pre-commit or pre-push workflow"
+    ],
+    "key_files_to_verify": [
+      "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (entire document, all sections)",
+      "/home/user/yawl/.claude/HYPER_STANDARDS.md (H-set and Q-invariant definitions)",
+      "/home/user/yawl/.claude/hooks/hyper-validate.sh (or equivalent) (14 pattern checks)",
+      "/home/user/yawl/CLAUDE.md (Sections H, Q for foundational axioms)",
+      "Mermaid diagrams (if present) showing gate flow and enforcement"
+    ],
+    "expected_findings": {
+      "pass_scenario": "All 7 gates documented, measurable, enforceable; H-set and Q-invariant integrated into hooks",
+      "potential_issues": [
+        "DEFINITION-OF-DONE.md defines gates vaguely (e.g., 'pass comprehensive tests')",
+        "hyper-validate.sh missing some anti-patterns or doesn't block on violation",
+        "G_release gate references 'integration tests' but none are automated",
+        "Package-info.java requirement not enforceable in CI/CD",
+        "Gate ordering doesn't match partial order in documentation",
+        "Q-invariant not validated; allows mock/stub/fake implementations"
+      ]
+    },
+    "integration_point_1": "Receives gate execution timings from Quantum 3 (parallelism); validates gates execute within budget",
+    "integration_point_2": "Integrates findings from Quantum 4 (profiles); validates gate commands match profile selections",
+    "estimated_duration_minutes": 30
+  },
+  "integration_points": {
+    "integration_point_A": {
+      "name": "Reactor Order Canonical Form",
+      "participants": ["Quantum 1 (reactor)", "Quantum 3 (parallelism)", "Quantum 4 (gates)"],
+      "verification": "Reactor module order in pom.xml matches reactor.json, which determines correct topological sort and enables valid parallelism in layers",
+      "expected_alignment": "All three quantums report same module ordering and layer assignments",
+      "failure_resolution": "If pom.xml order differs from reactor.json, reactor.json is canonical (FM7 poka-yoke). Update pom.xml."
+    },
+    "integration_point_B": {
+      "name": "Gate Execution Commands & Timing",
+      "participants": ["Quantum 3 (parallelism)", "Quantum 4 (profiles)", "Quantum 5 (DoD)"],
+      "verification": "Each gate command (G_compile: mvn clean compile, G_test: mvn clean test, etc.) uses correct profile and parallelism (-T 1.5C)",
+      "expected_alignment": "DEFINITION-OF-DONE.md gate commands match actual pom.xml profile selection and -T 1.5C parallelism",
+      "failure_resolution": "If gates don't use -T 1.5C or wrong profile, update DEFINITION-OF-DONE.md gate specifications."
+    },
+    "integration_point_C": {
+      "name": "CLI Argument Contracts & Parallelism",
+      "participants": ["Quantum 2 (CLI)", "Quantum 3 (parallelism)", "Quantum 1 (reactor)"],
+      "verification": "dx.sh -pl argument correctly invokes 'mvn -pl modules -amd clean compile' respecting reactor order and parallelism",
+      "expected_alignment": "dx.sh -pl behavior documented in dx-workflow.md matches actual implementation and respects topological sort",
+      "failure_resolution": "If dx.sh -pl doesn't respect reactor order, fix dx.sh or document limitation in dx-workflow.md."
+    }
+  },
+  "consolidation_strategy": {
+    "synthesis_approach": "Lead (you) run single final consolidation phase after all 5 engineers report GREEN",
+    "consolidation_steps": [
+      {
+        "step": 1,
+        "action": "Collect individual verification reports from all 5 engineers (expected: ~50 findings each)",
+        "output": "5 verification reports with findings, pass/fail status, and evidence"
+      },
+      {
+        "step": 2,
+        "action": "Cross-check integration points A-C: are quantums aligned on reactor order, gate execution, CLI contracts?",
+        "output": "Integration point consensus (GREEN if all aligned, RED if conflicts detected)"
+      },
+      {
+        "step": 3,
+        "action": "Synthesize findings into unified verification summary document",
+        "output": "COMPREHENSIVE_VERIFICATION_REPORT.md with: per-quantum status, integration point alignment, consolidated findings"
+      },
+      {
+        "step": 4,
+        "action": "List all inconsistencies found (if any) with remediation priority",
+        "output": "Inconsistency manifest: which file(s) need fixing and why"
+      },
+      {
+        "step": 5,
+        "action": "Run dx.sh all locally to validate build passes end-to-end",
+        "output": "Build verification: dx.sh all exits 0, all modules compile + test green"
+      },
+      {
+        "step": 6,
+        "action": "If all GREEN: commit verification report with evidence",
+        "output": "Single commit with verification artifacts and evidence chain"
+      }
+    ],
+    "verification_report_schema": {
+      "title": "YAWL Build System Comprehensive Verification Report",
+      "date": "2026-02-27",
+      "team_id": "τ-build-verification-synthesis",
+      "sections": [
+        {
+          "section": "Executive Summary",
+          "content": "Overall status (GREEN|YELLOW|RED), count of findings per quantum, critical path blockers"
+        },
+        {
+          "section": "Per-Quantum Status",
+          "content": "5 subsections, one per engineer, with: checklist status, key findings, confidence level"
+        },
+        {
+          "section": "Integration Point Alignment",
+          "content": "3 subsections (A, B, C), showing consensus or conflicts between quantums"
+        },
+        {
+          "section": "Inconsistency Manifest",
+          "content": "Prioritized list of conflicts found (if any): file, line, expected vs actual, fix priority"
+        },
+        {
+          "section": "Evidence Chain",
+          "content": "Markdown code blocks showing file excerpts and verification results"
+        }
+      ]
+    },
+    "success_criteria": [
+      "All 5 engineers report GREEN on their checklists",
+      "Integration points A, B, C show consensus (no conflicts)",
+      "Inconsistency manifest is empty (or contains only YELLOW items requiring clarification)",
+      "dx.sh all exits 0 with all modules compiling and testing green",
+      "Verification report is commit-ready with evidence trail"
+    ]
+  },
+  "team_formation_checklist": [
+    "{ id: 1, item: 'Run team-recommendation.sh hook (confirm team is viable)', status: 'pending' }",
+    "{ id: 2, item: 'Verify all 5 quantums are truly orthogonal (no file conflicts)', status: 'pending' }",
+    "{ id: 3, item: 'Confirm each engineer task is 20-40 minutes scope', status: 'pending' }",
+    "{ id: 4, item: 'Update facts via: bash scripts/observatory/observatory.sh', status: 'pending' }",
+    "{ id: 5, item: 'Enable team feature: CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1', status: 'pending' }",
+    "{ id: 6, item: 'Ensure lead has local dx.sh all passing before team spawns', status: 'pending' }",
+    "{ id: 7, item: 'Distribute quantum definitions and expected findings to each engineer', status: 'pending' }"
+  ],
+  "team_communication_protocol": {
+    "message_frequency": "Each engineer sends status update after each major finding (every 5-10 minutes)",
+    "critical_messages": "If finding conflicts with another quantum's assumption, message lead immediately",
+    "consolidation_messaging": "Engineers submit final report (checklist + findings + confidence) before lead synthesis phase",
+    "escalation": "If engineer finds blocker (e.g., missing pom.xml profile), message lead within 5 minutes"
+  },
+  "estimated_cost_and_timeline": {
+    "per_engineer_duration_minutes": "22-30 minutes",
+    "parallel_execution": "~30 minutes (all engineers work simultaneously)",
+    "consolidation_by_lead": "15-20 minutes (synthesis + build validation)",
+    "total_team_duration_minutes": "45-50 minutes",
+    "estimated_cost": "$3-4C (5 engineers × 30 min ÷ 6 context-windows, 15 min consolidation)"
+  }
+}

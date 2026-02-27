@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218711236185049,
+  "timestamp_rfc": "2026-02-27T18:58:31.236185049Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/ScopedTenantContextTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e59b524bced3892b4d549cb193e38a7257d2c74a2970de0af975d7795bf8fd51",
+  "delta_hash": "7e3a91074eb0a314aab97d00f051fde0716610ae77f6c3e9675a8f0011173da6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@MethodSource",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@ParameterizedTest",
+        "change": "Added"
+      }
+    }
+  ]
+}

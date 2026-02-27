@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772212352107006765,
+  "timestamp_rfc": "2026-02-27T17:12:32.107006765Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/elements/YNet.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "cecefc9162074bbc5685406b2ad42c74c59c45b29e39151326eb258f3af14a67",
+  "delta_hash": "d6cf0ba3fcef25be4d7175b72741f51b79fe231cbae412707b2c7be8184d73b7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// ThreadLocal ensures each thread has i",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    }
+  ]
+}

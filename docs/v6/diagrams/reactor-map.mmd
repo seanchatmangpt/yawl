@@ -1,29 +1,70 @@
-graph LR
-    subgraph Foundation
-        yawl-utilities
-        yawl-elements
-        yawl-authentication
+graph TD
+    subgraph L0["Layer 0 — Foundation (parallel)"]
+        U[yawl-utilities]
+        SEC[yawl-security]
+        GPY[yawl-graalpy]
+        GJS[yawl-graaljs]
     end
 
-    subgraph Core
-        yawl-engine
-        yawl-stateless
-        yawl-security
+    subgraph L1["Layer 1 — First consumers (parallel)"]
+        EL[yawl-elements]
+        GG[yawl-ggen]
+        GW[yawl-graalwasm]
     end
 
-    subgraph Services
-        yawl-resourcing
-        yawl-worklet
-        yawl-scheduling
-        yawl-integration
-        yawl-monitoring
+    subgraph L2["Layer 2 — Core engine"]
+        EN[yawl-engine]
     end
 
-    subgraph Presentation
-        yawl-webapps
-        yawl-control-panel
+    subgraph L3["Layer 3 — Engine extensions"]
+        SL[yawl-stateless]
     end
 
-    Foundation --> Core
-    Core --> Services
-    Services --> Presentation
+    subgraph L4["Layer 4 — Services (parallel)"]
+        AU[yawl-authentication]
+        SC[yawl-scheduling]
+        MO[yawl-monitoring]
+        WK[yawl-worklet]
+        CP[yawl-control-panel]
+        IN[yawl-integration]
+        WA[yawl-webapps]
+    end
+
+    subgraph L5["Layer 5 — Advanced services (parallel)"]
+        PI[yawl-pi]
+        RS[yawl-resourcing]
+    end
+
+    subgraph L6["Layer 6 — Top-level application"]
+        MCP[yawl-mcp-a2a-app]
+    end
+
+    U --> EL
+    GPY --> GG
+    GJS --> GW
+    EL --> EN
+    U --> SL
+    EL --> SL
+    EN --> SL
+    EN --> AU
+    EN --> SC
+    EN --> MO
+    SL --> MO
+    SL --> WK
+    EN --> CP
+    EN --> IN
+    SL --> IN
+    GG --> IN
+    EN --> PI
+    EL --> PI
+    IN --> PI
+    EN --> RS
+    SL --> RS
+    IN --> RS
+    IN --> MCP
+    PI --> MCP
+    EN --> MCP
+    SL --> MCP
+    EL --> MCP
+    U --> MCP
+    GG --> MCP

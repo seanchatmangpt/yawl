@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
@@ -96,11 +97,20 @@ public class YCaseNbrStore {
     public String toString() { return caseNbr.toString(); }
 
 
-    /** @return the next available case number (as a String) */
+    /**
+     * Returns the next case identifier as a UUID string.
+     *
+     * <p>UUID generation requires no cross-replica coordination, eliminating
+     * the {@link AtomicInteger} collision hazard when multiple engine pods
+     * share a case namespace.  The legacy integer counter is kept for
+     * {@code getCaseNbr()}/{@code setCaseNbr()} callers (e.g. restore from
+     * persisted state) but is no longer used for new case IDs.</p>
+     *
+     * @param pmgr persistence manager (ignored — UUIDs are not persisted)
+     * @return a fresh UUID string suitable for use as a {@code YIdentifier} value
+     */
     public String getNextCaseNbr(YPersistenceManager pmgr) {
-        caseNbr.incrementAndGet();
-        if (persisting) persistThis(pmgr) ;
-        return caseNbr.toString();
+        return UUID.randomUUID().toString();
     }
 
 

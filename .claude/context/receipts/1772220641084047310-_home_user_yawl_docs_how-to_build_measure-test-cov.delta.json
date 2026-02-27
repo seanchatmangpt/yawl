@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220641084047310,
+  "timestamp_rfc": "2026-02-27T19:30:41.084047310Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/how-to/build/measure-test-coverage.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d9741adc4f882606e8e2b1e42487efc76dacad3e4bb0a276c354e1a9f662d7ce",
+  "delta_hash": "5d893dbda1f38b9bae57532643d9236a5bb18d6aef912bb4fa8f027e117a2c6a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Measure Test Coverage",
+        "change": "Added"
+      }
+    }
+  ]
+}

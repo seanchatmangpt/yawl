@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212198184722301,
+  "timestamp_rfc": "2026-02-27T17:09:58.184722301Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/root/.claude/plans/graceful-jingling-pebble.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e09638704906fbe6834111b8ca16081c424f08ae5d4598b1240f7ab997ab3ae4",
+  "delta_hash": "ead719fdcd5d7f987efc8d3759a3d1c56a177af82daca2b0b035071e40464e36",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Map Build Sequences for All YAWL",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -140,7 +140,9 @@ public class VirtualThreadTenantInheritanceTest {
         testTenant.registerCase("structured-case");
 
         ScopedTenantContext.runWithTenant(testTenant, () -> {
-            try (var scope = java.util.concurrent.StructuredTaskScope.ShutdownOnFailure()) {
+            // Java 25 API: StructuredTaskScope.open(Joiner) replaces new ShutdownOnFailure()
+            try (var scope = java.util.concurrent.StructuredTaskScope.open(
+                    java.util.concurrent.StructuredTaskScope.Joiner.<String>awaitAllSuccessfulOrThrow())) {
                 // Multiple virtual threads that all inherit tenant context
                 AtomicReference<TenantContext> thread1Context = new AtomicReference<>();
                 AtomicReference<TenantContext> thread2Context = new AtomicReference<>();
@@ -161,7 +163,12 @@ public class VirtualThreadTenantInheritanceTest {
                     return "task3-complete";
                 });
 
-                scope.join();
+                try {
+                    scope.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Structured scope interrupted", e);
+                }
 
                 // All tasks should have inherited the tenant context
                 assertEquals(testTenant, thread1Context.get(), "Task 1 context");

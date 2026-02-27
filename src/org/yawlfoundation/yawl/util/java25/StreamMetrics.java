@@ -173,6 +173,66 @@ public final class StreamMetrics {
                 .orElse(new PercentileSnapshot(0L, 0L, 0L, 0L, 0L));
     }
 
+    /**
+     * Fixed-window throughput gatherer built on {@link Gatherers#windowFixed(int)}.
+     *
+     * <p>Unlike {@link #rollingThroughputPerSec(int)} (sliding windows), this gatherer
+     * emits one rate per <em>non-overlapping</em> batch of {@code windowSize} events.
+     * Each output {@code Double} is the throughput rate (events per second) for that batch.
+     * Useful for SLA bucketing, where you want discrete time windows rather than a
+     * continuously-updated rolling rate.
+     *
+     * <p>Example: 300 events with windowSize=20 → 15 rate samples, each representing
+     * exactly 20 events with no overlap.
+     *
+     * @param windowSize number of events per fixed window (must be ≥ 2)
+     * @return a Gatherer that emits one {@code Double} rate per complete fixed window
+     * @throws IllegalArgumentException if windowSize &lt; 2
+     */
+    public static Gatherer<Long, ?, Double> fixedWindowThroughputPerSec(int windowSize) {
+        if (windowSize < 2) {
+            throw new IllegalArgumentException("windowSize must be >= 2, got " + windowSize);
+        }
+        return Gatherers.<Long>windowFixed(windowSize)
+                .andThen(Gatherer.ofSequential(
+                        () -> new Object(),   // no state needed
+                        Gatherer.Integrator.ofGreedy((state, window, downstream) -> {
+                            if (window.size() < 2) {
+                                downstream.push(0.0);
+                            } else {
+                                long first = window.getFirst();
+                                long last = window.getLast();
+                                long elapsedNs = last - first;
+                                double rate = elapsedNs > 0
+                                        ? (double) (window.size() - 1) / elapsedNs * 1_000_000_000.0
+                                        : 0.0;
+                                downstream.push(rate);
+                            }
+                            return true;
+                        })
+                ));
+    }
+
+    /**
+     * Running-count gatherer built on {@link Gatherers#scan(Supplier, java.util.function.BiFunction)}.
+     *
+     * <p>Emits a cumulative count after each element — the first element emits {@code 1},
+     * the second emits {@code 2}, and so on. Useful for tracking running totals in a
+     * stream pipeline without a terminal collect.
+     *
+     * <p>Usage:
+     * <pre>{@code
+     * List<Long> runningTotals = events.stream()
+     *         .gather(StreamMetrics.runningCount())
+     *         .toList();
+     * }</pre>
+     *
+     * @return a Gatherer that emits one {@code Long} running count per input element
+     */
+    public static Gatherer<Long, ?, Long> runningCount() {
+        return Gatherers.scan(() -> 0L, (count, ignored) -> count + 1);
+    }
+
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------

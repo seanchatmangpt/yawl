@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218361157448738,
+  "timestamp_rfc": "2026-02-27T18:52:41.157448738Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/add-constraint-rule.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "aa32156f38678551c0e4f6593a1111c61075b02ea26a109138f7a99fd986b833",
+  "delta_hash": "3080def3d63a228ab56cd234278427cebfed9f8815d631e3a33a88ba7010ebc4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@prefix yawl: <http://www.yawlfoundation",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Add a Constraint Rule",
+        "change": "Added"
+      }
+    }
+  ]
+}

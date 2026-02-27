@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772173013017830309,
+  "timestamp_rfc": "2026-02-27T06:16:53.017830309Z",
+  "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4445f2c2d18e57502cf39a226d704384b884d93a1f13fc194f41c347241aebbf",
+  "delta_hash": "4cef6419d787fa937b5d2adaf87218ed4aadf6c165ff7acd2f129c1368b9fe0d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "final int TARGET = 500;",
+        "change": "Added"
+      }
+    }
+  ]
+}

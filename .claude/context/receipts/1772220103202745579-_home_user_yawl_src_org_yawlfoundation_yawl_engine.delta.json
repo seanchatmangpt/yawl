@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772220103202745579,
+  "timestamp_rfc": "2026-02-27T19:21:43.202745579Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YNetRunner.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "8d33438db7fd8ebbd3bb70ed31eef0fa6ab03cc6cebaeb290604ad2ce4887457",
+  "delta_hash": "36f18bdeffe6f0d4c14fe27219bee7b1ed68e5cde606663f3555348019dbd893",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final long WRITE_LOCK_TIM",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    }
+  ]
+}

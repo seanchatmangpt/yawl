@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218091945074027,
+  "timestamp_rfc": "2026-02-27T18:48:11.945074027Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7538678dddf74c434033d88ce3528d869f027169997102a60a13ea7f3cad60a0",
+  "delta_hash": "d1984674f3fd338085b8bff5c765a3528c76a74f6f1199649b81f85919e35bdc",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public YIdentifier startCase(YSpecificat",
+        "change": "Added"
+      }
+    }
+  ]
+}

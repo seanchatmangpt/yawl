@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218970611422338,
+  "timestamp_rfc": "2026-02-27T19:02:50.611422338Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/spi/CaseNotFoundInStoreException.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b038ff6aaf008b9d0a0910b33bcb5352304bd033802c4dfc0b7017b05968e516",
+  "delta_hash": "796c096e1917a8e735e6b53ae215449d61f6dbe099938347d00a7c43bc1c6fac",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "CaseNotFoundInStoreException",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

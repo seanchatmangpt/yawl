@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220010990449387,
+  "timestamp_rfc": "2026-02-27T19:20:10.990449387Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "fec5193ce63df77c81afd866575ff903720b25abefc63d0a425e762dd6ee19b6",
+  "delta_hash": "0ec77c24edaa27fa3de3c6b7a452205cf4a6f15127c22e099cc3a10e74d5d517",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ye.rethrow",
+        "change": "Added"
+      }
+    }
+  ]
+}

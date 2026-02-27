@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772218609728679870,
+  "timestamp_rfc": "2026-02-27T18:56:49.728679870Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/tutorials/04-natural-language-qa.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "29bab75f8d2b47ef4e941123568e968fd70c926bef3d4e265726b3c17ac8549f",
+  "delta_hash": "7085d8a95a4e0a19f8a6103c87f9c00ab2e9e52c900bdcaba41f8b8a24571cb8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial 4 — Natural Language Q&A over",
+        "change": "Added"
+      }
+    }
+  ]
+}
