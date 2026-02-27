@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.yawlfoundation.yawl.integration.util.ParameterValidator;
+import org.yawlfoundation.yawl.integration.util.SkillLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A named table of typed columns in a DMN data model.
@@ -52,12 +56,16 @@ import java.util.Optional;
  */
 public final class DmnTable {
 
+    private static final Logger log = LoggerFactory.getLogger(DmnTable.class);
+    private static final SkillLogger skillLogger = SkillLogger.forSkill("dmn-table", "DMN_Table");
+
     private final String name;
     private final @Nullable String description;
     private final List<DmnColumn> columns;
     private final Map<String, DmnColumn> columnIndex;
 
     private DmnTable(Builder builder) {
+        skillLogger.debug("Creating DmnTable '{}'", builder.name);
         this.name = builder.name;
         this.description = builder.description;
         this.columns = List.copyOf(builder.columns);
@@ -66,6 +74,8 @@ public final class DmnTable {
             idx.put(col.getName(), col);
         }
         this.columnIndex = Collections.unmodifiableMap(idx);
+
+        skillLogger.debug("Created DmnTable '{}' with {} columns", this.name, this.columns.size());
     }
 
     /**
@@ -180,9 +190,8 @@ public final class DmnTable {
         private final List<DmnColumn> columns = new ArrayList<>();
 
         private Builder(String name) {
-            if (name == null || name.isBlank())
-                throw new IllegalArgumentException("Table name must not be null or blank");
-            this.name = name;
+            this.name = ParameterValidator.validateRequired(Map.of("name", name), "name",
+                    "Table name must not be null or blank");
         }
 
         /**
@@ -203,8 +212,9 @@ public final class DmnTable {
          * @return this builder
          */
         public Builder column(DmnColumn column) {
-            Objects.requireNonNull(column, "column must not be null");
+            ParameterValidator.validateNotNull(column, "column");
             columns.add(column);
+            skillLogger.debug("Added column '{}' to DmnTable '{}'", column.getName(), this.name);
             return this;
         }
 

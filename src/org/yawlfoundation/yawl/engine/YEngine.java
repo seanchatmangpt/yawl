@@ -332,8 +332,16 @@ public class YEngine implements InterfaceADesign,
      * @param tasks the tasks to execute in parallel
      * @return results of all tasks in input order
      */
+    @SuppressWarnings("unchecked")
     public static String[] executeParallel(TenantContext ctx, Callable<?>[] tasks) {
-        return ScopedTenantContext.runParallel(ctx, tasks);
+        // Convert Callable<?>[] to Callable<String>[] by mapping tasks
+        Callable<String>[] stringTasks = new Callable[tasks.length];
+        for (int i = 0; i < tasks.length; i++) {
+            // Each task must return a String - wrap if needed
+            final Callable<?> task = tasks[i];
+            stringTasks[i] = () -> task.call().toString();
+        }
+        return ScopedTenantContext.runParallel(ctx, stringTasks);
     }
 
     /**

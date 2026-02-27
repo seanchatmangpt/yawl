@@ -21,6 +21,10 @@ package org.yawlfoundation.yawl.dmn;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
+import org.yawlfoundation.yawl.integration.util.ParameterValidator;
+import org.yawlfoundation.yawl.integration.util.SkillLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A directed relationship between two {@link DmnTable} entities in a {@link DataModel}.
@@ -54,6 +58,9 @@ import java.util.Objects;
  * @see DataModel
  */
 public final class DmnRelationship {
+
+    private static final Logger log = LoggerFactory.getLogger(DmnRelationship.class);
+    private static final SkillLogger skillLogger = SkillLogger.forSkill("dmn-relationship", "DMN_Relationship");
 
     private final String name;
     private final String fromTable;
@@ -223,9 +230,8 @@ public final class DmnRelationship {
         private @Nullable String toColumn;
 
         private Builder(String name) {
-            if (name == null || name.isBlank())
-                throw new IllegalArgumentException("Relationship name must not be null or blank");
-            this.name = name;
+            this.name = ParameterValidator.validateRequired(Map.of("name", name), "name",
+                    "Relationship name must not be null or blank");
         }
 
         /**
@@ -235,7 +241,8 @@ public final class DmnRelationship {
          * @return this builder
          */
         public Builder fromTable(String fromTable) {
-            this.fromTable = Objects.requireNonNull(fromTable);
+            this.fromTable = ParameterValidator.validateRequired(Map.of("fromTable", fromTable), "fromTable",
+                    "fromTable must not be null or blank");
             return this;
         }
 
@@ -246,7 +253,8 @@ public final class DmnRelationship {
          * @return this builder
          */
         public Builder toTable(String toTable) {
-            this.toTable = Objects.requireNonNull(toTable);
+            this.toTable = ParameterValidator.validateRequired(Map.of("toTable", toTable), "toTable",
+                    "toTable must not be null or blank");
             return this;
         }
 
@@ -257,7 +265,7 @@ public final class DmnRelationship {
          * @return this builder
          */
         public Builder sourceCardinality(EndpointCardinality cardinality) {
-            this.sourceCardinality = Objects.requireNonNull(cardinality);
+            this.sourceCardinality = ParameterValidator.validateNotNull(cardinality, "cardinality");
             return this;
         }
 
@@ -268,7 +276,7 @@ public final class DmnRelationship {
          * @return this builder
          */
         public Builder targetCardinality(EndpointCardinality cardinality) {
-            this.targetCardinality = Objects.requireNonNull(cardinality);
+            this.targetCardinality = ParameterValidator.validateNotNull(cardinality, "cardinality");
             return this;
         }
 

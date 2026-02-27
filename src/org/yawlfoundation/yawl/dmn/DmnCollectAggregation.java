@@ -160,8 +160,11 @@ public enum DmnCollectAggregation {
      * @throws IllegalArgumentException if unrecognised
      */
     public static DmnCollectAggregation fromValue(String value) {
-        if (value == null) throw new IllegalArgumentException("aggregation value must not be null");
-        return switch (value.trim().toUpperCase()) {
+        ParameterValidator.validateRequired(Map.of("value", value), "value",
+                "Aggregation value must not be null or blank");
+        String normalized = value.trim().toUpperCase();
+
+        DmnCollectAggregation result = switch (normalized) {
             case "C+", "SUM"   -> SUM;
             case "C<", "MIN"   -> MIN;
             case "C>", "MAX"   -> MAX;
@@ -170,6 +173,9 @@ public enum DmnCollectAggregation {
                     "Unknown COLLECT aggregation: '" + value + "'. "
                     + "Expected one of: C+, C<, C>, C#, SUM, MIN, MAX, COUNT");
         };
+
+        log.debug("Resolved '{}' to aggregation {}", value, result);
+        return result;
     }
 
     /**

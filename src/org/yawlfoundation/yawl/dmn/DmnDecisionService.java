@@ -21,6 +21,10 @@ package org.yawlfoundation.yawl.dmn;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.integration.util.GraalVMUtils;
+import org.yawlfoundation.yawl.integration.util.ParameterValidator;
+import org.yawlfoundation.yawl.integration.util.YawlConstants;
+import org.yawlfoundation.yawl.integration.util.SkillLogger;
 import org.yawlfoundation.yawl.graalwasm.dmn.DmnDecisionResult;
 import org.yawlfoundation.yawl.graalwasm.dmn.DmnEvaluationContext;
 import org.yawlfoundation.yawl.graalwasm.dmn.DmnException;
@@ -84,6 +88,7 @@ import java.util.OptionalDouble;
 public final class DmnDecisionService implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(DmnDecisionService.class);
+    private static final SkillLogger skillLogger = SkillLogger.forSkill("dmn-service", "DMN_DecisionService");
 
     private final @Nullable DataModel schema;
     private final DmnWasmBridge bridge;
@@ -98,15 +103,18 @@ public final class DmnDecisionService implements AutoCloseable {
      * @throws IllegalArgumentException if the schema has integrity violations
      */
     public DmnDecisionService(DataModel schema) {
-        Objects.requireNonNull(schema, "schema must not be null");
+        ParameterValidator.validateNotNull(schema, "schema");
+
         List<String> errors = schema.validateIntegrity();
         if (!errors.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "DataModel '" + schema.getName() + "' has integrity violations: " + errors);
+            String errorMsg = "DataModel '" + schema.getName() + "' has integrity violations: " + errors;
+            skillLogger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
         }
+
         this.schema = schema;
         this.bridge = new DmnWasmBridge();
-        log.debug("DmnDecisionService created with schema '{}': {} tables, {} relationships",
+        skillLogger.info("DmnDecisionService created with schema '{}': {} tables, {} relationships",
                 schema.getName(), schema.tableCount(), schema.relationshipCount());
     }
 
@@ -119,7 +127,7 @@ public final class DmnDecisionService implements AutoCloseable {
     public DmnDecisionService() {
         this.schema = null;
         this.bridge = new DmnWasmBridge();
-        log.debug("DmnDecisionService created without schema");
+        skillLogger.info("DmnDecisionService created without schema");
     }
 
     /**
@@ -140,8 +148,10 @@ public final class DmnDecisionService implements AutoCloseable {
      * @throws DmnException if the XML is malformed or unsupported
      */
     public DmnWasmBridge.DmnModel parseDmnModel(String dmnXml) {
-        Objects.requireNonNull(dmnXml, "dmnXml must not be null");
-        return bridge.parseDmnModel(dmnXml);
+        String sanitizedXml = ParameterValidator.validateRequired(Map.of("dmnXml", dmnXml), "dmnXml",
+                "DMN XML must not be null or blank");
+        skillLogger.debug("Parsing DMN model with " + sanitizedXml.length() + " characters");
+        return bridge.parseDmnModel(sanitizedXml);
     }
 
     /**
@@ -160,15 +170,21 @@ public final class DmnDecisionService implements AutoCloseable {
     public DmnDecisionResult evaluate(DmnWasmBridge.DmnModel model,
                                       String decisionId,
                                       DmnEvaluationContext ctx) {
-        Objects.requireNonNull(model, "model must not be null");
-        Objects.requireNonNull(decisionId, "decisionId must not be null");
-        Objects.requireNonNull(ctx, "ctx must not be null");
+        ParameterValidator.validateNotNull(model, "model");
+        ParameterValidator.validateNotNull(decisionId, "decisionId");
+        ParameterValidator.validateNotNull(ctx, "ctx");
+
+        String sanitizedDecisionId = ParameterValidator.validateRequired(Map.of("decisionId", decisionId),
+                "decisionId", "Decision ID must not be null or blank");
+
+        skillLogger.debug("Evaluating decision '{}' with schema validation: {}",
+                sanitizedDecisionId, schema != null);
 
         if (schema != null) {
-            validateContextAgainstSchema(ctx, decisionId);
+            validateContextAgainstSchema(ctx, sanitizedDecisionId);
         }
 
-        return bridge.evaluateDecision(model, decisionId, ctx);
+        return bridge.evaluateDecision(model, sanitizedDecisionId, ctx);
     }
 
     /**
@@ -251,7 +267,7 @@ public final class DmnDecisionService implements AutoCloseable {
         }
 
         if (!warnings.isEmpty()) {
-            log.warn("Decision '{}': schema validation warnings for context {}: {}",
+            skillLogger.warn("Decision '{}': schema validation warnings for context {}: {}",
                     decisionId, ctx.keySet(), warnings);
         }
     }

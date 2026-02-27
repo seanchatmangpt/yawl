@@ -21,6 +21,11 @@ package org.yawlfoundation.yawl.dmn;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Map;
+import org.yawlfoundation.yawl.integration.util.ParameterValidator;
+import org.yawlfoundation.yawl.integration.util.SkillLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A typed column in a DMN data model table.
@@ -46,6 +51,9 @@ import java.util.Objects;
  * @see DataModel
  */
 public final class DmnColumn {
+
+    private static final Logger log = LoggerFactory.getLogger(DmnColumn.class);
+    private static final SkillLogger skillLogger = SkillLogger.forSkill("dmn-column", "DMN_Column");
 
     private final String name;
     private final String typeRef;
@@ -135,12 +143,10 @@ public final class DmnColumn {
         private @Nullable String description;
 
         private Builder(String name, String typeRef) {
-            if (name == null || name.isBlank())
-                throw new IllegalArgumentException("Column name must not be null or blank");
-            if (typeRef == null || typeRef.isBlank())
-                throw new IllegalArgumentException("Column typeRef must not be null or blank");
-            this.name = name;
-            this.typeRef = typeRef;
+            this.name = ParameterValidator.validateRequired(Map.of("name", name), "name",
+                    "Column name must not be null or blank");
+            this.typeRef = ParameterValidator.validateRequired(Map.of("typeRef", typeRef), "typeRef",
+                    "Column typeRef must not be null or blank");
         }
 
         /**

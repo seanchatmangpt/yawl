@@ -23,7 +23,9 @@ All modules use **context pooling** (Apache Commons Pool2) to reuse interpreter 
 |--------|----------|-----------------|-----------|------------------|----------------------|
 | **yawl-graalpy** | Python 3.11+ | `org.yawlfoundation.yawl.graalpy` | `PythonExecutionEngine` | Data analysis, process mining scripts, ML model evaluation | GraalVM JDK 24.1+ with Python support |
 | **yawl-graaljs** | JavaScript (ES2022) | `org.yawlfoundation.yawl.graaljs` | `JavaScriptExecutionEngine` | Workflow routing rules, business logic, real-time decision making | GraalVM JDK 24.1+ with JavaScript support |
-| **yawl-graalwasm** | WebAssembly (WASM/WASI) | `org.yawlfoundation.yawl.graalwasm` | `WasmExecutionEngine`, `Rust4pmBridge` | OCEL2 process mining, high-performance analytics, custom WASM binaries | GraalVM JDK 24.1+ with WASM support |
+| **yawl-graalwasm** | WebAssembly (WASM/WASI) | `org.yawlfoundation.yawl.graalwasm` | `WasmExecutionEngine`, `Rust4pmBridge`, `DmnWasmBridge` | OCEL2 process mining, DMN decisions, high-performance analytics, custom WASM binaries | GraalVM JDK 24.1+ with WASM support |
+| **yawl-dmn** | WASM + Java API | `org.yawlfoundation.yawl.dmn` | `DmnDecisionService` | DMN decision execution, schema validation, rule evaluation | GraalVM JDK 24.1+ with WASM support |
+| **yawl-data-modelling** | WASM + JavaScript | `org.yawlfoundation.yawl.datamodelling` | `DataModellingBridge` | Schema operations, format conversion, decision records | GraalVM JDK 24.1+ with WASM support |
 
 ---
 
@@ -43,9 +45,22 @@ All modules use **context pooling** (Apache Commons Pool2) to reuse interpreter 
 
 ### Use yawl-graalwasm if you need to:
 - Analyze OCEL2 process mining event logs using Rust4pmBridge
+- Execute DMN decision models using DmnWasmBridge (bundled dmn_feel_engine.wasm)
 - Run compiled WebAssembly binaries (from Rust, C, or C++) for performance-critical analytics
 - Cache frequently-used WASM modules (binary cache is transparent)
 - Execute untrusted code in a strict security sandbox
+
+### Use yawl-dmn if you need to:
+- Execute DMN 1.3 decision models with schema validation and COLLECT aggregation
+- Validate input data against data models before decision evaluation
+- Integrate business rules into workflow task handlers
+- Aggregate results using SUM, MIN, MAX, or COUNT operations on multiple decision results
+
+### Use yawl-data-modelling if you need to:
+- Import/export schemas across 70+ formats (ODCS, SQL, BPMN, DMN, OpenAPI, etc.)
+- Convert between data modeling formats (YAML ↔ JSON ↔ SQL ↔ OpenAPI)
+- Create decision records and knowledge bases
+- Validate schemas and manage domain organizations
 
 ---
 
@@ -56,6 +71,10 @@ All modules use **context pooling** (Apache Commons Pool2) to reuse interpreter 
 | Python data analysis, scikit-learn model evaluation | **yawl-graalpy** |
 | JavaScript business rules engine, dynamic routing | **yawl-graaljs** |
 | OCEL2 event log processing for process mining | **yawl-graalwasm** (Rust4pmBridge) |
+| DMN 1.3 decision execution with schema validation | **yawl-dmn** |
+| DMN evaluation with FEEL expression language | **yawl-dmn** (bundled dmn_feel_engine.wasm) |
+| Data modeling format conversions (ODCS, SQL, BPMN, etc.) | **yawl-data-modelling** |
+| Schema import/export across 70+ formats | **yawl-data-modelling** |
 | Any custom WebAssembly binary (Rust, C, C++) | **yawl-graalwasm** (WasmExecutionEngine) |
 | Bidirectional Java ↔ JS object marshalling | **yawl-graaljs** + JsTypeMarshaller |
 | Python pip packages (numpy, pandas, requests) | **yawl-graalpy** + PythonVirtualEnvironment |
@@ -99,6 +118,8 @@ YAWL polyglot documentation is organized by learning style:
 - [**Getting Started with GraalJS**](tutorials/02-graaljs-getting-started.md) — Your first JavaScript evaluation in YAWL
 - [**Getting Started with GraalWasm**](tutorials/03-graalwasm-getting-started.md) — Your first WASM module execution
 - [**Rust4pmBridge: OCEL2 Process Mining**](tutorials/04-rust4pm-ocel2.md) — Analyze event logs in real time
+- [**DMN Decision Execution**](tutorials/05-dmn-decision-execution.md) — DMN 1.3 business rules in workflows
+- [**DataModelling SDK Integration**](tutorials/06-data-modelling-sdk.md) — Schema operations with 70+ formats
 
 ### How-To Guides — Solving Real Problems
 - How to load Python virtual environments with pip packages
@@ -112,6 +133,8 @@ YAWL polyglot documentation is organized by learning style:
 - [GraalPy API Reference](../reference/polyglot-graalpy-api.md) — PythonExecutionEngine, PythonContextPool, PythonVirtualEnvironment
 - [GraalJS API Reference](../reference/polyglot-graaljs-api.md) — JavaScriptExecutionEngine, JsTypeMarshaller, JavaScriptContextPool
 - [GraalWasm API Reference](../reference/polyglot-graalwasm-api.md) — WasmExecutionEngine, WasmModule, Rust4pmBridge, WasmBinaryCache
+- [DMN Integration Guide](../explanation/dmn-integration.md) — DmnWasmBridge, dmn_feel_engine.wasm integration
+- [DataModelling API Reference](../reference/data-modelling-api.md) — DataModellingBridge methods and schema operations
 
 ### Explanation — Concepts & Design
 - [Polyglot Execution Model](../explanation/polyglot-execution-model.md) — How GraalVM contexts work, threading, lifecycle
@@ -144,6 +167,20 @@ All three modules are available from Maven Central under `org.yawlfoundation`:
 <dependency>
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-graalwasm</artifactId>
+    <version>6.0.0-GA</version>
+</dependency>
+
+<!-- DMN Decision Engine -->
+<dependency>
+    <groupId>org.yawlfoundation</groupId>
+    <artifactId>yawl-dmn</artifactId>
+    <version>6.0.0-GA</version>
+</dependency>
+
+<!-- Data Modelling SDK Bridge -->
+<dependency>
+    <groupId>org.yawlfoundation</groupId>
+    <artifactId>yawl-data-modelling</artifactId>
     <version>6.0.0-GA</version>
 </dependency>
 ```
