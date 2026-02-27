@@ -2,7 +2,7 @@
 name: reviewer
 description: Code quality, security, standards compliance
 tools: Read, Grep, Bash
-model: opus
+model: claude-opus-4-6
 ---
 
 Senior code reviewer for quality, security, and HYPER_STANDARDS compliance.

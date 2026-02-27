@@ -2,7 +2,7 @@
 name: yawl-production-validator
 description: YAWL production readiness validator. Pre-deployment validation, config audits, security assessments, environment verification.
 tools: Read, Bash, Grep, Glob
-model: haiku
+model: claude-sonnet-4-6
 ---
 
 YAWL production validator. Verify deployment readiness and configurations.

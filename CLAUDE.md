@@ -67,13 +67,14 @@ Subagents: within session, max 5, report-only, no inter-task messaging. Teams if
 Entry points: YEngine (stateful)|YStatelessEngine (stateless)|YSpecification (defs)|YawlMcpServer (MCP)|YawlA2AServer (A2A)
 Interfaces: A=design|B=client|E=events|X=extended. Key types: YNetRunner|YWorkItem. 89 packages have package-info.java — read first.
 
-## R RULES (17 files, auto-activate by path)
+## R RULES (19 files, auto-activate by path)
 
-teams/** → team-decision-framework.md | pom.xml → dx-workflow.md + maven-modules.md
+teams/** → team-decision-framework.md | pom.xml → dx-workflow.md + maven-modules.md + build-orchestration.md
 schema/**|*.xsd → xsd-validation.md | yawl/engine/**|stateless/** → workflow-patterns.md + interfaces.md + worklet-service.md
 yawl/integration/** → mcp-a2a-conventions.md + autonomous-agents.md | yawl/resourcing/** → resource-allocation.md
 **/*.java → modern-java.md | yawl/elements/** → domain-model.md | yawl/observability/** → monitoring-patterns.md
 scripts/**|*.sh → shell-conventions.md | yawl/authentication/** → crypto-and-tls.md | **/test/** → chicago-tdd.md | Dockerfile* → container-conventions.md
+.gitignore|.gitattributes → git-discipline.md
 
 ## STOP CONDITIONS
 

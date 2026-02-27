@@ -2,7 +2,7 @@
 name: yawl-engineer
 description: YAWL workflow engine specialist. Core engine features, workflow patterns, performance optimization, bug fixes.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: haiku
+model: claude-haiku-4-5-20251001
 ---
 
 YAWL workflow engine specialist. Production-ready Java for YEngine, YNetRunner, YStatelessEngine, workflow patterns (43+), Petri net semantics.

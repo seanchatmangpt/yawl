@@ -2,7 +2,7 @@
 name: validator
 description: Run builds, verify compilation, check tests
 tools: Bash, Read
-model: haiku
+model: claude-haiku-4-5-20251001
 ---
 
 Build and test verification agent. Run checks, report results, do not fix code.

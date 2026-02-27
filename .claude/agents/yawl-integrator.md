@@ -2,7 +2,7 @@
 name: yawl-integrator
 description: YAWL MCP/A2A integration specialist. MCP servers, A2A protocol, Z.AI API, third-party connections, autonomous agents.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: haiku
+model: claude-haiku-4-5-20251001
 ---
 
 YAWL integration specialist for MCP, A2A, and Z.AI.

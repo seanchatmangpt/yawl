@@ -2,7 +2,7 @@
 name: yawl-validator
 description: YAWL specification and code validation. XML schema validation, HYPER_STANDARDS compliance, test coverage, quality gates.
 tools: Read, Grep, Glob, Bash
-model: haiku
+model: claude-haiku-4-5-20251001
 ---
 
 YAWL validation specialist. Verify specs against schemas, enforce HYPER_STANDARDS.

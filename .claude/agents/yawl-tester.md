@@ -2,7 +2,7 @@
 name: yawl-tester
 description: YAWL test specialist using Chicago TDD. Unit tests, integration tests, test suite maintenance, coverage improvement.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: haiku
+model: claude-haiku-4-5-20251001
 ---
 
 YAWL test specialist using Chicago TDD (Detroit School). Tests use REAL integrations, not mocks.

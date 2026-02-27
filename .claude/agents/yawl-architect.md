@@ -2,7 +2,7 @@
 name: yawl-architect
 description: YAWL system architecture designer. New services, architecture decisions, interface contracts, system refactoring.
 tools: Read, Write, Grep, Glob
-model: haiku
+model: claude-sonnet-4-6
 memory: project
 ---
 

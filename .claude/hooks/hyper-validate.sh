@@ -113,9 +113,10 @@ PLACEHOLDER_CONST_PATTERN='(DUMMY|PLACEHOLDER|MOCK|FAKE)_[A-Z_]+\s*='
 
 if matches=$(grep -n -E "$PLACEHOLDER_CONST_PATTERN" "$FILE" 2>/dev/null); then
     # Filter out legitimate defaults (like DEFAULT_TIMEOUT, DEFAULT_PORT)
-    if echo "$matches" | grep -E -v '(DEFAULT_(TIMEOUT|PORT|HOST|BUFFER|SIZE|LIMIT))'; then
+    filtered=$(echo "$matches" | grep -E -v '(DEFAULT_(TIMEOUT|PORT|HOST|BUFFER|SIZE|LIMIT))' || true)
+    if [[ -n "$filtered" ]]; then
         VIOLATIONS+=("❌ PLACEHOLDER CONSTANTS detected")
-        VIOLATION_LINES+=("$matches")
+        VIOLATION_LINES+=("$filtered")
     fi
 fi
 
