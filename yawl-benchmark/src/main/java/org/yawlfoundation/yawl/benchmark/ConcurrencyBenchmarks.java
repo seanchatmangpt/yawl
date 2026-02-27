@@ -54,7 +54,11 @@ public class ConcurrencyBenchmarks {
     private List<String> caseIds;
     private AtomicInteger caseCounter;
     
-    @Param({"1", "4", "8", "16", "32"})
+    // Scaling curve from 1→64: exposes the inflection point where YNetRunner's
+    // internal locks saturate. The Caffeine insight: single-thread numbers are
+    // misleading for concurrent data structures — the shape of the curve matters.
+    // 2 and 64 added: 2 exposes the first contention point; 64 exposes saturation.
+    @Param({"1", "2", "4", "8", "16", "32", "64"})
     private int threadCount;
     
     @Param({"10", "100", "1000"})

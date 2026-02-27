@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772152728956743189,
+  "timestamp_rfc": "2026-02-27T00:38:48.956743189Z",
+  "session_id": "86e44b67-bcb0-4b38-b172-73dd4aad8312",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/Java25StructuredConcurrencyBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "69b699489017dd8b5f7a3f7e9c4f371e965aee0ded3318194d310c5922583c53",
+  "delta_hash": "270c8016657a093a4c4fedc353b3d10d89721caef9eddb2cccf9e8c4da6ae927",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Measurement",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Fork(value = 2, jvmArgs = {",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@State",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// Mode.Throughput only: Mode.AverageTim",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@OutputTimeUnit",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Warmup",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@BenchmarkMode",
+        "change": "Added"
+      }
+    }
+  ]
+}

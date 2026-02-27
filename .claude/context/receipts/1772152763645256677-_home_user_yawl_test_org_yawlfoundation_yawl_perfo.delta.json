@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772152763645256677,
+  "timestamp_rfc": "2026-02-27T00:39:23.645256677Z",
+  "session_id": "86e44b67-bcb0-4b38-b172-73dd4aad8312",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/BenchmarkConfig.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "84b7fc01c819ef146d6d126c9f466c93f946b1b52dab695d691aae815e7f935e",
+  "delta_hash": "1f14449f618090860378d7388c6c761b8ae720b100c520dfa1511139044ea6d7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Options options = new OptionsBuilder",
+        "change": "Added"
+      }
+    }
+  ]
+}

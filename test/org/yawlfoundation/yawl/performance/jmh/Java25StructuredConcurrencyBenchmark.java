@@ -48,14 +48,23 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  *
  * @see org.yawlfoundation.yawl.integration.autonomous.GenericPartyAgent
  */
-@BenchmarkMode({Mode.AverageTime, Mode.Throughput})
+// Mode.Throughput only: Mode.AverageTime is semantically broken for virtual thread
+// workloads. StructuredTaskScope uses virtual threads internally; AverageTime
+// assumes fixed concurrency that is undefined with VIRTUAL_TPE executor.
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1, jvmArgs = {
+// Fork(2): prevents JIT profile contamination between benchmark methods.
+// -Djmh.executor=VIRTUAL_TPE: JMH runner threads are virtual, matching the
+//   workload under test (StructuredTaskScope forks virtual threads).
+// -XX:+UseZGC: matches YAWL production config; <1ms GC pauses.
+@Fork(value = 2, jvmArgs = {
     "-Xms2g", "-Xmx4g",
-    "-XX:+UseG1GC"
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
 })
 public class Java25StructuredConcurrencyBenchmark {
 

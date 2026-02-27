@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772152740380777372,
+  "timestamp_rfc": "2026-02-27T00:39:00.380777372Z",
+  "session_id": "86e44b67-bcb0-4b38-b172-73dd4aad8312",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/BenchmarkConfig.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f9cc54a175fcc68397fde636703c0afea4ea8a86d079b21d4a6e9bef9302cfcd",
+  "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}
