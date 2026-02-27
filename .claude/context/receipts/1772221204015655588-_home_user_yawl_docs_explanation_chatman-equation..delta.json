@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221204015655588,
+  "timestamp_rfc": "2026-02-27T19:40:04.015655588Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/explanation/chatman-equation.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "60060642de1e6a930d95fada05d43f955b3afa4d074cafc0045730d807fb34c2",
+  "delta_hash": "8265eca9b462bef17e598d2a4b8bd2d65fc4b7732968f015cebd8a88454848fe",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "# The Chatman Equation: A = μ",
+        "change": "Added"
+      }
+    }
+  ]
+}

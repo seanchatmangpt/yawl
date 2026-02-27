@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221120568841529,
+  "timestamp_rfc": "2026-02-27T19:38:40.568841529Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/explanation/reactor-ordering.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "60d1988e5b5b28f5c718a3f00b345a3c4aff535c38066e320f717d2884826229",
+  "delta_hash": "9c7a2b81f431a737415624102ac7b1e5b3780c2491778ad2ad522d68f8c73f1b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Why Reactor Ordering Matters",
+        "change": "Added"
+      }
+    }
+  ]
+}

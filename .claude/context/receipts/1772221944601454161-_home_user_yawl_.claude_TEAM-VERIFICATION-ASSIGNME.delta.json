@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221944601454161,
+  "timestamp_rfc": "2026-02-27T19:52:24.601454161Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/.claude/TEAM-VERIFICATION-ASSIGNMENTS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c2d7965436ab61ce899cbeb1c7b1b12488a40a188734f84037ebb8885bb931dc",
+  "delta_hash": "616919281f4b928a39d33574cd466c26980f70d5f639758daba3d907ba76fc15",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# YAWL Build System Verification Team — ",
+        "change": "Added"
+      }
+    }
+  ]
+}

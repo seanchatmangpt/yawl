@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212699297057012,
+  "timestamp_rfc": "2026-02-27T17:18:19.297057012Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "727640046c45b0270333167173c6c3df1ef101ab681af7d778e27c52abca10b9",
+  "delta_hash": "fe4a7a69a5d289440bece73396532818fa38f3ec637738fb87d71ccde7a9abe3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "**Conditions**:",
+        "change": "Added"
+      }
+    }
+  ]
+}

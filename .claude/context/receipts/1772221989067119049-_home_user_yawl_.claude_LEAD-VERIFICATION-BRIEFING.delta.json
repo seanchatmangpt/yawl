@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221989067119049,
+  "timestamp_rfc": "2026-02-27T19:53:09.067119049Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/.claude/LEAD-VERIFICATION-BRIEFING.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "359a1ab15166ad117de480aede55546f3b5f7a829a8ef038b99b0d68c4d65841",
+  "delta_hash": "62ea5a5e8dfaae61a82f3df6df68b7f70fda379c6779153f439e8c0709aaaec2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Lead Briefing: Build System Verificati",
+        "change": "Added"
+      }
+    }
+  ]
+}

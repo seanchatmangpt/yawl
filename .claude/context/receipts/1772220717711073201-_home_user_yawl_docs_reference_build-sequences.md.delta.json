@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220717711073201,
+  "timestamp_rfc": "2026-02-27T19:31:57.711073201Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/reference/build-sequences.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7c6a872af6312179adfab533b70ea89a6a5f8f78c787799eb20f00250b62b433",
+  "delta_hash": "9cd7319e4398b488d176521bbd3224dc39f0d9ce856be3ff3ad29676372061ae",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Build Sequences Reference",
+        "change": "Added"
+      }
+    }
+  ]
+}
