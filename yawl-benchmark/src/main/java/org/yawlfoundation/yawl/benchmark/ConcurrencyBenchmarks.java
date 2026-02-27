@@ -44,7 +44,12 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 50, time = 1)
-@Fork(3)
+@Fork(value = 3, jvmArgs = {
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
+})
 public class ConcurrencyBenchmarks {
 
     private YEngine engine;

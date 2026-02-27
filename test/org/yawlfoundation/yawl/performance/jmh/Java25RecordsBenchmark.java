@@ -69,9 +69,10 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @Warmup(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 2, jvmArgs = {
-    "-Xms1g", "-Xmx2g",
-    "-XX:+UseG1GC",
-    "-XX:+UseStringDeduplication"
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
 })
 public class Java25RecordsBenchmark {
 

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772170100832472730,
+  "timestamp_rfc": "2026-02-27T05:28:20.832472730Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/ConcurrencyBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "24e9061129d77529c9ea0807b842848c8a2e84b540a7ffe9d505179ce1b9a56a",
+  "delta_hash": "aad1d9f9d9d3fdcada6d2e2d29783a5a2b702b149c2923379e605cf1f0cfee9a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "ConcurrencyBenchmarks",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Fork(value = 3, jvmArgs = {",
+        "change": "Added"
+      }
+    }
+  ]
+}

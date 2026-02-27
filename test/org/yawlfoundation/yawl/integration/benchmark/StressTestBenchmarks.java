@@ -45,7 +45,7 @@ import io.modelcontextprotocol.spec.McpSchema;
  * </ul>
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0
  */
 @BenchmarkMode({Mode.Throughput, Mode.AverageTime})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -54,8 +54,7 @@ import io.modelcontextprotocol.spec.McpSchema;
 @Measurement(iterations = 5, time = 15, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1, jvmArgs = {
     "-Xms4g", "-Xmx8g",
-    "-XX:+UseG1GC",
-    "-XX:MaxGCPauseMillis=200",
+    "-XX:+UseZGC",
     "-XX:+UseCompactObjectHeaders"
 })
 @Threads(8)
@@ -82,13 +81,13 @@ public class StressTestBenchmarks {
         stressMonitor = new StressMonitor();
         currentScenario = TestScenario.getRandomScenario();
 
-        // Initialize multiple thread pools for different test scenarios
+        // Initialize multiple virtual thread executor pools for I/O-bound stress tests
+        // Java 25: virtual threads are the standard for I/O-bound workloads
         int threadPoolCount = 3;
         threadPools = new ExecutorService[threadPoolCount];
-        int cpuCount = Runtime.getRuntime().availableProcessors();
 
         for (int i = 0; i < threadPoolCount; i++) {
-            threadPools[i] = Executors.newWorkStealingPool(cpuCount * 2);
+            threadPools[i] = Executors.newVirtualThreadPerTaskExecutor();
         }
 
         // Initialize real components
@@ -101,7 +100,7 @@ public class StressTestBenchmarks {
         System.out.println("- Concurrent Requests: " + extremeConcurrentRequests);
         System.out.println("- Ramp-up Time: " + rampUpSeconds + "s");
         System.out.println("- Test Scenario: " + currentScenario.name());
-        System.out.println("- Thread Pool Size: " + cpuCount * 2);
+        System.out.println("- Thread Pool Type: virtual thread per task");
         System.out.println();
     }
 
