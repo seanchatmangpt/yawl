@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214914445640996,
+  "timestamp_rfc": "2026-02-27T17:55:14.445640996Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "86847890b54fbdac0a36d9b56d703b5b5e79edb04bcd271dd3245dafb6e98059",
+  "delta_hash": "1ddeba0a1b6925aceee3e46f30fca53b1c8c44a4ad8e34904ea48924af11edea",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final String FTR_PASS  = ",
+        "change": "Added"
+      }
+    }
+  ]
+}

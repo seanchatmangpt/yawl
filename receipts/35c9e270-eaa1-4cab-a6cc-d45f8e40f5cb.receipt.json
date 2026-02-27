@@ -1,9 +1,9 @@
 {
   "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
-  "started_at": "2026-02-27T17:52:34.598167636Z",
-  "ended_at": "2026-02-27T17:52:34.607784132Z",
-  "receipt_count": 36,
-  "chain_hash": "2cce7f76851b9b59ef7ee3ab1238b061a7c2fc01e0be611db9e317a5ffc89c04",
+  "started_at": "2026-02-27T18:18:14.987295966Z",
+  "ended_at": "2026-02-27T18:18:15.101385390Z",
+  "receipt_count": 52,
+  "chain_hash": "b777e322245d3a40d461787d84ef5c53b02d50614774cb34362b647cc3e5d166",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -1601,6 +1601,338 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "for",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214877826193269,
+      "timestamp_rfc": "2026-02-27T17:54:37.826193269Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b3459171dbd5f205e0ef7eb1ea470cf5609e4a81abd639c4c66cb221ae6bbe5e",
+      "delta_hash": "648af60fc925265d7c1d8ee005347e168fe6780786e0ef14c8b866256a2769ae",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214882307453755,
+      "timestamp_rfc": "2026-02-27T17:54:42.307453755Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "59e1fad7e0835922a643bf09a3989a5194e9804c0e03fe7765770e03e34687db",
+      "delta_hash": "40b92f3e397d142ce0b8cfbb55b6eab875fd3a7edc75c190d341b4b81ccec47c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "rt.gc",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214887452947066,
+      "timestamp_rfc": "2026-02-27T17:54:47.452947066Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c68eedcbb786e8983e0cb10504e5e7e4f04ad917ef6cc77bd5cbd4b34cd0ba82",
+      "delta_hash": "83c8f6f7f5bdb6efbfc96bb1034a84943503d76538d55ca3c0fa905db5379ab2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// Readers: query work item repository a",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214893111185996,
+      "timestamp_rfc": "2026-02-27T17:54:53.111185996Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2d53873c11997835a817ca0fe16bc5818ba0df4c623cb0492596e517c76c045f",
+      "delta_hash": "68aa5569604f2edbf670dc9282a4d189484d3dd572e7ed6a8864784fdb71284d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// Writers: start a case then cancel it",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214899224877750,
+      "timestamp_rfc": "2026-02-27T17:54:59.224877750Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c23014fd886e4fef8fd31444c2ad5cf09cd880a19e3274f46903bf4598bfd815",
+      "delta_hash": "3f8ad79d2e45f535d8600988fe777f8d9cadc9707332e715ce0ff052a618b2fe",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "for",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214904200571273,
+      "timestamp_rfc": "2026-02-27T17:55:04.200571273Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f4ed84b2c77682c0c4aa8dd77753895748dab83d4ce91dbcf29f3922e2d14365",
+      "delta_hash": "3f8ad79d2e45f535d8600988fe777f8d9cadc9707332e715ce0ff052a618b2fe",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "for",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214909085098271,
+      "timestamp_rfc": "2026-02-27T17:55:09.085098271Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b2eec5717ec60b6c0d3d888681d06edf6eaed3f42f526c1ce5f2b2860222570e",
+      "delta_hash": "3f8ad79d2e45f535d8600988fe777f8d9cadc9707332e715ce0ff052a618b2fe",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "for",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214914445640996,
+      "timestamp_rfc": "2026-02-27T17:55:14.445640996Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "86847890b54fbdac0a36d9b56d703b5b5e79edb04bcd271dd3245dafb6e98059",
+      "delta_hash": "1ddeba0a1b6925aceee3e46f30fca53b1c8c44a4ad8e34904ea48924af11edea",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String FTR_PASS  = ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214920698269099,
+      "timestamp_rfc": "2026-02-27T17:55:20.698269099Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f31981faf44ed69dc47c0ec646d707d003a164bdc32c3653ae64fe342cbadcc0",
+      "delta_hash": "4860ad073e46d843668ac12bacce7e2e0efb1454775eb44df4da53242a6aedd2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "*   <li><b>ScopedValue at Engine Scale</",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214936023121497,
+      "timestamp_rfc": "2026-02-27T17:55:36.023121497Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1c03076835a0c379bb20fb6af95a01f034d81fc6c694b2ba7e696f4a6b0b5778",
+      "delta_hash": "2e54958ba78ddd5e66538da33e9c6a0d880dba15821028e97a285b1943c71791",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// =====================================",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Timeout",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215013093393886,
+      "timestamp_rfc": "2026-02-27T17:56:53.093393886Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/ScopedTenantContext.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "06be71d84d4247f158841e3cfbc8366c2bb88451b484ebf28af72d5247b03da5",
+      "delta_hash": "57557a4028c21ada686cdfe8e73313b0105486564e5c6c8df75702556adc2b27",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215581556781074,
+      "timestamp_rfc": "2026-02-27T18:06:21.556781074Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2ba0f80c695232ceda9eb18fa719aea054127d1e596e42abeb610e318cacfe38",
+      "delta_hash": "7cc7bd3a8cc76100d2e3be5494808369d961c5c0d5c3ad277539d4ce61e217de",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<!-- YWorkItemSoundnessTest references A",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215594911603750,
+      "timestamp_rfc": "2026-02-27T18:06:34.911603750Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "51c9c0061c5eddbc4b73759b035f7e2a59a04da04953bc5827c846e74c91ec59",
+      "delta_hash": "a5a6589521e71ed92751eac4be7418093ffb12adc2b1f224fb91455ef53e5edd",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<!-- ObservabilityIntegrationTest requir",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215723131150436,
+      "timestamp_rfc": "2026-02-27T18:08:43.131150436Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9cc24471251bebaa525c2b43b207d7bb43dd45f3036156b9c9155000735ae1b1",
+      "delta_hash": "7cde14242a4a738772d820d67386b1c6d94c9d188780c7fef07eb5a739c1ea45",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<!-- TimerStateTest has duplicate method",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215769388407500,
+      "timestamp_rfc": "2026-02-27T18:09:29.388407500Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6dca1043b319988f8204e314dac0d65771f0a437c0d73cce6b6a74c881353727",
+      "delta_hash": "c263d8682da408ec0c60318b2773247aeb0aea8b9bc3133b934fb2a939e7e0c1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<!-- EngineKernelBenchmark requires JMH ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215825009235642,
+      "timestamp_rfc": "2026-02-27T18:10:25.009235642Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6e02e0e476fe9c7e18137190befbafdb70f5c4c83abba45d8d4394e430d34016",
+      "delta_hash": "d4fda9377636f904de374284d646e3119eea529b777a97130739af6ebe5237b2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<classpathDependencyExcludes>",
             "change": "Added"
           }
         }

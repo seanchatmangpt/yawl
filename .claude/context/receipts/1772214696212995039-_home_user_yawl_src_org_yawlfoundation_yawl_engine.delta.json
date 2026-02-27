@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214696212995039,
+  "timestamp_rfc": "2026-02-27T17:51:36.212995039Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/DatabaseService.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d65b4315a67149cd0d125647064faf0d144627ee7da2edb0687e1162fdc2bbc7",
+  "delta_hash": "648af60fc925265d7c1d8ee005347e168fe6780786e0ef14c8b866256a2769ae",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    }
+  ]
+}
