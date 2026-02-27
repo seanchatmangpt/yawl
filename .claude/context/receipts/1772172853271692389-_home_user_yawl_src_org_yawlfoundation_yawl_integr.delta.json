@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772172853271692389,
+  "timestamp_rfc": "2026-02-27T06:14:13.271692389Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/temporal/TemporalForkEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d5a1062330f3a4e0f3efa1e0009f882e81d9bc393a0b3e298855992e3e2a1e18",
+  "delta_hash": "da5df6c27d3f40c04d6e9e4c952e8313031b7de4d7ddd63adb6e8088f22179ef",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static TemporalForkEngine forInte",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    }
+  ]
+}

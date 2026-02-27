@@ -86,10 +86,8 @@ public class ProcessMiningTrainingDataExtractor {
         Map<String, CaseFeatures> caseData = new ConcurrentHashMap<>();
         Executor executor = Executors.newVirtualThreadPerTaskExecutor();
 
-        List<String> allCaseIds = eventStore.loadEvents("")
+        List<String> allCaseIds = eventStore.loadCaseIds(specId.getIdentifier())
             .stream()
-            .map(WorkflowEvent::getCaseId)
-            .distinct()
             .limit(maxCases)
             .toList();
 

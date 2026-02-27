@@ -27,7 +27,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Performance benchmarks for A2A Skill execution.
@@ -51,9 +55,9 @@ import junit.framework.TestCase;
  * </ul>
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0
  */
-public class A2ASkillBenchmark extends TestCase {
+public class A2ASkillBenchmark {
 
     private static final int WARMUP_ITERATIONS = 10;
     private static final int MEASUREMENT_ITERATIONS = 100;
@@ -63,28 +67,22 @@ public class A2ASkillBenchmark extends TestCase {
     private Path factsDir;
     private Path tempProjectDir;
 
-    public A2ASkillBenchmark(String name) {
-        super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         tempObservatory = Files.createTempDirectory("benchmark-observatory");
         factsDir = tempObservatory.resolve("facts");
         Files.createDirectories(factsDir);
         tempProjectDir = Files.createTempDirectory("benchmark-project");
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (tempObservatory != null) {
             deleteRecursively(tempObservatory);
         }
         if (tempProjectDir != null) {
             deleteRecursively(tempProjectDir);
         }
-        super.tearDown();
     }
 
     // =========================================================================
@@ -215,6 +213,7 @@ public class A2ASkillBenchmark extends TestCase {
     // IntrospectCodebaseSkill Benchmarks
     // =========================================================================
 
+    @Test
     public void testBenchmarkIntrospectCodebaseSkillModulesQuery() throws Exception {
         // Setup: Create realistic modules.json
         String modulesJson = createRealisticModulesJson();
@@ -238,6 +237,7 @@ public class A2ASkillBenchmark extends TestCase {
         assertTrue("Should achieve > 200 ops/sec", result.getOpsPerSecond() > 200);
     }
 
+    @Test
     public void testBenchmarkIntrospectCodebaseSkillAllQuery() throws Exception {
         // Setup: Create all fact files
         writeFactFile("modules.json", createRealisticModulesJson());
@@ -266,6 +266,7 @@ public class A2ASkillBenchmark extends TestCase {
         assertTrue("P99 should be < 30ms", result.getP99() < 30.0);
     }
 
+    @Test
     public void testBenchmarkIntrospectCodebaseSkillDifferentQueryTypes() throws Exception {
         // Setup
         writeFactFile("modules.json", createRealisticModulesJson());
@@ -312,6 +313,7 @@ public class A2ASkillBenchmark extends TestCase {
     // ExecuteBuildSkill Benchmarks (Command Construction Only)
     // =========================================================================
 
+    @Test
     public void testBenchmarkExecuteBuildSkillMetadataAccess() throws Exception {
         ExecuteBuildSkill skill = new ExecuteBuildSkill(tempProjectDir);
 
@@ -352,6 +354,7 @@ public class A2ASkillBenchmark extends TestCase {
         assertTrue("Should achieve > 10M ops/sec", idResult.getOpsPerSecond() > 10_000_000);
     }
 
+    @Test
     public void testBenchmarkExecuteBuildSkillRequestValidation() throws Exception {
         ExecuteBuildSkill skill = new ExecuteBuildSkill(tempProjectDir);
 
@@ -372,6 +375,7 @@ public class A2ASkillBenchmark extends TestCase {
         // We measure the validation path (before actual process execution)
     }
 
+    @Test
     public void testBenchmarkExecuteBuildSkillInvalidModeHandling() throws Exception {
         ExecuteBuildSkill skill = new ExecuteBuildSkill(tempProjectDir);
 
@@ -394,6 +398,7 @@ public class A2ASkillBenchmark extends TestCase {
     // RunTestsSkill Benchmarks (Parsing Performance)
     // =========================================================================
 
+    @Test
     public void testBenchmarkRunTestsSkillMetadataAccess() throws Exception {
         RunTestsSkill skill = new RunTestsSkill(tempProjectDir);
 
@@ -425,6 +430,7 @@ public class A2ASkillBenchmark extends TestCase {
         assertTrue("Should achieve > 10M ops/sec", idResult.getOpsPerSecond() > 10_000_000);
     }
 
+    @Test
     public void testBenchmarkRunTestsSkillInvalidModeHandling() throws Exception {
         RunTestsSkill skill = new RunTestsSkill(tempProjectDir);
 
@@ -446,6 +452,7 @@ public class A2ASkillBenchmark extends TestCase {
     // CommitChangesSkill Benchmarks (Safety Classification Speed)
     // =========================================================================
 
+    @Test
     public void testBenchmarkCommitChangesSkillSafetyClassification() throws Exception {
         CommitChangesSkill skill = new CommitChangesSkill(tempProjectDir);
 
@@ -500,6 +507,7 @@ public class A2ASkillBenchmark extends TestCase {
             "commit", commitResult.getMean(), commitResult.getP99());
     }
 
+    @Test
     public void testBenchmarkCommitChangesSkillForbiddenPatternDetection() throws Exception {
         CommitChangesSkill skill = new CommitChangesSkill(tempProjectDir);
 
@@ -534,6 +542,7 @@ public class A2ASkillBenchmark extends TestCase {
         }
     }
 
+    @Test
     public void testBenchmarkCommitChangesSkillMetadataAccess() throws Exception {
         CommitChangesSkill skill = new CommitChangesSkill(tempProjectDir);
 
@@ -562,6 +571,7 @@ public class A2ASkillBenchmark extends TestCase {
     // SelfUpgradeSkill Benchmarks (Orchestration Overhead)
     // =========================================================================
 
+    @Test
     public void testBenchmarkSelfUpgradeSkillMetadataAccess() throws Exception {
         // Create skills with minimal dependencies for benchmarking
         IntrospectCodebaseSkill introspectSkill = new IntrospectCodebaseSkill(tempObservatory);
@@ -602,6 +612,7 @@ public class A2ASkillBenchmark extends TestCase {
             commitIdResult.getMean(), commitIdResult.getOpsPerSecond());
     }
 
+    @Test
     public void testBenchmarkSelfUpgradeSkillRiskLevelCalculation() throws Exception {
         // Test risk level calculation performance (file path analysis)
         String[] lowRiskFiles = {
@@ -695,6 +706,7 @@ public class A2ASkillBenchmark extends TestCase {
     // SkillRequest Builder Benchmarks
     // =========================================================================
 
+    @Test
     public void testBenchmarkSkillRequestBuilder() throws Exception {
         BenchmarkResult simpleResult = runBenchmark(
             "SkillRequest.builder.simple",
@@ -722,6 +734,7 @@ public class A2ASkillBenchmark extends TestCase {
         assertTrue("Should achieve > 1M ops/sec", simpleResult.getOpsPerSecond() > 1_000_000);
     }
 
+    @Test
     public void testBenchmarkSkillRequestParameterAccess() throws Exception {
         SkillRequest request = SkillRequest.builder("test_skill")
             .parameter("param1", "value1")
@@ -754,6 +767,7 @@ public class A2ASkillBenchmark extends TestCase {
     // SkillResult Creation Benchmarks
     // =========================================================================
 
+    @Test
     public void testBenchmarkSkillResultCreation() throws Exception {
         Map<String, Object> data = new HashMap<>();
         data.put("key1", "value1");
@@ -792,6 +806,7 @@ public class A2ASkillBenchmark extends TestCase {
     // Memory Allocation Benchmarks
     // =========================================================================
 
+    @Test
     public void testBenchmarkMemoryAllocationPatterns() throws Exception {
         System.out.println("\n========================================");
         System.out.println("Memory Allocation Analysis");
@@ -827,6 +842,7 @@ public class A2ASkillBenchmark extends TestCase {
     // Summary Report
     // =========================================================================
 
+    @Test
     public void testPrintSummaryReport() throws Exception {
         System.out.println("\n");
         System.out.println("╔══════════════════════════════════════════════════════════════════╗");

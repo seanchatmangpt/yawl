@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213045522406337,
+  "timestamp_rfc": "2026-02-27T17:24:05.522406337Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/08-conclusion.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ecac1b27d6d01d78b917df5a18688d2d296a1b1230456e20d62ecf0b9ebc3eca",
+  "delta_hash": "d92436b7defa00722457063b94a131e6e6d1c90b2930a547645a65529fd923b6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "*Branch: `claude/review-engine-wrap-tpot",
+        "change": "Added"
+      }
+    }
+  ]
+}

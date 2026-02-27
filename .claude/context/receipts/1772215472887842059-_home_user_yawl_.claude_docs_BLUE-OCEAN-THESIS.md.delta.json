@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215472887842059,
+  "timestamp_rfc": "2026-02-27T18:04:32.887842059Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ee4fcdd599632c4fd5a20d6f55150e9bc24ca5403b0341d1fd6f958d9a39d7a4",
+  "delta_hash": "ba3189f6e2b6309e94edb4f43d44c45115032a36eef46e902e8d80329d1a453e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "### 7.2 Medium-Term",
+        "change": "Added"
+      }
+    }
+  ]
+}

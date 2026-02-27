@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772170372203287462,
+  "timestamp_rfc": "2026-02-27T05:32:52.203287462Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/automl/Tpot2BridgeTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "98c3a2862d6fb1ffef489fd34ca54639ea27a9aa491aa2b628899d9d30ed7bed",
+  "delta_hash": "b421d68c7ea46c792856c6cb57e14b306f0ef1a42fe14bb253a47c7941fbdf72",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "* Validates that CSV and JSON config wer",
+        "change": "Added"
+      }
+    }
+  ]
+}

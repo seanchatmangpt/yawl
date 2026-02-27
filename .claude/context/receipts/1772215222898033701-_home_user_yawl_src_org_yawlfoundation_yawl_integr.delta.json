@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772215222898033701,
+  "timestamp_rfc": "2026-02-27T18:00:22.898033701Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/coordination/ConflictEventLogger.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6a9a1357c0f9900213dfe2405cee1116637084c10f1bb95ff123941eb0606b20",
+  "delta_hash": "da2df9d1394c1b2f8fb6a3b881b1af98118a9a0aac916332be0f203114a56ee5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ConflictEventLogger",
+        "change": "Added"
+      }
+    }
+  ]
+}

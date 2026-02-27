@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772172659270481570,
+  "timestamp_rfc": "2026-02-27T06:10:59.270481570Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalwasm/WasmExceptionTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4366089b97818753020fb734e525861fd48413e0f471243881086cb85b1dcdfc",
+  "delta_hash": "272b40b97f28e8fe5ca414358e5e093a66be22a6d0bdbd46cc5d6488156f5730",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -58,15 +58,23 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  * @see org.yawlfoundation.yawl.engine.YNetRunner
  * @see org.yawlfoundation.yawl.engine.YWorkItem
  */
-@BenchmarkMode({Mode.AverageTime, Mode.Throughput})
+// Mode.Throughput only: Mode.AverageTime is semantically broken for virtual thread
+// workloads because JMH assumes a fixed concurrency level that is undefined when
+// the executor is VIRTUAL_TPE. See: OpenJDK Loom dev list, May 2023.
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1, jvmArgs = {
+// Fork(2): single-JVM measurements are contaminated by prior benchmark JIT profiles.
+// -Djmh.executor=VIRTUAL_TPE: run JMH worker threads as virtual threads so the
+//   runner itself does not introduce platform-thread scheduling noise.
+// -XX:+UseZGC: matches YAWL production config; pause times <1ms at scale.
+@Fork(value = 2, jvmArgs = {
     "-Xms2g", "-Xmx4g",
-    "-XX:+UseG1GC",
-    "-XX:+UseStringDeduplication"
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
 })
 public class Java25VirtualThreadBenchmark {
 

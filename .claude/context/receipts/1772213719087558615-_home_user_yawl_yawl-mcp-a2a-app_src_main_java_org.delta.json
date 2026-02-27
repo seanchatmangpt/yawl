@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213719087558615,
+  "timestamp_rfc": "2026-02-27T17:35:19.087558615Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-mcp-a2a-app/src/main/java/org/yawlfoundation/yawl/mcp/a2a/mcp/YawlMcpHttpServer.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "47ee8ecdeaa7c1e10bf275f06922b9253dbd28547fbf5eeba067b8c45a4fbbd0",
+  "delta_hash": "cd8b5ec8e51905d0b91f98aa208e04e117fb3e37de468e1444b215209b0584d5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "List<io.modelcontextprotocol.server.McpS",
+        "change": "Added"
+      }
+    }
+  ]
+}

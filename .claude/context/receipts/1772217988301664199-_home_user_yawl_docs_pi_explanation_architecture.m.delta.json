@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772217988301664199,
+  "timestamp_rfc": "2026-02-27T18:46:28.301664199Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/explanation/architecture.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e0502347fd8c03ff05982e723a60e19074d691e20a6180253b24d46340f1a59a",
+  "delta_hash": "bb33d5690492a3180c4d0cb3c6f38a90d48a9afe109b523779cc193c77c10f5d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Architecture — YAWL Process Intelligen",
+        "change": "Added"
+      }
+    }
+  ]
+}

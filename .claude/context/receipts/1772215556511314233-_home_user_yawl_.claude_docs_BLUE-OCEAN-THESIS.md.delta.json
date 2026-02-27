@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215556511314233,
+  "timestamp_rfc": "2026-02-27T18:05:56.511314233Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "32b0c15de1fdf1b269d1c634c068050cb426d4e087810a48ae744a6914518e2b",
+  "delta_hash": "fcb9ae02afbf73d266beb9720c61daffb812f43108dd4fa1d4e3883187ef462e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "## 4. The Wiring Pattern: Engine → MCP +",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772172536717838379,
+  "timestamp_rfc": "2026-02-27T06:08:56.717838379Z",
+  "session_id": "9725a029-9fcb-4176-a54b-ee54343c996a",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/adaptation/AdaptationCondition.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "27e85afe516da76059d200a934bcb0adbb9687675959ba639e0d52f91f3f9423",
+  "delta_hash": "f0dcd7c5e9e65ae4a33c5c9c91bc29546f76059f64bdbb6565a34ed0545166e7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "AdaptationCondition",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    }
+  ]
+}

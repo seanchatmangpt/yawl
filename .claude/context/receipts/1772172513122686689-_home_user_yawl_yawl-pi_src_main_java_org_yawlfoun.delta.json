@@ -1,0 +1,82 @@
+{
+  "timestamp_ns": 1772172513122686689,
+  "timestamp_rfc": "2026-02-27T06:08:33.122686689Z",
+  "session_id": "9725a029-9fcb-4176-a54b-ee54343c996a",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/adaptive/PredictiveAdaptationRules.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "acdda67aeb05d412e08496b194cfe7b994262881a515cd3a0d3a110d3aaba381",
+  "delta_hash": "729bf03593fee4433b8e5b97f55b31ec97626ab32846a4265a9a4dbcf7345b80",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static AdaptationRule nextActivit",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static List<AdaptationRule> healt",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static List<AdaptationRule> opera",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static List<AdaptationRule> insur",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "PredictiveAdaptationRules",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static List<AdaptationRule> finan",
+        "change": "Added"
+      }
+    }
+  ]
+}

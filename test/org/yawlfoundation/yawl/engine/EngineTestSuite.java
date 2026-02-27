@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.engine;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 import org.junit.platform.suite.api.SuiteDisplayName;
+import org.yawlfoundation.yawl.engine.observability.EngineObservabilityIntegrationTest;
 
 /**
  *
@@ -47,6 +48,8 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     TestYEngineLifecycle.class,
     // Track B - New gap-filling tests
     YNetRunnerDeadlockTest.class,
+    YNetRunnerORJoinIntegrationTest.class,        // Gap 1: OR-join cycle detection (0% → covered)
+    EngineObservabilityIntegrationTest.class,     // Gap 2: engine↔observability silo (Blue Ocean)
     YEngineRestorerTest.class,
     YEngineNegativePathTest.class,
     VirtualThreadPinningTest.class

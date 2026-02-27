@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772212054655364837,
+  "timestamp_rfc": "2026-02-27T17:07:34.655364837Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/03-theoretical-foundation.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "40a326020175d695e1587636b549ee2856397fe01191d6d360313b914d5bb2cd",
+  "delta_hash": "a13ae75663e79815f93db96702ff81c1764343de8ecec4bdca8261c288d30ff8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "of",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Chapter 3 — Theoretical Foundation",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "float",
+        "change": "Added"
+      }
+    }
+  ]
+}

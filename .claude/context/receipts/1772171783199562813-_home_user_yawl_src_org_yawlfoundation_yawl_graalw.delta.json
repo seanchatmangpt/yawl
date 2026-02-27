@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772171783199562813,
+  "timestamp_rfc": "2026-02-27T05:56:23.199562813Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graalwasm/WasmBinaryCache.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e2d46701b508848754aca2510dea2a305aac7f911cdaf178bfd0b8b6b41b1282",
+  "delta_hash": "0a0159b4d3e43175c4ec48ab92addc0ed9bfde19c7ca7004f42101f855ea05fb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "byte[] bytes = Files.readAllBytes",
+        "change": "Added"
+      }
+    }
+  ]
+}

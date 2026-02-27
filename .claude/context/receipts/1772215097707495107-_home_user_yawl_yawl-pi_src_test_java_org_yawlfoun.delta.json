@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215097707495107,
+  "timestamp_rfc": "2026-02-27T17:58:17.707495107Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/optimization/ProcessSchedulerTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4ca033b611217a2246c364a0298981938c0fb98cad01239faaec9dcde9829dc6",
+  "delta_hash": "acc473bdddb84cb9ec69757de47af83247f368fb6c4525a55e5fc48415b7bc3b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// All have same duration, so any order ",
+        "change": "Added"
+      }
+    }
+  ]
+}

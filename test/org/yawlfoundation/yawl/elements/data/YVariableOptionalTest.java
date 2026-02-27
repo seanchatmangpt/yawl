@@ -21,9 +21,12 @@ package org.yawlfoundation.yawl.elements.data;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
- * Tests for YVariable initial value and default value accessors.
- * YVariable.getInitialValue() and getDefaultValue() return String (not Optional).
+ * Tests for YVariable getInitialValue() and getDefaultValue() — both return String.
  */
 public class YVariableOptionalTest {
 
@@ -48,12 +51,13 @@ public class YVariableOptionalTest {
     }
 
     @Test
-    public void testGetInitialValueOrElse() {
+    public void testGetInitialValueOrElsePattern() {
         YVariable variable1 = new YVariable();
         variable1.setInitialValue("actualValue");
 
         YVariable variable2 = new YVariable();
 
+        // Null-safe pattern using String API
         String result1 = variable1.getInitialValue() != null ? variable1.getInitialValue() : "default";
         assertEquals("actualValue", result1);
 
@@ -62,18 +66,23 @@ public class YVariableOptionalTest {
     }
 
     @Test
-    public void testGetInitialValueIfPresent() {
+    public void testGetInitialValueIfPresentPattern() {
         YVariable variable1 = new YVariable();
         variable1.setInitialValue("test");
 
         YVariable variable2 = new YVariable();
 
+        // Null-safe ifPresent pattern
         StringBuilder captured = new StringBuilder();
-        if (variable1.getInitialValue() != null) captured.append(variable1.getInitialValue());
+        if (variable1.getInitialValue() != null) {
+            captured.append(variable1.getInitialValue());
+        }
         assertEquals("test", captured.toString());
 
         StringBuilder empty = new StringBuilder();
-        if (variable2.getInitialValue() != null) empty.append(variable2.getInitialValue());
+        if (variable2.getInitialValue() != null) {
+            empty.append(variable2.getInitialValue());
+        }
         assertEquals("", empty.toString());
     }
 
@@ -106,11 +115,12 @@ public class YVariableOptionalTest {
         var2.setInitialValue("value2");
 
         YVariable var3 = new YVariable();
+        // No initial value
 
-        java.util.List<String> values = java.util.List.of(var1, var2, var3).stream()
+        List<String> values = Arrays.asList(var1, var2, var3).stream()
             .map(YVariable::getInitialValue)
             .filter(v -> v != null)
-            .collect(java.util.stream.Collectors.toList());
+            .collect(Collectors.toList());
 
         assertEquals(2, values.size());
         assertTrue(values.contains("value1"));
@@ -121,11 +131,18 @@ public class YVariableOptionalTest {
     public void testNullSafety() {
         YVariable variable = new YVariable();
 
-        // Null-safe operations — no NPE expected
+        // Verify no NullPointerException when calling on set value
         assertDoesNotThrow(() -> {
-            String v = variable.getInitialValue();
-            boolean present = v != null;
-            String safe = v != null ? v : "safe";
+            String val = variable.getInitialValue();
+            // Safe null check pattern
+            boolean hasValue = val != null;
+            assertFalse(hasValue, "Unset variable must return null");
+        });
+
+        assertDoesNotThrow(() -> {
+            String val = variable.getDefaultValue();
+            boolean hasValue = val != null;
+            assertFalse(hasValue, "Unset variable must return null default");
         });
     }
 }

@@ -7,27 +7,38 @@ quantum = "MCP/A2A + Engine-semantic"
 spr_section = "ι INTELLIGENCE"
 
 [ticket.acceptance_criteria]
-"yawl-jira inject --session completes in < 50ms" = false
-"yawl-jira inject --prompt completes in < 20ms" = false
+"Typed delta contains no line numbers" = true
+"Ticket correction survives context window boundary" = true
+"cargo test green" = true
+"Receipt chain is reproducible" = true
+"cargo clippy -- -D warnings green" = true
+"yawl-jira inject --prompt completes in < 20ms" = true
+"yawl-jira inject --session completes in < 50ms" = true
+"Scout fetch respects watermark TTL" = true
 "Scout fetch respects watermark TTL" = false
-"Typed delta contains no line numbers" = false
 "Receipt chain is reproducible" = false
-"Ticket correction survives context window boundary" = false
-"cargo test green" = false
+"Ticket correction survives context window boundary" = true
+"Typed delta contains no line numbers" = false
+"yawl-jira inject --prompt completes in < 20ms" = true
+"yawl-jira inject --session completes in < 50ms" = true
 "cargo clippy -- -D warnings green" = false
+"cargo test green" = false
 
 [ticket.context_refs]
 files = [
-  ".claude/hooks/yawl-jira",
-  ".claude/hooks/yawl-scout",
-  "yawl-hooks/Cargo.toml",
+    ".claude/hooks/yawl-jira",
+    ".claude/hooks/yawl-scout",
+    "yawl-hooks/Cargo.toml",
 ]
-docs = [".claude/HYPER_STANDARDS.md", "PRD: YAWL Intelligence Layer"]
+docs = [
+    ".claude/HYPER_STANDARDS.md",
+    "PRD: YAWL Intelligence Layer",
+]
 
 [ticket.depends_on]
 ids = []
 
-[[ticket.corrections]]
+[[corrections]]
 timestamp = "2026-02-26T00:00:00Z"
 hash = "initial"
 text = "Intelligence layer PRD specifies typed deltas, not line diffs. Delta = typed fact transition."

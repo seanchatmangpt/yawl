@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772152861221546359,
+  "timestamp_rfc": "2026-02-27T00:41:01.221546359Z",
+  "session_id": "86e44b67-bcb0-4b38-b172-73dd4aad8312",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "38e01ffa536600a2012c650e1c35d1e520df96bb1ef554b30e48c004c34b8920",
+  "delta_hash": "1010be60520d75f405f8b77d7a9399cc22c6d1e1ef8ccca8e7dd3278f6e454de",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "System.out.println",
+        "change": "Added"
+      }
+    }
+  ]
+}

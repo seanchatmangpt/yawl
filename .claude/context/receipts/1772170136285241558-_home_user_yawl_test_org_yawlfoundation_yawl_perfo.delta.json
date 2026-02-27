@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772170136285241558,
+  "timestamp_rfc": "2026-02-27T05:28:56.285241558Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/WorkflowExecutionBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6d9e5b097015ffdc69adb9f386472e9317e69b733d9052439fbb64616fb04c9b",
+  "delta_hash": "f4fa53e85de9e163ab0c8754eeae5b25f808a216cecfe9e6adbc078cddac1f0e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "record Created",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "record Executing",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "WorkItemState",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "record Completed",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "record CheckedOut",
+        "change": "Added"
+      }
+    }
+  ]
+}

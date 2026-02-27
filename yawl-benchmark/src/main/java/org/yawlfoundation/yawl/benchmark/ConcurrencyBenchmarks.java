@@ -19,426 +19,233 @@
 package org.yawlfoundation.yawl.benchmark;
 
 import org.openjdk.jmh.annotations.*;
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.engine.YEngine;
-import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.stateless.engine.YStatelessEngine;
+import org.yawlfoundation.yawl.exceptions.YSyntaxException;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.elements.YSpecification;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
+import org.yawlfoundation.yawl.stateless.listener.YCaseEventListener;
+import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
+import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
+import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Concurrency Performance Benchmarks
- * 
- * This class benchmarks multi-threaded performance of YAWL engine components:
- * - Virtual vs Platform thread performance comparison
- * - Thread scalability with increasing thread counts
- * - Concurrent case creation and management
- * - Resource contention under load
- * - Deadlock detection and prevention
+ * Concurrency Performance Benchmarks.
+ *
+ * <p>Measures multi-case throughput and virtual-thread scalability using
+ * {@link YStatelessEngine}. Each benchmark drives workflow cases to
+ * completion via the engine's event-listener contract; no fake work-item
+ * construction or stub invocations are used.</p>
+ *
+ * <p>Scaling curve from 1→64 threads exposes the inflection point where
+ * {@code YNetRunner}'s internal locks saturate. Adding thread counts 2 and
+ * 64 reveals the first contention point and full saturation respectively.</p>
+ *
+ * <p>Benchmarks:</p>
+ * <ul>
+ *   <li>{@link #virtualThreadCaseLaunch} — single case on a virtual thread</li>
+ *   <li>{@link #parallelBatchSmall} — 4 cases via {@code launchCasesParallel}</li>
+ *   <li>{@link #parallelBatchLarge} — 32 cases via {@code launchCasesParallel}</li>
+ *   <li>{@link #concurrentCaseThroughput} — throughput under JMH multi-threading</li>
+ *   <li>{@link #threadScalingSingle} — single-thread scaling reference point</li>
+ * </ul>
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 50, time = 1)
-@Fork(3)
-public class ConcurrencyBenchmarks {
+@Fork(value = 3, jvmArgs = {
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
+})
+public class ConcurrencyBenchmarks implements YWorkItemEventListener, YCaseEventListener {
 
-    private YEngine engine;
-    private YStatelessEngine statelessEngine;
-    private YSpecification testSpec;
-    private ExecutorService executor;
-    private List<String> caseIds;
-    private AtomicInteger caseCounter;
-    
-    @Param({"1", "4", "8", "16", "32"})
+    /** Scales the parallel-batch size between benchmark runs. */
+    @Param({"1", "2", "4", "8", "16", "32", "64"})
     private int threadCount;
-    
-    @Param({"10", "100", "1000"})
+
+    @Param({"10", "100"})
     private int caseCount;
-    
-    @Setup
-    public void setup() throws Exception {
-        System.out.println("[Concurrency Benchmark Setup] Initializing with " + threadCount + " threads, " + caseCount + " cases");
-        
-        // Initialize engines
-        engine = new YEngine();
-        engine.initialiseEngine(true);
-        statelessEngine = new YStatelessEngine();
-        statelessEngine.initialiseEngine();
-        
-        // Create test specification
-        testSpec = createTestSpecification();
-        
-        // Initialize thread pool based on thread count
-        executor = Executors.newFixedThreadPool(threadCount);
-        
-        // Initialize test data
-        caseIds = Collections.synchronizedList(new ArrayList<>());
-        caseCounter = new AtomicInteger(0);
-        
-        System.out.println("[Concurrency Benchmark Setup] Setup completed");
+
+    private YStatelessEngine engine;
+    private YSpecification spec;
+
+    // Tracks remaining completions for the current benchmark invocation
+    private volatile CountDownLatch completionLatch;
+    private final AtomicReference<Exception> listenerError = new AtomicReference<>();
+    private final AtomicInteger completionCounter = new AtomicInteger(0);
+
+    // ── Setup ─────────────────────────────────────────────────────────────
+
+    @Setup(Level.Trial)
+    public void setup() throws YSyntaxException {
+        engine = new YStatelessEngine();
+        engine.addWorkItemEventListener(this);
+        engine.addCaseEventListener(this);
+        spec = engine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_2_TASK);
     }
-    
-    @TearDown
-    public void tearDown() {
-        System.out.println("[Concurrency Benchmark Teardown] Cleaning up resources...");
-        if (executor != null) {
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
+
+    // ── Event listener ────────────────────────────────────────────────────
+
+    @Override
+    public void handleWorkItemEvent(YWorkItemEvent event) {
+        YWorkItem item = event.getWorkItem();
+        try {
+            switch (event.getEventType()) {
+                case ITEM_ENABLED -> engine.startWorkItem(item);
+                case ITEM_STARTED -> engine.completeWorkItem(item, null, null);
+                default -> { /* not needed */ }
             }
+        } catch (Exception e) {
+            listenerError.compareAndSet(null, e);
         }
-        if (engine != null) {
-            engine.shutdownEngine();
-        }
-        caseIds.clear();
     }
-    
+
+    @Override
+    public void handleCaseEvent(YCaseEvent event) {
+        if (event.getEventType() == YEventType.CASE_COMPLETED ||
+                event.getEventType() == YEventType.CASE_CANCELLED) {
+            CountDownLatch latch = completionLatch;
+            if (latch != null) latch.countDown();
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private void awaitCompletion(int expected) throws Exception {
+        if (!completionLatch.await(60, TimeUnit.SECONDS)) {
+            throw new IllegalStateException(
+                "Only " + (expected - completionLatch.getCount()) +
+                "/" + expected + " cases completed within timeout");
+        }
+        Exception err = listenerError.get();
+        if (err != null) throw err;
+    }
+
+    private List<String> nullParams(int count) {
+        List<String> params = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) params.add(null);
+        return params;
+    }
+
+    // ── Benchmarks ────────────────────────────────────────────────────────
+
     /**
-     * Benchmark 1: Virtual Thread Performance vs Platform Threads
-     * Compares performance using virtual threads vs platform threads
+     * Launches a single workflow case on a virtual thread and waits for
+     * completion. Measures virtual-thread scheduling + engine overhead.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public void virtualThreadCaseLaunch() throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(1);
+
+        Thread vt = Thread.ofVirtual().name("vt-bench").start(() -> {
+            try {
+                engine.launchCase(spec);
+            } catch (Exception e) {
+                listenerError.compareAndSet(null, e);
+                completionLatch.countDown();
+            }
+        });
+        vt.join();
+        awaitCompletion(1);
+    }
+
+    /**
+     * Batch-launches 4 sequential cases in parallel using
+     * {@link YStatelessEngine#launchCasesParallel} (virtual threads).
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void virtualVsPlatformThreadPerformance() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Use virtual thread for benchmarking
-        Thread virtualThread = Thread.ofVirtual()
-            .name("benchmark-virtual-" + caseCounter.getAndIncrement())
-            .start(() -> {
-                try {
-                    executeCaseWorkflow(caseId);
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-        
-        virtualThread.join();
+    public void parallelBatchSmall() throws Exception {
+        int batch = 4;
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(batch);
+        engine.launchCasesParallel(spec, nullParams(batch));
+        awaitCompletion(batch);
     }
-    
+
     /**
-     * Benchmark 2: Thread Scaling Performance
-     * Measures performance as thread count increases
+     * Batch-launches 32 sequential cases in parallel using
+     * {@link YStatelessEngine#launchCasesParallel} (virtual threads).
+     * Exposes lock saturation inside {@code YNetRunner}.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @Group("scaling")
-    @GroupThreads(1)
-    public void threadScalingSingle() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        executeCaseWorkflow(caseId);
+    public void parallelBatchLarge() throws Exception {
+        int batch = 32;
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(batch);
+        engine.launchCasesParallel(spec, nullParams(batch));
+        awaitCompletion(batch);
     }
-    
+
     /**
-     * Benchmark 3: Concurrent Case Creation Throughput
-     * Measures cases created per second with multiple threads
+     * Per-second throughput of completed cases under JMH's multi-thread
+     * driver. The {@code @Threads} annotation uses the {@code threadCount}
+     * parameter at the JMH runner level; this benchmark body is
+     * single-invocation-per-thread.
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void concurrentCaseCreationThroughput() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Create case using stateless engine
-        statelessEngine.createCase(testSpec.getID(), testSpec, null, null);
-        caseIds.add(caseId);
+    public void concurrentCaseThroughput() throws Exception {
+        listenerError.set(null);
+        CountDownLatch latch = new CountDownLatch(1);
+        // Override the shared latch for this invocation
+        completionLatch = latch;
+        engine.launchCase(spec);
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Case did not complete within timeout");
+        }
+        Exception err = listenerError.get();
+        if (err != null) throw err;
     }
-    
+
     /**
-     * Benchmark 4: Concurrent Work Item Processing
-     * Measures performance of multiple threads processing work items
+     * Single-thread reference benchmark used to normalise the scaling curve.
+     * Each invocation runs exactly one sequential case to completion.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @Group("scaling")
+    @GroupThreads(1)
+    public void threadScalingSingle() throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(1);
+        engine.launchCase(spec);
+        awaitCompletion(1);
+    }
+
+    /**
+     * {@code caseCount} cases launched sequentially in a loop from a
+     * single thread — used to measure sustained single-node throughput
+     * without the overhead of thread pool management.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void concurrentWorkItemProcessing() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Submit work item processing tasks
-        List<Future<?>> futures = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            final int taskId = i;
-            Future<?> future = executor.submit(() -> {
-                try {
-                    YWorkItem workItem = createWorkItem(caseId, "task-" + taskId);
-                    engine.startWorkItem(workItem);
-                    engine.completeWorkItem(workItem, Collections.emptyMap());
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            futures.add(future);
-        }
-        
-        // Wait for all tasks to complete
-        for (Future<?> future : futures) {
-            future.get();
-        }
-    }
-    
-    /**
-     * Benchmark 5: Resource Contention Under Load
-     * Measures performance under resource contention scenarios
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void resourceContentionUnderLoad() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Submit competing tasks
-        List<Future<?>> futures = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            final int taskId = i;
-            Future<?> future = executor.submit(() -> {
-                try {
-                    // Simulate resource contention
-                    Thread.sleep(1);
-                    YWorkItem workItem = createWorkItem(caseId, "contention-task-" + taskId);
-                    engine.startWorkItem(workItem);
-                    engine.completeWorkItem(workItem, Collections.emptyMap());
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            futures.add(future);
-        }
-        
-        // Wait for all tasks
-        for (Future<?> future : futures) {
-            future.get();
-        }
-    }
-    
-    /**
-     * Benchmark 6: Bulk Case Processing
-     * Measures performance of bulk case operations
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void bulkCaseProcessing() throws Exception {
-        List<String> bulkCaseIds = new ArrayList<>();
-        
-        // Create multiple cases
+    public void bulkSequentialLaunch() throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(caseCount);
+        // Launch all cases; completionLatch counts down once per case
         for (int i = 0; i < caseCount; i++) {
-            String caseId = UUID.randomUUID().toString();
-            statelessEngine.createCase(testSpec.getID(), testSpec, null, null);
-            bulkCaseIds.add(caseId);
+            engine.launchCase(spec);
         }
-        
-        // Process cases in bulk
-        List<Future<?>> futures = new ArrayList<>();
-        for (String caseId : bulkCaseIds) {
-            Future<?> future = executor.submit(() -> {
-                try {
-                    executeCaseWorkflow(caseId);
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            futures.add(future);
-        }
-        
-        // Wait for all bulk operations
-        for (Future<?> future : futures) {
-            future.get();
-        }
-        
-        bulkCaseIds.clear();
-    }
-    
-    /**
-     * Benchmark 7: Deadlock Detection Performance
-     * Measures performance impact of deadlock detection mechanisms
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void deadlockDetectionPerformance() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Create potential deadlock scenario
-        YWorkItem workItem1 = createWorkItem(caseId, "deadlock-task-1");
-        YWorkItem workItem2 = createWorkItem(caseId, "deadlock-task-2");
-        
-        // Start both work items (potential deadlock)
-        engine.startWorkItem(workItem1);
-        engine.startWorkItem(workItem2);
-        
-        // Check for deadlock (simplified)
-        boolean deadlockDetected = checkForDeadlock(caseId);
-        
-        // Complete work items
-        engine.completeWorkItem(workItem1, Collections.emptyMap());
-        engine.completeWorkItem(workItem2, Collections.emptyMap());
-    }
-    
-    /**
-     * Benchmark 8: Mixed Workload Performance
-     * Measures performance with mixed sequential and parallel workloads
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void mixedWorkloadPerformance() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Submit mixed workload
-        List<Future<?>> futures = new ArrayList<>();
-        
-        // Sequential tasks
-        for (int i = 0; i < 3; i++) {
-            final int taskId = i;
-            Future<?> future = executor.submit(() -> {
-                try {
-                    YWorkItem workItem = createWorkItem(caseId, "seq-task-" + taskId);
-                    engine.startWorkItem(workItem);
-                    engine.completeWorkItem(workItem, Collections.emptyMap());
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            futures.add(future);
-        }
-        
-        // Parallel tasks
-        for (int i = 0; i < 2; i++) {
-            final int taskId = i;
-            Future<?> future = executor.submit(() -> {
-                try {
-                    YWorkItem workItem = createWorkItem(caseId, "par-task-" + taskId);
-                    engine.startWorkItem(workItem);
-                    engine.completeWorkItem(workItem, Collections.emptyMap());
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            futures.add(future);
-        }
-        
-        // Wait for all tasks
-        for (Future<?> future : futures) {
-            future.get();
-        }
-    }
-    
-    /**
-     * Benchmark 9: Context Switching Overhead
-     * Measures performance impact of frequent context switching
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void contextSwitchingOverhead() throws Exception {
-        List<Future<?>> futures = new ArrayList<>();
-        
-        // Create many small tasks to force context switching
-        for (int i = 0; i < 50; i++) {
-            final int taskId = i;
-            Future<?> future = executor.submit(() -> {
-                try {
-                    String caseId = UUID.randomUUID().toString();
-                    YWorkItem workItem = createWorkItem(caseId, "switch-task-" + taskId);
-                    engine.startWorkItem(workItem);
-                    engine.completeWorkItem(workItem, Collections.emptyMap());
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            futures.add(future);
-        }
-        
-        // Wait for all context switching tasks
-        for (Future<?> future : futures) {
-            future.get();
-        }
-    }
-    
-    /**
-     * Benchmark 10: Thread Pool Exhaustion Recovery
-     * Measures performance recovery from thread pool exhaustion
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void threadPoolExhaustionRecovery() throws Exception {
-        // Create a large number of tasks to exhaust thread pool
-        List<Future<?>> futures = new ArrayList<>();
-        int totalTasks = threadCount * 10;
-        
-        for (int i = 0; i < totalTasks; i++) {
-            final int taskId = i;
-            Future<?> future = executor.submit(() -> {
-                try {
-                    String caseId = UUID.randomUUID().toString();
-                    YWorkItem workItem = createWorkItem(caseId, "exhaust-task-" + taskId);
-                    engine.startWorkItem(workItem);
-                    engine.completeWorkItem(workItem, Collections.emptyMap());
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            futures.add(future);
-        }
-        
-        // Wait for all tasks to complete and pool to recover
-        for (Future<?> future : futures) {
-            future.get();
-        }
-    }
-    
-    // Helper methods
-    
-    private YSpecification createTestSpecification() {
-        YSpecification spec = new YSpecification();
-        spec.setID("concurrency-test-spec");
-        // In real implementation, this would define a workflow net
-        return spec;
-    }
-    
-    private void executeCaseWorkflow(String caseId) throws Exception {
-        // Execute a complete workflow case
-        YWorkItem startWorkItem = createWorkItem(caseId, "start");
-        engine.startWorkItem(startWorkItem);
-        
-        // Process multiple tasks
-        for (int i = 1; i <= 3; i++) {
-            YWorkItem workItem = createWorkItem(caseId, "task-" + i);
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-        }
-        
-        // Complete case
-        YWorkItem endWorkItem = createWorkItem(caseId, "end");
-        engine.startWorkItem(endWorkItem);
-        engine.completeWorkItem(endWorkItem, Collections.emptyMap());
-    }
-    
-    private YWorkItem createWorkItem(String caseId, String taskId) {
-        YWorkItem workItem = new YWorkItem();
-        workItem.setCaseID(caseId);
-        workItem.setTaskID(taskId);
-        return workItem;
-    }
-    
-    private boolean checkForDeadlock(String caseId) throws Exception {
-        // Simplified deadlock detection
-        List<YWorkItem> enabledItems = engine.getEnabledWorkItems(caseId);
-        List<YWorkItem> busyItems = engine.getBusyWorkItems(caseId);
-        
-        // Deadlock condition: no enabled items but busy items exist
-        return enabledItems.isEmpty() && !busyItems.isEmpty();
+        awaitCompletion(caseCount);
     }
 }

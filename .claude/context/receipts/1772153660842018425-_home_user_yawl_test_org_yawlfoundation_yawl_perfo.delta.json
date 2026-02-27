@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772153660842018425,
+  "timestamp_rfc": "2026-02-27T00:54:20.842018425Z",
+  "session_id": "f82378be-b0ec-4666-b3e0-c41d376176bf",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/ChaosEngineeringBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5848d8dc820606c2af0011bf125148ac6207db2fe1915dfed440521aa9ee20ad",
+  "delta_hash": "40ea63fbf8bc12e8947c166c7fff051edf15528da3be2f3f254d0fc3227d65b0",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "* <p>Tasks are launched via {@code Struc",
+        "change": "Added"
+      }
+    }
+  ]
+}

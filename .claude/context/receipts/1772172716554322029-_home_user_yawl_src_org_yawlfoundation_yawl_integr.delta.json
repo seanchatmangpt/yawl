@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172716554322029,
+  "timestamp_rfc": "2026-02-27T06:11:56.554322029Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/YawlMcpServer.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "fe2adee4e93edec48bf36fa1052acb19b190a5bbfc714368c37ba5d94b796ebd",
+  "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

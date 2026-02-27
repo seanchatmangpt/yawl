@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772170953220448633,
+  "timestamp_rfc": "2026-02-27T05:42:33.220448633Z",
+  "session_id": "6fff539d-2cdd-479b-9a13-8cf56c43ac9d",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/elements/data/YVariableOptionalTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f2ab62e5f6bdca58918c67c420f7aa314c2d7dd5f539e6d595794980bb6ce968",
+  "delta_hash": "b3842fddfacb7ad5c7a7c298485312850dd3559d7b954af3c5d985585752cfe6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "YVariableOptionalTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}

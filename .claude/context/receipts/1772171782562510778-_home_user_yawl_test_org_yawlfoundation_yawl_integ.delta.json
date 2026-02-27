@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772171782562510778,
+  "timestamp_rfc": "2026-02-27T05:56:22.562510778Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/A2ASkillBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "07d72b77e0912bd7fab834070bb16047b84ae2068903477a6f384c4d448fb9f4",
+  "delta_hash": "ef6ebd1eea7946f017dd5089afacb64f0a6de54b2e8cd69124412c7122836554",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public void testBenchmark",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    }
+  ]
+}

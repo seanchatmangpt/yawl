@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772212252891907505,
+  "timestamp_rfc": "2026-02-27T17:10:52.891907505Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/05-enterprise-use-cases.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "15bf46847da4d487c98e3f4ba41b8ffa53443b27f18e4e986910339bddec1a14",
+  "delta_hash": "0fd86f7235046ad1ee0891b7e938cbd074b3aee2c3d50825e6f4b1498f0b72d3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Chapter 5 — Enterprise Use Cases",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public void announceDeadlock(Set<YAWLSer",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    }
+  ]
+}

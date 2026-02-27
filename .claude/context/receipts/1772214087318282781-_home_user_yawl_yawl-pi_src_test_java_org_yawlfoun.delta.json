@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772214087318282781,
+  "timestamp_rfc": "2026-02-27T17:41:27.318282781Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngineTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3e91581251f4aac285aa8a7a92995bfb54e032e11a9edbe796c5392d0795dc32",
+  "delta_hash": "6d2d2164f5466ca990f5eb65dbe2684cf6824c1c3428972255ef7ac791580108",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    }
+  ]
+}

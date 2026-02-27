@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772164870372030619,
+  "timestamp_rfc": "2026-02-27T04:01:10.372030619Z",
+  "session_id": "8245231d-707d-4236-ba14-eec8cb5f9387",
+  "file_path": "/root/.claude/plans/curious-gliding-shore.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "95b9a5797190e65dd93bda93b1e6485a4a1c3de1a9ac1f05f1c37270b3ef7b9c",
+  "delta_hash": "711303562aaf682d462bbfca059bf419ad176573b425e19b4329fb72c3925246",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Research: Constructing Entire MCP/A2A/",
+        "change": "Added"
+      }
+    }
+  ]
+}

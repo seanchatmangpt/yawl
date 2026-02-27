@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772169703150900963,
+  "timestamp_rfc": "2026-02-27T05:21:43.150900963Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/root/.claude/plans/async-growing-lemur.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5bd49e43e172c8cca6422d922a601cf2b40fb7bd152c80f9c3742e9c38b686bc",
+  "delta_hash": "b2d71c1a21c746ebf81b9a46ad46c3a8bbc1e43e5fe804baffbf93a142793d97",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "record Tpot2Config(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "record Tpot2Result(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Review RlGenerationEngine + Wrap",
+        "change": "Added"
+      }
+    }
+  ]
+}

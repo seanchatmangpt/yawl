@@ -82,11 +82,9 @@ public class ProcessScheduler {
             }
         }
 
-        // Sort by duration (SPT)
+        // Sort by duration (SPT) - shortest first to minimise average completion time
         List<String> sorted = new ArrayList<>(taskIds);
-        sorted.sort(
-            Comparator.comparingLong(id -> estimatedDurationsMs.get(id))
-        );
+        sorted.sort(Comparator.comparingLong(id -> estimatedDurationsMs.get(id)));
 
         // Compute start times
         Map<String, Instant> startTimes = new LinkedHashMap<>();

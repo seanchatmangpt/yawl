@@ -126,8 +126,7 @@ public class ProcessConstraintModel {
                 PREFIX constraint: <http://yawl.org/constraints/>
                 SELECT ?predecessor
                 WHERE {
-                    ?predecessor constraint:precedes ?task .
-                    BIND(constraint:%s AS ?task)
+                    ?predecessor constraint:precedes <http://yawl.org/constraints/%s> .
                 }
                 """.formatted(taskName);
 

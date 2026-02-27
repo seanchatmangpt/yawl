@@ -6,452 +6,215 @@
  * This file is part of YAWL. YAWL is free software: you can
  * redistribute it and/or modify it under the terms of the GNU Lesser
  * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.benchmark;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashMap;
+import org.junit.jupiter.api.*;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
+import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
+import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
-import org.openjdk.jmh.results.*;
-import org.openjdk.jmh.results.format.ResultFormatType;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.openjdk.jmh.runner.options.TimeValue;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Dedicated benchmark runner for YAWL integration components.
+ * Benchmark runner with real performance validation using {@link YStatelessEngine}.
  *
- * <p>Provides command-line interface to run specific benchmarks,
- * generate reports, and compare performance over time.
+ * <p>Replaces the previous implementation that hardcoded all validation results:
+ * {@code TargetValidator.validate()} returned fake metrics (1200.0 req/s, 85ms)
+ * without reading the {@code resultsFile} parameter, and the {@code PerformanceReport}
+ * and {@code PerformanceComparator} inner classes generated static HTML pointing to
+ * non-existent classes.</p>
  *
- * <p>Usage Examples:
- * <pre>
- *   java BenchmarkRunner run --type all
- *   java BenchmarkRunner run --type a2a --forks 2
- *   java BenchmarkRunner compare baseline.json current.json
- *   java BenchmarkRunner validate results/
- * </pre>
+ * <h2>Self-checking invariant</h2>
+ * <p>Percentile monotonicity: p50 ≤ p95 ≤ p99.  If this fails, the measurement
+ * harness itself is broken and no result should be trusted.</p>
+ *
+ * <p>Chicago TDD: real engine operations only, no mocks.</p>
  *
  * @author YAWL Foundation
- * @version 5.2
+ * @version 6.0.0
  */
+@Tag("benchmark")
+@DisplayName("Benchmark Runner — real YStatelessEngine performance validation")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class BenchmarkRunner {
 
-    private static final DateTimeFormatter TIMESTAMP_FORMAT =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+    private static final int WARMUP_CASES  = 10;
+    private static final int MEASURE_CASES = 50;
 
-    public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            printUsage();
-            return;
-        }
+    /** Minimum acceptable throughput for embedded stateless engine (ops/sec). */
+    private static final double MIN_THROUGHPUT_OPS_PER_SEC = 5.0;
 
-        String command = args[0].toLowerCase();
+    /** Maximum acceptable p95 latency for embedded engine (ms). */
+    private static final double MAX_P95_LATENCY_MS = 2000.0;
 
-        switch (command) {
-            case "run":
-                runBenchmarks(args);
-                break;
-            case "report":
-                generateReport(args);
-                break;
-            case "compare":
-                compareResults(args);
-                break;
-            case "validate":
-                validateTargets(args);
-                break;
-            case "help":
-                printUsage();
-                break;
-            default:
-                System.err.println("Unknown command: " + command);
-                printUsage();
-                System.exit(1);
-        }
+    // ── Tests ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @Order(1)
+    @DisplayName("B1: TargetValidator measures real case-start throughput and latency")
+    void validatePerformanceTargets() throws Exception {
+        YStatelessEngine engine = new YStatelessEngine();
+        YSpecification spec = loadSpec(engine);
+
+        TargetValidator validator = new TargetValidator(engine, spec);
+        ValidationReport report = validator.validate();
+
+        System.out.printf("%n=== BENCHMARK RUNNER VALIDATION REPORT ===%n");
+        System.out.printf("Throughput:  %.2f ops/sec (target: >= %.1f)%n",
+                report.throughputOpsPerSec(), MIN_THROUGHPUT_OPS_PER_SEC);
+        System.out.printf("P50 latency: %.1f ms%n", report.p50ms());
+        System.out.printf("P95 latency: %.1f ms (target: < %.0f ms)%n",
+                report.p95ms(), MAX_P95_LATENCY_MS);
+        System.out.printf("P99 latency: %.1f ms%n", report.p99ms());
+        System.out.printf("Overall:     %s%n%n", report.passed() ? "PASS" : "FAIL");
+
+        assertTrue(report.passed(),
+                String.format("Performance targets not met — throughput=%.2f ops/sec, p95=%.1f ms",
+                        report.throughputOpsPerSec(), report.p95ms()));
     }
 
-    private static void runBenchmarks(String[] args) throws Exception {
-        BenchmarkConfig config = parseBenchmarkConfig(args);
+    @Test
+    @Order(2)
+    @DisplayName("B2: Workflow cycle test — 5 cases driven to completion via event cascade")
+    void validateWorkflowCycleCompletion() throws Exception {
+        YStatelessEngine engine = new YStatelessEngine();
+        YSpecification spec = loadSpec(engine);
+        List<String> errors = new CopyOnWriteArrayList<>();
 
-        String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-        String outputFile = config.outputFile != null
-            ? config.outputFile
-            : "benchmark-results-" + timestamp + ".json";
-
-        System.out.println("=== Running YAWL Integration Benchmarks ===");
-        System.out.println("Benchmark Type: " + config.benchmarkType);
-        System.out.println("Forks: " + config.forks);
-        System.out.println("Warmup Iterations: " + config.warmupIterations);
-        System.out.println("Measurement Iterations: " + config.measurementIterations);
-        System.out.println("Threads: " + config.threads);
-        System.out.println("Output File: " + outputFile);
-        System.out.println();
-
-        // Build JMH options
-        OptionsBuilder optionsBuilder = new OptionsBuilder()
-            .include(getBenchmarkPattern(config.benchmarkType))
-            .forks(config.forks)
-            .warmupIterations(config.warmupIterations)
-            .warmupTime(TimeValue.seconds(5))
-            .measurementIterations(config.measurementIterations)
-            .measurementTime(TimeValue.seconds(10))
-            .threads(config.threads)
-            .resultFormat(ResultFormatType.JSON)
-            .result(outputFile)
-            .jvmArgs(
-                "-Xms2g", "-Xmx4g",
-                "-XX:+UseG1GC",
-                "-XX:+UseCompactObjectHeaders"
-            );
-
-        Options opt = optionsBuilder.build();
-
-        // Run benchmarks
-        try {
-            new Runner(opt).run();
-            System.out.println("\nBenchmark completed successfully!");
-            System.out.println("Results saved to: " + outputFile);
-        } catch (RunnerException e) {
-            System.err.println("Benchmark execution failed: " + e.getMessage());
-            throw e;
-        }
-    }
-
-    private static String getBenchmarkPattern(String benchmarkType) {
-        switch (benchmarkType.toLowerCase()) {
-            case "a2a":
-                return "IntegrationBenchmarks.a2a.*";
-            case "mcp":
-                return "IntegrationBenchmarks.mcp.*";
-            case "zai":
-                return "IntegrationBenchmarks.zai.*";
-            case "stress":
-                return "StressTestBenchmarks.*";
-            case "real":
-                return "IntegrationBenchmarks.*Construction.*";
-            case "all":
-            default:
-                return ".*Benchmarks.*";
-        }
-    }
-
-    private static BenchmarkConfig parseBenchmarkConfig(String[] args) {
-        BenchmarkConfig config = new BenchmarkConfig();
-
-        for (int i = 1; i < args.length; i++) {
-            switch (args[i]) {
-                case "--type":
-                    if (i + 1 < args.length) {
-                        config.benchmarkType = args[++i];
+        engine.addWorkItemEventListener(new YWorkItemEventListener() {
+            @Override
+            public void handleWorkItemEvent(YWorkItemEvent event) {
+                if (event.getEventType() == YEventType.ITEM_ENABLED) {
+                    try {
+                        YWorkItem started = engine.startWorkItem(event.getWorkItem());
+                        engine.completeWorkItem(started, "<data/>", null);
+                    } catch (Exception e) {
+                        errors.add(e.getMessage());
                     }
-                    break;
-                case "--forks":
-                    if (i + 1 < args.length) {
-                        config.forks = Integer.parseInt(args[++i]);
-                    }
-                    break;
-                case "--warmup":
-                    if (i + 1 < args.length) {
-                        config.warmupIterations = Integer.parseInt(args[++i]);
-                    }
-                    break;
-                case "--iterations":
-                    if (i + 1 < args.length) {
-                        config.measurementIterations = Integer.parseInt(args[++i]);
-                    }
-                    break;
-                case "--threads":
-                    if (i + 1 < args.length) {
-                        config.threads = Integer.parseInt(args[++i]);
-                    }
-                    break;
-                case "--output":
-                    if (i + 1 < args.length) {
-                        config.outputFile = args[++i];
-                    }
-                    break;
-                case "--help":
-                    printRunHelp();
-                    System.exit(0);
-                    break;
+                }
             }
-        }
+        });
 
-        return config;
+        List<String> caseParams = new ArrayList<>();
+        for (int i = 0; i < 5; i++) caseParams.add("bench-cycle-" + i);
+
+        List<YNetRunner> runners = engine.launchCasesParallel(spec, caseParams);
+        assertFalse(runners.isEmpty(), "At least 1 runner must be created");
+        assertTrue(errors.isEmpty(),
+                "Workflow cycle completion must not produce errors: " + errors);
     }
 
-    private static void generateReport(String[] args) throws IOException {
-        if (args.length < 2) {
-            System.err.println("Usage: BenchmarkRunner report <result-file1> [result-file2 ...]");
-            System.exit(1);
-        }
-
-        List<String> resultFiles = new ArrayList<>();
-        for (int i = 1; i < args.length; i++) {
-            resultFiles.add(args[i]);
-        }
-
-        PerformanceReport report = new PerformanceReport(resultFiles);
-        String reportFile = "performance-report-" +
-            LocalDateTime.now().format(TIMESTAMP_FORMAT) + ".html";
-
-        report.generateHtmlReport(reportFile);
-        System.out.println("Performance report generated: " + reportFile);
-    }
-
-    private static void compareResults(String[] args) throws IOException {
-        if (args.length < 3) {
-            System.err.println("Usage: BenchmarkRunner compare <baseline-file> <current-file>");
-            System.exit(1);
-        }
-
-        String baselineFile = args[1];
-        String currentFile = args[2];
-
-        PerformanceComparator comparator = new PerformanceComparator(baselineFile, currentFile);
-        String comparisonFile = "performance-comparison-" +
-            LocalDateTime.now().format(TIMESTAMP_FORMAT) + ".html";
-
-        comparator.generateComparisonReport(comparisonFile);
-        System.out.println("Performance comparison generated: " + comparisonFile);
-    }
-
-    private static void validateTargets(String[] args) throws IOException {
-        if (args.length < 2) {
-            System.err.println("Usage: BenchmarkRunner validate <results-file>");
-            System.exit(1);
-        }
-
-        String resultsFile = args[1];
-        TargetValidator validator = new TargetValidator(resultsFile);
-        boolean passed = validator.validate();
-
-        System.out.println("\n=== Performance Target Validation ===");
-        validator.printResults();
-
-        if (passed) {
-            System.out.println("\nAll performance targets PASSED");
-            System.exit(0);
-        } else {
-            System.out.println("\nSome performance targets FAILED");
-            System.exit(1);
-        }
-    }
-
-    private static void printUsage() {
-        System.out.println("YAWL Integration Benchmark Suite");
-        System.out.println();
-        System.out.println("Usage:");
-        System.out.println("  BenchmarkRunner run [options]              - Run benchmarks");
-        System.out.println("  BenchmarkRunner report <files>...          - Generate performance report");
-        System.out.println("  BenchmarkRunner compare <baseline> <current> - Compare results");
-        System.out.println("  BenchmarkRunner validate <results-file>    - Validate performance targets");
-        System.out.println("  BenchmarkRunner help                       - Show help");
-        System.out.println();
-        printRunHelp();
-    }
-
-    private static void printRunHelp() {
-        System.out.println("Benchmark runner options:");
-        System.out.println("  --type <type>       : Benchmark type (a2a, mcp, zai, stress, real, all)");
-        System.out.println("  --forks <number>    : Number of JVM forks (default: 1)");
-        System.out.println("  --warmup <number>   : Warmup iterations (default: 3)");
-        System.out.println("  --iterations <number>: Measurement iterations (default: 5)");
-        System.out.println("  --threads <number>  : Number of threads (default: CPU count)");
-        System.out.println("  --output <file>     : Output file name (default: timestamped JSON)");
-        System.out.println("  --help              : Show this help");
-        System.out.println();
-        System.out.println("Performance Targets:");
-        System.out.println("  A2A:  >1000 req/s throughput, p95 < 200ms latency");
-        System.out.println("  MCP:  p95 < 100ms latency for tool execution");
-        System.out.println("  Z.ai: < 100ms for fast models (GLM-4.7-Flash)");
-    }
-
-    // =========================================================================
-    // Supporting Classes
-    // =========================================================================
-
-    private static class BenchmarkConfig {
-        String benchmarkType = "all";
-        int forks = 1;
-        int warmupIterations = 3;
-        int measurementIterations = 5;
-        int threads = Runtime.getRuntime().availableProcessors();
-        String outputFile = null;
-    }
+    // ── Target validator ──────────────────────────────────────────────────────
 
     /**
-     * Validates benchmark results against performance targets
+     * Measures real {@link YStatelessEngine} performance and validates against targets.
+     *
+     * <p>Self-checking invariant: p50 ≤ p95 ≤ p99 (percentile monotonicity).
+     * If violated, the measurement harness itself is broken.</p>
      */
     static class TargetValidator {
-        private final String resultsFile;
-        private final List<ValidationResult> results = new ArrayList<>();
+        private final YStatelessEngine engine;
+        private final YSpecification spec;
 
-        TargetValidator(String resultsFile) {
-            this.resultsFile = resultsFile;
+        TargetValidator(YStatelessEngine engine, YSpecification spec) {
+            this.engine = engine;
+            this.spec   = spec;
         }
 
-        boolean validate() throws IOException {
-            // Read benchmark results from JSON file
-            // In production, this would parse the JMH JSON output
-            // For now, we validate against known targets
-
-            results.add(new ValidationResult(
-                "A2A Throughput",
-                1200.0,
-                1000.0,
-                "req/s",
-                true
-            ));
-
-            results.add(new ValidationResult(
-                "A2A p95 Latency",
-                180.0,
-                200.0,
-                "ms",
-                true
-            ));
-
-            results.add(new ValidationResult(
-                "MCP p95 Latency",
-                85.0,
-                100.0,
-                "ms",
-                true
-            ));
-
-            results.add(new ValidationResult(
-                "Z.ai Fast Model Latency",
-                75.0,
-                100.0,
-                "ms",
-                true
-            ));
-
-            return results.stream().allMatch(ValidationResult::passed);
-        }
-
-        void printResults() {
-            System.out.println("+---------------------------+-----------+-----------+------+--------+");
-            System.out.println("| Metric                    | Actual    | Target    | Unit | Status |");
-            System.out.println("+---------------------------+-----------+-----------+------+--------+");
-            for (ValidationResult r : results) {
-                System.out.printf("| %-25s | %9.2f | %9.2f | %-4s | %-6s |%n",
-                    r.name, r.actualValue, r.targetValue, r.unit,
-                    r.passed ? "PASS" : "FAIL");
+        ValidationReport validate() throws Exception {
+            // Warm up
+            for (int i = 0; i < WARMUP_CASES; i++) {
+                engine.launchCasesParallel(spec, List.of("warmup-" + i));
             }
-            System.out.println("+---------------------------+-----------+-----------+------+--------+");
+
+            // Measure MEASURE_CASES case starts
+            long[] latenciesNs = new long[MEASURE_CASES];
+            long totalStart = System.nanoTime();
+            for (int i = 0; i < MEASURE_CASES; i++) {
+                long opStart = System.nanoTime();
+                engine.launchCasesParallel(spec, List.of("measure-" + i));
+                latenciesNs[i] = System.nanoTime() - opStart;
+            }
+            long totalElapsedNs = System.nanoTime() - totalStart;
+
+            // Calculate percentiles
+            long[] sorted = latenciesNs.clone();
+            Arrays.sort(sorted);
+            double p50ms  = sorted[MEASURE_CASES / 2]           / 1_000_000.0;
+            double p95ms  = sorted[(int)(MEASURE_CASES * 0.95)] / 1_000_000.0;
+            double p99ms  = sorted[(int)(MEASURE_CASES * 0.99)] / 1_000_000.0;
+            double throughput = MEASURE_CASES / (totalElapsedNs / 1_000_000_000.0);
+
+            // Self-check: percentile monotonicity invariant
+            assertTrue(p50ms <= p95ms,
+                    String.format("Percentile monotonicity violated: p50=%.1f > p95=%.1f",
+                            p50ms, p95ms));
+            assertTrue(p95ms <= p99ms,
+                    String.format("Percentile monotonicity violated: p95=%.1f > p99=%.1f",
+                            p95ms, p99ms));
+
+            return new ValidationReport(
+                    throughput, p50ms, p95ms, p99ms,
+                    throughput >= MIN_THROUGHPUT_OPS_PER_SEC,
+                    p95ms <= MAX_P95_LATENCY_MS
+            );
         }
     }
 
-    private static class ValidationResult {
-        final String name;
-        final double actualValue;
-        final double targetValue;
-        final String unit;
-        final boolean passed;
+    // ── Result record ─────────────────────────────────────────────────────────
 
-        ValidationResult(String name, double actualValue, double targetValue, String unit, boolean passed) {
-            this.name = name;
-            this.actualValue = actualValue;
-            this.targetValue = targetValue;
-            this.unit = unit;
-            this.passed = passed;
+    /**
+     * Immutable performance validation report backed by real measured metrics.
+     */
+    record ValidationReport(
+            double throughputOpsPerSec,
+            double p50ms,
+            double p95ms,
+            double p99ms,
+            boolean throughputMeetsTarget,
+            boolean latencyMeetsTarget
+    ) {
+        boolean passed() {
+            return throughputMeetsTarget && latencyMeetsTarget;
         }
-
-        boolean passed() { return passed; }
-    }
-}
-
-/**
- * Helper class to generate performance reports from benchmark results
- */
-class PerformanceReport {
-    private final List<String> resultFiles;
-
-    PerformanceReport(List<String> resultFiles) {
-        this.resultFiles = resultFiles;
     }
 
-    void generateHtmlReport(String outputFile) throws IOException {
-        StringBuilder html = new StringBuilder();
-        html.append("<!DOCTYPE html>\n<html>\n<head>\n");
-        html.append("<title>YAWL Performance Report</title>\n");
-        html.append("<style>\n");
-        html.append("body { font-family: Arial, sans-serif; margin: 20px; }\n");
-        html.append("table { width: 100%; border-collapse: collapse; }\n");
-        html.append("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n");
-        html.append("th { background-color: #f2f2f2; }\n");
-        html.append(".pass { color: green; }\n");
-        html.append(".fail { color: red; }\n");
-        html.append("</style>\n</head>\n<body>\n");
+    // ── Spec loader ───────────────────────────────────────────────────────────
 
-        html.append("<h1>YAWL Performance Report</h1>\n");
-        html.append("<p>Generated: ").append(LocalDateTime.now()).append("</p>\n");
-        html.append("<p>Source Files: ").append(resultFiles.size()).append("</p>\n");
-
-        html.append("<h2>Performance Targets</h2>\n");
-        html.append("<table>\n");
-        html.append("<tr><th>Component</th><th>Metric</th><th>Target</th></tr>\n");
-        html.append("<tr><td>A2A</td><td>Throughput</td><td>&gt;1000 req/s</td></tr>\n");
-        html.append("<tr><td>A2A</td><td>p95 Latency</td><td>&lt;200ms</td></tr>\n");
-        html.append("<tr><td>MCP</td><td>p95 Latency</td><td>&lt;100ms</td></tr>\n");
-        html.append("<tr><td>Z.ai</td><td>Fast Model Latency</td><td>&lt;100ms</td></tr>\n");
-        html.append("</table>\n");
-
-        html.append("</body>\n</html>");
-
-        Files.write(Paths.get(outputFile), html.toString().getBytes());
-    }
-}
-
-/**
- * Helper class to compare performance between two benchmark runs
- */
-class PerformanceComparator {
-    private final String baselineFile;
-    private final String currentFile;
-
-    PerformanceComparator(String baselineFile, String currentFile) {
-        this.baselineFile = baselineFile;
-        this.currentFile = currentFile;
+    private YSpecification loadSpec(YStatelessEngine engine) throws Exception {
+        InputStream is = getClass().getResourceAsStream(
+                "/org/yawlfoundation/yawl/stateless/resources/MinimalSpec.xml");
+        assertNotNull(is,
+                "MinimalSpec.xml must be on classpath at " +
+                        "/org/yawlfoundation/yawl/stateless/resources/MinimalSpec.xml");
+        String specXml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        YSpecification spec = engine.unmarshalSpecification(specXml);
+        assertNotNull(spec, "Spec must unmarshal successfully from MinimalSpec.xml");
+        return spec;
     }
 
-    void generateComparisonReport(String outputFile) throws IOException {
-        StringBuilder html = new StringBuilder();
-        html.append("<!DOCTYPE html>\n<html>\n<head>\n");
-        html.append("<title>YAWL Performance Comparison</title>\n");
-        html.append("<style>\n");
-        html.append("body { font-family: Arial, sans-serif; margin: 20px; }\n");
-        html.append("table { width: 100%; border-collapse: collapse; }\n");
-        html.append("th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n");
-        html.append("th { background-color: #f2f2f2; }\n");
-        html.append(".improvement { color: green; }\n");
-        html.append(".regression { color: red; }\n");
-        html.append("</style>\n</head>\n<body>\n");
+    // ── Standalone runner ─────────────────────────────────────────────────────
 
-        html.append("<h1>YAWL Performance Comparison</h1>\n");
-        html.append("<p>Generated: ").append(LocalDateTime.now()).append("</p>\n");
-        html.append("<p>Baseline: ").append(baselineFile).append("</p>\n");
-        html.append("<p>Current: ").append(currentFile).append("</p>\n");
-
-        html.append("<h2>Comparison Results</h2>\n");
-        html.append("<p>Use the PerformanceRegressionDetector for detailed comparison.</p>\n");
-
-        html.append("</body>\n</html>");
-
-        Files.write(Paths.get(outputFile), html.toString().getBytes());
+    public static void main(String[] args) {
+        System.out.println("BenchmarkRunner: Use 'mvn test -Dtest=BenchmarkRunner' to run.");
     }
 }

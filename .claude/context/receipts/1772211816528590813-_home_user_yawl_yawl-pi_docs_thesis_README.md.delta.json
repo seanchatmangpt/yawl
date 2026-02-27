@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772211816528590813,
+  "timestamp_rfc": "2026-02-27T17:03:36.528590813Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/README.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "623dc75bdb8830323645693a29325abaa510e5eb59244ad254a6553727697743",
+  "delta_hash": "21fd647385e9ad7be5f25fada9c4eddfffa9289ed911aadb11bdf2e43452440c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# The Co-location Thesis",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772161230043515943,
+  "timestamp_rfc": "2026-02-27T03:00:30.043515943Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/mossy-greeting-valiant-agent-a90676973e2697b9a.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "cd1f8831682430785160444b98fdbd9491d7df0db31039e43ae60a7bf3c679fd",
+  "delta_hash": "de0e25bc75cd680f531b4e7c5045336513b5ebfd5265dff64d96cd5c89fa6009",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Test File Implementation Plan",
+        "change": "Added"
+      }
+    }
+  ]
+}

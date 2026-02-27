@@ -87,6 +87,29 @@ public interface AdaptationCondition {
     }
 
     /**
+     * Creates a condition that matches events whose payload numeric value is below a threshold.
+     *
+     * <p>The payload value is retrieved via {@link ProcessEvent#numericPayload(String)}.
+     * If the key is not found or the value is not numeric, this condition returns false
+     * (does not throw).</p>
+     *
+     * @param key       the payload key to retrieve
+     * @param threshold the numeric threshold (exclusive)
+     * @return a condition matching events with payload[key] &lt; threshold
+     * @throws NullPointerException if key is null
+     */
+    static AdaptationCondition payloadBelow(String key, double threshold) {
+        Objects.requireNonNull(key, "key must not be null");
+        return event -> {
+            try {
+                return event.numericPayload(key) < threshold;
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        };
+    }
+
+    /**
      * Creates a condition that matches events whose payload value equals a target.
      *
      * <p>Equality is determined via {@link Objects#equals(Object, Object)}.

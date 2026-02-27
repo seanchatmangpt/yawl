@@ -25,6 +25,8 @@ import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
 import org.yawlfoundation.yawl.integration.processmining.PerformanceAnalyzer;
 import org.yawlfoundation.yawl.pi.PIException;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +53,7 @@ class ProcessKnowledgeBaseTest {
     void setUp() throws Exception {
         knowledgeBase = new ProcessKnowledgeBase(null);
         specId = new YSpecificationID("test_spec", "1.0", "http://test.spec");
-        testReport = createTestReport();
+        testReport = createTestReportViaReflection();
     }
 
     @Test
@@ -177,28 +179,114 @@ class ProcessKnowledgeBaseTest {
         });
     }
 
-    // Helper method to create a test report
-    private ProcessMiningFacade.ProcessMiningReport createTestReport() {
-        PerformanceAnalyzer.PerformanceResult perfResult = new PerformanceAnalyzer.PerformanceResult(
-            5,              // traceCount
-            50,             // eventCount
-            1000,           // avgFlowTimeMs
-            500,            // minFlowTimeMs
-            2000,           // maxFlowTimeMs
-            12.0            // throughputPerHour
-        );
+    // Helper method to create a test report using reflection (constructor is package-private)
+    private ProcessMiningFacade.ProcessMiningReport createTestReportViaReflection() throws Exception {
+        // Build minimal XES XML that PerformanceAnalyzer can parse
+        String xesXml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <log xes.version="1.0" xmlns="http://www.xes-standard.org/">
+              <trace concept:name="trace1">
+                <event>
+                  <string key="concept:name" value="A"/>
+                  <date key="time:timestamp" value="2026-02-27T10:00:00Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="B"/>
+                  <date key="time:timestamp" value="2026-02-27T10:01:40Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="C"/>
+                  <date key="time:timestamp" value="2026-02-27T10:03:10Z"/>
+                </event>
+              </trace>
+              <trace concept:name="trace2">
+                <event>
+                  <string key="concept:name" value="A"/>
+                  <date key="time:timestamp" value="2026-02-27T10:10:00Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="B"/>
+                  <date key="time:timestamp" value="2026-02-27T10:11:40Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="C"/>
+                  <date key="time:timestamp" value="2026-02-27T10:13:10Z"/>
+                </event>
+              </trace>
+              <trace concept:name="trace3">
+                <event>
+                  <string key="concept:name" value="A"/>
+                  <date key="time:timestamp" value="2026-02-27T10:20:00Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="B"/>
+                  <date key="time:timestamp" value="2026-02-27T10:21:40Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="C"/>
+                  <date key="time:timestamp" value="2026-02-27T10:23:10Z"/>
+                </event>
+              </trace>
+              <trace concept:name="trace4">
+                <event>
+                  <string key="concept:name" value="A"/>
+                  <date key="time:timestamp" value="2026-02-27T10:30:00Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="C"/>
+                  <date key="time:timestamp" value="2026-02-27T10:31:40Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="B"/>
+                  <date key="time:timestamp" value="2026-02-27T10:33:10Z"/>
+                </event>
+              </trace>
+              <trace concept:name="trace5">
+                <event>
+                  <string key="concept:name" value="A"/>
+                  <date key="time:timestamp" value="2026-02-27T10:40:00Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="C"/>
+                  <date key="time:timestamp" value="2026-02-27T10:41:40Z"/>
+                </event>
+                <event>
+                  <string key="concept:name" value="B"/>
+                  <date key="time:timestamp" value="2026-02-27T10:43:10Z"/>
+                </event>
+              </trace>
+            </log>
+            """;
 
+        // Use PerformanceAnalyzer to create the result
+        PerformanceAnalyzer analyzer = new PerformanceAnalyzer();
+        PerformanceAnalyzer.PerformanceResult perfResult = analyzer.analyze(xesXml);
+
+        // Create variant frequencies map
         Map<String, Long> variants = new HashMap<>();
         variants.put("A,B,C", 3L);
         variants.put("A,C,B", 2L);
 
-        return new ProcessMiningFacade.ProcessMiningReport(
-            "<xes version='1.0'></xes>",  // xesXml
-            null,                          // conformance (not required)
+        // ProcessMiningReport constructor is package-private, so use reflection
+        Class<?> reportClass = ProcessMiningFacade.ProcessMiningReport.class;
+        Constructor<?> constructor = reportClass.getDeclaredConstructor(
+            String.class,  // xesXml
+            Class.forName("org.yawlfoundation.yawl.integration.processmining.TokenReplayConformanceChecker$TokenReplayResult"),  // conformance
+            PerformanceAnalyzer.PerformanceResult.class,  // performance
+            Map.class,  // variantFrequencies
+            String.class,  // ocelJson
+            int.class,  // traceCount
+            String.class   // specId
+        );
+        constructor.setAccessible(true);
+
+        return (ProcessMiningFacade.ProcessMiningReport) constructor.newInstance(
+            xesXml,                        // xesXml
+            null,                          // conformance (not required for testing)
             perfResult,                    // performance
             variants,                      // variantFrequencies
-            "{}",                          // ocelJson
-            5,                             // traceCount
+            "{}",                          // ocelJson (minimal OCEL)
+            perfResult.traceCount,         // traceCount (from analyzer result)
             "test_spec"                    // specificationId
         );
     }
