@@ -1,9 +1,9 @@
 {
   "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
-  "started_at": "2026-02-27T06:06:27.431717472Z",
-  "ended_at": "2026-02-27T06:06:27.453359562Z",
-  "receipt_count": 86,
-  "chain_hash": "a59b7088487180e48c4870d377daef8214b78216ca4f2515fd55a7cfea4d960b",
+  "started_at": "2026-02-27T06:37:03.723603775Z",
+  "ended_at": "2026-02-27T06:37:03.837407483Z",
+  "receipt_count": 103,
+  "chain_hash": "18eb97cbf6223b676905ffb92df124af3ccb02aa8f9d403c2dfdc2bc8f7bc6df",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -5386,6 +5386,763 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172532443885001,
+      "timestamp_rfc": "2026-02-27T06:08:52.443885001Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/AdaptationSkillTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9d3936801569a76ae7de4ae5783f7c7168edd898189cb58e885675e27b2377cb",
+      "delta_hash": "538169dac095357fbdfa12d8c030a0e2a87b7e1006dc696f6ab8e3edcf00dc2d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private AdaptationSkill skill;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "AdaptationSkillTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172598637974162,
+      "timestamp_rfc": "2026-02-27T06:09:58.637974162Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecifications.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "784d7d53fa947c3c9d571e9a2aaa64fffbe061b571a28b57b018964b7dcdbed1",
+      "delta_hash": "d52b323fb39cb09f2d542fc84aa58e3311ba49aed0f545419bf36d7000d156d8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YawlConformanceToolSpecifications",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final FootprintExtractor extract",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private double jaccardSimilarity(java.ut",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private String buildConformanceResponse(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "io",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172627508779289,
+      "timestamp_rfc": "2026-02-27T06:10:27.508779289Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/a2a/skills/ConformanceCheckSkill.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "56ad4688415636f90f01b30024cd281da30cc01e5d0c19a036e94b12bb40f0d5",
+      "delta_hash": "d891ad82658b28d8dcd553d3d63188c31a086be540310b7d4cf89522f35ab994",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Set",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final FootprintExtractor extract",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "SkillResult",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ConformanceCheckSkill",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "double",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172672328081431,
+      "timestamp_rfc": "2026-02-27T06:11:12.328081431Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecificationsTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a0985c27b86aeb287d88db54b31a19a6099c77adb7bc946952aa0f8973167f96",
+      "delta_hash": "63aec601a244de12cad9052ce3c8bf4e1deed5257812f2096a229213412097af",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String SEQUENCE_ABC",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "io",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String XOR_AB = \"\"\"",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String SEQUENCE_AB ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private YawlConformanceToolSpecification",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "YawlConformanceToolSpecificationsTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String PARALLEL_AB ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172709416667463,
+      "timestamp_rfc": "2026-02-27T06:11:49.416667463Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/ConformanceCheckSkillTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1631c4cc2fb20eff7e3043c70041859e776b3976b8bea4afb1753a558f719d8a",
+      "delta_hash": "a068d1b612419522b5a6cd9aeab23b77f85aaa956986a372d93f1a1070fca7af",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String SEQUENCE_ABC",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String PARALLEL_AB ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ConformanceCheckSkillTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String XOR_AB = \"\"\"",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private ConformanceCheckSkill skill;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String SEQUENCE_AB ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172716554322029,
+      "timestamp_rfc": "2026-02-27T06:11:56.554322029Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/YawlMcpServer.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "fe2adee4e93edec48bf36fa1052acb19b190a5bbfc714368c37ba5d94b796ebd",
+      "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172724702345516,
+      "timestamp_rfc": "2026-02-27T06:12:04.702345516Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/YawlMcpServer.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "eb5002b9920ce66ba4ba27c3aa69898426d39929379829422416aeb4b297d859",
+      "delta_hash": "53a7fd73b7f8184df9240da73950d2f3dafb776363678d143104db9cfd71d9a9",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "// GraalPy workflow tools",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172853271692389,
+      "timestamp_rfc": "2026-02-27T06:14:13.271692389Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/temporal/TemporalForkEngine.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d5a1062330f3a4e0f3efa1e0009f882e81d9bc393a0b3e298855992e3e2a1e18",
+      "delta_hash": "da5df6c27d3f40c04d6e9e4c952e8313031b7de4d7ddd63adb6e8088f22179ef",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public static TemporalForkEngine forInte",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172860055913335,
+      "timestamp_rfc": "2026-02-27T06:14:20.055913335Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/a2a/skills/TemporalForkSkill.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "838eac9cd5421d400e41a00ecb400704508ca4e7a6ff10e56a2a5f5d6dd21512",
+      "delta_hash": "923019339a965ac2d16379105c196ab0dde432974821ee6a1a1e1f3d84159013",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "TemporalForkEngine engine = TemporalFork",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172871239466156,
+      "timestamp_rfc": "2026-02-27T06:14:31.239466156Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlAdaptationToolSpecifications.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "25218e851e6ce1d9fcd33a7944ddabf8bc0d010e98b5d6d2cf2fd4d1e4b98237",
+      "delta_hash": "57557a4028c21ada686cdfe8e73313b0105486564e5c6c8df75702556adc2b27",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172906446997386,
+      "timestamp_rfc": "2026-02-27T06:15:06.446997386Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlAdaptationToolSpecifications.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5a8a7be3208a901c094bc292e1267e9c4ca3dd74614f59f79cdf5cde46384322",
+      "delta_hash": "663b7d56c2d44c731c0b95b081e212c5bf4a4aad95b3b2cb121440c4dac5799c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172914130666924,
+      "timestamp_rfc": "2026-02-27T06:15:14.130666924Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlAdaptationToolSpecifications.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b37da6e98aa2227615bf6968f4bb49efdff0ba055939aa123414e1aded4086a5",
+      "delta_hash": "663b7d56c2d44c731c0b95b081e212c5bf4a4aad95b3b2cb121440c4dac5799c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172924986883688,
+      "timestamp_rfc": "2026-02-27T06:15:24.986883688Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecifications.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f5ca65db4395e57425aa13906d70a82a125b692e0656ef6258cea1d55368edad",
+      "delta_hash": "663b7d56c2d44c731c0b95b081e212c5bf4a4aad95b3b2cb121440c4dac5799c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172935167682577,
+      "timestamp_rfc": "2026-02-27T06:15:35.167682577Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecifications.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6e8f7c0f4d947d84d1d0fe0a84e1df4c430ae6f3244c1892a4004c0720ae1133",
+      "delta_hash": "663b7d56c2d44c731c0b95b081e212c5bf4a4aad95b3b2cb121440c4dac5799c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772173217059192264,
+      "timestamp_rfc": "2026-02-27T06:20:17.059192264Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/mcp/spec/YawlAdaptationToolSpecificationsTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1c862d47d072b5e9c7c90bd5088bdbd2f6358890e7ee2e5638db854a6bbef78b",
+      "delta_hash": "dbe8c88d1ca7b3e5a05127e13715de6a1309217efa094213e5cd03700a5dae60",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private McpSchema.CallToolResult invoke(",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772173230359045723,
+      "timestamp_rfc": "2026-02-27T06:20:30.359045723Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecificationsTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "37aa7d111943916d077f48fb28860894a46679333ae5dbc710af5d447a330cb9",
+      "delta_hash": "20563290477795542fa6d6c3803efdf820e50efdf82b0c668d3089e3cbea85f7",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "invoke(tool,",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772173241642371267,
+      "timestamp_rfc": "2026-02-27T06:20:41.642371267Z",
+      "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecificationsTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f872d39a818c9574bda726654435cdaf04e8668adf2a2e7fcab73d514b453504",
+      "delta_hash": "d2e9c6e77c60de45b3995c3b4be621cc01d086e029c370fc97ab64cead28d81f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private McpSchema.CallToolResult invoke(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
             "change": "Added"
           }
         }

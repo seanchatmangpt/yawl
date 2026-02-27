@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772173217059192264,
+  "timestamp_rfc": "2026-02-27T06:20:17.059192264Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/mcp/spec/YawlAdaptationToolSpecificationsTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1c862d47d072b5e9c7c90bd5088bdbd2f6358890e7ee2e5638db854a6bbef78b",
+  "delta_hash": "dbe8c88d1ca7b3e5a05127e13715de6a1309217efa094213e5cd03700a5dae60",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "McpServerFeatures",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private McpSchema.CallToolResult invoke(",
+        "change": "Added"
+      }
+    }
+  ]
+}

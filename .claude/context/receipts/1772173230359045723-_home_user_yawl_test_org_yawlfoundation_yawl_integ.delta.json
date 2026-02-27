@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772173230359045723,
+  "timestamp_rfc": "2026-02-27T06:20:30.359045723Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecificationsTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "37aa7d111943916d077f48fb28860894a46679333ae5dbc710af5d447a330cb9",
+  "delta_hash": "20563290477795542fa6d6c3803efdf820e50efdf82b0c668d3089e3cbea85f7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "invoke(tool,",
+        "change": "Added"
+      }
+    }
+  ]
+}

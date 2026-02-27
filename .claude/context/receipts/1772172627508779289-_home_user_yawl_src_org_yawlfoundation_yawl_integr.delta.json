@@ -1,0 +1,103 @@
+{
+  "timestamp_ns": 1772172627508779289,
+  "timestamp_rfc": "2026-02-27T06:10:27.508779289Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/a2a/skills/ConformanceCheckSkill.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "56ad4688415636f90f01b30024cd281da30cc01e5d0c19a036e94b12bb40f0d5",
+  "delta_hash": "d891ad82658b28d8dcd553d3d63188c31a086be540310b7d4cf89522f35ab994",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Set",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "int",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final FootprintExtractor extract",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "SkillResult",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ConformanceCheckSkill",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "List",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "double",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

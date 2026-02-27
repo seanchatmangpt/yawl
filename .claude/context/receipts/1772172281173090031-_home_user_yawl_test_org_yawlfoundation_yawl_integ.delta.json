@@ -1,0 +1,75 @@
+{
+  "timestamp_ns": 1772172281173090031,
+  "timestamp_rfc": "2026-02-27T06:04:41.173090031Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/TemporalForkSkillTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0b7ee1901d9cfbd6b39ebcbe332ea023c5c0bd45d398fc485101db4f43c8a148",
+  "delta_hash": "5cd2fd1a2ce64060c18cb1c81c4d3bed1aa416c338cae608c7fdd36101007627",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@SuppressWarnings",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "TemporalForkSkillTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private TemporalForkSkill skill;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}

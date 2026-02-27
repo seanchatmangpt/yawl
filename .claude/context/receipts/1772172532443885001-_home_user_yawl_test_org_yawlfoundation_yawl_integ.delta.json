@@ -1,0 +1,68 @@
+{
+  "timestamp_ns": 1772172532443885001,
+  "timestamp_rfc": "2026-02-27T06:08:52.443885001Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/AdaptationSkillTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9d3936801569a76ae7de4ae5783f7c7168edd898189cb58e885675e27b2377cb",
+  "delta_hash": "538169dac095357fbdfa12d8c030a0e2a87b7e1006dc696f6ab8e3edcf00dc2d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private AdaptationSkill skill;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "AdaptationSkillTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}
