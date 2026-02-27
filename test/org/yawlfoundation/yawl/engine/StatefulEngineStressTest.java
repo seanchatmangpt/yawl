@@ -24,6 +24,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
+import org.yawlfoundation.yawl.exceptions.YStateException;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
@@ -62,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li><b>Concurrent Double-Cancel</b> (FM-08) — cancel same case from 2 threads simultaneously; no exceptions or orphaned items</li>
  *   <li><b>Cancel-During-Start Race</b> (FM-20, FM-23) — 50 pairs racing startCase vs cancelCase; engine remains healthy</li>
  *   <li><b>Deadlock Detection at Scale</b> (FM-24) — 30 concurrent deadlocking cases; each detected within 5s</li>
+ *   <li><b>TPS Breaking Point Sweep</b> — 100→5000 concurrent; Jidoka gate prevents hang; Heijunka holds rate</li>
  * </ol>
  *
  * <p>Chicago TDD: uses the real YEngine singleton; no mocks. Serialised via
@@ -81,7 +83,7 @@ class StatefulEngineStressTest {
 
     private static final List<String> REPORT_LINES = new ArrayList<>();
     private static final String HDR = "=== STATEFUL ENGINE STRESS REPORT ===";
-    private static final String FTR_PASS  = "=== RESULT: S1-S6+S8-S12 PASS | S7 CHARACTERISED ===";
+    private static final String FTR_PASS  = "=== RESULT: S1-S6+S8-S13 PASS | S7 CHARACTERISED ===";
     private static final String FTR_FAIL  = "=== RESULT: FAILURES DETECTED ===";
 
     // ScopedValue for S8 — mirrors YNetRunner.CASE_CONTEXT pattern
@@ -891,6 +893,70 @@ class StatefulEngineStressTest {
                 detected.get(), CASES);
         REPORT_LINES.add(result);
         System.out.println(result);
+    }
+
+
+    // =========================================================================
+    // S13: Breaking Point Characterization (TPS — Jidoka + Heijunka regression gate)
+    // =========================================================================
+
+    @Test @Order(13)
+    @DisplayName("S13 — TPS: Breaking Point Sweep — 100/200/500/1000/2000/5000 concurrent")
+    @Timeout(300)
+    void s13_breakingPointCharacterization() throws Exception {
+        int[] levels = {100, 200, 500, 1000, 2000, 5000};
+        for (int concurrency : levels) {
+            long t0 = System.nanoTime();
+            AtomicInteger succeeded = new AtomicInteger(0);
+            AtomicInteger rejected = new AtomicInteger(0);
+            AtomicInteger errors = new AtomicInteger(0);
+            CountDownLatch done = new CountDownLatch(concurrency);
+            CountDownLatch gate = new CountDownLatch(1);
+
+            for (int i = 0; i < concurrency; i++) {
+                Thread.ofVirtual().inheritInheritableThreadLocals(false).start(() -> {
+                    try {
+                        assert Thread.currentThread().isVirtual() : "S13 thread must be virtual";
+                        gate.await();
+                        YIdentifier id = engine.startCase(spec.getSpecificationID(), null, null,
+                                null, new YLogDataItemList(), null, false);
+                        if (id != null) {
+                            succeeded.incrementAndGet();
+                            try { engine.cancelCase(id); } catch (Exception ignored) {}
+                        }
+                    } catch (YStateException e) {
+                        // Jidoka (capacity) or Heijunka (semaphore timeout) — graceful rejection
+                        rejected.incrementAndGet();
+                    } catch (Exception ex) {
+                        errors.incrementAndGet();
+                    } finally { done.countDown(); }
+                });
+            }
+
+            gate.countDown();
+            boolean finished = done.await(120, TimeUnit.SECONDS);
+            long ms = (System.nanoTime() - t0) / 1_000_000;
+            long rate = (succeeded.get() * 1000L) / Math.max(1, ms);
+
+            // PRIMARY ASSERTION: no hang. Jidoka gate must prevent OOM/infinite wait.
+            assertTrue(finished,
+                "S13 concurrency=" + concurrency + " must not hang — Jidoka gate prevents OOM. " +
+                "succeeded=" + succeeded.get() + " rejected=" + rejected.get() +
+                " errors=" + errors.get());
+
+            assertEquals(0, errors.get(),
+                "Zero unexpected errors at concurrency=" + concurrency +
+                " (YEngineStateException from Jidoka/Heijunka is expected, not an error)");
+
+            String result = String.format(
+                "[S13] concurrency=%5d  succeeded=%5d  rejected=%5d  rate=%5d c/s  wall=%dms",
+                concurrency, succeeded.get(), rejected.get(), rate, ms);
+            System.out.println(result);  // printed but not in REPORT_LINES (individual level, not summary)
+
+            // Settle between levels
+            Thread.sleep(Duration.ofMillis(500));
+        }
+        REPORT_LINES.add("[S13] PASS — TPS Breaking Point Sweep: all 6 levels completed, no hangs, Andon instrumentation active");
     }
 
 

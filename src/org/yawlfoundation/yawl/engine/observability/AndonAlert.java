@@ -165,6 +165,29 @@ public final class AndonAlert {
     }
 
     /**
+     * Creates a P1 HIGH alert for resource exhaustion (capacity, semaphore timeout, etc.).
+     *
+     * @param resource the exhausted resource name (e.g., "engine", "startSemaphore")
+     * @param operation the operation that was rejected (e.g., "startCase")
+     * @param detail human-readable description of the exhaustion condition
+     * @return the Andon alert
+     */
+    public static AndonAlert resourceExhaustion(String resource, String operation, String detail) {
+        Map<String, Object> ctx = new ConcurrentHashMap<>();
+        ctx.put("resource", resource);
+        ctx.put("operation", operation);
+        ctx.put("detail", detail);
+
+        return new AndonAlert(
+            Level.P1_HIGH,
+            CATEGORY_RESOURCE_EXHAUSTION,
+            "Resource exhaustion [" + resource + "." + operation + "]: " + detail,
+            ctx,
+            null
+        );
+    }
+
+    /**
      * Creates a P2 MEDIUM alert for elevated lock contention.
      *
      * @param caseId the case identifier experiencing contention
