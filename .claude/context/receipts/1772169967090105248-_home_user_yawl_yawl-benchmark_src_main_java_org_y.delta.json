@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772169967090105248,
+  "timestamp_rfc": "2026-02-27T05:26:07.090105248Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/YAWLEngineBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "21ad767a5de8166b438855b16dc1ec448f31685c986f901b20769e0fb80898b0",
+  "delta_hash": "3dfc0ae378060b58a888067b35fa613905f214c204a2818878c275b2d20fc0f1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@OutputTimeUnit",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@BenchmarkMode",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Benchmark",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    }
+  ]
+}

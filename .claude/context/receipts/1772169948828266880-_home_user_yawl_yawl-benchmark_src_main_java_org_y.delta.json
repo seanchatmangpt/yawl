@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772169948828266880,
+  "timestamp_rfc": "2026-02-27T05:25:48.828266880Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/YAWLEngineBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "39d7411f773f20092b7fa6879fe4fc94fcbc430f5e4438b36cd87d3244d7484b",
+  "delta_hash": "e3892e8e5b1dc9ed0dd1a2c6b617986bef5f65eb16c12e770d5dba87895264cb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}
