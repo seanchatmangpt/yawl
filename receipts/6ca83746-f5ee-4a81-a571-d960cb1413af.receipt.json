@@ -1,9 +1,9 @@
 {
   "session_id": "6ca83746-f5ee-4a81-a571-d960cb1413af",
-  "started_at": "2026-02-27T17:29:17.169698215Z",
-  "ended_at": "2026-02-27T17:29:17.356935669Z",
-  "receipt_count": 162,
-  "chain_hash": "d6c7fde9e349bd187816e075e89f5d56836ff1404075d1c797e18bef7b44b9fb",
+  "started_at": "2026-02-27T17:56:28.889175876Z",
+  "ended_at": "2026-02-27T17:56:29.040697732Z",
+  "receipt_count": 163,
+  "chain_hash": "e4171f67ada4129aca91049c3ed3f7ec024c3d3c192d907a170484854b1b2416",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -8699,6 +8699,25 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "assertEquals",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214795046107322,
+      "timestamp_rfc": "2026-02-27T17:53:15.046107322Z",
+      "session_id": "6ca83746-f5ee-4a81-a571-d960cb1413af",
+      "file_path": "/root/.claude/plans/humming-dancing-pelican.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "cb116171f083159ee25a8733fa2b21507c13a199c6a40fe88c25af27ef09c900",
+      "delta_hash": "1453c81c6967d6349da7cc11203796e88d3b6e189c68a072063082e655927f5b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Plan: Fortune 500 at Million-Agent Sca",
             "change": "Added"
           }
         }
