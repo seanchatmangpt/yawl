@@ -18,6 +18,7 @@ Work through these in order for the best introduction to YAWL:
 | [06](06-write-a-custom-work-item-handler.md) | Custom Work Item Handler | Extend the engine with domain-specific task execution logic |
 | [07](07-docker-dev-environment.md) | Docker Dev Environment | Set up a fully containerized local development stack |
 | [08](08-mcp-agent-integration.md) | MCP Agent Integration | Connect an LLM-powered AI agent to YAWL via the MCP server |
+| [11](11-scale-to-million-cases.md) | Scale to 1M Cases | Deploy and verify a million-case YAWL cluster end-to-end |
 
 ## Topic-Specific Entry Points
 

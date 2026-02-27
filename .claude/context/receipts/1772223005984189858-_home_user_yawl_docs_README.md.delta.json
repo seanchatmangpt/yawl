@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772223005984189858,
+  "timestamp_rfc": "2026-02-27T20:10:05.984189858Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/README.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "47192ecf08fef8eef82b9ba7ceef2f48b7e1199287c217138f8730477307da9e",
+  "delta_hash": "0f30bfce9f1740c0dd0d2685f61e89c8c54a8081aa11130ff4f25db164fbb650",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "| 07 | [Docker Dev Environment]",
+        "change": "Added"
+      }
+    }
+  ]
+}

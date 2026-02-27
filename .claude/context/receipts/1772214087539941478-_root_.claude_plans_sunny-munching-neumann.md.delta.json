@@ -1,0 +1,89 @@
+{
+  "timestamp_ns": 1772214087539941478,
+  "timestamp_rfc": "2026-02-27T17:41:27.539941478Z",
+  "session_id": "82367c69-4c64-4fc1-a69e-c04e9d126361",
+  "file_path": "/root/.claude/plans/sunny-munching-neumann.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "8f14def097f6bcefee61732982bec33dcb1401b22c536dfcfbbd163ed1eeb0a2",
+  "delta_hash": "dd4398636d1fbba3547dde263ab9b8e727135c85c3a1ccdb9e4c931c0f825828",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "YNetRunner",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Scale YAWL to 1,000,000 Active C",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "existing",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final LinkedHashMap<YIdentifier,",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final ConcurrentHashMap<YIdentif",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final EventReplayer _replayer;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final SnapshotRepository _snapsh",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "YNetRunnerRepository",
+        "change": "Added"
+      }
+    }
+  ]
+}

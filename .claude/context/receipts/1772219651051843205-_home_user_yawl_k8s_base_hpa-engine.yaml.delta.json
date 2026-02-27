@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219651051843205,
+  "timestamp_rfc": "2026-02-27T19:14:11.051843205Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/k8s/base/hpa-engine.yaml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d83b916cd5a18fd6f9cd31141bdb49173a76fa7ccc72ba883b7c6378fc5c0a0c",
+  "delta_hash": "450c63453cfca4f90d7a2c7a32d05ac473aa23f3a71fe70fcb3602f978969ea4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "apiVersion: autoscaling/v2",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772219545057792160,
+  "timestamp_rfc": "2026-02-27T19:12:25.057792160Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YCaseNbrStore.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c0ee5c27e30d8b416acf75c5d2b0598cbe9ec964c40e2c2458524df37f9972cc",
+  "delta_hash": "e3892e8e5b1dc9ed0dd1a2c6b617986bef5f65eb16c12e770d5dba87895264cb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

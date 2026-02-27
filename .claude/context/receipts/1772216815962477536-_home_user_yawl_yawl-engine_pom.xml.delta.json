@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772216815962477536,
+  "timestamp_rfc": "2026-02-27T18:26:55.962477536Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "473c31b1eaf7b40a66bae8c0479179b80ef3499879067a5f6972aed7629ff005",
+  "delta_hash": "3612a8ed235b990839317f0109364c930f6d93d8587244feb59052ccac825cfa",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<!-- VirtualThreadMetricsTest uses unava",
+        "change": "Added"
+      }
+    }
+  ]
+}

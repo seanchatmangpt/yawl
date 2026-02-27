@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222616041372087,
+  "timestamp_rfc": "2026-02-27T20:03:36.041372087Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/how-to/operations/tune-hpa-for-cases.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "fd88a4393a16899edc3a3531aa47e32a6b5a99b8a0dde468229591d14e51e3ea",
+  "delta_hash": "906384a00d54489bc8be78a5118fae35038aecce38e7d9c5db5efda317cd1ebb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Tune Kubernetes HPA for Workflo",
+        "change": "Added"
+      }
+    }
+  ]
+}

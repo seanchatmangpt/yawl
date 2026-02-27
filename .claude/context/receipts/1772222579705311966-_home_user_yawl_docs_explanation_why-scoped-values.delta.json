@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772222579705311966,
+  "timestamp_rfc": "2026-02-27T20:02:59.705311966Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/explanation/why-scoped-values.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "01330ee63c6c2cb40c6aa4d13992b875958e6a364cb396e9abd4290061eb3474",
+  "delta_hash": "2afca25c825f8d599f709ba7857db8987cffc8115f073854457e05e0dcc81ac7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Why YAWL Uses ScopedValue Instead of T",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}

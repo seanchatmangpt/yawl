@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772219553266767000,
+  "timestamp_rfc": "2026-02-27T19:12:33.266767Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YCaseNbrStore.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "44952edc587b5979616599beee51d7c68cfe0275f7784d9e9b7e7bd13043b80d",
+  "delta_hash": "cb870d5c596cae942ebd7e2456aa7604ce6ace19cc2729920db2fe1b109c1b32",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    }
+  ]
+}

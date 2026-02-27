@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772217891278914900,
+  "timestamp_rfc": "2026-02-27T18:44:51.278914900Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "db50c6d43ea33bd4b6b56a3b1e2497271c55fb3a252678d5685db444acaa9a24",
+  "delta_hash": "7cc7bd3a8cc76100d2e3be5494808369d961c5c0d5c3ad277539d4ce61e217de",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<!-- YWorkItemSoundnessTest references A",
+        "change": "Added"
+      }
+    }
+  ]
+}

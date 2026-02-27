@@ -61,6 +61,7 @@ import io.opentelemetry.context.Scope;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -134,6 +135,10 @@ public class YEngine implements InterfaceADesign,
 
     // MULTI-TENANT ISOLATION - Tenant context for current request/thread
     private static final ThreadLocal<TenantContext> _currentTenant = new ThreadLocal<>();
+
+    // FLOW API EVENT BUS - default in-JVM pub/sub (Phase 1)
+    private final org.yawlfoundation.yawl.engine.spi.WorkflowEventBus _eventBus =
+            new org.yawlfoundation.yawl.engine.spi.FlowWorkflowEventBus();
 
     /********************************************************************************/
 
@@ -282,8 +287,58 @@ public class YEngine implements InterfaceADesign,
         _currentTenant.remove();
     }
 
+    // ─── ScopedValue bridge methods (Java 25 Phase 0a) ───────────────────────
+
+    /**
+     * Runs the given action with the specified tenant context bound via ScopedValue.
+     * Delegates to {@link ScopedTenantContext#runWithTenant(TenantContext, Runnable)}.
+     *
+     * @param ctx  the tenant context; may be null
+     * @param work the action to run
+     */
+    public static void runWithTenant(TenantContext ctx, Runnable work) {
+        ScopedTenantContext.runWithTenant(ctx, work);
+    }
+
+    /**
+     * Runs the given action with the specified tenant context bound via ScopedValue.
+     * Alias for {@link #runWithTenant(TenantContext, Runnable)}.
+     *
+     * @param ctx  the tenant context; may be null
+     * @param work the action to run
+     */
+    public static void executeWithTenant(TenantContext ctx, Runnable work) {
+        ScopedTenantContext.runWithTenant(ctx, work);
+    }
+
+    /**
+     * Calls the given callable with the specified tenant context bound via ScopedValue.
+     * Delegates to {@link ScopedTenantContext#runWithTenant(TenantContext, Callable)}.
+     *
+     * @param <T>  the return type of the callable
+     * @param ctx  the tenant context; may be null
+     * @param work the callable to execute within the tenant scope
+     * @return the result of the callable
+     */
+    public static <T> T executeWithTenant(TenantContext ctx, Callable<T> work) {
+        return ScopedTenantContext.runWithTenant(ctx, work);
+    }
+
+    /**
+     * Executes multiple callables in parallel, all sharing the same tenant context.
+     * Delegates to {@link ScopedTenantContext#runParallel(TenantContext, Callable[])}.
+     *
+     * @param ctx   the tenant context; may be null
+     * @param tasks the tasks to execute in parallel
+     * @return results of all tasks in input order
+     */
+    public static String[] executeParallel(TenantContext ctx, Callable<?>[] tasks) {
+        return ScopedTenantContext.runParallel(ctx, tasks);
+    }
+
     /**
      * Validates that the current tenant has access to a case.
+     * Throws YAuthenticationException if not authorized.
      * Throws YAuthenticationException if not authorized.
      *
      * @param caseID The case identifier to check
@@ -509,6 +564,16 @@ public class YEngine implements InterfaceADesign,
 
     public YAnnouncer getAnnouncer() {
         return _announcer;
+    }
+
+    /**
+     * Returns the in-JVM workflow event bus (Phase 1: Flow API pub/sub).
+     * External adapters (Kafka etc.) can be substituted via ServiceLoader at startup.
+     *
+     * @return the active {@link org.yawlfoundation.yawl.engine.spi.WorkflowEventBus}
+     */
+    public org.yawlfoundation.yawl.engine.spi.WorkflowEventBus getEventBus() {
+        return _eventBus;
     }
 
     public void setEngineStatus(Status status) {
@@ -834,9 +899,9 @@ public class YEngine implements InterfaceADesign,
     }
 
 
-    protected YIdentifier startCase(YSpecificationID specID, String caseParams,
-                                    URI completionObserver, String caseID,
-                                    YLogDataItemList logData, String serviceRef, boolean delayed)
+    public YIdentifier startCase(YSpecificationID specID, String caseParams,
+                                 URI completionObserver, String caseID,
+                                 YLogDataItemList logData, String serviceRef, boolean delayed)
             throws YStateException, YDataStateException, YQueryException, YPersistenceException {
 
         // TPS FIX A — ANDON PULL CORD: refuse if engine is paused

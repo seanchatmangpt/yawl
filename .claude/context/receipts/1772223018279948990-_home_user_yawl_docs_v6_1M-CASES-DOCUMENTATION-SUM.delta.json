@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772223018279948990,
+  "timestamp_rfc": "2026-02-27T20:10:18.279948990Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/v6/1M-CASES-DOCUMENTATION-SUMMARY.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6183575de0fec9712fa24cdeb004f9b3b56d7582327ed45aba2c3935b556a78b",
+  "delta_hash": "71a450351425c14e4a559343b259895bc741f4081aa963921412e07f9ce0d365",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# 1M Cases Documentation — Summary",
+        "change": "Added"
+      }
+    }
+  ]
+}

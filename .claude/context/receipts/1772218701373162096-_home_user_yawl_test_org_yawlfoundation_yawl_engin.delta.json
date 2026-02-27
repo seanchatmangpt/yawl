@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772218701373162096,
+  "timestamp_rfc": "2026-02-27T18:58:21.373162096Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/ScopedTenantContextTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "19530eae1fc0999974e2f63a36461fd54de0802761baa4f6c1d61658635b0024",
+  "delta_hash": "e93053126863ca409546131992dc4c36d6be7ae1eecbbb2fbe22a17c21395f22",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772219577744247984,
+  "timestamp_rfc": "2026-02-27T19:12:57.744247984Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/TenantContext.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "85a9ca3acbadf9b9d27a0beb56a0b22cf17977292a4c230abd44d2609a16dd77",
+  "delta_hash": "4992fc689a4e6ac22962cded1f22061947238bd2ac17b6980ca5e42121b5b8b9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final GlobalCaseRegistry ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "// Pluggable global case→tenant registry",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218689002785886,
+  "timestamp_rfc": "2026-02-27T18:58:09.002785886Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/ScopedTenantContextTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "fd5001c319bc87072c0da8f1ab1ca874427d2003e24a6b96a80dd883428a13ab",
+  "delta_hash": "648af60fc925265d7c1d8ee005347e168fe6780786e0ef14c8b866256a2769ae",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    }
+  ]
+}

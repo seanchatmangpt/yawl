@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222314997847970,
+  "timestamp_rfc": "2026-02-27T19:58:34.997847970Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/root/.claude/plans/sunny-munching-neumann.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ece2116ce4d1c937a33220a71fa9d3bd2db1dc127bf25428cb0cea2d4f75bc48",
+  "delta_hash": "dfa45dfeb90a2f2842716f204c1d71604e879d369a91815cf5707dc48276a077",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Full Diataxis Documentation — YA",
+        "change": "Added"
+      }
+    }
+  ]
+}

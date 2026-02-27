@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772219095057881548,
+  "timestamp_rfc": "2026-02-27T19:04:55.057881548Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3b124b0c8b81e7304d3a642b44162fea79972109aa841b764ba122faef1db930",
+  "delta_hash": "28c7d92e182df4c79c005b95bebd585a494b27e26a35523726d8061529e21bf9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// MULTI-TENANT ISOLATION - Tenant conte",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final org.yawlfoundation.yawl.en",
+        "change": "Added"
+      }
+    }
+  ]
+}

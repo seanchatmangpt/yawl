@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222485098409871,
+  "timestamp_rfc": "2026-02-27T20:01:25.098409871Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/how-to/configure-zgc-compact-headers.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ad6cf1cdf0c4fe217eff3ce0da98873a957368939271922d4a82a0c486729dbd",
+  "delta_hash": "a581db53fae73417ea43f271cffbf707ca86db630d6923fdb9139ff52009f5e1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Configure ZGC Generational GC a",
+        "change": "Added"
+      }
+    }
+  ]
+}

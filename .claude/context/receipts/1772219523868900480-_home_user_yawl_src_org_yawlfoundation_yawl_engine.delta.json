@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219523868900480,
+  "timestamp_rfc": "2026-02-27T19:12:03.868900480Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YAnnouncer.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e41d9111cda01e0f498c65ef6ed982feb1764041bf4fe83390f0c746041f2860",
+  "delta_hash": "8f32dd06ca2c45e81ce07e32e197606bafdaabb7e4061754cb08b08c94af0242",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "protected void announceCaseCompletion(YA",
+        "change": "Added"
+      }
+    }
+  ]
+}

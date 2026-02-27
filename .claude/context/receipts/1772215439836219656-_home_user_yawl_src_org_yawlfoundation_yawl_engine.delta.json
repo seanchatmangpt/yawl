@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772215439836219656,
+  "timestamp_rfc": "2026-02-27T18:03:59.836219656Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/ScopedTenantContext.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e3367f9fecef1a3b41566ffa742306902169ef0f8c37bcc028a8a9579ef03d80",
+  "delta_hash": "29bb3480bd4a2a44a77e93788d3671ae7c88f57f62a7d24af75ab2afcd7e5f33",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@SuppressWarnings",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ScopedTenantContext",
+        "change": "Added"
+      }
+    }
+  ]
+}

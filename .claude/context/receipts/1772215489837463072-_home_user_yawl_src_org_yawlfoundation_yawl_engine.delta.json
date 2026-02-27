@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772215489837463072,
+  "timestamp_rfc": "2026-02-27T18:04:49.837463072Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "44f34bf86045761d17f4bf977651d4f6a44e1587137f7a7bb3e438b96af04b7c",
+  "delta_hash": "e05dbec945742a1640c0ca5e87354b37e2f6799445b25e63db030f7c89943aeb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "* <p>Uses {@code synchronized} for mutua",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "synchronized",
+        "change": "Added"
+      }
+    }
+  ]
+}
