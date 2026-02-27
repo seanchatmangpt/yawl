@@ -1,9 +1,9 @@
 {
-  "session_id": "7a22268e-5b6a-4d1c-8f8e-70c7147201d5",
-  "started_at": "2026-02-27T01:30:11.278251233Z",
-  "ended_at": "2026-02-27T01:30:11.282966556Z",
-  "receipt_count": 11,
-  "chain_hash": "c9f875afbc22a91aef208bc8b9e1cbbc1e225e735524c65acfc46943fd120f84",
+  "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
+  "started_at": "2026-02-27T06:18:11.406324917Z",
+  "ended_at": "2026-02-27T06:18:11.424854302Z",
+  "receipt_count": 16,
+  "chain_hash": "826df88840b025225f74d3d8d1001c3d5bb2debbd58946a342839731a4435485",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -825,6 +825,178 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "@Measurement",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171953543852895,
+      "timestamp_rfc": "2026-02-27T05:59:13.543852895Z",
+      "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/elements/data/YVariableOptionalTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a75188d0ec288ddb697c3efb209e46a1142e55b1890fc49151bcd505084407a3",
+      "delta_hash": "6ffead994de7527cc4540c5e9cf134612181fc769176665175c713e337774f8d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "YVariableOptionalTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172739908765183,
+      "timestamp_rfc": "2026-02-27T06:12:19.908765183Z",
+      "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "bbc2c5b5d0fedd018ac52cd0f2e4a75be213ad42634931adb2a62f7e12d83ff0",
+      "delta_hash": "83d965e2ab6c261d5e3c2c5b4d2917fcffb3feb87c3724afe84622a5aed59599",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Timeout",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172783665971700,
+      "timestamp_rfc": "2026-02-27T06:13:03.665971700Z",
+      "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "62c2840f0c53ce00c097f113c221de9588f7e025648eaf1c8c83f35551fbd999",
+      "delta_hash": "1388f79c4cfc58f2ff68c7b601e22be0ffb3037af5ea56fc4bbd76aa4b2e059a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "} catch",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172869784885197,
+      "timestamp_rfc": "2026-02-27T06:14:29.784885197Z",
+      "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "040f8d291990b29f664ea9a79786b40fa5425fd1eb7ad1ee741e7818158a3abc",
+      "delta_hash": "f807c71be80cd5195fda7277b83b194a77bd5dedcd357c2a20e31c11e3822f72",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Order",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Timeout",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772173013017830309,
+      "timestamp_rfc": "2026-02-27T06:16:53.017830309Z",
+      "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4445f2c2d18e57502cf39a226d704384b884d93a1f13fc194f41c347241aebbf",
+      "delta_hash": "4cef6419d787fa937b5d2adaf87218ed4aadf6c165ff7acd2f129c1368b9fe0d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "final int TARGET = 500;",
             "change": "Added"
           }
         }
