@@ -41,6 +41,8 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlConscienceToolSpecificat
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlFactoryToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
 import org.yawlfoundation.yawl.integration.mcp.spec.McpToolRegistry;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlAdaptationToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.YawlConformanceToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlGraalPyWorkflowToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPatternSynthesisToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlProcessMiningToolSpecifications;
@@ -296,6 +298,16 @@ public class YawlMcpServer {
         var graalPyList = graalPyTools.createAll();
         allTools.addAll(graalPyList);
         int graalPyToolCount = graalPyList.size();
+
+        // Event-driven adaptation tools (no LLM — pure rule matching)
+        var adaptationTools = new YawlAdaptationToolSpecifications();
+        var adaptationList = adaptationTools.createAll();
+        allTools.addAll(adaptationList);
+
+        // Behavioral conformance tools (no LLM — pure Jaccard footprint comparison)
+        var conformanceTools = new YawlConformanceToolSpecifications();
+        var conformanceList = conformanceTools.createAll();
+        allTools.addAll(conformanceList);
 
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)

@@ -136,6 +136,26 @@ public final class TemporalForkEngine {
     }
 
     /**
+     * Creates a TemporalForkEngine with custom function dependencies for integration use.
+     *
+     * <p>This factory method is the intended path for A2A skill integration and
+     * other contexts where a live YAWL engine is not available. All case operations
+     * are delegated to the provided functions.</p>
+     *
+     * @param caseSerializer function that serializes a case ID to XML state
+     * @param enabledTasksProvider function that extracts enabled task IDs from case XML
+     * @param taskExecutor function that executes a task on case XML, returning updated XML
+     * @return a new TemporalForkEngine using the provided functions
+     * @throws NullPointerException if any parameter is null
+     */
+    public static TemporalForkEngine forIntegration(
+            Function<String, String> caseSerializer,
+            Function<String, List<String>> enabledTasksProvider,
+            BiFunction<String, String, String> taskExecutor) {
+        return new TemporalForkEngine(caseSerializer, enabledTasksProvider, taskExecutor);
+    }
+
+    /**
      * Forks a case into multiple parallel execution paths based on the policy.
      *
      * <p>This method serializes the current case state, enumerates enabled tasks
