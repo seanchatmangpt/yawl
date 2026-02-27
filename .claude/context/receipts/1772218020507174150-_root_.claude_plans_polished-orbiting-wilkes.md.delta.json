@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772218020507174150,
+  "timestamp_rfc": "2026-02-27T18:47:00.507174150Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/root/.claude/plans/polished-orbiting-wilkes.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1369432941d571fdd363cc08a1f24d644f4a0c09ffa5eb72ca3c362b1313810f",
+  "delta_hash": "815f3d1a88bcc32b019b8497f55a1d293f3c76484b5c89b9cc32ea04d15ad7b1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Timeout",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Test @Order",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "---",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private boolean _cancelling;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private volatile boolean _cancelling;",
+        "change": "Added"
+      }
+    }
+  ]
+}

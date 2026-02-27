@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772219961977370687,
+  "timestamp_rfc": "2026-02-27T19:19:21.977370687Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1fe39bab0343fe40fb80994da6a79527ec09891a0f49b7986ae70599b288d22a",
+  "delta_hash": "bd9d92e9d38c369458a1dd25455c03c4d69acf3c52080bf6f814b326d17c0f61",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final int MAX_CONCURRENT_",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private volatile boolean _paused = false",
+        "change": "Added"
+      }
+    }
+  ]
+}

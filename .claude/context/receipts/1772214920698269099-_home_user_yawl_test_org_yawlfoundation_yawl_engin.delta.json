@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214920698269099,
+  "timestamp_rfc": "2026-02-27T17:55:20.698269099Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f31981faf44ed69dc47c0ec646d707d003a164bdc32c3653ae64fe342cbadcc0",
+  "delta_hash": "4860ad073e46d843668ac12bacce7e2e0efb1454775eb44df4da53242a6aedd2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "*   <li><b>ScopedValue at Engine Scale</",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772213073114124212,
+  "timestamp_rfc": "2026-02-27T17:24:33.114124212Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/tmp/MaxStressProbe.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "002fb18200614af550a8c9dbf9a08de3842fbb65b5a4d7844cdd6334b48eac37",
+  "delta_hash": "56a4f3f7b52c847248868c98974680f4714bada77cf9ca5e8e27655260b77555",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "MaxStressProbe",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "long",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "YSpecification",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214182448589250,
+  "timestamp_rfc": "2026-02-27T17:43:02.448589250Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/root/.claude/plans/polished-orbiting-wilkes.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "669c1d939d8e139870c68fe22c53798ec0698da2f3a13660dd23226684a747fb",
+  "delta_hash": "2f4299aea3b669e3319b7c2f46b4690cf311eb3719073accc33858711d499b01",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Java 21-25 Virtual Thread Best Practic",
+        "change": "Added"
+      }
+    }
+  ]
+}

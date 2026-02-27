@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772220054329733405,
+  "timestamp_rfc": "2026-02-27T19:20:54.329733405Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4c9fc8a482674dfd54ab91c36068b4679df258e5cd98397e2bfbd03a459d81af",
+  "delta_hash": "78130a732c95162f2b953aecd54e5ee8f33049168fd498cba198cfdf471ea7de",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Deprecated",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "boolean",
+        "change": "Added"
+      }
+    }
+  ]
+}

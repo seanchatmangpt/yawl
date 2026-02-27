@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214887452947066,
+  "timestamp_rfc": "2026-02-27T17:54:47.452947066Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c68eedcbb786e8983e0cb10504e5e7e4f04ad917ef6cc77bd5cbd4b34cd0ba82",
+  "delta_hash": "83c8f6f7f5bdb6efbfc96bb1034a84943503d76538d55ca3c0fa905db5379ab2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// Readers: query work item repository a",
+        "change": "Added"
+      }
+    }
+  ]
+}

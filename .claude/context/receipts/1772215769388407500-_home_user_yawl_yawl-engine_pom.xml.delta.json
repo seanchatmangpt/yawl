@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215769388407500,
+  "timestamp_rfc": "2026-02-27T18:09:29.388407500Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6dca1043b319988f8204e314dac0d65771f0a437c0d73cce6b6a74c881353727",
+  "delta_hash": "c263d8682da408ec0c60318b2773247aeb0aea8b9bc3133b934fb2a939e7e0c1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<!-- EngineKernelBenchmark requires JMH ",
+        "change": "Added"
+      }
+    }
+  ]
+}

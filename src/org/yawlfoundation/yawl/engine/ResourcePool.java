@@ -208,7 +208,7 @@ public class ResourcePool<T> {
             // Wait for one to become available
             waitsForAvailable.incrementAndGet();
             try {
-                Thread.sleep(10);
+                Thread.sleep(Duration.ofMillis(10));
                 attempts++;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

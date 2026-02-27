@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214687551101521,
+  "timestamp_rfc": "2026-02-27T17:51:27.551101521Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/ResourcePool.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "435c28248ba145023d9b40a216afb77d26f025a59f23f70721c9f44548e6a48e",
+  "delta_hash": "54b189b45facf523b83e52fe7df00e5f00bd5af98e8944e3356c7ca30d5f08d3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Thread.sleep",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215723131150436,
+  "timestamp_rfc": "2026-02-27T18:08:43.131150436Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/yawl-engine/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9cc24471251bebaa525c2b43b207d7bb43dd45f3036156b9c9155000735ae1b1",
+  "delta_hash": "7cde14242a4a738772d820d67386b1c6d94c9d188780c7fef07eb5a739c1ea45",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<!-- TimerStateTest has duplicate method",
+        "change": "Added"
+      }
+    }
+  ]
+}

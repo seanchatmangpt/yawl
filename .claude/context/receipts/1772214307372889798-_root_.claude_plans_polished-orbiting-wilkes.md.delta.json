@@ -1,0 +1,68 @@
+{
+  "timestamp_ns": 1772214307372889798,
+  "timestamp_rfc": "2026-02-27T17:45:07.372889798Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/root/.claude/plans/polished-orbiting-wilkes.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "31205fe7fbb2dc5325e7c1d8c5503b7804e481bdd20f67d5b537491fac242753",
+  "delta_hash": "fbe7a76b6de4926cfa7aa951b8b1f6a309a11a3c8198e22710f993c4e3deace7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "synchronized",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Timeout",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Test @Order",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Java 21-25 Virtual Thread Best Practic",
+        "change": "Added"
+      }
+    }
+  ]
+}

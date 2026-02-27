@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219978004556555,
+  "timestamp_rfc": "2026-02-27T19:19:38.004556555Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e58e04519b4d18a936a6d013546ee94ffc6885f31ec5ba43310495f55b0c186a",
+  "delta_hash": "297bcf40a93be97a96c1056a980eff4e0e8956504a311e71125c122b85d5e74e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "checkEngineRunning",
+        "change": "Added"
+      }
+    }
+  ]
+}

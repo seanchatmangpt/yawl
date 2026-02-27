@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214877826193269,
+  "timestamp_rfc": "2026-02-27T17:54:37.826193269Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b3459171dbd5f205e0ef7eb1ea470cf5609e4a81abd639c4c66cb221ae6bbe5e",
+  "delta_hash": "648af60fc925265d7c1d8ee005347e168fe6780786e0ef14c8b866256a2769ae",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    }
+  ]
+}

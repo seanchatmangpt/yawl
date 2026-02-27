@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220036400375091,
+  "timestamp_rfc": "2026-02-27T19:20:36.400375091Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "eddd4426037d3fa7588c038e004e8a6d7bebe11ae9de2de6721ddbbdd15f805a",
+  "delta_hash": "68c4ffe90708acec96f9a2312eb9fd3fb3fd2375098d78f0a2857ae64bc49cd5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Set<YWorkItem> removedItems = _workItemR",
+        "change": "Added"
+      }
+    }
+  ]
+}
