@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772153131096859401,
+  "timestamp_rfc": "2026-02-27T00:45:31.096859401Z",
+  "session_id": "f82378be-b0ec-4666-b3e0-c41d376176bf",
+  "file_path": "/home/user/yawl/test/resources/performance-baseline.json",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "afe239173c8a303539534001ec0016fe6944a9fd1b70f44a76a7cbfc8a5274b4",
+  "delta_hash": "cd6d7f29ce193c8c5a571b276bd5f645fb4b9da06c07d4d69cba43fd0a23d784",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "{",
+        "change": "Added"
+      }
+    }
+  ]
+}
