@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220304828867009,
+  "timestamp_rfc": "2026-02-27T19:25:04.828867009Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a5e97e706cddf5fecec815be3a2ec1351ec8c72f0e7a4078e93f84040cbeac7d",
+  "delta_hash": "3902c12db0e4f0171c6b79ae292b2bc07a41eb4fa05784d884eedb92215f4ad5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "protected YIdentifier startCase(YSpecifi",
+        "change": "Added"
+      }
+    }
+  ]
+}

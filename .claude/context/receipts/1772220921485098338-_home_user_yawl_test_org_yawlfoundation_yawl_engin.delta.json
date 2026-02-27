@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220921485098338,
+  "timestamp_rfc": "2026-02-27T19:35:21.485098338Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c1b2b7204630732602b0beb26ff4e078bca72768495a3ee170415276232fd51a",
+  "delta_hash": "a36fdf49f535e83be771088a2ead970d53100469348bd155676d64f28e052df6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// Settle between levels",
+        "change": "Added"
+      }
+    }
+  ]
+}

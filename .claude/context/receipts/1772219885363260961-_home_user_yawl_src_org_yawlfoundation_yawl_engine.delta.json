@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772219885363260961,
+  "timestamp_rfc": "2026-02-27T19:18:05.363260961Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/observability/AndonAlert.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "16e4c9abaf01970bb9bd1dc64b15d7ef67e03dab1f59b5d024659af662f07fc2",
+  "delta_hash": "edd9e566fef5b22109d4b6f868b4086de70edfc1c6758fd350104780b0dce2e9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    }
+  ]
+}

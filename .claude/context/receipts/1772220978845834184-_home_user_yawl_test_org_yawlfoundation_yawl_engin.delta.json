@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220978845834184,
+  "timestamp_rfc": "2026-02-27T19:36:18.845834184Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "fc0c9a924d37c8c821238fc3b95a55b8fdb769827c80d48963926e7819e6c859",
+  "delta_hash": "3df2afe20ddfd005ab05803334c339d5b11cb044dab9437c03d9f329f6d2b2e0",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "String result = String.format(",
+        "change": "Added"
+      }
+    }
+  ]
+}
