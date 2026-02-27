@@ -18,10 +18,10 @@ import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
 import org.yawlfoundation.yawl.integration.autonomous.registry.AgentRegistryClient;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService;
 import org.yawlfoundation.yawl.integration.a2a.auth.JwtAuthenticationProvider;
-import org.yawlfoundation.yawl.marketplace.AgentMarketplace;
-import org.yawlfoundation.yawl.marketplace.AgentMarketplaceListing;
-import org.yawlfoundation.yawl.marketplace.MarketplaceSkill;
-import org.yawlfoundation.yawl.marketplace.WorkflowTransitionContract;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplace;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplaceListing;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.MarketplaceSkill;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.WorkflowTransitionContract;
 
 import java.time.Duration;
 import java.time.Instant;

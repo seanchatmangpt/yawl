@@ -51,10 +51,6 @@
             <artifactId>opentelemetry-sdk</artifactId>
         </dependency>
         <!-- opentelemetry-sdk-trace-core was renamed to opentelemetry-sdk-trace in 1.x -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk-trace</artifactId>
-        </dependency>
         <!-- opentelemetry-instrumentation-api:2.18.1 POM not in local Maven cache;
              excluded to allow offline builds. Re-enable when network access is available.
         <dependency>

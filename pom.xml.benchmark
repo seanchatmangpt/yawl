@@ -5,14 +5,9 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.yawlfoundation</groupId>
-        <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-GA</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
+    <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-benchmark</artifactId>
+    <version>6.0.0-GA</version>
     <packaging>jar</packaging>
 
     <name>YAWL A2A Communication Benchmarks</name>
@@ -25,7 +20,7 @@
         <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC --enable-preview</argLine>
 
         <!-- Benchmark dependencies -->
-        <jmh.version>1.37</jmh.version>
+        <jmh.version>1.36</jmh.version>
         <junit.version>5.11.3</junit.version>
         <testcontainers.version>1.21.4</testcontainers.version>
         <resilience4j.version>2.3.0</resilience4j.version>
@@ -33,16 +28,6 @@
     </properties>
 
     <dependencies>
-        <!-- YAWL Internal Dependencies -->
-        <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-elements</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-engine</artifactId>
-        </dependency>
-
         <!-- JMH for microbenchmarking -->
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
@@ -155,13 +140,6 @@
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                     </compilerArgs>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.openjdk.jmh</groupId>
-                            <artifactId>jmh-generator-annprocess</artifactId>
-                            <version>${jmh.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 

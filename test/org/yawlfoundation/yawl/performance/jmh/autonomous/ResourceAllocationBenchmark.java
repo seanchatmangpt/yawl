@@ -361,6 +361,189 @@ public class ResourceAllocationBenchmark {
     }
 
     @Benchmark
+    public void testDynamicResourceScaling(Blackhole bh) throws Exception {
+        System.out.println("\n=== Dynamic Resource Scaling Test ===");
+
+        // Test dynamic scaling from low to high resource usage
+        List<Integer> scalingPoints = List.of(10, 50, 100, 500, workloadSize);
+        Map<Integer, ScalingResult> scalingResults = new HashMap<>();
+        Map<Integer, Long> scalingLatencies = new HashMap<>();
+
+        Instant overallStart = Instant.now();
+
+        for (int scalePoint : scalingPoints) {
+            Instant scaleStart = Instant.now();
+            ScalingResult result = testScalingToLevel(scalePoint);
+            long duration = Duration.between(scaleStart, Instant.now()).toMillis();
+
+            scalingResults.put(scalePoint, result);
+            scalingLatencies.put(scalePoint, duration);
+
+            // Record scaling metrics
+            metrics.recordResourceAllocation(
+                "scaling-agent",
+                result.successful == scalePoint, // All allocations successful
+                duration,
+                result.successful,
+                result.conflicts == 0
+            );
+        }
+
+        long totalDuration = Duration.between(overallStart, Instant.now()).toMillis();
+        System.out.printf("Dynamic scaling completed in %d ms%n", totalDuration);
+
+        // Analyze scaling efficiency
+        int totalAllocated = scalingResults.values().stream()
+            .mapToInt(r -> r.successful)
+            .sum();
+        double scalingEfficiency = (double) totalAllocated / scalingPoints.stream().mapToInt(Integer::intValue).sum() * 100;
+
+        System.out.printf("Scaling efficiency: %.1f%%%n", scalingEfficiency);
+
+        bh.consume(scalingEfficiency);
+    }
+
+    @Benchmark
+    public void testIntelligentResourceBalancing(Blackhole bh) throws Exception {
+        System.out.println("\n=== Intelligent Resource Balancing Test ===");
+
+        // Test intelligent load balancing algorithms
+        int balancingOperations = workloadSize / 2;
+        CountDownLatch latch = new CountDownLatch(balancingOperations);
+        List<Future<BalancingResult>> futures = new ArrayList<>(balancingOperations);
+
+        // Initialize agent capacities
+        Map<String, Integer> agentCapacities = initializeAgentCapacities();
+
+        Instant start = Instant.now();
+
+        for (int i = 0; i < balancingOperations; i++) {
+            final int operation = i;
+            Future<BalancingResult> future = virtualExecutor.submit(() -> {
+                try {
+                    Instant balStart = Instant.now();
+
+                    // Execute intelligent balancing
+                    BalancingResult result = executeIntelligentBalancing(
+                        operation, agentCapacities, loadIntensity);
+
+                    long duration = Duration.between(balStart, Instant.now()).toMillis();
+                    allocationLatencies.add(duration);
+
+                    // Update agent capacities
+                    if (result.assignedAgent != null) {
+                        agentCapacities.merge(result.assignedAgent, -1, Integer::sum);
+                    }
+
+                    // Record balancing metrics
+                    metrics.recordResourceAllocation(
+                        "balancing-agent-" + operation,
+                        result.success,
+                        duration,
+                        result.resourcesAllocated,
+                        result.conflictResolved
+                    );
+
+                    if (result.success) {
+                        successfulAllocations.incrementAndGet();
+                    } else {
+                        failedAllocations.incrementAndGet();
+                    }
+
+                    return result;
+                } finally {
+                    latch.countDown();
+                }
+            });
+            futures.add(future);
+        }
+
+        // Wait for all balancing operations
+        latch.await(120, TimeUnit.SECONDS);
+
+        long totalTime = Duration.between(start, Instant.now()).toMillis();
+        double throughput = balancingOperations * 1000.0 / totalTime;
+
+        System.out.printf("Intelligent balancing throughput: %.2f ops/sec%n", throughput);
+
+        // Calculate capacity utilization
+        double avgUtilization = calculateAverageUtilization(agentCapacities);
+        System.out.printf("Average capacity utilization: %.1f%%%n", avgUtilization);
+
+        bh.consume(throughput);
+    }
+
+    @Benchmark
+    public void testResourceAllocationWithFailover(Blackhole bh) throws Exception {
+        System.out.println("\n=== Resource Allocation with Failover Test ===");
+
+        // Test allocation with primary/agent failover scenarios
+        int failoverOperations = workloadSize;
+        CountDownLatch latch = new CountDownLatch(failoverOperations);
+        List<Future<FailoverResult>> futures = new ArrayList<>(failoverOperations);
+
+        // Simulate agent availability
+        Map<String, Boolean> agentAvailability = initializeAgentAvailability();
+
+        Instant start = Instant.now();
+
+        for (int i = 0; i < failoverOperations; i++) {
+            final int operation = i;
+            Future<FailoverResult> future = virtualExecutor.submit(() -> {
+                try {
+                    Instant failoverStart = Instant.now();
+
+                    // Execute failover-aware allocation
+                    FailoverResult result = executeFailoverAllocation(
+                        operation, agentAvailability, deploymentMode);
+
+                    long duration = Duration.between(failoverStart, Instant.now()).toMillis();
+                    allocationLatencies.add(duration);
+
+                    // Record failover metrics
+                    metrics.recordResourceAllocation(
+                        "failover-agent-" + operation,
+                        result.success,
+                        duration,
+                        result.attemptedAgents,
+                        result.failoverSuccess
+                    );
+
+                    // Update agent availability
+                    if (result.assignedAgent != null) {
+                        agentAvailability.put(result.assignedAgent, false); // Simulate agent busy
+                    }
+
+                    if (result.success) {
+                        successfulAllocations.incrementAndGet();
+                    } else {
+                        failedAllocations.incrementAndGet();
+                    }
+
+                    return result;
+                } finally {
+                    latch.countDown();
+                }
+            });
+            futures.add(future);
+        }
+
+        // Wait for all failover operations
+        latch.await(180, TimeUnit.SECONDS);
+
+        long totalTime = Duration.between(start, Instant.now()).toMillis();
+        double throughput = failoverOperations * 1000.0 / totalTime;
+
+        System.out.printf("Failover allocation throughput: %.2f ops/sec%n", throughput);
+
+        // Analyze failover effectiveness
+        double failoverRate = calculateFailoverRate(futures);
+        System.out.printf("Failover success rate: %.1f%%%n", failoverRate);
+
+        bh.consume(throughput);
+    }
+
+    @Benchmark
     public void testResourceScalingPerformance(Blackhole bh) throws Exception {
         // Test scaling from low to high resource usage
         List<Integer> scalingPoints = List.of(10, 50, 100, 500, workloadSize);

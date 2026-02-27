@@ -1,0 +1,180 @@
+{
+    "thresholds": {
+        "hard_limit_cpu": 90,
+        "hard_limit_memory": 80,
+        "hard_limit_disk": 95,
+        "hard_limit_throughput": 1000,
+        "hard_limit_latency": 5000,
+        "hard_limit_error_rate": 0.05,
+        "soft_limit_cpu": 70,
+        "soft_limit_memory": 60,
+        "soft_limit_disk": 80,
+        "soft_limit_throughput": 500,
+        "soft_limit_latency": 3000,
+        "soft_limit_error_rate": 0.01,
+        "hard_limit_heap_usage": 90,
+        "hard_limit_gc_time": 10,
+        "hard_limit_thread_count": 1000,
+        "soft_limit_heap_usage": 70,
+        "soft_limit_gc_time": 5,
+        "soft_limit_thread_count": 500,
+        "hard_limit_response_time_p95": 1000,
+        "hard_limit_response_time_p99": 2000,
+        "soft_limit_response_time_p95": 500,
+        "soft_limit_response_time_p99": 1000
+    },
+    "alert_channels": ["console", "log"],
+    "notification_settings": {
+        "email": {
+            "enabled": false,
+            "recipients": ["team@yawlfoundation.org"],
+            "on_failure": true,
+            "on_warning": false
+        },
+        "slack": {
+            "enabled": false,
+            "webhook_url": "",
+            "channel": "#performance-alerts",
+            "on_failure": true,
+            "on_warning": false
+        },
+        "webhook": {
+            "enabled": false,
+            "url": "",
+            "on_failure": true,
+            "on_warning": false
+        }
+    },
+    "monitoring": {
+        "interval": 30,
+        "duration": 0,
+        "metrics": ["cpu", "memory", "disk", "throughput", "latency", "error_rate"],
+        "enable_charts": true,
+        "enable_alerts": true
+    },
+    "regression_detection": {
+        "enabled": true,
+        "historical_days": 30,
+        "percentage_threshold": 10.0,
+        "absolute_threshold": 1000,
+        "min_benchmark_runs": 5,
+        "trend_analysis": true,
+        "anomaly_detection": true
+    },
+    "chaos_testing": {
+        "enabled": true,
+        "scenarios": ["network", "resource", "service", "data"],
+        "recovery_validation": true,
+        "auto_recovery": false,
+        "recovery_time_threshold_ms": 30000,
+        "success_rate_threshold": 0.80
+    },
+    "stress_testing": {
+        "enabled": true,
+        "load_profiles": ["light", "moderate", "heavy", "peak"],
+        "duration": "30m",
+        "users": 50,
+        "ramp_up": "5m",
+        "steady_state": "20m",
+        "throughput_target": 0,
+        "response_time_threshold": 5000,
+        "error_rate_threshold": 0.05
+    },
+    "jmh_configuration": {
+        "warmup_iterations": 3,
+        "measurement_iterations": 5,
+        "fork_count": 1,
+        "threads": 1,
+        "jvm_args": [
+            "-Xms1g",
+            "-Xmx2g",
+            "-XX:+UseCompactObjectHeaders",
+            "-XX:+UseZGC"
+        ]
+    },
+    "profiles": {
+        "development": {
+            "enabled": true,
+            "parallel_jobs": 2,
+            "duration": "5-10 minutes",
+            "threshold_multiplier": 1.5
+        },
+        "ci": {
+            "enabled": true,
+            "parallel_jobs": 4,
+            "duration": "30-60 minutes",
+            "threshold_multiplier": 1.0
+        },
+        "production": {
+            "enabled": true,
+            "parallel_jobs": 8,
+            "duration": "2-4 hours",
+            "threshold_multiplier": 0.8
+        },
+        "custom": {
+            "enabled": true,
+            "parallel_jobs": 4,
+            "duration": "Variable",
+            "threshold_multiplier": 1.0
+        }
+    },
+    "benchmark_suites": {
+        "jmh_unit": {
+            "enabled": true,
+            "default_duration": "5m",
+            "metrics": ["throughput", "latency", "memory"]
+        },
+        "jmh_integration": {
+            "enabled": true,
+            "default_duration": "10m",
+            "metrics": ["throughput", "response_time", "error_rate"]
+        },
+        "memory_basic": {
+            "enabled": true,
+            "default_duration": "3m",
+            "metrics": ["memory_usage", "gc_frequency"]
+        },
+        "stress_full": {
+            "enabled": true,
+            "default_duration": "60m",
+            "metrics": ["throughput", "latency", "cpu", "memory", "error_rate"]
+        },
+        "chaos_extended": {
+            "enabled": true,
+            "default_duration": "45m",
+            "metrics": ["recovery_time", "error_rate", "availability", "consistency"]
+        },
+        "regression_deep": {
+            "enabled": true,
+            "default_duration": "30m",
+            "metrics": ["performance_change", "regression_score", "trend_analysis"]
+        }
+    },
+    "reporting": {
+        "formats": ["html", "json", "csv"],
+        "include_raw_data": true,
+        "include_charts": true,
+        "include_recommendations": true,
+        "compress_reports": false,
+        "retention_days": 90
+    },
+    "ci_cd_integration": {
+        "enabled": true,
+        "quality_gates": {
+            "enabled": true,
+            "fail_on_regression": true,
+            "fail_on_threshold_violation": true,
+            "fail_on_anomaly": true
+        },
+        "artifacts": {
+            "enabled": true,
+            "formats": ["html", "json"],
+            "retention_days": 30
+        },
+        "notifications": {
+            "enabled": true,
+            "on_failure": true,
+            "on_warning": false
+        }
+    }
+}

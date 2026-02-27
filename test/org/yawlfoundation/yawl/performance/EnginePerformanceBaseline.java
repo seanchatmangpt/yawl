@@ -1,6 +1,13 @@
 package org.yawlfoundation.yawl.performance;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.Timeout;
+import java.util.concurrent.TimeUnit;
 
 import java.io.File;
 import java.net.URL;
@@ -23,7 +30,8 @@ import org.yawlfoundation.yawl.util.StringUtil;
 
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Performance baseline measurements for YAWL Engine.
@@ -127,7 +135,10 @@ public class EnginePerformanceBaseline extends TestCase {
      * BASELINE 1: Case Launch Latency
      * Target: p95 < 500ms
      */
-    public void testCaseLaunchLatency() throws Exception {
+    @Test
+    @Execution(ExecutionMode.SAME_THREAD)
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void testCaseLaunchLatency() throws Exception {
         System.out.println("\n=== BASELINE 1: Case Launch Latency ===");
         List<Long> latencies = new ArrayList<>();
         
@@ -179,7 +190,10 @@ public class EnginePerformanceBaseline extends TestCase {
      * BASELINE 2: Work Item Completion Latency
      * Target: p95 < 200ms
      */
-    public void testWorkItemCompletionLatency() throws Exception {
+    @Test
+    @Execution(ExecutionMode.SAME_THREAD)
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void testWorkItemCompletionLatency() throws Exception {
         System.out.println("\n=== BASELINE 2: Work Item Completion Latency ===");
         List<Long> latencies = new ArrayList<>();
         
@@ -253,7 +267,10 @@ public class EnginePerformanceBaseline extends TestCase {
      * BASELINE 3: Concurrent Case Throughput
      * Target: > 100 cases/sec
      */
-    public void testConcurrentThroughput() throws Exception {
+    @Test
+    @Execution(ExecutionMode.SAME_THREAD)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void testConcurrentThroughput() throws Exception {
         System.out.println("\n=== BASELINE 3: Concurrent Case Throughput ===");
         
         ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_THREADS);
@@ -339,7 +356,10 @@ public class EnginePerformanceBaseline extends TestCase {
      * BASELINE 4: Memory Usage
      * Target: < 512MB for 1000 concurrent cases
      */
-    public void testMemoryUsage() throws Exception {
+    @Test
+    @Execution(ExecutionMode.SAME_THREAD)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void testMemoryUsage() throws Exception {
         System.out.println("\n=== BASELINE 4: Memory Usage ===");
         
         Runtime runtime = Runtime.getRuntime();
@@ -406,7 +426,10 @@ public class EnginePerformanceBaseline extends TestCase {
      * BASELINE 5: Engine Startup Time
      * Target: < 60 seconds
      */
-    public void testEngineStartupTime() throws Exception {
+    @Test
+    @Execution(ExecutionMode.SAME_THREAD)
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void testEngineStartupTime() throws Exception {
         System.out.println("\n=== BASELINE 5: Engine Startup Time ===");
         
         // Clear and restart engine

@@ -9,9 +9,14 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.Timeout;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Performance and Scalability Tests
@@ -25,7 +30,8 @@ import junit.framework.TestSuite;
  * - CPU efficiency
  * - Database query performance
  */
-public class PerformanceTest extends TestCase {
+@Execution(ExecutionMode.CONCURRENT)
+public class PerformanceTest {
 
     private static final int WARMUP_ITERATIONS = 100;
     private static final int BENCHMARK_ITERATIONS = 1000;
@@ -34,14 +40,16 @@ public class PerformanceTest extends TestCase {
         super(name);
     }
 
-    @Override
-    protected void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         super.setUp();
         // Warmup JVM
         performWarmup();
     }
 
-    public void testCaseExecutionThroughput() throws Exception {
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void testCaseExecutionThroughput() throws Exception {
         int caseCount = 1000;
         long startTime = System.nanoTime();
 
@@ -64,7 +72,9 @@ public class PerformanceTest extends TestCase {
             casesPerSecond > 50); // Adjusted for realistic performance
     }
 
-    public void testWorkItemProcessingThroughput() throws Exception {
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void testWorkItemProcessingThroughput() throws Exception {
         int workItemCount = 10000;
         long startTime = System.nanoTime();
 
@@ -100,7 +110,9 @@ public class PerformanceTest extends TestCase {
             itemsPerSecond > 100);
     }
 
-    public void testAPIResponseTime() throws Exception {
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void testAPIResponseTime() throws Exception {
         int requestCount = 1000;
         List<Long> responseTimes = new ArrayList<>();
 
@@ -137,7 +149,9 @@ public class PerformanceTest extends TestCase {
             averageResponseTime < 50);
     }
 
-    public void testMemoryUsageUnderLoad() throws Exception {
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void testMemoryUsageUnderLoad() throws Exception {
         Runtime runtime = Runtime.getRuntime();
 
         // Force GC to get baseline
@@ -170,7 +184,9 @@ public class PerformanceTest extends TestCase {
         objects.clear();
     }
 
-    public void testConcurrentLoadHandling() throws Exception {
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void testConcurrentLoadHandling() throws Exception {
         int concurrentUsers = 100;
         int requestsPerUser = 10;
         ExecutorService executor = Executors.newFixedThreadPool(concurrentUsers);
@@ -223,7 +239,9 @@ public class PerformanceTest extends TestCase {
         assertEquals("No errors should occur", 0, errorCount.get());
     }
 
-    public void testDatabaseQueryPerformance() throws Exception {
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void testDatabaseQueryPerformance() throws Exception {
         Connection conn = DriverManager.getConnection(
             "jdbc:h2:mem:perf_test;DB_CLOSE_DELAY=-1",
             "sa",
@@ -267,7 +285,9 @@ public class PerformanceTest extends TestCase {
         conn.close();
     }
 
-    public void testBatchOperationPerformance() throws Exception {
+    @Test
+    @Timeout(value = 30, unit = TimeUnit.SECONDS)
+    void testBatchOperationPerformance() throws Exception {
         Connection conn = DriverManager.getConnection(
             "jdbc:h2:mem:batch_perf;DB_CLOSE_DELAY=-1",
             "sa",
@@ -305,7 +325,9 @@ public class PerformanceTest extends TestCase {
         conn.close();
     }
 
-    public void testScalabilityUnderLoad() throws Exception {
+    @Test
+    @Timeout(value = 60, unit = TimeUnit.SECONDS)
+    void testScalabilityUnderLoad() throws Exception {
         int[] loadLevels = {10, 50, 100, 200};
         List<Double> throughputs = new ArrayList<>();
 

@@ -7,7 +7,7 @@
 
     <groupId>org.yawlfoundation</groupId>
     <artifactId>yawl-parent</artifactId>
-    <version>5.2</version>
+    <version>6.0.0-GA</version>
     <packaging>pom</packaging>
 
     <name>YAWL Parent</name>
@@ -26,6 +26,7 @@
         <module>yawl-monitoring</module>
         <module>yawl-webapps</module>
         <module>yawl-control-panel</module>
+        <module>yawl-benchmark</module>
     </modules>
 
     <properties>
@@ -36,7 +37,7 @@
         <!-- BOM Versions (for reference - not used as BOMs, using explicit versions instead) -->
         <spring-boot.version>3.4.3</spring-boot.version>
         <jakarta-ee.version>10.0.0</jakarta-ee.version>
-        <opentelemetry.version>1.45.0</opentelemetry.version>
+        <opentelemetry.version>1.59.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>2.10.0</opentelemetry-instrumentation.version>
         <resilience4j.version>2.3.0</resilience4j.version>
         <testcontainers.version>1.20.4</testcontainers.version>
@@ -92,9 +93,9 @@
         <jaxen.version>1.2.0</jaxen.version>
 
         <!-- Testing -->
-        <junit.version>4.13.2</junit.version>
-        <junit.jupiter.version>5.12.2</junit.jupiter.version>
-        <junit.platform.version>1.12.2</junit.platform.version>
+        <junit.version>5.11.3</junit.version>
+        <junit.jupiter.version>5.11.3</junit.jupiter.version>
+        <junit.platform.version>1.11.3</junit.platform.version>
         <hamcrest.version>3.0</hamcrest.version>
         <xmlunit.version>1.6</xmlunit.version>
 
@@ -105,6 +106,7 @@
         <mcp.version>0.17.2</mcp.version>
         <a2a.version>1.0.0.Alpha2</a2a.version>
         <jspecify.version>1.0.0</jspecify.version>
+        <grpc.version>1.68.1</grpc.version>
 
         <!-- Other -->
         <jandex.version>3.3.1</jandex.version>
@@ -592,18 +594,7 @@
                 <version>${micrometer.version}</version>
             </dependency>
 
-            <!-- Spring Boot Actuator -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-actuator</artifactId>
-                <version>${spring-boot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-web</artifactId>
-                <version>${spring-boot.version}</version>
-            </dependency>
-
+  
             <!-- Supporting Libraries -->
             <dependency>
                 <groupId>org.jboss</groupId>
@@ -706,6 +697,12 @@
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.jupiter.version}</version>
                 <scope>test</scope>
@@ -719,6 +716,18 @@
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite-engine</artifactId>
+                <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit.platform.version}</version>
                 <scope>test</scope>
             </dependency>
