@@ -76,6 +76,7 @@
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>
         <module>yawl-graalpy</module>
+        <module>yawl-benchmark</module>
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.

@@ -69,26 +69,30 @@ public class TestDataGenerator {
     }
     
     /**
-     * Generate workflow specifications for different patterns
+     * Generate workflow specifications for different patterns.
+     *
+     * <p>Returns valid YAWL specificationSet XML (schema 4.0) for each pattern.
+     * These are sourced from {@link BenchmarkSpecFactory} to guarantee
+     * compatibility with {@code YStatelessEngine.unmarshalSpecification}.</p>
      */
     public Map<String, String> generateWorkflowSpecifications() {
         Map<String, String> specs = new HashMap<>();
-        
-        // Sequential workflow
-        specs.put("sequential", generateSequentialWorkflowSpec());
-        
-        // Parallel split/sync
-        specs.put("parallel", generateParallelWorkflowSpec());
-        
-        // Multi-choice/merge
-        specs.put("multiChoice", generateMultiChoiceWorkflowSpec());
-        
-        // Cancel region
-        specs.put("cancelRegion", generateCancelRegionWorkflowSpec());
-        
-        // N-out-of-M
-        specs.put("nOutOfM", generateNOutOfMWorkflowSpec());
-        
+
+        // Sequential workflow (2-task baseline)
+        specs.put("sequential", BenchmarkSpecFactory.SEQUENTIAL_2_TASK);
+
+        // Parallel split/sync (AND-split + AND-join)
+        specs.put("parallel", BenchmarkSpecFactory.PARALLEL_SPLIT_SYNC);
+
+        // Multi-choice/merge (OR-split)
+        specs.put("multiChoice", BenchmarkSpecFactory.MULTI_CHOICE);
+
+        // XOR exclusive choice
+        specs.put("exclusiveChoice", BenchmarkSpecFactory.EXCLUSIVE_CHOICE);
+
+        // 4-task sequential for deeper chains
+        specs.put("sequential4", BenchmarkSpecFactory.SEQUENTIAL_4_TASK);
+
         return specs;
     }
     

@@ -20,26 +20,42 @@ package org.yawlfoundation.yawl.benchmark;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.engine.YEngine;
-import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.stateless.engine.YStatelessEngine;
-import org.yawlfoundation.yawl.stateless.engine.YCaseMonitor;
+import org.yawlfoundation.yawl.exceptions.YSyntaxException;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.elements.YSpecification;
+import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
+import org.yawlfoundation.yawl.stateless.listener.YCaseEventListener;
+import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
+import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
+import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
-import java.lang.management.*;
-import java.util.*;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Memory Performance Benchmarks
- * 
- * This class benchmarks memory usage patterns and GC behavior in YAWL:
- * - Heap usage during workflow execution
- * - Garbage collection pressure
- * - Memory scalability with case counts
- * - Object allocation patterns
- * - Memory leak detection
+ * Memory Performance Benchmarks.
+ *
+ * <p>Measures heap allocation, GC pressure, and marshal/restore memory cost
+ * using the real {@link YStatelessEngine}. All case execution uses the
+ * engine's genuine event-driven lifecycle — no fake work items or stub
+ * completions.</p>
+ *
+ * <p>Benchmarks:</p>
+ * <ul>
+ *   <li>{@link #heapDeltaPerCase} — net heap allocated per sequential case</li>
+ *   <li>{@link #gcCountUnderLoad} — GC collections triggered by {@code caseCount} cases</li>
+ *   <li>{@link #marshalMemoryCost} — heap allocated to marshal a completed runner</li>
+ *   <li>{@link #specParseMemoryCost} — heap allocated per spec unmarshal call</li>
+ *   <li>{@link #caseCompletionMemoryRecovery} — heap delta before/after GC hint</li>
+ * </ul>
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -52,435 +68,206 @@ import java.util.concurrent.atomic.AtomicInteger;
     "-XX:+UseCompactObjectHeaders"
 })
 @Threads(1)
-public class MemoryBenchmarks {
+public class MemoryBenchmarks implements YWorkItemEventListener, YCaseEventListener {
 
-    private YEngine engine;
-    private YStatelessEngine statelessEngine;
-    private YCaseMonitor caseMonitor;
-    
-    private MemoryMXBean memoryMXBean;
-    private GarbageCollectorMXBean gcMXBean;
-    private ThreadMXBean threadMXBean;
-    
-    private List<String> caseIds;
-    private AtomicInteger caseCounter;
-    private Random random;
-    
-    @Param({"10", "100", "1000", "10000"})
+    @Param({"10", "100", "1000"})
     private int caseCount;
-    
-    @Param({"sequential", "parallel", "multiChoice"})
-    private String workflowPattern;
-    
-    @Setup
-    public void setup() throws Exception {
-        System.out.println("[Memory Benchmark Setup] Initializing with " + caseCount + " cases, pattern: " + workflowPattern);
-        
-        // Initialize engines
-        engine = new YEngine();
-        engine.initialiseEngine(true);
-        statelessEngine = new YStatelessEngine();
-        statelessEngine.initialiseEngine();
-        caseMonitor = new YCaseMonitor();
-        caseMonitor.initialiseEngine();
-        
-        // Initialize memory monitoring
+
+    private YStatelessEngine engine;
+    private YSpecification spec;
+    private MemoryMXBean memoryMXBean;
+    private List<GarbageCollectorMXBean> gcBeans;
+
+    private volatile CountDownLatch completionLatch;
+    private final AtomicReference<Exception> listenerError = new AtomicReference<>();
+
+    // ── Setup ─────────────────────────────────────────────────────────────
+
+    @Setup(Level.Trial)
+    public void setup() throws YSyntaxException {
+        engine = new YStatelessEngine();
+        engine.addWorkItemEventListener(this);
+        engine.addCaseEventListener(this);
+        spec = engine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_2_TASK);
+
         memoryMXBean = ManagementFactory.getMemoryMXBean();
-        gcMXBean = ManagementFactory.getGarbageCollectorMXBeans().get(0);
-        threadMXBean = ManagementFactory.getThreadMXBean();
-        
-        // Initialize test data
-        caseIds = Collections.synchronizedList(new ArrayList<>());
-        caseCounter = new AtomicInteger(0);
-        random = new Random();
-        
-        System.out.println("[Memory Benchmark Setup] Setup completed");
+        gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
     }
-    
-    @TearDown
-    public void tearDown() {
-        System.out.println("[Memory Benchmark Teardown] Cleaning up resources...");
-        if (engine != null) {
-            engine.shutdownEngine();
-        }
-        if (statelessEngine != null) {
-            statelessEngine.shutdownEngine();
-        }
-        if (caseMonitor != null) {
-            caseMonitor.shutdownEngine();
-        }
-        caseIds.clear();
-        System.gc(); // Suggest GC cleanup
-    }
-    
-    /**
-     * Benchmark 1: Heap Usage During Workflow Execution
-     * Measures heap memory consumption during workflow processing
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long heapUsageDuringWorkflowExecution(Blackhole bh) throws Exception {
-        String caseId = "memory-case-" + caseCounter.getAndIncrement();
-        caseIds.add(caseId);
 
-        long initialHeap = memoryMXBean.getHeapMemoryUsage().getUsed();
+    // ── Event listener ────────────────────────────────────────────────────
 
-        // Execute workflow
-        executeWorkflowPattern(caseId, workflowPattern);
-
-        long finalHeap = memoryMXBean.getHeapMemoryUsage().getUsed();
-        long heapDelta = finalHeap - initialHeap;
-
-        bh.consume(heapDelta);
-        return heapDelta;
-    }
-    
-    /**
-     * Benchmark 2: GC Pressure Under Load
-     * Measures garbage collection activity during high load scenarios
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long gcPressureUnderLoad(Blackhole bh) throws Exception {
-        long initialGcTime = gcMXBean.getCollectionTime();
-
-        // Execute workflow with high object creation
-        for (int i = 0; i < caseCount; i++) {
-            String caseId = "gc-case-" + i;
-            executeWorkflowPattern(caseId, workflowPattern);
-
-            // Force some object creation
-            bh.consume(createLargeObjects(100));
-        }
-
-        long gcTimeDelta = gcMXBean.getCollectionTime() - initialGcTime;
-        bh.consume(gcTimeDelta);
-        return gcTimeDelta;
-    }
-    
-    /**
-     * Benchmark 3: Memory Scalability with Case Counts
-     * Measures how memory usage scales with increasing case counts
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long memoryScalabilityWithCaseCounts(Blackhole bh) throws Exception {
-        long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-
-        // Create and process multiple cases
-        for (int i = 0; i < caseCount; i++) {
-            String caseId = "scalable-case-" + i;
-            statelessEngine.createCase("spec-id", createTestSpecification(), null, null);
-
-            // Process case
-            YWorkItem workItem = createWorkItem(caseId, "memory-task");
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-            bh.consume(workItem);
-        }
-
-        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
-        bh.consume(delta);
-        return delta;
-    }
-    
-    /**
-     * Benchmark 4: Object Allocation Patterns
-     * Measures object allocation during workflow execution
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long objectAllocationPatterns(Blackhole bh) throws Exception {
-        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        long initialAllocations = threadBean.getThreadAllocatedBytes(Thread.currentThread().getId());
-
-        // Execute workflow with many object allocations
-        String caseId = "alloc-case-" + caseCounter.getAndIncrement();
-        executeWorkflowPattern(caseId, workflowPattern);
-
-        // Additional allocations
-        for (int i = 0; i < 1000; i++) {
-            String data = "data-" + i + "-" + UUID.randomUUID();
-            bh.consume(data.split("-"));
-        }
-
-        long delta = threadBean.getThreadAllocatedBytes(Thread.currentThread().getId()) - initialAllocations;
-        bh.consume(delta);
-        return delta;
-    }
-    
-    /**
-     * Benchmark 5: Memory Leak Detection
-     * Tests for memory leaks by monitoring memory growth over time
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long memoryLeakDetection(Blackhole bh) throws Exception {
-        long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        List<String> leakTestObjects = new ArrayList<>();
-
-        // Create objects that might leak
-        for (int i = 0; i < caseCount; i++) {
-            String caseId = "leak-case-" + i;
-            leakTestObjects.add(caseId);
-
-            // Execute workflow
-            executeWorkflowPattern(caseId, workflowPattern);
-
-            // Store references (potential leak)
-            List<YWorkItem> workItems = engine.getEnabledWorkItems(caseId);
-            leakTestObjects.addAll(workItems.stream().map(w -> w.getCaseID()).toList());
-        }
-
-        // Clear references to test for proper cleanup
-        leakTestObjects.clear();
-        System.gc();
-
-        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
-        bh.consume(delta);
-        return delta;
-    }
-    
-    /**
-     * Benchmark 6: Non-Heap Memory Usage
-     * Measures non-heap memory usage (code cache, metaspace, etc.)
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long nonHeapMemoryUsage(Blackhole bh) throws Exception {
-        MemoryUsage nonHeapInitial = memoryMXBean.getNonHeapMemoryUsage();
-
-        // Execute operations that affect non-heap memory
-        for (int i = 0; i < 100; i++) {
-            String caseId = "nonheap-case-" + i;
-            executeWorkflowPattern(caseId, workflowPattern);
-
-            // Class loading affects metaspace
-            bh.consume(Class.forName("java.lang.String"));
-        }
-
-        long delta = memoryMXBean.getNonHeapMemoryUsage().getUsed() - nonHeapInitial.getUsed();
-        bh.consume(delta);
-        return delta;
-    }
-    
-    /**
-     * Benchmark 7: Thread Memory Usage
-     * Measures memory used by threads during concurrent execution
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long threadMemoryUsage(Blackhole bh) throws Exception {
-        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        long initialThreadMemory = 0;
-
-        // Measure current thread memory
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            initialThreadMemory += threadBean.getThreadAllocatedBytes(thread.getId());
-        }
-
-        // Execute concurrent operations using virtual threads (Java 25 best practice)
-        List<Thread> threads = new ArrayList<>();
-        for (int i = 0; i < threadCount(); i++) {
-            Thread t = Thread.ofVirtual().start(() -> {
-                try {
-                    String caseId = "thread-case-" + UUID.randomUUID();
-                    executeWorkflowPattern(caseId, workflowPattern);
-                } catch (Exception e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            threads.add(t);
-        }
-
-        // Wait for threads to complete
-        for (Thread t : threads) {
-            t.join();
-        }
-
-        long finalThreadMemory = 0;
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            finalThreadMemory += threadBean.getThreadAllocatedBytes(thread.getId());
-        }
-
-        long delta = finalThreadMemory - initialThreadMemory;
-        bh.consume(delta);
-        return delta;
-    }
-    
-    /**
-     * Benchmark 8: Memory Usage by Case Monitor
-     * Measures memory usage of the case monitoring component
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long caseMonitorMemoryUsage(Blackhole bh) throws Exception {
-        long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-
-        // Use case monitor extensively
-        for (int i = 0; i < caseCount; i++) {
-            String caseId = "monitor-case-" + i;
-            YSpecification spec = createTestSpecification();
-
-            // Get case state (uses memory)
-            bh.consume(caseMonitor.getCaseState(caseId, spec));
-
-            // Monitor case changes
-            bh.consume(caseMonitor.getCaseChanges(caseId));
-        }
-
-        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
-        bh.consume(delta);
-        return delta;
-    }
-    
-    /**
-     * Benchmark 9: Large Dataset Processing Memory Impact
-     * Measures memory impact of processing large datasets
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public long largeDatasetProcessingMemoryImpact(Blackhole bh) throws Exception {
-        long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-
-        // Create and process large dataset
-        List<String> largeDataset = new ArrayList<>();
-        for (int i = 0; i < 10000; i++) {
-            largeDataset.add("data-point-" + i + "-" + UUID.randomUUID());
-        }
-
-        // Process dataset with workflow
-        String caseId = "large-data-case-" + caseCounter.getAndIncrement();
-        for (String data : largeDataset) {
-            YWorkItem workItem = createWorkItem(caseId, "process-" + data.hashCode());
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.singletonMap("data", data));
-            bh.consume(workItem);
-        }
-
-        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
-        bh.consume(delta);
-        return delta;
-    }
-    
-    /**
-     * Benchmark 10: Memory Recovery After Load
-     * Measures how well memory is recovered after processing load
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public double memoryRecoveryAfterLoad(Blackhole bh) throws Exception {
-        long peakMemory = 0;
-
-        // Process load and track peak memory
-        for (int i = 0; i < caseCount; i++) {
-            long currentMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-            peakMemory = Math.max(peakMemory, currentMemory);
-
-            String caseId = "recovery-case-" + i;
-            executeWorkflowPattern(caseId, workflowPattern);
-        }
-
-        // Clear all references and suggest GC
-        caseIds.clear();
-        System.gc();
-
-        // Wait a bit for GC to complete
-        Thread.sleep(100);
-
-        long recoveredMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        double ratio = peakMemory > 0 ? (double) (peakMemory - recoveredMemory) / peakMemory : 0.0;
-        bh.consume(ratio);
-        return ratio;
-    }
-    
-    // Helper methods
-    
-    private int threadCount() {
-        return Runtime.getRuntime().availableProcessors() * 2;
-    }
-    
-    private void executeWorkflowPattern(String caseId, String pattern) throws Exception {
-        switch (pattern) {
-            case "sequential":
-                executeSequentialWorkflow(caseId);
-                break;
-            case "parallel":
-                executeParallelWorkflow(caseId);
-                break;
-            case "multiChoice":
-                executeMultiChoiceWorkflow(caseId);
-                break;
-            default:
-                executeSequentialWorkflow(caseId);
-        }
-    }
-    
-    private void executeSequentialWorkflow(String caseId) throws Exception {
-        for (int i = 1; i <= 5; i++) {
-            YWorkItem workItem = createWorkItem(caseId, "seq-task-" + i);
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-        }
-    }
-    
-    private void executeParallelWorkflow(String caseId) throws Exception {
-        List<YWorkItem> parallelTasks = new ArrayList<>();
-        for (int i = 1; i <= 3; i++) {
-            YWorkItem workItem = createWorkItem(caseId, "par-task-" + i);
-            parallelTasks.add(workItem);
-            engine.startWorkItem(workItem);
-        }
-        
-        for (YWorkItem workItem : parallelTasks) {
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-        }
-    }
-    
-    private void executeMultiChoiceWorkflow(String caseId) throws Exception {
-        int choice = random.nextInt(3);
-        YWorkItem choiceWorkItem = createWorkItem(caseId, "choice-" + choice);
-        engine.startWorkItem(choiceWorkItem);
-        engine.completeWorkItem(choiceWorkItem, Collections.emptyMap());
-        
-        // Merge point
-        YWorkItem mergeWorkItem = createWorkItem(caseId, "merge");
-        engine.startWorkItem(mergeWorkItem);
-        engine.completeWorkItem(mergeWorkItem, Collections.emptyMap());
-    }
-    
-    private List<String> createLargeObjects(int count) {
-        List<String> largeObjects = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            StringBuilder sb = new StringBuilder();
-            for (int j = 0; j < 1000; j++) {
-                sb.append("data-point-").append(i).append("-").append(j);
+    @Override
+    public void handleWorkItemEvent(YWorkItemEvent event) {
+        YWorkItem item = event.getWorkItem();
+        try {
+            switch (event.getEventType()) {
+                case ITEM_ENABLED -> engine.startWorkItem(item);
+                case ITEM_STARTED -> engine.completeWorkItem(item, null, null);
+                default -> { /* not needed */ }
             }
-            largeObjects.add(sb.toString());
+        } catch (Exception e) {
+            listenerError.compareAndSet(null, e);
         }
-        return largeObjects;
     }
-    
-    private YWorkItem createWorkItem(String caseId, String taskId) {
-        YWorkItem workItem = new YWorkItem();
-        workItem.setCaseID(caseId);
-        workItem.setTaskID(taskId);
-        return workItem;
+
+    @Override
+    public void handleCaseEvent(YCaseEvent event) {
+        if (event.getEventType() == YEventType.CASE_COMPLETED ||
+                event.getEventType() == YEventType.CASE_CANCELLED) {
+            CountDownLatch latch = completionLatch;
+            if (latch != null) latch.countDown();
+        }
     }
-    
-    private YSpecification createTestSpecification() {
-        YSpecification spec = new YSpecification();
-        spec.setID("memory-test-spec");
-        return spec;
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    private void runCase() throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(1);
+        engine.launchCase(spec);
+        if (!completionLatch.await(10, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Case did not complete within timeout");
+        }
+        Exception err = listenerError.get();
+        if (err != null) throw err;
+    }
+
+    private long totalGcCount() {
+        return gcBeans.stream().mapToLong(GarbageCollectorMXBean::getCollectionCount).sum();
+    }
+
+    private long totalGcTimeMs() {
+        return gcBeans.stream().mapToLong(GarbageCollectorMXBean::getCollectionTime).sum();
+    }
+
+    // ── Benchmarks ────────────────────────────────────────────────────────
+
+    /**
+     * Net heap bytes allocated per 2-task sequential case.
+     * Runs one case and measures the heap delta. JMH blackhole prevents
+     * dead-code elimination of the measured value.
+     */
+    @Benchmark
+    public void heapDeltaPerCase(Blackhole bh) throws Exception {
+        long before = memoryMXBean.getHeapMemoryUsage().getUsed();
+        runCase();
+        long after = memoryMXBean.getHeapMemoryUsage().getUsed();
+        bh.consume(after - before);
+    }
+
+    /**
+     * Total GC collections triggered by running {@code caseCount} cases
+     * back-to-back. Reveals allocation pressure caused by case object churn.
+     */
+    @Benchmark
+    public void gcCountUnderLoad(Blackhole bh) throws Exception {
+        long gcBefore = totalGcCount();
+        long gcTimeBefore = totalGcTimeMs();
+
+        for (int i = 0; i < caseCount; i++) {
+            runCase();
+        }
+
+        bh.consume(totalGcCount() - gcBefore);
+        bh.consume(totalGcTimeMs() - gcTimeBefore);
+    }
+
+    /**
+     * Heap bytes allocated to marshal one completed {@link YNetRunner} to
+     * XML. Measures the serialization footprint for cloud hand-off scenarios.
+     */
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public void marshalMemoryCost(Blackhole bh) throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(1);
+        YNetRunner runner = engine.launchCase(spec);
+        completionLatch.await(10, TimeUnit.SECONDS);
+
+        long before = memoryMXBean.getHeapMemoryUsage().getUsed();
+        String xml = engine.marshalCase(runner);
+        long after = memoryMXBean.getHeapMemoryUsage().getUsed();
+
+        bh.consume(xml);
+        bh.consume(after - before);
+    }
+
+    /**
+     * Heap bytes allocated to parse one YAWL spec XML into a
+     * {@link YSpecification}. One-time start-up cost per workflow definition.
+     */
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public void specParseMemoryCost(Blackhole bh) throws YSyntaxException {
+        long before = memoryMXBean.getHeapMemoryUsage().getUsed();
+        YSpecification parsed = engine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_4_TASK);
+        long after = memoryMXBean.getHeapMemoryUsage().getUsed();
+
+        bh.consume(parsed);
+        bh.consume(after - before);
+    }
+
+    /**
+     * Heap usage delta before and after running {@code caseCount} cases
+     * followed by a GC hint. A large positive result suggests object
+     * retention (potential memory leak); a near-zero result indicates
+     * proper cleanup.
+     */
+    @Benchmark
+    public void caseCompletionMemoryRecovery(Blackhole bh) throws Exception {
+        long baseline = memoryMXBean.getHeapMemoryUsage().getUsed();
+
+        for (int i = 0; i < caseCount; i++) {
+            runCase();
+        }
+
+        long peakMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
+        System.gc();   // hint only — GC may not run immediately
+        long postGc = memoryMXBean.getHeapMemoryUsage().getUsed();
+
+        bh.consume(peakMemory - baseline);   // allocation during load
+        bh.consume(postGc - baseline);       // retained after GC
+    }
+
+    /**
+     * Engine re-creation cost: creates a fresh {@link YStatelessEngine},
+     * parses the spec, launches one case, and completes it. Measures the
+     * full start-up + first-case overhead (cold-start scenario).
+     */
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public void coldStartFirstCase(Blackhole bh) throws Exception {
+        YStatelessEngine freshEngine = new YStatelessEngine();
+        AtomicReference<Exception> err = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+
+        freshEngine.addWorkItemEventListener(event -> {
+            YWorkItem item = event.getWorkItem();
+            try {
+                switch (event.getEventType()) {
+                    case ITEM_ENABLED -> freshEngine.startWorkItem(item);
+                    case ITEM_STARTED -> freshEngine.completeWorkItem(item, null, null);
+                    default -> { }
+                }
+            } catch (Exception e) {
+                err.compareAndSet(null, e);
+            }
+        });
+        freshEngine.addCaseEventListener(caseEvent -> {
+            if (caseEvent.getEventType() == YEventType.CASE_COMPLETED ||
+                    caseEvent.getEventType() == YEventType.CASE_CANCELLED) {
+                latch.countDown();
+            }
+        });
+
+        YSpecification freshSpec =
+            freshEngine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_2_TASK);
+        YNetRunner runner = freshEngine.launchCase(freshSpec);
+
+        if (!latch.await(10, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Cold-start case did not complete");
+        }
+        if (err.get() != null) throw err.get();
+        bh.consume(runner);
     }
 }

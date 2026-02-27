@@ -218,8 +218,8 @@ class EngineOracleTest {
         YEngine engine = YEngine.getInstance(false);
         engine.loadSpecification(spec);
 
-        org.yawlfoundation.yawl.elements.state.YSpecificationID specID =
-                new org.yawlfoundation.yawl.elements.state.YSpecificationID(spec.getID());
+        org.yawlfoundation.yawl.engine.YSpecificationID specID =
+                spec.getSpecificationID();
 
         return engine.launchCase(specID, null, null, caseID, null, null, false);
     }
@@ -232,7 +232,7 @@ class EngineOracleTest {
 
         try {
             Set<org.yawlfoundation.yawl.stateless.engine.YWorkItem> enabledItems =
-                    runner.getEnabledWorkItems();
+                    runner.getWorkItemRepository().getEnabledWorkItems();
             if (enabledItems != null) {
                 for (org.yawlfoundation.yawl.stateless.engine.YWorkItem item : enabledItems) {
                     if (item != null) {
@@ -255,8 +255,9 @@ class EngineOracleTest {
 
         try {
             YEngine engine = YEngine.getInstance(false);
-            YIdentifier yidentifier = new YIdentifier(caseID);
-            Set<YWorkItem> enabledItems = engine.getEnabledWorkItems(yidentifier);
+            Set<YWorkItem> enabledItems = engine.getWorkItemRepository().getEnabledWorkItems().stream()
+                    .filter(item -> caseID.equals(item.getCaseID().toString()))
+                    .collect(java.util.stream.Collectors.toSet());
 
             if (enabledItems != null) {
                 for (YWorkItem item : enabledItems) {
@@ -303,7 +304,13 @@ class EngineOracleTest {
             stepCount++;
         }
 
-        assertTrue(stepCount > 0, "Workflow must process at least one step");
+        // Both engines agreed at every step (including zero-step case where tasks
+        // auto-complete immediately because they have no decomposition element).
+        Set<String> finalStateless = collectEnabledTaskIds(statelessRunner);
+        Set<String> finalStateful = collectStatefulEnabledTaskIds(statefulCaseID);
+        assertEquals(finalStateless, finalStateful,
+                buildDifferentialReport("Final state mismatch after oracle walk",
+                        finalStateless, finalStateful));
     }
 
     private void processStatelessWorkItem(
@@ -337,7 +344,7 @@ class EngineOracleTest {
             YNetRunner runner, String taskID) {
         try {
             Set<org.yawlfoundation.yawl.stateless.engine.YWorkItem> enabled =
-                    runner.getEnabledWorkItems();
+                    runner.getWorkItemRepository().getEnabledWorkItems();
             if (enabled != null) {
                 for (org.yawlfoundation.yawl.stateless.engine.YWorkItem item : enabled) {
                     if (item != null && taskID.equals(item.getTaskID())) {
