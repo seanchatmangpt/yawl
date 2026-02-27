@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172180211905039,
+  "timestamp_rfc": "2026-02-27T06:03:00.211905039Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/root/.claude/plans/tranquil-wandering-engelbart.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "22be8fa44d2c3084ce5a60aeebfff61fa217f8764234d50db50ababffc57b99a",
+  "delta_hash": "2b412d5e64b156c908b40e9b27ff5a03ed45d79ca95d6a3efba8c3e1a99507d2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Merge Remote Master + Relevance ",
+        "change": "Added"
+      }
+    }
+  ]
+}

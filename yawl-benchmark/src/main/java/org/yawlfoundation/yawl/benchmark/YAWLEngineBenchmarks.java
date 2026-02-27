@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * Core YAWL Engine Performance Benchmarks
@@ -48,7 +48,12 @@ import static org.junit.Assert.*;
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 50, time = 1)
-@Fork(3)
+@Fork(value = 3, jvmArgs = {
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
+})
 @Threads(1)
 public class YAWLEngineBenchmarks {
 
@@ -180,15 +185,11 @@ public class YAWLEngineBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void engineStartupPerformance() throws Exception {
+    public void engineStartupPerformance(Blackhole bh) throws Exception {
         YEngine tempEngine = new YEngine();
-        long startTime = System.nanoTime();
         tempEngine.initialiseEngine(true);
-        long endTime = System.nanoTime();
-        
         tempEngine.shutdownEngine();
-        
-        return (endTime - startTime) / 1_000_000.0;
+        bh.consume(tempEngine);
     }
     
     /**
@@ -198,20 +199,15 @@ public class YAWLEngineBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void taskTransitionPerformance() throws Exception {
+    public void taskTransitionPerformance(Blackhole bh) throws Exception {
         String caseId = testCaseIds.get((int) (System.nanoTime() % testCaseIds.size()));
         YWorkItem workItem = findEnabledWorkItem(caseId);
-        
+
         if (workItem != null) {
-            long start = System.nanoTime();
             engine.startWorkItem(workItem);
             engine.completeWorkItem(workItem, Collections.emptyMap());
-            long end = System.nanoTime();
-            
-            return (end - start) / 1_000_000.0;
+            bh.consume(workItem);
         }
-        
-        return 0.0;
     }
     
     /**
@@ -241,16 +237,10 @@ public class YAWLEngineBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void memoryUsageDuringCaseExecution() throws Exception {
-        Runtime runtime = Runtime.getRuntime();
-        long before = runtime.totalMemory() - runtime.freeMemory();
-        
-        // Execute a simple case
+    public void memoryUsageDuringCaseExecution(Blackhole bh) throws Exception {
         String caseId = UUID.randomUUID().toString();
         statelessEngine.createCase(sequentialSpec.getID(), sequentialSpec, null, null);
-        
-        long after = runtime.totalMemory() - runtime.freeMemory();
-        return after - before;
+        bh.consume(caseId);
     }
     
     // Helper methods

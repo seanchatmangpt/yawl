@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172187193181767,
+  "timestamp_rfc": "2026-02-27T06:03:07.193181767Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/root/.claude/plans/tranquil-wandering-engelbart.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4553134019a4d00e54ffd4a692c014304fb62065ff78864f9a3e6b0f5c6b32f0",
+  "delta_hash": "f2b1100a809586ff2ad622497762baa9010760f2520ae8933bced54745f3a94d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "## Remaining Work",
+        "change": "Added"
+      }
+    }
+  ]
+}

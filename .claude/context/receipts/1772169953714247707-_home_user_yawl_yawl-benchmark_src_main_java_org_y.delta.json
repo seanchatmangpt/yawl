@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772169953714247707,
+  "timestamp_rfc": "2026-02-27T05:25:53.714247707Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/YAWLEngineBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7e1a49564f9044a75342f551dca43ca5877be438e294b22d9642309898a4a470",
+  "delta_hash": "94103eb9af80e287e62bd9d4c57efea0cdaa34e4bad9c4dd0ba5f62c98ebb510",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Fork(value = 3, jvmArgs = {",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "YAWLEngineBenchmarks",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Threads",
+        "change": "Added"
+      }
+    }
+  ]
+}
