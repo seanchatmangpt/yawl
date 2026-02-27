@@ -2,363 +2,219 @@
 
 ## Problem
 
-Creating a new `PythonExecutionEngine` or `JavaScriptExecutionEngine` for each workflow task is expensive (contexts consume memory and startup time). You want to reuse a single engine and its context pool across multiple tasks.
+You're executing many workflow tasks that each need to evaluate JavaScript or Python code. Creating a new engine per task is expensive; you want to reuse a shared pool.
 
 ## Solution
 
-Create the engine once as an application singleton (or dependency-injected bean), and inject it into all tasks that need it.
+Create the execution engine once in your application bootstrap, inject it as a singleton (via Spring `@Bean` or static factory), and use the same engine instance across all tasks.
 
-## Using Spring dependency injection (recommended)
+### Spring Bean approach (recommended)
 
 ```java
 import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Configuration;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionEngine;
 import org.yawlfoundation.yawl.graaljs.JavaScriptSandboxConfig;
-import org.yawlfoundation.yawl.graalpy.PythonExecutionEngine;
-import org.yawlfoundation.yawl.graalpy.PythonSandboxConfig;
+
+@Configuration
+public class PolyglotConfiguration {
+
+    @Bean(destroyMethod = "close")
+    public JavaScriptExecutionEngine jsEngine() {
+        return JavaScriptExecutionEngine.builder()
+            .contextPoolSize(8)  // Tune based on task concurrency
+            .sandboxConfig(JavaScriptSandboxConfig.standard())
+            .build();
+    }
+
+    @Bean(destroyMethod = "close")
+    public PythonExecutionEngine pythonEngine() {
+        return PythonExecutionEngine.builder()
+            .poolSize(4)  // Python Contexts heavier than JS; use fewer
+            .sandboxConfig(PythonSandboxConfig.standard())
+            .build();
+    }
+}
+```
+
+### Inject into task handlers
+
+```java
+import org.springframework.stereotype.Service;
+import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionEngine;
 
 @Service
-public class PolyglotEngineProvider {
+public class LoanRoutingTask {
 
-    /**
-     * Singleton JavaScript engine shared across all tasks.
-     * Spring manages the lifecycle and ensures shutdown on app termination.
-     */
-    @Bean(destroyMethod = "close")
-    public JavaScriptExecutionEngine javaScriptExecutionEngine() {
-        return JavaScriptExecutionEngine.builder()
-            .contextPoolSize(8)
-            .sandboxConfig(JavaScriptSandboxConfig.standard())
-            .build();
-    }
-
-    /**
-     * Singleton Python engine shared across all tasks.
-     */
-    @Bean(destroyMethod = "close")
-    public PythonExecutionEngine pythonExecutionEngine() {
-        return PythonExecutionEngine.builder()
-            .poolSize(8)
-            .sandboxConfig(PythonSandboxConfig.standard())
-            .build();
-    }
-}
-```
-
-Then inject into your task handlers:
-
-```java
-import org.springframework.beans.factory.annotation.Autowired;
-import org.yawlfoundation.yawl.core.AbstractYawlTask;
-import org.yawlfoundation.yawl.core.WorkItem;
-
-public class DataValidationTask extends AbstractYawlTask {
     private final JavaScriptExecutionEngine jsEngine;
-    private final PythonExecutionEngine pythonEngine;
 
-    @Autowired
-    public DataValidationTask(
-            JavaScriptExecutionEngine jsEngine,
-            PythonExecutionEngine pythonEngine) {
+    public LoanRoutingTask(JavaScriptExecutionEngine jsEngine) {
         this.jsEngine = jsEngine;
-        this.pythonEngine = pythonEngine;
     }
 
-    @Override
-    protected void executeTask(WorkItem item) {
-        try {
-            // Both engines share a single context pool per engine type
-            // Requests are queued if no free contexts available
-            Map<String, Object> validation = jsEngine.evalToMap(
-                "({ valid: true, errors: [] })"
-            );
-
-            // Each engine has independent pool — can use both concurrently
-            double score = pythonEngine.evalToDouble(
-                "0.95"
-            );
-
-        } catch (Exception e) {
-            failTask(item, "Validation error: " + e.getMessage());
+    public void executeTask(WorkItem workItem) throws YStateException {
+        // Load rules once (first request)
+        if (!rulesLoaded) {
+            jsEngine.evalScript(Path.of("classpath:workflows/loan-rules.js"));
+            rulesLoaded = true;
         }
-    }
 
-    // No need to close — Spring manages lifecycle
+        // Evaluate rules for this case
+        Map<String, Object> decision = jsEngine.evalToMap("""
+            routeApplication({
+                amount: %d,
+                score: %d
+            })
+        """.formatted(
+            (int) workItem.getDataVariable("amount"),
+            (int) workItem.getDataVariable("creditScore")
+        ));
+
+        String nextTask = (String) decision.get("nextTask");
+        workItem.setData("routing_decision", nextTask);
+    }
 }
 ```
 
-## Using a static factory pattern (non-Spring)
-
-If you don't use Spring, create a static holder for the shared engines:
+### Static factory approach (no Spring)
 
 ```java
-public class PolyglotEngineFactory {
-    private static final JavaScriptExecutionEngine JS_ENGINE;
-    private static final PythonExecutionEngine PY_ENGINE;
+public class ScriptEngineFactory {
+    private static JavaScriptExecutionEngine jsEngine;
+    private static PythonExecutionEngine pyEngine;
 
     static {
-        // Initialize engines once when class is loaded
-        JS_ENGINE = JavaScriptExecutionEngine.builder()
+        jsEngine = JavaScriptExecutionEngine.builder()
             .contextPoolSize(8)
             .sandboxConfig(JavaScriptSandboxConfig.standard())
             .build();
 
-        PY_ENGINE = PythonExecutionEngine.builder()
-            .poolSize(8)
+        pyEngine = PythonExecutionEngine.builder()
+            .poolSize(4)
             .sandboxConfig(PythonSandboxConfig.standard())
             .build();
-
-        // Register shutdown hook to clean up resources
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            JS_ENGINE.close();
-            PY_ENGINE.close();
-        }));
     }
 
-    public static JavaScriptExecutionEngine getJavaScriptEngine() {
-        return JS_ENGINE;
+    public static JavaScriptExecutionEngine getJsEngine() {
+        return jsEngine;
     }
 
-    public static PythonExecutionEngine getPythonEngine() {
-        return PY_ENGINE;
+    public static PythonExecutionEngine getPyEngine() {
+        return pyEngine;
+    }
+
+    public static void shutdown() {
+        jsEngine.close();
+        pyEngine.close();
     }
 }
 ```
 
-Usage in task handlers:
+### Use in task handler (non-Spring)
 
 ```java
-public class MyWorkflowTask extends AbstractYawlTask {
-
+public class DataTransformTask implements YawlTask {
+    
     @Override
-    protected void executeTask(WorkItem item) {
-        JavaScriptExecutionEngine engine = PolyglotEngineFactory.getJavaScriptEngine();
-        try {
-            Object result = engine.eval("1 + 1");
-            // Process result
-        } catch (JavaScriptException e) {
-            failTask(item, "JS error: " + e.getMessage());
-        }
+    public void handleTask(WorkItem workItem) throws YStateException {
+        JavaScriptExecutionEngine engine = ScriptEngineFactory.getJsEngine();
+        
+        String result = engine.evalToString("""
+            JSON.stringify({
+                case_id: '%s',
+                processed: true,
+                timestamp: new Date().toISOString()
+            })
+        """.formatted(workItem.getCaseID()));
+        
+        workItem.setData("transform_result", result);
     }
 }
 ```
 
-## Monitoring the context pool
-
-Access pool statistics to monitor usage:
+### Monitor pool health
 
 ```java
 public class PoolMonitor {
-    private final JavaScriptExecutionEngine engine;
-
-    public PoolMonitor(JavaScriptExecutionEngine engine) {
-        this.engine = engine;
-    }
-
-    public void printPoolStats() {
+    
+    public void logPoolStats(JavaScriptExecutionEngine engine) {
         JavaScriptContextPool pool = engine.getContextPool();
-
-        System.out.println("=== Context Pool Statistics ===");
-        System.out.println("Total contexts: " + pool.getPoolSize());
-        System.out.println("Borrowed contexts: " + pool.getBorrowedCount());
-        System.out.println("Idle contexts: " + pool.getIdleCount());
-        System.out.println("Available: " + (pool.getPoolSize() - pool.getBorrowedCount()));
-    }
-
-    /**
-     * Log pool stats every 10 seconds (useful for diagnosing pool exhaustion)
-     */
-    public void startMonitoring(ExecutorService executor) {
-        executor.scheduleAtFixedRate(
-            this::printPoolStats,
-            10, 10, TimeUnit.SECONDS
-        );
+        
+        System.out.println("Borrowed contexts: " + pool.getNumBorrowed());
+        System.out.println("Idle contexts: " + pool.getNumIdle());
+        System.out.println("Max pool size: " + pool.getMaxPoolSize());
     }
 }
 ```
 
-## Preloading shared scripts
+### Preload shared rules into all contexts
 
-Load scripts once in all pooled contexts to reduce per-task overhead:
+Use `evalScriptInAllContexts()` to load utility functions or shared code once:
 
 ```java
-@Service
-public class RuleEngineService {
-    private final JavaScriptExecutionEngine engine;
-
-    @Autowired
-    public RuleEngineService(JavaScriptExecutionEngine engine) {
-        this.engine = engine;
-    }
-
-    @PostConstruct
-    public void loadSharedRules() {
-        try {
-            // Load rules.js into ALL contexts in the pool
-            // This runs in parallel using virtual threads
-            engine.evalScriptInAllContexts(
-                Paths.get("classpath:business-rules.js")
-            );
-            System.out.println("Business rules loaded into all contexts");
-        } catch (JavaScriptException e) {
-            throw new RuntimeException("Failed to load shared rules", e);
-        }
-    }
-
-    /**
-     * Invoke a pre-loaded rule function
-     * No need to load rules again — they're already in the context
-     */
-    public Map<String, Object> evaluateApproval(String submitter, double amount) {
-        try {
-            return engine.evalToMap(
-                String.format(
-                    "approveRequest('%s', %f)",
-                    submitter, amount
-                )
-            );
-        } catch (JavaScriptException e) {
-            throw new RuntimeException("Rule evaluation failed", e);
-        }
-    }
+@PostConstruct
+public void initializeRules(JavaScriptExecutionEngine engine) {
+    // Load utils into all pooled contexts (runs in parallel via virtual threads)
+    engine.evalScriptInAllContexts(Path.of("classpath:rules/utils.js"));
+    engine.evalScriptInAllContexts(Path.of("classpath:rules/common.js"));
+    
+    // All subsequent eval calls can use these utilities
 }
 ```
 
-## Thread-safe concurrent usage
-
-Both `PythonExecutionEngine` and `JavaScriptExecutionEngine` are thread-safe. Multiple workflow tasks can safely call methods concurrently:
+### Tune pool size
 
 ```java
-@Service
-public class ConcurrentRuleEngine {
-    private final JavaScriptExecutionEngine engine;
+// For GraalJS (lightweight contexts)
+// Rule of thumb: poolSize = 2 × (expected concurrent tasks)
+JavaScriptExecutionEngine jsEngine = JavaScriptExecutionEngine.builder()
+    .contextPoolSize(16)  // 16 contexts for 8 concurrent tasks
+    .build();
 
-    @Autowired
-    public ConcurrentRuleEngine(JavaScriptExecutionEngine engine) {
-        this.engine = engine;
-    }
-
-    /**
-     * Safe to call from multiple threads simultaneously
-     * Each thread gets a context from the pool
-     */
-    public Map<String, Object> evaluateInParallel(List<String> caseIds) {
-        return caseIds.parallelStream()
-            .collect(Collectors.toMap(
-                caseId -> caseId,
-                caseId -> {
-                    try {
-                        return engine.evalToMap(
-                            "checkStatus('" + caseId + "')"
-                        );
-                    } catch (JavaScriptException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            ));
-    }
-}
+// For GraalPy (heavier contexts, ~50-200MB each)
+// Rule of thumb: poolSize = expected concurrent tasks
+PythonExecutionEngine pyEngine = PythonExecutionEngine.builder()
+    .poolSize(4)  // 4 contexts for 4 concurrent tasks
+    .build();
 ```
 
-## Pool sizing recommendations
+### Handle pool exhaustion
 
-| Scenario | Pool Size | Rationale |
-|----------|-----------|-----------|
-| **Low concurrency** (< 5 concurrent tasks) | 2-4 | Minimal memory overhead |
-| **Medium concurrency** (5-20 concurrent tasks) | 8 | One context per expected concurrent task |
-| **High concurrency** (20+ concurrent tasks) | 16-32 | Account for contention; contexts are reused |
-| **Production** | num_cpus * 2 | Good default for most servers |
-
-## Complete example: Shared engines in a YAWL service
+If all contexts are borrowed and a new request arrives:
 
 ```java
-@Service
-public class WorkflowIntegrationService {
-    private final JavaScriptExecutionEngine jsEngine;
-    private final PythonExecutionEngine pythonEngine;
-    private static final Logger LOGGER = LoggerFactory.getLogger(
-        WorkflowIntegrationService.class
-    );
+// GraalJS pool behavior
+JavaScriptExecutionEngine engine = ...;  // Pool size = 4
 
-    @Autowired
-    public WorkflowIntegrationService(
-            JavaScriptExecutionEngine jsEngine,
-            PythonExecutionEngine pythonEngine) {
-        this.jsEngine = jsEngine;
-        this.pythonEngine = pythonEngine;
-    }
+// Concurrent requests > 4 will wait for a context to return
+// Default timeout: (implementation-dependent, typically 30 seconds)
 
-    /**
-     * Initialize shared scripts in all contexts once on startup
-     */
-    @PostConstruct
-    public void initialize() {
-        try {
-            jsEngine.evalScriptInAllContexts(
-                Paths.get("classpath:workflows/rules.js")
-            );
-            LOGGER.info("Workflow rules loaded into all JavaScript contexts");
-        } catch (JavaScriptException e) {
-            throw new RuntimeException("Failed to initialize workflow rules", e);
-        }
-    }
-
-    /**
-     * Evaluate a business rule using the shared JS engine
-     * Called from multiple task handlers — guaranteed thread-safe
-     */
-    public String routeWorkflow(WorkItem item) throws Exception {
-        try {
-            Object result = jsEngine.invokeJsFunction(
-                "determineRoute",
-                item.getCaseId(),
-                item.getDataValue("amount")
-            );
-            return (String) result;
-        } catch (JavaScriptException e) {
-            LOGGER.error("Routing failed for case {}", item.getCaseId(), e);
-            throw new Exception("Workflow routing error", e);
-        }
-    }
-
-    /**
-     * Analyze case data using Python — uses shared pool
-     */
-    public Map<String, Object> analyzeCase(String caseId) throws Exception {
-        try {
-            return pythonEngine.evalToMap(
-                String.format(
-                    """
-                    import json
-                    result = {
-                        'case_id': '%s',
-                        'complexity': 'high',
-                        'recommended_action': 'escalate'
-                    }
-                    json.dumps(result)
-                    """,
-                    caseId
-                )
-            );
-        } catch (PythonException e) {
-            LOGGER.error("Analysis failed for case {}", caseId, e);
-            throw new Exception("Case analysis error", e);
-        }
+// If you hit timeout:
+try {
+    String result = engine.evalToString("1 + 1");
+} catch (JavaScriptException e) {
+    if (e.getErrorKind() == ErrorKind.CONTEXT_ERROR) {
+        System.err.println("Pool exhausted; increase contextPoolSize");
     }
 }
 ```
 
-## Notes
+### Graceful shutdown
 
-- **Singleton pattern**: Create engines once at application startup; reuse across all tasks.
-- **Pool size**: Set pool size to match expected concurrent tasks; too small causes queuing, too large wastes memory.
-- **Spring shutdown**: The `destroyMethod = "close"` bean property ensures proper cleanup on application termination.
-- **Thread safety**: Both engines are thread-safe; pool handles context borrowing and return automatically.
-- **Script preloading**: Use `evalScriptInAllContexts()` to load shared rule files once instead of on every task.
+```java
+@PreDestroy
+public void shutdown() {
+    // Called automatically by Spring
+    jsEngine.close();  // Closes all contexts, releases resources
+    pyEngine.close();
+}
+```
 
-## Related guides
+## Tips
 
-- [Execute a Python script](./execute-python-script.md)
-- [Execute JavaScript workflow rules](./execute-js-in-workflow-task.md)
-- [Pass Java objects to scripts](./pass-java-objects-to-script.md)
+- **Pool size matters**: Start with `2 × task_concurrency` for JS, `1 × task_concurrency` for Python.
+- **Preload once**: Call `evalScriptInAllContexts()` at startup to load shared code.
+- **Monitor for exhaustion**: Log pool stats periodically; increase size if you see high "Borrowed" count.
+- **Don't forget close()**: If not using Spring, manually call `engine.close()` on shutdown.
+- **Per-task state**: Don't store state in the engine; evaluate fresh code per task or pass state explicitly.
+
