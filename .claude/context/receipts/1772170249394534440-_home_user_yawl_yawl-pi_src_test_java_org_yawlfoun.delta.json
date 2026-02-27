@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772170249394534440,
+  "timestamp_rfc": "2026-02-27T05:30:49.394534440Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/automl/Tpot2ConfigTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a6a0a1bd23810d2371c746e2738d3682ce7c1db20e4e3680f0bafbf456d03f2f",
+  "delta_hash": "de256d4456476d96d3c8886e025a942298739a4f2498a04c09800cf36d211fda",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "Tpot2ConfigTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}

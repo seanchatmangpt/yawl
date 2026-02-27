@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772170019741866891,
+  "timestamp_rfc": "2026-02-27T05:26:59.741866891Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/automl/Tpot2Result.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "438219e9576dd45f6d331a9fdde30440f7291e39a94de51c87052b9ce10c94b0",
+  "delta_hash": "972b5f21313ed2457462b511d5c384785dab515ded3c424f80946156804d23a8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public Tpot2Result {",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record Tpot2Result(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}

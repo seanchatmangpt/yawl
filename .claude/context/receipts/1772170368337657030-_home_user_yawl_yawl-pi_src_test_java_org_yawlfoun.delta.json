@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772170368337657030,
+  "timestamp_rfc": "2026-02-27T05:32:48.337657030Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/automl/Tpot2BridgeTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c2034ac1724f997ed0f22cdf013cf82d258f0930130692edaf742e7061d7b511",
+  "delta_hash": "9fb9c79bd7b1e036bae40cef1523cce091b664a806294d1dbb7d439c0505a7e8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "* No test-double framework. Does NOT req",
+        "change": "Added"
+      }
+    }
+  ]
+}

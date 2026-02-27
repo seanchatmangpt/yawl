@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772169722196824621,
+  "timestamp_rfc": "2026-02-27T05:22:02.196824621Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/root/.claude/plans/async-growing-lemur.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a1f0b318dd78ec86783ebdcbf6e1101cc00c3a34f19abe07cecc93308ca00759",
+  "delta_hash": "a9d7359268381f65a019295b548a385f4d78dd24299ca6c70f98abe14273372d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "- Error handling: exit code ≠ 0 → `PIExc",
+        "change": "Added"
+      }
+    }
+  ]
+}

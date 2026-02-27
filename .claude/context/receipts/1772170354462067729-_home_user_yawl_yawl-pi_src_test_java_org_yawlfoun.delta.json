@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772170354462067729,
+  "timestamp_rfc": "2026-02-27T05:32:34.462067729Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/automl/Tpot2BridgeTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1927411b88e2d47e9f59a3db9e3c3f6ee29a6ded69e9cfe4a556eadf22f33491",
+  "delta_hash": "65ce9e79564145553f5326e5a65527de365b95e4de582d04f1d13eab2af78cee",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "ONNX_SIMULATOR_OUTPUT_BYTES",
+        "change": "Added"
+      }
+    }
+  ]
+}
