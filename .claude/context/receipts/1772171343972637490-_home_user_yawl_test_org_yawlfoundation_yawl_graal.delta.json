@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772171343972637490,
+  "timestamp_rfc": "2026-02-27T05:49:03.972637490Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graaljs/JavaScriptExecutionEngineTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c659ae7b75facc74f314b7e78b49a8582acabd4d01218a3ae5db7f7484d1d5a0",
+  "delta_hash": "b0edd382873e00bc416b6d9d7c233d2cc14dec1bf4046dc93ec218aa0c9c4afb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "JavaScriptExecutionEngineTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    }
+  ]
+}

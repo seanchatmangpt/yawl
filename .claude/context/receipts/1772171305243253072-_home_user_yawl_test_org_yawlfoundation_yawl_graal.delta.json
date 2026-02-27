@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772171305243253072,
+  "timestamp_rfc": "2026-02-27T05:48:25.243253072Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graaljs/JavaScriptExceptionTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "816614b31ceb7e997315f110deb20ced5585971fcce81706a05518f1f4f55cc1",
+  "delta_hash": "31a6098603db34aba59d7caa67f4e36d2e8589f9684bdefe53c63974ee33c108",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "JavaScriptExceptionTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

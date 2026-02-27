@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172714388619489,
+  "timestamp_rfc": "2026-02-27T06:11:54.388619489Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalwasm/WasmBinaryCacheTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "109eab64d6223c701a09797be7805bd4b627b7943e27b0cd4c9e9878dfe3fb40",
+  "delta_hash": "a2008cbb0843d25d34a88bd34786e12337e3a02cb30479c29cc152fff5b6b05f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "assertEquals",
+        "change": "Added"
+      }
+    }
+  ]
+}

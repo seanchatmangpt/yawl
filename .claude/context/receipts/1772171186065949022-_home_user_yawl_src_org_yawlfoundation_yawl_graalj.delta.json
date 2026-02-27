@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772171186065949022,
+  "timestamp_rfc": "2026-02-27T05:46:26.065949022Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JavaScriptException.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "470863e98d25064dcc4852effcdb2f5d1e9210ead82fcf8126d98d66efd1fc92",
+  "delta_hash": "b8892a58310d0886d1661a211bc31e65abfb079f9f1b8f8632bc790e1cb351f3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "JavaScriptException",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final ErrorKind errorKind;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ErrorKind",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    }
+  ]
+}
