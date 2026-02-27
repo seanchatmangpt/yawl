@@ -3235,6 +3235,61 @@
             </build>
         </profile>
 
+        <!-- Fast profile for local development (skip tests, minimal validation) -->
+        <!-- Usage: mvn -P fast clean compile -->
+        <profile>
+            <id>fast</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <spotbugs.skip>true</spotbugs.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <useIncrementalCompilation>true</useIncrementalCompilation>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- CI profile with caching and parallel execution -->
+        <!-- Usage: mvn -P ci clean verify -->
+        <profile>
+            <id>ci</id>
+            <properties>
+                <maven.build.cache.enabled>true</maven.build.cache.enabled>
+                <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+            </properties>
+        </profile>
+
+        <!-- Prod profile with full validation and parallel execution -->
+        <!-- Usage: mvn -P clean verify -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <maven.build.cache.enabled>false</maven.build.cache.enabled>
+                <skipTests>false</skipTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <parallel>all</parallel>
+                            <useSystemClassLoader>false</useSystemClassLoader>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>
