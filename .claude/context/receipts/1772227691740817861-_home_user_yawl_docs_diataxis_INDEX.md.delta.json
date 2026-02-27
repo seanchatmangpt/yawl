@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772227691740817861,
+  "timestamp_rfc": "2026-02-27T21:28:11.740817861Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "eb19eecf7cf67a62ac5f11d5eac9ca417a4cd7612d5b07c80bad9cf65069c244",
+  "delta_hash": "2548cf5e1a222051f459c4583ff7588e8b1c0a5aaf04d1d5f39687a58a55597c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Schema Modelling & DMN",
+        "change": "Added"
+      }
+    }
+  ]
+}
