@@ -1,9 +1,9 @@
 {
   "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
-  "started_at": "2026-02-27T21:07:44.519402287Z",
-  "ended_at": "2026-02-27T21:07:45.249044867Z",
-  "receipt_count": 622,
-  "chain_hash": "6f78bb808106761a2a3324e2d39f7a2f5c9a1be5803002b0734c2d79f5b38a8b",
+  "started_at": "2026-02-27T21:12:45.225231596Z",
+  "ended_at": "2026-02-27T21:12:45.356314095Z",
+  "receipt_count": 623,
+  "chain_hash": "4ab99667a20c79aad33cd516cc779510d42c020e77466b2b438032aac836c28f",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -26271,6 +26271,46 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "ALL_MODULES=(",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772226759157486766,
+      "timestamp_rfc": "2026-02-27T21:12:39.157486766Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/tutorials/11-data-modelling-bridge.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4769bdda8150177c205e90d80d770801e6ee1307505fc96773dc4d0f47934c31",
+      "delta_hash": "d8a580370cb7dfff588dd01cf297698bf0f45925cea4cb39eb7dc7455e428e1d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataModellingDemo",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial: Schema Modelling with DataMo",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
             "change": "Added"
           }
         }

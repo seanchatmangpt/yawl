@@ -23,6 +23,8 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | 11 | [Walk All 7 Quality Gates](../tutorials/11-quality-gate-sequence.md) | Run G_compile through G_release in the correct order |
 | 12 | [Fix Your First HYPER_STANDARDS Violation](../tutorials/12-fix-hyper-standards-violation.md) | Read violation output, understand H-patterns, apply both fix options |
 | 13 | [Scale to 1M Cases](../tutorials/11-scale-to-million-cases.md) | Deploy and verify a 1M-case YAWL cluster end-to-end |
+| 14 | [Schema Modelling with DataModellingBridge](../tutorials/11-data-modelling-bridge.md) | Parse ODCS YAML, import SQL, manage domains, create ADRs, export workspaces |
+| 15 | [DMN Decision Service](../tutorials/14-dmn-decision-service.md) | Evaluate DMN decision tables with DataModel schema validation and COLLECT aggregation |
 
 ---
 
@@ -107,6 +109,14 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Migrate to UUID Case IDs](../how-to/migrate-uuid-case-ids.md) | Remove integer counter, enable UUID generation |
 | [Tune HPA for Cases](../how-to/operations/tune-hpa-for-cases.md) | Right-size Kubernetes autoscaling |
 
+### Schema Modelling & DMN
+| Guide | Task |
+|-------|------|
+| [Import Schema Formats](../how-to/import-schema-formats.md) | Import SQL (5 dialects), Avro, JSON Schema, Protobuf, CADS, ODPS, BPMN, DMN, OpenAPI |
+| [Manage Decision Records & Knowledge Base](../how-to/manage-knowledge-and-decisions.md) | Create/export MADR decision records, KB articles, and Excalidraw sketches with indexes |
+| [Validate Data Schemas](../how-to/validate-data-schemas.md) | Validate ODPS, table/column names, data types, circular dependencies, naming conflicts |
+| [Evaluate DMN Decisions](../how-to/evaluate-dmn-decisions.md) | Parse DMN XML, build DataModel schema, evaluate with COLLECT aggregation |
+
 ---
 
 ## Reference — Accurate Technical Information
@@ -151,6 +161,12 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [REST API Configuration](../reference/rest-api-config.md) | JAX-RS configuration |
 | [MCP Tools](../reference/mcp-tools.md) | MCP tool definitions |
 
+### Schema Modelling & DMN
+| Reference | Contents |
+|-----------|----------|
+| [DataModellingBridge API](../reference/data-modelling-bridge.md) | All 50+ methods: schema import, export, conversion, workspace, domain, decisions, KB, sketches, validation |
+| [DMN Decision Service API](../reference/dmn-decision-service.md) | DmnDecisionService, DataModel, DmnTable, DmnColumn, DmnRelationship, DmnCollectAggregation, EndpointCardinality |
+
 ### Build & Infrastructure
 | Reference | Contents |
 |-----------|----------|
@@ -189,6 +205,8 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Interface Architecture](../explanation/interface-architecture.md) | A/B/E/X interface layering |
 | [Shared-Src Build Strategy](../explanation/shared-src-build-strategy.md) | Why shared-src exists and how it works |
 | [Worklet Service](../explanation/worklet-service.md) | RDR-based runtime adaptation |
+| [Data Modelling WASM Architecture](../explanation/data-modelling-wasm-architecture.md) | GraalJS+WASM polyglot, wasm-bindgen ES modules, JSON pass-through, Web API polyfills |
+| [DMN GraalWASM Engine](../explanation/dmn-graalwasm-engine.md) | FEEL evaluation via WASM, DmnDecisionService layering, COLLECT aggregation delegation |
 
 ### Build System
 | Explanation | What it addresses |
