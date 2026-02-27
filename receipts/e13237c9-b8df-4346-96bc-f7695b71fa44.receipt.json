@@ -1,9 +1,9 @@
 {
   "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
-  "started_at": "2026-02-27T18:47:01.242389589Z",
-  "ended_at": "2026-02-27T18:47:01.286747369Z",
-  "receipt_count": 54,
-  "chain_hash": "e6f00d4a678ebb7d7be2dc8762e9350b3e1d6b98a8717a9bc5052bef76594bd5",
+  "started_at": "2026-02-27T19:01:09.204827530Z",
+  "ended_at": "2026-02-27T19:01:09.250531692Z",
+  "receipt_count": 60,
+  "chain_hash": "d073044fed845e53fea29685fdbb0d713b31182a5a3e51656cf8901f43390d84",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -2006,6 +2006,148 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "private volatile boolean _cancelling;",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218460005904553,
+      "timestamp_rfc": "2026-02-27T18:54:20.005904553Z",
+      "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YNetRunner.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "17c3443ac61871a2ea6fd92b011df66fa3b4f3d798acfed56fe396b088382ae7",
+      "delta_hash": "8d37919b127e41611896f217643fe72945a645af76bc19e408f5002b919f69bc",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private volatile boolean _cancelling;  /",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218474955890365,
+      "timestamp_rfc": "2026-02-27T18:54:34.955890365Z",
+      "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YNetRunner.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e24753edfb5b9104c35755cdd0e3f1a25035670dff0acd22b0578e255cc20477",
+      "delta_hash": "0c1304143d8658c5ae364b225e3851102e77ac734ca4a3cb9c2ff08189a3d0b0",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// FM-06 FIX: widen catch to Exception s",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218540006494452,
+      "timestamp_rfc": "2026-02-27T18:55:40.006494452Z",
+      "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "cbda670ae9adb7d72f19ac3ace0dd7a81ee4bb645f56121fa711d5fa00a90bd7",
+      "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218571792631212,
+      "timestamp_rfc": "2026-02-27T18:56:11.792631212Z",
+      "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c130ba3d67f6e35c3991724fc507d5ba27e78af4fa4089adafafb83cbd324266",
+      "delta_hash": "5cdd71a8063a12b35e6917222681d8547a0dfeea85575053ccbee79f78169885",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Timeout",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YSpecification",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// =====================================",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Test @Order",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218591820680417,
+      "timestamp_rfc": "2026-02-27T18:56:31.820680417Z",
+      "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "bc2ed65b10123e42b8bcef72ff2e1daeef735acf08284eba297923fd94270435",
+      "delta_hash": "1ddeba0a1b6925aceee3e46f30fca53b1c8c44a4ad8e34904ea48924af11edea",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String FTR_PASS  = ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218600962153094,
+      "timestamp_rfc": "2026-02-27T18:56:40.962153094Z",
+      "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "846064b5546025bc16ab99bca860d843e614ae6f3cbe8acaadd09df42b3be3d0",
+      "delta_hash": "f074679e82d70a90effce6c4cab83ef7b4ea2baba46f956a8af1fc9458c5bffc",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "*   <li><b>Joiner Policy Comparison</b> ",
             "change": "Added"
           }
         }
