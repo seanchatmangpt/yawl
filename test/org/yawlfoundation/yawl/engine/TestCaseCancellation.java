@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.yawlfoundation.yawl.engine.observability.YAWLTelemetry;
+
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.junit.jupiter.api.Tag;
@@ -187,6 +189,51 @@ class TestCaseCancellation {
             performTask(item.getTaskID());
         }
      //   assertTrue(_caseCompletionReceived.size() > 0);
+    }
+
+    @Test
+    void testCancelCase_TelemetryNoSpuriousDeadlocks()
+            throws InterruptedException, YDataStateException, YEngineStateException,
+            YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+        YAWLTelemetry telemetry = YAWLTelemetry.getInstance();
+        long deadlocksBefore = telemetry.getDeadlockStats().getTotalDeadlocksDetected();
+
+        Thread.sleep(200);
+        _engine.cancelCase(_idForTopNet, null);
+        Thread.sleep(200);
+
+        // Cancellation must not spuriously trigger deadlock telemetry
+        long deadlocksAfter = telemetry.getDeadlockStats().getTotalDeadlocksDetected();
+        assertEquals(deadlocksBefore, deadlocksAfter,
+                "YEngine.cancelCase() must not increment deadlock counter in YAWLTelemetry");
+        assertTrue(telemetry.isEnabled(),
+                "YAWLTelemetry must remain enabled after case cancellation");
+    }
+
+    @Test
+    void testCancelCase_EngineRemovesCaseFromSpecificationRegistry()
+            throws InterruptedException, YDataStateException, YEngineStateException,
+            YStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
+        // Before cancel: the case must be registered for its specification
+        Set casesBefore = _engine.getCasesForSpecification(
+                _specification.getSpecificationID());
+        assertTrue(casesBefore.contains(_idForTopNet),
+                "Case must be visible in specification registry before cancellation");
+
+        _engine.cancelCase(_idForTopNet, null);
+        Thread.sleep(200);
+
+        // After cancel: no cases remain for the specification (SLO/SLA lifecycle cleanup contract)
+        Set casesAfter = _engine.getCasesForSpecification(
+                _specification.getSpecificationID());
+        assertFalse(casesAfter.contains(_idForTopNet),
+                "cancelCase must remove the case from the specification registry — "
+                + "any SLO/SLA tracker keyed on caseId must be notified at this point");
+
+        // Telemetry must remain functional after the lifecycle transition
+        YAWLTelemetry telemetry = YAWLTelemetry.getInstance();
+        assertTrue(telemetry.isEnabled(),
+                "YAWLTelemetry must remain enabled after full case lifecycle (start → cancel)");
     }
 
     public void performTask(String name) throws YDataStateException, YStateException, YEngineStateException, YQueryException, YSchemaBuildingException, YPersistenceException {
