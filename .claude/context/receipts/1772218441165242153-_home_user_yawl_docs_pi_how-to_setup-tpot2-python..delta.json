@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772218441165242153,
+  "timestamp_rfc": "2026-02-27T18:54:01.165242153Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/setup-tpot2-python.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "99da920cff2933abb314a74197899e9b1d1175f6457a80b4e73656b12a3ec27c",
+  "delta_hash": "276708219de8a1ac44ed9818f3461c461dfb8e757b690ed15f8485855322becb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "tpot2",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "json",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Set Up the TPOT2 Python Environ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "csv",
+        "change": "Added"
+      }
+    }
+  ]
+}

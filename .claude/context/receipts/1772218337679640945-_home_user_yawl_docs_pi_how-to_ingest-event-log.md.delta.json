@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772218337679640945,
+  "timestamp_rfc": "2026-02-27T18:52:17.679640945Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/ingest-event-log.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a2ba1d7cee79f222a8097d5b867d8629b62d36084002d9b7fc9ebc2468c69e39",
+  "delta_hash": "b7c128737437011fb24dab4ea7b5247c940079faa25a0e0a56aa3858b70647f5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Ingest an Event Log",
+        "change": "Added"
+      }
+    }
+  ]
+}

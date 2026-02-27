@@ -1,9 +1,9 @@
 {
-  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
-  "started_at": "2026-02-27T18:15:05.304828289Z",
-  "ended_at": "2026-02-27T18:15:05.474104538Z",
-  "receipt_count": 266,
-  "chain_hash": "c0d63fe85dc8f1ca29ffacae1fbc9a8eeadb99d90cd88f0c1ff96432c821f198",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "started_at": "2026-02-27T18:56:50.059257119Z",
+  "ended_at": "2026-02-27T18:56:50.140531141Z",
+  "receipt_count": 289,
+  "chain_hash": "3aadef02bcb83da5615e379e7776c0f0026a47992b0ff19faad786dc1069e5bd",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -12362,6 +12362,737 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "Map<String, CaseFeatures> caseData = new",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772217785608163333,
+      "timestamp_rfc": "2026-02-27T18:43:05.608163333Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/root/.claude/plans/async-growing-lemur.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "97e80d26d7db57ec789ad510cc2ed6ce9ce730a4a039dcce435b044a5884cba0",
+      "delta_hash": "aabc136eb5df7c19bf84b977c223145200a76c724d8878eb986c6c32f451f177",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "# Plan: Full Diátaxis Documentation — ya",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772217928563256720,
+      "timestamp_rfc": "2026-02-27T18:45:28.563256720Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/index.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "cd2cfd84409c7dda08a7a379db6b9d8af5d2c69211f29e7ae831c432437725e4",
+      "delta_hash": "ed7fa0930f563fb33776a2bf57d9c8e0c1a52ad308f96c173c062c311c5db8db",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "# YAWL Process Intelligence",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772217988301664199,
+      "timestamp_rfc": "2026-02-27T18:46:28.301664199Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/explanation/architecture.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e0502347fd8c03ff05982e723a60e19074d691e20a6180253b24d46340f1a59a",
+      "delta_hash": "bb33d5690492a3180c4d0cb3c6f38a90d48a9afe109b523779cc193c77c10f5d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Architecture — YAWL Process Intelligen",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218022491505857,
+      "timestamp_rfc": "2026-02-27T18:47:02.491505857Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/explanation/co-located-automl.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "79d8add4978a0c3390a1f2c265d2d6b2e8aa5a2be0adb6fe399107c3db6748b6",
+      "delta_hash": "81b2a722ac15d467e06ad2e345bc7712315584db4edde743ca7ba7e007ac407b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Co-located AutoML — Why Zero-ETL Predi",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218073204479029,
+      "timestamp_rfc": "2026-02-27T18:47:53.204479029Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/explanation/6-pi-connections.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e10bdc4aa04bcb9706d28ee8ff20af066d38e544cadd93d2eec787871d7f8227",
+      "delta_hash": "2199a1ff333d982c8fc108d60217fd6063d449f4cefc59cbc255e9acb5951aa4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# The Six PI Connections — Design Ration",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218108106622806,
+      "timestamp_rfc": "2026-02-27T18:48:28.106622806Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/explanation/ocel2-standard.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "26bcc62fbcca3357004d3007a97b0dfa89107e2fbc35c39738765d9df70ca1bd",
+      "delta_hash": "a39a756bebd70bea62827ec37e865920ce6b50b028a685b201225cf3db8e10b8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# OCEL2 Standard — Object-Centric Event ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218144481977739,
+      "timestamp_rfc": "2026-02-27T18:49:04.481977739Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/reference/facade-api.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "df289b2d647f8106df75598508deddee3f55801661a00c9a697ee0227195a06a",
+      "delta_hash": "8fc53dd32f7cd36fe7686925ccc0672cfeea7201d89118175c4f3cfb88f84b06",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "AssignmentSolution",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "CaseOutcomePrediction",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record PISession(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public ProcessIntelligenceFacade(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public List<ProcessAction> recommendActi",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "NlQueryResponse",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "PIException",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Facade API Reference",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218175682523677,
+      "timestamp_rfc": "2026-02-27T18:49:35.682523677Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/reference/config.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9eaf364fa48c45c447a7b9ea129ea40be48dec82ea66b1ca1ed13facc7d5041b",
+      "delta_hash": "de655a222ab7cbfe82bb60c50d111f366b20d7d94e906965fd51d4fad2aec8cf",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record Tpot2Config(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Configuration Reference",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record PIFacadeConfig(",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218203255534098,
+      "timestamp_rfc": "2026-02-27T18:50:03.255534098Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/reference/process-actions.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c9d86916b4443354160d911207b284bd432474c217491c262ece01fbc58ef08d",
+      "delta_hash": "a12530742ae177284a61554654ed8b70288bbf1b6ed24ab722d1e2324bc459a6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Process Actions Reference",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record RerouteAction(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "ProcessAction",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record NoOpAction(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record ReallocateResourceAction(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record EscalateAction(",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218232204568214,
+      "timestamp_rfc": "2026-02-27T18:50:32.204568214Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/reference/onnx-model-format.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3b18aea51f8bf8f16d7ba19978308e9312dd97240a087aa4be63371a140bbd1c",
+      "delta_hash": "4baa7ef6963a4b3e75901264693ce51175fedf372a4a4ea7e330289f942f2ad6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "onnxruntime",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# ONNX Model Format Reference",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218259217252633,
+      "timestamp_rfc": "2026-02-27T18:50:59.217252633Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/reference/oced-schema.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9ff837826e2d493c31e0f4ea9302afd1f8160252b48ab4a55f435fa9c0d1a6e7",
+      "delta_hash": "9453a845535a6a1def4fe40caf85b5dc91015887e790dd88a001892cd57b20ea",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record OcedSchema(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "OcedBridge",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record ValidationReport(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# OCED Schema Reference",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218295465760279,
+      "timestamp_rfc": "2026-02-27T18:51:35.465760279Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/configure-pi-facade.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8dbb69d1b8c5edb85b82849938a42acc2ba93fbaa9cccf25f07b566c61101431",
+      "delta_hash": "b3c2155355d99282d353c6f7decf14ae804b5be1fd4b05184b9263898b902c97",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Configure the PI Facade",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "com",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218315471499925,
+      "timestamp_rfc": "2026-02-27T18:51:55.471499925Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/register-onnx-model.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "affea09fe9967a3d2c1f16ae402b58b79c0a4428f6cdcc04d5b933400d463eb4",
+      "delta_hash": "5cba6c3fe9e3896a68b551537086b9343ca78e420b11ea977028e87af32f746b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Register an ONNX Model",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218337679640945,
+      "timestamp_rfc": "2026-02-27T18:52:17.679640945Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/ingest-event-log.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a2ba1d7cee79f222a8097d5b867d8629b62d36084002d9b7fc9ebc2468c69e39",
+      "delta_hash": "b7c128737437011fb24dab4ea7b5247c940079faa25a0e0a56aa3858b70647f5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Ingest an Event Log",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218361157448738,
+      "timestamp_rfc": "2026-02-27T18:52:41.157448738Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/add-constraint-rule.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "aa32156f38678551c0e4f6593a1111c61075b02ea26a109138f7a99fd986b833",
+      "delta_hash": "3080def3d63a228ab56cd234278427cebfed9f8815d631e3a33a88ba7010ebc4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@prefix yawl: <http://www.yawlfoundation",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Add a Constraint Rule",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218389501928726,
+      "timestamp_rfc": "2026-02-27T18:53:09.501928726Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/add-adaptation-rule.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "da591fa21fed68e1b968a7414c0b2af6ece451f071c1ba2955e9712cd5aa874f",
+      "delta_hash": "9259ecc4904e43c80da15d3202a538782e42692be9aa0d61ef7c89f8111f4183",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Add an Adaptation Rule",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218413693676251,
+      "timestamp_rfc": "2026-02-27T18:53:33.693676251Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/expose-mcp-tools.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4b54f312cb0ce9e5de4e73e7568b2fff35ccfc70ddf2d6bc035667960481b3f2",
+      "delta_hash": "d9a4742f9eb13d9d6fd99ae2fc2f0d8e6df8c58fc0c2f7af9bc23be3a51d602f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "mcp",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Expose PI Tools via MCP",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218441165242153,
+      "timestamp_rfc": "2026-02-27T18:54:01.165242153Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/setup-tpot2-python.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "99da920cff2933abb314a74197899e9b1d1175f6457a80b4e73656b12a3ec27c",
+      "delta_hash": "276708219de8a1ac44ed9818f3461c461dfb8e757b690ed15f8485855322becb",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "tpot2",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "json",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Set Up the TPOT2 Python Environ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "csv",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218465178904008,
+      "timestamp_rfc": "2026-02-27T18:54:25.178904008Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/how-to/optimize-resources.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "df6edc0e763fa570c5cbfcb7a5a8c7896d96c4afb56b6b8f952ea18b0aa8206e",
+      "delta_hash": "db8df5e31e35a37b4fd8e5ad94b40cfaaa1312b29ca312f8d70ec27f5f1d04a2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Optimize Resource Assignments",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218501261170303,
+      "timestamp_rfc": "2026-02-27T18:55:01.261170303Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/tutorials/01-first-case-prediction.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "fd0d7deccb7c57a54bf2d285b357f5ec987d7ad75f505adf7c9893d433f98deb",
+      "delta_hash": "0a0244e18ad04c53f3523d74c3449af6776256d9575ae92119a916a1ea6ffa2a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 1 — Your First Case Outcome P",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218541495912833,
+      "timestamp_rfc": "2026-02-27T18:55:41.495912833Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/tutorials/02-train-automl-model.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f2514b7c8af0b3db9bae3316377216f6aef3f7a9c118baf3e2c4c3966ffd973e",
+      "delta_hash": "61100bbad74cb3167baca43393553d15665408e9f7c14e73d1bfa915577fae9e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 2 — Train an AutoML Model wit",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218576312747833,
+      "timestamp_rfc": "2026-02-27T18:56:16.312747833Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/tutorials/03-realtime-adaptive.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "178cf62dcff2a4cc395560e698ddb5b65e84a57e84a00d4ff0c33e3e5d6b6ebe",
+      "delta_hash": "bb5d2730cc47908738a6a5bcaf1ce9941bc2436db83e6e8d9f8b1ebb88d81738",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 3 — Build a Real-Time Adaptiv",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772218609728679870,
+      "timestamp_rfc": "2026-02-27T18:56:49.728679870Z",
+      "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+      "file_path": "/home/user/yawl/docs/pi/tutorials/04-natural-language-qa.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "29bab75f8d2b47ef4e941123568e968fd70c926bef3d4e265726b3c17ac8549f",
+      "delta_hash": "7085d8a95a4e0a19f8a6103c87f9c00ab2e9e52c900bdcaba41f8b8a24571cb8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 4 — Natural Language Q&A over",
             "change": "Added"
           }
         }

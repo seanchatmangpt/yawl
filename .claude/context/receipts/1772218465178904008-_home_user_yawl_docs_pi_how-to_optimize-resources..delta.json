@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772218465178904008,
+  "timestamp_rfc": "2026-02-27T18:54:25.178904008Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/optimize-resources.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "df6edc0e763fa570c5cbfcb7a5a8c7896d96c4afb56b6b8f952ea18b0aa8206e",
+  "delta_hash": "db8df5e31e35a37b4fd8e5ad94b40cfaaa1312b29ca312f8d70ec27f5f1d04a2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Optimize Resource Assignments",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

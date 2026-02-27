@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218413693676251,
+  "timestamp_rfc": "2026-02-27T18:53:33.693676251Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/expose-mcp-tools.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4b54f312cb0ce9e5de4e73e7568b2fff35ccfc70ddf2d6bc035667960481b3f2",
+  "delta_hash": "d9a4742f9eb13d9d6fd99ae2fc2f0d8e6df8c58fc0c2f7af9bc23be3a51d602f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "mcp",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Expose PI Tools via MCP",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

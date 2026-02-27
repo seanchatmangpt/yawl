@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772218203255534098,
+  "timestamp_rfc": "2026-02-27T18:50:03.255534098Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/reference/process-actions.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c9d86916b4443354160d911207b284bd432474c217491c262ece01fbc58ef08d",
+  "delta_hash": "a12530742ae177284a61554654ed8b70288bbf1b6ed24ab722d1e2324bc459a6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Process Actions Reference",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record RerouteAction(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "ProcessAction",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record NoOpAction(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record ReallocateResourceAction(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record EscalateAction(",
+        "change": "Added"
+      }
+    }
+  ]
+}
