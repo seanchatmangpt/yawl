@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772213214507767134,
+  "timestamp_rfc": "2026-02-27T17:26:54.507767134Z",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "file_path": "/home/user/yawl/docs/polyglot/index.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "04738d959edfa57c16b1e523363b9f216ca4816e025dd656330c88ba75fd95f8",
+  "delta_hash": "87e4e47d84db88732156ed9875dc8fd1b2331eb57ad162e90e544947f0d6ac9d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# YAWL GraalVM Polyglot Integration",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772213204313669801,
+  "timestamp_rfc": "2026-02-27T17:26:44.313669801Z",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "file_path": "/home/user/yawl/docs/polyglot/how-to/execute-python-script.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c59518084932a67e61f7401e615f4a9aeff9a91c2aa85748d45cc5ddd786b53a",
+  "delta_hash": "d45ab6161ae15f2b83350b9397ea43a04a19de8372be033d8d0320946234979f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "json",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to execute a Python script and ret",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

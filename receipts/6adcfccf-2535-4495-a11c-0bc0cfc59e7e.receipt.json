@@ -1,9 +1,9 @@
 {
-  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
-  "started_at": "2026-02-27T06:16:10.636511607Z",
-  "ended_at": "2026-02-27T06:16:10.676151706Z",
-  "receipt_count": 97,
-  "chain_hash": "8c087b78931a12a73026055067622fcca286f1606e2a130f757ecbadab409df0",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "started_at": "2026-02-27T17:28:34.498133136Z",
+  "ended_at": "2026-02-27T17:28:34.641471045Z",
+  "receipt_count": 109,
+  "chain_hash": "eb0b54ca94154b4b8bcfbe13d7a73687d7ac15539b90ecbdf96d63fbeb41882d",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -6372,6 +6372,696 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "assertEquals",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772211868021333420,
+      "timestamp_rfc": "2026-02-27T17:04:28.021333420Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/root/.claude/plans/atomic-petting-karp.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4260d4392592070ac18f6f6a8c0718f3492d052e622888eed93231d41370c045",
+      "delta_hash": "c676dd65f3bc356e54592e4f2f0f53c14e5343d5aac21c309ba921bdd14c1b2b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "# Plan: PhD Thesis",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772211953575386003,
+      "timestamp_rfc": "2026-02-27T17:05:53.575386003Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/root/.claude/plans/atomic-petting-karp.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b860921c9a619d6fa1ba8edfc3c92085d264cad7148b5146bc55f87bdd1c67b2",
+      "delta_hash": "c676dd65f3bc356e54592e4f2f0f53c14e5343d5aac21c309ba921bdd14c1b2b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "# Plan: PhD Thesis",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212017797558947,
+      "timestamp_rfc": "2026-02-27T17:06:57.797558947Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/root/.claude/plans/atomic-petting-karp.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ad0ce121f5dd2c4b5f38cd8f67512753767a66b04e3bbfc575e133c206526f2d",
+      "delta_hash": "56a95bcb43f0263a0ddfc87eeed2a93661023c8c3b54856f03a138f0cdd13862",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "---",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212109333469490,
+      "timestamp_rfc": "2026-02-27T17:08:29.333469490Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/root/.claude/plans/atomic-petting-karp.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "241ea4a1c9a5c4301c02a971a7bd57e193a8b8432acbbf64bd99101ea1ff0e8c",
+      "delta_hash": "56a95bcb43f0263a0ddfc87eeed2a93661023c8c3b54856f03a138f0cdd13862",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "---",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213204313669801,
+      "timestamp_rfc": "2026-02-27T17:26:44.313669801Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/how-to/execute-python-script.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c59518084932a67e61f7401e615f4a9aeff9a91c2aa85748d45cc5ddd786b53a",
+      "delta_hash": "d45ab6161ae15f2b83350b9397ea43a04a19de8372be033d8d0320946234979f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "json",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to execute a Python script and ret",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213214507767134,
+      "timestamp_rfc": "2026-02-27T17:26:54.507767134Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/index.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "04738d959edfa57c16b1e523363b9f216ca4816e025dd656330c88ba75fd95f8",
+      "delta_hash": "87e4e47d84db88732156ed9875dc8fd1b2331eb57ad162e90e544947f0d6ac9d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# YAWL GraalVM Polyglot Integration",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213219268737630,
+      "timestamp_rfc": "2026-02-27T17:26:59.268737630Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/how-to/execute-js-in-workflow-task.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c1f6f2e9cb53dc126f5783d88aa20be7f61fc9a3b9f79ae37783251a4bf96a40",
+      "delta_hash": "801af2af7a1c0b70297b16d28570df1374062378bb173e1928d4ddd3b82b3c48",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private JavaScriptExecutionEngine routin",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ApprovalRoutingTask",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to evaluate JavaScript workflow ru",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213234821367546,
+      "timestamp_rfc": "2026-02-27T17:27:14.821367546Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/how-to/load-wasm-from-classpath.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "58b4068305cb2a02423e9750bf2d164cc72c18c7acd64db33a9dcef2a0af1078",
+      "delta_hash": "793ad9570712220a4e4e4ade8d83f7470941279f0e82a1c9187539f35702556c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to bundle and load a .wasm binary ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "com",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213236779982772,
+      "timestamp_rfc": "2026-02-27T17:27:16.779982772Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/tutorials/01-graalpy-getting-started.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b6666685983f72bab6a542a0382da513c91e67a98e1a965641b7b5f4763b3456",
+      "delta_hash": "690125e16781121563dded8a9d1df44bf78da9f1121b98c4fd2d294693d45fa7",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "evaluate_case_risk",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 1: Getting Started with Graal",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "RiskAssessmentHandler",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "analyze_case",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "CaseRiskEvaluator",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "get_decision",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "calculate_risk",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "get_recommendations",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "comprehensive_analysis",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "math",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213254459377544,
+      "timestamp_rfc": "2026-02-27T17:27:34.459377544Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/how-to/configure-sandbox.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2ea4a15350bec2600272d9a4e65c611f96977052c5f8db22a7333f3a7be19398",
+      "delta_hash": "70c0dbc2d8907aa83060f2e83e686cac8cae2afe7abcfd36d52cda9ec1c7d0c8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "calculate_score",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final PythonExecutionEngine pyth",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final JavaScriptExecutionEngine ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "double",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to configure sandbox restrictions ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "WorkflowScriptEngine",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final WasmExecutionEngine wasmEn",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Map",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213269592904047,
+      "timestamp_rfc": "2026-02-27T17:27:49.592904047Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/tutorials/02-graaljs-getting-started.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "67733c4ef19f7dd2f9ea4190376808d941eff9505d45ee4794f78b3b2a0ae87c",
+      "delta_hash": "4683dac464eed84abde5172c26841fa2126905f4ff2ca3e50e294ae168cbf7d7",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "CaseRoutingHandler",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private JavaScriptExecutionEngine engine",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "WorkflowRoutingHandler",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 2: Getting Started with Graal",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213276326109710,
+      "timestamp_rfc": "2026-02-27T17:27:56.326109710Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/how-to/share-context-pool.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f87b8f1242105f752cf305b2bd5170323207299be5a03f366036f9d1d0ae2aeb",
+      "delta_hash": "72e6db5479d14513db4d91093af31d8383e9378cc433a26531d7fbe33d3d9ff0",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to share a GraalJS or GraalPy cont",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "PolyglotEngineProvider",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "PythonExecutionEngine",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public WorkflowIntegrationService(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "WorkflowIntegrationService",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "PoolMonitor",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final PythonExecutionEngine pyth",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final JavaScriptExecution",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ConcurrentRuleEngine",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "static {",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "json",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "JavaScriptExecutionEngine",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Service",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "PolyglotEngineFactory",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final PythonExecutionEngi",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final Logger LOGGER = Log",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Map",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@PostConstruct",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Autowired",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataValidationTask",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Bean",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final JavaScriptExecutionEngine ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public DataValidationTask(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "RuleEngineService",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "MyWorkflowTask",
             "change": "Added"
           }
         }
