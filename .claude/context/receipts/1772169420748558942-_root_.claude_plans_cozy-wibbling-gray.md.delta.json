@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772169420748558942,
+  "timestamp_rfc": "2026-02-27T05:17:00.748558942Z",
+  "session_id": "6fff539d-2cdd-479b-9a13-8cf56c43ac9d",
+  "file_path": "/root/.claude/plans/cozy-wibbling-gray.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4929300676d0e9b8026c23b337f0f6041de59f694bccec4160be1bc878ba6dab",
+  "delta_hash": "812df2874943066ec8e0bd3b5c43cf7958264b487ba3e6e30d7741e25d38b2b1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Merge stateful-engine-observabil",
+        "change": "Added"
+      }
+    }
+  ]
+}

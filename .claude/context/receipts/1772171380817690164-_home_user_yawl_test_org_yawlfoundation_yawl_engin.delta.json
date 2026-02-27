@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772171380817690164,
+  "timestamp_rfc": "2026-02-27T05:49:40.817690164Z",
+  "session_id": "6fff539d-2cdd-479b-9a13-8cf56c43ac9d",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/observability/EngineObservabilityIntegrationTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f0a620c3bce1dd27fedda45d27abdae2a2fa89d269cd80263bbc5d08d8b0de70",
+  "delta_hash": "45ad2e77d5cc499e1dcb0a25160076de2a218843eac065070299b3ec7ab88ef7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "EngineObservabilityIntegrationTest",
+        "change": "Added"
+      }
+    }
+  ]
+}
