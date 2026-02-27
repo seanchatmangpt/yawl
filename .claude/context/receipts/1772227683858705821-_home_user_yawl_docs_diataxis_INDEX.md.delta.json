@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772227683858705821,
+  "timestamp_rfc": "2026-02-27T21:28:03.858705821Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ae2dfacea83ad6650b7ccc3c6c68ee474e14e81096549a93d7f267bc59f8a030",
+  "delta_hash": "67a955b552a9304b1527dd468c60df700c124b5e6207ab5637740bfbd0fba4a5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### 1M Cases Support",
+        "change": "Added"
+      }
+    }
+  ]
+}

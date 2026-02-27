@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772227702922595023,
+  "timestamp_rfc": "2026-02-27T21:28:22.922595023Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9642b5916cbf4b31666136f9db10f3dcf3fd82980e0fc510e2ec3e29cb1b73b5",
+  "delta_hash": "aca4268a74c9760839c515fd1b9980a441ce7f15ad285d02751756a348b12b9a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Architecture",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772227228968731037,
+  "timestamp_rfc": "2026-02-27T21:20:28.968731037Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/how-to/import-schema-formats.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5f8ec51506a5aafa632a6dd4dec256f626962cb89a305bfd26813c95b652b4b2",
+  "delta_hash": "00f37da0c7a04921ac2dfe1b5f37160b44b46852a5c916b4f300ffb086058bc9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "com",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Import Schema Formats with Data",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

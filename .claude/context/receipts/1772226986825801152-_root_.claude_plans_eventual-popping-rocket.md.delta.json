@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772226986825801152,
+  "timestamp_rfc": "2026-02-27T21:16:26.825801152Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/root/.claude/plans/eventual-popping-rocket.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4b91e417d11d11d099ffd287a8e7b8f49aaaa74d67aa1e13621f6d4a63d91dc7",
+  "delta_hash": "4cb737dddc543276da5494e689b7c60431e2af3dd7db388a4a2a4b3a42c174ea",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Full Diátaxis Documentation: yawl-data",
+        "change": "Added"
+      }
+    }
+  ]
+}

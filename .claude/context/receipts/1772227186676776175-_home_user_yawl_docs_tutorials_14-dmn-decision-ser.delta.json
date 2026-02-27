@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772227186676776175,
+  "timestamp_rfc": "2026-02-27T21:19:46.676776175Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/tutorials/14-dmn-decision-service.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "031ef5d74e4b92105717430bdc65a54ec47b02ca2cc7616343d47cee8612a581",
+  "delta_hash": "264e960af02013b2226d061c9d4ff1f27e85c2fc8bc17bb31d6f8727099e47c1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static void check(DmnDecisionSer",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final String ELIGIBILITY_",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial: DMN Decision Evaluation with",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "LoanEligibilityDemo",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 {
   "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
-  "started_at": "2026-02-27T21:12:45.225231596Z",
-  "ended_at": "2026-02-27T21:12:45.356314095Z",
-  "receipt_count": 623,
-  "chain_hash": "4ab99667a20c79aad33cd516cc779510d42c020e77466b2b438032aac836c28f",
+  "started_at": "2026-02-27T21:29:55.230168990Z",
+  "ended_at": "2026-02-27T21:29:55.959087640Z",
+  "receipt_count": 637,
+  "chain_hash": "481c7d3617c7290959c8c78dfd68194cb325db006deb0c9d0a86f69c444bbcd5",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -26311,6 +26311,363 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772226986825801152,
+      "timestamp_rfc": "2026-02-27T21:16:26.825801152Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/root/.claude/plans/eventual-popping-rocket.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4b91e417d11d11d099ffd287a8e7b8f49aaaa74d67aa1e13621f6d4a63d91dc7",
+      "delta_hash": "4cb737dddc543276da5494e689b7c60431e2af3dd7db388a4a2a4b3a42c174ea",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Full Diátaxis Documentation: yawl-data",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227186676776175,
+      "timestamp_rfc": "2026-02-27T21:19:46.676776175Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/tutorials/14-dmn-decision-service.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "031ef5d74e4b92105717430bdc65a54ec47b02ca2cc7616343d47cee8612a581",
+      "delta_hash": "264e960af02013b2226d061c9d4ff1f27e85c2fc8bc17bb31d6f8727099e47c1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static void check(DmnDecisionSer",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String ELIGIBILITY_",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial: DMN Decision Evaluation with",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "LoanEligibilityDemo",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227228968731037,
+      "timestamp_rfc": "2026-02-27T21:20:28.968731037Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/how-to/import-schema-formats.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5f8ec51506a5aafa632a6dd4dec256f626962cb89a305bfd26813c95b652b4b2",
+      "delta_hash": "00f37da0c7a04921ac2dfe1b5f37160b44b46852a5c916b4f300ffb086058bc9",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "com",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Import Schema Formats with Data",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227280996338407,
+      "timestamp_rfc": "2026-02-27T21:21:20.996338407Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/how-to/manage-knowledge-and-decisions.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6d6535a8f50f5656cac5b328afea05e03e4879236da95afc0ace1562abfab828",
+      "delta_hash": "f2685f9fe507a544fc34d3f04c6e98ea597acc2b9c8ae7b4eb04f17e1eb8057b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Manage Decision Records, Knowle",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227324268236053,
+      "timestamp_rfc": "2026-02-27T21:22:04.268236053Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/how-to/validate-data-schemas.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0a5abdd3d1b6e0985535b6d9126820624c2f2c0f157f18f61f23e3b2904bfb8d",
+      "delta_hash": "484deec9dd655a81559e407d0507c6471bca62d3b398dd94ea07e6a8579d2693",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Validate Data Schema Quality",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public ValidationResult validateSchema(D",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "record",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227377889214045,
+      "timestamp_rfc": "2026-02-27T21:22:57.889214045Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/how-to/evaluate-dmn-decisions.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "03741e8ac58eb2ae294abfea4fc7795b00462945c0e912b446652a3a0dce9b54",
+      "delta_hash": "d2ab3729c8909af60423a7e0b8dc3d1e8f06f9ef39285bd21bf443cc2f2ffc4f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Evaluate DMN Decisions with Dmn",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227450741604606,
+      "timestamp_rfc": "2026-02-27T21:24:10.741604606Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/reference/data-modelling-bridge.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7df93177cfb39fa7b4a4377b6a80b143219014f43a89c8b4545224baf0f59676",
+      "delta_hash": "a4384c87860cb911a4f2ea9d97b2bdfb777f2c9fbc9a1dc37e4483e0f639d34c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# DataModellingBridge API Reference",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227510016655916,
+      "timestamp_rfc": "2026-02-27T21:25:10.016655916Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/reference/dmn-decision-service.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1729e719d01d0abc3ced7fb4039f74884ff8146bcc0043b470dc4fd8f8d77ea4",
+      "delta_hash": "fdf31ed98f547ce23fabd65948c392ba6033107f1f104a70c4279bdac057f61f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# DMN Decision Service API Reference",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227579674006580,
+      "timestamp_rfc": "2026-02-27T21:26:19.674006580Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/explanation/data-modelling-wasm-architecture.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e5fd1acf01f4e1b5a16476b01903404d8fd6459187daa45994922b0c3b6d6da6",
+      "delta_hash": "71ade38ee98dd0673a6c1be60c8a08f2eed35a0a43f3f141ca083d6e90e7579d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# The Data Modelling WASM Architecture",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227637910235242,
+      "timestamp_rfc": "2026-02-27T21:27:17.910235242Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/explanation/dmn-graalwasm-engine.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "bb12a3a75b2e799e442d592ab5739ad40b58475b88aebdc82e3762f41ed9f0ef",
+      "delta_hash": "3d7e421b40447c20235e6019f490256a8dad163d622c5708ccc8d2519ca36504",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# The DMN GraalWASM Engine",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227667304366656,
+      "timestamp_rfc": "2026-02-27T21:27:47.304366656Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "20c12f314672c395310aa515f4019e98672c99a8d2dd83d90d8b89de81193731",
+      "delta_hash": "4514283efb7f8cbcc4a9644ec950e18aee377c75368257b3beeba16547ec84cf",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "| 13 | [Scale to 1M Cases]",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227683858705821,
+      "timestamp_rfc": "2026-02-27T21:28:03.858705821Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ae2dfacea83ad6650b7ccc3c6c68ee474e14e81096549a93d7f267bc59f8a030",
+      "delta_hash": "67a955b552a9304b1527dd468c60df700c124b5e6207ab5637740bfbd0fba4a5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### 1M Cases Support",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227691740817861,
+      "timestamp_rfc": "2026-02-27T21:28:11.740817861Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "eb19eecf7cf67a62ac5f11d5eac9ca417a4cd7612d5b07c80bad9cf65069c244",
+      "delta_hash": "2548cf5e1a222051f459c4583ff7588e8b1c0a5aaf04d1d5f39687a58a55597c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### Schema Modelling & DMN",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772227702922595023,
+      "timestamp_rfc": "2026-02-27T21:28:22.922595023Z",
+      "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9642b5916cbf4b31666136f9db10f3dcf3fd82980e0fc510e2ec3e29cb1b73b5",
+      "delta_hash": "aca4268a74c9760839c515fd1b9980a441ce7f15ad285d02751756a348b12b9a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### Architecture",
             "change": "Added"
           }
         }

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772227377889214045,
+  "timestamp_rfc": "2026-02-27T21:22:57.889214045Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/how-to/evaluate-dmn-decisions.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "03741e8ac58eb2ae294abfea4fc7795b00462945c0e912b446652a3a0dce9b54",
+  "delta_hash": "d2ab3729c8909af60423a7e0b8dc3d1e8f06f9ef39285bd21bf443cc2f2ffc4f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Evaluate DMN Decisions with Dmn",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

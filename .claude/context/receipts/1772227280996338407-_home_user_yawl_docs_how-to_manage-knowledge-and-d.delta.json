@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772227280996338407,
+  "timestamp_rfc": "2026-02-27T21:21:20.996338407Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/how-to/manage-knowledge-and-decisions.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6d6535a8f50f5656cac5b328afea05e03e4879236da95afc0ace1562abfab828",
+  "delta_hash": "f2685f9fe507a544fc34d3f04c6e98ea597acc2b9c8ae7b4eb04f17e1eb8057b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Manage Decision Records, Knowle",
+        "change": "Added"
+      }
+    }
+  ]
+}

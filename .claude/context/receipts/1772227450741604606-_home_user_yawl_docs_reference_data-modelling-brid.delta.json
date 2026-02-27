@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772227450741604606,
+  "timestamp_rfc": "2026-02-27T21:24:10.741604606Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/reference/data-modelling-bridge.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7df93177cfb39fa7b4a4377b6a80b143219014f43a89c8b4545224baf0f59676",
+  "delta_hash": "a4384c87860cb911a4f2ea9d97b2bdfb777f2c9fbc9a1dc37e4483e0f639d34c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# DataModellingBridge API Reference",
+        "change": "Added"
+      }
+    }
+  ]
+}
