@@ -1,9 +1,9 @@
 {
   "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
-  "started_at": "2026-02-27T20:05:01.261247115Z",
-  "ended_at": "2026-02-27T20:05:01.409847796Z",
-  "receipt_count": 234,
-  "chain_hash": "3636a790119ae5ddf567ffb8429d681774b83cc1b3e1978def81d0ab5ed7fd2a",
+  "started_at": "2026-02-27T20:06:23.477456252Z",
+  "ended_at": "2026-02-27T20:06:23.725947549Z",
+  "receipt_count": 236,
+  "chain_hash": "16e3a745da1e130d8a57f8b3546bac66e0eff5234dc42f28333f4d8c21fb5f9e",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -11500,6 +11500,44 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "# Java 21–25 JEP Index for YAWL 1M Cases",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222736075758551,
+      "timestamp_rfc": "2026-02-27T20:05:36.075758551Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/reference/capacity-planning-1m.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0b738ed334b268cc6987cec4ae537d8bc44a6019d4c820159210471abf5a8a7c",
+      "delta_hash": "d9209029f926845abb748bac1cce3829c8f9e625383c49ef26c7917e887e26d5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Capacity Planning for 1M Cases YAWL De",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222767817822020,
+      "timestamp_rfc": "2026-02-27T20:06:07.817822020Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/reference/configuration.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2ea33435291645a4e1d302d4afbb17ab8d78cb3fa83e31cf2a3dd1d4ded409b3",
+      "delta_hash": "20cc604e7ebab21dafe7c2fe22b312dae43095e831b6fd41ab122af8a39a5a1a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "| `XX:+UseZGC -XX:+ZGenerational` | flag",
             "change": "Added"
           }
         }

@@ -253,3 +253,179 @@ JVM system properties that affect virtual thread scheduling and memory:
 | `XX:InitialRAMPercentage` | double | `50.0` | Initial heap as percentage of container memory. | `50.0` |
 | `XX:+UseZGC -XX:+ZGenerational` | flag | _(off)_ | Generational ZGC garbage collector. Recommended for production; provides low-latency GC with large heaps. | _(JVM flag)_ |
 | `XX:+UseCompactObjectHeaders` | flag | _(off)_ | Java 25 compact object headers. Saves 4-8 bytes per object (~5-10% throughput improvement). | _(JVM flag)_ |
+
+---
+
+## 9. 1M Cases Configuration
+
+Configuration properties and JVM flags for YAWL deployments targeting 1M active cases. All settings below are production-tested and optimize for latency, throughput, and off-heap memory utilization.
+
+### JVM Flags (Core)
+
+| Flag | Value | Description | Priority |
+|------|-------|-------------|----------|
+| `-Xmx` | `8g` | Maximum heap size per pod. Sufficient for 50K hot cases + queues. | Critical |
+| `-Xms` | `4g` | Initial heap size. Allows JVM to grow to -Xmx without pauses. | Critical |
+| `-XX:+UseZGC` | _(enabled)_ | Generational ZGC garbage collector. Provides < 10 ms p99 pause time @ 1M cases. | Critical |
+| `-XX:+ZGenerational` | _(enabled)_ | Generational mode for ZGC (Java 21+). Separates young/old gen for better performance. | Critical |
+| `-XX:+UseCompactObjectHeaders` | _(enabled)_ | Compact object headers (Java 24+). Saves 50–100 MB heap per pod; experimental but proven. | Recommended |
+| `-XX:+HeapDumpOnOutOfMemoryError` | _(enabled)_ | Dump heap to file on OOM for post-mortem analysis. | Important |
+| `-XX:HeapDumpPath=/opt/yawl/logs/heapdump.hprof` | path | Location for heap dumps. Mount persistent volume. | Important |
+| `-XX:+UseContainerSupport` | _(enabled)_ | JVM respects cgroup memory limits in Docker/Kubernetes. | Critical |
+| `-XX:MaxRAMPercentage=75.0` | percentage | Heap as % of container memory. At 10 GB limit: 7.5 GB heap. | Important |
+| `-XX:InitialRAMPercentage=50.0` | percentage | Initial heap as % of container memory. Allows growth without pause. | Important |
+
+### JVM Flags (Virtual Threads)
+
+| Flag | Value | Description |
+|------|-------|-------------|
+| `-Djdk.virtualThreadScheduler.parallelism` | `200` | Carrier thread pool size. Increase for many concurrent cases. |
+| `-Djdk.virtualThreadScheduler.maxPoolSize` | `256` | Maximum carrier threads. Must be >= parallelism. |
+| `-Djdk.tracePinnedThreads=short` | `short` | Log thread pinning events (abbreviated output). Set to `full` for debugging. |
+
+### Local Case Registry Configuration
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| `yawl.registry.initial-capacity` | `1333334` | ConcurrentHashMap pre-sized for 1M entries (1M ÷ 0.75 load factor). Avoids rehashing during steady state. |
+
+### Runner Eviction Store Configuration (OffHeapRunnerStore)
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| `yawl.runner.eviction.enabled` | `true` | Enable off-heap storage for evicted runners. |
+| `yawl.runner.eviction.max-off-heap-gb` | `60` | Maximum off-heap memory for runner snapshots. At 1M × 30 KB = 30 GB typical; 60 GB headroom. |
+| `yawl.runner.cache.capacity` | `50000` | Hot-set LRU capacity per pod. Evicts to off-heap when exceeded. |
+| `yawl.runner.cache.eviction-threshold` | `0.9` | Evict runners when cache fill rate exceeds 90%. |
+
+### Workflow Event Bus Configuration
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| `yawl.eventbus.implementation` | `org.yawlfoundation.yawl.engine.spi.FlowWorkflowEventBus` | Default in-JVM event bus using Java 21+ Flow API. Override with env var `YAWL_EVENT_BUS_IMPL` for Kafka adapter. |
+| `yawl.eventbus.buffer-size` | `256` | Per-type event buffer size. Increase to 512+ if back-pressure observed. |
+| `yawl.eventbus.virtual-thread-executor` | `true` | Use virtual threads for event handlers (default). Disable only if debugging. |
+
+### HPA (Horizontal Pod Autoscaler) Configuration
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| `spec.minReplicas` | `3` | Minimum pod count for HA. At least 3 for multi-AZ deployments. |
+| `spec.maxReplicas` | `20` | Maximum pod count. 20 pods × 50K cases/pod = 1M cases capacity. |
+| `metrics[0].pods.target.averageValue` | `5000` | Scale out when `yawl_workitem_queue_depth` exceeds 5K items/pod. |
+| `metrics[1].resource.target.averageUtilization` | `70` | Secondary metric: scale out at 70% CPU utilization. |
+| `scaleUp.stabilizationWindowSeconds` | `60` | Wait 60s between scale-up evaluations to avoid oscillation. |
+| `scaleUp.policies[0].value` | `3` | Add 3 pods per scale-up event (max 3 pods/min). |
+| `scaleUp.policies[0].periodSeconds` | `60` | Evaluate scale-up every 60 seconds. |
+| `scaleDown.stabilizationWindowSeconds` | `300` | Wait 300s (5 min) before scale-down to ensure sustained low load. |
+| `scaleDown.policies[0].value` | `1` | Remove 1 pod per scale-down event (max 1 pod/2 min). |
+| `scaleDown.policies[0].periodSeconds` | `120` | Evaluate scale-down every 120 seconds. |
+
+**Example HPA manifest** (Kubernetes v1.24+):
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yawl-engine-hpa
+  namespace: yawl
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: engine-deployment
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: yawl_workitem_queue_depth
+        target:
+          type: AverageValue
+          averageValue: "5000"
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 3
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+```
+
+### Service Loader Environment Overrides (Phase 2/3)
+
+Override default SPI implementations via environment variables:
+
+| Env Var | Default Value | Example Override |
+|---------|---------------|------------------|
+| `YAWL_EVENT_BUS_IMPL` | `org.yawlfoundation.yawl.engine.spi.FlowWorkflowEventBus` | `org.example.kafka.KafkaWorkflowEventBus` |
+| `YAWL_CASE_REGISTRY_IMPL` | `org.yawlfoundation.yawl.engine.spi.LocalCaseRegistry` | `org.example.redis.RedisGlobalCaseRegistry` |
+| `YAWL_RUNNER_EVICTION_STORE_IMPL` | `org.yawlfoundation.yawl.engine.spi.OffHeapRunnerStore` | `org.example.postgres.PostgreSQLRunnerStore` |
+
+---
+
+## 10. Kubernetes Deployment
+
+Pod resource requests and limits for 1M case cluster:
+
+| Parameter | Request | Limit | Reason |
+|-----------|---------|-------|--------|
+| **CPU** | `4000m` (4 cores) | `8000m` (8 cores burstable) | Virtual threads allow overcommit; scale pod count instead. |
+| **Memory** | `4Gi` (initial heap) | `10Gi` (heap + off-heap buffer) | Initial heap = 4 GB; limit allows growth to 8 GB with 2 GB safety margin. |
+
+**Example deployment snippet:**
+```yaml
+containers:
+  - name: yawl-engine
+    image: yawl/engine:6.0.0
+    resources:
+      requests:
+        cpu: "4000m"
+        memory: "4Gi"
+      limits:
+        cpu: "8000m"
+        memory: "10Gi"
+    env:
+      - name: JAVA_TOOL_OPTIONS
+        value: >-
+          -XX:+UseZGC
+          -XX:+ZGenerational
+          -XX:+UseCompactObjectHeaders
+          -Xmx8g
+          -Xms4g
+          -XX:+HeapDumpOnOutOfMemoryError
+          -XX:HeapDumpPath=/opt/yawl/logs/heapdump.hprof
+```
+
+---
+
+## 11. Production Checklist
+
+- [ ] JVM flags: ZGC generational, compact headers, heap 8 GB, off-heap limit 60 GB
+- [ ] Database: PostgreSQL 14+, 400+ `max_connections`, NVMe SSD
+- [ ] Kubernetes: 1.24+, 15–20 nodes, 10 Gbps cluster network
+- [ ] HPA: Min 3, max 20 replicas; queue depth + CPU metrics
+- [ ] Monitoring: Prometheus scrape every 15s; alerts on queue depth > 5K, p99 latency > 50 ms
+- [ ] Load testing: Verify 40K cases/sec throughput, p95 work item dispatch < 30 ms, GC pause p99 < 10 ms
+- [ ] SPI implementations: Confirm correct ServiceLoader registration and env var overrides
+
+---
+
+## References
+
+- [Capacity Planning for 1M Cases](../reference/capacity-planning-1m.md)
+- [Java 25 JEP Index](../reference/java25-jep-index.md)
+- [SPI Reference](../reference/spi-million-cases.md)
+- [YAWL Kubernetes Deployment](../../k8s/base/)
