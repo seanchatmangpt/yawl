@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772222414929999803,
+  "timestamp_rfc": "2026-02-27T20:00:14.929999803Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/datamodelling/DataModellingException.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "80904a3c4f70a98b4f0ba246c920e07437bb433a1fc1620b23c4806c2c23842f",
+  "delta_hash": "12796f5ab4f0db9e330381479f3a5904175973a0e1eb0584f6af016278c7f734",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "DataModellingException",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final ErrorKind kind;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ErrorKind",
+        "change": "Added"
+      }
+    }
+  ]
+}

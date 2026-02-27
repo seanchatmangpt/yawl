@@ -1,9 +1,9 @@
 {
-  "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
-  "started_at": "2026-02-27T19:27:18.920311453Z",
-  "ended_at": "2026-02-27T19:27:19.113370378Z",
-  "receipt_count": 385,
-  "chain_hash": "1197526872b3f93736512275281329f5a8d7471b9ef654a65744dd203bf1277d",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "started_at": "2026-02-27T20:55:42.962140566Z",
+  "ended_at": "2026-02-27T20:55:43.416921947Z",
+  "receipt_count": 404,
+  "chain_hash": "c27300917ce8a74f5a2b9149cbceaff53d59708e332e3d2537c0e794f10d13f3",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -18746,6 +18746,822 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "WasmModule mod = engine.loadModuleFromCl",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220752613418153,
+      "timestamp_rfc": "2026-02-27T19:32:32.613418153Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/root/.claude/plans/eventual-popping-rocket.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "afe714cd6d3c54f9cb764448c70834be6c55caebdd1720c03229492d7da2e6b6",
+      "delta_hash": "11f87a04fce231945c47b3f8243618f94f67d8752edf196bd66cb600a3f824b6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Maximal YAWL Data-Modelling Module Des",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220978722156278,
+      "timestamp_rfc": "2026-02-27T19:36:18.722156278Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/root/.claude/plans/eventual-popping-rocket.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "79a834c1d6755b7d5504608333a4ef40bf49829a1bcfe754881374f2d37d47af",
+      "delta_hash": "11f87a04fce231945c47b3f8243618f94f67d8752edf196bd66cb600a3f824b6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Maximal YAWL Data-Modelling Module Des",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221120645485947,
+      "timestamp_rfc": "2026-02-27T19:38:40.645485947Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/root/.claude/plans/eventual-popping-rocket.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9d09318b87c11825cd0d510af326931434a3a8b7360a4a6a20717d0ba6918840",
+      "delta_hash": "526979aa061195f44bd0bbdd36e866a151e5468a2b5ef415a779c70a5a456d4f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Maximal YAWL Data-Modelling Module Des",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221430201346676,
+      "timestamp_rfc": "2026-02-27T19:43:50.201346676Z",
+      "session_id": "e37582ab-64d6-4752-898e-84d05770cf97",
+      "file_path": "/root/.claude/plans/eventual-popping-rocket.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "27fda4c8a2c793b272f38bfc68dc89668596aa9d6ba3207a0e3cf5fa70deab38",
+      "delta_hash": "a212987b872133b05a977b3a9986b0ff9eb3d635a7e389c55d1b71757e33f047",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Sketch",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record Workspace(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Domain",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final Value instance;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record Table(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataModellingEngine",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final Context wasmContext;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record Column(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# yawl-data-modelling: WASM-First Design",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Workspace",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222366371248826,
+      "timestamp_rfc": "2026-02-27T19:59:26.371248826Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/yawl-data-modelling/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "063b009c49502d3440ab9fefffc4b236b464f0052f83de31e8461e6c208109d5",
+      "delta_hash": "444ba2e1deaed161219cb92c26ae77219a8a6a7ac81d1cad987c8cecae486cda",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222414929999803,
+      "timestamp_rfc": "2026-02-27T20:00:14.929999803Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/datamodelling/DataModellingException.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "80904a3c4f70a98b4f0ba246c920e07437bb433a1fc1620b23c4806c2c23842f",
+      "delta_hash": "12796f5ab4f0db9e330381479f3a5904175973a0e1eb0584f6af016278c7f734",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DataModellingException",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final ErrorKind kind;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ErrorKind",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222626964933492,
+      "timestamp_rfc": "2026-02-27T20:03:46.964933492Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/datamodelling/DataModellingBridge.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "17468ca5f58d3dffce65900d81affb419e1bb4eb84dd7fa8418332619c5c584e",
+      "delta_hash": "c3b862b293d69bef173d0836d510e45fceac558ce121d3569c4a4415224a7c5d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public String createDecision(int number,",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public String convertOpenapiToOdcs(Strin",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public String checkCircularDependency(St",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final JavaScriptExecutionEngine ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Path",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "static final String GLUE_RESOURCE = \"was",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "static final String WASM_RESOURCE = \"was",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Nullable String tableName) {",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DataModellingBridge",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public String createKnowledgeArticle(int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final Path tempDir;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222645557257778,
+      "timestamp_rfc": "2026-02-27T20:04:05.557257778Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/datamodelling/package-info.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "bc2728a7d78e5b105a5d36dced51030b3575cbc6081126e21455223a7a3d52ab",
+      "delta_hash": "55b31a2cf3e758853a0bf94d17aba6585c8164cbd8ae6a0dc50d4a1d4845d684",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222713036907464,
+      "timestamp_rfc": "2026-02-27T20:05:13.036907464Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/datamodelling/DataModellingBridgeTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5ed4f552d4a16212a1fd43338f7a62c93b29102a27bd550673c7e59e93d8f4cb",
+      "delta_hash": "827df2184725a9f5b43f33fa313e5c8ed1f4a0d6f908e690bdc839face426566",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeAll",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private DataModellingBridge bridge;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestInstance",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@AfterAll",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataModellingBridgeTest",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222738909462740,
+      "timestamp_rfc": "2026-02-27T20:05:38.909462740Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "119590a6af76d1f8640a789a1f5b311ea5dffd7bbbb54694b9b60d539d7a1a5d",
+      "delta_hash": "bf5affa0a68ab1c918425d517074de9b542c9a4b2294986d8a692be26f1a4879",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<module>yawl-graalwasm</module>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222747886356383,
+      "timestamp_rfc": "2026-02-27T20:05:47.886356383Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a2bf582edcaccc737c4250def71caa61e27eeaf72445d9057ec60220e5327a69",
+      "delta_hash": "55b4f83c29087d3ec23379ed88b19e026f7e5f4a89830a309c4e5e1bf46ae01b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<dependency>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772223255479078342,
+      "timestamp_rfc": "2026-02-27T20:14:15.479078342Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/yawl-data-modelling/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5403b20865983a1604c31c629df4d3cc19db8d161c9df11ead498926723c5072",
+      "delta_hash": "883107a38b36804292b7db593fd8c4aed4fb2cde4fbe8e9ea7af6a2b77f77da4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "<!-- GraalVM Polyglot API",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772224226546229484,
+      "timestamp_rfc": "2026-02-27T20:30:26.546229484Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JavaScriptSandboxConfig.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b7a5a5d3b89d1d0d1aba7b7c67ff1a3c1d5e021c65a4129673792b7d0a2ccc4d",
+      "delta_hash": "8d110730085804993a65402f36221d8357d482712f838b716f23376d3f2ce46f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": ".option",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772224423412038859,
+      "timestamp_rfc": "2026-02-27T20:33:43.412038859Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/datamodelling/DataModellingBridge.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "547b7760b00b833a3950bcfa0db7349607440435bdf8e275c45866f7983078e7",
+      "delta_hash": "3197658373664d489c994b2e15380aba5e0cc72fa23e14a62b2a7ce3aa8e7550",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Constant",
+            "name": "c",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "const c=s.charCodeAt",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "const b =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "// Polyfills for Web APIs used by wasm-b",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String WEB_API_POLY",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Constant",
+            "name": "o",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772224543939514502,
+      "timestamp_rfc": "2026-02-27T20:35:43.939514502Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JavaScriptSandboxConfig.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3ad060898aacfe771756e08970b00aaef7321aa50e1563c0b5be50526973d79e",
+      "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772224731396716602,
+      "timestamp_rfc": "2026-02-27T20:38:51.396716602Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JavaScriptSandboxConfig.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9423273281a1fd764f769df0091b6fc63c9053c60ec55962bce53d6c7a85e462",
+      "delta_hash": "ce4dd0995842b6d83f69133b753839e50a6ed14d96f33c76079cfb34cf5b5d50",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "// ES module eval must return the module",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772225436503828605,
+      "timestamp_rfc": "2026-02-27T20:50:36.503828605Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/datamodelling/DataModellingBridgeTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c919e0259f1586f142ef49b76481432cc4647d34d8481c31be57ddee4ee4cb2d",
+      "delta_hash": "ca848d6e33520a4888cb60aa8e1e797060968e6a63c99def4f65fd855d534f02",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private DataModellingBridge bridge;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@AfterAll",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeAll",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataModellingBridgeTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestInstance",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772225490332039039,
+      "timestamp_rfc": "2026-02-27T20:51:30.332039039Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/datamodelling/DataModellingBridgeTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ed73ca8bd6a117156462359d57f8c2ca0738c4a1b81fa8fda19459ef71c0b87a",
+      "delta_hash": "4e6a61de62803bf1e1b9da422fabaf5bfd92bbb6a85d8a97200bc9bd2f11b67e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@TestInstance",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@AfterAll",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataModellingBridgeTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeAll",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private DataModellingBridge bridge;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772225652072459781,
+      "timestamp_rfc": "2026-02-27T20:54:12.072459781Z",
+      "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+      "file_path": "/home/user/yawl/scripts/dx.sh",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0f273dcf6802f33fc41841de6b8cfd2e8e279ff72dfdadc77bdbc32fa2d40d6f",
+      "delta_hash": "04ada17b858edc07ce36bd4c1d878c369066bf5f85a19fab77fb45e0dd8d43d5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "ALL_MODULES=(",
             "change": "Added"
           }
         }

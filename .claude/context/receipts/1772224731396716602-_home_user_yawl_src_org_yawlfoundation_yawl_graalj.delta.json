@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772224731396716602,
+  "timestamp_rfc": "2026-02-27T20:38:51.396716602Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JavaScriptSandboxConfig.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9423273281a1fd764f769df0091b6fc63c9053c60ec55962bce53d6c7a85e462",
+  "delta_hash": "ce4dd0995842b6d83f69133b753839e50a6ed14d96f33c76079cfb34cf5b5d50",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "// ES module eval must return the module",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772224226546229484,
+  "timestamp_rfc": "2026-02-27T20:30:26.546229484Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JavaScriptSandboxConfig.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b7a5a5d3b89d1d0d1aba7b7c67ff1a3c1d5e021c65a4129673792b7d0a2ccc4d",
+  "delta_hash": "8d110730085804993a65402f36221d8357d482712f838b716f23376d3f2ce46f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": ".option",
+        "change": "Added"
+      }
+    }
+  ]
+}
