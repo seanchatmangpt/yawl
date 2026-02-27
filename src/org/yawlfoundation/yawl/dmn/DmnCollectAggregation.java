@@ -21,9 +21,13 @@ package org.yawlfoundation.yawl.dmn;
 import org.yawlfoundation.yawl.graalwasm.WasmExecutionEngine;
 import org.yawlfoundation.yawl.graalwasm.WasmModule;
 import org.yawlfoundation.yawl.graalwasm.WasmSandboxConfig;
+import org.yawlfoundation.yawl.integration.util.ParameterValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 
 /**
@@ -116,6 +120,7 @@ public enum DmnCollectAggregation {
         }
     };
 
+    private static final Logger log = LoggerFactory.getLogger(DmnCollectAggregation.class);
     private final String dmnSymbol;
 
     DmnCollectAggregation(String dmnSymbol) {

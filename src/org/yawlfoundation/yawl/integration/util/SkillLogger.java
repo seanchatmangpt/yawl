@@ -146,6 +146,49 @@ public final class SkillLogger {
     }
 
     /**
+     * Logs a warning message with a single additional parameter.
+     *
+     * @param message The base message
+     * @param param1 The additional parameter
+     */
+    public void warn(String message, Object param1) {
+        logger.warn(prefix() + message, param1);
+    }
+
+    /**
+     * Logs a warning message with additional parameters.
+     *
+     * @param message The base message
+     * @param param1 The first additional parameter
+     * @param param2 The second additional parameter
+     */
+    public void warn(String message, Object param1, Object param2) {
+        logger.warn(prefix() + message, param1, param2);
+    }
+
+    /**
+     * Logs a warning message with additional parameters.
+     *
+     * @param message The base message
+     * @param param1 The first additional parameter
+     * @param param2 The second additional parameter
+     * @param param3 The third additional parameter
+     */
+    public void warn(String message, Object param1, Object param2, Object param3) {
+        logger.warn(prefix() + message, param1, param2, param3);
+    }
+
+    /**
+     * Logs a warning message with additional parameters.
+     *
+     * @param message The base message
+     * @param params The additional parameters
+     */
+    public void warn(String message, Object... params) {
+        logger.warn(prefix() + message, params);
+    }
+
+    /**
      * Logs an error message.
      *
      * @param message The message to log
@@ -171,6 +214,39 @@ public final class SkillLogger {
      */
     public void debug(String message) {
         logger.debug(prefix() + message);
+    }
+
+    /**
+     * Logs a debug message with a single additional parameter.
+     *
+     * @param message The base message
+     * @param param1 The additional parameter
+     */
+    public void debug(String message, Object param1) {
+        logger.debug(prefix() + message, param1);
+    }
+
+    /**
+     * Logs a debug message with additional parameters.
+     *
+     * @param message The base message
+     * @param param1 The first additional parameter
+     * @param param2 The second additional parameter
+     */
+    public void debug(String message, Object param1, Object param2) {
+        logger.debug(prefix() + message, param1, param2);
+    }
+
+    /**
+     * Logs a debug message with additional parameters.
+     *
+     * @param message The base message
+     * @param param1 The first additional parameter
+     * @param param2 The second additional parameter
+     * @param param3 The third additional parameter
+     */
+    public void debug(String message, Object param1, Object param2, Object param3) {
+        logger.debug(prefix() + message, param1, param2, param3);
     }
 
     // ─── Timing Logging ─────────────────────────────────────────────────────

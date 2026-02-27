@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.dmn;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Objects;
 import org.yawlfoundation.yawl.integration.util.ParameterValidator;
 import org.yawlfoundation.yawl.integration.util.SkillLogger;
