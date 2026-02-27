@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220971693411636,
+  "timestamp_rfc": "2026-02-27T19:36:11.693411636Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/reference/quality-gates.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c2f5a41571fab92ab20d1ab5939e73285127413814de4325bd961a49cbf321a9",
+  "delta_hash": "c8d193ef9bde9646b1656e90a82ef678725662a5a519a8ca05672963a2171254",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Quality Gates Reference",
+        "change": "Added"
+      }
+    }
+  ]
+}

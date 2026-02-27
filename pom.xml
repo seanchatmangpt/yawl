@@ -59,26 +59,39 @@
     </distributionManagement>
 
     <modules>
+        <!-- Layer 0: Foundation (no YAWL deps, build in parallel) -->
         <module>yawl-utilities</module>
-        <module>yawl-elements</module>
-        <module>yawl-authentication</module>
-        <module>yawl-engine</module>
-        <module>yawl-stateless</module>
-        <module>yawl-worklet</module>
-        <module>yawl-resourcing</module>
-        <module>yawl-scheduling</module>
         <module>yawl-security</module>
-        <module>yawl-integration</module>
-        <module>yawl-monitoring</module>
-        <module>yawl-ggen</module>
-        <module>yawl-pi</module>
-        <module>yawl-webapps</module>
-        <module>yawl-control-panel</module>
-        <module>yawl-mcp-a2a-app</module>
         <module>yawl-graalpy</module>
         <module>yawl-benchmark</module>
         <module>yawl-graaljs</module>
+
+        <!-- Layer 1: First consumers (build in parallel) -->
+        <module>yawl-elements</module>
+        <module>yawl-ggen</module>
         <module>yawl-graalwasm</module>
+
+        <!-- Layer 2: Core engine -->
+        <module>yawl-engine</module>
+
+        <!-- Layer 3: Engine extension -->
+        <module>yawl-stateless</module>
+
+        <!-- Layer 4: Services (build in parallel after stateless) -->
+        <module>yawl-authentication</module>
+        <module>yawl-scheduling</module>
+        <module>yawl-monitoring</module>
+        <module>yawl-worklet</module>
+        <module>yawl-control-panel</module>
+        <module>yawl-integration</module>
+        <module>yawl-webapps</module>
+
+        <!-- Layer 5: Advanced services (build in parallel) -->
+        <module>yawl-pi</module>
+        <module>yawl-resourcing</module>
+
+        <!-- Layer 6: Top-level application -->
+        <module>yawl-mcp-a2a-app</module>
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.

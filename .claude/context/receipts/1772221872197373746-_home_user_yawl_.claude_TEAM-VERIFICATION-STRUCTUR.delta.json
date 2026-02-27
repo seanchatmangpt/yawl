@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221872197373746,
+  "timestamp_rfc": "2026-02-27T19:51:12.197373746Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/.claude/TEAM-VERIFICATION-STRUCTURE.json",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d27f2381eaa2459a9b83b6369e78e68215b4505a0508bdb305cdd2e6673d6414",
+  "delta_hash": "cd6d7f29ce193c8c5a571b276bd5f645fb4b9da06c07d4d69cba43fd0a23d784",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "{",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772221159621015331,
+  "timestamp_rfc": "2026-02-27T19:39:19.621015331Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/explanation/h-guards-philosophy.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ab8191baa8fc068c3a8cabbac4b34f91ce562d5bde217e08c0603b8bfa6879c8",
+  "delta_hash": "59b0b773f3c408de625e5daa95ad78bf4020d9fcc4fb99ec4a146d6a673fb470",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Why H-Guards Exist",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    }
+  ]
+}

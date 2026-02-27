@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772220672082380085,
+  "timestamp_rfc": "2026-02-27T19:31:12.082380085Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/how-to/build/fix-h-guard-violations.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "71c4254ca2968b4e173d9dcaf047f8b427c786c726f5727fd135843573fb3914",
+  "delta_hash": "194c6a0a39eae1d845401c297963dcb4cdc0eaf164d4e5b5268a38b5435b4300",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Fix H-Guard Violations at Scale",
+        "change": "Added"
+      }
+    }
+  ]
+}

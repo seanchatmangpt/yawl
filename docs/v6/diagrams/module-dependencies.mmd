@@ -1,16 +1,45 @@
 graph TD
     %% Inter-module dependencies derived from module pom.xml files
-    yawl-elements --> yawl-utilities
-    yawl-authentication --> yawl-elements
-    yawl-engine --> yawl-elements
-    yawl-stateless --> yawl-utilities
-    yawl-stateless --> yawl-elements
-    yawl-stateless --> yawl-engine
-    yawl-resourcing --> yawl-engine
-    yawl-worklet --> yawl-engine
-    yawl-worklet --> yawl-resourcing
-    yawl-scheduling --> yawl-engine
-    yawl-integration --> yawl-engine
-    yawl-integration --> yawl-stateless
-    yawl-monitoring --> yawl-engine
-    yawl-control-panel --> yawl-engine
+    %% 19 modules — YAWL v6.0.0-GA
+    %% Generated 2026-02-27
+
+    %% Layer 0 → Layer 1
+    yawl-utilities --> yawl-elements
+    yawl-graalpy --> yawl-ggen
+    yawl-graaljs --> yawl-graalwasm
+
+    %% Layer 1 → Layer 2
+    yawl-elements --> yawl-engine
+
+    %% Layer 2 → Layer 3
+    yawl-utilities --> yawl-stateless
+    yawl-elements --> yawl-stateless
+    yawl-engine --> yawl-stateless
+
+    %% Layer 2/3 → Layer 4
+    yawl-engine --> yawl-authentication
+    yawl-engine --> yawl-scheduling
+    yawl-engine --> yawl-monitoring
+    yawl-stateless --> yawl-monitoring
+    yawl-stateless --> yawl-worklet
+    yawl-engine --> yawl-control-panel
+    yawl-engine --> yawl-integration
+    yawl-stateless --> yawl-integration
+    yawl-ggen --> yawl-integration
+
+    %% Layer 4 → Layer 5
+    yawl-engine --> yawl-pi
+    yawl-elements --> yawl-pi
+    yawl-integration --> yawl-pi
+    yawl-engine --> yawl-resourcing
+    yawl-stateless --> yawl-resourcing
+    yawl-integration --> yawl-resourcing
+
+    %% Layer 5 → Layer 6
+    yawl-integration --> yawl-mcp-a2a-app
+    yawl-pi --> yawl-mcp-a2a-app
+    yawl-engine --> yawl-mcp-a2a-app
+    yawl-stateless --> yawl-mcp-a2a-app
+    yawl-elements --> yawl-mcp-a2a-app
+    yawl-utilities --> yawl-mcp-a2a-app
+    yawl-ggen --> yawl-mcp-a2a-app

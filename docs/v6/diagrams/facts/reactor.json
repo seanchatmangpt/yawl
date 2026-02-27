@@ -1,0 +1,242 @@
+{
+  "_schema": "yawl-reactor/v1",
+  "_description": "FM7 poka-yoke: Definitive Maven reactor order for all 19 YAWL modules. Prevents reactor order violations (RPN=105). Source: pom.xml dependency graph computed 2026-02-27.",
+  "generated_at": "2026-02-27T00:00:00Z",
+  "yawl_version": "6.0.0-GA",
+  "total_modules": 19,
+  "reactor_order": [
+    {
+      "position": 1,
+      "module": "yawl-utilities",
+      "layer": 0,
+      "depends_on": [],
+      "description": "Core utilities, XML processing, JWT management — root module"
+    },
+    {
+      "position": 2,
+      "module": "yawl-security",
+      "layer": 0,
+      "depends_on": [],
+      "description": "PKI and digital signatures (BouncyCastle) — no YAWL deps"
+    },
+    {
+      "position": 3,
+      "module": "yawl-graalpy",
+      "layer": 0,
+      "depends_on": [],
+      "description": "GraalPy in-process Python execution — no YAWL deps"
+    },
+    {
+      "position": 4,
+      "module": "yawl-graaljs",
+      "layer": 0,
+      "depends_on": [],
+      "description": "GraalJS in-process JavaScript execution — no YAWL deps"
+    },
+    {
+      "position": 5,
+      "module": "yawl-elements",
+      "layer": 1,
+      "depends_on": ["yawl-utilities"],
+      "description": "Workflow elements: Petri net model (YNet, YTask, YSpec)"
+    },
+    {
+      "position": 6,
+      "module": "yawl-ggen",
+      "layer": 1,
+      "depends_on": ["yawl-graalpy"],
+      "description": "Code generation engine (RDF+SPARQL+Tera templates)"
+    },
+    {
+      "position": 7,
+      "module": "yawl-graalwasm",
+      "layer": 1,
+      "depends_on": ["yawl-graaljs"],
+      "description": "GraalWasm WebAssembly execution + Rust4pmBridge (OCEL2 process mining)"
+    },
+    {
+      "position": 8,
+      "module": "yawl-engine",
+      "layer": 2,
+      "depends_on": ["yawl-elements"],
+      "description": "Stateful workflow engine (YEngine, YNetRunner, persistence)"
+    },
+    {
+      "position": 9,
+      "module": "yawl-stateless",
+      "layer": 3,
+      "depends_on": ["yawl-utilities", "yawl-elements", "yawl-engine"],
+      "description": "Stateless event-driven engine (no persistence)"
+    },
+    {
+      "position": 10,
+      "module": "yawl-authentication",
+      "layer": 4,
+      "depends_on": ["yawl-engine"],
+      "description": "JWT, CSRF protection, session management"
+    },
+    {
+      "position": 11,
+      "module": "yawl-scheduling",
+      "layer": 4,
+      "depends_on": ["yawl-engine"],
+      "description": "Workflow scheduling service (timer management)"
+    },
+    {
+      "position": 12,
+      "module": "yawl-monitoring",
+      "layer": 4,
+      "depends_on": ["yawl-engine", "yawl-stateless"],
+      "description": "Observability (OpenTelemetry, Prometheus, structured logging)"
+    },
+    {
+      "position": 13,
+      "module": "yawl-worklet",
+      "layer": 4,
+      "depends_on": ["yawl-stateless"],
+      "description": "RDR-guided worklet orchestrator (AI routing layer) — uses shared ../src"
+    },
+    {
+      "position": 14,
+      "module": "yawl-control-panel",
+      "layer": 4,
+      "depends_on": ["yawl-engine"],
+      "description": "Swing desktop control panel (YAWL management UI)"
+    },
+    {
+      "position": 15,
+      "module": "yawl-integration",
+      "layer": 4,
+      "depends_on": ["yawl-engine", "yawl-stateless", "yawl-ggen"],
+      "description": "MCP, A2A, and external system connectors"
+    },
+    {
+      "position": 16,
+      "module": "yawl-webapps",
+      "layer": 4,
+      "depends_on": [],
+      "description": "Aggregator POM (no module deps) — contains yawl-engine-webapp WAR",
+      "note": "Aggregator with no inter-module dependencies; can build at any layer"
+    },
+    {
+      "position": 17,
+      "module": "yawl-pi",
+      "layer": 5,
+      "depends_on": ["yawl-engine", "yawl-integration", "yawl-elements"],
+      "description": "Process Intelligence: Predictive AI + ONNX Runtime + OCEL2",
+      "note": "Excluded when CLAUDE_CODE_REMOTE=true (89MB onnxruntime)"
+    },
+    {
+      "position": 18,
+      "module": "yawl-resourcing",
+      "layer": 5,
+      "depends_on": ["yawl-engine", "yawl-stateless", "yawl-integration"],
+      "description": "Resource management (allocators, work queues, participants)"
+    },
+    {
+      "position": 19,
+      "module": "yawl-mcp-a2a-app",
+      "layer": 6,
+      "depends_on": [
+        "yawl-integration",
+        "yawl-pi",
+        "yawl-engine",
+        "yawl-stateless",
+        "yawl-elements",
+        "yawl-utilities",
+        "yawl-ggen"
+      ],
+      "description": "Spring Boot MCP server + A2A agent — most connected module (7 YAWL deps)",
+      "note": "Excluded when CLAUDE_CODE_REMOTE=true (transitive via yawl-pi)"
+    }
+  ],
+  "parallel_groups": [
+    {
+      "layer": 0,
+      "modules": ["yawl-utilities", "yawl-security", "yawl-graalpy", "yawl-graaljs"],
+      "can_parallelize": true,
+      "note": "All 4 have no YAWL dependencies"
+    },
+    {
+      "layer": 1,
+      "modules": ["yawl-elements", "yawl-ggen", "yawl-graalwasm"],
+      "can_parallelize": true,
+      "note": "Each depends on a different layer-0 module"
+    },
+    {
+      "layer": 2,
+      "modules": ["yawl-engine"],
+      "can_parallelize": false,
+      "note": "Single module, must wait for yawl-elements"
+    },
+    {
+      "layer": 3,
+      "modules": ["yawl-stateless"],
+      "can_parallelize": false,
+      "note": "Single module, must wait for engine+elements+utilities"
+    },
+    {
+      "layer": 4,
+      "modules": [
+        "yawl-authentication",
+        "yawl-scheduling",
+        "yawl-monitoring",
+        "yawl-worklet",
+        "yawl-control-panel",
+        "yawl-integration",
+        "yawl-webapps"
+      ],
+      "can_parallelize": true,
+      "note": "All 7 can compile concurrently once layer 3 is complete (and yawl-ggen for integration)"
+    },
+    {
+      "layer": 5,
+      "modules": ["yawl-pi", "yawl-resourcing"],
+      "can_parallelize": true,
+      "note": "Both depend on yawl-integration but not each other"
+    },
+    {
+      "layer": 6,
+      "modules": ["yawl-mcp-a2a-app"],
+      "can_parallelize": false,
+      "note": "Final application; must wait for yawl-pi and yawl-resourcing"
+    }
+  ],
+  "critical_path": [
+    "yawl-utilities",
+    "yawl-elements",
+    "yawl-engine",
+    "yawl-stateless",
+    "yawl-integration",
+    "yawl-pi",
+    "yawl-mcp-a2a-app"
+  ],
+  "critical_path_length": 7,
+  "known_bugs_fixed": [
+    {
+      "file": "scripts/dx.sh",
+      "description": "yawl-authentication placed before yawl-engine in ALL_MODULES but depends on it",
+      "fixed_in": "this commit"
+    },
+    {
+      "file": "docs/v6/DEFINITION-OF-DONE.md",
+      "description": "G_compile section listed authentication before engine + missing 5 modules",
+      "fixed_in": "this commit"
+    },
+    {
+      "file": "docs/v6/diagrams/module-dependencies.mmd",
+      "description": "Wrong deps: authentication->elements (should be ->engine), worklet->engine+resourcing (should be ->stateless only). Missing: ggen, pi, graalpy, graaljs, graalwasm, mcp-a2a-app",
+      "fixed_in": "this commit"
+    }
+  ],
+  "dx_sh_all_modules": [
+    "yawl-utilities", "yawl-security", "yawl-graalpy", "yawl-graaljs",
+    "yawl-elements", "yawl-ggen", "yawl-graalwasm",
+    "yawl-engine",
+    "yawl-stateless",
+    "yawl-authentication", "yawl-scheduling", "yawl-monitoring",
+    "yawl-worklet", "yawl-control-panel", "yawl-integration", "yawl-webapps",
+    "yawl-pi", "yawl-resourcing",
+    "yawl-mcp-a2a-app"
+  ]
+}
