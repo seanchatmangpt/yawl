@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772211830890857406,
+  "timestamp_rfc": "2026-02-27T17:03:50.890857406Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/00-abstract.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "69509c0b55f0eb084a56e99ed846dc203d738ec303ab1942e09586df5d2875e8",
+  "delta_hash": "2a50f5bb3be2365a6e000defb9b080aea72520daaa19b53c3dfa817d20b00e26",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Abstract",
+        "change": "Added"
+      }
+    }
+  ]
+}

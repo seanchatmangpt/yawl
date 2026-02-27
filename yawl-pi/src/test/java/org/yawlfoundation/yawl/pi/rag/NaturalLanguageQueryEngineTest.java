@@ -67,9 +67,10 @@ class NaturalLanguageQueryEngineTest {
             // Expected
         }
 
-        if (mockService != null) {
+        final ZaiService finalService = mockService;
+        if (finalService != null) {
             assertThrows(IllegalArgumentException.class, () -> {
-                new NaturalLanguageQueryEngine(null, mockService);
+                new NaturalLanguageQueryEngine(null, finalService);
             });
         }
     }

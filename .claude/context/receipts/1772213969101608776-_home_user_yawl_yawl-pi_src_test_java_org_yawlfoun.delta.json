@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213969101608776,
+  "timestamp_rfc": "2026-02-27T17:39:29.101608776Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngineTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a2d5c2f4469c3d273b48d283d9850cd7a344fa92a2e84488543e6256790da881",
+  "delta_hash": "c1e7ce1ad20cce6233ff5dfb1e584bd73db2772c6a4d8234cef849684bdb52ca",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "assertTrue",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213000316108528,
+  "timestamp_rfc": "2026-02-27T17:23:20.316108528Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/03-theoretical-foundation.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ef80ef109ffcb25f07006bcb77b2fcdae3a0dc81a0d44e3c5b6a4e14e849bdb3",
+  "delta_hash": "18d1b52eb666b0224f3c74f802827e1ea1389c63c369d6db0ba72cc4dfa690d3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Formal Setup",
+        "change": "Added"
+      }
+    }
+  ]
+}

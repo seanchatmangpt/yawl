@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772213927631824490,
+  "timestamp_rfc": "2026-02-27T17:38:47.631824490Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/ProcessMiningTrainingDataExtractorTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "55cc0207b02ea6889c2c7ddbfcb8f7979267089d792c38d782cc1718c7a723e1",
+  "delta_hash": "4328bccda97656b5320fbaa2cb1106490c5ef9f6c5c21e2c50beb3b1959e9082",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "package org.yawlfoundation.yawl.pi.predi",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -81,7 +81,7 @@ public class ProcessKnowledgeBase {
             if (report.performance != null) {
                 // Average flow time
                 String avgFlowTimeText = String.format(
-                    "Specification %s average flow time is %d ms",
+                    "Specification %s average flow time is %.2f ms",
                     specIdStr, report.performance.avgFlowTimeMs
                 );
                 addEntry("perf_avg_flow_" + specIdStr, specIdStr, avgFlowTimeText,

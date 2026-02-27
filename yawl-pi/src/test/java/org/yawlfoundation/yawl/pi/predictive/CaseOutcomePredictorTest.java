@@ -22,14 +22,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
+import org.yawlfoundation.yawl.integration.processmining.XesToYawlSpecGenerator;
 import org.yawlfoundation.yawl.observatory.rdf.WorkflowDNAOracle;
 import org.yawlfoundation.yawl.pi.PIException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,36 +48,36 @@ public class CaseOutcomePredictorTest {
 
     private CaseOutcomePredictor predictor;
     private PredictiveModelRegistry modelRegistry;
-    private MockWorkflowEventStore mockEventStore;
-    private MockWorkflowDNAOracle mockDnaOracle;
+    private WorkflowEventStore eventStore;
+    private WorkflowDNAOracle dnaOracle;
 
     @BeforeEach
-    public void setUp() throws PIException {
+    public void setUp() throws Exception {
         Path tempDir = Files.createTempDirectory("pi-models-test");
         modelRegistry = new PredictiveModelRegistry(tempDir);
-        mockEventStore = new MockWorkflowEventStore();
-        mockDnaOracle = new MockWorkflowDNAOracle();
-        predictor = new CaseOutcomePredictor(modelRegistry, mockEventStore, mockDnaOracle);
+        eventStore = createTestEventStore();
+        dnaOracle = new WorkflowDNAOracle(new XesToYawlSpecGenerator(1));
+        predictor = new CaseOutcomePredictor(modelRegistry, eventStore, dnaOracle);
     }
 
     @Test
     public void testPredictReturnsValidPrediction() throws Exception {
         String caseId = "case-001";
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-1", caseId, "item-1", WorkflowEvent.EventType.CASE_STARTED,
-            Instant.now()
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.CASE_STARTED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-2", caseId, "item-1", WorkflowEvent.EventType.WORKITEM_ENABLED,
-            Instant.now().plusSeconds(1)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.WORKITEM_ENABLED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-3", caseId, "item-1", WorkflowEvent.EventType.WORKITEM_STARTED,
-            Instant.now().plusSeconds(2)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.WORKITEM_STARTED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-4", caseId, "item-1", WorkflowEvent.EventType.CASE_COMPLETED,
-            Instant.now().plusSeconds(3)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.CASE_COMPLETED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
 
         CaseOutcomePrediction prediction = predictor.predict(caseId);
@@ -89,13 +91,13 @@ public class CaseOutcomePredictorTest {
     @Test
     public void testPredictWithCancellation() throws Exception {
         String caseId = "case-002";
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-1", caseId, "item-1", WorkflowEvent.EventType.CASE_STARTED,
-            Instant.now()
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.CASE_STARTED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-2", caseId, "item-1", WorkflowEvent.EventType.CASE_CANCELLED,
-            Instant.now().plusSeconds(5)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.CASE_CANCELLED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
 
         CaseOutcomePrediction prediction = predictor.predict(caseId);
@@ -119,17 +121,17 @@ public class CaseOutcomePredictorTest {
     @Test
     public void testPredictionFallsBackToDnaOracleWhenOnnxUnavailable() throws Exception {
         String caseId = "case-003";
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-1", caseId, "item-1", WorkflowEvent.EventType.CASE_STARTED,
-            Instant.now()
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.CASE_STARTED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-2", caseId, "item-1", WorkflowEvent.EventType.WORKITEM_STARTED,
-            Instant.now().plusSeconds(10)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.WORKITEM_STARTED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
-        mockEventStore.addEvent(caseId, new MockWorkflowEvent(
-            "evt-3", caseId, "item-1", WorkflowEvent.EventType.CASE_COMPLETED,
-            Instant.now().plusSeconds(20)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.CASE_COMPLETED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
 
         CaseOutcomePrediction prediction = predictor.predict(caseId);
@@ -138,61 +140,14 @@ public class CaseOutcomePredictorTest {
         assertTrue(!prediction.fromOnnxModel(), "Should use DNA oracle when ONNX model unavailable");
     }
 
-    /**
-     * Mock implementation of WorkflowEventStore for testing.
-     */
-    private static class MockWorkflowEventStore extends WorkflowEventStore {
-        private final List<WorkflowEvent> events = new ArrayList<>();
+    private static WorkflowEventStore createTestEventStore() throws Exception {
+        // Create H2 in-memory datasource
+        org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
+        ds.setURL("jdbc:h2:mem:test-case-outcome-" + System.nanoTime() + ";MODE=MySQL;DB_CLOSE_DELAY=-1");
+        ds.setUser("sa");
+        ds.setPassword("");
 
-        void addEvent(String caseId, WorkflowEvent event) {
-            events.add(event);
-        }
-
-        @Override
-        public List<WorkflowEvent> loadEvents(String caseId) throws EventStoreException {
-            return events.stream()
-                .filter(e -> e.getCaseId().equals(caseId))
-                .toList();
-        }
-    }
-
-    /**
-     * Mock implementation of WorkflowEvent for testing.
-     */
-    private static class MockWorkflowEvent extends WorkflowEvent {
-        private final String eventId;
-        private final String caseId;
-        private final String workItemId;
-        private final EventType eventType;
-        private final Instant timestamp;
-
-        MockWorkflowEvent(String eventId, String caseId, String workItemId,
-                          EventType eventType, Instant timestamp) {
-            this.eventId = eventId;
-            this.caseId = caseId;
-            this.workItemId = workItemId;
-            this.eventType = eventType;
-            this.timestamp = timestamp;
-        }
-
-        @Override
-        public String getEventId() { return eventId; }
-        @Override
-        public String getCaseId() { return caseId; }
-        @Override
-        public String getWorkItemId() { return workItemId; }
-        @Override
-        public EventType getEventType() { return eventType; }
-        @Override
-        public Instant getTimestamp() { return timestamp; }
-    }
-
-    /**
-     * Mock implementation of WorkflowDNAOracle for testing.
-     */
-    private static class MockWorkflowDNAOracle extends WorkflowDNAOracle {
-        MockWorkflowDNAOracle() {
-            super(null);
-        }
+        // Create real store (it initializes its own schema on first use)
+        return new WorkflowEventStore(ds);
     }
 }

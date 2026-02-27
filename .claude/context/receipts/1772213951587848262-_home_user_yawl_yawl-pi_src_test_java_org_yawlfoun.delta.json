@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772213951587848262,
+  "timestamp_rfc": "2026-02-27T17:39:11.587848262Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngineTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4cd80befaa5fb76b072df020f2026ae6766112af50d88892457cb765f8d7ca95",
+  "delta_hash": "84ae32396a6755987d6a64290bbef0d88cc3a2444bbb1d37f5a70539461c7ce0",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "package org.yawlfoundation.yawl.pi.presc",
+        "change": "Added"
+      }
+    }
+  ]
+}

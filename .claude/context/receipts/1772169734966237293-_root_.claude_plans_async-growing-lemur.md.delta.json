@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772169734966237293,
+  "timestamp_rfc": "2026-02-27T05:22:14.966237293Z",
+  "session_id": "00042a30-76dd-4797-a80c-c52d7af01d87",
+  "file_path": "/root/.claude/plans/async-growing-lemur.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7f2aa3c9d7743ac54f3969cef8ede7c0c52ad30fdd9a2c3f47fa7fc68bad3bc3",
+  "delta_hash": "0071a4c8056476512bec0cfbf54bdc27f7c368dd11fe772a2211b0052c3339b9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "4. Write ONNX bytes to a persistent path",
+        "change": "Added"
+      }
+    }
+  ]
+}

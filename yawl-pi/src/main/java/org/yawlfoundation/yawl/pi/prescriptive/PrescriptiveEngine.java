@@ -72,7 +72,7 @@ public class PrescriptiveEngine {
      * <ul>
      *   <li>If DNA oracle has alternative paths → generate RerouteAction for each
      *   <li>If risk > 0.7 → add EscalateAction
-     *   <li>If risk > 0.5 → add ReallocateResourceAction
+     *   <li>If risk &gt;= 0.5 → add ReallocateResourceAction
      *   <li>Always add NoOpAction as baseline
      * </ul>
      *
@@ -95,7 +95,7 @@ public class PrescriptiveEngine {
             0.1
         ));
 
-        if (riskScore > 0.5) {
+        if (riskScore >= 0.5) {
             candidates.add(new ReallocateResourceAction(
                 caseId,
                 "unspecified_task",

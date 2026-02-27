@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772211870163419566,
+  "timestamp_rfc": "2026-02-27T17:04:30.163419566Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/01-introduction.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4780b9929e2e1df2f040149fa18a7f957a070b34ee09555219f4eafd1e87f99c",
+  "delta_hash": "ef05112f3b1249b4f87f52e59935c57058db9adc43662d24c65609633580501e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Chapter 1 — The Invisible Tax of Distr",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public void announceCaseStarted(Set<YAWL",
+        "change": "Added"
+      }
+    }
+  ]
+}

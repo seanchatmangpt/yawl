@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214634401282045,
+  "timestamp_rfc": "2026-02-27T17:50:34.401282045Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "85db1b03da6ef2b46d387b1872192eaa06a8003010cc7b9e2529844021975fab",
+  "delta_hash": "3785853482fe69c4eb4237b4a45e855c9b06e714d2a1761aaea40b2387b7c7e9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<build>",
+        "change": "Added"
+      }
+    }
+  ]
+}

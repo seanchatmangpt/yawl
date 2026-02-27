@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213073352902737,
+  "timestamp_rfc": "2026-02-27T17:24:33.352902737Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/07-vision-2030.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5bc01d210b88b321096571c4cade2a537c1b1cd79772e9f77f8358c17ba298b2",
+  "delta_hash": "ed38407022ef04a782e5097c091808eed1be84f4122725aed65f81182b628732",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "| Research area | Starting point | 2030 ",
+        "change": "Added"
+      }
+    }
+  ]
+}
