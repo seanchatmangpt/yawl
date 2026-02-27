@@ -1,9 +1,9 @@
 {
   "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
-  "started_at": "2026-02-27T17:39:53.359061507Z",
-  "ended_at": "2026-02-27T17:39:53.583843664Z",
-  "receipt_count": 221,
-  "chain_hash": "bad22accba92c99308d2d7400fbf4dee75424718fceb701b241105205b4e6684",
+  "started_at": "2026-02-27T18:14:44.180771554Z",
+  "ended_at": "2026-02-27T18:14:44.503372627Z",
+  "receipt_count": 266,
+  "chain_hash": "c0d63fe85dc8f1ca29ffacae1fbc9a8eeadb99d90cd88f0c1ff96432c821f198",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -11332,6 +11332,1036 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "ProcessMiningFacade",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214024427747732,
+      "timestamp_rfc": "2026-02-27T17:40:24.427747732Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6d4dc8234393009012118996a9eced5c5b09d78f12c804fd36bd14c0dd531010",
+      "delta_hash": "e451c0dc2c3d7c5417a231e47c81a85139e08f9c34a6e72c27b021f710091002",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "package org.yawlfoundation.yawl.pi.presc",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214036620333707,
+      "timestamp_rfc": "2026-02-27T17:40:36.620333707Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/ProcessKnowledgeBaseTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b437b548c4e5aee1db89a89840a79bc1b4c1e21e36cfbadab1553e4d68721496",
+      "delta_hash": "234055d2c891ea7024cd50c4dc4813680c644bba617e9e7ec95210d5aba41989",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// Helper method to create a test report",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ProcessMiningFacade",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214043435927939,
+      "timestamp_rfc": "2026-02-27T17:40:43.435927939Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/ProcessKnowledgeBaseTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b30e33d9c98217f77b11823b1b570fb3f9220fdeb226b0d5b2b03301371cc522",
+      "delta_hash": "0a99094beb975eecf50940c6048f0992bd9c45ff4c606502287fbe2807c3c037",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "package org.yawlfoundation.yawl.pi.rag;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214046692439353,
+      "timestamp_rfc": "2026-02-27T17:40:46.692439353Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/ProcessKnowledgeBaseTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "19c33b6999b668f749b2cef2792c0c21da7eb785471883bf10cede72a55eebe3",
+      "delta_hash": "1645ea6f5e665d68911d802e7a39533c1ff54452775e7331b4b610d3558c8f4f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214061000208166,
+      "timestamp_rfc": "2026-02-27T17:41:01.000208166Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/ProcessKnowledgeBaseTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4c9a23eea54132ddb8064db8faa5fd486b6b5233c2baa1267228fb14079c529d",
+      "delta_hash": "21eef8bcabab5e0b808a99261f48c4673848eda3e026c8061dd1037379f0d698",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ProcessMiningFacade",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "// Helper method to create a test report",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214084955742988,
+      "timestamp_rfc": "2026-02-27T17:41:24.955742988Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0e21b70cc3f7f056707b34164190dde13b0cf6028aecbe1d6de46b6ab68de2e6",
+      "delta_hash": "648af60fc925265d7c1d8ee005347e168fe6780786e0ef14c8b866256a2769ae",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214087318282781,
+      "timestamp_rfc": "2026-02-27T17:41:27.318282781Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3e91581251f4aac285aa8a7a92995bfb54e032e11a9edbe796c5392d0795dc32",
+      "delta_hash": "6d2d2164f5466ca990f5eb65dbe2684cf6824c1c3428972255ef7ac791580108",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214154133361415,
+      "timestamp_rfc": "2026-02-27T17:42:34.133361415Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "97126e2d5673872be32402f69f96f9e01f84de48149acca7ab7b63ef392c0830",
+      "delta_hash": "e32a052469daec25225ed6ed65aedf7e26660a7b30175b9f81935151f7e5e38f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214158530303737,
+      "timestamp_rfc": "2026-02-27T17:42:38.530303737Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "de4137d141613a911370327462de2c983d43ab3075554383f5662a0f88a7acde",
+      "delta_hash": "e32a052469daec25225ed6ed65aedf7e26660a7b30175b9f81935151f7e5e38f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214219452155904,
+      "timestamp_rfc": "2026-02-27T17:43:39.452155904Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1d909cb7c0f1b2383e1d8c51c0acd4183af446e575803d100b67f7838c2f02ae",
+      "delta_hash": "e32a052469daec25225ed6ed65aedf7e26660a7b30175b9f81935151f7e5e38f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214277110545383,
+      "timestamp_rfc": "2026-02-27T17:44:37.110545383Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "511b6b3cda5f4354c1ce4c04d84262af5f8e13235f99a11684028aa514e74cc0",
+      "delta_hash": "3e63c5f80e8cea238ca9222fdabd1f22cdbce10f93eff81899dc156833184cdd",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214299295472981,
+      "timestamp_rfc": "2026-02-27T17:44:59.295472981Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7c6b1790e67324e484d98e3dd464334f1110d21ab1deac91496b1a370464eed8",
+      "delta_hash": "3785853482fe69c4eb4237b4a45e855c9b06e714d2a1761aaea40b2387b7c7e9",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<build>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214302309645368,
+      "timestamp_rfc": "2026-02-27T17:45:02.309645368Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8faa28ccb158c3197f902458fbbcba637f34364d91db3821aab9acf558cf56ca",
+      "delta_hash": "78afd76ccad822ae9f75f6af45a0d5f8fca08bceca364585332ef9f704a022dc",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<dependencies>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214352435400100,
+      "timestamp_rfc": "2026-02-27T17:45:52.435400100Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0747a236508291807c64df48514edf74d155ef2c6a6f100f5a1f9cea3bad8918",
+      "delta_hash": "1a7c8cf9ec64629da3095b4ea772b21a326016b052e339254e348c9d092299a4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<artifactId>yawl-pi</artifactId>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214599669990762,
+      "timestamp_rfc": "2026-02-27T17:49:59.669990762Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "dcca8c2041e80bde6efc795920beb8e9852b9c84580efe284e38f4c2b1c7c3c1",
+      "delta_hash": "3964e74fadfa7f039a4ff488b066e7f146e16eaa6f9252ad5f5f3826bf9ab9f3",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "final ZaiService finalService = mockServ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214634401282045,
+      "timestamp_rfc": "2026-02-27T17:50:34.401282045Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "85db1b03da6ef2b46d387b1872192eaa06a8003010cc7b9e2529844021975fab",
+      "delta_hash": "3785853482fe69c4eb4237b4a45e855c9b06e714d2a1761aaea40b2387b7c7e9",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<build>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214763625231048,
+      "timestamp_rfc": "2026-02-27T17:52:43.625231048Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/automl/Tpot2Bridge.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "00004f9c7e7347755fc825d7f65056c9d88cdfa6fa4a62a89e0435ecc1e5e4b8",
+      "delta_hash": "1c1192f9f77f19511cdd298ee5bd97d6686323630335d366f6bca88d6a2f2e39",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "final",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final Path runnerScript;   // br",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final boolean ownsDir;     // tr",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214769222446546,
+      "timestamp_rfc": "2026-02-27T17:52:49.222446546Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/automl/Tpot2Bridge.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "44fc964a74b51d928476ee3e7ee9d185e8b51aebe8be53e44187ebaa89455ccf",
+      "delta_hash": "c44ad5d7d9fe4ad00bcdd7e712cb4e4425defe68d65e4b414e0084877d2a1214",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Tpot2Bridge",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214773635202827,
+      "timestamp_rfc": "2026-02-27T17:52:53.635202827Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/automl/Tpot2Bridge.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8306067715f98f3460074824671219eec18023e2658f1541fd5c09e034ebcab6",
+      "delta_hash": "c44ad5d7d9fe4ad00bcdd7e712cb4e4425defe68d65e4b414e0084877d2a1214",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Tpot2Bridge",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214777122187115,
+      "timestamp_rfc": "2026-02-27T17:52:57.122187115Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/automl/Tpot2Bridge.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "748d43ef12ad8dd5e5a1b80b5982f7feee3434a11dd7787f12fe6c26edb874ff",
+      "delta_hash": "9b13152a173f1f0e6d743b37f95739378b819ccc8fe77ef74995415f2491064f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214869763041341,
+      "timestamp_rfc": "2026-02-27T17:54:29.763041341Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/rag/ProcessKnowledgeBase.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c2d875acd8cdfef933fe7080da1122dfa137048eba2dc879c9c4fbb0097863d3",
+      "delta_hash": "2cf64dff1a3a9d0a4e11e326d8c51fe73e211c80516ac933e353c7a8d9c72b11",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// Average flow time",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214876507085134,
+      "timestamp_rfc": "2026-02-27T17:54:36.507085134Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/prescriptive/ProcessConstraintModel.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "407e7024692273a62261fb36ff154843cfb27a6d5e25579c78aabbb8fb90c63e",
+      "delta_hash": "7f196a70d580e0301d0985a152ad5bd57a6421198847092b633e78fd92b3929f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214893538120423,
+      "timestamp_rfc": "2026-02-27T17:54:53.538120423Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/optimization/AlignmentOptimizer.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ef56f205ac0e72a07c9dc09c66b8462962389bff59def159f1787d14c00c247d",
+      "delta_hash": "294b08f4e5827dddc329df654a213bb67d39a228a0079ac0fdd59dda3c49f13e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "int i = obsLen, j = refLen;",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214919715687762,
+      "timestamp_rfc": "2026-02-27T17:55:19.715687762Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/optimization/ProcessScheduler.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9a2cf485ac4ca0c99b83f186fc4c3b78bedaf323a604aa85ca69edb0edd79de1",
+      "delta_hash": "3290742302b81d49341a43b32fae399bf9f4b050e92374dd35cd2c73624c2290",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "// Sort by duration",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214992064370796,
+      "timestamp_rfc": "2026-02-27T17:56:32.064370796Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "11ad49473633afe7fff1aab6fc4072a637b193bc35a9f7fbcbeca5c9871da168",
+      "delta_hash": "53fdeafeaf164c15a5e4e4547a149038d80881e35f35fd95c5ed478730ac3e43",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "javax",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214997840685800,
+      "timestamp_rfc": "2026-02-27T17:56:37.840685800Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "670a91a9f8a72d77f46e959117550c293f520000715727fcea6565eafb516b77",
+      "delta_hash": "ab848faa01bea573aa771e9cb6d601319406a1abc9f56b2aa54dcabd16a1d63f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "WorkflowEventStore",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215047757028621,
+      "timestamp_rfc": "2026-02-27T17:57:27.757028621Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "16d385e6dff4d61a0bb3a0e54adfdf8f01fe8a6d8e54f73e2828f8630e873f35",
+      "delta_hash": "06d8c823790278a75d36d9e111057bbdab7f0165f2e0661db9d2f4bbffabbce5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215056206097127,
+      "timestamp_rfc": "2026-02-27T17:57:36.206097127Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "feb095751033e7bff6e4c25bba514433b8d50ebfda006ab975e76cc23a15ee2d",
+      "delta_hash": "06d8c823790278a75d36d9e111057bbdab7f0165f2e0661db9d2f4bbffabbce5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215093285732610,
+      "timestamp_rfc": "2026-02-27T17:58:13.285732610Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/optimization/ProcessScheduler.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5af7562f4e15c317a18e6086e104acc2285beefebe33ee100b0d3aa0c2080694",
+      "delta_hash": "3290742302b81d49341a43b32fae399bf9f4b050e92374dd35cd2c73624c2290",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "// Sort by duration",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215097707495107,
+      "timestamp_rfc": "2026-02-27T17:58:17.707495107Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/optimization/ProcessSchedulerTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4ca033b611217a2246c364a0298981938c0fb98cad01239faaec9dcde9829dc6",
+      "delta_hash": "acc473bdddb84cb9ec69757de47af83247f368fb6c4525a55e5fc48415b7bc3b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// All have same duration, so any order ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215174421599281,
+      "timestamp_rfc": "2026-02-27T17:59:34.421599281Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/CaseOutcomePredictorTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "51e942d289763b7cd7f6a0c7105aa754cbdbc6439c596d3613356a3d7c1a42cd",
+      "delta_hash": "cfafd8b1b770be776a80dcc59727c7dc0494759f02dc7e23b980ccecccfd7e93",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ds.setURL",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215178467433280,
+      "timestamp_rfc": "2026-02-27T17:59:38.467433280Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/ProcessMiningTrainingDataExtractorTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "bb392f2f820d547b88099a7a120522ddeca183af979d935e258ecf7ece4d1ffd",
+      "delta_hash": "cfafd8b1b770be776a80dcc59727c7dc0494759f02dc7e23b980ccecccfd7e93",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ds.setURL",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215222898033701,
+      "timestamp_rfc": "2026-02-27T18:00:22.898033701Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/coordination/ConflictEventLogger.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6a9a1357c0f9900213dfe2405cee1116637084c10f1bb95ff123941eb0606b20",
+      "delta_hash": "da2df9d1394c1b2f8fb6a3b881b1af98118a9a0aac916332be0f203114a56ee5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ConflictEventLogger",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215284750664292,
+      "timestamp_rfc": "2026-02-27T18:01:24.750664292Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngine.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "eb1df47ecbfbfb9db5db57ec051ae804de1021bc67784324491333fbe72b2c84",
+      "delta_hash": "27a9aad1cd75dd78387b6ede242c05edc3c5d1ceb4667a2422ecfdc5a94c05bb",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "if",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215289482258967,
+      "timestamp_rfc": "2026-02-27T18:01:29.482258967Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/prescriptive/PrescriptiveEngine.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "136a052f43e112b1515787c47398fc4b897140779ace88c00d37e3b1c75dd61a",
+      "delta_hash": "6da55a1e550341e468e6900f32dc97fe49c33437ffd123265687e4628d11bbb5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "*   <li>If risk &gt;= 0.5 → add Realloca",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215320858223485,
+      "timestamp_rfc": "2026-02-27T18:02:00.858223485Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1806135d26eaf60cf94b1d7c508c2de05c8b4a9ac67e18603d30edffdd0869ab",
+      "delta_hash": "06d8c823790278a75d36d9e111057bbdab7f0165f2e0661db9d2f4bbffabbce5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215328008647322,
+      "timestamp_rfc": "2026-02-27T18:02:08.008647322Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2e1a8a369500c65d123ec1b681f90a6382b49670d3c780f253c03cb4579ed489",
+      "delta_hash": "06d8c823790278a75d36d9e111057bbdab7f0165f2e0661db9d2f4bbffabbce5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215357223316765,
+      "timestamp_rfc": "2026-02-27T18:02:37.223316765Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "45f76acde1a15734c08f68ead96a9d624fc546fcffdbf00daf32430593bc32ad",
+      "delta_hash": "06d8c823790278a75d36d9e111057bbdab7f0165f2e0661db9d2f4bbffabbce5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215423716002405,
+      "timestamp_rfc": "2026-02-27T18:03:43.716002405Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/CaseOutcomePredictorTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "50b87c3e56a88064c428038c86697c3a50f349ad7a2ef8d7254e3a6df8e96027",
+      "delta_hash": "cfafd8b1b770be776a80dcc59727c7dc0494759f02dc7e23b980ccecccfd7e93",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ds.setURL",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215427903706647,
+      "timestamp_rfc": "2026-02-27T18:03:47.903706647Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/ProcessMiningTrainingDataExtractorTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c795e99c42f369b327befd8e18db222651812efc947107e2b8c88ee95686a3da",
+      "delta_hash": "cfafd8b1b770be776a80dcc59727c7dc0494759f02dc7e23b980ccecccfd7e93",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ds.setURL",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215449737006046,
+      "timestamp_rfc": "2026-02-27T18:04:09.737006046Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/optimization/ProcessSchedulerTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "864af2ae8df8e51bb5bc09d988553eec3162e4e934b624e124bb84afb7d2e1e2",
+      "delta_hash": "1d3b89daf5da5420fe53be0a54dbb0a3ba5552b8dba888a03be70323212fb176",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "assertNotNull",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215460684600067,
+      "timestamp_rfc": "2026-02-27T18:04:20.684600067Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "048cb1f8d5a50a863ed97f12b8918a173a8dc6c7c1b1c588937e874e288b3133",
+      "delta_hash": "e01d63448467f27d1428bc2fa98ddaf65f629c99d6160d662aea7c0c331e6b2e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215914848702620,
+      "timestamp_rfc": "2026-02-27T18:11:54.848702620Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "226ef5a05aeb6981de47d47b53e8e292ba1ec24516a8738518eae60cfe244342",
+      "delta_hash": "7ff2437573544a5a209301ce1ec1239481ebca29ed63c2aab0f594226cb5d05e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String SELECT_MAX_S",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String SELECT_CASE_",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215921244231250,
+      "timestamp_rfc": "2026-02-27T18:12:01.244231250Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1b67dd36e62581d63925e004559f912df73e43bf270312d0ef08b4be2f908e15",
+      "delta_hash": "600f22869e74ac0475a79b0d155a6c5502a61669ac51991c9f65b2977ed11f00",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215928685489840,
+      "timestamp_rfc": "2026-02-27T18:12:08.685489840Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/predictive/ProcessMiningTrainingDataExtractor.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e946196f6e72dc19efef6d1d8107e6addc0c9bde8be7c19c9f27aafaef40777c",
+      "delta_hash": "e92f5a98c0ac3ae41c97e1450befdb121e450d858e19c06a08a1d8df6ed3ece1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Map<String, CaseFeatures> caseData = new",
             "change": "Added"
           }
         }

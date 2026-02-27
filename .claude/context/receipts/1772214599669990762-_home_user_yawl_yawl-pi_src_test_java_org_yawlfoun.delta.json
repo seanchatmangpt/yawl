@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214599669990762,
+  "timestamp_rfc": "2026-02-27T17:49:59.669990762Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "dcca8c2041e80bde6efc795920beb8e9852b9c84580efe284e38f4c2b1c7c3c1",
+  "delta_hash": "3964e74fadfa7f039a4ff488b066e7f146e16eaa6f9252ad5f5f3826bf9ab9f3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "final ZaiService finalService = mockServ",
+        "change": "Added"
+      }
+    }
+  ]
+}

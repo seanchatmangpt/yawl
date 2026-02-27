@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772214061000208166,
+  "timestamp_rfc": "2026-02-27T17:41:01.000208166Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/ProcessKnowledgeBaseTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4c9a23eea54132ddb8064db8faa5fd486b6b5233c2baa1267228fb14079c529d",
+  "delta_hash": "21eef8bcabab5e0b808a99261f48c4673848eda3e026c8061dd1037379f0d698",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ProcessMiningFacade",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "// Helper method to create a test report",
+        "change": "Added"
+      }
+    }
+  ]
+}

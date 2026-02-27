@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772214997840685800,
+  "timestamp_rfc": "2026-02-27T17:56:37.840685800Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/eventsourcing/WorkflowEventStore.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "670a91a9f8a72d77f46e959117550c293f520000715727fcea6565eafb516b77",
+  "delta_hash": "ab848faa01bea573aa771e9cb6d601319406a1abc9f56b2aa54dcabd16a1d63f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "WorkflowEventStore",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    }
+  ]
+}

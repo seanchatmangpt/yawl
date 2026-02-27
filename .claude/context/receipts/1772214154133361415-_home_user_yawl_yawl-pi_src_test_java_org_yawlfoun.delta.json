@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214154133361415,
+  "timestamp_rfc": "2026-02-27T17:42:34.133361415Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "97126e2d5673872be32402f69f96f9e01f84de48149acca7ab7b63ef392c0830",
+  "delta_hash": "e32a052469daec25225ed6ed65aedf7e26660a7b30175b9f81935151f7e5e38f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    }
+  ]
+}

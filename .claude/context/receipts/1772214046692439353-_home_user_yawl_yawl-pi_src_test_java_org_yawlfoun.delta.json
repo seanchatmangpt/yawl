@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214046692439353,
+  "timestamp_rfc": "2026-02-27T17:40:46.692439353Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/ProcessKnowledgeBaseTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "19c33b6999b668f749b2cef2792c0c21da7eb785471883bf10cede72a55eebe3",
+  "delta_hash": "1645ea6f5e665d68911d802e7a39533c1ff54452775e7331b4b610d3558c8f4f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    }
+  ]
+}
