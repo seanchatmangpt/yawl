@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772171667646475128,
+  "timestamp_rfc": "2026-02-27T05:54:27.646475128Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalwasm/WasmExceptionTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ff17e29e41be8bfe8f685663c7dfebcd4bdafd959ed31d6fbb1e61db3053aaf0",
+  "delta_hash": "ca3f54886500b66c9d54ce449817a55a6e6b3e2a2752bd92fa4ecd909f7f50c0",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@EnumSource",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@ParameterizedTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "WasmExceptionTest",
+        "change": "Added"
+      }
+    }
+  ]
+}

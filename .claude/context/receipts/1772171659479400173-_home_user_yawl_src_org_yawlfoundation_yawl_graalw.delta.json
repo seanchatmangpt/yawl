@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772171659479400173,
+  "timestamp_rfc": "2026-02-27T05:54:19.479400173Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graalwasm/package-info.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a070574f0da2b99376d61c839856a10e660474752401094204624bff442b0dde",
+  "delta_hash": "84f063adaba0be680de3d1ab99b728787f2a5f324d1c56c695a112a73c4f1c2f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@NullMarked",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}

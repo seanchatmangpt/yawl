@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772171775391866045,
+  "timestamp_rfc": "2026-02-27T05:56:15.391866045Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graalwasm/WasmBinaryCache.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "282780252eda6c0ed96ae4b5d5a13cce5bced5888ca90fc1af57d8cd05e305c8",
+  "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

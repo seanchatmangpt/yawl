@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772170689590679450,
+  "timestamp_rfc": "2026-02-27T05:38:09.590679450Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/root/.claude/plans/atomic-petting-karp.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "de1c1a95b26b74d35e84f3fe501435deee5da615894c36e4abbd241ffd84d455",
+  "delta_hash": "e0026a29e0328e799b28b7436ca8cb1464bf7b0c3b73c5273b67bfcd9a5166af",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Add GraalJS + GraalWasm Support ",
+        "change": "Added"
+      }
+    }
+  ]
+}
