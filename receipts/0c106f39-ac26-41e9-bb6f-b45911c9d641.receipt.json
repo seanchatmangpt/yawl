@@ -1,9 +1,9 @@
 {
-  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
-  "started_at": "2026-02-27T18:59:48.453485478Z",
-  "ended_at": "2026-02-27T18:59:48.625788622Z",
-  "receipt_count": 289,
-  "chain_hash": "3aadef02bcb83da5615e379e7776c0f0026a47992b0ff19faad786dc1069e5bd",
+  "session_id": "0c106f39-ac26-41e9-bb6f-b45911c9d641",
+  "started_at": "2026-02-27T19:23:28.237191936Z",
+  "ended_at": "2026-02-27T19:23:28.527297467Z",
+  "receipt_count": 290,
+  "chain_hash": "b3f3339435c8101555bbefb1ce094fe2c8ec1e910d8d8ffb98443d18811bf9c5",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -13093,6 +13093,88 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "# Tutorial 4 — Natural Language Q&A over",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220171083093451,
+      "timestamp_rfc": "2026-02-27T19:22:51.083093451Z",
+      "session_id": "0c106f39-ac26-41e9-bb6f-b45911c9d641",
+      "file_path": "/home/user/yawl/docs/thesis/zero-etl-process-intelligence.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e97b22ca0593933208aaf54d1fe6953ed88ff266d9e0a47d582040c62297b325",
+      "delta_hash": "a8a039754b18b718af12be311379bc2a2dfd0dd99afed2ef22c87d04a953b55c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "ProcessAction",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final List<AdaptationRule> rules",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "ObserverGateway",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Zero-ETL Process Intelligence: Co-Loca",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "record PISession(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public void announceWorkItemStatusChange",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "PredictiveProcessObserver",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "OcedBridge",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final ProcessIntelligenceFacade ",
             "change": "Added"
           }
         }

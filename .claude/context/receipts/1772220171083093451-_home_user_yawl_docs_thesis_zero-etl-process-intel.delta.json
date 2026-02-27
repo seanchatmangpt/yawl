@@ -1,0 +1,82 @@
+{
+  "timestamp_ns": 1772220171083093451,
+  "timestamp_rfc": "2026-02-27T19:22:51.083093451Z",
+  "session_id": "0c106f39-ac26-41e9-bb6f-b45911c9d641",
+  "file_path": "/home/user/yawl/docs/thesis/zero-etl-process-intelligence.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e97b22ca0593933208aaf54d1fe6953ed88ff266d9e0a47d582040c62297b325",
+  "delta_hash": "a8a039754b18b718af12be311379bc2a2dfd0dd99afed2ef22c87d04a953b55c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "ProcessAction",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final List<AdaptationRule> rules",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "ObserverGateway",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Zero-ETL Process Intelligence: Co-Loca",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "record PISession(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public void announceWorkItemStatusChange",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "PredictiveProcessObserver",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "OcedBridge",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final ProcessIntelligenceFacade ",
+        "change": "Added"
+      }
+    }
+  ]
+}
