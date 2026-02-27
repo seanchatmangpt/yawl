@@ -19,29 +19,42 @@
 package org.yawlfoundation.yawl.benchmark;
 
 import org.openjdk.jmh.annotations.*;
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.engine.YEngine;
-import org.yawlfoundation.yawl.engine.YNetRunner;
-import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.engine.state.YInternalCondition;
-import org.yawlfoundation.yawl.stateless.engine.YStatelessEngine;
-import org.yawlfoundation.yawl.stateless.engine.YCaseMonitor;
-import org.yawlfoundation.yawl.stateless.engine.YCaseMonitor.CaseState;
+import org.yawlfoundation.yawl.exceptions.*;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.elements.YSpecification;
+import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
+import org.yawlfoundation.yawl.stateless.listener.YCaseEventListener;
+import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
+import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
+import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.atomic.AtomicReference;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Core YAWL Engine Performance Benchmarks
- * 
- * This class benchmarks fundamental YAWL engine operations including:
- * - YNetRunner task execution latency
- * - YWorkItem throughput (tasks/second)
- * - YStatelessEngine scalability
- * - Memory usage patterns
+ * Core YAWL Engine Performance Benchmarks.
+ *
+ * <p>All benchmarks use {@link YStatelessEngine} — the modern, cloud-native
+ * engine that requires no Hibernate persistence layer. Workflow execution is
+ * event-driven: a shared {@link YWorkItemEventListener} auto-starts every
+ * enabled item and auto-completes every started item, driving each case to
+ * completion without external intervention.</p>
+ *
+ * <p>Measurements:</p>
+ * <ul>
+ *   <li>{@link #specUnmarshalLatency} — XML → YSpecification parse time</li>
+ *   <li>{@link #sequentialCaseLaunch} — full 2-task sequential case latency</li>
+ *   <li>{@link #seq4TaskCaseLaunch} — full 4-task sequential case latency</li>
+ *   <li>{@link #caseLaunchThroughput} — cases launched per second</li>
+ *   <li>{@link #caseRestoreLatency} — marshal + unmarshal round-trip latency</li>
+ *   <li>{@link #parallelBatchLaunch} — batch parallel launch via virtual threads</li>
+ * </ul>
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -55,224 +68,159 @@ import org.openjdk.jmh.infra.Blackhole;
     "-Djmh.executor=VIRTUAL_TPE"
 })
 @Threads(1)
-public class YAWLEngineBenchmarks {
+public class YAWLEngineBenchmarks implements YWorkItemEventListener, YCaseEventListener {
 
-    private YEngine engine;
-    private YStatelessEngine statelessEngine;
-    private YSpecification sequentialSpec;
-    private YSpecification parallelSpec;
-    private YSpecification multiChoiceSpec;
-    private YSpecification cancelRegionSpec;
-    
-    private List<String> testCaseIds;
-    private Map<String, List<YWorkItem>> workItemCache;
-    
-    @Setup
-    public void setup() throws Exception {
-        System.out.println("[Benchmark Setup] Initializing YAWL engine and test specifications...");
-        
-        // Initialize YAWL engine
-        engine = new YEngine();
-        engine.initialiseEngine(true);
-        
-        // Initialize stateless engine
-        statelessEngine = new YStatelessEngine();
-        statelessEngine.initialiseEngine();
-        
-        // Load test specifications
-        sequentialSpec = loadSpecification("SequentialWorkflow");
-        parallelSpec = loadSpecification("ParallelSplitSync");
-        multiChoiceSpec = loadSpecification("MultiChoice");
-        cancelRegionSpec = loadSpecification("CancelRegion");
-        
-        // Generate test case IDs
-        testCaseIds = generateTestCaseIds(100);
-        
-        // Pre-generate work items
-        workItemCache = new ConcurrentHashMap<>();
-        for (String caseId : testCaseIds) {
-            workItemCache.put(caseId, generateWorkItems(caseId, 5));
-        }
-        
-        System.out.println("[Benchmark Setup] Setup completed with " + testCaseIds.size() + " test cases");
+    // Shared engine — one per benchmark thread (Scope.Thread)
+    private YStatelessEngine engine;
+
+    // Parsed specs — reused across invocations to isolate engine overhead
+    private YSpecification seq2Spec;
+    private YSpecification seq4Spec;
+
+    // Latch signalling case completion for the current invocation
+    private volatile CountDownLatch completionLatch;
+
+    // Capture any exception thrown inside the listener
+    private final AtomicReference<Exception> listenerError = new AtomicReference<>();
+
+    // ── Setup ─────────────────────────────────────────────────────────────
+
+    @Setup(Level.Trial)
+    public void setup() throws YSyntaxException {
+        engine = new YStatelessEngine();
+        engine.addWorkItemEventListener(this);
+        engine.addCaseEventListener(this);
+
+        seq2Spec = engine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_2_TASK);
+        seq4Spec = engine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_4_TASK);
     }
-    
-    @TearDown
-    public void tearDown() {
-        System.out.println("[Benchmark Teardown] Cleaning up resources...");
-        if (engine != null) {
-            engine.shutdownEngine();
+
+    // ── Event listener: auto-drive workflow to completion ─────────────────
+
+    @Override
+    public void handleWorkItemEvent(YWorkItemEvent event) {
+        YWorkItem item = event.getWorkItem();
+        try {
+            switch (event.getEventType()) {
+                case ITEM_ENABLED -> engine.startWorkItem(item);
+                case ITEM_STARTED -> engine.completeWorkItem(item, null, null);
+                default -> { /* other transitions not needed */ }
+            }
+        } catch (Exception e) {
+            listenerError.compareAndSet(null, e);
         }
-        workItemCache.clear();
     }
-    
+
+    @Override
+    public void handleCaseEvent(YCaseEvent event) {
+        if (event.getEventType() == YEventType.CASE_COMPLETED ||
+                event.getEventType() == YEventType.CASE_CANCELLED) {
+            CountDownLatch latch = completionLatch;
+            if (latch != null) latch.countDown();
+        }
+    }
+
+    // ── Helper ────────────────────────────────────────────────────────────
+
+    private void runCase(YSpecification spec) throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(1);
+        engine.launchCase(spec);
+        if (!completionLatch.await(10, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Case did not complete within timeout");
+        }
+        Exception err = listenerError.get();
+        if (err != null) throw err;
+    }
+
+    // ── Benchmarks ────────────────────────────────────────────────────────
+
     /**
-     * Benchmark: YNetRunner task execution latency
-     * Measures the time to complete a single task in a workflow case
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void netRunnerTaskExecutionLatency() throws Exception {
-        String caseId = testCaseIds.get((int) (System.nanoTime() % testCaseIds.size()));
-        YWorkItem workItem = findEnabledWorkItem(caseId);
-        
-        if (workItem != null) {
-            engine.startWorkItem(workItem);
-            // Simulate task processing
-            Thread.sleep(1);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-        }
-    }
-    
-    /**
-     * Benchmark: YWorkItem checkout/checkout latency
-     * Measures the performance of work item operations
+     * Measures the latency of parsing a YAWL spec XML string into a
+     * {@link YSpecification} object.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public void workItemCheckoutLatency() throws Exception {
-        String caseId = testCaseIds.get((int) (System.nanoTime() % testCaseIds.size()));
-        List<YWorkItem> workItems = workItemCache.get(caseId);
-        
-        if (workItems != null && !workItems.isEmpty()) {
-            YWorkItem workItem = workItems.get(0);
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-        }
+    public YSpecification specUnmarshalLatency() throws YSyntaxException {
+        return engine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_2_TASK);
     }
-    
+
     /**
-     * Benchmark: YStatelessEngine case creation throughput
-     * Measures cases created per second
+     * End-to-end latency for launching and completing a 2-task sequential
+     * workflow case.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public void sequentialCaseLaunch() throws Exception {
+        runCase(seq2Spec);
+    }
+
+    /**
+     * End-to-end latency for launching and completing a 4-task sequential
+     * workflow case (deeper task chain).
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public void seq4TaskCaseLaunch() throws Exception {
+        runCase(seq4Spec);
+    }
+
+    /**
+     * Case-launch throughput: 2-task cases completed per second.
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void statelessEngineCaseCreationThroughput() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        YSpecification spec = sequentialSpec;
-        
-        statelessEngine.createCase(spec.getID(), spec, null, null);
+    public void caseLaunchThroughput() throws Exception {
+        runCase(seq2Spec);
     }
-    
-    /**
-     * Benchmark: YStatelessEngine case monitoring scalability
-     * Measures monitoring performance with increasing case counts
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void statelessEngineCaseMonitoringScalability() throws Exception {
-        YCaseMonitor monitor = new YCaseMonitor();
-        monitor.initialiseEngine();
-        
-        // Monitor with different case counts
-        int caseCount = (int) (System.nanoTime() % 100) + 10;
-        for (int i = 0; i < caseCount; i++) {
-            String caseId = "case-" + i;
-            monitor.getCaseState(caseId, sequentialSpec);
-        }
-        
-        monitor.shutdownEngine();
-    }
-    
-    /**
-     * Benchmark: Engine startup performance
-     * Measures time to initialize YAWL engine
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void engineStartupPerformance(Blackhole bh) throws Exception {
-        YEngine tempEngine = new YEngine();
-        tempEngine.initialiseEngine(true);
-        tempEngine.shutdownEngine();
-        bh.consume(tempEngine);
-    }
-    
-    /**
-     * Benchmark: Task transition performance
-     * Measures the time to transition a task from one state to another
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void taskTransitionPerformance(Blackhole bh) throws Exception {
-        String caseId = testCaseIds.get((int) (System.nanoTime() % testCaseIds.size()));
-        YWorkItem workItem = findEnabledWorkItem(caseId);
 
-        if (workItem != null) {
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-            bh.consume(workItem);
-        }
-    }
-    
     /**
-     * Benchmark: Concurrent task execution
-     * Measures performance with multiple concurrent threads
+     * Round-trip latency of marshalling a completed case runner to XML and
+     * restoring it into a fresh engine — the critical path for case
+     * hand-off between cloud nodes.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public void caseRestoreLatency() throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(1);
+        YNetRunner runner = engine.launchCase(seq2Spec);
+        completionLatch.await(10, TimeUnit.SECONDS);
+
+        String caseXml = engine.marshalCase(runner);
+
+        YStatelessEngine restoreEngine = new YStatelessEngine();
+        restoreEngine.restoreCase(caseXml);
+    }
+
+    /**
+     * Batch parallel launch: 10 cases launched concurrently via virtual
+     * threads using {@link YStatelessEngine#launchCasesParallel}.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @Group("concurrent")
-    @GroupThreads(4)
-    public void concurrentTaskExecution() throws Exception {
-        String caseId = testCaseIds.get((int) (System.nanoTime() % testCaseIds.size()));
-        YWorkItem workItem = findEnabledWorkItem(caseId);
-        
-        if (workItem != null) {
-            engine.startWorkItem(workItem);
-            Thread.sleep(5); // Simulate processing time
-            engine.completeWorkItem(workItem, Collections.emptyMap());
+    public void parallelBatchLaunch() throws Exception {
+        int batchSize = 10;
+        List<String> params = new ArrayList<>(batchSize);
+        for (int i = 0; i < batchSize; i++) {
+            params.add(null);
         }
-    }
-    
-    /**
-     * Benchmark: Memory usage during case execution
-     * Measures memory consumption patterns
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void memoryUsageDuringCaseExecution(Blackhole bh) throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        statelessEngine.createCase(sequentialSpec.getID(), sequentialSpec, null, null);
-        bh.consume(caseId);
-    }
-    
-    // Helper methods
-    
-    private YSpecification loadSpecification(String name) throws Exception {
-        // In a real implementation, this would load from XML files
-        // For benchmarking, we create minimal specifications
-        return new YSpecification(); // Simplified for benchmarking
-    }
-    
-    private List<String> generateTestCaseIds(int count) {
-        List<String> ids = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            ids.add("case-" + UUID.randomUUID().toString());
+
+        completionLatch = new CountDownLatch(batchSize);
+        listenerError.set(null);
+
+        engine.launchCasesParallel(seq2Spec, params);
+
+        if (!completionLatch.await(30, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Batch did not complete within timeout");
         }
-        return ids;
-    }
-    
-    private List<YWorkItem> generateWorkItems(String caseId, int count) {
-        List<YWorkItem> workItems = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            YWorkItem workItem = new YWorkItem();
-            workItem.setCaseID(caseId);
-            workItem.setTaskID("task-" + i);
-            workItems.add(workItem);
-        }
-        return workItems;
-    }
-    
-    private YWorkItem findEnabledWorkItem(String caseId) throws Exception {
-        // Simplified implementation for benchmarking
-        List<YWorkItem> items = engine.getEnabledWorkItems(caseId);
-        return items.isEmpty() ? null : items.get(0);
+        Exception err = listenerError.get();
+        if (err != null) throw err;
     }
 }

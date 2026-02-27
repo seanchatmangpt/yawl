@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772169392716543618,
+  "timestamp_rfc": "2026-02-27T05:16:32.716543618Z",
+  "session_id": "825565e2-929c-4fdf-a552-b24a84efe5fb",
+  "file_path": "/home/user/yawl/yawl-integration/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0dbc0e670aa59969822a5cb4850877e668649918b3d3e82fb02f91194a965efe",
+  "delta_hash": "d26b221f1233a56848103b64a49286bbc702afa08842b1c8b6ede8a35c4849a2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<!-- a2a tests now included - A2A source",
+        "change": "Added"
+      }
+    }
+  ]
+}

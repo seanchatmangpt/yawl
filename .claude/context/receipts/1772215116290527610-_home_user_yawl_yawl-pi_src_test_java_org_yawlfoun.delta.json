@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215116290527610,
+  "timestamp_rfc": "2026-02-27T17:58:36.290527610Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/YawlOcedBridgeToolSpecificationsTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a9464126d8931e22a994342c70e857ee04b9fb4177fe49cb3b0cfbf9c2993c88",
+  "delta_hash": "97fc0d066ee9e5c2cef49b4758fff6e44c1d1cb888f6d34840633ee134721e41",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final String XML_DATA =",
+        "change": "Added"
+      }
+    }
+  ]
+}

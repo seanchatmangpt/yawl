@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214831065166184,
+  "timestamp_rfc": "2026-02-27T17:53:51.065166184Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/YawlOcedBridgeToolSpecificationsTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7de1565e39d312eafbf5698f9608ba2eae285bb77af8babda3eb0643cf63431f",
+  "delta_hash": "33101518fe5eeb03fa210000fbf5bd126757470b674e6d0ffd439b71642e8ec0",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "return spec.callHandler",
+        "change": "Added"
+      }
+    }
+  ]
+}

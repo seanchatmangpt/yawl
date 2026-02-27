@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772213219268737630,
+  "timestamp_rfc": "2026-02-27T17:26:59.268737630Z",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "file_path": "/home/user/yawl/docs/polyglot/how-to/execute-js-in-workflow-task.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "c1f6f2e9cb53dc126f5783d88aa20be7f61fc9a3b9f79ae37783251a4bf96a40",
+  "delta_hash": "801af2af7a1c0b70297b16d28570df1374062378bb173e1928d4ddd3b82b3c48",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private JavaScriptExecutionEngine routin",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ApprovalRoutingTask",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to evaluate JavaScript workflow ru",
+        "change": "Added"
+      }
+    }
+  ]
+}

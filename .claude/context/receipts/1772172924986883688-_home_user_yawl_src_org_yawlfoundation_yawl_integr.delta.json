@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172924986883688,
+  "timestamp_rfc": "2026-02-27T06:15:24.986883688Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlConformanceToolSpecifications.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f5ca65db4395e57425aa13906d70a82a125b692e0656ef6258cea1d55368edad",
+  "delta_hash": "663b7d56c2d44c731c0b95b081e212c5bf4a4aad95b3b2cb121440c4dac5799c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "McpServerFeatures",
+        "change": "Added"
+      }
+    }
+  ]
+}

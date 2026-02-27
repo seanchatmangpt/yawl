@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214479166039624,
+  "timestamp_rfc": "2026-02-27T17:47:59.166039624Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ff855e7f6b5f9b6743984bae9d3e10fc9ff416a9f5f671b3b8e7e649281728a1",
+  "delta_hash": "40da95ae07f2aa40ea5912a923ab2b1e57d7298b36dd507ce58992652f1f2025",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "OcedSchema ocedSchema = bridge.inferSche",
+        "change": "Added"
+      }
+    }
+  ]
+}

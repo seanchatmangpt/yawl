@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212095691129909,
+  "timestamp_rfc": "2026-02-27T17:08:15.691129909Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4f6d8a1fb70a640193edbdc59cd2feb0c4521d16b9ded2f719b0410a959b88f4",
+  "delta_hash": "fdeeae00d24eb549061487f04e9ca8a0030c6740f9ce27ed9c2bd8accb8017af",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Zero-Inference Workflow Intelligence: ",
+        "change": "Added"
+      }
+    }
+  ]
+}
