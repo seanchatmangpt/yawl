@@ -400,6 +400,7 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/pool/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/memory/**</testInclude>
                         <!-- a2a tests now included - A2A sources are compiled -->
+                        <testInclude>**/org/yawlfoundation/yawl/integration/a2a/skills/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/zai/**</testInclude>
                         <!-- autonomous marketplace tests (strategies excluded - pre-existing breaks) -->
                         <testInclude>**/org/yawlfoundation/yawl/integration/autonomous/marketplace/**</testInclude>
@@ -414,6 +415,8 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/reactor/**</testInclude>
                     </testIncludes>
                     <testExcludes>
+                        <!-- ProcessMiningSkill not yet implemented (pre-existing) -->
+                        <testExclude>**/a2a/skills/ProcessMiningSkillTest.java</testExclude>
                         <testExclude>**/SelfPlayTest.java</testExclude>
                         <!-- IntegrationTestSuite references excluded classes -->
                         <testExclude>**/IntegrationTestSuite.java</testExclude>
