@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.integration.ExternalCallGuard;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEventSerializer;
 import org.yawlfoundation.yawl.resilience.observability.RetryObservability;
@@ -42,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Reliable outbound webhook delivery service with exponential-backoff retry.
@@ -87,6 +89,7 @@ public final class WebhookDeliveryService {
 
     private static final String USER_AGENT = "YAWL-Webhook/6.0.0";
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration DELIVERY_TIMEOUT = Duration.ofSeconds(25);
     private static final String COMPONENT_NAME = "webhook";
 
     /**
@@ -95,6 +98,15 @@ public final class WebhookDeliveryService {
      */
     private static final long[] RETRY_DELAYS_SECONDS = {5L, 30L, 300L, 1800L, 7200L, 28800L};
 
+    /**
+     * Guard for all webhook delivery attempts, enforcing per-delivery timeout.
+     * Timeout of 25 seconds ensures cleanup before HTTP request timeout (30s).
+     */
+    private static final ExternalCallGuard<Void> DELIVERY_GUARD =
+            ExternalCallGuard.<Void>withTimeout(DELIVERY_TIMEOUT)
+                    .withFallback(() -> null)
+                    .build();
+
     private final WebhookSubscriptionRepository subscriptionRepo;
     private final WebhookDeliveryLog            deliveryLog;
     private final WorkflowEventSerializer       serializer;
@@ -102,6 +114,7 @@ public final class WebhookDeliveryService {
     private final ScheduledExecutorService      retryScheduler;
     private final ExecutorService               deliveryExecutor;
     private final RetryObservability            retryObservability;
+    private final LongAdder                     _deliveryTimeouts;
 
     /**
      * Construct the delivery service.
@@ -118,9 +131,11 @@ public final class WebhookDeliveryService {
                                           .connectTimeout(REQUEST_TIMEOUT)
                                           .build();
         this.deliveryExecutor = Executors.newVirtualThreadPerTaskExecutor();
-        this.retryScheduler   = Executors.newScheduledThreadPool(2, r ->
-                Thread.ofVirtual().name("yawl-webhook-retry").unstarted(r));
+        this.retryScheduler   = Executors.newScheduledThreadPool(
+                Runtime.getRuntime().availableProcessors(),
+                Thread.ofVirtual().name("yawl-webhook-retry-", 0).factory());
         this.retryObservability = RetryObservability.getInstance();
+        this._deliveryTimeouts = new LongAdder();
     }
 
     /**
@@ -277,7 +292,19 @@ public final class WebhookDeliveryService {
         retryObservability.recordBackoff(COMPONENT_NAME, "deliver", delayMs);
 
         retryScheduler.schedule(
-                () -> attemptDelivery(event, subscription, bodyBytes, nextAttempt),
+                () -> {
+                    try {
+                        DELIVERY_GUARD.execute(() -> {
+                            attemptDelivery(event, subscription, bodyBytes, nextAttempt);
+                            return null;
+                        });
+                    } catch (Exception e) {
+                        // ExternalCallGuard timeout = delivery failure; retry mechanism handles it
+                        log.warn("Webhook delivery timed out after {} for subscription {} (retry {})",
+                                DELIVERY_TIMEOUT, subscription.getSubscriptionId(), nextAttempt);
+                        _deliveryTimeouts.increment();
+                    }
+                },
                 delaySeconds,
                 TimeUnit.SECONDS);
     }
@@ -320,6 +347,15 @@ public final class WebhookDeliveryService {
     private static String truncate(String s, int maxLength) {
         if (s == null) return null;
         return s.length() <= maxLength ? s : s.substring(0, maxLength) + "...[truncated]";
+    }
+
+    /**
+     * Returns the number of webhook delivery attempts that timed out.
+     *
+     * @return the count of timeout events
+     */
+    public long getDeliveryTimeouts() {
+        return _deliveryTimeouts.sum();
     }
 
     /**
