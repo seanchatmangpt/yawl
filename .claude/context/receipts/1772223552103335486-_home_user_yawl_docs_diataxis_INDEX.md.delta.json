@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772223552103335486,
+  "timestamp_rfc": "2026-02-27T20:19:12.103335486Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "030750b263bc33f834638d3f7647c327c9a86ea5ce33b504506d81c6295cd60d",
+  "delta_hash": "853a05dc55fedb652c51f7563b9e1698c3d84ca3d62b04d82fda2ee5583cee6a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "| 11 | [Walk All 7 Quality Gates]",
+        "change": "Added"
+      }
+    }
+  ]
+}
