@@ -1,0 +1,75 @@
+{
+  "timestamp_ns": 1772222640607500049,
+  "timestamp_rfc": "2026-02-27T20:04:00.607500049Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/explanation/offheap-runner-store.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1ea19b9cea77656d65ccfd26d0ea3acf66735b142a7bf72b1d824043d27c2a0a",
+  "delta_hash": "1809f0cd6ae88e32a061c193f807b750e62f8987ffccaad43c34db510ab2b723",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final LocalCaseRegistry registry",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "LocalCaseRegistry",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "OffHeapRunnerStore",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "YNetRunnerRepository",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "GlobalCaseRegistry",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Why YAWL Stores Evicted YNetRunner Sna",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final LRUCache<String, YNetRunne",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "YNetRunner",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final OffHeapRunnerStore offHeap",
+        "change": "Added"
+      }
+    }
+  ]
+}

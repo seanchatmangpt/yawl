@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772223571756146643,
+  "timestamp_rfc": "2026-02-27T20:19:31.756146643Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "780c4558827e3dbdecbd8941957a27d5e2f03162f481e53aab4df0832cd2c171",
+  "delta_hash": "e8a1a47cc9597c35e1bd25ca4ef67d7bd32d645aab8aad1977b04f7621c85b5b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Build & Test",
+        "change": "Added"
+      }
+    }
+  ]
+}

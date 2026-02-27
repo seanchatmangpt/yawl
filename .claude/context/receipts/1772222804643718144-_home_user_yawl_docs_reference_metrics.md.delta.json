@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772222804643718144,
+  "timestamp_rfc": "2026-02-27T20:06:44.643718144Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/reference/metrics.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d800e1566b286b64a7a0522a3922bc5cf614548eafc8fcf8a77d33fd8799517f",
+  "delta_hash": "b4b9acb7714e141146b02a4c067611343ddc2de1e50a12df47aea1b9e990ef7b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# YAWL Metrics Reference",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final MeterRegistry meterRegistr",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Component",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "CustomWorkflowMetrics",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    }
+  ]
+}

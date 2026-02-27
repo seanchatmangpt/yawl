@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772222652456816386,
+  "timestamp_rfc": "2026-02-27T20:04:12.456816386Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/reference/spi-million-cases.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3152d574d082407e454df942a7b66daabf76e2fb6cf1b249d8f54ef60f2c0af9",
+  "delta_hash": "3ea5d04016b066a49540a6ae297f3ad6905e9537305bf2e2fd10b12df79703b9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record WorkflowEvent(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# YAWL SPI for 1M Cases Architecture",
+        "change": "Added"
+      }
+    }
+  ]
+}

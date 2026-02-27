@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219602102091494,
+  "timestamp_rfc": "2026-02-27T19:13:22.102091494Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/TenantContext.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "47fe0882d0e8ee48dbd25c4d06c68e23f7232ee8f9d23a8a3cfee7c7c8578192",
+  "delta_hash": "a242059181b8b112b011630733ea3c664d8ca9839f0a0555adacef6b88404f2d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String owner = CASE_REGISTRY.lookupTenan",
+        "change": "Added"
+      }
+    }
+  ]
+}

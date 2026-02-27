@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772217287545676064,
+  "timestamp_rfc": "2026-02-27T18:34:47.545676064Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/VirtualThreadTenantInheritanceTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0d5614e0c7ab864a63eb6bdcc0d8e2539babfe3c1b31cb2bda5eb8916a596ab6",
+  "delta_hash": "414f142cbdf3b92fde62a521010837d0d09fbd261e331fc9e58fae022b6659a6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ScopedTenantContext.runWithTenant",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222736075758551,
+  "timestamp_rfc": "2026-02-27T20:05:36.075758551Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/reference/capacity-planning-1m.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0b738ed334b268cc6987cec4ae537d8bc44a6019d4c820159210471abf5a8a7c",
+  "delta_hash": "d9209029f926845abb748bac1cce3829c8f9e625383c49ef26c7917e887e26d5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Capacity Planning for 1M Cases YAWL De",
+        "change": "Added"
+      }
+    }
+  ]
+}

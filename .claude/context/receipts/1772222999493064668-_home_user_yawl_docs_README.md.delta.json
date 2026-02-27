@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222999493064668,
+  "timestamp_rfc": "2026-02-27T20:09:59.493064668Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/README.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0f5d9befc4438646f7db4f21f86534a7c40a7a0e2fdc981ed26fb3e41dec3d47",
+  "delta_hash": "5f9bebb45d9384bbaf531586005c0e4987e996e99a80b546bacb75c5b376fd32",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "| Deploy to production | [how-to/deploym",
+        "change": "Added"
+      }
+    }
+  ]
+}

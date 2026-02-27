@@ -21,10 +21,12 @@ package org.yawlfoundation.yawl.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.engine.spi.GlobalCaseRegistry;
+import org.yawlfoundation.yawl.engine.spi.LocalCaseRegistry;
 
 import java.util.HashSet;
+import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -64,8 +66,12 @@ public class TenantContext {
     // Specifications accessible by this tenant
     private final Set<String> authorizedSpecifications;
 
-    // Cache of case IDs to tenant IDs for fast lookup
-    private static final ConcurrentHashMap<String, String> CASE_TO_TENANT = new ConcurrentHashMap<>();
+    // Pluggable global case→tenant registry (default: LocalCaseRegistry / 1M-entry ConcurrentHashMap).
+    // Swap in RedisGlobalCaseRegistry at runtime by placing yawl-redis-adapter on the classpath.
+    private static final GlobalCaseRegistry CASE_REGISTRY =
+            ServiceLoader.load(GlobalCaseRegistry.class)
+                         .findFirst()
+                         .orElseGet(LocalCaseRegistry::new);
 
     /**
      * Creates a new TenantContext for a specific tenant.
@@ -107,7 +113,7 @@ public class TenantContext {
 
         String normalizedCaseID = caseID.trim();
         authorizedCases.add(normalizedCaseID);
-        CASE_TO_TENANT.put(normalizedCaseID, tenantId);
+        CASE_REGISTRY.register(normalizedCaseID, tenantId);
 
         LOG.debug("Registered case {} for tenant {}", normalizedCaseID, tenantId);
     }
@@ -143,7 +149,7 @@ public class TenantContext {
         }
 
         // Check global case-to-tenant mapping
-        String owner = CASE_TO_TENANT.get(normalizedCaseID);
+        String owner = CASE_REGISTRY.lookupTenant(normalizedCaseID);
         if (owner != null && owner.equals(tenantId)) {
             // Cache locally for faster future lookups
             authorizedCases.add(normalizedCaseID);
@@ -178,7 +184,7 @@ public class TenantContext {
 
         String normalizedCaseID = caseID.trim();
         authorizedCases.remove(normalizedCaseID);
-        CASE_TO_TENANT.remove(normalizedCaseID);
+        CASE_REGISTRY.deregister(normalizedCaseID);
 
         LOG.debug("Deregistered case {} from tenant {}", normalizedCaseID, tenantId);
     }
@@ -254,7 +260,7 @@ public class TenantContext {
      * WARNING: Use only during cleanup/testing.
      */
     public void clearAll() {
-        authorizedCases.forEach(caseID -> CASE_TO_TENANT.remove(caseID));
+        authorizedCases.forEach(caseID -> CASE_REGISTRY.deregister(caseID));
         authorizedCases.clear();
         authorizedSpecifications.clear();
 
@@ -269,7 +275,7 @@ public class TenantContext {
      * @return the owning tenant ID, or null if not found
      */
     public static String getTenantForCase(String caseID) {
-        return CASE_TO_TENANT.get(caseID);
+        return CASE_REGISTRY.lookupTenant(caseID);
     }
 
     /**
@@ -289,7 +295,7 @@ public class TenantContext {
             throw new IllegalArgumentException("caseID cannot be null or empty");
         }
 
-        String owner = CASE_TO_TENANT.get(caseID.trim());
+        String owner = CASE_REGISTRY.lookupTenant(caseID.trim());
         boolean authorized = tenantId.trim().equals(owner);
 
         if (!authorized) {

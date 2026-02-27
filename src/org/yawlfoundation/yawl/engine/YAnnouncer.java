@@ -39,8 +39,11 @@ import org.yawlfoundation.yawl.engine.announcement.YEngineEvent;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EngineBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_HttpsEngineBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceX.InterfaceX_EngineSideClient;
+import org.yawlfoundation.yawl.engine.spi.WorkflowEvent;
+import org.yawlfoundation.yawl.engine.spi.WorkflowEventBus;
 import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 
 /**
  * Handles the announcement of engine-generated events to the environment.
@@ -56,6 +59,7 @@ public class YAnnouncer {
     private final YEngine _engine;
     private final Logger _logger;
     private final Set<InterfaceX_EngineSideClient> _interfaceXListeners;
+    private final WorkflowEventBus _eventBus;
 
     private AnnouncementContext _announcementContext;
     // Protects first-gateway registration + reannounceRestoredItems() HTTP calls.
@@ -70,6 +74,7 @@ public class YAnnouncer {
         _interfaceXListeners = new HashSet<>();
         _announcementContext = AnnouncementContext.NORMAL;
         _controller = new ObserverGatewayController();
+        _eventBus = engine.getEventBus();
 
         // Initialise the standard Observer Gateways.
         // Currently the two standard gateways are the HTTP and HTTPS driven
@@ -174,6 +179,8 @@ public class YAnnouncer {
     protected void announceCaseCancellation(YIdentifier id, Set<YAWLServiceReference> services) {
         _controller.notifyCaseCancellation(services, id);
         announceCaseCancellationToInterfaceXListeners(id);
+        // Publish non-blocking in-JVM event
+        _eventBus.publish(new WorkflowEvent(YEventType.CASE_CANCELLED, id, null));
     }
 
 
@@ -232,6 +239,8 @@ public class YAnnouncer {
         }
         _controller.notifyCaseStarting(_engine.getYAWLServices(), specID, caseID,
                 launchingService, delayed);
+        // Publish non-blocking in-JVM event (Flow API — no HTTP RTT on hot path)
+        _eventBus.publish(new WorkflowEvent(YEventType.CASE_STARTING, caseID, specID));
     }
  
 
@@ -251,6 +260,8 @@ public class YAnnouncer {
             _controller.notifyCaseCompletion(_engine.getYAWLServices(), caseID, caseData);
         }
         else _controller.notifyCaseCompletion(service, caseID, caseData);
+        // Publish non-blocking in-JVM event
+        _eventBus.publish(new WorkflowEvent(YEventType.CASE_COMPLETED, caseID, caseData));
     }
 
 
@@ -298,6 +309,14 @@ public class YAnnouncer {
         if (! (announcements == null || announcements.isEmpty())) {
             _logger.debug("Announcing {} events.", announcements.size());
             _controller.announce(announcements);
+            // Publish work-item enabled events to in-JVM event bus (non-blocking)
+            for (YAnnouncement ann : announcements) {
+                if (ann.getEvent() == ITEM_ADD) {
+                    YWorkItem item = ann.getItem();
+                    _eventBus.publish(new WorkflowEvent(
+                            YEventType.ITEM_ENABLED, item.getCaseID(), item));
+                }
+            }
         }
     }
 

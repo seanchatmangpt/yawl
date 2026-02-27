@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -95,25 +95,32 @@ public class ScopedTenantContextTest {
     }
 
     @Test
-    @DisplayName("Virtual thread inheritance")
+    @DisplayName("StructuredTaskScope fork inherits tenant context (Java 25 ScopedValue model)")
     void testVirtualThreadInheritance() {
+        // In Java 25, ScopedValue is inherited only by StructuredTaskScope.fork(),
+        // not by Thread.ofVirtual().start() (unstructured concurrency).
         AtomicReference<TenantContext> capturedContext = new AtomicReference<>();
 
         ScopedTenantContext.runWithTenant(tenant1, () -> {
-            // Virtual thread inherits parent context
-            Thread.ofVirtual()
-                .name("inheritance-test")
-                .start(() -> {
+            try (var scope = StructuredTaskScope.open(
+                    StructuredTaskScope.Joiner.<Void>awaitAllSuccessfulOrThrow())) {
+                scope.fork(() -> {
                     capturedContext.set(ScopedTenantContext.getTenantContext());
-                })
-                .join();
+                    return null;
+                });
+                try {
+                    scope.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Scope join interrupted", e);
+                }
+            }
 
-            // Check that virtual thread inherited the context
-            assertNotNull(capturedContext.get(), "Virtual thread should inherit parent context");
+            assertNotNull(capturedContext.get(), "StructuredTaskScope fork should inherit parent context");
             assertEquals(tenant1, capturedContext.get(), "Inherited context should match parent");
             assertEquals(TENANT_ID_1, capturedContext.get().getTenantId(), "Tenant ID should match");
             assertTrue(capturedContext.get().isAuthorized(CASE_ID_1),
-                "Should be authorized in virtual thread");
+                "Should be authorized in forked task");
         });
     }
 
@@ -254,39 +261,47 @@ public class ScopedTenantContextTest {
                 "Should not be authorized for other tenant's case");
 
             // Should handle null case ID gracefully
-            assertFalse(context.isAuthorized(null),
+            assertFalse(context.isAuthorized((String) null),
                 "Should return false for null case ID");
         });
     }
 
     @ParameterizedTest
-    @DisplayName("Test with different virtual thread counts")
+    @DisplayName("Test with different StructuredTaskScope fork counts")
     @MethodSource("virtualThreadCounts")
     void testWithDifferentVirtualThreadCounts(int threadCount) {
+        // In Java 25, ScopedValue is inherited by StructuredTaskScope.fork() tasks.
         AtomicReference<Boolean> allSuccess = new AtomicReference<>(true);
         AtomicInteger successfulThreads = new AtomicInteger(0);
 
         ScopedTenantContext.runWithTenant(tenant1, () -> {
-            for (int i = 0; i < threadCount; i++) {
-                final int threadNum = i;
-                Thread.ofVirtual()
-                    .name("virtual-test-" + i)
-                    .start(() -> {
+            try (var scope = StructuredTaskScope.open(
+                    StructuredTaskScope.Joiner.<Void>awaitAllSuccessfulOrThrow())) {
+                for (int i = 0; i < threadCount; i++) {
+                    scope.fork(() -> {
                         try {
                             TenantContext context = ScopedTenantContext.requireTenantContext();
                             assertEquals(TENANT_ID_1, context.getTenantId(),
-                                "Virtual thread should have correct tenant");
+                                "Forked task should have correct tenant");
                             successfulThreads.incrementAndGet();
                         } catch (Exception e) {
                             allSuccess.set(false);
                         }
+                        return null;
                     });
+                }
+                try {
+                    scope.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Scope join interrupted", e);
+                }
             }
         });
 
-        assertTrue(allSuccess.get(), "All virtual threads should succeed");
+        assertTrue(allSuccess.get(), "All forked tasks should succeed");
         assertEquals(threadCount, successfulThreads.get(),
-            "All threads should have executed successfully");
+            "All tasks should have executed successfully");
     }
 
     private static Stream<Integer> virtualThreadCounts() {

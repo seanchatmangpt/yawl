@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772218964493830712,
+  "timestamp_rfc": "2026-02-27T19:02:44.493830712Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/spi/RunnerEvictionStore.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f0879d934ca80747ad4e29866ececf5c2657a7cb783bdc7713f396da8e94c369",
+  "delta_hash": "844ee0687940e86e066a7dfe915f00e01e7c1511bb8e47da21a8d5a43f99ce75",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "RunnerEvictionStore",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

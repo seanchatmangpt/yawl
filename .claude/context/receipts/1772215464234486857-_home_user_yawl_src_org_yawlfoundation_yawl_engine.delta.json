@@ -1,0 +1,10 @@
+{
+  "timestamp_ns": 1772215464234486857,
+  "timestamp_rfc": "2026-02-27T18:04:24.234486857Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "295192ea1ec8566d563b1a7587e5f0198580cdbd043842f5090a4c197c20c67a",
+  "delta_hash": "d53d18c23212ea7b6300594bb89bce60218f6eff2b9d628b8cc42d3e79bbd5ab",
+  "injected": false
+}

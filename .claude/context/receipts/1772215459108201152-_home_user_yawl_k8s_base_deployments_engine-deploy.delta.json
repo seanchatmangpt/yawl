@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215459108201152,
+  "timestamp_rfc": "2026-02-27T18:04:19.108201152Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/k8s/base/deployments/engine-deployment.yaml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "669e79d49b4545de14cbc1609545a4e5108218ad5e0c7519a3398423708b842a",
+  "delta_hash": "25a2e54007d93e86c306af2ac1c5d87358883606c29ce57db6399df671fe325e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "resources:",
+        "change": "Added"
+      }
+    }
+  ]
+}
