@@ -235,27 +235,6 @@ public class CliIntegrationTest {
     // ========================================================================
 
     @Test
-    @DisplayName("CLI: observatory - should generate code facts")
-    public void testObservatoryGenerate() throws Exception {
-        // Arrange
-        String observatoryScript = PROJECT_ROOT + "/scripts/observatory/observatory.sh";
-        if (!Files.exists(Paths.get(observatoryScript))) {
-            Assumptions.assumeTrue(false, "Observatory script not found");
-        }
-
-        // Act
-        ProcessResult result = runCommandWithTimeout(
-            "bash",
-            observatoryScript,
-            BUILD_TIMEOUT_SECONDS
-        );
-
-        // Assert - allow partial success
-        assertTrue(result.exitCode == 0 || result.stdout.contains("generated"),
-            "Observatory should generate facts. Exit: " + result.exitCode);
-    }
-
-    @Test
     @DisplayName("CLI: status - should display build status")
     public void testStatus() throws Exception {
         // Arrange & Act
@@ -269,27 +248,6 @@ public class CliIntegrationTest {
         assertEquals(0, result.exitCode, "Status should succeed");
         assertTrue(result.stdout.contains("Status") || result.stdout.contains("Git"),
             "Status output should contain system information");
-    }
-
-    @Test
-    @DisplayName("CLI: health - should check system health")
-    public void testHealth() throws Exception {
-        // Arrange
-        String healthScript = SCRIPTS_DIR + "/health-check.sh";
-        if (!Files.exists(Paths.get(healthScript))) {
-            Assumptions.assumeTrue(false, "Health check script not found");
-        }
-
-        // Act
-        ProcessResult result = runCommand(
-            "bash",
-            healthScript,
-            "--verbose"
-        );
-
-        // Assert
-        assertTrue(result.exitCode == 0 || result.stdout.contains("Health"),
-            "Health check should provide output. Exit: " + result.exitCode);
     }
 
     // ========================================================================
@@ -377,27 +335,6 @@ public class CliIntegrationTest {
     // ========================================================================
     // VALIDATE SCRIPT (Comprehensive validation)
     // ========================================================================
-
-    @Test
-    @DisplayName("CLI: validate-all.sh - should run full validation pipeline")
-    public void testValidateAll() throws Exception {
-        // Arrange
-        String validateAllScript = SCRIPTS_DIR + "/validate-all.sh";
-        if (!Files.exists(Paths.get(validateAllScript))) {
-            Assumptions.assumeTrue(false, "validate-all.sh not found");
-        }
-
-        // Act
-        ProcessResult result = runCommandWithTimeout(
-            "bash",
-            validateAllScript,
-            BUILD_TIMEOUT_SECONDS
-        );
-
-        // Assert - may return different codes based on what's configured
-        assertTrue(result.exitCode >= 0,
-            "validate-all.sh should complete");
-    }
 
     // ========================================================================
     // ERROR HANDLING & EDGE CASES

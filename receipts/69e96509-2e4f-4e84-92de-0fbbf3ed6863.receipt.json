@@ -1,9 +1,9 @@
 {
   "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
-  "started_at": "2026-02-27T05:48:09.540363939Z",
-  "ended_at": "2026-02-27T05:48:09.648313361Z",
-  "receipt_count": 69,
-  "chain_hash": "8717cef3506d23c239869e2a66f9bce8da35af5f33c9556913890f4c75021177",
+  "started_at": "2026-02-27T06:13:07.917072994Z",
+  "ended_at": "2026-02-27T06:13:07.935013052Z",
+  "receipt_count": 79,
+  "chain_hash": "9095f6fc7b8b22616b63d5d538ab288fd92fa6fd26c49f3dda97b2cd6f4202eb",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -5238,6 +5238,497 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "@Order",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172182016910665,
+      "timestamp_rfc": "2026-02-27T06:03:02.016910665Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/auth/SimpleVerificationTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "6c3e515a7771ccc5aadb2787d4aa240f100fc39461097e4ebf568efb97ca299c",
+      "delta_hash": "a6f8aa4c8ae9903a97ff9b767cba2f8ea36d24976fea2f76c8d6eabf9f551d5d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "SimpleVerificationTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String MINIMAL_SPEC",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "package org.yawlfoundation.yawl.integrat",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172191786416135,
+      "timestamp_rfc": "2026-02-27T06:03:11.786416135Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/cli/CliIntegrationTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ad9d96e83ade3f74fcac3987b23fbe343d8c799d02f4ed9cfdde0ea9411fe0ab",
+      "delta_hash": "e93053126863ca409546131992dc4c36d6be7ae1eecbbb2fbe22a17c21395f22",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172199006739719,
+      "timestamp_rfc": "2026-02-27T06:03:19.006739719Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/cli/CliIntegrationTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7762ea6650c7b67e30d40d9cdfa8d0204f98d8b1c9d4eddb5290687c1635d757",
+      "delta_hash": "a3d6d2ca3e6df96cf4b5bb5e830668433d07b95f6374d29db51194a09345fcb5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// =====================================",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172204964921432,
+      "timestamp_rfc": "2026-02-27T06:03:24.964921432Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/cli/CliIntegrationTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "be0aa4722b1d8282789107b425cf9217d1176dbbc46b15b7043d4ebf1e33d2c4",
+      "delta_hash": "a3d6d2ca3e6df96cf4b5bb5e830668433d07b95f6374d29db51194a09345fcb5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// =====================================",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172331110448220,
+      "timestamp_rfc": "2026-02-27T06:05:31.110448220Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/scheduling/SchedulerCancelFireRaceTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "99ff8988efaf11f3c1e740ae478df60f7b4587e1a16e3912eb5a691b29269a91",
+      "delta_hash": "9abb914b4c78cebc7291d421235c0c1ce6287c6a591ed744378cd37282409ac7",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "SchedulerCancelFireRaceTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@RepeatedTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172527154916192,
+      "timestamp_rfc": "2026-02-27T06:08:47.154916192Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/stateless/RoundTripInvariantTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "dc52ecde0691550ed50e982a8c0dd38ca15d893a96c4984f37197c1045aaa233",
+      "delta_hash": "28758b25658ec93d73e11c275d3f69084cdb325303d70b594f4c0e80890d1427",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "RoundTripInvariantTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String MINIMAL_SPEC",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172569415725235,
+      "timestamp_rfc": "2026-02-27T06:09:29.415725235Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/stateless/WorkItemTimestampInvariantTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a38d2ad3acb01ef2c2e0599ff68c4298e39512b72323fa4a0bc8854a6451e335",
+      "delta_hash": "ab8132ca128c5c13404f1a5b2ff7eb1d699ce7c2155f27601c37169be97db5df",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String MINIMAL_SPEC",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "WorkItemTimestampInvariantTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172640248373275,
+      "timestamp_rfc": "2026-02-27T06:10:40.248373275Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/invariant/RunnerTaskSetInvariantTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "435cd9cf8c09500661741dfd1dd049424b6583a63375ec17a03b57803e1a4479",
+      "delta_hash": "78e13e8a57f26b0c8b6435891e32fe64639dcf670ee917d9d5f7312b8a2dbe0b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String SINGLE_TASK_",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Tag",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@RepeatedTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "RunnerTaskSetInvariantTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172700490651251,
+      "timestamp_rfc": "2026-02-27T06:11:40.490651251Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/invariant/RunnerTaskSetInvariantTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b32d73ea0f248e301fdd4aa3fc2f77d0b1f5caa387e57e7de0401ef8d90b947c",
+      "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772172707202648455,
+      "timestamp_rfc": "2026-02-27T06:11:47.202648455Z",
+      "session_id": "69e96509-2e4f-4e84-92de-0fbbf3ed6863",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/invariant/RunnerTaskSetInvariantTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "21c12e85040db22f3f85bc120dcd3e1837cc25e4ea89ddeaf735e86cc9a56cb0",
+      "delta_hash": "f56e8094e9c35bc33b2815f167071400dccff9d4a4c3989b3ad55723fac0be4f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YWorkItem started = runner.getWorkItemRe",
             "change": "Added"
           }
         }
