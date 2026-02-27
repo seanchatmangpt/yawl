@@ -13,6 +13,7 @@ Documentation is organized by the [Diataxis](https://diataxis.fr/) framework int
 | Connect an AI agent via MCP | [tutorials/08-mcp-agent-integration.md](tutorials/08-mcp-agent-integration.md) |
 | Contribute code | [how-to/contributing.md](how-to/contributing.md) |
 | Deploy to production | [how-to/deployment/production.md](how-to/deployment/production.md) |
+| Scale to 1M cases | [diataxis/INDEX.md#1m-cases-support-v600](diataxis/INDEX.md#1m-cases-support-v600) |
 | Migrate from v5 to v6 | [how-to/migration/v5-to-v6.md](how-to/migration/v5-to-v6.md) |
 | Debug a problem | [how-to/troubleshooting.md](how-to/troubleshooting.md) |
 | Look up configuration | [reference/configuration.md](reference/configuration.md) |
@@ -52,12 +53,15 @@ Step-by-step lessons where completing the lesson is the goal.
 | 06 | [Custom Work Item Handler](tutorials/06-write-a-custom-work-item-handler.md) |
 | 07 | [Docker Dev Environment](tutorials/07-docker-dev-environment.md) |
 | 08 | [MCP Agent Integration](tutorials/08-mcp-agent-integration.md) |
+| 11 | [Scale to 1M Cases](tutorials/11-scale-to-million-cases.md) |
 
 ### How-To Guides — Accomplishing a Task
 
 Task-oriented guides for practitioners who know what they want to achieve.
 
 **Configuration** — [configure-multi-tenancy.md](how-to/configure-multi-tenancy.md) · [configure-resource-service.md](how-to/configure-resource-service.md) · [configure-spiffe.md](how-to/configure-spiffe.md) · [enable-stateless-persistence.md](how-to/enable-stateless-persistence.md)
+
+**1M Cases** — [configure-zgc-compact-headers.md](how-to/configure-zgc-compact-headers.md) · [implement-custom-case-registry.md](how-to/implement-custom-case-registry.md) · [subscribe-workflow-events.md](how-to/subscribe-workflow-events.md) · [migrate-uuid-case-ids.md](how-to/migrate-uuid-case-ids.md) · [operations/tune-hpa-for-cases.md](how-to/operations/tune-hpa-for-cases.md)
 
 **Deployment** — [deployment/](how-to/deployment/) — Docker, Jetty, Tomcat, WildFly, production, Java 25 upgrade
 

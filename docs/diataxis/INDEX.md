@@ -20,6 +20,7 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | 08 | [MCP Agent Integration](../tutorials/08-mcp-agent-integration.md) | Connect an AI agent via the MCP server |
 | 09 | [Marketplace Quick Start](../tutorials/09-marketplace-quick-start.md) | Deploy YAWL to a cloud marketplace |
 | 10 | [Getting Started (User Guide)](../tutorials/10-getting-started.md) | End-to-end user perspective walkthrough |
+| 11 | [Scale to 1M Cases](../tutorials/11-scale-to-million-cases.md) | Deploy and verify a 1M-case YAWL cluster end-to-end |
 
 ---
 
@@ -86,6 +87,15 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 |-------|------|
 | [Security Testing](../how-to/security/testing.md) | Run security test suite |
 
+### 1M Cases Support
+| Guide | Task |
+|-------|------|
+| [Configure ZGC & Compact Headers](../how-to/configure-zgc-compact-headers.md) | Enable low-latency GC on engine pods |
+| [Implement Custom Case Registry](../how-to/implement-custom-case-registry.md) | Plug in Redis-backed GlobalCaseRegistry |
+| [Subscribe to Workflow Events](../how-to/subscribe-workflow-events.md) | Register WorkflowEventBus subscribers |
+| [Migrate to UUID Case IDs](../how-to/migrate-uuid-case-ids.md) | Remove integer counter, enable UUID generation |
+| [Tune HPA for Cases](../how-to/operations/tune-hpa-for-cases.md) | Right-size Kubernetes autoscaling |
+
 ---
 
 ## Reference — Accurate Technical Information
@@ -115,6 +125,13 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Workflow Patterns](../reference/workflow-patterns.md) | WfMC/van der Aalst pattern catalog |
 | [Performance Baselines](../reference/performance-baselines.md) | Benchmark results by version |
 | [Capacity Planning](../reference/capacity-planning.md) | Resource sizing guidelines |
+
+### 1M Cases Support
+| Reference | Contents |
+|-----------|----------|
+| [SPI Interfaces](../reference/spi-million-cases.md) | WorkflowEventBus, GlobalCaseRegistry, RunnerEvictionStore contracts |
+| [JEP Index](../reference/java25-jep-index.md) | All Java 25 JEPs used (ScopedValue, FFM, ZGC, JEP 491) |
+| [Capacity Planning (1M)](../reference/capacity-planning-1m.md) | Node sizing, heap/off-heap math, throughput model |
 
 ### API
 | Reference | Contents |
@@ -161,6 +178,14 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | ADR | Decision |
 |-----|----------|
 | [decisions/](../explanation/decisions/) | All Architecture Decision Records |
+
+### 1M Cases Support
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [Why ScopedValue?](../explanation/why-scoped-values.md) | ScopedValue vs ThreadLocal on virtual threads |
+| [Flow API Event Bus](../explanation/flow-api-event-bus.md) | Why Flow API by default, not Kafka |
+| [Off-Heap Runner Store](../explanation/offheap-runner-store.md) | Why store snapshots off-heap via FFM API |
+| [1M Case Architecture](../explanation/million-case-architecture.md) | How 5 Java 25 features compose to reach 1M |
 
 ---
 

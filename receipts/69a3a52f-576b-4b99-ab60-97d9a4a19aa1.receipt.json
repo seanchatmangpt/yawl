@@ -1,9 +1,9 @@
 {
   "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
-  "started_at": "2026-02-27T20:09:21.973123585Z",
-  "ended_at": "2026-02-27T20:09:22.300483983Z",
-  "receipt_count": 237,
-  "chain_hash": "e4ed57be3796b56261cd4c343de37bcdc599b53b3f15cad9ee60925e298b051a",
+  "started_at": "2026-02-27T20:09:43.965864961Z",
+  "ended_at": "2026-02-27T20:09:44.111469930Z",
+  "receipt_count": 239,
+  "chain_hash": "39eb96e7a1070652023a26eee5a82ed2d4503f94fe5ce11267a024cab3d8e3fa",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -11585,6 +11585,44 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222972904621275,
+      "timestamp_rfc": "2026-02-27T20:09:32.904621275Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e70204c323b23e22766fa8102603afe5144ddef89e125718bdcdef79fc4e2621",
+      "delta_hash": "e29f35c16d02e06d0cfbfc95d0b240262a8b5af82639670b25ec6bb1d90d03f1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "| 10 | [Getting Started",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222979607179708,
+      "timestamp_rfc": "2026-02-27T20:09:39.607179708Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "16c6d74d3edb01a77824fe25daf0918053d3fa86c5004611330f21420870c3e0",
+      "delta_hash": "2f121569af44288e949ad2438033118c6cd57ffe2583a8b7853f813b03d5282f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### Security",
             "change": "Added"
           }
         }

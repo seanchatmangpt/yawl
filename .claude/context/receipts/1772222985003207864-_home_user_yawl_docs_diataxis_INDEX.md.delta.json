@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222985003207864,
+  "timestamp_rfc": "2026-02-27T20:09:45.003207864Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a76b5dadea4ceb1fadf2e640021f6ad871640d930338fed3d250ae613ffc5f59",
+  "delta_hash": "c7d287de81292e923a1eceb5e6e92467f64630485aae0490f720eb30a0827248",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Observability & Patterns",
+        "change": "Added"
+      }
+    }
+  ]
+}
