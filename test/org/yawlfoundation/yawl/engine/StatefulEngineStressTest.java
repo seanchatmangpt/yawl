@@ -32,6 +32,7 @@ import org.yawlfoundation.yawl.util.java25.StreamMetrics.PercentileSnapshot;
 import java.io.File;
 import java.lang.ScopedValue;
 import java.net.URL;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li><b>Gatherers Rolling Throughput</b> — first {@code Gatherers.windowSliding()} usage in codebase</li>
  *   <li><b>Degradation Profile</b> — concurrency curve [10,50,100,200,500] cases/s</li>
  *   <li><b>ScopedValue at Engine Scale</b> — 200 concurrent contexts; assert zero leakage</li>
+ *   <li><b>Joiner Policy Comparison</b> — awaitAllSuccessfulOrThrow vs awaitAll under 10% fault injection</li>
  * </ol>
  *
  * <p>Chicago TDD: uses the real YEngine singleton; no mocks. Serialised via
@@ -75,7 +77,7 @@ class StatefulEngineStressTest {
 
     private static final List<String> REPORT_LINES = new ArrayList<>();
     private static final String HDR = "=== STATEFUL ENGINE STRESS REPORT ===";
-    private static final String FTR_PASS  = "=== RESULT: S1-S6+S8 PASS | S7 CHARACTERISED ===";
+    private static final String FTR_PASS  = "=== RESULT: S1-S6+S8+S9 PASS | S7 CHARACTERISED ===";
     private static final String FTR_FAIL  = "=== RESULT: FAILURES DETECTED ===";
 
     // ScopedValue for S8 — mirrors YNetRunner.CASE_CONTEXT pattern
@@ -214,7 +216,10 @@ class StatefulEngineStressTest {
         long wallStart = System.nanoTime();
 
         for (YIdentifier caseID : caseIDs) {
-            Thread.ofVirtual().start(() -> {
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
+                assert Thread.currentThread().isVirtual() : "S2 cancel thread must be virtual";
                 try {
                     startGate.await();
                     engine.cancelCase(caseID);
@@ -312,7 +317,7 @@ class StatefulEngineStressTest {
 
         // Baseline measurement (after GC to reduce noise)
         rt.gc();
-        Thread.sleep(50);
+        Thread.sleep(Duration.ofMillis(50));
         long heapBefore = rt.totalMemory() - rt.freeMemory();
 
         for (int cycle = 0; cycle < CYCLES; cycle++) {
@@ -327,7 +332,7 @@ class StatefulEngineStressTest {
         }
 
         rt.gc();
-        Thread.sleep(50);
+        Thread.sleep(Duration.ofMillis(50));
         long heapAfter = rt.totalMemory() - rt.freeMemory();
         long deltaMb = (heapAfter - heapBefore) / (1024 * 1024);
 
@@ -370,8 +375,11 @@ class StatefulEngineStressTest {
 
         // Readers: query work item repository and runner repository
         for (int r = 0; r < READERS; r++) {
-            Thread.ofVirtual().start(() -> {
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
                 try {
+                    assert Thread.currentThread().isVirtual() : "S5 reader must be virtual";
                     startGate.await();
                     YWorkItemRepository repo = engine.getWorkItemRepository();
                     Set<YWorkItem> items = repo.getWorkItems(YWorkItemStatus.statusEnabled);
@@ -392,8 +400,11 @@ class StatefulEngineStressTest {
 
         // Writers: start a case then cancel it
         for (int w = 0; w < WRITERS; w++) {
-            Thread.ofVirtual().start(() -> {
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
                 try {
+                    assert Thread.currentThread().isVirtual() : "S5 writer must be virtual";
                     startGate.await();
                     YIdentifier id = engine.startCase(spec.getSpecificationID(), null, null, null,
                             new YLogDataItemList(), null, false);
@@ -440,8 +451,11 @@ class StatefulEngineStressTest {
         AtomicInteger errors = new AtomicInteger(0);
 
         for (int i = 0; i < CASE_COUNT; i++) {
-            Thread.ofVirtual().start(() -> {
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
                 try {
+                    assert Thread.currentThread().isVirtual() : "S6 thread must be virtual";
                     YIdentifier id = engine.startCase(spec.getSpecificationID(), null, null, null,
                             new YLogDataItemList(), null, false);
                     if (id != null) {
@@ -515,8 +529,11 @@ class StatefulEngineStressTest {
             AtomicInteger succeeded = new AtomicInteger(0);
 
             for (int i = 0; i < level; i++) {
-                Thread.ofVirtual().start(() -> {
+                Thread.ofVirtual()
+                        .inheritInheritableThreadLocals(false)
+                        .start(() -> {
                     try {
+                        assert Thread.currentThread().isVirtual() : "S7 thread must be virtual";
                         startGate.await();
                         YIdentifier id = engine.startCase(spec.getSpecificationID(), null, null, null,
                                 new YLogDataItemList(), null, false);
@@ -581,8 +598,11 @@ class StatefulEngineStressTest {
 
         for (int i = 0; i < THREAD_COUNT; i++) {
             final String expectedCtx = "engine-stress-case-" + i;
-            Thread.ofVirtual().start(() -> {
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
                 try {
+                    assert Thread.currentThread().isVirtual() : "S8 thread must be virtual";
                     startGate.await();
                     ScopedValue.where(ENGINE_STRESS_CTX, expectedCtx).call(() -> {
                         // Start a real case while the ScopedValue is bound
@@ -622,6 +642,71 @@ class StatefulEngineStressTest {
         String result = String.format(
                 "[S8] PASS — ScopedValue: %d/%d context isolated, %d leakage events in %dms",
                 THREAD_COUNT - leakage.get(), THREAD_COUNT, leakage.get(), wallMs);
+        REPORT_LINES.add(result);
+        System.out.println(result);
+    }
+
+    // =========================================================================
+    // S9: Joiner Policy Comparison
+    // =========================================================================
+
+    @Test
+    @Order(9)
+    @DisplayName("S9 — Joiner Policy: awaitAllSuccessfulOrThrow vs awaitAll under 10% fault injection")
+    @Timeout(60)
+    void s9_joinerPolicyComparison() throws Exception {
+        final int TOTAL = 100;
+        final int FAULT_EVERY = 10; // 10% fault injection → 10 faults, 90 successes
+
+        // ── Policy 1: awaitAllSuccessfulOrThrow — first failure propagates ──────────
+        AtomicInteger countThrow = new AtomicInteger(0);
+        boolean sawException = false;
+        try {
+            try (var scope = StructuredTaskScope.open(
+                    StructuredTaskScope.Joiner.<YIdentifier>awaitAllSuccessfulOrThrow())) {
+                for (int i = 0; i < TOTAL; i++) {
+                    final int idx = i;
+                    scope.fork(() -> {
+                        if (idx % FAULT_EVERY == 0) {
+                            throw new RuntimeException("deliberate-fault-" + idx);
+                        }
+                        countThrow.incrementAndGet();
+                        return engine.startCase(spec.getSpecificationID(), null, null, null,
+                                new YLogDataItemList(), null, false);
+                    });
+                }
+                scope.join();
+            }
+        } catch (Exception ex) {
+            sawException = true;
+        }
+        assertTrue(sawException, "awaitAllSuccessfulOrThrow must propagate first fault");
+
+        // Clean up any cases started before the fault interrupted the scope
+        EngineClearer.clear(engine);
+        engine.loadSpecification(spec);
+
+        // ── Policy 2: awaitAll — all forks run regardless of failures ─────────────
+        AtomicInteger countAll = new AtomicInteger(0);
+        try (var scope = StructuredTaskScope.open(StructuredTaskScope.Joiner.<YIdentifier>awaitAll())) {
+            for (int i = 0; i < TOTAL; i++) {
+                final int idx = i;
+                scope.fork(() -> {
+                    if (idx % FAULT_EVERY == 0) {
+                        throw new RuntimeException("deliberate-fault-" + idx);
+                    }
+                    countAll.incrementAndGet();
+                    return engine.startCase(spec.getSpecificationID(), null, null, null,
+                            new YLogDataItemList(), null, false);
+                });
+            }
+            scope.join();
+        }
+        // 10 faults (indices 0,10,20,...,90) → 90 successful increments
+        assertEquals(90, countAll.get(),
+                "awaitAll must complete all non-throwing forks; expected 90, got " + countAll.get());
+
+        String result = "[S9] PASS — Joiner Policies: awaitAllSuccessfulOrThrow=fast-fail | awaitAll=90/100 completed";
         REPORT_LINES.add(result);
         System.out.println(result);
     }

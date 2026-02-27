@@ -245,9 +245,20 @@ public class YEngine implements InterfaceADesign,
     /**
      * Gets the tenant context for the current thread/request.
      *
+     * <p>Prefers the {@link ScopedTenantContext} ScopedValue (new API) over the
+     * ThreadLocal (legacy API). Code running inside
+     * {@code ScopedTenantContext.runWithTenant()} will return the scoped value;
+     * code using the legacy {@link #setTenantContext} / {@link #clearTenantContext}
+     * pair will return the ThreadLocal value as a fallback.
+     *
      * @return the current tenant context, or null if not set
      */
     public static TenantContext getTenantContext() {
+        // Prefer ScopedValue (virtual-thread-safe, auto-released on scope exit)
+        if (ScopedTenantContext.TENANT.isBound()) {
+            return ScopedTenantContext.TENANT.get();
+        }
+        // Fallback: legacy ThreadLocal (for setTenantContext() call-sites not yet migrated)
         return _currentTenant.get();
     }
 

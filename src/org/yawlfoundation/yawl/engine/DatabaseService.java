@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.sql.DataSource;
 
@@ -69,6 +70,8 @@ public class DatabaseService {
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean running = new AtomicBoolean(false);
+    // ReentrantLock instead of synchronized — avoids pinning virtual threads during init/shutdown
+    private final ReentrantLock _lifecycleLock = new ReentrantLock();
 
     private volatile int monitoringIntervalSeconds = DEFAULT_MONITORING_INTERVAL_SECONDS;
     private volatile int dailyBackupHour = DEFAULT_BACKUP_HOUR;
@@ -83,55 +86,65 @@ public class DatabaseService {
         this.backupDirectory = backupDirectory;
     }
 
-    public synchronized void start() {
-        if (!initialized.compareAndSet(false, true)) {
-            _log.warn("DatabaseService already initialized");
-            return;
+    public void start() {
+        _lifecycleLock.lock();
+        try {
+            if (!initialized.compareAndSet(false, true)) {
+                _log.warn("DatabaseService already initialized");
+                return;
+            }
+
+            _log.info("Starting DatabaseService...");
+
+            performanceMonitor = new DatabasePerformanceMonitor(dataSource, sessionFactory);
+            performanceMonitor.startMonitoring(monitoringIntervalSeconds);
+
+            if (archivingEnabled) {
+                dataArchiver = new DataArchiver(dataSource);
+                dataArchiver.setLogRetentionDays(90);
+                dataArchiver.setAuditRetentionDays(365);
+                dataArchiver.setWorkItemRetentionDays(30);
+                dataArchiver.scheduleDailyArchiving(4);
+                _log.info("Data archiver scheduled");
+            }
+
+            if (backupEnabled && backupDirectory != null) {
+                backupManager = new DatabaseBackupManager(dataSource, dbProperties, backupDirectory);
+                backupManager.scheduleDailyBackup(dailyBackupHour);
+                _log.info("Backup manager scheduled (daily at {}h)", dailyBackupHour);
+            }
+
+            running.set(true);
+            _log.info("DatabaseService started successfully");
+        } finally {
+            _lifecycleLock.unlock();
         }
-
-        _log.info("Starting DatabaseService...");
-
-        performanceMonitor = new DatabasePerformanceMonitor(dataSource, sessionFactory);
-        performanceMonitor.startMonitoring(monitoringIntervalSeconds);
-
-        if (archivingEnabled) {
-            dataArchiver = new DataArchiver(dataSource);
-            dataArchiver.setLogRetentionDays(90);
-            dataArchiver.setAuditRetentionDays(365);
-            dataArchiver.setWorkItemRetentionDays(30);
-            dataArchiver.scheduleDailyArchiving(4);
-            _log.info("Data archiver scheduled");
-        }
-
-        if (backupEnabled && backupDirectory != null) {
-            backupManager = new DatabaseBackupManager(dataSource, dbProperties, backupDirectory);
-            backupManager.scheduleDailyBackup(dailyBackupHour);
-            _log.info("Backup manager scheduled (daily at {}h)", dailyBackupHour);
-        }
-
-        running.set(true);
-        _log.info("DatabaseService started successfully");
     }
 
-    public synchronized void stop() {
-        if (!running.compareAndSet(true, false)) {
-            return;
-        }
+    public void stop() {
+        _lifecycleLock.lock();
+        try {
+            if (!running.compareAndSet(true, false)) {
+                return;
+            }
 
-        _log.info("Stopping DatabaseService...");
+            _log.info("Stopping DatabaseService...");
 
-        if (performanceMonitor != null) {
-            performanceMonitor.stopMonitoring();
-        }
-        if (dataArchiver != null) {
-            dataArchiver.stop();
-        }
-        if (backupManager != null) {
-            backupManager.stop();
-        }
+            if (performanceMonitor != null) {
+                performanceMonitor.stopMonitoring();
+            }
+            if (dataArchiver != null) {
+                dataArchiver.stop();
+            }
+            if (backupManager != null) {
+                backupManager.stop();
+            }
 
-        initialized.set(false);
-        _log.info("DatabaseService stopped");
+            initialized.set(false);
+            _log.info("DatabaseService stopped");
+        } finally {
+            _lifecycleLock.unlock();
+        }
     }
 
     public Map<String, Object> getPerformanceMetrics() {
