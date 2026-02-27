@@ -1,9 +1,9 @@
 {
   "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
-  "started_at": "2026-02-27T05:37:08.713828095Z",
-  "ended_at": "2026-02-27T05:37:08.821702993Z",
-  "receipt_count": 86,
-  "chain_hash": "7d8826fb3d281f6b6d94554ad0cc41e101482ba4f7896c866a3085e850cdcaa1",
+  "started_at": "2026-02-27T05:57:36.057388298Z",
+  "ended_at": "2026-02-27T05:57:36.199275576Z",
+  "receipt_count": 110,
+  "chain_hash": "3081c36ad38cbe41852e561e5dc41052b52d2cd8bac9ac46d8164b193743084d",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -5148,6 +5148,721 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171614941747849,
+      "timestamp_rfc": "2026-02-27T05:53:34.941747849Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/PropertyBasedPerformanceBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b14d5b8316e86831ed42e3670e623bcd5b0693f92910130e48bea9c05890e82e",
+      "delta_hash": "b93e06aec5a8c500e5541811247a54d2cc7ba1015e6b5dc9c6e703aad2b39034",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 1, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171617300386879,
+      "timestamp_rfc": "2026-02-27T05:53:37.300386879Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/yawl-mcp-a2a-app/src/jmh/java/org/yawlfoundation/yawl/mcp/a2a/benchmarks/NetworkTransportBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "edd9ee04bebc72c796a3f34b9d97d345607d632a7cd201d1673a4d079d164ec5",
+      "delta_hash": "74bdf4f5eb7aba7d3a32e0e86bc0f6eb39676726ea7c529ed49389fae05ddf2d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 2, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171622989195160,
+      "timestamp_rfc": "2026-02-27T05:53:42.989195160Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/benchmark/IntegrationBenchmarks.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b1ff75134af888d69f1d32129405129726cd8477fc4747822f085d6437c7da8a",
+      "delta_hash": "8524e470733fd0f9f2b600c26be745fd4eccebfb622bd036b1b3e1d44a79b8ca",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Measurement",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 1, jvmArgs = {",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@BenchmarkMode",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "* @version 6.0",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@OutputTimeUnit",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@State",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Warmup",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171624641336743,
+      "timestamp_rfc": "2026-02-27T05:53:44.641336743Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/Java25CompactHeadersBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "edd9ee04bebc72c796a3f34b9d97d345607d632a7cd201d1673a4d079d164ec5",
+      "delta_hash": "74bdf4f5eb7aba7d3a32e0e86bc0f6eb39676726ea7c529ed49389fae05ddf2d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 2, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171662390375878,
+      "timestamp_rfc": "2026-02-27T05:54:22.390375878Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/ChaosEngineeringBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b14d5b8316e86831ed42e3670e623bcd5b0693f92910130e48bea9c05890e82e",
+      "delta_hash": "b93e06aec5a8c500e5541811247a54d2cc7ba1015e6b5dc9c6e703aad2b39034",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 1, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171664150478594,
+      "timestamp_rfc": "2026-02-27T05:54:24.150478594Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/AdaptiveLoadBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b14d5b8316e86831ed42e3670e623bcd5b0693f92910130e48bea9c05890e82e",
+      "delta_hash": "b93e06aec5a8c500e5541811247a54d2cc7ba1015e6b5dc9c6e703aad2b39034",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 1, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171665876044867,
+      "timestamp_rfc": "2026-02-27T05:54:25.876044867Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/MemoryUsageBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "20e4021b04eea7c8e2c52645ca60ae52f1083d5e405772f86c661a82b0a8e212",
+      "delta_hash": "5264272f3a995745aa40caa7749be7261fc145026413eaf1b6eed8e02b3d8964",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Fork",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171667664587478,
+      "timestamp_rfc": "2026-02-27T05:54:27.664587478Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/Java25RecordsBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "edd9ee04bebc72c796a3f34b9d97d345607d632a7cd201d1673a4d079d164ec5",
+      "delta_hash": "74bdf4f5eb7aba7d3a32e0e86bc0f6eb39676726ea7c529ed49389fae05ddf2d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 2, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171690690563661,
+      "timestamp_rfc": "2026-02-27T05:54:50.690563661Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/EventLoggerBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b14d5b8316e86831ed42e3670e623bcd5b0693f92910130e48bea9c05890e82e",
+      "delta_hash": "b93e06aec5a8c500e5541811247a54d2cc7ba1015e6b5dc9c6e703aad2b39034",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 1, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171692341508528,
+      "timestamp_rfc": "2026-02-27T05:54:52.341508528Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/IOBoundBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b14d5b8316e86831ed42e3670e623bcd5b0693f92910130e48bea9c05890e82e",
+      "delta_hash": "b93e06aec5a8c500e5541811247a54d2cc7ba1015e6b5dc9c6e703aad2b39034",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 1, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171693996811031,
+      "timestamp_rfc": "2026-02-27T05:54:53.996811031Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/InterfaceBClientBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b14d5b8316e86831ed42e3670e623bcd5b0693f92910130e48bea9c05890e82e",
+      "delta_hash": "b93e06aec5a8c500e5541811247a54d2cc7ba1015e6b5dc9c6e703aad2b39034",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 1, jvmArgs = {",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171718747285469,
+      "timestamp_rfc": "2026-02-27T05:55:18.747285469Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/WorkflowPatternBenchmarks.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0c99ff00652dcbd4f3f60e639bafc4f41cef049b86028922153f725fc65daa9a",
+      "delta_hash": "272b40b97f28e8fe5ca414358e5e093a66be22a6d0bdbd46cc5d6488156f5730",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171723180769003,
+      "timestamp_rfc": "2026-02-27T05:55:23.180769003Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/WorkflowPatternBenchmarks.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "37b1d341a9447da0b599d10608f425ca106c830ef329ddcfa4ec888512722a21",
+      "delta_hash": "a6dc1ce0b4ec93dcc4509da5224ffd8bd64254faa50c37b25c4dc2c1af7c7e27",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Fork(value = 3, jvmArgs = {",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Threads",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171729890725809,
+      "timestamp_rfc": "2026-02-27T05:55:29.890725809Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/WorkflowPatternBenchmarks.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "403a9881edbf31106dee74f55cad2a0b4373cd1bc5b64ed468cf6ec9f32aa16f",
+      "delta_hash": "4cdb7836946ef608017e7234a8e008ea74c0c652cc6a07705d27903c015d8264",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Benchmark",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@OutputTimeUnit",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@BenchmarkMode",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171740554668956,
+      "timestamp_rfc": "2026-02-27T05:55:40.554668956Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e810ddec358706809c4995fcc998ec86051294c6bf73f1ba0490f8f258435b60",
+      "delta_hash": "3e63c5f80e8cea238ca9222fdabd1f22cdbce10f93eff81899dc156833184cdd",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171745226921333,
+      "timestamp_rfc": "2026-02-27T05:55:45.226921333Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "cd402ff88b4d1e4b01ae6f2dcdfc1dc95051840c905e98689df0630202a447d3",
+      "delta_hash": "443a278f13e12373ed22627ee45cfa9ef605bc875c72a461d2a82644ea37ce0e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "LoadTestSuite",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private YSpecification spec;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "* @version 6.0",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private YEngine engine;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@Execution",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171751879414701,
+      "timestamp_rfc": "2026-02-27T05:55:51.879414701Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d1646f519770292d142deee527376d01289d20aacc38c57f15cf2f5010d5178a",
+      "delta_hash": "a4a47bc98bc9a0a09adf87d39e13f1318ac2b6fb976a2e62b09d51cfb4c9cdf2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@AfterEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171757063331664,
+      "timestamp_rfc": "2026-02-27T05:55:57.063331664Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8e13ee1a11ff831bce58e8ba7a19f5ada9064b6c0395387211b85ef8b33c6b5b",
+      "delta_hash": "495334d8c58bc99cee9e12c4bfd9a7d8a82017227445627e36ac6f364a119eb4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171760674317386,
+      "timestamp_rfc": "2026-02-27T05:56:00.674317386Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "52abf591c1d0411b40b162f274b9775596d8fc070799141dd6725db3b4d7c547",
+      "delta_hash": "6cab627fd8ba9b898b333573ed12d37ecaa5ba2612efe66ec0579ee4994206f0",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171764618971716,
+      "timestamp_rfc": "2026-02-27T05:56:04.618971716Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "62063796da43e88bc220585c29b8fccce50c867db1bad102a3ad14fd4bfb8966",
+      "delta_hash": "6cab627fd8ba9b898b333573ed12d37ecaa5ba2612efe66ec0579ee4994206f0",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/**",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171771820262767,
+      "timestamp_rfc": "2026-02-27T05:56:11.820262767Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/A2ASkillBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "faa006e7279e36337939e45c27471d47915e1fd4e0a4da812cb43a3d746ac8d2",
+      "delta_hash": "3e63c5f80e8cea238ca9222fdabd1f22cdbce10f93eff81899dc156833184cdd",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171778563097952,
+      "timestamp_rfc": "2026-02-27T05:56:18.563097952Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/A2ASkillBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ff0a85aad4a10e5c17106bff2501493b9c8217bee932d780e01723df8b4f1d67",
+      "delta_hash": "1a60149d591bb2d548dfecbf250e650e7c06e14136474c8a5d7e732df7f3bbb3",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "A2ASkillBenchmark",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private Path tempObservatory;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private Path tempProjectDir;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "* @version 6.0",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final double NANOS_TO_MIL",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int MEASUREMENT_ITE",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final int WARMUP_ITERATIO",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private Path factsDir;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@AfterEach",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171782562510778,
+      "timestamp_rfc": "2026-02-27T05:56:22.562510778Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/A2ASkillBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "07d72b77e0912bd7fab834070bb16047b84ae2068903477a6f384c4d448fb9f4",
+      "delta_hash": "ef6ebd1eea7946f017dd5089afacb64f0a6de54b2e8cd69124412c7122836554",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public void testBenchmark",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772171786013016485,
+      "timestamp_rfc": "2026-02-27T05:56:26.013016485Z",
+      "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/A2ASkillBenchmark.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "fea8597d1e985373dc06d90af8ba1defe6419de08d8d3e65e675853fe4ea9af8",
+      "delta_hash": "e0778ead355f256186f032ee7eb378f61c5af8f28014f1af5fa909aee9a4facd",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
             "change": "Added"
           }
         }

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772171771820262767,
+  "timestamp_rfc": "2026-02-27T05:56:11.820262767Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/A2ASkillBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "faa006e7279e36337939e45c27471d47915e1fd4e0a4da812cb43a3d746ac8d2",
+  "delta_hash": "3e63c5f80e8cea238ca9222fdabd1f22cdbce10f93eff81899dc156833184cdd",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772171740554668956,
+  "timestamp_rfc": "2026-02-27T05:55:40.554668956Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e810ddec358706809c4995fcc998ec86051294c6bf73f1ba0490f8f258435b60",
+  "delta_hash": "3e63c5f80e8cea238ca9222fdabd1f22cdbce10f93eff81899dc156833184cdd",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}
