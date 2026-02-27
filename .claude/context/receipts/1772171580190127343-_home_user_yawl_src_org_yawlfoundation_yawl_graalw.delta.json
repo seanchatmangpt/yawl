@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772171580190127343,
+  "timestamp_rfc": "2026-02-27T05:53:00.190127343Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graalwasm/WasmException.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "99e854dd42bc1b3f0473c06fb3d5d2d817d04305ff34ed72178d1c57a41b3dc0",
+  "delta_hash": "11dd11a8e511321f5b5e8371f32a441bd0b45550895d9b19a242c85b70e2d5d7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final ErrorKind errorKind;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ErrorKind",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "WasmException",
+        "change": "Added"
+      }
+    }
+  ]
+}

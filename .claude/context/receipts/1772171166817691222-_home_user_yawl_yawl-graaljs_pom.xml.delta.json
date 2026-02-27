@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772171166817691222,
+  "timestamp_rfc": "2026-02-27T05:46:06.817691222Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/yawl-graaljs/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "541535da0b353ed6abf93f8e8d248b76d61d87ae44d0c1f6a188c42c4686d89a",
+  "delta_hash": "da98a9163bf76b0a1af9cc81409ff1d293168a7d46b8926d8e056af89b9bf489",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Type",
+        "name": "conversion",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        "change": "Added"
+      }
+    }
+  ]
+}

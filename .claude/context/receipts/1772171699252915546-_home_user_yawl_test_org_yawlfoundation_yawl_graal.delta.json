@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772171699252915546,
+  "timestamp_rfc": "2026-02-27T05:54:59.252915546Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graalwasm/Rust4pmBridgeTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "2c54bf7466bdd36fb516d64d55ed9d0f84787a5cd01d2e163be6fe4cc74a56f9",
+  "delta_hash": "2c9438a5aec6939faa8e3d71d341f6f28d0c06713754daee09d80bdec61b6aef",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "Rust4pmBridgeTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}

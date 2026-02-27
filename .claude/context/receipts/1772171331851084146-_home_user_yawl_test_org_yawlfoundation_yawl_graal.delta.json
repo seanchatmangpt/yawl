@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772171331851084146,
+  "timestamp_rfc": "2026-02-27T05:48:51.851084146Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/graaljs/JavaScriptContextPoolTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "89259ef3a0ac096c1d37c34882730b18eaabd3607ab00c0de5e1caa444214b8c",
+  "delta_hash": "f5e6cd0569b381402d3c22da8dbfa4269a2231bad0b4f881d5f435dfa1a4043c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "JavaScriptContextPoolTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    }
+  ]
+}
