@@ -179,13 +179,21 @@ class ProcessKnowledgeBaseTest {
 
     // Helper method to create a test report
     private ProcessMiningFacade.ProcessMiningReport createTestReport() {
+        Map<String, Long> activityCounts = new HashMap<>();
+        activityCounts.put("A", 5L);
+        activityCounts.put("B", 5L);
+        activityCounts.put("C", 5L);
+
+        Map<String, Double> avgTimeBetweenActivities = new HashMap<>();
+        avgTimeBetweenActivities.put("A>>B", 100.0);
+        avgTimeBetweenActivities.put("B>>C", 150.0);
+
         PerformanceAnalyzer.PerformanceResult perfResult = new PerformanceAnalyzer.PerformanceResult(
-            5,              // traceCount
-            50,             // eventCount
-            1000,           // avgFlowTimeMs
-            500,            // minFlowTimeMs
-            2000,           // maxFlowTimeMs
-            12.0            // throughputPerHour
+            5,                              // traceCount
+            1000.0,                         // avgFlowTimeMs
+            12.0,                           // throughputPerHour
+            activityCounts,                 // activityCounts
+            avgTimeBetweenActivities        // avgTimeBetweenActivities
         );
 
         Map<String, Long> variants = new HashMap<>();

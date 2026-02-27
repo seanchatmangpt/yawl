@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772213909154700633,
+  "timestamp_rfc": "2026-02-27T17:38:29.154700633Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/CaseOutcomePredictorTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3aad66091a6d7582a9be4ee66324a2a8b9af6ee1c72d9a66a5c0a2591c4d0ce9",
+  "delta_hash": "e0778ead355f256186f032ee7eb378f61c5af8f28014f1af5fa909aee9a4facd",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    }
+  ]
+}

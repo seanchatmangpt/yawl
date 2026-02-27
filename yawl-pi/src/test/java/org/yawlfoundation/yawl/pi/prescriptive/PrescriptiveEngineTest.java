@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
+import org.yawlfoundation.yawl.integration.processmining.XesToYawlSpecGenerator;
 import org.yawlfoundation.yawl.observatory.rdf.WorkflowDNAOracle;
 import org.yawlfoundation.yawl.pi.PIException;
 import org.yawlfoundation.yawl.pi.predictive.CaseOutcomePrediction;
@@ -30,7 +31,6 @@ import org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,16 +48,16 @@ public class PrescriptiveEngineTest {
 
     private PrescriptiveEngine engine;
     private PredictiveModelRegistry modelRegistry;
-    private MockWorkflowDNAOracle mockDnaOracle;
+    private WorkflowDNAOracle dnaOracle;
     private ProcessConstraintModel constraintModel;
 
     @BeforeEach
     public void setUp() throws PIException {
         Path tempDir = Files.createTempDirectory("pi-models-test");
         modelRegistry = new PredictiveModelRegistry(tempDir);
-        mockDnaOracle = new MockWorkflowDNAOracle();
+        dnaOracle = new WorkflowDNAOracle(new XesToYawlSpecGenerator(1));
         constraintModel = new ProcessConstraintModel();
-        engine = new PrescriptiveEngine(mockDnaOracle, modelRegistry, constraintModel);
+        engine = new PrescriptiveEngine(dnaOracle, modelRegistry, constraintModel);
     }
 
     @Test
@@ -176,15 +176,6 @@ public class PrescriptiveEngineTest {
                 }
             }
             assertTrue(isOrdered, "Actions should be sorted by score (highest first)");
-        }
-    }
-
-    /**
-     * Mock implementation of WorkflowDNAOracle for testing.
-     */
-    private static class MockWorkflowDNAOracle extends WorkflowDNAOracle {
-        MockWorkflowDNAOracle() {
-            super(null);
         }
     }
 }
