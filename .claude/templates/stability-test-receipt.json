@@ -1,0 +1,18 @@
+{
+  "_schema": "stability-test-receipt/v1",
+  "_description": "PY-4: Required before GA release tag. Prevents FM13 (48h staging test skipped).",
+  "_instructions": [
+    "Copy to receipts/stability-test-receipt.json",
+    "Fill all fields — empty signed_by or result != PASS causes validate-release.sh to exit 2",
+    "duration_hours must be >= 48",
+    "incidents array must be present (empty array is valid if no incidents occurred)"
+  ],
+  "environment": "staging",
+  "start_time": "YYYY-MM-DDTHH:MM:SSZ",
+  "end_time": "YYYY-MM-DDTHH:MM:SSZ",
+  "duration_hours": 48.0,
+  "result": "PASS",
+  "incidents": [],
+  "signed_by": "",
+  "notes": ""
+}
