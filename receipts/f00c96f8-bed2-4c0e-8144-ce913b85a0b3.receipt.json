@@ -1,9 +1,9 @@
 {
   "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
-  "started_at": "2026-02-27T19:06:35.475319004Z",
-  "ended_at": "2026-02-27T19:06:35.799771746Z",
-  "receipt_count": 367,
-  "chain_hash": "89ace1f432ed55293deca8e7b5081b9c33557dca4926b2a113852742a92153a7",
+  "started_at": "2026-02-27T19:26:59.481274214Z",
+  "ended_at": "2026-02-27T19:26:59.806731278Z",
+  "receipt_count": 385,
+  "chain_hash": "1197526872b3f93736512275281329f5a8d7471b9ef654a65744dd203bf1277d",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -17263,6 +17263,1489 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "/**",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219640838062151,
+      "timestamp_rfc": "2026-02-27T19:14:00.838062151Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "dd40f07f474ba8147ac05418c5de6a38939ba9c3276242a21def6a5c137bc4ac",
+      "delta_hash": "d50133639d8abece8fff0f160d663a0eb5dbdca9b9cb5f1badaef2b9835f2772",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<module>yawl-graaljs</module>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219648088094091,
+      "timestamp_rfc": "2026-02-27T19:14:08.088094091Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "26a1fab0b705f08402f3085af1a56a3748d093d39c89e5be60faf241d90e7341",
+      "delta_hash": "55b4f83c29087d3ec23379ed88b19e026f7e5f4a89830a309c4e5e1bf46ae01b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<dependency>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219682522581663,
+      "timestamp_rfc": "2026-02-27T19:14:42.522581663Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/yawl-dmn/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e4da1665eca350b8838d8a4ad1b6f49fbe8c9849a1e99596bc5315a796c5ce18",
+      "delta_hash": "444ba2e1deaed161219cb92c26ae77219a8a6a7ac81d1cad987c8cecae486cda",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219717762039366,
+      "timestamp_rfc": "2026-02-27T19:15:17.762039366Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/EndpointCardinality.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b19a6010e619229c3ea2f5004b3ebb8c15255b2c9462e2754f393f871791dd1b",
+      "delta_hash": "fb3a6b4f86b19780b23fb3a57baffbca1161625b1a7ae2d1de974095bbf07886",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "boolean",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Enum",
+            "name": "EndpointCardinality",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public static final int UNBOUNDED = Inte",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String notation;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final int min;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final int max;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219738824545993,
+      "timestamp_rfc": "2026-02-27T19:15:38.824545993Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnColumn.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ad0937a737b435c75017834a3aae4db3091bd93250fb1bba4c728195edf6c860",
+      "delta_hash": "7cc5a9062be66055d3f76cc7591b80f1e2694d2d5f685f62a6498381df7ce721",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private @Nullable String description;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String typeRef;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DmnColumn",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final boolean required;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private boolean required = true;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Builder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "boolean",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "public @Nullable String getDescription",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final @Nullable String descripti",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String name;",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219760844443412,
+      "timestamp_rfc": "2026-02-27T19:16:00.844443412Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnTable.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0792d6402e78781d4beeff4431af5932c44baddcef65b9a1b59c51952edcbdad",
+      "delta_hash": "429f4f3f1d97f76ef4410607528c305b99db41f0138a20a91500091cf1739e5e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "boolean",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Optional",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Builder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String name;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "final",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DmnTable",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private @Nullable String description;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final @Nullable String descripti",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final Map<String, DmnColumn> col",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "public @Nullable String getDescription",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final List<DmnColumn> columns;",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219797343800044,
+      "timestamp_rfc": "2026-02-27T19:16:37.343800044Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnRelationship.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "886db173f91272d6a83757b04f214f99823201a6e5e1ecb4c4b99024b91d8ef8",
+      "delta_hash": "02023234cd824f48a04273f4439c2312211ce541b7d774f831a72103825b7860",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final @Nullable String toColumn;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String fromTable;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "EndpointCardinality",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final @Nullable String fromColum",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private @Nullable String fromColumn;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "boolean",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private EndpointCardinality sourceCardin",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final EndpointCardinality source",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final EndpointCardinality target",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private String toTable = \"\";",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private @Nullable String toColumn;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DmnRelationship",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private EndpointCardinality targetCardin",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private String fromTable = \"\";",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Builder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String toTable;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "public @Nullable String getFromColumn",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "public @Nullable String getToColumn",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String name;",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219931264640445,
+      "timestamp_rfc": "2026-02-27T19:18:51.264640445Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DataModel.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e281c2dfb2f48b15e7c52d2689db91e61ac9903a2134c23f7c9c7f0e522803d3",
+      "delta_hash": "1dc732959085a8e8a3670a835cc8a7ad9bbc14bbdd254c91c426a8426fb91ef6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String name;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Optional",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final List<DmnTable> tables;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Builder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "int",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private @Nullable String description;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "final",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "public @Nullable String getDescription",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final Map<String, DmnTable> tabl",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DataModel",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final List<DmnRelationship> rela",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final @Nullable String descripti",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "boolean",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772219966962875920,
+      "timestamp_rfc": "2026-02-27T19:19:26.962875920Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnCollectAggregation.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "973a99cd47909deae6672c124a873c8e59f2407d8a5458738a4c02525966a933",
+      "delta_hash": "6d0839de90840b06455153b0a4b03fb32f54c803d741d40487859fec1dc94c87",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "OptionalDouble",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "abstract",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "double",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "boolean",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final String dmnSymbol;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Enum",
+            "name": "DmnCollectAggregation",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220022463593844,
+      "timestamp_rfc": "2026-02-27T19:20:22.463593844Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnDecisionService.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8b47d0a90f441874089162a8ecf23d6ab8333c50bb65e68a83cbfbbfdf8d885b",
+      "delta_hash": "b182328a718d59eaf01e4dfe030f03509255b117dec07d176964db42682cefee",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DmnWasmBridge",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public DmnDecisionResult evaluate(DmnWas",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public OptionalDouble evaluateAndAggrega",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final @Nullable DataModel schema",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final DmnWasmBridge bridge;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public OptionalDouble collectAggregate(D",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "public @Nullable DataModel getSchema",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "DmnDecisionService",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220058963091677,
+      "timestamp_rfc": "2026-02-27T19:20:58.963091677Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/package-info.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7136a255a0685a19826852474995abf6120fad871f63fea33217cee3f79d383e",
+      "delta_hash": "f48a80e000ba61f3e70991224e5d197d16d48c7c06c3153ecd768b5aba1d2f40",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@NullMarked",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220086932366226,
+      "timestamp_rfc": "2026-02-27T19:21:26.932366226Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/dmn/EndpointCardinalityTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "097a79a1a7b1a5f243219f22e112404a19135a659d94668ea02841edd728effa",
+      "delta_hash": "da2ad947e5e54d6b768a3b93bfff81ce8cd5c387de6c03d7cf8fe58b6480392a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "FromNotation",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "Accepts",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Nested",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "Notation",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "EndpointCardinalityTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "MinMax",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "Predicates",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220122695546429,
+      "timestamp_rfc": "2026-02-27T19:22:02.695546429Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/dmn/DataModelTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3dae0517d04e81c0a80d356306b66d40fb790a8dc79519f39593a9b6a401d4ba",
+      "delta_hash": "61afcb4000470160a770e48722b6649c61ba799945910036c36f869e394fd8f2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Nested",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "TableTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ColumnTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataModelTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "RelationshipTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DataModelTests",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220147281465887,
+      "timestamp_rfc": "2026-02-27T19:22:27.281465887Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/dmn/DmnCollectAggregationTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d3d13df92b47c40a4aaa43ee68d664607e1c51183e5d31c49b7a43e8a57c5008",
+      "delta_hash": "4d8fd6c0a9d9c7b711864894d3c50d51ba317b25ee5abc1646cf3913aac0e609",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "CountTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "SumTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "AggregateDoublesTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "FromValueTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "MaxTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DmnCollectAggregationTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Nested",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "MinTests",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220183435059414,
+      "timestamp_rfc": "2026-02-27T19:23:03.435059414Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/dmn/DmnDecisionServiceTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4b4e7eeab446d40078a82d29184de55d3006c7bc2215e776a6054005056c2753",
+      "delta_hash": "b0ac0cd24cff97386d089fcb49f304a1c844e2e10fee6bf68e890a47ca6a48e6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String ELIGIBILITY_",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String RISK_SCORES_",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "CollectAggregateTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@DisplayName",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "DmnDecisionServiceTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ConstructionTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "EvaluateTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Nested",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ParseTests",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220292668644737,
+      "timestamp_rfc": "2026-02-27T19:24:52.668644737Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnCollectAggregation.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1a1ea245796afff64f07817139809f7f15b5ede80dbb74a744284e8bcaa7a197",
+      "delta_hash": "3946bd7dad414e7c49f5d70a8451184f66415dfe19d0c5fcacc6fbf7fa4d1eaf",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "try",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220318380144517,
+      "timestamp_rfc": "2026-02-27T19:25:18.380144517Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnCollectAggregation.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "34012c7775c3d1e4b04615110197f19c6cfc99b7bfd15b384ac9e0680e2e028a",
+      "delta_hash": "648af60fc925265d7c1d8ee005347e168fe6780786e0ef14c8b866256a2769ae",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220327275141898,
+      "timestamp_rfc": "2026-02-27T19:25:27.275141898Z",
+      "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnCollectAggregation.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "dbe42312c5d5d2d05ff784ccda14aee683f5a6020101e3d50a40ce51ace8a5e7",
+      "delta_hash": "fa4db9f8186867b7fb515dd629d3449a58295262536278d36f54380a8798cbec",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "WasmModule mod = engine.loadModuleFromCl",
             "change": "Added"
           }
         }

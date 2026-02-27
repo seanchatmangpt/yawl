@@ -1,0 +1,89 @@
+{
+  "timestamp_ns": 1772219717762039366,
+  "timestamp_rfc": "2026-02-27T19:15:17.762039366Z",
+  "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/EndpointCardinality.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b19a6010e619229c3ea2f5004b3ebb8c15255b2c9462e2754f393f871791dd1b",
+  "delta_hash": "fb3a6b4f86b19780b23fb3a57baffbca1161625b1a7ae2d1de974095bbf07886",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "boolean",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Enum",
+        "name": "EndpointCardinality",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static final int UNBOUNDED = Inte",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final String notation;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final int min;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final int max;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "int",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    }
+  ]
+}

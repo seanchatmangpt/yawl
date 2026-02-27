@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220327275141898,
+  "timestamp_rfc": "2026-02-27T19:25:27.275141898Z",
+  "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnCollectAggregation.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "dbe42312c5d5d2d05ff784ccda14aee683f5a6020101e3d50a40ce51ace8a5e7",
+  "delta_hash": "fa4db9f8186867b7fb515dd629d3449a58295262536278d36f54380a8798cbec",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "WasmModule mod = engine.loadModuleFromCl",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220318380144517,
+  "timestamp_rfc": "2026-02-27T19:25:18.380144517Z",
+  "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/dmn/DmnCollectAggregation.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "34012c7775c3d1e4b04615110197f19c6cfc99b7bfd15b384ac9e0680e2e028a",
+  "delta_hash": "648af60fc925265d7c1d8ee005347e168fe6780786e0ef14c8b866256a2769ae",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    }
+  ]
+}
