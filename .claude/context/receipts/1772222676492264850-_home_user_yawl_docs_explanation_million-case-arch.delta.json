@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772222676492264850,
+  "timestamp_rfc": "2026-02-27T20:04:36.492264850Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/explanation/million-case-architecture.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7ad5782d504eafba380c208c2de3749b302772f38e9c9e32d8d8f0edb82dd7ba",
+  "delta_hash": "0af822856ff5afb5e449841af12f061b71117557d40701bdb282b5e97b65f53c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "synchronized",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How Java 25 Features Enable YAWL to Ha",
+        "change": "Added"
+      }
+    }
+  ]
+}

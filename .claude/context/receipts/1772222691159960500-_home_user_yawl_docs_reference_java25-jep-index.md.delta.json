@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772222691159960500,
+  "timestamp_rfc": "2026-02-27T20:04:51.159960500Z",
+  "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+  "file_path": "/home/user/yawl/docs/reference/java25-jep-index.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "8f636398d91d443bed9ccbde6a484c7e42d67cc03e3c1fbc39bd95bf55569bee",
+  "delta_hash": "655cb77c8e791a76637c578aaee3b1463f394d1461bf2bd7b35c4e10abcf501b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record WorkflowEvent(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "YEvent",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Java 21–25 JEP Index for YAWL 1M Cases",
+        "change": "Added"
+      }
+    }
+  ]
+}

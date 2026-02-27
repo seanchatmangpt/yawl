@@ -1,9 +1,9 @@
 {
   "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
-  "started_at": "2026-02-27T20:03:40.971733228Z",
-  "ended_at": "2026-02-27T20:03:41.172876628Z",
-  "receipt_count": 230,
-  "chain_hash": "1173723852f40767a5e267fc0d6e5100673afaa1ca0004fe94b6576215b9a00a",
+  "started_at": "2026-02-27T20:04:38.572793649Z",
+  "ended_at": "2026-02-27T20:04:38.795736598Z",
+  "receipt_count": 233,
+  "chain_hash": "75ec46d70e85a381c40fc18d51be79932d012484d58869d777cc4177201b9f64",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -11340,6 +11340,133 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "# How to Tune Kubernetes HPA for Workflo",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222640607500049,
+      "timestamp_rfc": "2026-02-27T20:04:00.607500049Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/explanation/offheap-runner-store.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1ea19b9cea77656d65ccfd26d0ea3acf66735b142a7bf72b1d824043d27c2a0a",
+      "delta_hash": "1809f0cd6ae88e32a061c193f807b750e62f8987ffccaad43c34db510ab2b723",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final LocalCaseRegistry registry",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "LocalCaseRegistry",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "OffHeapRunnerStore",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "YNetRunnerRepository",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "GlobalCaseRegistry",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Why YAWL Stores Evicted YNetRunner Sna",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final LRUCache<String, YNetRunne",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YNetRunner",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final OffHeapRunnerStore offHeap",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222652456816386,
+      "timestamp_rfc": "2026-02-27T20:04:12.456816386Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/reference/spi-million-cases.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3152d574d082407e454df942a7b66daabf76e2fb6cf1b249d8f54ef60f2c0af9",
+      "delta_hash": "3ea5d04016b066a49540a6ae297f3ad6905e9537305bf2e2fd10b12df79703b9",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record WorkflowEvent(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# YAWL SPI for 1M Cases Architecture",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222676492264850,
+      "timestamp_rfc": "2026-02-27T20:04:36.492264850Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/explanation/million-case-architecture.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7ad5782d504eafba380c208c2de3749b302772f38e9c9e32d8d8f0edb82dd7ba",
+      "delta_hash": "0af822856ff5afb5e449841af12f061b71117557d40701bdb282b5e97b65f53c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "synchronized",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How Java 25 Features Enable YAWL to Ha",
             "change": "Added"
           }
         }
