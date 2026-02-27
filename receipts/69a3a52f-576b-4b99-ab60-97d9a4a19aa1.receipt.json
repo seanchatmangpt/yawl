@@ -1,9 +1,9 @@
 {
   "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
-  "started_at": "2026-02-27T20:06:23.477456252Z",
-  "ended_at": "2026-02-27T20:06:23.725947549Z",
-  "receipt_count": 236,
-  "chain_hash": "16e3a745da1e130d8a57f8b3546bac66e0eff5234dc42f28333f4d8c21fb5f9e",
+  "started_at": "2026-02-27T20:06:47.794748970Z",
+  "ended_at": "2026-02-27T20:06:48.034232171Z",
+  "receipt_count": 237,
+  "chain_hash": "e4ed57be3796b56261cd4c343de37bcdc599b53b3f15cad9ee60925e298b051a",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -11538,6 +11538,53 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "| `XX:+UseZGC -XX:+ZGenerational` | flag",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222804643718144,
+      "timestamp_rfc": "2026-02-27T20:06:44.643718144Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/reference/metrics.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d800e1566b286b64a7a0522a3922bc5cf614548eafc8fcf8a77d33fd8799517f",
+      "delta_hash": "b4b9acb7714e141146b02a4c067611343ddc2de1e50a12df47aea1b9e990ef7b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# YAWL Metrics Reference",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final MeterRegistry meterRegistr",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Component",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "CustomWorkflowMetrics",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
             "change": "Added"
           }
         }
