@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772170058977937891,
+  "timestamp_rfc": "2026-02-27T05:27:38.977937891Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/MemoryBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "47f9da46a2c6bef085d6288cc16dfb9adc24f7543ca9664a656b146e352627cd",
+  "delta_hash": "6ad9425deb706c3988a8c1b9fdabc15eabe23a4855996e383bcee95496b8f8db",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Benchmark",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@BenchmarkMode",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "long",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@OutputTimeUnit",
+        "change": "Added"
+      }
+    }
+  ]
+}

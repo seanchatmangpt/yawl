@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772171483877254290,
+  "timestamp_rfc": "2026-02-27T05:51:23.877254290Z",
+  "session_id": "6fff539d-2cdd-479b-9a13-8cf56c43ac9d",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/TestCaseCancellation.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "78f9843aa58212712ed64e979b2dd8bbfb98831047325b84265363059f94938c",
+  "delta_hash": "0135700d339cbe12628046e7f85846cfdc8540e54305c96fb8804ed84afe038d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "io",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "package org.yawlfoundation.yawl.engine;",
+        "change": "Added"
+      }
+    }
+  ]
+}

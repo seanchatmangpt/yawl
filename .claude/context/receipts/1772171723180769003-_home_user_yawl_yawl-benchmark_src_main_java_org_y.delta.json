@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772171723180769003,
+  "timestamp_rfc": "2026-02-27T05:55:23.180769003Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/WorkflowPatternBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "37b1d341a9447da0b599d10608f425ca106c830ef329ddcfa4ec888512722a21",
+  "delta_hash": "a6dc1ce0b4ec93dcc4509da5224ffd8bd64254faa50c37b25c4dc2c1af7c7e27",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Fork(value = 3, jvmArgs = {",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Threads",
+        "change": "Added"
+      }
+    }
+  ]
+}

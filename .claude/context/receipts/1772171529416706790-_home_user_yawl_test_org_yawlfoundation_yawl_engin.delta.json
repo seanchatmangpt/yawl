@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772171529416706790,
+  "timestamp_rfc": "2026-02-27T05:52:09.416706790Z",
+  "session_id": "6fff539d-2cdd-479b-9a13-8cf56c43ac9d",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/TestCaseCancellation.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4eed0fc3da7dcb5bd946cc3adaca2aa287e083fac3fd40b683957318ac584389",
+  "delta_hash": "3a4f2a9a49f30bc4677b5fc8442b845b9b8dcc852285a83e80e6a7096b41a55a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772171757063331664,
+  "timestamp_rfc": "2026-02-27T05:55:57.063331664Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "8e13ee1a11ff831bce58e8ba7a19f5ada9064b6c0395387211b85ef8b33c6b5b",
+  "delta_hash": "495334d8c58bc99cee9e12c4bfd9a7d8a82017227445627e36ac6f364a119eb4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    }
+  ]
+}

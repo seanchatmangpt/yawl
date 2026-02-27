@@ -2,24 +2,90 @@
 # Hyper-Advanced Validation Hook for YAWL Fortune 5 Standards
 # Runs after Write/Edit tool use to catch ALL forbidden patterns
 # Exit 2 = Block and show violations to Claude
+#
+# Modes:
+#   Hook mode (no args):   reads JSON from stdin (Claude Code hooks framework)
+#   Batch mode (dirs...):  scans provided directories; PY-6 completeness check
 
 set -euo pipefail
 
-# Check for jq availability
-if ! command -v jq &>/dev/null; then
-    echo "[hyper-validate.sh] WARNING: jq not found, skipping validation" >&2
-    exit 0
+# ─── PY-6: Batch mode — scan directories and assert completeness (FM14, FM16) ─
+# Usage: bash .claude/hooks/hyper-validate.sh src/ test/ yawl/
+if [ "$#" -gt 0 ]; then
+    REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    NC='\033[0m'
+
+    echo "[hyper-validate.sh] Batch mode: scanning $*"
+
+    # Count Java files that will be scanned
+    SCANNED=$(find "$@" -name "*.java" 2>/dev/null | wc -l)
+
+    # Attempt to get expected count from Observatory receipt
+    OBS_RECEIPT="${REPO_ROOT}/.claude/receipts/observatory.json"
+    EXPECTED=0
+    if [ -f "$OBS_RECEIPT" ] && command -v jq &>/dev/null; then
+        EXPECTED=$(jq -r '.total_java_files // .java_file_count // 0' "$OBS_RECEIPT" 2>/dev/null || echo 0)
+    fi
+
+    # PY-6: completeness assertion (must cover ≥90% of known Java files)
+    if [ "$EXPECTED" -gt 0 ] && [ "$SCANNED" -lt "$(( EXPECTED * 90 / 100 ))" ]; then
+        echo -e "${RED}[FAIL] PY-6 SCAN INCOMPLETE: found $SCANNED Java files, Observatory expects ≥ $EXPECTED${NC}" >&2
+        echo "       Add missing source directories to the scan arguments." >&2
+        echo "       Expected: $EXPECTED files | Scanned: $SCANNED files ($(( SCANNED * 100 / EXPECTED ))%)" >&2
+        exit 2
+    elif [ "$EXPECTED" -gt 0 ]; then
+        echo -e "${GREEN}[PASS] PY-6 scan completeness: $SCANNED / $EXPECTED files ($(( SCANNED * 100 / EXPECTED ))%)${NC}"
+    else
+        echo -e "${YELLOW}[WARN] PY-6 Observatory receipt not found — skipping completeness check${NC}"
+        echo "       Run: bash scripts/observatory/observatory.sh  to generate facts"
+    fi
+
+    # Run individual file checks across all found Java files
+    BATCH_FAILURES=0
+    while IFS= read -r java_file; do
+        result=$(FILE="$java_file" TOOL="batch" bash "${BASH_SOURCE[0]}" --file-only "$java_file" 2>&1) || {
+            echo "$result" >&2
+            BATCH_FAILURES=$(( BATCH_FAILURES + 1 ))
+        }
+    done < <(find "$@" -name "*.java" 2>/dev/null)
+
+    if [ "$BATCH_FAILURES" -gt 0 ]; then
+        echo -e "${RED}[FAIL] Batch scan: $BATCH_FAILURES file(s) with violations${NC}" >&2
+        exit 2
+    else
+        echo -e "${GREEN}[PASS] Batch scan: no violations in $SCANNED files${NC}"
+        exit 0
+    fi
 fi
 
-# Colors for terminal output
+# ─── File-only mode (internal batch helper) ───────────────────────────────────
+if [ "${1:-}" = "--file-only" ]; then
+    FILE="${2:-}"
+    TOOL="batch"
+    if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then exit 0; fi
+else
+    # ─── Hook mode: read JSON from stdin ─────────────────────────────────────
+    # Check for jq availability
+    if ! command -v jq &>/dev/null; then
+        echo "[hyper-validate.sh] WARNING: jq not found, skipping validation" >&2
+        exit 0
+    fi
+fi
+
+# Colors for terminal output (may be already set in batch preamble — safe to re-assign)
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Parse hook input
-INPUT=$(cat)
-FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
-TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty')
+# Parse hook input (hook mode only; --file-only mode already set FILE and TOOL above)
+if [ "${1:-}" != "--file-only" ]; then
+    INPUT=$(cat)
+    FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+    TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty')
+fi
 
 # Only validate Java source files in src/
 if [[ ! "$FILE" =~ \.java$ ]] || [[ ! "$FILE" =~ ^/.*/(src|test)/ ]]; then

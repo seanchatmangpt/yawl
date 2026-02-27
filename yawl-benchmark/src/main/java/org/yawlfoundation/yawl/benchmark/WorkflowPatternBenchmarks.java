@@ -27,7 +27,7 @@ import org.yawlfoundation.yawl.stateless.engine.YStatelessEngine;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 /**
  * Workflow Pattern Performance Benchmarks
@@ -44,7 +44,12 @@ import static org.junit.Assert.*;
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 50, time = 1)
-@Fork(3)
+@Fork(value = 3, jvmArgs = {
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
+})
 @Threads(1)
 public class WorkflowPatternBenchmarks {
 
@@ -232,17 +237,17 @@ public class WorkflowPatternBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void patternMemoryUsage() throws Exception {
+    public void patternMemoryUsage(Blackhole bh) throws Exception {
         Runtime runtime = Runtime.getRuntime();
         long before = runtime.totalMemory() - runtime.freeMemory();
-        
+
         // Execute each pattern and measure memory
         executeSequentialCase(UUID.randomUUID().toString(), 3);
         executeParallelSplitSyncCase(UUID.randomUUID().toString(), 2);
         executeMultiChoiceCase(UUID.randomUUID().toString(), 0);
-        
+
         long after = runtime.totalMemory() - runtime.freeMemory();
-        return after - before;
+        bh.consume(after - before);
     }
     
     /**

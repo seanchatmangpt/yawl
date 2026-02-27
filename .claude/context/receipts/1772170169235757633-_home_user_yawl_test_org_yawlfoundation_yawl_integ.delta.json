@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772170169235757633,
+  "timestamp_rfc": "2026-02-27T05:29:29.235757633Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/benchmark/StressTestBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a35fe748d9b1e7a7a10a3ffc71ac9ffb60a6b7dc00fa4b84133d92bfeeaae374",
+  "delta_hash": "4469318c5b2dd379445ca266e4eea08c061671c7bf5850f1deee959a61c26e20",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// Initialize multiple virtual thread ex",
+        "change": "Added"
+      }
+    }
+  ]
+}

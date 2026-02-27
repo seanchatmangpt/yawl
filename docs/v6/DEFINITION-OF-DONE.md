@@ -326,8 +326,20 @@ with RPN > 100 have active mitigations:
 | FM5 | Test Selection Ambiguity | 7 | 4 | 3 | 84 | `tests.json` + `30-test-topology.mmd` |
 | FM6 | Gate Bypass via Skip Flags | 8 | 3 | 6 | **144** | `gates.json` + `40-ci-gates.mmd` |
 | FM7 | Reactor Order Violation | 5 | 3 | 7 | **105** | `reactor.json` + `10-maven-reactor.mmd` |
+| FM8 | Release documentation written before gate verification | 10 | 7 | 9 | **630** | PY-1: `scripts/validation/validate-release.sh` receipt gate |
+| FM9 | GA date accelerated without change-control | 7 | 5 | 7 | **245** | PY-5: `.claude/decisions/` dated decision record |
+| FM10 | Version promotion without evidence trail | 9 | 5 | 8 | **360** | PY-1 + gate receipt consistency check |
+| FM11 | Coverage never measured before version tag | 7 | 8 | 7 | **392** | PY-2: JaCoCo artifact assertion in validate-release.sh |
+| FM12 | SBOM not generated before GA declaration | 8 | 7 | 6 | **336** | PY-3: `grype sbom:target/bom.json --fail-on critical` |
+| FM13 | 48-hour staging stability test skipped | 9 | 6 | 8 | **432** | PY-4: `receipts/stability-test-receipt.json` schema + assertion |
+| FM14 | Violation scan scope incomplete — files missed | 9 | 5 | 9 | **405** | PY-6: file-count assertion vs Observatory in hyper-validate.sh |
+| FM15 | Beta/GA notes written together as batch documentation | 5 | 6 | 4 | **120** | Process norm: separate release note commits |
+| FM16 | Engine defects not in violation tracker (undocumented) | 9 | 4 | 8 | **288** | PY-6 + manual audit before each release tag |
 
 **S** = Severity, **O** = Occurrence, **D** = Detection (1 = best, 10 = worst)
+
+**Top 5 risks by RPN (TPS evaluation, 2026-02-27)**:
+FM8 (630) > FM13 (432) > FM14 (405) > FM11 (392) > FM10 (360)
 
 **DoD Requirement**: Before any release, verify that:
 1. FM1 and FM2 (RPN > 200): Agents must read `shared-src.json` and `dual-family.json`
@@ -335,6 +347,8 @@ with RPN > 100 have active mitigations:
 2. FM3 (RPN = 210): Dependency changes must pass `deps-conflicts.json` verification
 3. FM6 (RPN = 144): No RED skip flags in CI/CD pipeline configuration
 4. FM7 (RPN = 105): New modules placed in correct reactor position per `reactor.json`
+5. FM8–FM16 (RPN 120–630): All poka-yoke mechanisms PY-1 through PY-6 must be in place
+   and passing before any GA release tag is created (`bash scripts/validation/validate-release.sh`)
 
 ### 5.2 Observatory Verification
 

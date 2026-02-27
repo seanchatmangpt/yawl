@@ -80,7 +80,8 @@ import java.util.concurrent.*;
 @Fork(value = 1, jvmArgs = {
     "-Xms2g", "-Xmx4g",
     "-XX:+UseZGC",
-    "-XX:+UseCompactObjectHeaders"
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
 })
 public class PropertyBasedPerformanceBenchmark {
 

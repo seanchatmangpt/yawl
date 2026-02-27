@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772170153958645408,
+  "timestamp_rfc": "2026-02-27T05:29:13.958645408Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/benchmark/StressTestBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b5ee6fcfb95aa138ad5ce35ee37ec9a632c4a54259286cba922461bd1294b4af",
+  "delta_hash": "ff3cfd036a7de217334c66f418ae68e5e778175c0959e71bf67e8b9393d5c2c1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "* @version 6.0",
+        "change": "Added"
+      }
+    }
+  ]
+}

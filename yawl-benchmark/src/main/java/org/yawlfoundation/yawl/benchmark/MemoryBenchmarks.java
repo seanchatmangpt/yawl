@@ -19,6 +19,7 @@
 package org.yawlfoundation.yawl.benchmark;
 
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.engine.YEngine;
 import org.yawlfoundation.yawl.engine.YWorkItem;
@@ -45,7 +46,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 50, time = 1)
-@Fork(3)
+@Fork(value = 3, jvmArgs = {
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders"
+})
 @Threads(1)
 public class MemoryBenchmarks {
 
@@ -115,19 +120,19 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void heapUsageDuringWorkflowExecution() throws Exception {
+    public long heapUsageDuringWorkflowExecution(Blackhole bh) throws Exception {
         String caseId = "memory-case-" + caseCounter.getAndIncrement();
         caseIds.add(caseId);
-        
+
         long initialHeap = memoryMXBean.getHeapMemoryUsage().getUsed();
-        
+
         // Execute workflow
         executeWorkflowPattern(caseId, workflowPattern);
-        
+
         long finalHeap = memoryMXBean.getHeapMemoryUsage().getUsed();
         long heapDelta = finalHeap - initialHeap;
-        
-        // Return heap delta in bytes
+
+        bh.consume(heapDelta);
         return heapDelta;
     }
     
@@ -138,26 +143,21 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void gcPressureUnderLoad() throws Exception {
-        long initialGcCount = gcMXBean.getCollectionCount();
+    public long gcPressureUnderLoad(Blackhole bh) throws Exception {
         long initialGcTime = gcMXBean.getCollectionTime();
-        
+
         // Execute workflow with high object creation
         for (int i = 0; i < caseCount; i++) {
             String caseId = "gc-case-" + i;
             executeWorkflowPattern(caseId, workflowPattern);
-            
+
             // Force some object creation
-            createLargeObjects(100);
+            bh.consume(createLargeObjects(100));
         }
-        
-        long finalGcCount = gcMXBean.getCollectionCount();
-        long finalGcTime = gcMXBean.getCollectionTime();
-        
-        long gcCountDelta = finalGcCount - initialGcCount;
-        long gcTimeDelta = finalGcTime - initialGcTime;
-        
-        return gcTimeDelta; // Return GC time in ms
+
+        long gcTimeDelta = gcMXBean.getCollectionTime() - initialGcTime;
+        bh.consume(gcTimeDelta);
+        return gcTimeDelta;
     }
     
     /**
@@ -167,22 +167,24 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void memoryScalabilityWithCaseCounts() throws Exception {
+    public long memoryScalabilityWithCaseCounts(Blackhole bh) throws Exception {
         long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        
+
         // Create and process multiple cases
         for (int i = 0; i < caseCount; i++) {
             String caseId = "scalable-case-" + i;
             statelessEngine.createCase("spec-id", createTestSpecification(), null, null);
-            
+
             // Process case
             YWorkItem workItem = createWorkItem(caseId, "memory-task");
             engine.startWorkItem(workItem);
             engine.completeWorkItem(workItem, Collections.emptyMap());
+            bh.consume(workItem);
         }
-        
-        long finalMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        return finalMemory - initialMemory; // Memory delta in bytes
+
+        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
+        bh.consume(delta);
+        return delta;
     }
     
     /**
@@ -192,22 +194,23 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void objectAllocationPatterns() throws Exception {
+    public long objectAllocationPatterns(Blackhole bh) throws Exception {
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         long initialAllocations = threadBean.getThreadAllocatedBytes(Thread.currentThread().getId());
-        
+
         // Execute workflow with many object allocations
         String caseId = "alloc-case-" + caseCounter.getAndIncrement();
         executeWorkflowPattern(caseId, workflowPattern);
-        
+
         // Additional allocations
         for (int i = 0; i < 1000; i++) {
             String data = "data-" + i + "-" + UUID.randomUUID();
-            String[] parts = data.split("-");
+            bh.consume(data.split("-"));
         }
-        
-        long finalAllocations = threadBean.getThreadAllocatedBytes(Thread.currentThread().getId());
-        return finalAllocations - initialAllocations; // Allocation delta in bytes
+
+        long delta = threadBean.getThreadAllocatedBytes(Thread.currentThread().getId()) - initialAllocations;
+        bh.consume(delta);
+        return delta;
     }
     
     /**
@@ -217,29 +220,30 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void memoryLeakDetection() throws Exception {
+    public long memoryLeakDetection(Blackhole bh) throws Exception {
         long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
         List<String> leakTestObjects = new ArrayList<>();
-        
+
         // Create objects that might leak
         for (int i = 0; i < caseCount; i++) {
             String caseId = "leak-case-" + i;
             leakTestObjects.add(caseId);
-            
+
             // Execute workflow
             executeWorkflowPattern(caseId, workflowPattern);
-            
+
             // Store references (potential leak)
             List<YWorkItem> workItems = engine.getEnabledWorkItems(caseId);
             leakTestObjects.addAll(workItems.stream().map(w -> w.getCaseID()).toList());
         }
-        
+
         // Clear references to test for proper cleanup
         leakTestObjects.clear();
         System.gc();
-        
-        long finalMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        return finalMemory - initialMemory; // If positive, potential leak
+
+        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
+        bh.consume(delta);
+        return delta;
     }
     
     /**
@@ -249,20 +253,21 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void nonHeapMemoryUsage() throws Exception {
+    public long nonHeapMemoryUsage(Blackhole bh) throws Exception {
         MemoryUsage nonHeapInitial = memoryMXBean.getNonHeapMemoryUsage();
-        
+
         // Execute operations that affect non-heap memory
         for (int i = 0; i < 100; i++) {
             String caseId = "nonheap-case-" + i;
             executeWorkflowPattern(caseId, workflowPattern);
-            
+
             // Class loading affects metaspace
-            Class<?> clazz = Class.forName("java.lang.String");
+            bh.consume(Class.forName("java.lang.String"));
         }
-        
-        MemoryUsage nonHeapFinal = memoryMXBean.getNonHeapMemoryUsage();
-        return nonHeapFinal.getUsed() - nonHeapInitial.getUsed(); // Non-heap delta
+
+        long delta = memoryMXBean.getNonHeapMemoryUsage().getUsed() - nonHeapInitial.getUsed();
+        bh.consume(delta);
+        return delta;
     }
     
     /**
@@ -272,19 +277,19 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void threadMemoryUsage() throws Exception {
+    public long threadMemoryUsage(Blackhole bh) throws Exception {
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         long initialThreadMemory = 0;
-        
+
         // Measure current thread memory
         for (Thread thread : Thread.getAllStackTraces().keySet()) {
             initialThreadMemory += threadBean.getThreadAllocatedBytes(thread.getId());
         }
-        
-        // Execute concurrent operations
+
+        // Execute concurrent operations using virtual threads (Java 25 best practice)
         List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < threadCount(); i++) {
-            Thread t = new Thread(() -> {
+            Thread t = Thread.ofVirtual().start(() -> {
                 try {
                     String caseId = "thread-case-" + UUID.randomUUID();
                     executeWorkflowPattern(caseId, workflowPattern);
@@ -293,20 +298,21 @@ public class MemoryBenchmarks {
                 }
             });
             threads.add(t);
-            t.start();
         }
-        
+
         // Wait for threads to complete
         for (Thread t : threads) {
             t.join();
         }
-        
+
         long finalThreadMemory = 0;
         for (Thread thread : Thread.getAllStackTraces().keySet()) {
             finalThreadMemory += threadBean.getThreadAllocatedBytes(thread.getId());
         }
-        
-        return finalThreadMemory - initialThreadMemory; // Thread memory delta
+
+        long delta = finalThreadMemory - initialThreadMemory;
+        bh.consume(delta);
+        return delta;
     }
     
     /**
@@ -316,23 +322,24 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void caseMonitorMemoryUsage() throws Exception {
+    public long caseMonitorMemoryUsage(Blackhole bh) throws Exception {
         long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        
+
         // Use case monitor extensively
         for (int i = 0; i < caseCount; i++) {
             String caseId = "monitor-case-" + i;
             YSpecification spec = createTestSpecification();
-            
+
             // Get case state (uses memory)
-            caseMonitor.getCaseState(caseId, spec);
-            
+            bh.consume(caseMonitor.getCaseState(caseId, spec));
+
             // Monitor case changes
-            caseMonitor.getCaseChanges(caseId);
+            bh.consume(caseMonitor.getCaseChanges(caseId));
         }
-        
-        long finalMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        return finalMemory - initialMemory; // Monitor memory delta
+
+        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
+        bh.consume(delta);
+        return delta;
     }
     
     /**
@@ -342,25 +349,27 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void largeDatasetProcessingMemoryImpact() throws Exception {
+    public long largeDatasetProcessingMemoryImpact(Blackhole bh) throws Exception {
         long initialMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        
+
         // Create and process large dataset
         List<String> largeDataset = new ArrayList<>();
         for (int i = 0; i < 10000; i++) {
             largeDataset.add("data-point-" + i + "-" + UUID.randomUUID());
         }
-        
+
         // Process dataset with workflow
         String caseId = "large-data-case-" + caseCounter.getAndIncrement();
         for (String data : largeDataset) {
             YWorkItem workItem = createWorkItem(caseId, "process-" + data.hashCode());
             engine.startWorkItem(workItem);
             engine.completeWorkItem(workItem, Collections.singletonMap("data", data));
+            bh.consume(workItem);
         }
-        
-        long finalMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        return finalMemory - initialMemory; // Large dataset memory delta
+
+        long delta = memoryMXBean.getHeapMemoryUsage().getUsed() - initialMemory;
+        bh.consume(delta);
+        return delta;
     }
     
     /**
@@ -370,30 +379,29 @@ public class MemoryBenchmarks {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void memoryRecoveryAfterLoad() throws Exception {
+    public double memoryRecoveryAfterLoad(Blackhole bh) throws Exception {
         long peakMemory = 0;
-        
+
         // Process load and track peak memory
         for (int i = 0; i < caseCount; i++) {
             long currentMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
             peakMemory = Math.max(peakMemory, currentMemory);
-            
+
             String caseId = "recovery-case-" + i;
             executeWorkflowPattern(caseId, workflowPattern);
         }
-        
+
         // Clear all references and suggest GC
         caseIds.clear();
         System.gc();
-        
+
         // Wait a bit for GC to complete
         Thread.sleep(100);
-        
+
         long recoveredMemory = memoryMXBean.getHeapMemoryUsage().getUsed();
-        long memoryRecovered = peakMemory - recoveredMemory;
-        
-        // Return recovery ratio (0-1)
-        return (double) memoryRecovered / peakMemory;
+        double ratio = peakMemory > 0 ? (double) (peakMemory - recoveredMemory) / peakMemory : 0.0;
+        bh.consume(ratio);
+        return ratio;
     }
     
     // Helper methods
