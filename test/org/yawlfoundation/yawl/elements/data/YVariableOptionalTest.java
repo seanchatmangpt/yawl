@@ -21,37 +21,30 @@ package org.yawlfoundation.yawl.elements.data;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Optional;
-
 /**
- * Test class to verify the Optional migration for YVariable methods.
- *
- * @author Claude Migration Assistant
- * @date 2026-02-25
+ * Tests for YVariable initial value and default value accessors.
+ * YVariable.getInitialValue() and getDefaultValue() return String (not Optional).
  */
 public class YVariableOptionalTest {
 
     @Test
     public void testGetInitialValueWhenPresent() {
-        // Test when initial value is set
         YVariable variable = new YVariable();
         variable.setInitialValue("testValue");
 
-        Optional<String> result = variable.getInitialValue();
+        String result = variable.getInitialValue();
 
-        assertTrue(result.isPresent());
-        assertEquals("testValue", result.get());
+        assertNotNull(result);
+        assertEquals("testValue", result);
     }
 
     @Test
     public void testGetInitialValueWhenAbsent() {
-        // Test when initial value is null (not set)
         YVariable variable = new YVariable();
 
-        Optional<String> result = variable.getInitialValue();
+        String result = variable.getInitialValue();
 
-        assertFalse(result.isPresent());
-        assertTrue(result.isEmpty());
+        assertNull(result);
     }
 
     @Test
@@ -61,12 +54,10 @@ public class YVariableOptionalTest {
 
         YVariable variable2 = new YVariable();
 
-        // Test orElse with present value
-        String result1 = variable1.getInitialValue().orElse("default");
+        String result1 = variable1.getInitialValue() != null ? variable1.getInitialValue() : "default";
         assertEquals("actualValue", result1);
 
-        // Test orElse with absent value
-        String result2 = variable2.getInitialValue().orElse("default");
+        String result2 = variable2.getInitialValue() != null ? variable2.getInitialValue() : "default";
         assertEquals("default", result2);
     }
 
@@ -77,14 +68,12 @@ public class YVariableOptionalTest {
 
         YVariable variable2 = new YVariable();
 
-        // Test ifPresent with value present
         StringBuilder captured = new StringBuilder();
-        variable1.getInitialValue().ifPresent(captured::append);
+        if (variable1.getInitialValue() != null) captured.append(variable1.getInitialValue());
         assertEquals("test", captured.toString());
 
-        // Test ifPresent with value absent
         StringBuilder empty = new StringBuilder();
-        variable2.getInitialValue().ifPresent(empty::append);
+        if (variable2.getInitialValue() != null) empty.append(variable2.getInitialValue());
         assertEquals("", empty.toString());
     }
 
@@ -93,24 +82,23 @@ public class YVariableOptionalTest {
         YVariable variable = new YVariable();
         variable.setDefaultValue("defaultValue");
 
-        Optional<String> result = variable.getDefaultValue();
+        String result = variable.getDefaultValue();
 
-        assertTrue(result.isPresent());
-        assertEquals("defaultValue", result.get());
+        assertNotNull(result);
+        assertEquals("defaultValue", result);
     }
 
     @Test
     public void testGetDefaultValueWhenAbsent() {
         YVariable variable = new YVariable();
 
-        Optional<String> result = variable.getDefaultValue();
+        String result = variable.getDefaultValue();
 
-        assertFalse(result.isPresent());
+        assertNull(result);
     }
 
     @Test
     public void testStreamProcessingExample() {
-        // Create multiple variables with different states
         YVariable var1 = new YVariable();
         var1.setInitialValue("value1");
 
@@ -118,13 +106,10 @@ public class YVariableOptionalTest {
         var2.setInitialValue("value2");
 
         YVariable var3 = new YVariable();
-        // No initial value
 
-        // Stream processing example
         java.util.List<String> values = java.util.List.of(var1, var2, var3).stream()
             .map(YVariable::getInitialValue)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .filter(v -> v != null)
             .collect(java.util.stream.Collectors.toList());
 
         assertEquals(2, values.size());
@@ -134,13 +119,13 @@ public class YVariableOptionalTest {
 
     @Test
     public void testNullSafety() {
-        // Verify no NullPointerException can occur
         YVariable variable = new YVariable();
 
-        // These operations should never throw NPE
-        assertDoesNotThrow(() -> variable.getInitialValue().isPresent());
-        assertDoesNotThrow(() -> variable.getInitialValue().isEmpty());
-        assertDoesNotThrow(() -> variable.getInitialValue().orElse("safe"));
-        assertDoesNotThrow(() -> variable.getInitialValue().ifPresent(v -> {}));
+        // Null-safe operations — no NPE expected
+        assertDoesNotThrow(() -> {
+            String v = variable.getInitialValue();
+            boolean present = v != null;
+            String safe = v != null ? v : "safe";
+        });
     }
 }
