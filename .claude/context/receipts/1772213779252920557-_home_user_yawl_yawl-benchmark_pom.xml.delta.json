@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213779252920557,
+  "timestamp_rfc": "2026-02-27T17:36:19.252920557Z",
+  "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
+  "file_path": "/home/user/yawl/yawl-benchmark/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a6907d44b4d65ddbed09ee34096d38a0b3920b5cbb7c61c186ab81844c6b3b2b",
+  "delta_hash": "9091b38b340914b454f1bc7015f7c94d13d156bdb1e4c4c01c3aad9f19410356",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<version>6.0.0-GA</version>",
+        "change": "Added"
+      }
+    }
+  ]
+}

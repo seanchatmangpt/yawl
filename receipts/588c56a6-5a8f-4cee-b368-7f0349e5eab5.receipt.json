@@ -1,9 +1,9 @@
 {
   "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
-  "started_at": "2026-02-27T17:28:02.671471057Z",
-  "ended_at": "2026-02-27T17:28:02.876627342Z",
-  "receipt_count": 162,
-  "chain_hash": "d6c7fde9e349bd187816e075e89f5d56836ff1404075d1c797e18bef7b44b9fb",
+  "started_at": "2026-02-27T17:42:10.194151477Z",
+  "ended_at": "2026-02-27T17:42:10.442544147Z",
+  "receipt_count": 167,
+  "chain_hash": "bf4702434c5ae4da3f6f954a597750fab2787eb49aec31578fcd6e5b3a3822e9",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -8699,6 +8699,101 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "assertEquals",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213779252920557,
+      "timestamp_rfc": "2026-02-27T17:36:19.252920557Z",
+      "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
+      "file_path": "/home/user/yawl/yawl-benchmark/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a6907d44b4d65ddbed09ee34096d38a0b3920b5cbb7c61c186ab81844c6b3b2b",
+      "delta_hash": "9091b38b340914b454f1bc7015f7c94d13d156bdb1e4c4c01c3aad9f19410356",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<version>6.0.0-GA</version>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213789211042474,
+      "timestamp_rfc": "2026-02-27T17:36:29.211042474Z",
+      "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
+      "file_path": "/home/user/yawl/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9eb2b1c69e97ca7a0a1a0d18fb394c3741d4f076aabbd91ebff01f52f911e475",
+      "delta_hash": "bf5affa0a68ab1c918425d517074de9b542c9a4b2294986d8a692be26f1a4879",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<module>yawl-graalwasm</module>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213831054797979,
+      "timestamp_rfc": "2026-02-27T17:37:11.054797979Z",
+      "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
+      "file_path": "/home/user/yawl/yawl-benchmark/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c9b49ad1955de2079bf4b2f3548d23f6f2518a4cb3c421fc2c5327447720f3c0",
+      "delta_hash": "55b4f83c29087d3ec23379ed88b19e026f7e5f4a89830a309c4e5e1bf46ae01b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<dependency>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213845918891554,
+      "timestamp_rfc": "2026-02-27T17:37:25.918891554Z",
+      "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
+      "file_path": "/home/user/yawl/yawl-benchmark/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c138ff582aa3a92a2e8489e9b841b41794114515d3d8478d0cdfd6ced75e1dc0",
+      "delta_hash": "55b4f83c29087d3ec23379ed88b19e026f7e5f4a89830a309c4e5e1bf46ae01b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<dependency>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213870657162831,
+      "timestamp_rfc": "2026-02-27T17:37:50.657162831Z",
+      "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
+      "file_path": "/home/user/yawl/yawl-benchmark/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "92b9fe06bde79afe661d9bc083dc37a727c516cafaf5cac0d142a2f3dac244e7",
+      "delta_hash": "55b4f83c29087d3ec23379ed88b19e026f7e5f4a89830a309c4e5e1bf46ae01b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<dependency>",
             "change": "Added"
           }
         }

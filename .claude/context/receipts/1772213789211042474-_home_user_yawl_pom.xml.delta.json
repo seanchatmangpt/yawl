@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213789211042474,
+  "timestamp_rfc": "2026-02-27T17:36:29.211042474Z",
+  "session_id": "588c56a6-5a8f-4cee-b368-7f0349e5eab5",
+  "file_path": "/home/user/yawl/pom.xml",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9eb2b1c69e97ca7a0a1a0d18fb394c3741d4f076aabbd91ebff01f52f911e475",
+  "delta_hash": "bf5affa0a68ab1c918425d517074de9b542c9a4b2294986d8a692be26f1a4879",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "<module>yawl-graalwasm</module>",
+        "change": "Added"
+      }
+    }
+  ]
+}
