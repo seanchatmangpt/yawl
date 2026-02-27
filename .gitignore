@@ -242,3 +242,10 @@ docs/v6/performance-history/
 docs/v6/static-analysis-history/
 _build/
 META-INF/
+
+# =============================================================================
+# Claude Code system files (metadata, agent worktrees, receipts)
+# =============================================================================
+.claude/context/receipts/
+.claude/worktrees/
+receipts/
