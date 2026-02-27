@@ -1,9 +1,9 @@
 {
   "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
-  "started_at": "2026-02-27T19:31:58.030647041Z",
-  "ended_at": "2026-02-27T19:31:58.070543367Z",
-  "receipt_count": 179,
-  "chain_hash": "f07db44bb7db4d01b95988e89c7de8f9f026152afc07fd398ce026f9c27b902a",
+  "started_at": "2026-02-27T19:54:28.840030642Z",
+  "ended_at": "2026-02-27T19:54:29.033257601Z",
+  "receipt_count": 196,
+  "chain_hash": "59f0bdcc478496d7013a524451c774366506055ca34cc53ce3f1ff3a933771c2",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -9120,6 +9120,413 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "# Build Sequences Reference",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220923060458558,
+      "timestamp_rfc": "2026-02-27T19:35:23.060458558Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/reference/hyper-standards.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0cdc9f9047462b3a3f683b09628c237a1bb1c754535b1af9a2b57b0de7ed6948",
+      "delta_hash": "fe73e0da788d56d6e1140feb06f9486387e2d79cb82ab351b6e6c82665a27765",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private boolean useMockData = true;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "User",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "MockDataService",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String PLACEHOLDER_",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private boolean isFakeMode = false;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# HYPER_STANDARDS Pattern Reference",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "FakeRepository",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final boolean MOCK_MODE =",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772220971693411636,
+      "timestamp_rfc": "2026-02-27T19:36:11.693411636Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/reference/quality-gates.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c2f5a41571fab92ab20d1ab5939e73285127413814de4325bd961a49cbf321a9",
+      "delta_hash": "c8d193ef9bde9646b1656e90a82ef678725662a5a519a8ca05672963a2171254",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Quality Gates Reference",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221007034848630,
+      "timestamp_rfc": "2026-02-27T19:36:47.034848630Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/reference/dx-sh.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1e1d3d58adc9bcc987e3c19bf372d0de22731a306baeb3cde9b4be7d88578280",
+      "delta_hash": "727af48b33a4e568faa1494ce8205b24fafa475c56a443f7ec2c6cbc2e2ded8a",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# dx.sh CLI Reference",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221058591131625,
+      "timestamp_rfc": "2026-02-27T19:37:38.591131625Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/reference/fmea-risk-table.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a8ed45742d0d2238f483d48bb6f6243920d0783733db4287f2af3fe2b0f1debd",
+      "delta_hash": "e91642f6d28a2c6f636ab8585582a6f75b33a82b0a9f931a709793b48a5e3604",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# FMEA Risk Table",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221120568841529,
+      "timestamp_rfc": "2026-02-27T19:38:40.568841529Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/explanation/reactor-ordering.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "60d1988e5b5b28f5c718a3f00b345a3c4aff535c38066e320f717d2884826229",
+      "delta_hash": "9c7a2b81f431a737415624102ac7b1e5b3780c2491778ad2ad522d68f8c73f1b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Why Reactor Ordering Matters",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221159621015331,
+      "timestamp_rfc": "2026-02-27T19:39:19.621015331Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/explanation/h-guards-philosophy.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ab8191baa8fc068c3a8cabbac4b34f91ce562d5bde217e08c0603b8bfa6879c8",
+      "delta_hash": "59b0b773f3c408de625e5daa95ad78bf4020d9fcc4fb99ec4a146d6a673fb470",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Why H-Guards Exist",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221204015655588,
+      "timestamp_rfc": "2026-02-27T19:40:04.015655588Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/explanation/chatman-equation.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "60060642de1e6a930d95fada05d43f955b3afa4d074cafc0045730d807fb34c2",
+      "delta_hash": "8265eca9b462bef17e598d2a4b8bd2d65fc4b7732968f015cebd8a88454848fe",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "# The Chatman Equation: A = μ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221224442344752,
+      "timestamp_rfc": "2026-02-27T19:40:24.442344752Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1917d9d5acb7d1caabaf0ec35836b7c7b6f1db0e2ba65314072f56357b39842a",
+      "delta_hash": "e29f35c16d02e06d0cfbfc95d0b240262a8b5af82639670b25ec6bb1d90d03f1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "| 10 | [Getting Started",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221232042034493,
+      "timestamp_rfc": "2026-02-27T19:40:32.042034493Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5ce339499bee67cdbd790a879ee4286886df3664dab13ab01e1138274ae0b21a",
+      "delta_hash": "2f121569af44288e949ad2438033118c6cd57ffe2583a8b7853f813b03d5282f",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### Security",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221242748947691,
+      "timestamp_rfc": "2026-02-27T19:40:42.748947691Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7f650e914c61dfc3882c2cf08aee08bb1df14e18849f16621d94b9e09ab51273",
+      "delta_hash": "c9c17a99474977a35250b040fc39f302ff404a127b23d0f104ac648a2fb090c8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### Build & Infrastructure",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221249767613682,
+      "timestamp_rfc": "2026-02-27T19:40:49.767613682Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "83a330d23b08c281a73d91b89676de07e553bfb321a0f9b2538e7db7cb6f1658",
+      "delta_hash": "3d73e486f42637df109adca903e517007365c290d5c44ecf003283b89c798bb6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### Build System",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221872197373746,
+      "timestamp_rfc": "2026-02-27T19:51:12.197373746Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/.claude/TEAM-VERIFICATION-STRUCTURE.json",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d27f2381eaa2459a9b83b6369e78e68215b4505a0508bdb305cdd2e6673d6414",
+      "delta_hash": "cd6d7f29ce193c8c5a571b276bd5f645fb4b9da06c07d4d69cba43fd0a23d784",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "{",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221898975474819,
+      "timestamp_rfc": "2026-02-27T19:51:38.975474819Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/.claude/TEAM-VERIFICATION-QUICK-REF.yaml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "dea9613c2d1d1674d01aa5a8d791f6fd4fd29fcad9c5851051a03ffdf570e44a",
+      "delta_hash": "56a95bcb43f0263a0ddfc87eeed2a93661023c8c3b54856f03a138f0cdd13862",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "---",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221944601454161,
+      "timestamp_rfc": "2026-02-27T19:52:24.601454161Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/.claude/TEAM-VERIFICATION-ASSIGNMENTS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "c2d7965436ab61ce899cbeb1c7b1b12488a40a188734f84037ebb8885bb931dc",
+      "delta_hash": "616919281f4b928a39d33574cd466c26980f70d5f639758daba3d907ba76fc15",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# YAWL Build System Verification Team — ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221958873794716,
+      "timestamp_rfc": "2026-02-27T19:52:38.873794716Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/pom.xml",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "155f305f9e5df3cb682ed655b1c9f8069d2c1280b6887ce84714b4287e30f373",
+      "delta_hash": "9e9f48d0ec8be79b655425f04085bafe10be6918a615a2b73a957e9329a08892",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "<modules>",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772221989067119049,
+      "timestamp_rfc": "2026-02-27T19:53:09.067119049Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/.claude/LEAD-VERIFICATION-BRIEFING.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "359a1ab15166ad117de480aede55546f3b5f7a829a8ef038b99b0d68c4d65841",
+      "delta_hash": "62ea5a5e8dfaae61a82f3df6df68b7f70fda379c6779153f439e8c0709aaaec2",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Lead Briefing: Build System Verificati",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222046311136439,
+      "timestamp_rfc": "2026-02-27T19:54:06.311136439Z",
+      "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+      "file_path": "/home/user/yawl/.claude/TEAM-VERIFICATION-VISUAL.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0e8c6279257d19d28c0a1931578f10578151045f17179ef645afe2db9b5b8fbe",
+      "delta_hash": "3ca7211acda9876d5b2bec85d50e3f8e5b43231bc08cd6070dc999e0b94935d1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Team Verification: Visual Architecture",
             "change": "Added"
           }
         }
