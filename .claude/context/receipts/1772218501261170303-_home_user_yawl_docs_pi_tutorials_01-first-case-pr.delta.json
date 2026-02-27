@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218501261170303,
+  "timestamp_rfc": "2026-02-27T18:55:01.261170303Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/tutorials/01-first-case-prediction.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "fd0d7deccb7c57a54bf2d285b357f5ec987d7ad75f505adf7c9893d433f98deb",
+  "delta_hash": "0a0244e18ad04c53f3523d74c3449af6776256d9575ae92119a916a1ea6ffa2a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial 1 — Your First Case Outcome P",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

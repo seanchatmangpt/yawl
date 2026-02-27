@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772218295465760279,
+  "timestamp_rfc": "2026-02-27T18:51:35.465760279Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/configure-pi-facade.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "8dbb69d1b8c5edb85b82849938a42acc2ba93fbaa9cccf25f07b566c61101431",
+  "delta_hash": "b3c2155355d99282d353c6f7decf14ae804b5be1fd4b05184b9263898b902c97",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Configure the PI Facade",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "com",
+        "change": "Added"
+      }
+    }
+  ]
+}

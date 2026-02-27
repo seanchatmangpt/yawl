@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772218259217252633,
+  "timestamp_rfc": "2026-02-27T18:50:59.217252633Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/reference/oced-schema.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9ff837826e2d493c31e0f4ea9302afd1f8160252b48ab4a55f435fa9c0d1a6e7",
+  "delta_hash": "9453a845535a6a1def4fe40caf85b5dc91015887e790dd88a001892cd57b20ea",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record OcedSchema(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "OcedBridge",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record ValidationReport(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# OCED Schema Reference",
+        "change": "Added"
+      }
+    }
+  ]
+}

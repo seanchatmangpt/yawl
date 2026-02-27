@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772217928563256720,
+  "timestamp_rfc": "2026-02-27T18:45:28.563256720Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/index.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "cd2cfd84409c7dda08a7a379db6b9d8af5d2c69211f29e7ae831c432437725e4",
+  "delta_hash": "ed7fa0930f563fb33776a2bf57d9c8e0c1a52ad308f96c173c062c311c5db8db",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "# YAWL Process Intelligence",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772218389501928726,
+  "timestamp_rfc": "2026-02-27T18:53:09.501928726Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/add-adaptation-rule.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "da591fa21fed68e1b968a7414c0b2af6ece451f071c1ba2955e9712cd5aa874f",
+  "delta_hash": "9259ecc4904e43c80da15d3202a538782e42692be9aa0d61ef7c89f8111f4183",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Add an Adaptation Rule",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218073204479029,
+  "timestamp_rfc": "2026-02-27T18:47:53.204479029Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/explanation/6-pi-connections.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e10bdc4aa04bcb9706d28ee8ff20af066d38e544cadd93d2eec787871d7f8227",
+  "delta_hash": "2199a1ff333d982c8fc108d60217fd6063d449f4cefc59cbc255e9acb5951aa4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# The Six PI Connections — Design Ration",
+        "change": "Added"
+      }
+    }
+  ]
+}

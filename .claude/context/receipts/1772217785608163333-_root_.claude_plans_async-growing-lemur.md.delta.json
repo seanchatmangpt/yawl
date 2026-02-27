@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772217785608163333,
+  "timestamp_rfc": "2026-02-27T18:43:05.608163333Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/root/.claude/plans/async-growing-lemur.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "97e80d26d7db57ec789ad510cc2ed6ce9ce730a4a039dcce435b044a5884cba0",
+  "delta_hash": "aabc136eb5df7c19bf84b977c223145200a76c724d8878eb986c6c32f451f177",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "# Plan: Full Diátaxis Documentation — ya",
+        "change": "Added"
+      }
+    }
+  ]
+}
