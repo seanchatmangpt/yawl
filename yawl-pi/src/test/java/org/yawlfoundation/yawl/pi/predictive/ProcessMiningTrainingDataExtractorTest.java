@@ -25,8 +25,7 @@ import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,12 +41,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ProcessMiningTrainingDataExtractorTest {
 
     private ProcessMiningTrainingDataExtractor extractor;
-    private MockWorkflowEventStore mockEventStore;
+    private WorkflowEventStore eventStore;
 
     @BeforeEach
-    public void setUp() {
-        mockEventStore = new MockWorkflowEventStore();
-        extractor = new ProcessMiningTrainingDataExtractor(mockEventStore);
+    public void setUp() throws Exception {
+        eventStore = createTestEventStore();
+        extractor = new ProcessMiningTrainingDataExtractor(eventStore);
     }
 
     @Test
@@ -128,85 +127,43 @@ public class ProcessMiningTrainingDataExtractorTest {
         assertTrue(lines.length > 1, "CSV should have header + at least one data row");
     }
 
-    private void addTestCaseEvents(String caseId, boolean cancelled) {
-        Instant now = Instant.now();
-
-        mockEventStore.addEvent(new MockWorkflowEvent(
-            "evt-1", caseId, "item-1", WorkflowEvent.EventType.CASE_STARTED, now
+    private void addTestCaseEvents(String caseId, boolean cancelled) throws Exception {
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.CASE_STARTED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
 
-        mockEventStore.addEvent(new MockWorkflowEvent(
-            "evt-2", caseId, "item-1", WorkflowEvent.EventType.WORKITEM_ENABLED,
-            now.plusSeconds(1)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.WORKITEM_ENABLED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
 
-        mockEventStore.addEvent(new MockWorkflowEvent(
-            "evt-3", caseId, "item-1", WorkflowEvent.EventType.WORKITEM_STARTED,
-            now.plusSeconds(2)
+        eventStore.appendNext(new WorkflowEvent(
+            WorkflowEvent.EventType.WORKITEM_STARTED, "test-spec", caseId, "item-1",
+            Map.of()
         ));
 
         if (cancelled) {
-            mockEventStore.addEvent(new MockWorkflowEvent(
-                "evt-4", caseId, "item-1", WorkflowEvent.EventType.CASE_CANCELLED,
-                now.plusSeconds(3)
+            eventStore.appendNext(new WorkflowEvent(
+                WorkflowEvent.EventType.CASE_CANCELLED, "test-spec", caseId, "item-1",
+                Map.of()
             ));
         } else {
-            mockEventStore.addEvent(new MockWorkflowEvent(
-                "evt-4", caseId, "item-1", WorkflowEvent.EventType.CASE_COMPLETED,
-                now.plusSeconds(10)
+            eventStore.appendNext(new WorkflowEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, "test-spec", caseId, "item-1",
+                Map.of()
             ));
         }
     }
 
-    /**
-     * Mock implementation of WorkflowEventStore for testing.
-     */
-    private static class MockWorkflowEventStore extends WorkflowEventStore {
-        private final List<WorkflowEvent> allEvents = new ArrayList<>();
+    private static WorkflowEventStore createTestEventStore() throws Exception {
+        // Create H2 in-memory datasource
+        org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
+        ds.setURL("jdbc:h2:mem:test-training-data-" + System.nanoTime() + ";MODE=MySQL;DB_CLOSE_DELAY=-1");
+        ds.setUser("sa");
+        ds.setPassword("");
 
-        void addEvent(WorkflowEvent event) {
-            allEvents.add(event);
-        }
-
-        @Override
-        public List<WorkflowEvent> loadEvents(String caseId) throws EventStoreException {
-            if (caseId.isEmpty()) {
-                return new ArrayList<>(allEvents);
-            }
-            return allEvents.stream()
-                .filter(e -> e.getCaseId().equals(caseId))
-                .toList();
-        }
-    }
-
-    /**
-     * Mock implementation of WorkflowEvent for testing.
-     */
-    private static class MockWorkflowEvent extends WorkflowEvent {
-        private final String eventId;
-        private final String caseId;
-        private final String workItemId;
-        private final EventType eventType;
-        private final Instant timestamp;
-
-        MockWorkflowEvent(String eventId, String caseId, String workItemId,
-                          EventType eventType, Instant timestamp) {
-            this.eventId = eventId;
-            this.caseId = caseId;
-            this.workItemId = workItemId;
-            this.eventType = eventType;
-            this.timestamp = timestamp;
-        }
-
-        @Override
-        public String getEventId() { return eventId; }
-        @Override
-        public String getCaseId() { return caseId; }
-        @Override
-        public String getWorkItemId() { return workItemId; }
-        @Override
-        public EventType getEventType() { return eventType; }
-        @Override
-        public Instant getTimestamp() { return timestamp; }
+        // Create real store (it initializes its own schema on first use)
+        return new WorkflowEventStore(ds);
     }
 }

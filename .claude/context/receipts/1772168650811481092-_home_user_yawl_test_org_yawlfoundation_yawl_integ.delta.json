@@ -1,0 +1,82 @@
+{
+  "timestamp_ns": 1772168650811481092,
+  "timestamp_rfc": "2026-02-27T05:04:10.811481092Z",
+  "session_id": "825565e2-929c-4fdf-a552-b24a84efe5fb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/integration/a2a/skills/GraalPySynthesisSkillTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "de742b690d2f301a7090a13e463a41eca6f2c74ccb2438ae4c8eab60c5710b32",
+  "delta_hash": "57d6de239ae0ff4e0fdf7d35269f1f0d6154aad9f37106fd19559e6174c1c8fc",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private GraalPySynthesisSkill skill;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "GraalPySynthesisSkillTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@AfterEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    }
+  ]
+}

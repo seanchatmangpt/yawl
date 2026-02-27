@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772172674634414416,
+  "timestamp_rfc": "2026-02-27T06:11:14.634414416Z",
+  "session_id": "9725a029-9fcb-4176-a54b-ee54343c996a",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/adaptive/EnterpriseAutoMlPatterns.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "6f3236cd9a655127bd41f6f3a5a3a9731e6c49a04df08608b1821844bca2b87f",
+  "delta_hash": "bbc535e6f8b95008b292b9fc9b3b37766a589604022a5ae9e48ee0d39a060879",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "EnterpriseAutoMlPatterns",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static Consumer<ProcessEvent> ada",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static PredictiveProcessObserver ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public static Consumer<ProcessEvent> log",
+        "change": "Added"
+      }
+    }
+  ]
+}

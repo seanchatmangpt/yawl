@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772218232204568214,
+  "timestamp_rfc": "2026-02-27T18:50:32.204568214Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/reference/onnx-model-format.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3b18aea51f8bf8f16d7ba19978308e9312dd97240a087aa4be63371a140bbd1c",
+  "delta_hash": "4baa7ef6963a4b3e75901264693ce51175fedf372a4a4ea7e330289f942f2ad6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "onnxruntime",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# ONNX Model Format Reference",
+        "change": "Added"
+      }
+    }
+  ]
+}

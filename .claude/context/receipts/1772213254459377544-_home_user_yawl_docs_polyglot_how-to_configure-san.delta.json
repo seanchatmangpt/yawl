@@ -1,0 +1,82 @@
+{
+  "timestamp_ns": 1772213254459377544,
+  "timestamp_rfc": "2026-02-27T17:27:34.459377544Z",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "file_path": "/home/user/yawl/docs/polyglot/how-to/configure-sandbox.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "2ea4a15350bec2600272d9a4e65c611f96977052c5f8db22a7333f3a7be19398",
+  "delta_hash": "70c0dbc2d8907aa83060f2e83e686cac8cae2afe7abcfd36d52cda9ec1c7d0c8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "calculate_score",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final PythonExecutionEngine pyth",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final JavaScriptExecutionEngine ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "double",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to configure sandbox restrictions ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "WorkflowScriptEngine",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final WasmExecutionEngine wasmEn",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Map",
+        "change": "Added"
+      }
+    }
+  ]
+}

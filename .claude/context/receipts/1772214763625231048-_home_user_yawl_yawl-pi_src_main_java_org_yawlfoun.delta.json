@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772214763625231048,
+  "timestamp_rfc": "2026-02-27T17:52:43.625231048Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/automl/Tpot2Bridge.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "00004f9c7e7347755fc825d7f65056c9d88cdfa6fa4a62a89e0435ecc1e5e4b8",
+  "delta_hash": "1c1192f9f77f19511cdd298ee5bd97d6686323630335d366f6bca88d6a2f2e39",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "final",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final Path runnerScript;   // br",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final boolean ownsDir;     // tr",
+        "change": "Added"
+      }
+    }
+  ]
+}

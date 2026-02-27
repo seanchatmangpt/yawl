@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221007034848630,
+  "timestamp_rfc": "2026-02-27T19:36:47.034848630Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/reference/dx-sh.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1e1d3d58adc9bcc987e3c19bf372d0de22731a306baeb3cde9b4be7d88578280",
+  "delta_hash": "727af48b33a4e568faa1494ce8205b24fafa475c56a443f7ec2c6cbc2e2ded8a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# dx.sh CLI Reference",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219766498210691,
+  "timestamp_rfc": "2026-02-27T19:16:06.498210691Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/root/.claude/plans/polished-orbiting-wilkes.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "964f20f419fa2513673a7b452edf886521235dd128490f0adaa57d4a43a51322",
+  "delta_hash": "c1715c6da58ec709154f2afe84db091b206040ab17d9616e157dac9c7c319e12",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "## Critical Files",
+        "change": "Added"
+      }
+    }
+  ]
+}

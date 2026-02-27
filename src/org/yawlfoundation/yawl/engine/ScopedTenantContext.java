@@ -18,177 +18,177 @@
 
 package org.yawlfoundation.yawl.engine;
 
-import java.lang.ScopedValue;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * ScopedValue-based tenant context for multi-tenant YAWL deployments.
+ * ScopedValue-based tenant context carrier for virtual thread safety (JEP 487).
  *
- * <p>This class provides the Java 25 ScopedValue alternative to the ThreadLocal-based
- * tenant context in {@link YEngine}. Key advantages:</p>
+ * <p>Replaces the ThreadLocal pattern used by {@link YEngine#setTenantContext} /
+ * {@link YEngine#clearTenantContext}. Key advantages over ThreadLocal:
  * <ul>
- *   <li><b>Virtual thread safety</b>: ScopedValues are inherited automatically by
- *       child virtual threads without carrier thread pinning</li>
- *   <li><b>Automatic cleanup</b>: Context is released when the scope exits — no
- *       manual {@code clearTenantContext()} call required</li>
- *   <li><b>Immutable binding</b>: Context cannot be modified within a scope, preventing
- *       accidental cross-tenant contamination</li>
- *   <li><b>Structured concurrency</b>: Compatible with {@link StructuredTaskScope} for
- *       parallel tenant-scoped task execution where all subtasks inherit the context</li>
+ *   <li>Auto-released on scope exit — no manual {@code clearTenantContext()} required.</li>
+ *   <li>Immutable within a scope — no silent overwrites by nested calls.</li>
+ *   <li>Inherited by child virtual threads via {@code StructuredTaskScope.fork()} —
+ *       propagates correctly without manual plumbing.</li>
+ *   <li>Zero leakage between unrelated virtual threads — each scope is isolated.</li>
  * </ul>
  *
- * <p><b>Usage</b>:</p>
+ * <p><b>Usage (preferred new API)</b>:
  * <pre>{@code
- * TenantContext ctx = new TenantContext("customer-123");
- * ScopedTenantContext.runWithTenant(ctx, () -> {
- *     // All code here (and any spawned virtual threads) sees the context
- *     TenantContext current = ScopedTenantContext.getTenantContext(); // returns ctx
- *     // Context is automatically released when this block exits
- * });
+ *   TenantContext tenant = new TenantContext("customer-123");
+ *   ScopedTenantContext.runWithTenant(tenant, () -> {
+ *       // All engine calls here run under the tenant context.
+ *       // Child virtual threads inherit it automatically.
+ *   });
+ *   // Context is auto-released here — no clearTenantContext() needed.
  * }</pre>
  *
- * <p><b>Migration</b>: The old {@code YEngine.setTenantContext()} / {@code clearTenantContext()}
- * ThreadLocal API remains available for backward compatibility. New code should use
- * {@code ScopedTenantContext.runWithTenant()} instead.</p>
+ * <p>{@link YEngine#getTenantContext()} prefers this ScopedValue over the legacy ThreadLocal,
+ * so code inside a {@code runWithTenant} scope sees the correct context via either API.
  *
  * @author YAWL Foundation
  * @version 6.0.0
- * @see java.lang.ScopedValue
- * @see java.util.concurrent.StructuredTaskScope
- * @see TenantContext
+ * @see YEngine#getTenantContext()
+ * @see YEngine#setTenantContext(TenantContext)
  */
 public final class ScopedTenantContext {
 
-    /**
-     * The ScopedValue backing the tenant context.
-     *
-     * <p>Inherited automatically by all child virtual threads forked within the binding
-     * scope, including {@link StructuredTaskScope} subtasks. Released when the enclosing
-     * {@link ScopedValue#where} scope exits — no manual cleanup required.</p>
-     */
-    static final ScopedValue<TenantContext> CURRENT_TENANT = ScopedValue.newInstance();
+    // ScopedValue: immutable per-scope, auto-inherited by StructuredTaskScope children,
+    // zero cross-thread leakage. Package-private so YEngine can check isBound().
+    static final ScopedValue<TenantContext> TENANT = ScopedValue.newInstance();
 
-    // Utility class — not instantiable
-    private ScopedTenantContext() {
-        throw new UnsupportedOperationException("ScopedTenantContext is a utility class");
-    }
+    private ScopedTenantContext() { /* utility class */ }
 
-    // ─── Read accessors ───────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
+    // Read access
+    // -------------------------------------------------------------------------
 
     /**
      * Returns the tenant context bound to the current scope, or {@code null} if none.
      *
-     * @return the current {@link TenantContext}, or {@code null} if no tenant scope is active
+     * @return current {@link TenantContext}, or {@code null}
      */
     public static TenantContext getTenantContext() {
-        return CURRENT_TENANT.isBound() ? CURRENT_TENANT.get() : null;
-    }
-
-    /**
-     * Returns the tenant context bound to the current scope.
-     *
-     * @return the current {@link TenantContext} (never null)
-     * @throws IllegalStateException if no tenant context is bound to the current scope
-     */
-    public static TenantContext requireTenantContext() {
-        if (!CURRENT_TENANT.isBound()) {
-            throw new IllegalStateException(
-                "No tenant context is bound to the current scope. " +
-                "Wrap the calling code in ScopedTenantContext.runWithTenant(ctx, ...).");
-        }
-        return CURRENT_TENANT.get();
+        return TENANT.isBound() ? TENANT.get() : null;
     }
 
     /**
      * Returns {@code true} if a tenant context is bound to the current scope.
      *
-     * @return {@code true} if {@link #CURRENT_TENANT} is bound
+     * @return {@code true} if context is present
      */
     public static boolean hasTenantContext() {
-        return CURRENT_TENANT.isBound();
+        return TENANT.isBound();
     }
 
-    // ─── Scope binders ────────────────────────────────────────────────────────
-
     /**
-     * Runs the given action with the specified tenant context bound for its duration.
-     * The context is automatically released when the action completes (normally or
-     * exceptionally).
+     * Returns the tenant context bound to the current scope, throwing if absent.
      *
-     * <p>If {@code ctx} is {@code null}, the action runs without binding any tenant
-     * context — {@link #getTenantContext()} returns {@code null} inside the action.</p>
-     *
-     * @param ctx  the tenant context to bind; may be {@code null}
-     * @param work the action to run within the tenant scope
+     * @return current {@link TenantContext} (never null)
+     * @throws IllegalStateException if no context is bound
      */
-    public static void runWithTenant(TenantContext ctx, Runnable work) {
-        if (ctx == null) {
-            work.run();
-        } else {
-            ScopedValue.where(CURRENT_TENANT, ctx).run(work);
+    public static TenantContext requireTenantContext() {
+        if (!TENANT.isBound()) {
+            throw new IllegalStateException(
+                    "No tenant context bound for current virtual thread. " +
+                    "Wrap the call in ScopedTenantContext.runWithTenant(tenant, work).");
         }
+        return TENANT.get();
     }
 
+    // -------------------------------------------------------------------------
+    // Scope entry — Runnable
+    // -------------------------------------------------------------------------
+
     /**
-     * Calls the given callable with the specified tenant context bound for its duration.
-     * The context is automatically released when the callable completes (normally or
-     * exceptionally).
+     * Runs {@code action} with {@code tenant} bound to the current scope.
      *
-     * <p>If {@code ctx} is {@code null}, the callable runs without binding any tenant
-     * context — {@link #getTenantContext()} returns {@code null} inside the callable.</p>
+     * <p>The binding is released automatically when {@code action} completes (or throws).
+     * Child virtual threads created inside {@code action} — including those forked via
+     * {@code StructuredTaskScope.fork()} — inherit the binding automatically.
      *
-     * @param <T>  the return type of the callable
-     * @param ctx  the tenant context to bind; may be {@code null}
-     * @param work the callable to execute within the tenant scope
-     * @return the result of {@code work.call()}
-     * @throws RuntimeException wrapping any checked exception thrown by the callable
+     * @param tenant the {@link TenantContext} to bind (may be {@code null} to run unbound)
+     * @param action the work to perform under the tenant context
      */
-    public static <T> T runWithTenant(TenantContext ctx, Callable<T> work) {
+    public static void runWithTenant(TenantContext tenant, Runnable action) {
+        ScopedValue.where(TENANT, tenant).run(action);
+    }
+
+    // -------------------------------------------------------------------------
+    // Scope entry — Callable<T>
+    // -------------------------------------------------------------------------
+
+    /**
+     * Runs {@code action} with {@code tenant} bound, returning its result.
+     *
+     * <p>Checked exceptions from {@code action} are wrapped in {@link RuntimeException}.
+     * {@link RuntimeException} and {@link Error} propagate as-is.
+     *
+     * @param tenant the {@link TenantContext} to bind
+     * @param action the work to perform under the tenant context
+     * @param <T>    result type
+     * @return the value returned by {@code action}
+     */
+    public static <T> T runWithTenant(TenantContext tenant, Callable<T> action) {
         try {
-            if (ctx == null) {
-                return work.call();
-            } else {
-                // Wrap in lambda: Carrier.call() expects CallableOp (not java.util.concurrent.Callable)
-                return ScopedValue.where(CURRENT_TENANT, ctx).call(() -> work.call());
-            }
-        } catch (RuntimeException e) {
+            // Use lambda to bridge Callable<T> → CallableOp<T, Exception> (Java 25 API)
+            return ScopedValue.where(TENANT, tenant).call(() -> action.call());
+        } catch (RuntimeException | Error e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Tenant-scoped callable failed", e);
+            throw new RuntimeException("Callable under tenant scope threw checked exception", e);
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Parallel execution — all tasks share the same tenant context
+    // -------------------------------------------------------------------------
+
     /**
-     * Executes multiple callables in parallel, all sharing the same tenant context.
+     * Runs {@code tasks} in parallel virtual threads, all sharing {@code tenant} as context.
      *
-     * <p>Uses {@link StructuredTaskScope} for structured concurrency: all subtasks
-     * automatically inherit {@link #CURRENT_TENANT} from the parent scope. If any task
-     * fails, the scope cancels all remaining tasks before propagating the exception.</p>
+     * <p>Returns an array of results in the same order as {@code tasks}. If any task throws,
+     * the first exception is wrapped and re-thrown after all tasks complete.
+     * Uses {@code .inheritInheritableThreadLocals(false)} to enforce isolation.
      *
-     * @param ctx   the tenant context to bind for all tasks; may be {@code null}
-     * @param tasks the tasks to execute in parallel (each must return a {@code String})
-     * @return results of all tasks in input order
-     * @throws RuntimeException if any task fails or the scope is interrupted
+     * @param tenant the {@link TenantContext} shared by all parallel tasks
+     * @param tasks  callable tasks to run in parallel
+     * @param <T>    result type
+     * @return results array, one entry per task (in original order)
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public static String[] runParallel(TenantContext ctx, Callable<?>[] tasks) {
-        return runWithTenant(ctx, () -> {
-            try (var scope = StructuredTaskScope.open(
-                    StructuredTaskScope.Joiner.<String>awaitAllSuccessfulOrThrow())) {
-                List<StructuredTaskScope.Subtask<String>> subtasks = Arrays.stream(tasks)
-                    .map(t -> scope.fork(() -> (String) ((Callable) t).call()))
-                    .toList();
-                scope.join();
-                return subtasks.stream()
-                    .map(StructuredTaskScope.Subtask::get)
-                    .toArray(String[]::new);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Parallel tenant execution interrupted", e);
-            }
-        });
+    @SuppressWarnings("unchecked")
+    public static <T> T[] runParallel(TenantContext tenant, Callable<T>[] tasks) {
+        Object[] results = new Object[tasks.length];
+        CountDownLatch latch = new CountDownLatch(tasks.length);
+        AtomicReference<Exception> firstError = new AtomicReference<>();
+
+        for (int i = 0; i < tasks.length; i++) {
+            final int idx = i;
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> ScopedValue.where(TENANT, tenant).run(() -> {
+                        try {
+                            results[idx] = tasks[idx].call();
+                        } catch (Exception e) {
+                            firstError.compareAndSet(null, e);
+                        } finally {
+                            latch.countDown();
+                        }
+                    }));
+        }
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted waiting for parallel tenant tasks", e);
+        }
+
+        if (firstError.get() != null) {
+            throw new RuntimeException("Parallel tenant task failed", firstError.get());
+        }
+        return (T[]) results;
     }
 }

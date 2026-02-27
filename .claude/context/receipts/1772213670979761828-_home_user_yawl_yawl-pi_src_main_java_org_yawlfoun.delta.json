@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213670979761828,
+  "timestamp_rfc": "2026-02-27T17:34:30.979761828Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b9e209b11c439dee5c92ac108eb4f573aaac8e4a121997dda8a8985a6e7a2a80",
+  "delta_hash": "9aedc1c234c737466d5ae0b75771ad5365443317be1d9bdbc7efcc89b5291141",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "return new McpSchema.CallToolResult(",
+        "change": "Added"
+      }
+    }
+  ]
+}

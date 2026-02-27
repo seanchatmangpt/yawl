@@ -49,6 +49,7 @@ import org.yawlfoundation.yawl.logging.YLogPredicate;
 import org.yawlfoundation.yawl.schema.XSDType;
 import org.yawlfoundation.yawl.schema.YDataValidator;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
+import org.yawlfoundation.yawl.engine.observability.AndonAlert;
 import org.yawlfoundation.yawl.engine.observability.YAWLTelemetry;
 import org.yawlfoundation.yawl.engine.observability.YAWLTracing;
 import org.yawlfoundation.yawl.util.*;
@@ -62,6 +63,8 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -119,6 +122,16 @@ public class YEngine implements InterfaceADesign,
     private final YAWLTelemetry _telemetry = YAWLTelemetry.getInstance();
     private final ReentrantLock _persistLock = new ReentrantLock();
     private final ReentrantLock _pmgrAccessLock = new ReentrantLock();
+
+    // TPS — JIDOKA: reject new cases when at capacity (stop the line)
+    private static final int MAX_CONCURRENT_RUNNERS = 10_000;
+
+    // TPS — HEIJUNKA: level production by bounding concurrent startCase() callers
+    private static final int MAX_CONCURRENT_STARTS = 50;
+    private final Semaphore _startSemaphore = new Semaphore(MAX_CONCURRENT_STARTS, true);
+
+    // TPS — ANDON PULL CORD: pause/resume case acceptance
+    private volatile boolean _paused = false;
 
     // MULTI-TENANT ISOLATION - Tenant context for current request/thread
     private static final ThreadLocal<TenantContext> _currentTenant = new ThreadLocal<>();
@@ -250,9 +263,20 @@ public class YEngine implements InterfaceADesign,
     /**
      * Gets the tenant context for the current thread/request.
      *
+     * <p>Prefers the {@link ScopedTenantContext} ScopedValue (new API) over the
+     * ThreadLocal (legacy API). Code running inside
+     * {@code ScopedTenantContext.runWithTenant()} will return the scoped value;
+     * code using the legacy {@link #setTenantContext} / {@link #clearTenantContext}
+     * pair will return the ThreadLocal value as a fallback.
+     *
      * @return the current tenant context, or null if not set
      */
     public static TenantContext getTenantContext() {
+        // Prefer ScopedValue (virtual-thread-safe, auto-released on scope exit)
+        if (ScopedTenantContext.TENANT.isBound()) {
+            return ScopedTenantContext.TENANT.get();
+        }
+        // Fallback: legacy ThreadLocal (for setTenantContext() call-sites not yet migrated)
         return _currentTenant.get();
     }
 
@@ -880,6 +904,20 @@ public class YEngine implements InterfaceADesign,
                                  YLogDataItemList logData, String serviceRef, boolean delayed)
             throws YStateException, YDataStateException, YQueryException, YPersistenceException {
 
+        // TPS FIX A — ANDON PULL CORD: refuse if engine is paused
+        if (_paused) {
+            throw new YStateException("Engine paused — Andon pull cord active. Retry after resume.");
+        }
+
+        // TPS FIX A — JIDOKA: refuse new work when at capacity (stop the line)
+        int activeCount = getRunningCaseCount();
+        if (activeCount >= MAX_CONCURRENT_RUNNERS) {
+            AndonAlert.resourceExhaustion("engine", "startCase",
+                "Active cases at capacity: " + activeCount + "/" + MAX_CONCURRENT_RUNNERS).fire();
+            throw new YStateException(
+                "Engine at capacity: " + activeCount + " active cases. Retry later.");
+        }
+
         // check spec is loaded and is latest version (YStateException if not)
         YSpecification specification = _specifications.getSpecificationForCaseStart(specID);
 
@@ -1030,7 +1068,15 @@ public class YEngine implements InterfaceADesign,
 
             Set<YWorkItem> removedItems = _workItemRepository.removeWorkItemsForCase(caseID);
             YNetRunner runner = _netRunnerRepository.get(caseID);
+            // TPS FIX D — instrument _pmgrAccessLock to surface the global bottleneck
+            long _cancelLockWaitStart = System.nanoTime();
             _pmgrAccessLock.lock();
+            long _cancelLockWaitNs = System.nanoTime() - _cancelLockWaitStart;
+            if (_cancelLockWaitNs > AndonAlert.P1_LOCK_CONTENTION_THRESHOLD_NS) {
+                AndonAlert.lockContention("engine", _cancelLockWaitNs, "pmgrAccessLock:cancelCase").fire();
+            } else if (_cancelLockWaitNs > AndonAlert.P2_LOCK_CONTENTION_THRESHOLD_NS) {
+                AndonAlert.elevatedContention("engine", _cancelLockWaitNs, "pmgrAccessLock:cancelCase").fire();
+            }
             try {
                 startTransaction();
                 if (_persisting) clearWorkItemsFromPersistence(removedItems);
@@ -1065,6 +1111,36 @@ public class YEngine implements InterfaceADesign,
         }
     }
     
+
+    /**
+     * TPS FIX C — Andon Pull Cord: pause engine case acceptance.
+     *
+     * <p>When called, all subsequent {@code launchCase()} invocations will immediately throw
+     * {@link YEngineStateException} until {@link #resume()} is called. Intended for use by
+     * automated monitoring systems when a P0 Andon alert fires (e.g., deadlock cluster).</p>
+     *
+     * @param reason human-readable reason for the pause (logged at ERROR level)
+     */
+    public void pause(String reason) {
+        _paused = true;
+        AndonAlert.resourceExhaustion("engine", "pause", "Engine paused: " + reason).fire();
+        _logger.error("[ANDON PULL CORD] Engine paused: {}", reason);
+    }
+
+    /**
+     * TPS FIX C — Andon Pull Cord: resume engine case acceptance.
+     *
+     * <p>Clears the paused flag set by {@link #pause(String)}, allowing {@code launchCase()} to
+     * accept new cases again.</p>
+     */
+    public void resume() {
+        _paused = false;
+        _logger.info("[ANDON RESUME] Engine resumed — case acceptance restored");
+    }
+
+    /** Returns {@code true} if the engine is currently paused (Andon pull cord active). */
+    public boolean isPaused() { return _paused; }
+
 
     /**
      * Cancels a running case by identifier.
@@ -1118,8 +1194,47 @@ public class YEngine implements InterfaceADesign,
             }
             checkEngineRunning();
 
+            // TPS FIX A — ANDON PULL CORD: refuse if engine is paused
+            if (_paused) {
+                throw new YEngineStateException(
+                    "Engine paused — Andon pull cord active. Retry after resume.");
+            }
+
+            // TPS FIX A — JIDOKA: refuse new work when at capacity (stop the line)
+            int activeCount = getRunningCaseCount();
+            if (activeCount >= MAX_CONCURRENT_RUNNERS) {
+                AndonAlert.resourceExhaustion("engine", "launchCase",
+                    "Active cases at capacity: " + activeCount + "/" + MAX_CONCURRENT_RUNNERS)
+                    .fire();
+                throw new YEngineStateException(
+                    "Engine at capacity: " + activeCount + " active cases. Retry later.");
+            }
+
+            // TPS FIX B — HEIJUNKA: level production via bounded semaphore (max 50 concurrent starts)
+            boolean semAcquired;
+            try {
+                semAcquired = _startSemaphore.tryAcquire(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new YEngineStateException("Interrupted waiting for start slot.");
+            }
+            if (!semAcquired) {
+                AndonAlert.resourceExhaustion("startSemaphore", "launchCase",
+                    "Start queue full — timed out after 5s waiting for slot").fire();
+                throw new YEngineStateException(
+                    "Engine start queue full — retry in a moment.");
+            }
+
             String resultCaseId = null;
+            // TPS FIX D — Instrument _pmgrAccessLock to surface the global bottleneck
+            long _pmgrLockWaitStart = System.nanoTime();
             _pmgrAccessLock.lock();
+            long _pmgrLockWaitNs = System.nanoTime() - _pmgrLockWaitStart;
+            if (_pmgrLockWaitNs > AndonAlert.P1_LOCK_CONTENTION_THRESHOLD_NS) {
+                AndonAlert.lockContention("engine", _pmgrLockWaitNs, "pmgrAccessLock:launchCase").fire();
+            } else if (_pmgrLockWaitNs > AndonAlert.P2_LOCK_CONTENTION_THRESHOLD_NS) {
+                AndonAlert.elevatedContention("engine", _pmgrLockWaitNs, "pmgrAccessLock:launchCase").fire();
+            }
             try {
                 startTransaction();
                 try {
@@ -1153,6 +1268,7 @@ public class YEngine implements InterfaceADesign,
                 }
                         } finally {
                 _pmgrAccessLock.unlock();
+                _startSemaphore.release();  // TPS FIX B — release Heijunka slot
             }
             _logger.debug("<-- launchCase");
             return null;

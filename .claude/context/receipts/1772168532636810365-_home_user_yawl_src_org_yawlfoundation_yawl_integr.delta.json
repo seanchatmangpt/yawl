@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772168532636810365,
+  "timestamp_rfc": "2026-02-27T05:02:12.636810365Z",
+  "session_id": "825565e2-929c-4fdf-a552-b24a84efe5fb",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/YawlMcpServer.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ea8d22aa0ae9abce72c08a8782ca05100042e4d4a64b2ef24389bbab526ed5ed",
+  "delta_hash": "bab117a42e4ef87a0370f9d0b33c4c10849141862dd0d6b332aeca829dafccc3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "// Pattern synthesis tools",
+        "change": "Added"
+      }
+    }
+  ]
+}

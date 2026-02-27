@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213897019895814,
+  "timestamp_rfc": "2026-02-27T17:38:17.019895814Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/PIToolProviderTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ba5745f65922d8ee958b7cd92d260e4964ea9d1a1bddeacbde8e3c6020bb5304",
+  "delta_hash": "cce55fa1cae5ae8ba27d08bafa366fbff008a03ec3ad5473c03f11a3cdbcff2d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    }
+  ]
+}

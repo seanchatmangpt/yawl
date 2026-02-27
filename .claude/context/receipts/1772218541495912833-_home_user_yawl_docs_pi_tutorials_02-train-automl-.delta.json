@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218541495912833,
+  "timestamp_rfc": "2026-02-27T18:55:41.495912833Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/tutorials/02-train-automl-model.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f2514b7c8af0b3db9bae3316377216f6aef3f7a9c118baf3e2c4c3966ffd973e",
+  "delta_hash": "61100bbad74cb3167baca43393553d15665408e9f7c14e73d1bfa915577fae9e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial 2 — Train an AutoML Model wit",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

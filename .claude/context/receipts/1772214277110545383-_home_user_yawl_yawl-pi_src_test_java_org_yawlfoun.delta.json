@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772214277110545383,
+  "timestamp_rfc": "2026-02-27T17:44:37.110545383Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/rag/NaturalLanguageQueryEngineTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "511b6b3cda5f4354c1ce4c04d84262af5f8e13235f99a11684028aa514e74cc0",
+  "delta_hash": "3e63c5f80e8cea238ca9222fdabd1f22cdbce10f93eff81899dc156833184cdd",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}

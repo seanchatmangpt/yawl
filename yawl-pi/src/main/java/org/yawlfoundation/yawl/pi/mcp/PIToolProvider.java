@@ -22,6 +22,10 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.yawlfoundation.yawl.integration.mcp.spec.McpToolProvider;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
+import org.yawlfoundation.yawl.pi.PIException;
+import org.yawlfoundation.yawl.pi.bridge.OcedBridge;
+import org.yawlfoundation.yawl.pi.bridge.OcedBridgeFactory;
+import org.yawlfoundation.yawl.pi.bridge.OcedSchema;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -81,8 +85,10 @@ public class PIToolProvider implements McpToolProvider {
                 }
                 return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent(
-                        "Requires: ProcessIntelligenceFacade integration to predict case " + caseId)),
-                    false, null, null);
+                        "yawl_pi_predict_risk: ProcessIntelligenceFacade is not configured. " +
+                        "Provide a predictive model registry and event store to enable risk prediction " +
+                        "for case " + caseId + ".")),
+                    true, null, null);
             }
         );
     }
@@ -117,8 +123,10 @@ public class PIToolProvider implements McpToolProvider {
                 }
                 return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent(
-                        "Requires: ProcessIntelligenceFacade integration to recommend actions for case " + caseId)),
-                    false, null, null);
+                        "yawl_pi_recommend_action: ProcessIntelligenceFacade is not configured. " +
+                        "Provide a prescriptive engine and constraint model to enable action recommendations " +
+                        "for case " + caseId + ".")),
+                    true, null, null);
             }
         );
     }
@@ -152,8 +160,10 @@ public class PIToolProvider implements McpToolProvider {
                 }
                 return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent(
-                        "Requires: ProcessIntelligenceFacade integration to answer: " + question)),
-                    false, null, null);
+                        "yawl_pi_ask: ProcessIntelligenceFacade is not configured. " +
+                        "Provide a natural language query engine (RAG over process knowledge) " +
+                        "to answer: " + question)),
+                    true, null, null);
             }
         );
     }
@@ -185,10 +195,39 @@ public class PIToolProvider implements McpToolProvider {
                     return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent("Error: eventData is required")), true, null, null);
                 }
-                return new McpSchema.CallToolResult(
-                    List.of(new McpSchema.TextContent(
-                        "Requires: ProcessIntelligenceFacade integration to prepare event data")),
-                    false, null, null);
+                String format = args.arguments().get("format") instanceof String s ? s : null;
+                long start = System.currentTimeMillis();
+                try {
+                    OcedBridge bridge;
+                    if (format == null || format.isBlank() || format.equalsIgnoreCase("auto")) {
+                        bridge = OcedBridgeFactory.autoDetect(eventData);
+                    } else {
+                        bridge = OcedBridgeFactory.forFormat(format);
+                    }
+                    OcedSchema ocedSchema = bridge.inferSchema(eventData);
+                    String ocel2Json = bridge.convert(eventData, ocedSchema);
+                    long elapsed = System.currentTimeMillis() - start;
+                    String response = "OCEL 2.0 Conversion Result\n" +
+                        "==========================\n" +
+                        "Detected format:   " + bridge.formatName().toUpperCase() + "\n" +
+                        "Schema inferred:   " + (ocedSchema.aiInferred() ? "AI-assisted" : "heuristic") + "\n" +
+                        "Case ID column:    " + ocedSchema.caseIdColumn() + "\n" +
+                        "Activity column:   " + ocedSchema.activityColumn() + "\n" +
+                        "Timestamp column:  " + ocedSchema.timestampColumn() + "\n" +
+                        "\nOCEL 2.0 JSON:\n" + ocel2Json + "\n" +
+                        "\nElapsed: " + elapsed + "ms";
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(response)), false, null, null);
+                } catch (PIException e) {
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent("OCEL conversion failed: " + e.getMessage())),
+                        true, null, null);
+                } catch (Exception e) {
+                    return new McpSchema.CallToolResult(
+                        List.of(new McpSchema.TextContent(
+                            "Unexpected error during OCEL conversion: " + e.getMessage())),
+                        true, null, null);
+                }
             }
         );
     }

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772220575113892714,
+  "timestamp_rfc": "2026-02-27T19:29:35.113892714Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/how-to/build/add-maven-module.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "2dc07c5770de3430c0f3218465b57062cef1aa6917481b7f31edff4b32934b39",
+  "delta_hash": "6dc1d8a301858c222382d68f54f141a9ddcd98f40fffbb56e0ac2f3059a510f2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Add a New Maven Module",
+        "change": "Added"
+      }
+    }
+  ]
+}

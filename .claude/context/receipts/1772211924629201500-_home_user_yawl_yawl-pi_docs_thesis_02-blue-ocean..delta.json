@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772211924629201500,
+  "timestamp_rfc": "2026-02-27T17:05:24.629201500Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/02-blue-ocean.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "af984844d4721817ae125cb3d0e9513cf6fb1b07d0046f827265a7b4e543cc35",
+  "delta_hash": "9162cae77999fe92fda6858b258af8736ce80752dca18b35b7906f6cefb07df1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Chapter 2 — Blue Ocean: Creating Uncon",
+        "change": "Added"
+      }
+    }
+  ]
+}

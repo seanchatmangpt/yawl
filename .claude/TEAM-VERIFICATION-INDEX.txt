@@ -1,0 +1,235 @@
+================================================================================
+  YAWL BUILD SYSTEM VERIFICATION TEAM — Complete Package
+  Team ID: τ-build-verification-synthesis
+  Status: READY FOR EXECUTION
+================================================================================
+
+DELIVERABLES SUMMARY
+====================
+
+This package contains 6 documents designed to launch a 5-engineer verification
+team for comprehensive build system consistency audit. The team will verify that:
+- dx.sh CLI implementation
+- pom.xml module organization  
+- reactor.json canonical ordering
+- DEFINITION-OF-DONE.md quality gates
+- Mermaid diagrams (if present)
+...are all consistent with each other and with 15 new Diátaxis documentation.
+
+CORE DOCUMENTS (in recommended reading order)
+==============================================
+
+1. README-TEAM-VERIFICATION.md
+   - START HERE if you're new to this team
+   - Quick overview of what you're getting
+   - Pre-team checklist
+   - How to use each document
+
+2. TEAM-VERIFICATION-VISUAL.md
+   - Visual diagrams of 5 quantums
+   - Integration point flowcharts
+   - Source of truth hierarchy
+   - Execution timeline
+   - Conflict resolution decision trees
+   → USE: Team briefing, visual reference during execution
+
+3. TEAM-VERIFICATION-STRUCTURE.json
+   - Complete formal specification
+   - All 5 quantums with detailed descriptions
+   - Expected findings for each quantum
+   - Success criteria and integration points
+   - Consolidation strategy
+   → USE: Reference document, formal spec
+
+4. TEAM-VERIFICATION-QUICK-REF.yaml
+   - Condensed cheat sheet for each quantum
+   - Engineer checklists (succinct version)
+   - Key files to examine per quantum
+   - Integration point alignment rules
+   → USE: Hand to each engineer (easier than JSON)
+
+5. TEAM-VERIFICATION-ASSIGNMENTS.md
+   - Detailed task assignments for Engineers A-E
+   - Full checklists (specific items to verify)
+   - Evidence collection guidance
+   - Integration point explanations
+   - Lead consolidation workflow
+   → USE: Main execution document (give each engineer their section)
+
+6. LEAD-VERIFICATION-BRIEFING.md
+   - Your role as lead (pre-team, during, post-team)
+   - Integration point validation rules
+   - Synthesis report template
+   - Conflict resolution decision matrix
+   - Timeline and success criteria
+   → USE: Your personal playbook
+
+THE 5 ORTHOGONAL QUANTUMS
+=========================
+
+QUANTUM 1: Reactor Order & Dependency Graph (Engineer A, 25 min)
+  Focus: pom.xml vs reactor.json module sequence, topological sort, cycles
+  Key Files: pom.xml (61-81), reactor.json, DEFINITION-OF-DONE.md §3.1
+  Success: 19 modules verified, dependencies valid, no cycles
+  Integration: Points A, C
+
+QUANTUM 2: CLI Flags & Environment Variables (Engineer B, 22 min)
+  Focus: dx.sh command parsing, env vars, Java 25 enforcement
+  Key Files: dx.sh (entire), dx-workflow.md
+  Success: All CLI modes documented, env vars match implementation
+  Integration: Point C
+
+QUANTUM 3: Parallel Build Groups & Critical Path (Engineer C, 25 min)
+  Focus: -T 1.5C parallelism, layer structure, critical path, <90s target
+  Key Files: reactor.json, DEFINITION-OF-DONE.md §3.1, dx-workflow.md
+  Success: Layers enable parallel builds, critical path identified
+  Integration: Points A, B, C
+
+QUANTUM 4: Build Profiles & Quality Gates (Engineer D, 28 min)
+  Focus: 6 Maven profiles (java25, agent-dx, ci, analysis, security, prod)
+  Key Files: pom.xml (profiles), DEFINITION-OF-DONE.md §2-3
+  Success: All 6 profiles exist, 7 gates mapped to commands
+  Integration: Points A, B
+
+QUANTUM 5: Definition of Done & Enforcement (Engineer E, 30 min)
+  Focus: 7 gates, H-set (8 patterns), Q-invariant, enforcement via hooks
+  Key Files: DEFINITION-OF-DONE.md (all), HYPER_STANDARDS.md, hyper-validate.sh
+  Success: All 7 gates measurable, H-set integrated, Q-invariant enforced
+  Integration: Points B, C
+
+INTEGRATION POINTS
+==================
+
+POINT A: Reactor Order Canonical Form
+  Engineers: A (reactor), C (parallelism), D (gates)
+  Question: Do pom.xml, reactor.json, DEFINITION-OF-DONE all agree?
+  Success: Same 19-module sequence, same layers, no cycles
+
+POINT B: Gate Execution Commands & Timing
+  Engineers: C (parallelism), D (profiles), E (gates)
+  Question: Do gates use correct profiles/parallelism within <90s?
+  Success: -T 1.5C flag used, correct profile, timing achievable
+
+POINT C: CLI Argument Contracts & Parallelism
+  Engineers: B (CLI), C (parallelism), A (reactor)
+  Question: Does dx.sh -pl correctly invoke mvn -pl -amd?
+  Success: -amd flag included, affected modules included, order respected
+
+EXPECTED OUTPUTS
+================
+
+After team execution (~50 min), you'll have:
+
+✓ 5 engineer verification reports (with findings, evidence, status)
+✓ COMPREHENSIVE_VERIFICATION_REPORT.md (lead synthesis, full evidence trail)
+✓ Integration point alignment verification (Points A, B, C)
+✓ End-to-end build validation (dx.sh all green)
+✓ Inconsistency manifest (any issues identified + fix priority)
+✓ Git commit with artifacts and session URL
+
+TIMELINE
+========
+
+T+0 min   : Lead briefs team on 5 quantums and integration points
+T+5 min   : All 5 engineers start parallel work
+T+35 min  : Engineers report findings
+T+40 min  : Lead validates integration points
+T+45 min  : Lead synthesizes COMPREHENSIVE_VERIFICATION_REPORT.md
+T+50 min  : dx.sh all validation + commit
+
+SUCCESS CRITERIA
+================
+
+✓ All 5 engineers report GREEN on their checklists
+✓ Integration points A, B, C show consensus (no conflicts)
+✓ dx.sh all exits 0 locally (end-to-end validation)
+✓ Inconsistency manifest is empty (or YELLOW items only)
+✓ Artifacts committed with team ID and session URL
+
+QUICK START FOR LEAD
+====================
+
+1. Pre-team (5 min):
+   - Run: bash scripts/observatory/observatory.sh
+   - Verify: dx.sh all passes locally
+   - Brief: All 5 engineers on their assignments
+
+2. During (30 min):
+   - Monitor: Engineer progress (status every 5-10 min)
+   - Watch: For blockers or RED findings
+   - Flag: Unexpected conflicts
+
+3. Post-team (15-20 min):
+   - Collect: Engineer reports
+   - Validate: Integration points A, B, C
+   - Synthesize: COMPREHENSIVE_VERIFICATION_REPORT.md
+   - Validate: dx.sh all green
+   - Commit: Artifacts
+
+FILE STRUCTURE
+==============
+
+All team verification documents:
+  /home/user/yawl/.claude/
+  ├── README-TEAM-VERIFICATION.md
+  ├── TEAM-VERIFICATION-STRUCTURE.json
+  ├── TEAM-VERIFICATION-QUICK-REF.yaml
+  ├── TEAM-VERIFICATION-ASSIGNMENTS.md
+  ├── TEAM-VERIFICATION-VISUAL.md
+  ├── LEAD-VERIFICATION-BRIEFING.md
+  ├── TEAM-VERIFICATION-INDEX.txt (this file)
+  └── receipts/ (artifacts will be saved here)
+
+HOW TO LAUNCH
+=============
+
+1. Start with README-TEAM-VERIFICATION.md
+2. Review TEAM-VERIFICATION-VISUAL.md for team structure
+3. Use TEAM-VERIFICATION-ASSIGNMENTS.md to brief engineers
+4. Consult LEAD-VERIFICATION-BRIEFING.md when making decisions
+5. Reference TEAM-VERIFICATION-QUICK-REF.yaml for quick lookups
+6. Keep TEAM-VERIFICATION-STRUCTURE.json as formal spec
+
+SUPPORT
+=======
+
+Q: "What should Engineer A look for?"
+A: TEAM-VERIFICATION-ASSIGNMENTS.md section "Engineer A"
+
+Q: "How do I know if there's a conflict at Integration Point B?"
+A: LEAD-VERIFICATION-BRIEFING.md section "Integration Point B"
+
+Q: "What's the exact checklist for Quantum 3?"
+A: TEAM-VERIFICATION-QUICK-REF.yaml section "quantum_3"
+
+Q: "What's the consolidation strategy?"
+A: TEAM-VERIFICATION-STRUCTURE.json section "consolidation"
+
+Q: "Can I see a visual of the 5 quantums?"
+A: TEAM-VERIFICATION-VISUAL.md "Quantum Decomposition"
+
+Q: "What if dx.sh all fails?"
+A: LEAD-VERIFICATION-BRIEFING.md section "Key Decision Points"
+
+ESTIMATED COST & TIMING
+=======================
+
+Duration: 45-50 minutes
+Cost: $3-4C (5 engineers × 25-30 min parallel + 15 min consolidation)
+ROI: Comprehensive build system consistency verified
+
+NEXT STEPS
+==========
+
+1. Read README-TEAM-VERIFICATION.md
+2. Review TEAM-VERIFICATION-VISUAL.md
+3. Form team with TEAM-VERIFICATION-ASSIGNMENTS.md
+4. Execute verification (45-50 min)
+5. Generate COMPREHENSIVE_VERIFICATION_REPORT.md
+6. Commit artifacts
+
+================================================================================
+Generated: 2026-02-27
+Team ID: τ-build-verification-synthesis
+Status: READY FOR EXECUTION
+================================================================================

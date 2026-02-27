@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214919715687762,
+  "timestamp_rfc": "2026-02-27T17:55:19.715687762Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/optimization/ProcessScheduler.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9a2cf485ac4ca0c99b83f186fc4c3b78bedaf323a604aa85ca69edb0edd79de1",
+  "delta_hash": "3290742302b81d49341a43b32fae399bf9f4b050e92374dd35cd2c73624c2290",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "// Sort by duration",
+        "change": "Added"
+      }
+    }
+  ]
+}

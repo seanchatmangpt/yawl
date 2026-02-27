@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772165855190327162,
+  "timestamp_rfc": "2026-02-27T04:17:35.190327162Z",
+  "session_id": "cd619772-2869-459b-9a7b-60543d7d1869",
+  "file_path": "/root/.claude/plans/curious-gliding-shore.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "911ac027c0dea6f309666e4ba45a3285d3c10116f19eef13d945a7f1b220d87e",
+  "delta_hash": "3669bed966bf819dce8423865bb40b09edbbeaa7ce2061e525c71eb9f224e1b7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "Entire",
+        "change": "Added"
+      }
+    }
+  ]
+}

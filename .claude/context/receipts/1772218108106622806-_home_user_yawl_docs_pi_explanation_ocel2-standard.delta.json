@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218108106622806,
+  "timestamp_rfc": "2026-02-27T18:48:28.106622806Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/explanation/ocel2-standard.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "26bcc62fbcca3357004d3007a97b0dfa89107e2fbc35c39738765d9df70ca1bd",
+  "delta_hash": "a39a756bebd70bea62827ec37e865920ce6b50b028a685b201225cf3db8e10b8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# OCEL2 Standard — Object-Centric Event ",
+        "change": "Added"
+      }
+    }
+  ]
+}

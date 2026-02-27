@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218315471499925,
+  "timestamp_rfc": "2026-02-27T18:51:55.471499925Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/how-to/register-onnx-model.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "affea09fe9967a3d2c1f16ae402b58b79c0a4428f6cdcc04d5b933400d463eb4",
+  "delta_hash": "5cba6c3fe9e3896a68b551537086b9343ca78e420b11ea977028e87af32f746b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# How to Register an ONNX Model",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -114,6 +114,9 @@ public class AlignmentOptimizer {
                     i--;
                     j--;
                 } else if (dp[i][j] == dp[i - 1][j - 1] + 1) {
+                    // Substitution: counts as both moveOnLog and moveOnModel
+                    moveOnLog++;
+                    moveOnModel++;
                     i--;
                     j--;
                 } else if (dp[i][j] == dp[i - 1][j] + 1) {

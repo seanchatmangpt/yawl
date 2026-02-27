@@ -95,10 +95,19 @@ mvn -T 1.5C clean compile
 ```
 
 **Conditions**:
-1. All 14 modules compile in reactor order:
-   `yawl-parent -> yawl-utilities -> yawl-elements -> yawl-authentication -> yawl-engine
-   -> yawl-stateless -> yawl-resourcing -> yawl-worklet -> yawl-scheduling -> yawl-security
-   -> yawl-integration -> yawl-monitoring -> yawl-webapps -> yawl-control-panel`
+1. All 19 modules compile in topological reactor order (see `docs/build-sequences.md`
+   and `docs/v6/diagrams/facts/reactor.json` for the full FM7 poka-yoke reference):
+   ```
+   Layer 0 (parallel): yawl-utilities, yawl-security, yawl-graalpy, yawl-graaljs
+   Layer 1 (parallel): yawl-elements, yawl-ggen, yawl-graalwasm
+   Layer 2:            yawl-engine
+   Layer 3:            yawl-stateless
+   Layer 4 (parallel): yawl-authentication, yawl-scheduling, yawl-monitoring,
+                       yawl-worklet, yawl-control-panel, yawl-integration, yawl-webapps
+   Layer 5 (parallel): yawl-pi, yawl-resourcing
+   Layer 6:            yawl-mcp-a2a-app
+   ```
+   Note: `yawl-authentication` depends on `yawl-engine` and must compile **after** it.
 2. No compiler warnings treated as errors (when `-Xlint:all` is active)
 3. Parallel compilation via `-T 1.5C` succeeds (no module dependency cycles)
 4. Target time: < 90 seconds (clean build)

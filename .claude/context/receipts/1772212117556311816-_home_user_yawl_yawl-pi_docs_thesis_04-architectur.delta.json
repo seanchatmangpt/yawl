@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212117556311816,
+  "timestamp_rfc": "2026-02-27T17:08:37.556311816Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/04-architecture.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d299911f64a50106be992e4fccb14c0a88fb0c34a31efd700939476c369ae46f",
+  "delta_hash": "df04a8a7dd4788c9d5e4ac01ebb5ffe4064a1dad8fa6221d7750c50eff4457bb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Chapter 4 — Architecture: The YAWL PI ",
+        "change": "Added"
+      }
+    }
+  ]
+}

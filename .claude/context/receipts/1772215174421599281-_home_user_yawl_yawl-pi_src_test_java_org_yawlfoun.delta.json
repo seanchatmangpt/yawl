@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215174421599281,
+  "timestamp_rfc": "2026-02-27T17:59:34.421599281Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/CaseOutcomePredictorTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "51e942d289763b7cd7f6a0c7105aa754cbdbc6439c596d3613356a3d7c1a42cd",
+  "delta_hash": "cfafd8b1b770be776a80dcc59727c7dc0494759f02dc7e23b980ccecccfd7e93",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ds.setURL",
+        "change": "Added"
+      }
+    }
+  ]
+}

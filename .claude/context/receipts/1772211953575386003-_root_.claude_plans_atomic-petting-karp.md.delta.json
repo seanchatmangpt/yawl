@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772211953575386003,
+  "timestamp_rfc": "2026-02-27T17:05:53.575386003Z",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "file_path": "/root/.claude/plans/atomic-petting-karp.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b860921c9a619d6fa1ba8edfc3c92085d264cad7148b5146bc55f87bdd1c67b2",
+  "delta_hash": "c676dd65f3bc356e54592e4f2f0f53c14e5343d5aac21c309ba921bdd14c1b2b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "# Plan: PhD Thesis",
+        "change": "Added"
+      }
+    }
+  ]
+}

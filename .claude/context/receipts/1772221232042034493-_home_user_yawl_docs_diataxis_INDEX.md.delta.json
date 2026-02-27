@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221232042034493,
+  "timestamp_rfc": "2026-02-27T19:40:32.042034493Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5ce339499bee67cdbd790a879ee4286886df3664dab13ab01e1138274ae0b21a",
+  "delta_hash": "2f121569af44288e949ad2438033118c6cd57ffe2583a8b7853f813b03d5282f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Security",
+        "change": "Added"
+      }
+    }
+  ]
+}

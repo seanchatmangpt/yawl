@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772222046311136439,
+  "timestamp_rfc": "2026-02-27T19:54:06.311136439Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/.claude/TEAM-VERIFICATION-VISUAL.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0e8c6279257d19d28c0a1931578f10578151045f17179ef645afe2db9b5b8fbe",
+  "delta_hash": "3ca7211acda9876d5b2bec85d50e3f8e5b43231bc08cd6070dc999e0b94935d1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Team Verification: Visual Architecture",
+        "change": "Added"
+      }
+    }
+  ]
+}

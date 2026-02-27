@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772221242748947691,
+  "timestamp_rfc": "2026-02-27T19:40:42.748947691Z",
+  "session_id": "2ceb9e3d-5ad3-4ddc-a662-00ac91753aee",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7f650e914c61dfc3882c2cf08aee08bb1df14e18849f16621d94b9e09ab51273",
+  "delta_hash": "c9c17a99474977a35250b040fc39f302ff404a127b23d0f104ac648a2fb090c8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### Build & Infrastructure",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772218175682523677,
+  "timestamp_rfc": "2026-02-27T18:49:35.682523677Z",
+  "session_id": "f6fe9e36-6da9-42eb-a608-79924c6b784b",
+  "file_path": "/home/user/yawl/docs/pi/reference/config.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9eaf364fa48c45c447a7b9ea129ea40be48dec82ea66b1ca1ed13facc7d5041b",
+  "delta_hash": "de655a222ab7cbfe82bb60c50d111f366b20d7d94e906965fd51d4fad2aec8cf",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record Tpot2Config(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Configuration Reference",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public record PIFacadeConfig(",
+        "change": "Added"
+      }
+    }
+  ]
+}

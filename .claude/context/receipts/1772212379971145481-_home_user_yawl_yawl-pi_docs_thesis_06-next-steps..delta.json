@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772212379971145481,
+  "timestamp_rfc": "2026-02-27T17:12:59.971145481Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/06-next-steps.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "004d607c6cddf15a0f4117125a8cd3c2dc5fcaa24e14efa449410ec57c332fe4",
+  "delta_hash": "5def7b21da29d8712deedff0c10261292b225d40eebe5dd166f6836fed23f0f3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Chapter 6 — Next Steps: Research Agend",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Interface",
+        "name": "AdaptationOutcomeRecorder",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "ClosedLoopAutoMl",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public Tpot2Result retrain(String taskNa",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "FederatedModelAggregator",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "public void applyToRegistry(OnnxWeights ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "OnnxWeights",
+        "change": "Added"
+      }
+    }
+  ]
+}

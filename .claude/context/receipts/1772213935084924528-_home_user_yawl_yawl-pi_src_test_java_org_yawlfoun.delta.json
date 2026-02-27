@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772213935084924528,
+  "timestamp_rfc": "2026-02-27T17:38:55.084924528Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/predictive/ProcessMiningTrainingDataExtractorTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "45b56838300363c4cc79f28d77f7d95c93be1ff4474607adfc887bb4f1105ec1",
+  "delta_hash": "eaa69ba33d9ca890f076728a4bf5a9d7da2ac02dc962ce46cb4ffab1dfddb618",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private ProcessMiningTrainingDataExtract",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private WorkflowEventStore eventStore;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    }
+  ]
+}

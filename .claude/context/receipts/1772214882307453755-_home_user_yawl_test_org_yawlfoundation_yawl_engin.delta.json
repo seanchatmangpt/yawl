@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772214882307453755,
+  "timestamp_rfc": "2026-02-27T17:54:42.307453755Z",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "59e1fad7e0835922a643bf09a3989a5194e9804c0e03fe7765770e03e34687db",
+  "delta_hash": "40b92f3e397d142ce0b8cfbb55b6eab875fd3a7edc75c190d341b4b81ccec47c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "rt.gc",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215499312576110,
+  "timestamp_rfc": "2026-02-27T18:04:59.312576110Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f5012b6329173ac09dc354ac3487401eb218ca56c9e5597c36895d7dacaead73",
+  "delta_hash": "5596d6ebdcb47feb325f8b040527235075166c05f64283f441ea6796f2e14a49",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "### 8.5 OCEL 2.0 as the YAWL Data Standa",
+        "change": "Added"
+      }
+    }
+  ]
+}

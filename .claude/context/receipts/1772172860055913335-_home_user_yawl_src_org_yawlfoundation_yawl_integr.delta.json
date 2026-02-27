@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172860055913335,
+  "timestamp_rfc": "2026-02-27T06:14:20.055913335Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/a2a/skills/TemporalForkSkill.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "838eac9cd5421d400e41a00ecb400704508ca4e7a6ff10e56a2a5f5d6dd21512",
+  "delta_hash": "923019339a965ac2d16379105c196ab0dde432974821ee6a1a1e1f3d84159013",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "TemporalForkEngine engine = TemporalFork",
+        "change": "Added"
+      }
+    }
+  ]
+}

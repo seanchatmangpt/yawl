@@ -29,6 +29,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,6 +95,9 @@ public final class WorkflowEventStore {
     private static final String SELECT_MAX_SEQ =
         "SELECT COALESCE(MAX(seq_num), -1) FROM workflow_events WHERE case_id = ?";
 
+    private static final String SELECT_CASE_IDS_FOR_SPEC =
+        "SELECT DISTINCT case_id FROM workflow_events WHERE spec_id = ? AND case_id IS NOT NULL ORDER BY case_id";
+
     private final DataSource   dataSource;
     private final ObjectMapper objectMapper;
 
@@ -101,12 +105,47 @@ public final class WorkflowEventStore {
      * Construct event store backed by the given JDBC data source.
      *
      * @param dataSource JDBC data source with a connection pool (must not be null)
+     * @throws EventStoreException if schema initialization fails
      */
-    public WorkflowEventStore(DataSource dataSource) {
+    public WorkflowEventStore(DataSource dataSource) throws EventStoreException {
         this.dataSource   = Objects.requireNonNull(dataSource, "dataSource must not be null");
         this.objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        initializeSchema();
+    }
+
+    /**
+     * Initialize database schema on first use. Creates the workflow_events table if needed.
+     *
+     * @throws EventStoreException if schema initialization fails
+     */
+    private void initializeSchema() throws EventStoreException {
+        // Try creating table with minimal schema first - if it fails due to exists, that's OK
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE TABLE IF NOT EXISTS workflow_events (" +
+                "id BIGINT PRIMARY KEY AUTO_INCREMENT," +
+                "event_id VARCHAR(36) NOT NULL UNIQUE," +
+                "spec_id VARCHAR(255) NOT NULL," +
+                "case_id VARCHAR(255)," +
+                "seq_num BIGINT NOT NULL," +
+                "event_type VARCHAR(64) NOT NULL," +
+                "event_timestamp TIMESTAMP NOT NULL," +
+                "schema_version VARCHAR(16) NOT NULL DEFAULT '1.0'," +
+                "payload_json TEXT NOT NULL," +
+                "UNIQUE (case_id, seq_num)" +
+                ")");
+            log.debug("Event store schema initialized");
+        } catch (SQLException e) {
+            // If "already exists" error, table is fine - ignore it
+            if (e.getMessage() != null && e.getMessage().contains("already exists")) {
+                log.debug("Event store table already exists");
+                return;
+            }
+            // For any other error, throw it
+            throw new EventStoreException("Failed to initialize event store schema", e);
+        }
     }
 
     /**
@@ -296,6 +335,32 @@ public final class WorkflowEventStore {
         } catch (SQLException e) {
             throw new EventStoreException(
                     "Failed to load events for case " + caseId + " since seq " + afterSeqNum, e);
+        }
+    }
+
+    /**
+     * Load all distinct case IDs recorded for a given specification.
+     *
+     * @param specId specification identifier (must not be blank)
+     * @return sorted list of distinct case IDs (may be empty)
+     * @throws EventStoreException if the read fails
+     */
+    public List<String> loadCaseIds(String specId) throws EventStoreException {
+        if (specId == null || specId.isBlank()) {
+            throw new IllegalArgumentException("specId must not be blank");
+        }
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_CASE_IDS_FOR_SPEC)) {
+            stmt.setString(1, specId);
+            List<String> caseIds = new ArrayList<>();
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    caseIds.add(rs.getString("case_id"));
+                }
+            }
+            return caseIds;
+        } catch (SQLException e) {
+            throw new EventStoreException("Failed to load case IDs for spec " + specId, e);
         }
     }
 

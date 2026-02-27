@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172020509266407,
+  "timestamp_rfc": "2026-02-27T06:00:20.509266407Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/root/.claude/plans/curious-gliding-shore.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b497a7930b4d72ccaded0fb5851b8dd8a2039caefdb4fcf038831fd4e0404820",
+  "delta_hash": "3179c8ee8c404191a38b229d6b3aecedffcb49747ad1655b112e46ac8ac9a1e6",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Blue Ocean 80/20: Three More No-LLM MC",
+        "change": "Added"
+      }
+    }
+  ]
+}

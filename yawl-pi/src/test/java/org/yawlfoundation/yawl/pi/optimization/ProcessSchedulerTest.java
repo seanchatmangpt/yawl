@@ -83,14 +83,14 @@ class ProcessSchedulerTest {
         assertNotNull(result);
         assertEquals(3, result.scheduledStartTimes().size());
 
-        // Task2 (200ms) starts at baseTime
-        assertEquals(baseTime, result.scheduledStartTimes().get("task2"));
+        // SPT: task1 (100ms) first, then task3 (150ms), then task2 (200ms)
+        assertEquals(baseTime, result.scheduledStartTimes().get("task1"));
 
-        // Task3 (150ms) starts after task2
-        assertEquals(baseTime.plusMillis(200), result.scheduledStartTimes().get("task3"));
+        // Task3 (150ms) starts after task1
+        assertEquals(baseTime.plusMillis(100), result.scheduledStartTimes().get("task3"));
 
-        // Task1 (100ms) starts after task3
-        assertEquals(baseTime.plusMillis(350), result.scheduledStartTimes().get("task1"));
+        // Task2 (200ms) starts after task3
+        assertEquals(baseTime.plusMillis(250), result.scheduledStartTimes().get("task2"));
     }
 
     @Test
@@ -176,9 +176,9 @@ class ProcessSchedulerTest {
 
         assertNotNull(result);
         assertEquals(3, result.orderedTaskIds().size());
-        // All have same duration, so any order is valid
-        assertEquals(300L, result.scheduledStartTimes().get(result.orderedTaskIds().get(2))
-            .until(baseTime.plusMillis(300), java.time.temporal.ChronoUnit.MILLIS));
+        // All have same duration, so any order is valid; the third task starts at baseTime+200ms
+        assertEquals(baseTime.plusMillis(200),
+            result.scheduledStartTimes().get(result.orderedTaskIds().get(2)));
     }
 
     @Test

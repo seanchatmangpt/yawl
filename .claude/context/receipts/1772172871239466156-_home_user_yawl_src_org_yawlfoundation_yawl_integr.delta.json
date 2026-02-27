@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172871239466156,
+  "timestamp_rfc": "2026-02-27T06:14:31.239466156Z",
+  "session_id": "90fe3131-1aab-4aac-bb46-2a0aa583c015",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlAdaptationToolSpecifications.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "25218e851e6ce1d9fcd33a7944ddabf8bc0d010e98b5d6d2cf2fd4d1e4b98237",
+  "delta_hash": "57557a4028c21ada686cdfe8e73313b0105486564e5c6c8df75702556adc2b27",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}

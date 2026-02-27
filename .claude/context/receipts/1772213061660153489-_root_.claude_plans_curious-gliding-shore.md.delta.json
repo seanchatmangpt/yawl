@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213061660153489,
+  "timestamp_rfc": "2026-02-27T17:24:21.660153489Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/root/.claude/plans/curious-gliding-shore.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5fca6e1a4e6737a7f25bb63c87079875cbf73acea45192118a747c3599ad1ed2",
+  "delta_hash": "dbaffbadf610b91f950e5859f1be00ee63641f24cefc50171982ebf6c19fce06",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# OCPM Sprint: \"No AI Without PI\" — Obje",
+        "change": "Added"
+      }
+    }
+  ]
+}
