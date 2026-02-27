@@ -1,9 +1,9 @@
 {
   "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
-  "started_at": "2026-02-27T20:03:07.945777102Z",
-  "ended_at": "2026-02-27T20:03:08.236560343Z",
-  "receipt_count": 228,
-  "chain_hash": "188dc77b853484ce38c893d6e288747c1567ca3438fd82d8ecb2fe58c18de0a3",
+  "started_at": "2026-02-27T20:03:40.971733228Z",
+  "ended_at": "2026-02-27T20:03:41.172876628Z",
+  "receipt_count": 230,
+  "chain_hash": "1173723852f40767a5e267fc0d6e5100673afaa1ca0004fe94b6576215b9a00a",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -11267,6 +11267,79 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "private boolean persisting = false;",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222610205986179,
+      "timestamp_rfc": "2026-02-27T20:03:30.205986179Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/explanation/flow-api-event-bus.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "9e07313a30eeb41ffa6f943e86900e8d6f72cf6f0fff15535c9a2f406b53e1f6",
+      "delta_hash": "89c0ee4635e07d1fe7d5f1a0ba2388d32cb50fbf8a83dcc956efbcbf217a330b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "FlowWorkflowEventBus",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private final EnumMap<YEventType, Submis",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Why Flow API Is the Default Event Bus,",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "WorkflowEventBus",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222616041372087,
+      "timestamp_rfc": "2026-02-27T20:03:36.041372087Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/how-to/operations/tune-hpa-for-cases.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "fd88a4393a16899edc3a3531aa47e32a6b5a99b8a0dde468229591d14e51e3ea",
+      "delta_hash": "906384a00d54489bc8be78a5118fae35038aecce38e7d9c5db5efda317cd1ebb",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# How to Tune Kubernetes HPA for Workflo",
             "change": "Added"
           }
         }
