@@ -1,0 +1,152 @@
+---
+team_id: "τ-build-verification-synthesis"
+team_size: 5
+status: "READY_FOR_EXECUTION"
+duration_minutes: 45-50
+cost: "$3-4C"
+
+quantums:
+  quantum_1:
+    title: "Reactor Order & Dependency Graph"
+    engineer: "Engineer A"
+    duration: 25 min
+    focus: "pom.xml vs reactor.json consistency, module order, topological sort, cycles"
+    checklist:
+      - "19 modules in pom.xml match reactor.json (yawl-utilities, yawl-elements, yawl-authentication, ...)"
+      - "Module order respects dependencies (depends_on always precedes dependent in order)"
+      - "No cyclical dependencies detected"
+      - "DEFINITION-OF-DONE.md Layer 0-6 match reactor.json layer assignments"
+      - "dx-workflow.md 'Build Order' section matches reactor.json positions"
+    key_files:
+      - "/home/user/yawl/pom.xml (lines 61-81)"
+      - "/home/user/yawl/docs/v6/diagrams/facts/reactor.json"
+      - "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (§3.1 G_compile)"
+      - "/home/user/yawl/.claude/rules/build/dx-workflow.md"
+    success_metric: "All 19 modules accounted for, topological sort valid, zero cycles"
+    pass_criteria: "All 5 checklist items GREEN"
+
+  quantum_2:
+    title: "CLI Flags & Environment Variables"
+    engineer: "Engineer B"
+    duration: 22 min
+    focus: "dx.sh command interface, argument parsing, env var behavior"
+    checklist:
+      - "dx.sh supports all documented command formats: compile, test, all, -pl mod1,mod2, compile all, test all"
+      - "All env vars (DX_OFFLINE, DX_FAIL_AT, DX_VERBOSE, DX_CLEAN) documented with correct defaults"
+      - "Java 25 enforcement block correctly identifies Temurin 25 and sets JAVA_HOME"
+      - "Offline/online mode behavior matches documentation (auto-detect default)"
+      - "Exit codes documented and consistent with behavior"
+    key_files:
+      - "/home/user/yawl/scripts/dx.sh (entire, ~200 lines)"
+      - "/home/user/yawl/.claude/rules/build/dx-workflow.md (CLI section)"
+    success_metric: "All CLI modes documented, env vars match implementation, Java 25 enforced"
+    pass_criteria: "All 5 checklist items GREEN"
+
+  quantum_3:
+    title: "Parallel Build Groups & Critical Path"
+    engineer: "Engineer C"
+    duration: 25 min
+    focus: "Parallelism correctness, -T 1.5C flag, layer-based build strategy, critical path"
+    checklist:
+      - "1.5x CPU parallelism (-T 1.5C) clearly explained in documentation and consistently used"
+      - "All modules in same layer have zero inter-dependencies (enables parallel builds)"
+      - "Critical path identified: longest dependency chain from root to yawl-mcp-a2a-app"
+      - "<90 second clean build target is feasible given parallelization and critical path"
+      - "Incremental vs full build parallelism strategy documented"
+    key_files:
+      - "/home/user/yawl/docs/v6/diagrams/facts/reactor.json (layer definitions)"
+      - "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (§3.1 <90s target)"
+      - "/home/user/yawl/.claude/rules/build/dx-workflow.md (Build Profiles, Maven Commands)"
+      - "/home/user/yawl/scripts/dx.sh (-T 1.5C usage)"
+    success_metric: "No dependency violations in parallel groups, <90s target validated, critical path clear"
+    pass_criteria: "All 5 checklist items GREEN"
+
+  quantum_4:
+    title: "Build Profiles & Quality Gates"
+    engineer: "Engineer D"
+    duration: 28 min
+    focus: "Maven profiles (java25, agent-dx, ci, analysis, security, prod), 7 quality gates"
+    checklist:
+      - "All 6 profiles exist in pom.xml with documented effects in dx-workflow.md"
+      - "G_compile gate: mvn -T 1.5C clean compile succeeds with zero warnings"
+      - "G_test gate: mvn -T 1.5C clean test succeeds with 100% pass rate"
+      - "G_guard gate: mapped to hyper-validate.sh or equivalent (14 anti-patterns)"
+      - "G_analysis gate: 'analysis' profile runs SpotBugs, PMD, Checkstyle with zero violations"
+      - "G_security gate: 'security' profile enforces SBOM, OWASP, TLS 1.3"
+      - "Version properties are centralized in parent POM (not overridden by profiles)"
+    key_files:
+      - "/home/user/yawl/pom.xml (all <profile> sections and <properties>)"
+      - "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (§2.1 Gate Summary Table, §3 Gate Specs)"
+      - "/home/user/yawl/.claude/rules/build/dx-workflow.md (Build Profiles)"
+    success_metric: "All 7 gates measurable and enforceable, profiles match documentation"
+    pass_criteria: "All 7 checklist items GREEN"
+
+  quantum_5:
+    title: "Definition of Done & Enforcement"
+    engineer: "Engineer E"
+    duration: 30 min
+    focus: "DoD completeness, H-set/Q-invariant definitions, hook integration, acceptance criteria"
+    checklist:
+      - "All 7 gates (G_compile through G_release) have measurable predicates"
+      - "Gate ordering matches partial order: G_compile < G_test < G_guard < G_analysis < G_security < G_documentation < G_release"
+      - "H-set (8 items) defined and mapped to hyper-validate.sh checks: {TODO, FIXME, mock, stub, fake, empty_return, silent_fallback, lie}"
+      - "Q-invariant documented: every public method is real_impl OR throws UnsupportedOperationException"
+      - "hyper-validate.sh hook blocks on H-set violations (exit code 2)"
+      - "Package-info.java requirement for G_documentation gate is documented and enforceable"
+      - "G_release gate includes integration tests and performance baseline"
+    key_files:
+      - "/home/user/yawl/docs/v6/DEFINITION-OF-DONE.md (entire document)"
+      - "/home/user/yawl/.claude/HYPER_STANDARDS.md (H-set, Q-invariant)"
+      - "/home/user/yawl/.claude/hooks/hyper-validate.sh (pattern checks)"
+      - "/home/user/yawl/CLAUDE.md (Sections H, Q)"
+    success_metric: "All 7 gates defined, H-set and Q-invariant integrated into automation"
+    pass_criteria: "All 7 checklist items GREEN"
+
+integration_points:
+  A:
+    name: "Reactor Order Canonical Form"
+    quantums: ["Quantum 1", "Quantum 3", "Quantum 4"]
+    expected_alignment: "All quantums report same module order, layer assignments, dependency constraints"
+    conflict_resolution: "reactor.json is FM7 poka-yoke (canonical). Update pom.xml if differs."
+  B:
+    name: "Gate Execution Commands & Timing"
+    quantums: ["Quantum 3", "Quantum 4", "Quantum 5"]
+    expected_alignment: "Each gate command uses -T 1.5C parallelism, correct profile, consistent with <90s budget"
+    conflict_resolution: "If gate timing exceeds budget, adjust parallelism or profile selection."
+  C:
+    name: "CLI Argument Contracts & Parallelism"
+    quantums: ["Quantum 2", "Quantum 3", "Quantum 1"]
+    expected_alignment: "dx.sh -pl invokes mvn -pl -amd respecting reactor order and parallelism"
+    conflict_resolution: "If dx.sh violates reactor order, fix dx.sh implementation."
+
+consolidation:
+  lead_role: "Synthesize findings from 5 engineers into unified verification report"
+  steps:
+    - step: 1
+      action: "Collect individual reports (expect ~50 findings per engineer)"
+      output: "5 verification reports with status and evidence"
+    - step: 2
+      action: "Cross-check integration points A-C for alignment"
+      output: "Integration point consensus (GREEN if aligned, RED if conflicts)"
+    - step: 3
+      action: "Synthesize into COMPREHENSIVE_VERIFICATION_REPORT.md"
+      output: "Per-quantum status, integration points, inconsistency manifest"
+    - step: 4
+      action: "Run dx.sh all locally to validate end-to-end build"
+      output: "dx.sh all exits 0, all modules compile + test green"
+    - step: 5
+      action: "Commit verification artifacts"
+      output: "Single commit with evidence chain and session URL"
+  success_criteria:
+    - "All 5 engineers report GREEN"
+    - "Integration points A, B, C show consensus"
+    - "dx.sh all exits 0"
+    - "Inconsistency manifest is empty (or YELLOW only)"
+
+team_rules:
+  formation_prerequisite: "bash scripts/observatory/observatory.sh (refresh facts)"
+  communication: "Engineer sends status updates every 5-10 min; escalate blockers immediately"
+  pass_definition: "All 5 engineers GREEN on their checklists + integration points aligned"
+  fail_definition: "Any engineer RED or integration point conflicts"
+  escalation: "If RED or conflict: lead investigates and decides fix ownership"
+  messaging_protocol: "Post findings to team mailbox; lead synthesizes after all report"
