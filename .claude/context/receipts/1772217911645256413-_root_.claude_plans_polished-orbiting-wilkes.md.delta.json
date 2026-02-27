@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772217911645256413,
+  "timestamp_rfc": "2026-02-27T18:45:11.645256413Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/root/.claude/plans/polished-orbiting-wilkes.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0fee570dac4c2e53263feb809f2a7ada8f314cf72dfa071dc6462c1579020238",
+  "delta_hash": "7994146240a2cbce24f88c3a2666a0cdcbffad751e13a9016d980606c5c8d93b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# FMEA Stress Test + Engine Fixes",
+        "change": "Added"
+      }
+    }
+  ]
+}

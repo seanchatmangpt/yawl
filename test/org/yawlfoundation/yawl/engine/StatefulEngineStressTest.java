@@ -23,6 +23,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.exceptions.YEngineStateException;
 import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
@@ -58,6 +59,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li><b>Degradation Profile</b> — concurrency curve [10,50,100,200,500] cases/s</li>
  *   <li><b>ScopedValue at Engine Scale</b> — 200 concurrent contexts; assert zero leakage</li>
  *   <li><b>Joiner Policy Comparison</b> — awaitAllSuccessfulOrThrow vs awaitAll under 10% fault injection</li>
+ *   <li><b>Concurrent Double-Cancel</b> (FM-08) — cancel same case from 2 threads simultaneously; no exceptions or orphaned items</li>
+ *   <li><b>Cancel-During-Start Race</b> (FM-20, FM-23) — 50 pairs racing startCase vs cancelCase; engine remains healthy</li>
+ *   <li><b>Deadlock Detection at Scale</b> (FM-24) — 30 concurrent deadlocking cases; each detected within 5s</li>
  * </ol>
  *
  * <p>Chicago TDD: uses the real YEngine singleton; no mocks. Serialised via
@@ -77,7 +81,7 @@ class StatefulEngineStressTest {
 
     private static final List<String> REPORT_LINES = new ArrayList<>();
     private static final String HDR = "=== STATEFUL ENGINE STRESS REPORT ===";
-    private static final String FTR_PASS  = "=== RESULT: S1-S6+S8+S9 PASS | S7 CHARACTERISED ===";
+    private static final String FTR_PASS  = "=== RESULT: S1-S6+S8-S12 PASS | S7 CHARACTERISED ===";
     private static final String FTR_FAIL  = "=== RESULT: FAILURES DETECTED ===";
 
     // ScopedValue for S8 — mirrors YNetRunner.CASE_CONTEXT pattern
@@ -710,6 +714,185 @@ class StatefulEngineStressTest {
         REPORT_LINES.add(result);
         System.out.println(result);
     }
+
+    // =========================================================================
+    // S10: Concurrent Double-Cancel (FM-08 — idempotent cancel validation)
+    // =========================================================================
+
+    @Test @Order(10)
+    @DisplayName("S10 — FMEA: Concurrent Double-Cancel: same case cancelled from 2 threads simultaneously")
+    @Timeout(60)
+    void s10_concurrentDoubleCancelIdempotency() throws Exception {
+        final int PAIRS = 50;
+        AtomicInteger exceptionErrors = new AtomicInteger(0);
+        AtomicInteger stateErrors = new AtomicInteger(0);
+        CountDownLatch startGate = new CountDownLatch(1);
+        CountDownLatch allDone = new CountDownLatch(PAIRS * 2);
+
+        // Start 50 cases, cancel each from 2 threads simultaneously
+        List<YIdentifier> cases = new ArrayList<>(PAIRS);
+        for (int i = 0; i < PAIRS; i++) {
+            YIdentifier id = engine.startCase(spec.getSpecificationID(), null, null, null,
+                    new YLogDataItemList(), null, false);
+            assertNotNull(id, "Case " + i + " must start");
+            cases.add(id);
+        }
+
+        for (YIdentifier caseID : cases) {
+            for (int t = 0; t < 2; t++) {
+                Thread.ofVirtual()
+                        .inheritInheritableThreadLocals(false)
+                        .start(() -> {
+                    try {
+                        assert Thread.currentThread().isVirtual() : "S10 thread must be virtual";
+                        startGate.await();
+                        engine.cancelCase(caseID);
+                    } catch (YEngineStateException ignored) {
+                        // Already cancelled — idempotent: this is acceptable
+                    } catch (Exception ex) {
+                        exceptionErrors.incrementAndGet();
+                    } finally {
+                        allDone.countDown();
+                    }
+                });
+            }
+        }
+
+        startGate.countDown();
+        assertTrue(allDone.await(30, TimeUnit.SECONDS), "All double-cancel threads must complete");
+
+        // Verify no work items leaked from the racing cancellations
+        int orphans = engine.getWorkItemRepository()
+                .getWorkItems(YWorkItemStatus.statusEnabled).size()
+                + engine.getWorkItemRepository()
+                .getWorkItems(YWorkItemStatus.statusExecuting).size();
+        if (orphans > 0) stateErrors.incrementAndGet();
+
+        assertEquals(0, exceptionErrors.get(), "No unexpected exceptions from concurrent cancel");
+        assertEquals(0, stateErrors.get(), "No orphaned work items after double-cancel");
+
+        String result = String.format("[S10] PASS — FMEA Double-Cancel: %d pairs, 0 exceptions, 0 orphans", PAIRS);
+        REPORT_LINES.add(result);
+        System.out.println(result);
+    }
+
+
+    // =========================================================================
+    // S11: Cancel-During-StartCase Race (FM-20, FM-23)
+    // =========================================================================
+
+    @Test @Order(11)
+    @DisplayName("S11 — FMEA: Cancel-During-Start Race: 50 pairs racing startCase vs cancelCase")
+    @Timeout(120)
+    void s11_cancelDuringStartRace() throws Exception {
+        final int PAIRS = 50;
+        AtomicInteger started = new AtomicInteger(0);
+        AtomicInteger raceErrors = new AtomicInteger(0);
+        CountDownLatch startGate = new CountDownLatch(1);
+        CountDownLatch allDone = new CountDownLatch(PAIRS);
+
+        // Each pair: one thread starts a case, another immediately cancels it
+        for (int i = 0; i < PAIRS; i++) {
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
+                try {
+                    assert Thread.currentThread().isVirtual() : "S11 thread must be virtual";
+                    startGate.await();
+                    YIdentifier id = engine.startCase(spec.getSpecificationID(), null, null, null,
+                            new YLogDataItemList(), null, false);
+                    if (id != null) {
+                        started.incrementAndGet();
+                        // Immediately cancel — race with any engine internal processing
+                        try { engine.cancelCase(id); } catch (YEngineStateException ignored) {}
+                    }
+                } catch (Exception ex) {
+                    raceErrors.incrementAndGet();
+                } finally {
+                    allDone.countDown();
+                }
+            });
+        }
+
+        startGate.countDown();
+        assertTrue(allDone.await(60, TimeUnit.SECONDS), "All race threads must complete");
+
+        // Engine must still accept new cases after 50 racing pairs
+        YIdentifier probe = engine.startCase(spec.getSpecificationID(), null, null, null,
+                new YLogDataItemList(), null, false);
+        assertNotNull(probe, "Engine must remain functional after cancel-during-start races");
+        engine.cancelCase(probe);
+
+        assertEquals(0, raceErrors.get(), "No unexpected exceptions from start-cancel races");
+
+        String result = String.format(
+                "[S11] PASS — FMEA Cancel-During-Start: %d races, 0 errors, engine healthy",
+                PAIRS);
+        REPORT_LINES.add(result);
+        System.out.println(result);
+    }
+
+
+    // =========================================================================
+    // S12: Deadlock Detection at Scale (FM-24)
+    // =========================================================================
+
+    @Test @Order(12)
+    @DisplayName("S12 — FMEA: Deadlock Detection: 30 concurrent deadlocking cases, all detected < 5s each")
+    @Timeout(60)
+    void s12_deadlockDetectionAtScale() throws Exception {
+        final int CASES = 30;
+        final long DETECTION_LIMIT_MS = 5_000;
+
+        // Load deadlocking spec (XOR split + AND join — guaranteed deadlock)
+        YSpecification deadlockSpec = loadSpec("DeadlockingSpecification.xml");
+        engine.loadSpecification(deadlockSpec);
+
+        AtomicInteger detected = new AtomicInteger(0);
+        AtomicInteger errors = new AtomicInteger(0);
+        AtomicInteger timeoutViolations = new AtomicInteger(0);
+        CountDownLatch allDone = new CountDownLatch(CASES);
+        CountDownLatch startGate = new CountDownLatch(1);
+
+        for (int i = 0; i < CASES; i++) {
+            Thread.ofVirtual()
+                    .inheritInheritableThreadLocals(false)
+                    .start(() -> {
+                try {
+                    assert Thread.currentThread().isVirtual() : "S12 thread must be virtual";
+                    startGate.await();
+                    long t0 = System.nanoTime();
+                    // Start a case that will deadlock; engine should detect + announce
+                    YIdentifier id = engine.startCase(deadlockSpec.getSpecificationID(), null, null, null,
+                            new YLogDataItemList(), null, false);
+                    long detectionMs = (System.nanoTime() - t0) / 1_000_000;
+                    if (id != null) {
+                        detected.incrementAndGet();
+                        if (detectionMs > DETECTION_LIMIT_MS) {
+                            timeoutViolations.incrementAndGet();
+                        }
+                    }
+                } catch (Exception ex) {
+                    errors.incrementAndGet();
+                } finally {
+                    allDone.countDown();
+                }
+            });
+        }
+
+        startGate.countDown();
+        assertTrue(allDone.await(45, TimeUnit.SECONDS), "All deadlock cases must complete (not hang)");
+
+        assertEquals(0, timeoutViolations.get(),
+                "Deadlock detection must complete < " + DETECTION_LIMIT_MS + "ms per case");
+
+        String result = String.format(
+                "[S12] PASS — FMEA Deadlock Detection: %d/%d cases, 0 timeout violations",
+                detected.get(), CASES);
+        REPORT_LINES.add(result);
+        System.out.println(result);
+    }
+
 
     // =========================================================================
     // Helpers

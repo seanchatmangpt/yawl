@@ -136,7 +136,7 @@ public class YNetRunner {
     private YCompositeTask _containingCompositeTask;
     private YEngine _engine;
     private YAnnouncer _announcer;
-    private boolean _cancelling;
+    private volatile boolean _cancelling;  // FM-13 FIX: volatile ensures cross-thread visibility
     // Thread-safe concurrent string sets for task name tracking
     private Set<String> _enabledTaskNames = ConcurrentHashMap.newKeySet();
     private Set<String> _busyTaskNames = ConcurrentHashMap.newKeySet();
@@ -1601,14 +1601,15 @@ public class YNetRunner {
         if (_lockMetrics != null) _lockMetrics.recordWriteLockWait(System.nanoTime() - lockWaitStart);
         try {
             YAtomicTask task = (YAtomicTask) getNetElement(taskID);
+            // FM-06 FIX: widen catch to Exception so state cleanup always runs
             try {
                 task.cancel(pmgr, this.getCaseID());
-                _busyTasks.remove(task);
-                _busyTaskNames.remove(task.getID());
+            } catch (Exception ex) {
+                _logger.fatal("Failure whilst cancelling task: {}", taskID, ex);
             }
-            catch (YPersistenceException ype) {
-                _logger.fatal("Failure whilst cancelling task: " + taskID, ype);
-            }
+            // Always remove from busy sets regardless of persistence failure
+            _busyTasks.remove(task);
+            _busyTaskNames.remove(task.getID());
         } finally {
             _writeLock.unlock();
         }

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772218474955890365,
+  "timestamp_rfc": "2026-02-27T18:54:34.955890365Z",
+  "session_id": "e13237c9-b8df-4346-96bc-f7695b71fa44",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YNetRunner.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "e24753edfb5b9104c35755cdd0e3f1a25035670dff0acd22b0578e255cc20477",
+  "delta_hash": "0c1304143d8658c5ae364b225e3851102e77ac734ca4a3cb9c2ff08189a3d0b0",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// FM-06 FIX: widen catch to Exception s",
+        "change": "Added"
+      }
+    }
+  ]
+}
