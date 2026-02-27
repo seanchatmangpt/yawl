@@ -8,11 +8,15 @@
 package org.yawlfoundation.yawl.integration.java_python.interoperability;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.yawlfoundation.yawl.engine.YNetRunner;
 import org.yawlfoundation.yawl.engine.YWorkflowNet;
 import org.yawlfoundation.yawl.engine.interaction.YWorkItem;
 import org.yawlfoundation.yawl.engine.interaction.YTask;
 import org.yawlfoundation.yawl.elements.YNet;
+import org.yawlfoundation.yawl.elements.YFlow;
 import org.yawlfoundation.yawl.elements.YDecomposition;
 import org.yawlfoundation.yawl.util.YVerificationMessage;
 import org.yawlfoundation.yawl.exceptions.YException;
@@ -574,19 +578,29 @@ public class McpProtocolValidationTest extends ValidationTestBase {
         YNet net = new YNet("testNet");
 
         // Create simple workflow: start -> task1 -> task2 -> complete
-        net.addTask("start", "Start Task", false);
-        net.addTask("task1", "First Task", false);
-        net.addTask("task2", "Second Task", false);
-        net.addTask("complete", "Complete Task", true);
+        YTask startTask = new YTask("start");
+        startTask.setName("Start Task");
+        YTask task1 = new YTask("task1");
+        task1.setName("First Task");
+        YTask task2 = new YTask("task2");
+        task2.setName("Second Task");
+        YTask completeTask = new YTask("complete");
+        completeTask.setName("Complete Task");
+
+        // Add elements to net
+        net.addNetElement(startTask);
+        net.addNetElement(task1);
+        net.addNetElement(task2);
+        net.addNetElement(completeTask);
 
         // Add transitions
-        net.addFlow("start", "task1");
-        net.addFlow("task1", "task2");
-        net.addFlow("task2", "complete");
+        startTask.addPostset(new YFlow(startTask, task1));
+        task1.addPostset(new YFlow(task1, task2));
+        task2.addPostset(new YFlow(task2, completeTask));
 
         // Set start and end tasks
-        net.setStartTask("start");
-        net.setEndTask("complete");
+        net.setStartTask(startTask);
+        net.setEndTask(completeTask);
 
         return net;
     }

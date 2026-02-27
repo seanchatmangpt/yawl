@@ -9,16 +9,16 @@ package org.yawlfoundation.yawl.benchmark.framework;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
-import org.yawlfoundation.yawl.engine.YCase;
+import org.yawlfoundation.yawl.elements.YNet;
 import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.engine.YNet;
+import org.yawlfoundation.yawl.engine.instance.CaseInstance;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * Base class for all benchmark agents
@@ -74,11 +74,44 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
      */
     @Benchmark
     @GroupThreads(1)
-    public abstract void executeBenchmark(Blackhole bh);
+    public void executeBenchmark(Blackhole bh) {
+        throw new UnsupportedOperationException(
+            "Subclasses must implement executeBenchmark method"
+        );
+    }
 
     /**
-     * Execute benchmark with virtual thread scaling
+     * Execute benchmark with variation
      */
+    public BenchmarkResult executeBenchmark(String variation) throws Exception {
+        try {
+            Instant start = Instant.now();
+
+            // Execute benchmark based on variation
+            CaseInstance result = runSingleIteration(0);
+
+            Instant end = Instant.now();
+
+            return new BenchmarkResult(result, true, null);
+        } catch (Exception e) {
+            recordError(e, "variation_" + variation);
+            return new BenchmarkResult(null, false, e.getMessage());
+        }
+    }
+
+    /**
+     * Setup method - to be implemented by subclasses
+     */
+    protected void setup() throws Exception {
+        // Default implementation - can be overridden by subclasses
+    }
+
+    /**
+     * Cleanup method - to be implemented by subclasses
+     */
+    protected void cleanup() throws Exception {
+        // Default implementation - can be overridden by subclasses
+    }
     @Benchmark
     @GroupThreads(10)
     public void executeBenchmarkScaled_10(Blackhole bh) {
@@ -104,37 +137,34 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
     }
 
     /**
-     * Execute benchmark with structured concurrency
+     * Execute benchmark with structured concurrency (using ExecutorService)
      */
     @Benchmark
     public void executeBenchmarkStructured(Blackhole bh) throws InterruptedException {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            List<Future<YCase>> futures = new ArrayList<>();
+        List<Future<CaseInstance>> futures = new ArrayList<>();
+        int concurrencyLevel = config.structuredConcurrencyLevel();
 
-            for (int i = 0; i < config.getStructuredConcurrencyLevel(); i++) {
-                Future<YCase> future = scope.fork(() -> {
-                    try {
-                        return runSingleIteration(i);
-                    } catch (Exception e) {
-                        recordError(e, "structured_iteration_" + i);
-                        throw e;
-                    }
-                });
-                futures.add(future);
-            }
-
-            scope.join();
-
-            // Collect results
-            for (Future<YCase> future : futures) {
+        for (int i = 0; i < concurrencyLevel; i++) {
+            final int iterationId = i;
+            Future<CaseInstance> future = virtualThreadExecutor.submit(() -> {
                 try {
-                    YCase result = future.resultNow();
-                    bh.consume(result);
-                    successfulOperations.incrementAndGet();
+                    return runSingleIteration(iterationId);
                 } catch (Exception e) {
-                    bh.consume(e);
-                    failedOperations.incrementAndGet();
+                    recordError(e, "structured_iteration_" + iterationId);
+                    throw new RuntimeException(e);
                 }
+            });
+            futures.add(future);
+        }
+
+        // Collect results
+        for (Future<CaseInstance> future : futures) {
+            try {
+                CaseInstance result = future.get(30, TimeUnit.SECONDS);
+                bh.consume(result);
+            } catch (TimeoutException | ExecutionException e) {
+                recordError(e, "structured_future_get");
+                bh.consume(null);
             }
         }
     }
@@ -152,7 +182,7 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
                 final int threadId = i;
                 Future<BenchmarkResult> future = virtualThreadExecutor.submit(() -> {
                     try {
-                        YCase result = runSingleIteration(threadId);
+                        CaseInstance result = runSingleIteration(threadId);
                         totalOperations.incrementAndGet();
                         successfulOperations.incrementAndGet();
                         return new BenchmarkResult(result, true, null);
@@ -176,7 +206,7 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
             // Wait for all operations to complete
             for (Future<BenchmarkResult> future : futures) {
                 try {
-                    BenchmarkResult result = future.get(config.getOperationTimeout(), TimeUnit.SECONDS);
+                    BenchmarkResult result = future.get(config.operationTimeout().toSeconds(), TimeUnit.SECONDS);
                     bh.consume(result.caseResult());
                 } catch (Exception e) {
                     bh.consume(e);
@@ -203,7 +233,7 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
     /**
      * Single benchmark iteration - to be implemented by subclasses
      */
-    protected abstract YCase runSingleIteration(int iterationId) throws Exception;
+    protected abstract CaseInstance runSingleIteration(int iterationId) throws Exception;
 
     /**
      * Error handling and recording
@@ -237,8 +267,13 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
             totalOperations.get(),
             successfulOperations.get(),
             failedOperations.get(),
-            errors,
-            performanceMonitor.generateSummary()
+            errors.stream()
+                .map(error -> String.format("%s: %s (%s)",
+                    error.timestamp().toString(),
+                    error.errorType(),
+                    error.context()))
+                .collect(Collectors.toList()),
+            new HashMap<>(performanceMonitor.generateSummary())
         );
     }
 
@@ -261,7 +296,7 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
     }
 
     // Inner classes for data structures
-    public static record BenchmarkResult(YCase caseResult, boolean success, String errorMessage) {}
+    public static record BenchmarkResult(CaseInstance caseResult, boolean success, String errorMessage) {}
 
     public static record BenchmarkError(
         String agentName,
@@ -297,4 +332,28 @@ public abstract class BaseBenchmarkAgent implements AutoCloseable {
             false
         );
     }
-}
+
+    /**
+     * Get benchmark configuration
+     */
+    protected BenchmarkConfig config() {
+        return config;
+    }
+
+    /**
+     * Create a minimal CaseInstance for fallback operations
+     * To be implemented by subclasses
+     */
+    protected CaseInstance createMinimalCase(String identifier) {
+        try {
+            // This should be implemented based on specific YAWL API requirements
+            // For now, create a basic mock implementation
+            CaseInstance minimalCase = new CaseInstance();
+            minimalCase.setCaseID("minimal_case_" + identifier + "_" + System.currentTimeMillis());
+            return minimalCase;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create minimal case: " + identifier, e);
+        }
+    }
+
+  }

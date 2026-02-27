@@ -8,10 +8,14 @@
 package org.yawlfoundation.yawl.integration.java_python.interoperability;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.yawlfoundation.yawl.engine.YNetRunner;
 import org.yawlfoundation.yawl.engine.interaction.YWorkItem;
 import org.yawlfoundation.yawl.engine.interaction.YTask;
 import org.yawlfoundation.yawl.elements.YNet;
+import org.yawlfoundation.yawl.elements.YFlow;
 import org.yawlfoundation.yawl.elements.YDecomposition;
 import org.yawlfoundation.yawl.exceptions.YException;
 import org.yawlfoundation.yawl.integration.mcp.InterfaceB_EnvironmentBasedClient;
@@ -364,15 +368,15 @@ public class McpIntegrationTest extends ValidationTestBase {
         YTask completeTask = new org.yawlfoundation.yawl.elements.YExternalNetElement("complete", "Complete", true);
 
         // Add elements to net
-        net.addTask(startTask);
-        net.addTask(task1);
-        net.addTask(task2);
-        net.addTask(completeTask);
+        net.addNetElement(startTask);
+        net.addNetElement(task1);
+        net.addNetElement(task2);
+        net.addNetElement(completeTask);
 
         // Create flows
-        net.addFlow(startTask, task1);
-        net.addFlow(task1, task2);
-        net.addFlow(task2, completeTask);
+        startTask.addPostset(new YFlow(startTask, task1));
+        task1.addPostset(new YFlow(task1, task2));
+        task2.addPostset(new YFlow(task2, completeTask));
 
         // Set start and end
         net.setStartTask(startTask);

@@ -7,13 +7,14 @@
 
 package org.yawlfoundation.yawl.benchmark.framework;
 
-import org.yawlfoundation.yawl.engine.YCase;
-import org.yawlfoundation.yawl.engine.YNet;
-import org.yawlfoundation.yawl.elements.YAWLWorkflowNet;
+import org.yawlfoundation.yawl.engine.instance.CaseInstance;
+import org.yawlfoundation.yawl.elements.YNet;
 
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
+
+import static org.yawlfoundation.yawl.benchmark.framework.BaseBenchmarkAgent.*;
 
 /**
  * Smart fallback strategy system for benchmark failures
@@ -47,17 +48,21 @@ public class FallbackStrategy {
     {
         // Try each fallback handler in order
         for (Map.Entry<Class<?>, FallbackHandler<?>> entry : fallbackHandlers.entrySet()) {
-            FallbackHandler<?> handler = entry.getValue();
-            if (handler.canHandle(agent)) {
-                try {
+            // Use type-safe handling with proper generic conversion
+            try {
+                @SuppressWarnings("unchecked")
+                FallbackHandler<BaseBenchmarkAgent> handler =
+                    (FallbackHandler<BaseBenchmarkAgent>) entry.getValue();
+
+                if (handler.canHandle(agent)) {
                     BaseBenchmarkAgent.BenchmarkResult result = handler.handle(agent, iterationId);
                     if (result != null && result.success()) {
                         return result;
                     }
-                } catch (Exception e) {
-                    // Continue to next fallback
-                    continue;
                 }
+            } catch (Exception e) {
+                // Continue to next fallback
+                continue;
             }
         }
 
@@ -167,7 +172,7 @@ public class FallbackStrategy {
      */
     private BaseBenchmarkAgent.BenchmarkResult createMinimalFallback(BaseBenchmarkAgent agent) {
         try {
-            YCase minimalCase = createMinimalCase(agent.getClass().getSimpleName().toLowerCase() + "_minimal");
+            CaseInstance minimalCase = createMinimalCase(agent.getClass().getSimpleName().toLowerCase() + "_minimal");
             return new BaseBenchmarkAgent.BenchmarkResult(minimalCase, true, "Minimal fallback executed");
         } catch (Exception e) {
             return new BaseBenchmarkAgent.BenchmarkResult(null, false, "Fallback failed: " + e.getMessage());
@@ -175,18 +180,21 @@ public class FallbackStrategy {
     }
 
     /**
-     * Create a minimal YCase for fallback operations
+     * Create a minimal CaseInstance for fallback operations
      */
-    private YCase createMinimalCase(String identifier) {
+    private CaseInstance createMinimalCase(String identifier) {
         // This would be implemented based on YAWL API
-        // For now, create a mock implementation
-        return new YCase(null, "fallback_case_" + identifier + "_" + System.currentTimeMillis());
+        // For now, create a mock implementation using no-arg constructor
+        try {
+            return CaseInstance.class.getConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create minimal case", e);
+        }
     }
 
     /**
      * Fallback handler interface
      */
-    @FunctionalInterface
     public interface FallbackHandler<T extends BaseBenchmarkAgent> {
         boolean canHandle(T agent);
         BaseBenchmarkAgent.BenchmarkResult handle(T agent, int iterationId) throws Exception;

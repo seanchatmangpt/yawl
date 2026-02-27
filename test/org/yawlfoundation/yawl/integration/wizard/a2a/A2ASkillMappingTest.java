@@ -19,6 +19,9 @@
 package org.yawlfoundation.yawl.integration.wizard.a2a;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 
 import java.util.Map;
 

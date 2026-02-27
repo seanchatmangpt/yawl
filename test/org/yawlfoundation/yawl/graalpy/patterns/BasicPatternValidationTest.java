@@ -23,6 +23,9 @@
 package org.yawlfoundation.yawl.graalpy.patterns;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.yawlfoundation.yawl.elements.YAWLModel;
 import org.yawlfoundation.yawl.graalpy.patterns.PatternValidator.ValidationConfiguration;
 import org.yawlfoundation.yawl.graalpy.validation.ValidationResult;

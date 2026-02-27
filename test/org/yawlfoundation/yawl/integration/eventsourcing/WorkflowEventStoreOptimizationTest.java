@@ -20,6 +20,9 @@ package org.yawlfoundation.yawl.integration.eventsourcing;
 
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

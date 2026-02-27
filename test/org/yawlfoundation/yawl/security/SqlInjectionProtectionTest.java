@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.security;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -245,6 +247,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Classic Authentication Bypass Tests")
+    @Nested
+@DisplayName("Authentication Bypass Tests")
     class AuthenticationBypassTests {
 
         @Test
@@ -291,6 +295,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Union-Based Injection Tests")
+    @Nested
+@DisplayName("Union Injection Tests")
     class UnionInjectionTests {
 
         @Test
@@ -328,6 +334,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Destructive Command Injection Tests")
+    @Nested
+@DisplayName("Destructive Command Tests")
     class DestructiveCommandTests {
 
         @Test
@@ -373,6 +381,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Time-Based Blind Injection Tests")
+    @Nested
+@DisplayName("Time-Based Injection Tests")
     class TimeBasedInjectionTests {
 
         @Test
@@ -410,6 +420,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("HQL-Specific Injection Tests")
+    @Nested
+@DisplayName("HQL Injection Tests")
     class HqlInjectionTests {
 
         @Test
@@ -455,6 +467,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Encoded and Obfuscated Attack Tests")
+    @Nested
+@DisplayName("Encoded Attack Tests")
     class EncodedAttackTests {
 
         @Test
@@ -492,6 +506,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Parameterized Query Validation Tests")
+    @Nested
+@DisplayName("Parameterized Query Tests")
     class ParameterizedQueryTests {
 
         @Test
@@ -529,6 +545,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Identifier Sanitization Tests")
+    @Nested
+@DisplayName("Identifier Sanitization Tests")
     class IdentifierSanitizationTests {
 
         @Test
@@ -588,6 +606,8 @@ public class SqlInjectionProtectionTest {
 
     @Nested
     @DisplayName("Safe Input Acceptance Tests")
+    @Nested
+@DisplayName("Safe Input Tests")
     class SafeInputTests {
 
         @Test

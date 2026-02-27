@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.security;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -281,6 +283,8 @@ public class XxeProtectionTest {
 
     @Nested
     @DisplayName("Secure Parser Configuration Tests")
+    @Nested
+    @DisplayName("class SecureParserTests {")
     class SecureParserTests {
 
         @Test
@@ -333,6 +337,8 @@ public class XxeProtectionTest {
 
     @Nested
     @DisplayName("File Disclosure Prevention Tests")
+    @Nested
+    @DisplayName("class FileDisclosureTests {")
     class FileDisclosureTests {
 
         @Test
@@ -398,6 +404,8 @@ public class XxeProtectionTest {
 
     @Nested
     @DisplayName("SSRF Prevention Tests")
+    @Nested
+    @DisplayName("class SsrfTests {")
     class SsrfTests {
 
         @Test
@@ -455,6 +463,8 @@ public class XxeProtectionTest {
 
     @Nested
     @DisplayName("Denial of Service Prevention Tests")
+    @Nested
+    @DisplayName("class DosPreventionTests {")
     class DosPreventionTests {
 
         @Test
@@ -504,6 +514,8 @@ public class XxeProtectionTest {
 
     @Nested
     @DisplayName("Safe XML Acceptance Tests")
+    @Nested
+    @DisplayName("class SafeXmlTests {")
     class SafeXmlTests {
 
         @Test
@@ -570,6 +582,8 @@ public class XxeProtectionTest {
 
     @Nested
     @DisplayName("Edge Cases and Boundary Tests")
+    @Nested
+    @DisplayName("class EdgeCaseTests {")
     class EdgeCaseTests {
 
         @Test
@@ -633,6 +647,8 @@ public class XxeProtectionTest {
 
     @Nested
     @DisplayName("XInclude Attack Prevention Tests")
+    @Nested
+    @DisplayName("class XIncludeTests {")
     class XIncludeTests {
 
         @Test

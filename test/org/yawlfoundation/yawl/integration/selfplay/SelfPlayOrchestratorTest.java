@@ -17,6 +17,9 @@
 package org.yawlfoundation.yawl.integration.selfplay;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 
 import java.io.IOException;
 import java.nio.file.Files;

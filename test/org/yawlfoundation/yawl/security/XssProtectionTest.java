@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.security;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -251,6 +253,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("Script Tag Injection Tests")
+    @Nested
+    @DisplayName("class ScriptTagTests {")
     class ScriptTagTests {
 
         @Test
@@ -296,6 +300,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("Event Handler Injection Tests")
+    @Nested
+    @DisplayName("class EventHandlerTests {")
     class EventHandlerTests {
 
         @Test
@@ -341,6 +347,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("JavaScript Protocol Tests")
+    @Nested
+    @DisplayName("class JavaScriptProtocolTests {")
     class JavaScriptProtocolTests {
 
         @Test
@@ -386,6 +394,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("SVG-Based XSS Tests")
+    @Nested
+    @DisplayName("class SvgXssTests {")
     class SvgXssTests {
 
         @Test
@@ -415,6 +425,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("Data URI Tests")
+    @Nested
+    @DisplayName("class DataUriTests {")
     class DataUriTests {
 
         @Test
@@ -436,6 +448,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("HTML Entity Encoded Tests")
+    @Nested
+    @DisplayName("class HtmlEntityTests {")
     class HtmlEntityTests {
 
         @Test
@@ -457,6 +471,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("HTML Escape Tests")
+    @Nested
+    @DisplayName("class HtmlEscapeTests {")
     class HtmlEscapeTests {
 
         @Test
@@ -522,6 +538,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("JavaScript Escape Tests")
+    @Nested
+    @DisplayName("class JavaScriptEscapeTests {")
     class JavaScriptEscapeTests {
 
         @Test
@@ -583,6 +601,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("URL Safety Tests")
+    @Nested
+    @DisplayName("class UrlSafetyTests {")
     class UrlSafetyTests {
 
         @Test
@@ -651,6 +671,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("Safe Input Acceptance Tests")
+    @Nested
+    @DisplayName("class SafeInputTests {")
     class SafeInputTests {
 
         @Test
@@ -691,6 +713,8 @@ public class XssProtectionTest {
 
     @Nested
     @DisplayName("Edge Cases and Boundary Tests")
+    @Nested
+    @DisplayName("class EdgeCaseTests {")
     class EdgeCaseTests {
 
         @Test

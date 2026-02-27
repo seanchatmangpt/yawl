@@ -1,0 +1,129 @@
+YAWL JMH Benchmark Analysis Report
+=================================
+
+Status: Compilation failed due to missing dependencies, but source code analysis completed successfully.
+
+Available Benchmark Categories:
+
+1. 🔧 Core Engine Benchmarks (YAWLEngineBenchmarks)
+   - testCaseCreationSimple: Single case creation
+   - testCaseCreationConcurrent: Concurrent case creation (low)
+   - testCaseCreationHighConcurrency: Concurrent case creation (high)
+   - testVirtualThreadScaling_10: 10 virtual threads
+   - testVirtualThreadScaling_100: 100 virtual threads
+   - testVirtualThreadScaling_500: 500 virtual threads
+   - testVirtualThreadScaling_1000: 1000 virtual threads
+   - testVirtualThreadScaling_10000: 10000 virtual threads
+   - testMemoryUsageSmall: Small memory footprint
+   - testMemoryUsageMedium: Medium memory footprint
+   - testMemoryUsageLarge: Large memory footprint
+   - testCPUEfficiencySequential: Sequential CPU efficiency
+   - testCPUEfficiencyParallel: Parallel CPU efficiency
+   - testCPUEfficiencyHighParallel: High parallel CPU efficiency
+
+2. 🔄 Workflow Pattern Benchmarks (WorkflowPatternBenchmarks)
+   - Sequence Pattern (Small/1, 10, 50, 100, Medium/1)
+   - Parallel Split Pattern
+   - Synchronization Pattern
+   - Exclusive Choice Pattern
+   - Multi-Choice Pattern
+   - Discriminator Pattern
+   - N-out-of-M Pattern
+   - Deferred Choice Pattern
+   - Interleaved Routing Pattern
+   - Milestone Pattern
+   - Critical Section Pattern
+   - Structured Loop Pattern
+   - Pattern combinations testing
+
+3. 🤖 Agent Communication Benchmarks
+   - A2ACommunicationBenchmarkAgent:
+     * sendMessageLowLatency
+     * sendMessageHighLatency
+     * sendMessageBatch
+     * receiveMessageLowLatency
+     * receiveMessageHighLatency
+     * receiveMessageBatch
+
+   - PatternBenchmarkAgent:
+     * executeSequentialPattern
+     * executeParallelPattern
+     * executeExclusiveChoice
+     * executeMultiChoice
+     * executeDiscriminator
+     * executePatternCombination
+     * executePatternSequence
+     * executePatternComplex
+     * executePatternRandom
+
+4. 💾 Memory Optimization Benchmarks
+   - MemoryOptimizationBenchmarkAgent:
+     * testMemoryUsageBasic
+     * testMemoryUsageWithPatterns
+     * testMemoryUsageConcurrent
+     * testMemoryUsageScaling
+     * testMemoryUsageOptimized
+     * testMemoryUsageUnoptimized
+     * testGarbageCollectionPressure
+     * testMemoryLeakDetection
+     * testMemoryUsageOptimizedPatterns
+
+5. ⚡ Core Engine Benchmarks
+   - CoreEngineBenchmarkAgent:
+     * testEngineStartup
+     * testEngineShutdown
+     * testEngineThroughput
+     * testEngineLatency
+     * testEngineMemoryUsage
+     * testEngineStressTest
+     * testEngineRecovery
+     * testEnginePersistence
+     * testEngineScaling
+
+6. 🌪️ Chaos Engineering Benchmarks
+   - ChaosEngineeringBenchmarkAgent:
+     * testNetworkLatencyInjection
+     * testFailureInjection
+     * testLatencySpikes
+     * testNetworkPartition
+     * testResourceStarvation
+     * testConnectionFailures
+     * testTimeoutScenarios
+     * testOverloadScenarios
+
+7. 🚀 Performance Enhancement Benchmarks
+   - PerformanceEnhancementBenchmarkAgent:
+     * testOptimizedPathSelection
+     * testParallelExecution
+     * testVirtualThreadOptimization
+     * testMemoryOptimization
+     * testCacheEfficiency
+     * testThroughputOptimization
+     * testLatencyOptimization
+     * testResourceUtilization
+     * testScalabilityImprovement
+
+8. 🎯 Benchmark Coordination
+   - BenchmarkCoordinator:
+     * executeConcurrentBenchmarks
+     * executeSequentialBenchmarks
+     * executeStressBenchmarks
+     * executeScalingBenchmarks
+
+Benchmark Configuration:
+- Mode: Throughput, AverageTime, SampleTime
+- Time Unit: Milliseconds
+- Warmup: 3 iterations, 10 seconds
+- Measurement: 5 iterations, 30 seconds
+- Forks: 1
+- JVM Args: -Xms4g -Xmx8g
+
+Benchmark Categories Summary:
+- Total Benchmark Classes: 11
+- Total Benchmark Methods: 60+
+- Focus Areas: Engine Performance, Workflow Patterns, A2A Communication, Memory Optimization, Chaos Engineering
+
+Note: To run actual benchmarks, resolve dependency issues first:
+1. Fix JUnit dependency version mismatch
+2. Ensure all YAWL modules compile successfully
+3. Run: mvn exec:exec -pl yawl-benchmark -Dexec.executable=java -Dexec.args="-classpath %classpath org.openjdk.jmh.Main -l"

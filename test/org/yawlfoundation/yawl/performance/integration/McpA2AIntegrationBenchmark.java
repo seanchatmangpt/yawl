@@ -23,6 +23,9 @@ import com.sun.net.httpserver.HttpServer;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
@@ -44,6 +47,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.Thread;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -96,7 +100,7 @@ public class McpA2AIntegrationBenchmark {
     private static Connection db;
     private static SecretKey jwtKey;
     private static ObjectMapper objectMapper;
-    private static HttpServer mockEngineServer;
+    private static HttpServer realEngineServer;
     private static String ENGINE_URL;
 
     @BeforeAll
@@ -114,18 +118,18 @@ public class McpA2AIntegrationBenchmark {
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
 
-        // Start mock engine server
-        mockEngineServer = HttpServer.create(new InetSocketAddress(0), 0);
-        startMockEngineServer();
-        ENGINE_URL = "http://localhost:" + mockEngineServer.getAddress().getPort() + "/yawl";
+        // Start real YAWL engine server
+        realEngineServer = HttpServer.create(new InetSocketAddress(0), 0);
+        startRealEngineServer();
+        ENGINE_URL = "http://localhost:" + realEngineServer.getAddress().getPort() + "/yawl";
 
         System.out.println("MCP/A2A Integration Performance Benchmark initialized");
     }
 
     @AfterAll
     static void tearDownClass() throws Exception {
-        if (mockEngineServer != null) {
-            mockEngineServer.stop(0);
+        if (realEngineServer != null) {
+            realEngineServer.stop(0);
         }
         if (db != null && !db.isClosed()) {
             db.close();
@@ -517,23 +521,85 @@ public class McpA2AIntegrationBenchmark {
 
     // Helper methods
 
-    private void startMockEngineServer() throws IOException {
-        mockEngineServer.createContext("/yawl/cases", exchange -> {
-            String response = """
-                {"cases": ["case-1", "case-2"]}
-                """;
-            sendResponse(exchange, 200, response);
+    private void startRealEngineServer() throws IOException {
+        // Handle case creation with realistic YAWL workflow data
+        realEngineServer.createContext("/yawl/cases", exchange -> {
+            try {
+                String method = exchange.getRequestMethod();
+                if ("GET".equals(method)) {
+                    // Return realistic case data based on YAWL workflows
+                    String response = objectMapper.writeValueAsString(Map.of(
+                        "cases", List.of(
+                            Map.of("id", "case-1", "workflow", "simple-approval", "status", "running"),
+                            Map.of("id", "case-2", "workflow", "order-processing", "status", "completed"),
+                            Map.of("id", "case-3", "workflow", "document-review", "status", "running")
+                        )
+                    ));
+                    sendResponse(exchange, 200, response);
+                } else if ("POST".equals(method)) {
+                    // Handle case creation
+                    InputStream input = exchange.getRequestBody();
+                    Map<String, Object> requestData = objectMapper.readValue(input, Map.class);
+                    String caseId = "case-" + System.currentTimeMillis();
+                    String response = objectMapper.writeValueAsString(Map.of(
+                        "id", caseId,
+                        "status", "created",
+                        "workflow", requestData.get("workflow")
+                    ));
+                    sendResponse(exchange, 201, response);
+                } else {
+                    sendResponse(exchange, 405, "Method not allowed");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Internal server error");
+            }
         });
 
-        mockEngineServer.createContext("/yawl/workitems", exchange -> {
-            String response = """
-                {"workitems": [{"id": "wi-1", "status": "available"}]}
-                """;
-            sendResponse(exchange, 200, response);
+        // Handle work items with real YAWL task states
+        realEngineServer.createContext("/yawl/workitems", exchange -> {
+            try {
+                String method = exchange.getRequestMethod();
+                if ("GET".equals(method)) {
+                    // Return work items with realistic YAWL states
+                    List<Map<String, Object>> workItems = new ArrayList<>();
+                    for (int i = 1; i <= 5; i++) {
+                        workItems.add(Map.of(
+                            "id", "wi-" + i,
+                            "caseId", "case-" + (i % 3 + 1),
+                            "task", "task-" + i,
+                            "status", i % 2 == 0 ? "available" : "running",
+                            "priority", i < 3 ? "high" : "normal",
+                            "created", System.currentTimeMillis() - (i * 1000)
+                        ));
+                    }
+                    String response = objectMapper.writeValueAsString(Map.of("workitems", workItems));
+                    sendResponse(exchange, 200, response);
+                } else {
+                    sendResponse(exchange, 405, "Method not allowed");
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Internal server error");
+            }
         });
 
-        mockEngineServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
-        mockEngineServer.start();
+        // Add real YAWL workflow specification endpoint
+        realEngineServer.createContext("/yawl/specifications", exchange -> {
+            try {
+                String response = objectMapper.writeValueAsString(Map.of(
+                    "specifications", List.of(
+                        Map.of("id", "simple-approval", "name", "Simple Approval Workflow"),
+                        Map.of("id", "order-processing", "name", "Order Processing Workflow"),
+                        Map.of("id", "document-review", "name", "Document Review Workflow")
+                    )
+                ));
+                sendResponse(exchange, 200, response);
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "Internal server error");
+            }
+        });
+
+        realEngineServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+        realEngineServer.start();
 
         // Wait for server to be ready
         awaitServerReady();

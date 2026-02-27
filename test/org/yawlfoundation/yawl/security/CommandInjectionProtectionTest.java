@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.security;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -282,6 +284,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Semicolon Injection Tests")
+    @Nested
+    @DisplayName("class SemicolonInjectionTests {")
     class SemicolonInjectionTests {
 
         @Test
@@ -327,6 +331,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Pipe Injection Tests")
+    @Nested
+    @DisplayName("class PipeInjectionTests {")
     class PipeInjectionTests {
 
         @Test
@@ -364,6 +370,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Command Substitution Tests")
+    @Nested
+    @DisplayName("class CommandSubstitutionTests {")
     class CommandSubstitutionTests {
 
         @Test
@@ -409,6 +417,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Environment Variable Injection Tests")
+    @Nested
+    @DisplayName("class EnvironmentVariableTests {")
     class EnvironmentVariableTests {
 
         @Test
@@ -446,6 +456,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("AND/OR Operator Tests")
+    @Nested
+    @DisplayName("class AndOrOperatorTests {")
     class AndOrOperatorTests {
 
         @Test
@@ -475,6 +487,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Redirection Abuse Tests")
+    @Nested
+    @DisplayName("class RedirectionTests {")
     class RedirectionTests {
 
         @Test
@@ -504,6 +518,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Newline Injection Tests")
+    @Nested
+    @DisplayName("class NewlineInjectionTests {")
     class NewlineInjectionTests {
 
         @Test
@@ -533,6 +549,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Background Execution Tests")
+    @Nested
+    @DisplayName("class BackgroundExecutionTests {")
     class BackgroundExecutionTests {
 
         @Test
@@ -554,6 +572,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Windows-Specific Tests")
+    @Nested
+    @DisplayName("class WindowsSpecificTests {")
     class WindowsSpecificTests {
 
         @Test
@@ -591,6 +611,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Dangerous Command Detection Tests")
+    @Nested
+    @DisplayName("class DangerousCommandTests {")
     class DangerousCommandTests {
 
         @Test
@@ -636,6 +658,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Sanitization Tests")
+    @Nested
+    @DisplayName("class SanitizationTests {")
     class SanitizationTests {
 
         @Test
@@ -687,6 +711,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Shell Escape Tests")
+    @Nested
+    @DisplayName("class ShellEscapeTests {")
     class ShellEscapeTests {
 
         @Test
@@ -731,6 +757,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Argument Array Validation Tests")
+    @Nested
+    @DisplayName("class ArgumentArrayTests {")
     class ArgumentArrayTests {
 
         @Test
@@ -775,6 +803,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Safe Input Acceptance Tests")
+    @Nested
+    @DisplayName("class SafeInputTests {")
     class SafeInputTests {
 
         @Test
@@ -822,6 +852,8 @@ public class CommandInjectionProtectionTest {
 
     @Nested
     @DisplayName("Edge Cases and Boundary Tests")
+    @Nested
+    @DisplayName("class EdgeCaseTests {")
     class EdgeCaseTests {
 
         @Test

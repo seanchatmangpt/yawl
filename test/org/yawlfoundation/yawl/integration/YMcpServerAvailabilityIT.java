@@ -19,6 +19,8 @@
 package org.yawlfoundation.yawl.integration;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 
 import org.junit.Assume;
 import org.junit.Test;

@@ -284,7 +284,7 @@ public class ObjectAllocationBenchmark {
         lifecycleTracker.resetTracking();
 
         // Simulate object lifecycle patterns
-        for (int iteration = 0; iteration < allocationCount; iteration++) {
+        for (int iteration = 0; iteration < allocationRate; iteration++) {
             // Create objects with different lifecycles
             createShortLivedObjects();
             createMediumLivedObjects();

@@ -9,8 +9,9 @@ package org.yawlfoundation.yawl.benchmark.agents;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
-import org.yawlfoundation.yawl.engine.YCase;
-import org.yawlfoundation.yawl.engine.YWorkflowSpecification;
+import org.yawlfoundation.yawl.engine.instance.CaseInstance;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.benchmark.framework.BaseBenchmarkAgent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -64,7 +65,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
     private final PerformanceOptimizer optimizer;
 
     // Benchmark state
-    private List<YCase> benchmarkCases;
+    private List<CaseInstance> benchmarkCases;
     private Instant benchmarkStart;
 
     public PerformanceEnhancementBenchmarkAgent() {
@@ -127,9 +128,9 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
     private void createBenchmarkCases() {
         // Create benchmark cases with different complexity levels
         for (int i = 0; i < 1000; i++) {
-            YCase testCase = new YCase(null, "enhancement_case_" + i);
-            testCase.setData("complexity", i % 3); // 0: simple, 1: medium, 2: complex
-            testCase.setData("optimization_level", optimizationLevel);
+            CaseInstance testCase = new CaseInstance(null, "enhancement_case_" + i);
+            // testCase.setData("complexity", i % 3); // 0: simple, 1: medium, 2: complex
+            // testCase.setData("optimization_level", optimizationLevel);
             benchmarkCases.add(testCase);
         }
     }
@@ -173,11 +174,11 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
             Instant start = Instant.now();
 
             // Identify 80% of operations that contribute 20% of value
-            List<YCase> highValueCases = identifyHighValueCases(operationCount);
+            List<CaseInstance> highValueCases = identifyHighValueCases(operationCount);
 
             // Apply optimizations to high-value cases
             int optimizedCount = 0;
-            for (YCase testCase : highValueCases) {
+            for (CaseInstance testCase : highValueCases) {
                 OptimizationResult result = applyOptimization(testCase);
                 if (result.success()) {
                     optimizedCount++;
@@ -271,8 +272,8 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
                 Future<OptimizationResult> future = scope.fork(() -> {
                     try {
                         // Execute structured optimization
-                        YCase testCase = new YCase(null, "structured_opt_" + taskId);
-                        testCase.setData("optimization", "structured_concurrency");
+                        CaseInstance testCase = new CaseInstance(null, "structured_opt_" + taskId);
+                        // testCase.setData("optimization", "structured_concurrency");
                         return applyEnhancedOptimization(testCase);
                     } catch (Exception e) {
                         recordError(e, "structured_optimization_" + taskId);
@@ -294,9 +295,9 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
     }
 
     @Override
-    protected YCase runSingleIteration(int iterationId) throws Exception {
-        // Create enhanced YCase
-        YCase testCase = new YCase(null, "enhanced_case_" + iterationId);
+    protected CaseInstance runSingleIteration(int iterationId) throws Exception {
+        // Create enhanced CaseInstance
+        CaseInstance testCase = new CaseInstance(null, "enhanced_case_" + iterationId);
 
         // Apply performance enhancements
         OptimizationResult result = applyOptimization(testCase);
@@ -306,10 +307,10 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
     }
 
     // Performance enhancement helper methods
-    private List<YCase> identifyHighValueCases(int totalCases) {
+    private List<CaseInstance> identifyHighValueCases(int totalCases) {
         // Identify the 80% of cases that deliver 20% of value
         // (Simplified implementation)
-        List<YCase> allCases = new ArrayList<>(benchmarkCases);
+        List<CaseInstance> allCases = new ArrayList<>(benchmarkCases);
         Collections.shuffle(allCases);
 
         // Take 20% of cases (assuming they're high-value)
@@ -317,7 +318,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         return allCases.subList(0, Math.min(highValueCount, allCases.size()));
     }
 
-    private OptimizationResult applyOptimization(YCase testCase) {
+    private OptimizationResult applyOptimization(CaseInstance testCase) {
         Instant start = Instant.now();
 
         try {
@@ -366,7 +367,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         }
     }
 
-    private OptimizationResult applyEnhancedOptimization(YCase testCase) {
+    private OptimizationResult applyEnhancedOptimization(CaseInstance testCase) {
         // Apply multiple optimizations using structured concurrency
         Instant start = Instant.now();
 
@@ -375,7 +376,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
             List<CompletableFuture<Void>> optimizationFutures = new ArrayList<>();
 
             // Virtual thread optimization
-            if (enableVirtualThreadScaling) {
+            if (config().enableVirtualThreads()) {
                 CompletableFuture<Void> vtFuture = CompletableFuture.runAsync(() ->
                     applyVirtualThreadOptimization(testCase), virtualThreadExecutor);
                 optimizationFutures.add(vtFuture);
@@ -423,10 +424,10 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         }
     }
 
-    private String selectOptimizationType(YCase testCase) {
+    private String selectOptimizationType(CaseInstance testCase) {
         // Select optimization based on case characteristics
-        int complexity = (Integer) testCase.getData("complexity");
-        int optimizationLevel = (Integer) testCase.getData("optimization_level");
+        int complexity = 0; // (Integer) testCase.getData("complexity");
+        int optimizationLevel = optimizationLevel; // (Integer) testCase.getData("optimization_level");
 
         if (complexity == 0 && optimizationLevel >= 2) {
             return "virtual_thread";
@@ -441,11 +442,11 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         }
     }
 
-    private void applyVirtualThreadOptimization(YCase testCase) {
+    private void applyVirtualThreadOptimization(CaseInstance testCase) {
         // Apply virtual thread specific optimizations
-        testCase.setData("optimization", "virtual_thread");
-        testCase.setData("thread_count", "dynamic");
-        testCase.setData("memory_optimized", true);
+        // testCase.setData("optimization", "virtual_thread");
+        // testCase.setData("thread_count", "dynamic");
+        // testCase.setData("memory_optimized", true);
 
         // Simulate virtual thread scaling
         try {
@@ -455,30 +456,30 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         }
     }
 
-    private void applyCachingOptimization(YCase testCase) {
+    private void applyCachingOptimization(CaseInstance testCase) {
         // Apply caching optimizations
-        testCase.setData("optimization", "caching");
-        testCase.setData("cache_enabled", true);
-        testCase.setData("cache_strategy", "lru");
+        // testCase.setData("optimization", "caching");
+        // testCase.setData("cache_enabled", true);
+        // testCase.setData("cache_strategy", "lru");
 
         // Simulate caching
         String cacheKey = "case_" + testCase.getID();
         String cachedData = getCachedData(cacheKey);
-        testCase.setData("cached_result", cachedData);
+        // testCase.setData("cached_result", cachedData);
     }
 
-    private void applyParallelOptimization(YCase testCase) {
+    private void applyParallelOptimization(CaseInstance testCase) {
         // Apply parallel processing optimizations
-        testCase.setData("optimization", "parallel");
-        testCase.setData("parallel_enabled", true);
-        testCase.setData("thread_pool_size", "adaptive");
+        // testCase.setData("optimization", "parallel");
+        // testCase.setData("parallel_enabled", true");
+        // testCase.setData("thread_pool_size", "adaptive");
 
         // Simulate parallel processing
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             final int taskId = i;
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                testCase.setData("parallel_task_" + taskId, "completed");
+                // testCase.setData("parallel_task_" + taskId, "completed");
             }, virtualThreadExecutor);
             futures.add(future);
         }
@@ -486,26 +487,26 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         try {
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         } catch (Exception e) {
-            testCase.setData("parallel_error", e.getMessage());
+            // testCase.setData("parallel_error", e.getMessage());
         }
     }
 
-    private void applyAdaptiveScaling(YCase testCase) {
+    private void applyAdaptiveScaling(CaseInstance testCase) {
         // Apply adaptive scaling optimizations
-        testCase.setData("optimization", "adaptive");
-        testCase.setData("scaling_strategy", "dynamic");
-        testCase.setData("resource_allocation", "adaptive");
+        // testCase.setData("optimization", "adaptive");
+        // testCase.setData("scaling_strategy", "dynamic");
+        // testCase.setData("resource_allocation", "adaptive");
 
         // Simulate adaptive scaling
         int workload = calculateWorkload(testCase);
         int scale = calculateOptimalScale(workload);
-        testCase.setData("scale_factor", scale);
+        // testCase.setData("scale_factor", scale);
     }
 
-    private void applyGeneralOptimization(YCase testCase) {
+    private void applyGeneralOptimization(CaseInstance testCase) {
         // Apply general optimizations
-        testCase.setData("optimization", "general");
-        testCase.setData("basic_optimization", true);
+        // testCase.setData("optimization", "general");
+        // testCase.setData("basic_optimization", true);
 
         // Simulate basic optimization
         try {
@@ -523,9 +524,9 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         return null;
     }
 
-    private int calculateWorkload(YCase testCase) {
+    private int calculateWorkload(CaseInstance testCase) {
         // Calculate workload based on case complexity
-        int complexity = (Integer) testCase.getData("complexity");
+        int complexity = 0; // (Integer) testCase.getData("complexity");
         return complexity * 100; // Simplified workload calculation
     }
 
@@ -534,10 +535,10 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         return Math.min(100, Math.max(1, workload / 10));
     }
 
-    private double calculateOptimizationEfficiency(YCase testCase, Duration duration) {
+    private double calculateOptimizationEfficiency(CaseInstance testCase, Duration duration) {
         // Calculate efficiency based on optimization results
         long executionTime = duration.toMillis();
-        int complexity = (Integer) testCase.getData("complexity");
+        int complexity = 0; // (Integer) testCase.getData("complexity");
 
         // Base efficiency calculation
         double baseEfficiency = 100.0 / (executionTime + 1);
@@ -547,7 +548,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         return Math.min(1.0, efficiency); // Cap at 1.0
     }
 
-    private double calculateEnhancedEfficiency(YCase testCase, Duration duration) {
+    private double calculateEnhancedEfficiency(CaseInstance testCase, Duration duration) {
         // Calculate enhanced efficiency with multiple optimizations
         long executionTime = duration.toMillis();
         int optimizationsApplied = countOptimizationsApplied(testCase);
@@ -560,13 +561,13 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         return Math.min(1.5, efficiency); // Cap at 1.5 for enhanced
     }
 
-    private int countOptimizationsApplied(YCase testCase) {
+    private int countOptimizationsApplied(CaseInstance testCase) {
         // Count how many optimizations were applied
         int count = 0;
-        if (testCase.getData("virtual_thread") != null) count++;
-        if (testCase.getData("caching") != null) count++;
-        if (testCase.getData("parallel") != null) count++;
-        if (testCase.getData("adaptive") != null) count++;
+        // if (testCase.getData("virtual_thread") != null) count++;
+        // if (testCase.getData("caching") != null) count++;
+        // if (testCase.getData("parallel") != null) count++;
+        // if (testCase.getData("adaptive") != null) count++;
         return count;
     }
 
@@ -575,13 +576,13 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
         try {
             Instant start = Instant.now();
 
-            List<Future<YCase>> futures = new ArrayList<>();
+            List<Future<CaseInstance>> futures = new ArrayList<>();
             int successCount = 0;
 
             for (int i = 0; i < cases; i++) {
-                Future<YCase> future = virtualThreadExecutor.submit(() -> {
+                Future<CaseInstance> future = virtualThreadExecutor.submit(() -> {
                     try {
-                        YCase testCase = new YCase(null, "vt_case_" + i);
+                        CaseInstance testCase = new CaseInstance(null, "vt_case_" + i);
                         applyVirtualThreadOptimization(testCase);
                         successCount++;
                         return testCase;
@@ -594,8 +595,8 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
             }
 
             // Wait for all cases
-            for (Future<YCase> future : futures) {
-                YCase result = future.get(10, TimeUnit.SECONDS);
+            for (Future<CaseInstance> future : futures) {
+                CaseInstance result = future.get(10, TimeUnit.SECONDS);
                 bh.consume(result);
             }
 
@@ -621,7 +622,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
                 final int operationId = i;
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
-                        YCase testCase = new YCase(null, "throughput_case_" + operationId);
+                        CaseInstance testCase = new CaseInstance(null, "throughput_case_" + operationId);
                         applyParallelOptimization(testCase);
                         successCount++;
                     } catch (Exception e) {
@@ -653,11 +654,11 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
             Instant start = Instant.now();
 
             // Apply latency optimizations
-            List<YCase> results = new ArrayList<>();
+            List<CaseInstance> results = new ArrayList<>();
             long totalLatency = 0;
 
             for (int i = 0; i < operations; i++) {
-                YCase testCase = new YCase(null, "latency_case_" + i);
+                CaseInstance testCase = new CaseInstance(null, "latency_case_" + i);
                 Instant caseStart = Instant.now();
 
                 applyCachingOptimization(testCase);
@@ -686,7 +687,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
     private void testPerformanceEnhancement(Blackhole bh) {
         try {
             // Test basic performance enhancement
-            YCase testCase = new YCase(null, "basic_enhancement_case");
+            CaseInstance testCase = new CaseInstance(null, "basic_enhancement_case");
             OptimizationResult result = applyOptimization(testCase);
 
             bh.consume(testCase);
@@ -730,7 +731,7 @@ public class PerformanceEnhancementBenchmarkAgent extends BaseBenchmarkAgent {
 
     // Performance optimizer
     public static class PerformanceOptimizer {
-        public void optimize(YCase testCase) {
+        public void optimize(CaseInstance testCase) {
             // Apply performance optimizations to test case
         }
     }

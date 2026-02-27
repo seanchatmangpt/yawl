@@ -71,6 +71,37 @@ public class PerformanceMonitor {
     }
 
     /**
+     * Check system health before benchmark execution
+     */
+    public void checkSystemHealth() {
+        // Check available memory
+        Runtime runtime = Runtime.getRuntime();
+        long maxMemory = runtime.maxMemory();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+
+        double memoryUsagePercent = (double) usedMemory / maxMemory * 100;
+
+        // Check CPU load (simplified check)
+        int availableProcessors = runtime.availableProcessors();
+
+        // Log system health status
+        System.out.println("=== System Health Check ===");
+        System.out.println("Available Processors: " + availableProcessors);
+        System.out.println("Memory Usage: " + memoryUsagePercent + "% (" + (usedMemory / 1024 / 1024) + "MB used)");
+        System.out.println("Max Memory: " + (maxMemory / 1024 / 1024) + "MB");
+
+        // Check if memory usage is too high
+        if (memoryUsagePercent > 90) {
+            System.err.println("Warning: High memory usage detected (" + memoryUsagePercent + "%)");
+        }
+
+        // Record system metrics
+        recordMemoryUsage(usedMemory);
+    }
+
+    /**
      * Record operation completion time
      */
     public void recordOperation(int threadCount, long duration, long successes, long failures) {

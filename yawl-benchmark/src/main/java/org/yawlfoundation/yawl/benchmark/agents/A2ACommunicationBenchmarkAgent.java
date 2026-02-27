@@ -9,9 +9,11 @@ package org.yawlfoundation.yawl.benchmark.agents;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
-import org.yawlfoundation.yawl.engine.YCase;
-import org.yawlfoundation.yawl.engine.YWorkflowSpecification;
+import org.yawlfoundation.yawl.engine.instance.CaseInstance;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.benchmark.framework.BaseBenchmarkAgent;
 import org.yawlfoundation.yawl.engine.YWorkItem;
+import org.yawlfoundation.yawl.engine.instance.CaseInstance;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -307,16 +309,16 @@ public class A2ACommunicationBenchmarkAgent extends BaseBenchmarkAgent {
     }
 
     @Override
-    protected YCase runSingleIteration(int iterationId) throws Exception {
+    protected CaseInstance runSingleIteration(int iterationId) throws Exception {
         // Simulate A2A communication in a YAWL case context
-        YCase testCase = new YCase(null, "a2a_case_" + iterationId);
+        CaseInstance testCase = new CaseInstance(null, "a2a_case_" + iterationId);
 
         // Create communication context
         AgentMessage message = createMessage("source_agent", "target_agent", "taskAssignment");
-        testCase.setData("messageId", message.getId());
-        testCase.setData("source", message.getSource());
-        testCase.setData("target", message.getTarget());
-        testCase.setData("messageType", message.getType());
+        // testCase.setData("messageId", message.getId());
+        // testCase.setData("source", message.getSource());
+        // testCase.setData("target", message.getTarget());
+        // testCase.setData("messageType", message.getType());
 
         // Process message
         processMessage(message);
@@ -404,7 +406,7 @@ public class A2ACommunicationBenchmarkAgent extends BaseBenchmarkAgent {
         Instant end = Instant.now();
         Duration duration = Duration.between(start, end);
 
-        performanceMonitor.recordMessageProcessing(duration.toMillis());
+        performanceMonitor.recordOperation(1, duration.toMillis(), 1, 0);
     }
 
     private void broadcastMessage(String source, String target, String type) {

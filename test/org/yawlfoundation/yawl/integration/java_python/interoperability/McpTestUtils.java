@@ -210,22 +210,22 @@ public final class McpTestUtils {
         // Create input and output conditions
         YInputCondition input = new YInputCondition("input", "Input Condition");
         YOutputCondition output = new YOutputCondition("output", "Output Condition");
-        net.addCondition(input);
-        net.addCondition(output);
+        net.addNetElement(input);
+        net.addNetElement(output);
 
         // Create tasks
         YTask task1 = new YAtomicTask("task1", "Task 1");
         YTask task2 = new YAtomicTask("task2", "Task 2");
         YTask task3 = new YAtomicTask("task3", "Task 3");
-        net.addTask(task1);
-        net.addTask(task2);
-        net.addTask(task3);
+        net.addNetElement(task1);
+        net.addNetElement(task2);
+        net.addNetElement(task3);
 
         // Create flows
-        net.addFlow(input, task1);
-        net.addFlow(task1, task2);
-        net.addFlow(task2, task3);
-        net.addFlow(task3, output);
+        input.addPostset(new YFlow(input, task1));
+        task1.addPostset(new YFlow(task1, task2));
+        task2.addPostset(new YFlow(task2, task3));
+        task3.addPostset(new YFlow(task3, output));
 
         // Set start and end elements
         net.setStartCondition(input);

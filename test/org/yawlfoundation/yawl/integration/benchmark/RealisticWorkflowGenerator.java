@@ -317,7 +317,7 @@ public class RealisticWorkflowGenerator {
         YTask task = new YTask(id);
         task.setName(name);
         task.setTaskID(id);
-        workflow.addTask(task);
+        workflow.addNetElement(task);
         return task;
     }
 
@@ -591,7 +591,7 @@ public class RealisticWorkflowGenerator {
             connectedTasks.add(flow.getTarget());
         }
 
-        for (YTask task : workflow.getTasks()) {
+        for (YTask task : workflow.getNetTasks()) {
             if (!connectedTasks.contains(task)) {
                 issues.add("Task " + task.getTaskID() + " is disconnected from workflow");
             }
@@ -603,7 +603,7 @@ public class RealisticWorkflowGenerator {
         }
 
         // Check data consistency
-        for (YTask task : workflow.getTasks()) {
+        for (YTask task : workflow.getNetTasks()) {
             if (task.getInputParameters().isEmpty() && !workflow.getInputParameters().isEmpty()) {
                 issues.add("Task " + task.getTaskID() + " has no input parameters");
             }
@@ -623,7 +623,7 @@ public class RealisticWorkflowGenerator {
     public Map<String, Object> getWorkflowStats(YNet workflow) {
         Map<String, Object> stats = new HashMap<>();
 
-        stats.put("task_count", workflow.getTasks().size());
+        stats.put("task_count", workflow.getNetTasks().size());
         stats.put("input_params", workflow.getInputParameters().size());
         stats.put("control_flows", workflow.getControlFlows().size());
         stats.put("data_variables", workflow.getDataVariables().size());
@@ -631,11 +631,11 @@ public class RealisticWorkflowGenerator {
         stats.put("spec_id", workflow.getSpecificationID());
 
         // Calculate complexity metrics
-        int totalParams = workflow.getTasks().stream()
+        int totalParams = workflow.getNetTasks().stream()
             .mapToInt(t -> t.getInputParameters().size() + t.getOutputParameters().size())
             .sum();
         stats.put("total_parameters", totalParams);
-        stats.put("avg_params_per_task", totalParams / Math.max(1, workflow.getTasks().size()));
+        stats.put("avg_params_per_task", totalParams / Math.max(1, workflow.getNetTasks().size()));
 
         return stats;
     }

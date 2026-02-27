@@ -12,6 +12,8 @@ import java.util.Set;
 
 import org.jdom2.JDOMException;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.elements.YCondition;
@@ -66,7 +68,7 @@ class TestEngineSystem2 {
         _engine.loadSpecification(_specification);
         YIdentifier id = _engine.startCase(_specification.getSpecificationID(), null,
                 null, null, new YLogDataItemList(), null, false);
-        _netRunner = _engine._netRunnerRepository.get(id);
+        _netRunner = _engine.getNetRunner(id);
         try {
             //enabled btop
             Set currWorkItems = _workItemRepository.getEnabledWorkItems();
@@ -158,7 +160,7 @@ class TestEngineSystem2 {
         _engine.loadSpecification(_specification);
             YIdentifier id = _engine.startCase(_specification.getSpecificationID(), null,
                     null, null, new YLogDataItemList(), null, false);
-           _netRunner = _engine._netRunnerRepository.get(id);
+           _netRunner = _engine.getNetRunner(id);
         try {
             //enabled btop
             Set currWorkItems = _workItemRepository.getEnabledWorkItems();
