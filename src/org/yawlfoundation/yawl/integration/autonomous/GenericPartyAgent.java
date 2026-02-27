@@ -179,6 +179,29 @@ public final class GenericPartyAgent {
         return lifecycle.get();
     }
 
+    /**
+     * Attempts to hand off a work item to another capable agent following the
+     * ADR-025 agent coordination protocol. This method queries the agent registry
+     * for substitute agents and initiates the handoff process.
+     *
+     * @param workItemId the ID of the work item to classify and potentially hand off
+     * @param sessionHandle the Interface B session handle for the work item
+     * @throws HandoffException if no capable agents are available or the handoff fails
+     */
+    public void handoffWorkItem(String workItemId, String sessionHandle) throws HandoffException {
+        classifyHandoffIfNeeded(workItemId, sessionHandle);
+    }
+
+    /**
+     * Internal method to classify and hand off a work item to another capable agent.
+     * Uses the agent registry to find substitute agents and initiates the transfer.
+     *
+     * @param workItemId the ID of the work item to classify and potentially hand off
+     * @param sessionHandle the Interface B session handle for the work item
+     * @throws HandoffException if no capable agents are available or the handoff fails
+     */
+    private void classifyHandoffIfNeeded(String workItemId, String sessionHandle) throws HandoffException {
+
     // =========================================================================
     // Private: HTTP Server Setup
     // =========================================================================
@@ -322,7 +345,7 @@ public final class GenericPartyAgent {
      * @param sessionHandle the Interface B session handle for the work item
      * @throws HandoffException if no capable agents are available or the handoff fails
      */
-    private void classifyHandoffIfNeeded(String workItemId, String sessionHandle) throws HandoffException {
+    public void classifyHandoffIfNeeded(String workItemId, String sessionHandle) throws HandoffException {
         try {
             // Query agent registry for capable substitute agents
             List<AgentInfo> capableAgents = config.registryClient().findAgentsByCapability(
