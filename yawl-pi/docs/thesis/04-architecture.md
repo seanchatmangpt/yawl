@@ -1,14 +1,14 @@
 # Chapter 4 — Architecture: The YAWL PI Stack
 
-> *"Eight capabilities. 255 emergent combinations. One JVM."*
+> *"Ten capabilities. 1023 emergent combinations. One JVM."*
 
 ---
 
-## 4.1 The Eight Capability Packages
+## 4.1 The Ten Capability Packages
 
-The YAWL Process Intelligence module (`yawl-pi`) implements eight co-located
-capability packages, each independently valuable and exponentially more valuable
-in combination:
+The YAWL Process Intelligence stack implements ten co-located capability packages
+across three modules (`yawl-pi`, `yawl-graaljs`, `yawl-graalwasm`), each
+independently valuable and exponentially more valuable in combination:
 
 ```
 org.yawlfoundation.yawl.pi
@@ -64,6 +64,22 @@ org.yawlfoundation.yawl.pi
 └── mcp/              MCP tool provider for AI agent integration
     ├── PIToolProvider              Exposes PI capabilities as MCP tools
     └── PISkill                    Individual tool skill definition
+
+org.yawlfoundation.yawl.graaljs   (yawl-graaljs module)          [new v6.0]
+├── JavaScriptExecutionEngine       Main API; thread-safe JS evaluation
+├── JavaScriptContextPool           Pool of GraalJS interpreter contexts
+├── JavaScriptExecutionContext      Single GraalJS context wrapper
+├── JsTypeMarshaller                Java ↔ JavaScript type conversion
+└── JavaScriptSandboxConfig         Security policy (STRICT/STANDARD/PERMISSIVE/forWasm)
+
+org.yawlfoundation.yawl.graalwasm  (yawl-graalwasm module)        [new v6.0]
+├── WasmExecutionEngine             General-purpose WASM execution
+├── WasmModule                      Loaded + instantiated WASM module
+├── WasmBinaryCache                 ConcurrentHashMap of parsed WASM sources
+├── WasmSandboxConfig               WASI level and IO access policy
+├── WasmException                   7 ErrorKind values
+└── Rust4pmBridge                   OCEL2 process mining via @aarkue/process_mining_wasm
+                                    (Rust-compiled WASM, wasm-bindgen, JS+WASM polyglot)
 ```
 
 ## 4.2 The Integration Spine
@@ -229,6 +245,53 @@ framework, which maps to four roles users need:
 This mapping ensures that a developer at any experience level — from "I just want
 insurance triage to work" to "I need to understand exactly what fires on
 `announceDeadlock`" — has a documented entry point.
+
+## 4.6 The OCEL2 Grounding — Answering "No AI Without PI!"
+
+Van der Aalst's 2025 paper *"No AI Without PI!"* argues that **Process Intelligence
+is the grounding layer for all enterprise AI**: without access to actual process
+execution data (event logs), AI systems produce recommendations that are
+ungrounded in operational reality.
+
+YAWL v6.0 answers this argument with a concrete implementation:
+
+```
+OCEL2 XML event log (external)
+    ↓
+Rust4pmBridge.parseOcel2XmlToJsonString(ocel2Xml)
+    ↓  (Rust-compiled WASM via GraalWasm polyglot — no Python, no network)
+JSON representation of OCEL2 object-centric event log
+    ↓
+OcedBridge (bridge package) — import into WorkflowEventStore
+    ↓
+ProcessMiningTrainingDataExtractor — extract features from live event store
+    ↓
+ProcessMiningAutoMl.autoTrainCaseOutcome(...) — TPOT2 discovers optimal pipeline
+    ↓
+PredictiveModelRegistry — ONNX model deployed in-process
+    ↓
+PredictiveProcessObserver — predictions fire in ObserverGateway callbacks (<1ms)
+```
+
+**What this eliminates**: In PM4Py, ocpa, or Celonis, OCEL2 parsing requires a
+Python runtime or an external platform API call. The round-trip is measured in
+seconds. `Rust4pmBridge` parses OCEL2 natively in the JVM via a Rust-compiled
+WebAssembly module — the call completes in the same thread, in the same JVM,
+with no serialization boundary.
+
+**The van der Aalst 5-connection diagram** maps to YAWL v6.0 as follows:
+
+| Van der Aalst connection | YAWL v6.0 implementation |
+|---|---|
+| Event data → process models | `Rust4pmBridge` + `OcedBridge` → `WorkflowEventStore` |
+| Process models → predictions | `ProcessMiningAutoMl` → ONNX via TPOT2 |
+| Predictions → decisions | `PredictiveProcessObserver` → `EventDrivenAdaptationEngine` |
+| Decisions → actions | `AdaptationAction`: 8 engine-level interventions |
+| Actions → event data (loop) | `YNetRunner` → `WorkflowEventStore` → closed loop |
+
+The co-location thesis is van der Aalst's PI argument taken to its logical
+conclusion: not just that PI grounds AI, but that **co-location of PI and
+execution eliminates every latency barrier** between data, model, and action.
 
 ---
 

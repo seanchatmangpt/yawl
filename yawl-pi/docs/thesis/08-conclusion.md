@@ -30,10 +30,13 @@ be reduced below ~2μs on the same machine and ~500μs across datacenters, regar
 of engineering excellence. Co-located ONNX inference achieves 50–500μs — achieving
 parity only because it runs in the same JVM, with no process boundary to cross.
 
-The Combinatoric Value Law shows that N=8 co-located capabilities produce 255 active
-emergent combinations versus ~18 in the best achievable distributed deployment — a
-14× increase in combination value, with the highest-order combinations (which produce
-the most novel behaviours) available exclusively in co-located architecture.
+The Combinatoric Value Law shows that N=10 co-located capabilities produce 1023 active
+emergent combinations versus ~20 in the best achievable distributed deployment — a
+51× increase in combination value, with the highest-order combinations (which produce
+the most novel behaviours) available exclusively in co-located architecture. The two
+new capabilities added in v6.0 — GraalJS and GraalWASM — are uniquely co-located
+by nature: there is no distributed equivalent for in-process JavaScript or Rust-compiled
+WASM that does not reintroduce the ETL barrier.
 
 The Self-Reference Property establishes that the closed learning loop — cases feeding
 their own training data, models updating their own predictors — requires feedback loop
@@ -42,11 +45,16 @@ this.
 
 **Architecturally** (Chapter 4):
 
-Eight capability packages — bridge, predictive, prescriptive, optimization, rag,
-automl, adaptive, mcp — implemented, tested, and running in the YAWL PI module.
-The integration spine shows every arrow as a same-JVM method call. The twelve
-`ObserverGateway` callbacks each implement real predictive or signalling behaviour.
-No empty method bodies. No stubs. No silent fallbacks.
+Ten capability packages — bridge, predictive, prescriptive, optimization, rag,
+automl, adaptive, mcp, graaljs, graalwasm — implemented, tested, and running in
+the YAWL v6.0 stack. The integration spine shows every arrow as a same-JVM method
+call. The twelve `ObserverGateway` callbacks each implement real predictive or
+signalling behaviour. No empty method bodies. No stubs. No silent fallbacks.
+
+`Rust4pmBridge` (in `graalwasm`) answers van der Aalst's "No AI Without PI!" directly:
+it parses OCEL2/OCED event logs natively in the JVM via a Rust-compiled WebAssembly
+module — no Python, no network, no process boundary. This closes the final gap between
+object-centric process intelligence and co-located AI inference.
 
 **Empirically** (Chapter 5):
 
@@ -88,6 +96,11 @@ Every theoretical claim is grounded in working, committed, tested Java code:
 | Timer expiry as definite breach | `announceTimerExpiry()` → `TIMER_EXPIRY_BREACH`, no model |
 | payloadBelow condition | `AdaptationCondition.payloadBelow()` |
 | Pre-built vertical rule sets | `PredictiveAdaptationRules.{insurance,healthcare,financial,ops}RuleSet()` |
+| In-process JavaScript execution | `JavaScriptExecutionEngine` + `JavaScriptContextPool` (GraalJS) |
+| Sandboxed JS security policy | `JavaScriptSandboxConfig` (STRICT/STANDARD/PERMISSIVE/forWasm) |
+| In-process WASM execution | `WasmExecutionEngine` + `WasmModule` (GraalWasm) |
+| OCEL2 process mining in JVM | `Rust4pmBridge.parseOcel2XmlToJsonString()` — Rust WASM, no Python |
+| Van der Aalst 5-connection grounding | bridge × graalwasm × automl × predictive × adaptive loop |
 
 50 tests across `PredictiveAdaptationRulesTest` and `EnterpriseAutoMlPatternsTest`.
 No test doubles. Real `EventDrivenAdaptationEngine`. Real `ProcessEvent`. Real
@@ -143,5 +156,5 @@ YAWL v6.0 proves this is not theoretical. It is running.
 ---
 
 *Branch: `claude/review-engine-wrap-tpot2-NHV2f` ·
-1,251 Java source files · 8 PI packages · 61 PI classes ·
-50 tests, 0 doubles · February 2026*
+1,400+ Java source files · 10 PI capability packages · 73 PI classes ·
+50 PI tests + GraalJS/GraalWasm test suites, 0 doubles · February 2026*

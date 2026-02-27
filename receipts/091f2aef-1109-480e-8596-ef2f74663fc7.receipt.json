@@ -1,9 +1,9 @@
 {
   "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
-  "started_at": "2026-02-27T17:02:12.524363775Z",
-  "ended_at": "2026-02-27T17:02:12.567870326Z",
-  "receipt_count": 86,
-  "chain_hash": "6b515915f7d9dd5e1caf66a126ecf1472ebc6861fede4d592949fa319c8ba347",
+  "started_at": "2026-02-27T17:18:12.257198247Z",
+  "ended_at": "2026-02-27T17:18:12.272581357Z",
+  "receipt_count": 96,
+  "chain_hash": "f0c43ca2247efba6286b11a6ae4d330a0ff8e8438e179ea21bfc345d71e7fc74",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -5890,6 +5890,280 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "/*",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772211816528590813,
+      "timestamp_rfc": "2026-02-27T17:03:36.528590813Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/README.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "623dc75bdb8830323645693a29325abaa510e5eb59244ad254a6553727697743",
+      "delta_hash": "21fd647385e9ad7be5f25fada9c4eddfffa9289ed911aadb11bdf2e43452440c",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# The Co-location Thesis",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772211830890857406,
+      "timestamp_rfc": "2026-02-27T17:03:50.890857406Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/00-abstract.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "69509c0b55f0eb084a56e99ed846dc203d738ec303ab1942e09586df5d2875e8",
+      "delta_hash": "2a50f5bb3be2365a6e000defb9b080aea72520daaa19b53c3dfa817d20b00e26",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Abstract",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772211870163419566,
+      "timestamp_rfc": "2026-02-27T17:04:30.163419566Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/01-introduction.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4780b9929e2e1df2f040149fa18a7f957a070b34ee09555219f4eafd1e87f99c",
+      "delta_hash": "ef05112f3b1249b4f87f52e59935c57058db9adc43662d24c65609633580501e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 1 — The Invisible Tax of Distr",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public void announceCaseStarted(Set<YAWL",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772211924629201500,
+      "timestamp_rfc": "2026-02-27T17:05:24.629201500Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/02-blue-ocean.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "af984844d4721817ae125cb3d0e9513cf6fb1b07d0046f827265a7b4e543cc35",
+      "delta_hash": "9162cae77999fe92fda6858b258af8736ce80752dca18b35b7906f6cefb07df1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 2 — Blue Ocean: Creating Uncon",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212054655364837,
+      "timestamp_rfc": "2026-02-27T17:07:34.655364837Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/03-theoretical-foundation.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "40a326020175d695e1587636b549ee2856397fe01191d6d360313b914d5bb2cd",
+      "delta_hash": "a13ae75663e79815f93db96702ff81c1764343de8ecec4bdca8261c288d30ff8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "of",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 3 — Theoretical Foundation",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "float",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212117556311816,
+      "timestamp_rfc": "2026-02-27T17:08:37.556311816Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/04-architecture.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d299911f64a50106be992e4fccb14c0a88fb0c34a31efd700939476c369ae46f",
+      "delta_hash": "df04a8a7dd4788c9d5e4ac01ebb5ffe4064a1dad8fa6221d7750c50eff4457bb",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 4 — Architecture: The YAWL PI ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212252891907505,
+      "timestamp_rfc": "2026-02-27T17:10:52.891907505Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/05-enterprise-use-cases.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "15bf46847da4d487c98e3f4ba41b8ffa53443b27f18e4e986910339bddec1a14",
+      "delta_hash": "0fd86f7235046ad1ee0891b7e938cbd074b3aee2c3d50825e6f4b1498f0b72d3",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 5 — Enterprise Use Cases",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public void announceDeadlock(Set<YAWLSer",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212379971145481,
+      "timestamp_rfc": "2026-02-27T17:12:59.971145481Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/06-next-steps.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "004d607c6cddf15a0f4117125a8cd3c2dc5fcaa24e14efa449410ec57c332fe4",
+      "delta_hash": "5def7b21da29d8712deedff0c10261292b225d40eebe5dd166f6836fed23f0f3",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 6 — Next Steps: Research Agend",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Interface",
+            "name": "AdaptationOutcomeRecorder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ClosedLoopAutoMl",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public Tpot2Result retrain(String taskNa",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "FederatedModelAggregator",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public void applyToRegistry(OnnxWeights ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "OnnxWeights",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212443096279270,
+      "timestamp_rfc": "2026-02-27T17:14:03.096279270Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/07-vision-2030.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1aa43269e12d885bb54acaafa35ec60f1c8eb172ae11365c5a1738f3d394d72d",
+      "delta_hash": "04e5f162f14e2a6e7844798122cd4b28a0a1c3c2c32cc1412c032e40f2ed5077",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 7 — Vision 2030: The Cognitive",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212491656568367,
+      "timestamp_rfc": "2026-02-27T17:14:51.656568367Z",
+      "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+      "file_path": "/home/user/yawl/yawl-pi/docs/thesis/08-conclusion.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "be894deed6351fa73017d154083cd0c06a7a3b46f985144131120d4bfc38e26f",
+      "delta_hash": "74b91b5d852be3a2a7a736648232f5acb3d60077c9dc7fadd9052591bd0d598b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Chapter 8 — Conclusion",
             "change": "Added"
           }
         }

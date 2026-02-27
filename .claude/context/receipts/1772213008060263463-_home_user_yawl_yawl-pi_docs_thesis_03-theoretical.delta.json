@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772213008060263463,
+  "timestamp_rfc": "2026-02-27T17:23:28.060263463Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/03-theoretical-foundation.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "f3cf4bc52f9a916d0ad350b7d0e2802675bc508c6a768e8fdc5e943af812e09d",
+  "delta_hash": "6d8e1ce111008789d55031b6950d090520db875cab6f1e4b9d5719d47b9c7988",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "| Property | Traditional BPM + ML | YAWL",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -96,17 +96,19 @@ None of these are possible in batch or near-real-time architectures.
 
 ### Formal Setup
 
-Let S = {C₁, C₂, ..., Cₙ} be a set of n co-located capabilities, where for YAWL PI:
+Let S = {C₁, C₂, ..., Cₙ} be a set of n co-located capabilities, where for YAWL v6.0:
 
 ```
-C₁ = bridge      (OCED event data import)
-C₂ = predictive  (ONNX-based prediction)
-C₃ = prescriptive (constraint-based recommendation)
-C₄ = optimization (resource and scheduling optimization)
-C₅ = rag         (natural language process reasoning)
-C₆ = automl      (TPOT2 automated model training)
-C₇ = adaptive    (ObserverGateway-based real-time adaptation)
-C₈ = mcp         (AI agent tool provider)
+C₁  = bridge      (OCED event data import — CSV, JSON, XML)
+C₂  = predictive  (ONNX-based real-time prediction)
+C₃  = prescriptive (constraint-based action recommendation)
+C₄  = optimization (resource and scheduling optimization)
+C₅  = rag         (natural language process reasoning)
+C₆  = automl      (TPOT2 automated model training)
+C₇  = adaptive    (ObserverGateway-based real-time adaptation)
+C₈  = mcp         (AI agent tool provider)
+C₉  = graaljs     (in-process JavaScript execution, sandboxed)
+C₁₀ = graalwasm   (in-process WASM + OCEL2 via Rust4pmBridge)
 ```
 
 Define:
@@ -126,21 +128,23 @@ V_distributed(S) = Σᵢ V(Cᵢ) + Σ_{lag-tolerant pairs} ε(Cᵢ, Cⱼ)
 
 where ε(Cᵢ, Cⱼ) << V(Cᵢ) + V(Cⱼ) because high-frequency interaction is prohibitively
 expensive. In practice, most enterprise deployments use C₁, C₂, and C₆ in a weekly
-batch pipeline. C₇ (real-time adaptation) is structurally unavailable.
+batch pipeline. C₇ (real-time adaptation) is structurally unavailable. C₉ and C₁₀
+have no distributed equivalent — they eliminate Python, subprocess, and network
+for JavaScript and WASM process mining.
 
 ### Co-located Value (Combinatoric)
 
 In co-located architecture, all interactions run at inference latency:
 
 ```
-V_colocated(S) = Σᵢ V(Cᵢ)                           (8 standalone terms)
-               + Σ_{i<j} V(Cᵢ, Cⱼ)                  (C(8,2) = 28 pairwise terms)
-               + Σ_{i<j<k} V(Cᵢ, Cⱼ, Cₖ)            (C(8,3) = 56 triple terms)
-               + ... + V(C₁, C₂, ..., C₈)            (1 full-system term)
-               = Σ_{∅≠T⊆S} V(T)                      (2⁸ - 1 = 255 non-empty subsets)
+V_colocated(S) = Σᵢ V(Cᵢ)                             (10 standalone terms)
+               + Σ_{i<j} V(Cᵢ, Cⱼ)                    (C(10,2) = 45 pairwise terms)
+               + Σ_{i<j<k} V(Cᵢ, Cⱼ, Cₖ)              (C(10,3) = 120 triple terms)
+               + ... + V(C₁, C₂, ..., C₁₀)             (1 full-system term)
+               = Σ_{∅≠T⊆S} V(T)                        (2¹⁰ - 1 = 1023 non-empty subsets)
 ```
 
-### Selected Pairwise Interactions (28 total)
+### Selected Pairwise Interactions (45 total)
 
 | Pair | Emergent capability |
 |---|---|
@@ -154,30 +158,38 @@ V_colocated(S) = Σᵢ V(Cᵢ)                           (8 standalone terms)
 | automl × bridge | New OCED log format → auto-infer schema → auto-train → auto-register model |
 | predictive × adaptive | Inference result → adaptation rule firing → `AdaptationResult` in same JVM call |
 | adaptive × mcp | AI agent observes live adaptation decisions and adjusts strategy |
+| graalwasm × bridge | `Rust4pmBridge` parses OCEL2 XML natively → `OcedBridge` imports into live event store |
+| graaljs × mcp | AI agent calls JS process logic functions directly via `JavaScriptExecutionEngine` |
+| graalwasm × automl | OCEL2 parsed WASM-in-JVM → feature extraction → TPOT2 trains on richer feature set |
+| graaljs × adaptive | In-process JS rule evaluation in `ObserverGateway` callbacks (<1ms, no subprocess) |
+| graalwasm × predictive | Rust-quality feature extraction from OCEL2 log → ONNX inference, no Python |
 
-### Selected Triple Interactions (56 total)
+### Selected Triple Interactions (120 total, highlighting new)
 
 | Triple | Emergent capability |
 |---|---|
 | predictive × prescriptive × adaptive | Predict outcome → prescribe action → adapt routing → measure result → retrain (closed loop) |
 | rag × mcp × automl | "Fraud rate increased" → AI agent extracts features → triggers automl → deploys new model |
 | bridge × optimization × adaptive | New data source → optimize resource assignment → adapt case routing, fully autonomous |
-| bridge × automl × predictive | Historical OCED → train models → real-time inference on live cases |
+| **graalwasm × bridge × automl** | **OCEL2 XML → Rust4pmBridge → OcedBridge → ProcessMiningAutoMl: end-to-end without Python** |
+| **graaljs × adaptive × mcp** | **JS process logic + adaptation rules + AI agent: triple-grounded autonomous process management** |
 | adaptive × rag × mcp | Every adaptation decision explainable in NL via AI agent queries |
+| **graalwasm × predictive × adaptive** | **OCEL2 features → ONNX inference → ObserverGateway adaptation: Rust-to-adaptation pipeline** |
 
 ### Quantitative Comparison
 
-For n=8, the total emergent combination space:
+For n=10, the total emergent combination space:
 
 | Architecture | Combinations active | Value model |
 |---|---|---|
-| Distributed (batch ETL) | ~8 standalone + 3 batch pairs | Linear: ~11 terms |
-| Distributed (real-time API) | ~8 + ~10 low-frequency pairs | Sub-linear: ~18 terms |
-| Co-located (same JVM) | All 255 non-empty subsets | Exponential: 255 terms |
+| Distributed (batch ETL) | ~10 standalone + 3 batch pairs | Linear: ~13 terms |
+| Distributed (real-time API) | ~10 + ~10 low-frequency pairs | Sub-linear: ~20 terms |
+| Co-located (same JVM) | All 1023 non-empty subsets | Exponential: 1023 terms |
 
-The co-located deployment activates **23× more combination value** than the best
-achievable distributed deployment. More importantly, it activates the high-order
-combinations (triples, quadruples) that produce the most novel emergent behaviour.
+The co-located deployment activates **51× more combination value** than the best
+achievable distributed deployment. The GraalJS and GraalWASM additions are
+uniquely co-located capabilities: in-process JavaScript and Rust-compiled WASM
+cannot be replicated by API calls without reintroducing the ETL barrier.
 
 ---
 
@@ -245,8 +257,10 @@ Self-Reference Property — collectively establish a new system classification:
 | Property | Traditional BPM + ML | YAWL PI (IPOS) |
 |---|---|---|
 | ETL Barrier | Present (hours–days) | Eliminated (μs inference) |
-| Interaction combinations active | ~10% | 100% (255/255) |
+| Interaction combinations active | ~2% | 100% (1023/1023) |
 | Self-reference | Absent | Present (closed loop) |
+| In-process JavaScript | Absent (subprocess) | GraalJS, sandboxed, pooled |
+| In-process WASM / OCEL2 | Absent (Python/subprocess) | Rust4pmBridge, wasm-bindgen |
 | Market category | BPM + separate ML | Intelligent Process OS |
 
 The IPOS is not a better implementation of the traditional stack. It is a different
