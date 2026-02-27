@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772161196578378128,
+  "timestamp_rfc": "2026-02-27T02:59:56.578378128Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/mossy-greeting-valiant-agent-a5caef2cac93ba84d.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ee8604c9e0eff5286cedf7cca30afbab620445aa6856bf54c483182fc0b47cc5",
+  "delta_hash": "448f6446be304a70a463a7e7af901cd9397e9a5a8a62148b3ba977ef5cfc810e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Test File Rewrite Plan — YAWL Benchmar",
+        "change": "Added"
+      }
+    }
+  ]
+}

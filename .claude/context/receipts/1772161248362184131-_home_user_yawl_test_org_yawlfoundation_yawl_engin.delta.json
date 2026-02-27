@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772161248362184131,
+  "timestamp_rfc": "2026-02-27T03:00:48.362184131Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/MemoryLeakStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "79d60b840b7ccda6d1629da316bb46483e8015d36be8f7e04d81b55c8bba2699",
+  "delta_hash": "9a90f4ce485703d77d3e240c96d35a9381a92d521534079f4f7aa277d6498bc4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "package org.yawlfoundation.yawl.engine;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

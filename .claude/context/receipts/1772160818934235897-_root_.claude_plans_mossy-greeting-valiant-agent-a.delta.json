@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772160818934235897,
+  "timestamp_rfc": "2026-02-27T02:53:38.934235897Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/mossy-greeting-valiant-agent-a8195a029e153952b.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7ae5d4314a8a2de4e6e3f358777193ddc558a6118395d940d7a7a121d012aea1",
+  "delta_hash": "8fd4038fc77c5c198a1dec0ede2f9750e429c3349c1c8f79c6b67f9699c67d0f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "# Plan: Rewrite 3 Test Files",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    }
+  ]
+}

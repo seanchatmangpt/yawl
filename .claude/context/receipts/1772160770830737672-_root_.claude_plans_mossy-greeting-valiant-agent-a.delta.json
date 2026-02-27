@@ -1,0 +1,82 @@
+{
+  "timestamp_ns": 1772160770830737672,
+  "timestamp_rfc": "2026-02-27T02:52:50.830737672Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/mossy-greeting-valiant-agent-ace18b859ae2ebe31.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9bcb5603dc2a3b04818482ea9599b58ea812e76170e9000da9db824b6bd2d2a8",
+  "delta_hash": "7a98cdf1206294a67a4ede58048ca73051466279e84fd1114363dad4ce1baeab",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final YSpecification spec;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "record ValidationResult(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final int WARMUP = 10;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "record ValidationReport(",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final YStatelessEngine engine;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "TargetValidator",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "# Plan: Rewrite BenchmarkRunner.java and",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final int MEASURE = 50;",
+        "change": "Added"
+      }
+    }
+  ]
+}

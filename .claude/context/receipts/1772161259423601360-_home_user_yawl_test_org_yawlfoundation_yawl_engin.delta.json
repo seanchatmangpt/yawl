@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772161259423601360,
+  "timestamp_rfc": "2026-02-27T03:00:59.423601360Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/MemoryLeakStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "838a0d4f06b301c25fb74592cb921c1326f4ffc80dbf2672cd16bebb34945202",
+  "delta_hash": "e13bd1610668a3ac093a96a80e3abfc02971c03fb9a1f4c2ce6cf4c81c47203f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@AfterEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Timeout",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "record HeapSnapshot",
+        "change": "Added"
+      }
+    }
+  ]
+}
