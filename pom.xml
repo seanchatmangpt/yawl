@@ -78,6 +78,7 @@
         <module>yawl-graalpy</module>
         <module>yawl-graaljs</module>
         <module>yawl-graalwasm</module>
+        <module>yawl-benchmark</module>
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.

@@ -1,0 +1,290 @@
+# YAWL v6.0.0-GA Benchmark Profiles Configuration
+#
+# This file defines the benchmark profiles used by the orchestration scripts.
+# Each profile specifies which benchmarks to run, their configuration, and thresholds.
+
+[profiles.development]
+name = "Development Profile"
+description = "Quick subset of tests for development verification"
+duration = "5-10 minutes"
+parallel_jobs = 2
+jvm_args = [
+    "-Xms1g",
+    "-Xmx2g",
+    "-XX:+UseCompactObjectHeaders",
+    "-XX:+UseZGC"
+]
+
+[profiles.development.benchmarks]
+enabled = [
+    "jmh_unit",
+    "memory_basic",
+    "integration_fast"
+]
+disabled = [
+    "stress_full",
+    "chaos_extended",
+    "production_load"
+]
+
+[profiles.development.thresholds]
+response_time_ms = 5000
+throughput_ops = 100
+error_rate = 0.05
+memory_mb = 1024
+
+[profiles.development.custom_params]
+jmh_threads = 1
+jmh_forks = 1
+jmh_iterations = 3
+jmh_warmup = 2
+think_time_ms = 1000
+
+[profiles.ci]
+name = "CI Profile"
+description = "Comprehensive tests for CI/CD pipeline"
+duration = "30-60 minutes"
+parallel_jobs = 4
+jvm_args = [
+    "-Xms2g",
+    "-Xmx4g",
+    "-XX:+UseCompactObjectHeaders",
+    "-XX:+UseZGC",
+    "-XX:+UseContainerSupport"
+]
+
+[profiles.ci.benchmarks]
+enabled = [
+    "jmh_unit",
+    "jmh_integration",
+    "memory_comprehensive",
+    "stress_medium",
+    "chaos_basic",
+    "a2a_communication"
+]
+disabled = [
+    "production_load",
+    "memory_leak_detection",
+    "regression_deep"
+]
+
+[profiles.ci.thresholds]
+response_time_ms = 3000
+throughput_ops = 500
+error_rate = 0.02
+memory_mb = 2048
+cpu_percent = 80
+
+[profiles.ci.custom_params]
+jmh_threads = 2
+jmh_forks = 2
+jmh_iterations = 5
+jmh_warmup = 3
+think_time_ms = 500
+
+[profiles.production]
+name = "Production Profile"
+description = "Full suite for production validation"
+duration = "2-4 hours"
+parallel_jobs = 8
+jvm_args = [
+    "-Xms4g",
+    "-Xmx8g",
+    "-XX:+UseCompactObjectHeaders",
+    "-XX:+UseZGC",
+    "-XX:+UseContainerSupport",
+    "-Djava.util.concurrent.ForkJoinPool.common.parallelism=16"
+]
+
+[profiles.production.benchmarks]
+enabled = [
+    "jmh_unit",
+    "jmh_integration",
+    "jmh_stress",
+    "memory_comprehensive",
+    "memory_leak_detection",
+    "stress_full",
+    "chaos_extended",
+    "a2a_communication",
+    "regression_deep",
+    "production_load",
+    "scalability_tests",
+    "observability"
+]
+disabled = []
+
+[profiles.production.thresholds]
+response_time_ms = 1000
+throughput_ops = 1000
+error_rate = 0.001
+memory_mb = 4096
+cpu_percent = 90
+network_latency_ms = 100
+recovery_time_ms = 30000
+
+[profiles.production.custom_params]
+jmh_threads = 4
+jmh_forks = 3
+jmh_iterations = 10
+jmh_warmup = 5
+think_time_ms = 0
+
+[profiles.custom]
+name = "Custom Profile"
+description = "User-defined benchmark selection"
+duration = "Variable"
+parallel_jobs = 4
+jvm_args = [
+    "-Xms2g",
+    "-Xmx4g",
+    "-XX:+UseCompactObjectHeaders",
+    "-XX:+UseZGC"
+]
+
+[profiles.custom.benchmarks]
+enabled = []
+disabled = []
+
+[profiles.custom.thresholds]
+response_time_ms = 5000
+throughput_ops = 1000
+error_rate = 0.05
+memory_mb = 2048
+
+[profiles.custom.custom_params]
+jmh_threads = 1
+jmh_forks = 1
+jmh_iterations = 3
+jmh_warmup = 2
+think_time_ms = 1000
+
+# Benchmark suite definitions
+[benchmarks.jmh_unit]
+name = "JMH Unit Benchmarks"
+description = "Microbenchmarking for individual components"
+class = "org.yawlfoundation.yawl.performance.JmhUnitSuite"
+default_duration = "5m"
+metrics = ["throughput", "latency", "memory"]
+
+[benchmarks.jmh_integration]
+name = "JMH Integration Benchmarks"
+description = "Integration-focused microbenchmarking"
+class = "org.yawlfoundation.yawl.performance.JmhIntegrationSuite"
+default_duration = "10m"
+metrics = ["throughput", "response_time", "error_rate"]
+
+[benchmarks.jmh_stress]
+name = "JMH Stress Benchmarks"
+description = "Stress testing with JMH"
+class = "org.yawlfoundation.yawl.performance.JmhStressSuite"
+default_duration = "15m"
+metrics = ["throughput", "latency", "cpu", "memory"]
+
+[benchmarks.memory_basic]
+name = "Memory Basic Benchmarks"
+description = "Basic memory usage testing"
+class = "org.yawlfoundation.yawl.performance.MemoryUsageBenchmark"
+default_duration = "3m"
+metrics = ["memory_usage", "gc_frequency"]
+
+[benchmarks.memory_comprehensive]
+name = "Memory Comprehensive Benchmarks"
+description = "Comprehensive memory profiling"
+class = "org.yawlfoundation.yawl.performance.MemoryProfilerSuite"
+default_duration = "15m"
+metrics = ["heap_usage", "non_heap", "gc_time", "memory_leaks"]
+
+[benchmarks.memory_leak_detection]
+name = "Memory Leak Detection"
+description = "Memory leak detection and analysis"
+class = "org.yawlfoundation.yawl.performance.LeakDetectionSuite"
+default_duration = "30m"
+metrics = ["memory_growth", "object_counts", "gc_pressure"]
+
+[benchmarks.stress_fast]
+name = "Stress Fast"
+description = "Quick stress testing"
+class = "org.yawlfoundation.yawl.performance.StressFastSuite"
+default_duration = "10m"
+metrics = ["throughput", "error_rate", "response_time"]
+
+[benchmarks.stress_medium]
+name = "Stress Medium"
+description = "Medium duration stress testing"
+class = "org.yawlfoundation.yawl.performance.StressMediumSuite"
+default_duration = "30m"
+metrics = ["throughput", "latency", "cpu", "memory", "error_rate"]
+
+[benchmarks.stress_full]
+name = "Stress Full"
+description = "Full stress testing suite"
+class = "org.yawlfoundation.yawl.performance.StressFullSuite"
+default_duration = "60m"
+metrics = ["all"]
+
+[benchmarks.chaos_basic]
+name = "Chaos Basic"
+description = "Basic chaos engineering tests"
+class = "org.yawlfoundation.yawl.chaos.BasicChaosTest"
+default_duration = "15m"
+metrics = ["recovery_time", "error_rate", "availability"]
+
+[benchmarks.chaos_extended]
+name = "Chaos Extended"
+description = "Extended chaos engineering tests"
+class = "org.yawlfoundation.yawl.chaos.ExtendedChaosTest"
+default_duration = "45m"
+metrics = ["recovery_time", "error_rate", "availability", "consistency"]
+
+[benchmarks.a2a_communication]
+name = "A2A Communication"
+description = "Agent-to-agent communication benchmarks"
+class = "org.yawlfoundation.yawl.performance.jmh.A2ACommunicationBenchmarks"
+default_duration = "20m"
+metrics = ["message_latency", "throughput", "reliability"]
+
+[benchmarks.regression_basic]
+name = "Regression Basic"
+description = "Basic regression detection"
+class = "org.yawlfoundation.yawl.performance.RegressionBasicSuite"
+default_duration = "10m"
+metrics = ["performance_change", "regression_score"]
+
+[benchmarks.regression_deep]
+name = "Regression Deep"
+description = "Deep regression analysis"
+class = "org.yawlfoundation.yawl.performance.RegressionDeepSuite"
+default_duration = "30m"
+metrics = ["performance_change", "regression_score", "trend_analysis"]
+
+[benchmarks.production_load]
+name = "Production Load"
+description = "Production-like load testing"
+class = "org.yawlfoundation.yawl.performance.LoadTestSuite"
+default_duration = "60m"
+metrics = ["throughput", "latency", "error_rate", "resource_usage"]
+
+[benchmarks.scalability_tests]
+name = "Scalability Tests"
+description = "System scalability testing"
+class = "org.yawlfoundation.yawl.performance.ScalabilityTest"
+default_duration = "45m"
+metrics = ["scaling_factor", "efficiency", "bottlenecks"]
+
+[benchmarks.observability]
+name = "Observability Benchmarks"
+description = "Observability and monitoring testing"
+class = "org.yawlfoundation.yawl.performance.ObservabilityTest"
+default_duration = "20m"
+metrics = ["metrics_collection", "tracing", "logging"]
+
+# Custom user profiles can be added here
+[custom_profiles.example]
+name = "Example Custom Profile"
+description = "Example of how to create custom profiles"
+duration = "30 minutes"
+custom_params = { jmh_threads = 4, jmh_iterations = 5 }
+
+[custom_profiles.example.benchmarks]
+enabled = ["jmh_unit", "memory_basic", "stress_medium"]
+disabled = ["production_load"]

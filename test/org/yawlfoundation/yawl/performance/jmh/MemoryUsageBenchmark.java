@@ -40,7 +40,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Thread)
 @Warmup(iterations = 2)
 @Measurement(iterations = 3)
-@Fork(value = 1, jvmArgs = {"-Xms2g", "-Xmx4g", "-XX:+UseZGC", "-XX:+UseCompactObjectHeaders"})
+@Fork(value = 1, jvmArgs = {"-Xms2g", "-Xmx2g", "-XX:+UseG1GC", "-verbose:gc"})
 public class MemoryUsageBenchmark {
 
     @Param({"100", "1000", "5000", "10000"})

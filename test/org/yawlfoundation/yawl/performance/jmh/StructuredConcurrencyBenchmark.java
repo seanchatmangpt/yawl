@@ -40,12 +40,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Benchmark)
 @Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1, jvmArgs = {
-    "-Xms2g", "-Xmx4g",
-    "-XX:+UseZGC",
-    "-XX:+UseCompactObjectHeaders",
-    "-Djmh.executor=VIRTUAL_TPE"
-})
+@Fork(value = 1, jvmArgs = {"-Xms2g", "-Xmx4g", "--enable-preview"})
 public class StructuredConcurrencyBenchmark {
 
     @Param({"10", "50", "100", "500"})
@@ -191,6 +186,7 @@ public class StructuredConcurrencyBenchmark {
         Options opt = new OptionsBuilder()
             .include(StructuredConcurrencyBenchmark.class.getSimpleName())
             .forks(1)
+            .jvmArgs("--enable-preview")
             .build();
 
         new Runner(opt).run();

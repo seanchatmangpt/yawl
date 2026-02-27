@@ -69,19 +69,14 @@ import io.modelcontextprotocol.spec.McpSchema;
  * </ul>
  *
  * @author YAWL Foundation
- * @version 6.0
+ * @version 5.2
  */
 @BenchmarkMode({Mode.Throughput, Mode.AverageTime, Mode.SampleTime})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1, jvmArgs = {
-    "-Xms2g", "-Xmx4g",
-    "-XX:+UseZGC",
-    "-XX:+UseCompactObjectHeaders",
-    "-Djmh.executor=VIRTUAL_TPE"
-})
+@Fork(value = 1, jvmArgs = {"-Xms2g", "-Xmx4g", "-XX:+UseG1GC", "-XX:+UseCompactObjectHeaders"})
 @Threads(4)
 public class IntegrationBenchmarks {
 

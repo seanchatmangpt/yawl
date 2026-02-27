@@ -79,9 +79,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 2, jvmArgs = {
     "-Xms2g", "-Xmx4g",
-    "-XX:+UseZGC",
-    "-XX:+UseCompactObjectHeaders",
-    "-Djmh.executor=VIRTUAL_TPE"
+    "-XX:+UseG1GC",
+    // Java 25: replace above with: "-XX:+UseZGC", "-XX:+UseCompactObjectHeaders"
 })
 public class Java25CompactHeadersBenchmark {
 

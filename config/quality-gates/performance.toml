@@ -1,0 +1,258 @@
+# Performance Quality Gates Configuration
+# Version: 6.0.0-GA
+# Purpose: Defines performance thresholds and alerting rules for YAWL workflow engine
+
+[metadata]
+name = "Performance Quality Gates"
+version = "6.0.0-GA"
+last_updated = "2026-02-26"
+description = "Performance thresholds and monitoring rules for YAWL v6.0.0-GA"
+
+# Case Launch Performance (P95 Latency)
+[case_launch]
+target_ms = 500
+warning_ms = 400
+critical_ms = 600
+alert_threshold_ms = 700
+regression_tolerance_percent = 20
+auto_fail_threshold_percent = 50
+measurement_method = "statelessEngineCaseCreationThroughput"
+monitoring_interval_seconds = 30
+
+# Throughput Performance (Cases/Second)
+[throughput]
+target_cases_per_second = 1000
+warning_percent = 15
+critical_percent = 30
+auto_fail_percent = 50
+measurement_method = "concurrentCaseCreationThroughput"
+monitoring_interval_seconds = 60
+pattern_scaling_factors = {
+    "sequential" = 1.0,
+    "parallel_split_sync" = 0.85,
+    "multi_choice_merge" = 0.90,
+    "cancel_region" = 0.75,
+    "n_out_of_m" = 0.85,
+    "structured_loop" = 0.95,
+    "milestone" = 1.0,
+    "critical_section" = 0.80
+}
+
+# Memory Usage (MB per 1000 cases)
+[memory]
+target_mb_per_1000_cases = 50
+warning_percent = 25
+critical_percent = 50
+auto_fail_percent = 100
+heap_mb_initial = 2000
+heap_mb_max = 4000
+measurement_method = "memoryScalabilityWithCaseCounts"
+memory_leak_threshold_mb = 10
+monitoring_interval_seconds = 300
+memory_regions = {
+    "case_storage" = 0.6,
+    "cache" = 0.2,
+    "work_item_queue" = 0.15,
+    "overhead" = 0.05
+}
+
+# Response Time Regression Detection
+[regression_detection]
+latency = { warning_percent = 20, critical_percent = 50, auto_fail_percent = 100 }
+throughput = { warning_percent = 15, critical_percent = 30, auto_fail_percent = 50 }
+memory = { warning_percent = 25, critical_percent = 50, auto_fail_percent = 100 }
+error_rate = { warning_percent = 0.5, critical_percent = 1.0, auto_fail_percent = 5.0 }
+resource_contention = { warning_percent = 10, critical_percent = 20, auto_fail_percent = 40 }
+
+# Alert Thresholds
+[alerting]
+email_alert_threshold = "warning"
+slack_alert_threshold = "critical"
+page_alert_threshold = "auto_fail"
+email_recipients = ["yawl-perf-team@yawlfoundation.org"]
+slack_channel = "#yawl-performance-alerts"
+alert_cooldown_seconds = 300
+alert_format = "detailed_metrics_with_context"
+
+# Benchmark Configuration
+[benchmark]
+warmup_iterations = 5
+measurement_iterations = 20
+forks = 3
+jvm_args = [
+    "-Xms2g",
+    "-Xmx4g",
+    "-XX:+UseG1GC",
+    "-XX:+UseCompactObjectHeaders",
+    "-XX:+TracePinnedThreads=short",
+    "-XX:+UseZGC"  # Alternative for high-throughput scenarios
+]
+jvm_options = {
+    "gc_type" = "G1GC",
+    "max_garbage_pause_ms" = 200,
+    "heap_occupancy_percent" = 75
+}
+jmh_version = "1.37"
+include_benchmarks = [
+    "YAWLEngineBenchmarks",
+    "WorkflowPatternBenchmarks",
+    "ConcurrencyBenchmarks",
+    "MemoryBenchmarks",
+    "StressTestBenchmarks",
+    "LatencyDistributionBenchmarks",
+    "ResourceContentionBenchmarks"
+]
+excludes = [".*Warmup.*", ".*Debug.*"]
+
+# Stress Testing Configuration
+[stress_testing]
+max_concurrent_requests = [1000, 5000, 10000, 50000]
+timeout_seconds = 300
+success_rate_threshold_percent = 95
+warning_success_rate = 90
+critical_success_rate = 85
+auto_fail_success_rate = 75
+ramp_up_seconds = 300
+ramp_down_seconds = 60
+test_scenarios = [
+    "single_spec_multi_instances",
+    "multi_specs_parallel",
+    "peak_hour_simulation",
+    "failure_scenarios"
+]
+
+# Virtual Thread Configuration
+[virtual_threads]
+enabled = true
+scheduler_parallelism = 200
+max_pool_size = 256
+pinning_detection = "short"
+efficiency_threshold_percent = 95
+virtual_thread_stack_size_mb = 2
+unpark_timeout_seconds = 30
+carrier_thread_timeout_seconds = 60
+
+# Database Performance
+[database]
+query_timeout_ms = 50
+connection_pool_size = 20
+connection_pool_minimum_idle = 5
+query_cache_size = 1000
+statement_timeout_ms = 10000
+connection_validation_query = "SELECT 1"
+max_lifetime_seconds = 1800
+idle_timeout_seconds = 600
+leak_detection_threshold_ms = 15000
+monitoring = {
+    "connection_pool_monitoring_interval" = 60,
+    "query_performance_monitoring" = 300,
+    "deadlock_detection" = 30
+}
+
+# Monitoring and Alerting
+[monitoring]
+enabled = true
+metrics_port = 9464
+prometheus_endpoint = "/actuator/prometheus"
+health_check_endpoint = "/actuator/health"
+readiness_endpoint = "/actuator/health/readiness"
+liveness_endpoint = "/actuator/health/liveness"
+metrics_export_interval_seconds = 60
+trace_sample_ratio = 0.1
+excluded_endpoints = ["/actuator/health", "/actuator/info", "/api/docs"]
+custom_metrics_enabled = true
+distributed_tracing_enabled = true
+export_formats = ["prometheus", "json", "otel"]
+
+# Chaos Engineering Patterns
+[chaos]
+failure_injection_enabled = false
+latency_variation_enabled = true
+error_rate_enabled = false
+latency_variation_ms = 100
+error_rate_percent = 1
+latency_distribution_percentiles = [50, 90, 95, 99]
+circuit_breaker_enabled = true
+circuit_breaker_failure_rate_threshold = 50
+circuit_breaker_sliding_window_size = 10
+circuit_breaker_call_timeout_ms = 5000
+chaos_scenarios = [
+    "network_latency",
+    "high_cpu_usage",
+    "memory_pressure",
+    "database_timeout",
+    "disk_io_throttling"
+]
+
+# Performance Optimization Targets
+[optimization_targets]
+work_item_checkout_ms = { current = 180, target = 150, delta = -16.67 }
+parallel_thread_scaling = { current_threads = 16, target_throughput_improvement = 0.10, ideal_throughput = 1100 }
+memory_per_case_mb = { current = 2.0, target = 1.5, delta = -25.00 }
+gc_time_percent = { current = 3.2, target = 2.0, delta = -37.50 }
+startup_time_seconds = { current = 45.2, target = 30, delta = -33.63 }
+workitem_queue_processing_ms = { current = 12, target = 8, delta = -33.33 }
+resource_contention_percentage = { current = 5, target = 2, delta = -60.00 }
+cache_hit_rate_percent = { current = 85, target = 95, delta = 11.76 }
+
+# Test Environment Configuration
+[environment]
+hardware = {
+    cpu = "16-core Intel Xeon Gold 6248R @ 3.00GHz",
+    memory = "64GB DDR4 RAM",
+    storage = "NVMe SSD 1TB",
+    os = "Ubuntu 20.04 LTS"
+}
+java_version = "OpenJDK 25"
+jvm_args = [
+    "-Xms2g",
+    "-Xmx4g",
+    "-XX:+UseG1GC",
+    "-XX:+UseCompactObjectHeaders"
+]
+test_data_sizes = {
+    "small" = 1000,
+    "medium" = 10000,
+    "large" = 100000
+}
+concurrency_levels = [1, 10, 50, 100, 500, 1000, 5000, 10000]
+
+# Performance Test Suite Configuration
+[test_suite]
+test_scenarios = [
+    { name = "baseline", description = "Minimum viable performance", mandatory = true },
+    { name = "peak_load", description = "Maximum expected load", mandatory = true },
+    { name = "stress", description = "Beyond capacity limits", mandatory = false },
+    { name = "regression", description = "Performance regression detection", mandatory = true },
+    { name = "memory", description = "Memory leak and scalability", mandatory = true },
+    { name = "concurrency", description = "Thread contention and scaling", mandatory = true },
+    { name = "patterns", description = "Pattern-specific performance", mandatory = true }
+]
+pass_threshold = 0.05  # Maximum 5% degradation from baseline
+critical_degradation = 0.20  # Critical if 20% or more degradation
+auto_fail_degradation = 0.50  # Auto-fail if 50% or more degradation
+
+# Reporting and Visualization
+[reporting]
+enabled = true
+report_formats = ["html", "json", "csv", "pdf"]
+retention_days = 90
+dashboard_enabled = true
+dashboard_refresh_interval_seconds = 60
+historical_comparison_enabled = true
+alerting_enabled = true
+email_reporting_enabled = false
+slack_reporting_enabled = false
+custom_report_templates = ["daily_performance", "weekly_summary", "monthly_trend"]
+
+# Continuous Integration Integration
+[ci_integration]
+enabled = false
+branch_protection_rules = true
+pr_build_required = true
+performance_gate_enabled = true
+performance_gate_threshold = 0.05  # Maximum 5% regression
+critical_failure_threshold = 0.20  # Critical failure if 20%+ regression
+automated_alerting_enabled = false
+dashboard_url = "https://dashboard.yawlfoundation.org/performance"
+artifact_retention_days = 30
