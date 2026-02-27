@@ -1,9 +1,9 @@
 {
   "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
-  "started_at": "2026-02-27T17:00:42.006218858Z",
-  "ended_at": "2026-02-27T17:00:42.049661150Z",
-  "receipt_count": 103,
-  "chain_hash": "18eb97cbf6223b676905ffb92df124af3ccb02aa8f9d403c2dfdc2bc8f7bc6df",
+  "started_at": "2026-02-27T18:07:53.267234682Z",
+  "ended_at": "2026-02-27T18:07:53.472843618Z",
+  "receipt_count": 137,
+  "chain_hash": "cc437c0a9d80135150bd29b1c6786696f8fc4eb6fb997610ed00855c0ae89a03",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -6143,6 +6143,1044 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "String",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212095691129909,
+      "timestamp_rfc": "2026-02-27T17:08:15.691129909Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "4f6d8a1fb70a640193edbdc59cd2feb0c4521d16b9ded2f719b0410a959b88f4",
+      "delta_hash": "fdeeae00d24eb549061487f04e9ca8a0030c6740f9ce27ed9c2bd8accb8017af",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Zero-Inference Workflow Intelligence: ",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213061660153489,
+      "timestamp_rfc": "2026-02-27T17:24:21.660153489Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/root/.claude/plans/curious-gliding-shore.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5fca6e1a4e6737a7f25bb63c87079875cbf73acea45192118a747c3599ad1ed2",
+      "delta_hash": "dbaffbadf610b91f950e5859f1be00ee63641f24cefc50171982ebf6c19fce06",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# OCPM Sprint: \"No AI Without PI\" — Obje",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213488716300379,
+      "timestamp_rfc": "2026-02-27T17:31:28.716300379Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/YawlOcedBridgeToolSpecifications.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2783778c99f6994423988315583dcd59ab167373d390e2361c9ee0e29213e00a",
+      "delta_hash": "0820ce0d8faa8a5878dfb9cc342f65dbd57bf50b8e82b8cec704a9627724e9a7",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private String buildConvertResponse(Stri",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "io",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "YawlOcedBridgeToolSpecifications",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpServerFeatures",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213521605028340,
+      "timestamp_rfc": "2026-02-27T17:32:01.605028340Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/OcedConversionSkill.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d6d0b02f395ae5c09891557a58d05ff1d9a5958af704179831bba77fbd1779f8",
+      "delta_hash": "752aacb3db461208eddf04b0d0ec169476d7aff08ce89a676bf96ff8811487b4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "OcedConversionSkill",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "SkillResult",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Set",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213661230877343,
+      "timestamp_rfc": "2026-02-27T17:34:21.230877343Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "5458d6a675e6f9deca6270769a2d2199b73f69c11b4cd603704d835716a6a293",
+      "delta_hash": "424a7bbad0397e86ab455bd05c8dc7f84329a148e51a2e55832d37e1724fc642",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "io",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213666487078266,
+      "timestamp_rfc": "2026-02-27T17:34:26.487078266Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f2fcabd41125b6984f6cb2bab5cdb2f1cb7aab1611b66e1266b5a1b8c57a5e37",
+      "delta_hash": "9aedc1c234c737466d5ae0b75771ad5365443317be1d9bdbc7efcc89b5291141",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "return new McpSchema.CallToolResult(",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213670979761828,
+      "timestamp_rfc": "2026-02-27T17:34:30.979761828Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b9e209b11c439dee5c92ac108eb4f573aaac8e4a121997dda8a8985a6e7a2a80",
+      "delta_hash": "9aedc1c234c737466d5ae0b75771ad5365443317be1d9bdbc7efcc89b5291141",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "return new McpSchema.CallToolResult(",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213675407970523,
+      "timestamp_rfc": "2026-02-27T17:34:35.407970523Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a4e7a85c3200b257ff2fb6b2e5e97e7db838cdbcff7729592f177a1460cb4c67",
+      "delta_hash": "9aedc1c234c737466d5ae0b75771ad5365443317be1d9bdbc7efcc89b5291141",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "return new McpSchema.CallToolResult(",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213687838631315,
+      "timestamp_rfc": "2026-02-27T17:34:47.838631315Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "0e84955cb115f4558ed05fc9d4949eb31762864812071cbfa316e0f1fc33a09c",
+      "delta_hash": "d2b260bf9de045f7ecbd34e84d719c99039e6546c65ad01ebc654e46374385fa",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213712939378572,
+      "timestamp_rfc": "2026-02-27T17:35:12.939378572Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-mcp-a2a-app/src/main/java/org/yawlfoundation/yawl/mcp/a2a/mcp/YawlMcpHttpServer.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "d14f8c95f2c3987454709f6beb75d40c6be9a1de7f5ef95db95dd27fbeb57740",
+      "delta_hash": "abc59adc589e04be669154c5291b82bf4c0f1d63c02946a23840f9621507a0f8",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213719087558615,
+      "timestamp_rfc": "2026-02-27T17:35:19.087558615Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-mcp-a2a-app/src/main/java/org/yawlfoundation/yawl/mcp/a2a/mcp/YawlMcpHttpServer.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "47ee8ecdeaa7c1e10bf275f06922b9253dbd28547fbf5eeba067b8c45a4fbbd0",
+      "delta_hash": "cd8b5ec8e51905d0b91f98aa208e04e117fb3e37de468e1444b215209b0584d5",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "List<io.modelcontextprotocol.server.McpS",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213821655347347,
+      "timestamp_rfc": "2026-02-27T17:37:01.655347347Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/YawlOcedBridgeToolSpecificationsTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2834946f29751f12058f4db4c37507cfa39388294c40cc1e193d5908fec0aecf",
+      "delta_hash": "38f6724596946c4c2ee8bbcaa54991e8b4aa1073c1c4b3be3793fa9433541990",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpSchema",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String CSV_DATA =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "io",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String XML_DATA =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String JSON_DATA =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private YawlOcedBridgeToolSpecifications",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private List<McpServerFeatures.SyncToolS",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "YawlOcedBridgeToolSpecificationsTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213851398317479,
+      "timestamp_rfc": "2026-02-27T17:37:31.398317479Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/OcedConversionSkillTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b90da1f4309e7005dff70bfad13fb5dfe3649ec4e99a125eb76ec72cbf48d24f",
+      "delta_hash": "da6467f126e4a472b468fc6ca5e6fef6f057cc04ff3c394bd6084aebe235e798",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String CSV_DATA =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private OcedConversionSkill skill;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String JSON_DATA =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "OcedConversionSkillTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213883317783018,
+      "timestamp_rfc": "2026-02-27T17:38:03.317783018Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/PIToolProviderTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "54fd83e0076bcc15ef5adc09748203f2cbce678358c5a7c7fae8c1273b3af6bd",
+      "delta_hash": "658b2c07233f4a57779e4a5d5fa16ce8d32ecb2423d533449bd66a0620106384",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private PIToolProvider provider;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "/*",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "McpSchema",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "io",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String JSON_DATA =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "PIToolProviderTest",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Test",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private List<McpServerFeatures.SyncToolS",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@BeforeEach",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String CSV_DATA =",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private Map<String, McpServerFeatures.Sy",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213897019895814,
+      "timestamp_rfc": "2026-02-27T17:38:17.019895814Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/PIToolProviderTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ba5745f65922d8ee958b7cd92d260e4964ea9d1a1bddeacbde8e3c6020bb5304",
+      "delta_hash": "cce55fa1cae5ae8ba27d08bafa366fbff008a03ec3ad5473c03f11a3cdbcff2d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214479166039624,
+      "timestamp_rfc": "2026-02-27T17:47:59.166039624Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ff855e7f6b5f9b6743984bae9d3e10fc9ff416a9f5f671b3b8e7e649281728a1",
+      "delta_hash": "40da95ae07f2aa40ea5912a923ab2b1e57d7298b36dd507ce58992652f1f2025",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "OcedSchema ocedSchema = bridge.inferSche",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214831065166184,
+      "timestamp_rfc": "2026-02-27T17:53:51.065166184Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/YawlOcedBridgeToolSpecificationsTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7de1565e39d312eafbf5698f9608ba2eae285bb77af8babda3eb0643cf63431f",
+      "delta_hash": "33101518fe5eeb03fa210000fbf5bd126757470b674e6d0ffd439b71642e8ec0",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "return spec.callHandler",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772214842800634396,
+      "timestamp_rfc": "2026-02-27T17:54:02.800634396Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/PIToolProviderTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "7de1565e39d312eafbf5698f9608ba2eae285bb77af8babda3eb0643cf63431f",
+      "delta_hash": "33101518fe5eeb03fa210000fbf5bd126757470b674e6d0ffd439b71642e8ec0",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "return spec.callHandler",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215116290527610,
+      "timestamp_rfc": "2026-02-27T17:58:36.290527610Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/YawlOcedBridgeToolSpecificationsTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a9464126d8931e22a994342c70e857ee04b9fb4177fe49cb3b0cfbf9c2993c88",
+      "delta_hash": "97fc0d066ee9e5c2cef49b4758fff6e44c1d1cb888f6d34840633ee134721e41",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private static final String XML_DATA =",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215360460408151,
+      "timestamp_rfc": "2026-02-27T18:02:40.460408151Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e988717b1105c0e6b1755e3e1d8e1dd067dac42552cb10d7992db9ae07056cd9",
+      "delta_hash": "521129fb85ab71809ff56ef8128e0b337986f4bfb0fe4e54c6c4ffcf189eb716",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "We demonstrate 153 Chicago-TDD tests acr",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215372140863472,
+      "timestamp_rfc": "2026-02-27T18:02:52.140863472Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "89792a9d68b7985e7d5ad5193d81543ab557dd1b0033a068eb0089d5c2e56273",
+      "delta_hash": "feafd4009ae9599a9908240d9d146a939334775641c894e811b990b32e471197",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "These join the previously delivered **Gr",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215399069685290,
+      "timestamp_rfc": "2026-02-27T18:03:19.069685290Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2f302c9107a2a43c2c245a53e5537da7170dc2388cbf886a410cdd700d0ed7a1",
+      "delta_hash": "8ca6776f979e103746fbe431d92e41da4397cd2ffe682793325ea004015c0e5b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "This is not merely a performance optimiz",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215413616582915,
+      "timestamp_rfc": "2026-02-27T18:03:33.616582915Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a49bda83937c01afd6fd6c58b0973e641ca90fbaae5ec5cc890c60e6c3339deb",
+      "delta_hash": "475e8a3c084d675343032dd5a8bd9342ad4d6cd3775759c0444771f5f82d397e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "### 3.4 OCED Bridge Engine",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215418740208487,
+      "timestamp_rfc": "2026-02-27T18:03:38.740208487Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ed4cc4b46d417e8c1541a169778c9f360c6471721c6b87394a928bbcea9e363d",
+      "delta_hash": "0a6a83dba45107e7ce2978e4346a6fb84fdae80cc3ad96e567cb1f8e2e9209e6",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "**Location**: `yawl-ggen/.../rl/scoring/",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215437203396265,
+      "timestamp_rfc": "2026-02-27T18:03:57.203396265Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "e685d27e062604cfbcd89db6af7e57d18903c4448485b962297111644c466cb8",
+      "delta_hash": "646ad0a4a1159e2a14590b5e81e7b75a1a8ffb6efb2f8f5b4a42c90806235b52",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### 5.1 The Composition Matrix",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215451944883657,
+      "timestamp_rfc": "2026-02-27T18:04:11.944883657Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "2b0a56f242c6bbd0cd279a471bbb041152e9d1b0a0994cc542e4fefbc9fd189b",
+      "delta_hash": "46a0aedb18e91e0bdd05c14ddb06d29d070571f2c6d6c5f39ed9c22e9fbce958",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "*Use case*: A bank's loan approval proce",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215457632390513,
+      "timestamp_rfc": "2026-02-27T18:04:17.632390513Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "b1b8bcba599a525e9df259e05f7a24527c686d7474a936031559e3c0086c473f",
+      "delta_hash": "3e1d24fd30de95d39987d4b165201d50f3eb4b944556b925ecd3a5fb42e525d4",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "For k=2, compatibility matrix yields app",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215472887842059,
+      "timestamp_rfc": "2026-02-27T18:04:32.887842059Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "ee4fcdd599632c4fd5a20d6f55150e9bc24ca5403b0341d1fd6f958d9a39d7a4",
+      "delta_hash": "ba3189f6e2b6309e94edb4f43d44c45115032a36eef46e902e8d80329d1a453e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "### 7.2 Medium-Term",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215499312576110,
+      "timestamp_rfc": "2026-02-27T18:04:59.312576110Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f5012b6329173ac09dc354ac3487401eb218ca56c9e5597c36895d7dacaead73",
+      "delta_hash": "5596d6ebdcb47feb325f8b040527235075166c05f64283f441ea6796f2e14a49",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### 8.5 OCEL 2.0 as the YAWL Data Standa",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215522224195043,
+      "timestamp_rfc": "2026-02-27T18:05:22.224195043Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a288ef4fb4e01e8d32e9fda522d5ba23a892b0974d2eb7d42bdf18e99ecc1317",
+      "delta_hash": "c76182ca8f7b9f4b0ecf7a1cb1d5246204ee3b9effd21a48ebc16ea26b78f6f3",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "### 9.1 Code Delta",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215535037224668,
+      "timestamp_rfc": "2026-02-27T18:05:35.037224668Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8422eedb0fe42d6be32a8a7fd1e402f2aa33a667447b846035613a2ee8b7fc48",
+      "delta_hash": "4a11823137e39ac1738f28fa803afef517170c9f147c60e4b96a9d81694f0148",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "### 6.1 Test Coverage",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215549085935279,
+      "timestamp_rfc": "2026-02-27T18:05:49.085935279Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "a59ab942840d529b1f5938d0f315e840c7986aed155789a9c262d62025827043",
+      "delta_hash": "a3f8604352861a8c71d27a793ab2c84064617dbaf1ccde0d325bfdaec6faae9d",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "## References",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215556511314233,
+      "timestamp_rfc": "2026-02-27T18:05:56.511314233Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "32b0c15de1fdf1b269d1c634c068050cb426d4e087810a48ae744a6914518e2b",
+      "delta_hash": "fcb9ae02afbf73d266beb9720c61daffb812f43108dd4fa1d4e3883187ef462e",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "## 4. The Wiring Pattern: Engine → MCP +",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772215563274305064,
+      "timestamp_rfc": "2026-02-27T18:06:03.274305064Z",
+      "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+      "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3569b924c41bc52b6da927fe9ce453a8eb81a162ab0a305675288d40983ecd7c",
+      "delta_hash": "4f10057d222cd87734747ca8cc690b50a74dde62ddd7451be7e5827e953c4e16",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "*Prepared by the YAWL 6.0 research engin",
             "change": "Added"
           }
         }

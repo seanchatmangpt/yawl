@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215451944883657,
+  "timestamp_rfc": "2026-02-27T18:04:11.944883657Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "2b0a56f242c6bbd0cd279a471bbb041152e9d1b0a0994cc542e4fefbc9fd189b",
+  "delta_hash": "46a0aedb18e91e0bdd05c14ddb06d29d070571f2c6d6c5f39ed9c22e9fbce958",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "*Use case*: A bank's loan approval proce",
+        "change": "Added"
+      }
+    }
+  ]
+}

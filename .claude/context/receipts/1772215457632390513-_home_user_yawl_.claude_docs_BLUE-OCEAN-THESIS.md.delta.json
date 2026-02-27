@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215457632390513,
+  "timestamp_rfc": "2026-02-27T18:04:17.632390513Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b1b8bcba599a525e9df259e05f7a24527c686d7474a936031559e3c0086c473f",
+  "delta_hash": "3e1d24fd30de95d39987d4b165201d50f3eb4b944556b925ecd3a5fb42e525d4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "For k=2, compatibility matrix yields app",
+        "change": "Added"
+      }
+    }
+  ]
+}

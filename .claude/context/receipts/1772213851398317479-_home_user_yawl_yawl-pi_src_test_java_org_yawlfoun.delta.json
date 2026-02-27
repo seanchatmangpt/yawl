@@ -1,0 +1,82 @@
+{
+  "timestamp_ns": 1772213851398317479,
+  "timestamp_rfc": "2026-02-27T17:37:31.398317479Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-pi/src/test/java/org/yawlfoundation/yawl/pi/mcp/OcedConversionSkillTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b90da1f4309e7005dff70bfad13fb5dfe3649ec4e99a125eb76ec72cbf48d24f",
+  "delta_hash": "da6467f126e4a472b468fc6ca5e6fef6f057cc04ff3c394bd6084aebe235e798",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final String CSV_DATA =",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeEach",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private OcedConversionSkill skill;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private static final String JSON_DATA =",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "OcedConversionSkillTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}
