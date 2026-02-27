@@ -1,9 +1,9 @@
 {
   "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
-  "started_at": "2026-02-27T17:30:05.404736819Z",
-  "ended_at": "2026-02-27T17:30:05.489655946Z",
-  "receipt_count": 175,
-  "chain_hash": "3dc94802925d80adf0d3b12d762242f5bc84866737001d1d5028f03b82b24ac9",
+  "started_at": "2026-02-27T17:35:05.674938599Z",
+  "ended_at": "2026-02-27T17:35:05.802219935Z",
+  "receipt_count": 176,
+  "chain_hash": "498c14d8ac5a944b95640af7df1917ba445ded1b4011823ec8dce9c3f6552d86",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -9457,6 +9457,179 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "# Tutorial 3: Getting Started with Graal",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213436417934721,
+      "timestamp_rfc": "2026-02-27T17:30:36.417934721Z",
+      "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+      "file_path": "/home/user/yawl/docs/polyglot/tutorials/04-rust4pm-ocel2.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3624be12000b46df7d32783a12789236c5162841b0e4f058cf8c7a68c8e73c32",
+      "delta_hash": "40218e237ee4bdf1e1ff905f5b0f57a16b174628ff9a4e8abd39f43aefa232d9",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ObjectMapper",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ProcessMiningDecisionHandler",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public Ocel2Builder addEvent(String even",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@aarkue/process_mining_wasm",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "@SuppressWarnings",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "ProcessAnalyticsDashboard",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "com",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "Map",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private boolean detectBottleneck(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private String buildOcel2Log(String case",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "ProcessAnomalyDetector",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "List",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Tutorial 4: Rust4pmBridge — OCEL2 Proc",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "Ocel2Builder",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "String",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public Ocel2Builder addObject(String obj",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public static boolean detectAnomalies(Ma",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "CaseProcessMiningHandler",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "@Override",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private String makeRoutingDecision(boole",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
             "change": "Added"
           }
         }
