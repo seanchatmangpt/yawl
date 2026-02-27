@@ -1,0 +1,68 @@
+{
+  "timestamp_ns": 1772213391573073414,
+  "timestamp_rfc": "2026-02-27T17:29:51.573073414Z",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "file_path": "/home/user/yawl/docs/polyglot/tutorials/03-graalwasm-getting-started.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1131d59a4fae7b81c6cc92480a215635effdd1bb43ab7b300c520dd2cb9902a7",
+  "delta_hash": "4c06bcdee090b6810250d6bf2a1d0e45dbb8f6fb3e1a07b0931f67eddbd98c9c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private WasmExecutionEngine engine;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "CaseAnalyticsHandler",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "com",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "AnalyticsHandler",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial 3: Getting Started with Graal",
+        "change": "Added"
+      }
+    }
+  ]
+}

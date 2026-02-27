@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212109333469490,
+  "timestamp_rfc": "2026-02-27T17:08:29.333469490Z",
+  "session_id": "6adcfccf-2535-4495-a11c-0bc0cfc59e7e",
+  "file_path": "/root/.claude/plans/atomic-petting-karp.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "241ea4a1c9a5c4301c02a971a7bd57e193a8b8432acbbf64bd99101ea1ff0e8c",
+  "delta_hash": "56a95bcb43f0263a0ddfc87eeed2a93661023c8c3b54856f03a138f0cdd13862",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "---",
+        "change": "Added"
+      }
+    }
+  ]
+}
