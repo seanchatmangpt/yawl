@@ -7,14 +7,14 @@ quantum = "MCP/A2A + Engine-semantic"
 spr_section = "ι INTELLIGENCE"
 
 [ticket.acceptance_criteria]
-"yawl-jira inject --prompt completes in < 20ms" = true
-"Ticket correction survives context window boundary" = false
+"Ticket correction survives context window boundary" = true
 "cargo clippy -- -D warnings green" = false
-"cargo test green" = false
-"yawl-jira inject --session completes in < 50ms" = true
 "Typed delta contains no line numbers" = false
-"Scout fetch respects watermark TTL" = false
+"yawl-jira inject --prompt completes in < 20ms" = true
 "Receipt chain is reproducible" = false
+"cargo test green" = false
+"Scout fetch respects watermark TTL" = false
+"yawl-jira inject --session completes in < 50ms" = true
 
 [ticket.context_refs]
 files = [
