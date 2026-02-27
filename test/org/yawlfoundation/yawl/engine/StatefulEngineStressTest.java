@@ -135,10 +135,10 @@ class StatefulEngineStressTest {
     @Timeout(120)
     void s1_caseStorm500() throws Exception {
         final int TARGET = 500;
-        // Engine exposes a YNet.copyContainer race condition at max concurrency;
-        // 80% (400/500) success rate is the empirically validated minimum under
-        // 500 true-concurrent virtual threads sharing a single engine singleton.
-        final int MIN_SUCCESS = 400;
+        // 90% (450/500) minimum. YNet._clone is ThreadLocal so concurrent clone() calls
+        // on the same specification's root net no longer race. The remaining ~10% budget
+        // absorbs any transient engine-state contention under extreme virtual-thread load.
+        final int MIN_SUCCESS = 450;
 
         AtomicInteger atomicSucceeded = new AtomicInteger(0);
         AtomicInteger atomicFailed = new AtomicInteger(0);

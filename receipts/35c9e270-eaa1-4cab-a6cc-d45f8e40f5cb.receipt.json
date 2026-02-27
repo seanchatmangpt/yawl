@@ -1,9 +1,9 @@
 {
-  "session_id": "76fb8708-e5b0-426e-82aa-542fb3da403e",
-  "started_at": "2026-02-27T06:18:30.434851479Z",
-  "ended_at": "2026-02-27T06:18:30.441786229Z",
-  "receipt_count": 16,
-  "chain_hash": "826df88840b025225f74d3d8d1001c3d5bb2debbd58946a342839731a4435485",
+  "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+  "started_at": "2026-02-27T17:15:20.227476461Z",
+  "ended_at": "2026-02-27T17:15:20.239589875Z",
+  "receipt_count": 22,
+  "chain_hash": "aaf8099af89ca3edd798e36a53e425c7a6d4def56ec5b17f2ed5a4f66517fb68",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -997,6 +997,148 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "final int TARGET = 500;",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212133669810018,
+      "timestamp_rfc": "2026-02-27T17:08:53.669810018Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/root/.claude/plans/polished-orbiting-wilkes.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "f9d7c99862266c3e0b354beafac0ecad200b30971466bdc95f3dd9f0d369b09b",
+      "delta_hash": "c2cedf7c2ad79a8b210b75a8f9b6d3b243ad2367919f4243b6be32ce48d73277",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Fix S1 Bug: YNet._clone Thread-Safety ",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "final",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "private YNet _clone;",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YNet",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212352107006765,
+      "timestamp_rfc": "2026-02-27T17:12:32.107006765Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/elements/YNet.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "cecefc9162074bbc5685406b2ad42c74c59c45b29e39151326eb258f3af14a67",
+      "delta_hash": "d6cf0ba3fcef25be4d7175b72741f51b79fe231cbae412707b2c7be8184d73b7",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "// ThreadLocal ensures each thread has i",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "final",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212356677705068,
+      "timestamp_rfc": "2026-02-27T17:12:36.677705068Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/elements/YNet.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "54305943bc2f5a3e817cd7ccdb07183f6edd4cf1c31c2f42afe44553448b7bce",
+      "delta_hash": "cee14f137bb61c1a0aba5b51260b7022afca7b99399552fe2dcdc5dafcaae5db",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "_clone.set",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212363762555861,
+      "timestamp_rfc": "2026-02-27T17:12:43.762555861Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/elements/YNet.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "28c75ba4921c1869911f4f5d22b3e0d533cded3db6ac4ba9d94928b0a41089a2",
+      "delta_hash": "613a2502cc79e4b967f0231f582bc62dca41e718e9fa64971c70a807280c3338",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "_clone.get",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212368284237783,
+      "timestamp_rfc": "2026-02-27T17:12:48.284237783Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/elements/YNet.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "df7927845ef63a07a68f6b9baff739c8e64efe5e5deb90d0a387c4e28e859ced",
+      "delta_hash": "0f8212d156f21a42bc4c4bd21ee0e1fc1c724eec03ab22eb76506a4865676d49",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YNet",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772212393985085956,
+      "timestamp_rfc": "2026-02-27T17:13:13.985085956Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "1e2356e4dbde8a4626a716aedd2b38556a1e2578bb6db10ab67e0de9710b6dcb",
+      "delta_hash": "d5d44534063f6f464d43c44b62c354e01341c33aec8dad1c842b28b64eb921f1",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "// 90%",
             "change": "Added"
           }
         }
