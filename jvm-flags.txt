@@ -1,0 +1,2 @@
+     bool UseCompactObjectHeaders                  = false                          {product lp64_product} {default}
+     bool UseZGC                                   = false                                     {product} {default}

@@ -19,12 +19,21 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  * Runs all JMH benchmarks for virtual thread performance analysis.
  *
  * Executes:
- * 1. IOBoundBenchmark - I/O-bound operations comparison
- * 2. EventLoggerBenchmark - Event logging throughput
- * 3. InterfaceBClientBenchmark - HTTP client performance
- * 4. StructuredConcurrencyBenchmark - Structured concurrency vs CompletableFuture
- * 5. MemoryUsageBenchmark - Memory efficiency comparison
- * 6. WorkflowExecutionBenchmark - Real-world workflow patterns
+ * 1. VirtualThreadScalingBenchmark - Virtual thread scaling (10 to 1M threads)
+ * 2. StructuredConcurrencyPerformanceBenchmark - Java 25 structured concurrency
+ * 3. VirtualThreadContextSwitchingBenchmark - Context switching overhead analysis
+ * 4. VirtualThreadMemoryEfficiencyBenchmark - Memory efficiency testing
+ * 5. IOBoundBenchmark - I/O-bound operations comparison
+ * 6. EventLoggerBenchmark - Event logging throughput
+ * 7. InterfaceBClientBenchmark - HTTP client performance
+ * 8. WorkflowExecutionBenchmark - Real-world workflow patterns
+ * 9. MCPPerformanceBenchmarks - Model Context Protocol tool performance
+ *
+ * Performance Targets:
+ * - Virtual thread startup: < 1ms
+ * - Context switching: < 0.1ms
+ * - Memory overhead: < 8KB per thread
+ * - Linear scaling efficiency: > 90% up to 100k threads
  *
  * Results are output to:
  * - Console (human-readable)
@@ -36,7 +45,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  *   mvn exec:java -Dexec.mainClass="org.yawlfoundation.yawl.performance.jmh.AllBenchmarksRunner"
  *
  * @author YAWL Performance Team
- * @date 2026-02-16
+ * @date 2026-02-26
  */
 public class AllBenchmarksRunner {
 
@@ -46,14 +55,26 @@ public class AllBenchmarksRunner {
         System.out.println("=".repeat(80));
         System.out.println();
         System.out.println("This suite compares platform threads vs virtual threads across:");
+        System.out.println("  - Virtual thread scaling (10 to 1M threads)");
+        System.out.println("  - Structured concurrency vs traditional patterns");
+        System.out.println("  - Context switching overhead analysis");
+        System.out.println("  - Memory efficiency testing");
+        System.out.println("  - Park/unpark latency measurement");
+        System.out.println("  - Carrier thread migration impact");
+        System.out.println("  - Resource cleanup efficiency");
         System.out.println("  - I/O-bound operations");
         System.out.println("  - Event notification patterns");
         System.out.println("  - HTTP client performance");
-        System.out.println("  - Structured concurrency");
-        System.out.println("  - Memory usage");
         System.out.println("  - Real workflow execution");
+        System.out.println("  - MCP tool performance");
         System.out.println();
-        System.out.println("Estimated runtime: 30-45 minutes");
+        System.out.println("Performance Targets:");
+        System.out.println("  - Virtual thread startup: < 1ms");
+        System.out.println("  - Context switching: < 0.1ms");
+        System.out.println("  - Memory overhead: < 8KB per thread");
+        System.out.println("  - Linear scaling efficiency: > 90% up to 100k threads");
+        System.out.println();
+        System.out.println("Estimated runtime: 90-120 minutes");
         System.out.println("=".repeat(80));
         System.out.println();
 

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Enhanced Alert Output Template -->
+<!-- Supports security compliance, multi-channel delivery, and escalation tracking -->
+<data>
+    <!-- Alert Identification -->
+    <AlertID>${AlertID:-SYS-${AlertTimestamp}-${RandomID}}</AlertID>
+    <AlertType>${AlertType:-SYSTEM}</AlertType>
+    <AlertCategory>${AlertCategory:-Operational}</AlertCategory>
+    <AlertSubCategory>${AlertSubCategory:-General}</AlertSubCategory>
+
+    <!-- Critical Information -->
+    <Severity>${Severity:-HIGH}</Severity>
+    <Priority>${Priority:-CRITICAL}</Priority>
+    <Status>${Status:-PENDING}</Status>
+    <BusinessImpact>${BusinessImpact:-HIGH}</BusinessImpact>
+
+    <!-- Timestamps -->
+    <AlertTimestamp>${AlertTimestamp:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}</AlertTimestamp>
+    <DetectionTime>${DetectionTime:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}</DetectionTime>
+    <RequiredAction>${RequiredAction:-IMMEDIATE}</RequiredAction>
+    <ResponseWindowMinutes>${ResponseWindowMinutes:-60}</ResponseWindowMinutes>
+
+    <!-- Source Information -->
+    <Source>${Source:-YAWL_System}</Source>
+    <SourceSystem>${SourceSystem:-Workflow_Engine}</SourceSystem>
+    <SourceComponent>${SourceComponent:-Alert_Manager}</SourceComponent>
+    <SourceInstanceID>${SourceInstanceID:-$(hostname)}</SourceInstanceID>
+
+    <!-- Alert Content -->
+    <Message>${Message:-Alert triggered in system}</Message>
+    <DetailedDescription>${DetailedDescription:-No additional details available}</DetailedDescription>
+    <RecommendedAction>${RecommendedAction:-Review system logs for details}</RecommendedAction>
+    <ImpactAssessment>${ImpactAssessment:-System functionality may be affected}</ImpactAssessment>
+
+    <!-- Recipient and Delivery -->
+    <Recipient>${Recipient:-admin}</Recipient>
+    <RecipientEmail>${RecipientEmail:-admin@example.com}</RecipientEmail>
+    <RecipientPhone>${RecipientPhone:-+1234567890}</RecipientPhone>
+    <RecipientRole>${RecipientRole:-System_Administrator}</RecipientRole>
+
+    <!-- Delivery Configuration -->
+    <Channel>${Channel:-email}</Channel>
+    <DeliveryMethod>${DeliveryMethod:-Immediate}</DeliveryMethod>
+    <RetryCount>${RetryCount:-0}</RetryCount>
+    <MaxRetries>${MaxRetries:-3}</MaxRetries>
+    <NextRetryTime>${NextRetryTime:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}</NextRetryTime>
+
+    <!-- Escalation Information -->
+    <EscalationLevel>${EscalationLevel:-1}</EscalationLevel>
+    <EscalationPath>${EscalationPath:-admin:manager:director}</EscalationPath>
+    <CurrentEscalationLevel>${CurrentEscalationLevel:-1}</CurrentEscalationLevel>
+    <EscalationTrigger>${EscalationTrigger:-ResponseWindowExceeded}</EscalationTrigger>
+
+    <!-- Security and Compliance -->
+    <SecurityAuditID>${SecurityAuditID:-$(uuidgen)}</SecurityAuditID>
+    <ComplianceLevel>${ComplianceLevel:-ENHANCED}</ComplianceLevel>
+    <SecurityClassification>${SecurityClassification:-INTERNAL}</SecurityClassification>
+    <RetentionPeriodDays>${RetentionPeriodDays:-365}</RetentionPeriodDays>
+    <AuditTrailEnabled>${AuditTrailEnabled:-true}</AuditTrailEnabled>
+
+    <!-- Performance Metrics -->
+    <ProcessingTimeMs>${ProcessingTimeMs:-0}</ProcessingTimeMs>
+    <QueueWaitTimeMs>${QueueWaitTimeMs:-0}</QueueWaitTimeMs>
+    <DeliveryTimeMs>${DeliveryTimeMs:-0}</DeliveryTimeMs>
+    <TotalResponseTimeMs>${TotalResponseTimeMs:-0}</TotalResponseTimeMs>
+    <ResourceUsageMB>${ResourceUsageMB:-0}</ResourceUsageMB>
+
+    <!-- Status and Tracking -->
+    <DeliveryStatus>${DeliveryStatus:-PENDING}</DeliveryStatus>
+    <AcknowledgmentStatus>${AcknowledgmentStatus:-PENDING}</AcknowledgmentStatus>
+    <AcknowledgmentTime>${AcknowledgmentTime:-}</AcknowledgmentTime>
+    <AcknowledgedBy>${AcknowledgedBy:-}</AcknowledgedBy>
+    <ResolutionStatus>${ResolutionStatus:-OPEN}</ResolutionStatus>
+    <ResolutionTime>${ResolutionTime:-}</ResolutionTime>
+    <ResolvedBy>${ResolvedBy:-}</ResolvedBy>
+    <ResolutionNotes>${ResolutionNotes:-}</ResolutionNotes>
+
+    <!-- Additional Metadata -->
+    <NotificationTemplate>${NotificationTemplate:-alert}</NotificationTemplate>
+    <WorkflowCaseID>${WorkflowCaseID:-}</WorkflowCaseID>
+    <TaskID>${TaskID:-}</TaskID>
+    <CorrelationID>${CorrelationID:-${AlertID}}</CorrelationID>
+    <TraceID>${TraceID:-}</TraceID>
+    <ParentAlertID>${ParentAlertID:-}</ParentAlertID>
+    <AlertGroupID>${AlertGroupID:-}</AlertGroupID>
+
+    <!-- Business Context -->
+    <BusinessUnit>${BusinessUnit:-Operations}</BusinessUnit>
+    <CostCenter>${CostCenter:-IT001}</CostCenter>
+    <ServiceLevel>${ServiceLevel:-Critical}</ServiceLevel>
+    <SLATargetMinutes>${SLATargetMinutes:-60}</SLATargetMinutes>
+    <SLABreach>${SLABreach:-false}</SLABreach>
+
+    <!-- Technical Details -->
+    <ErrorCode>${ErrorCode:-ERR_0001}</ErrorCode>
+    <ErrorDetails>${ErrorDetails:-No error details available}</ErrorDetails>
+    <ErrorCategory>${ErrorCategory:-System}</ErrorCategory>
+    <ErrorSeverity>${ErrorSeverity:-High}</ErrorSeverity>
+    <ErrorSource>${ErrorSource:-Alert_System}</ErrorSource>
+
+    <!-- Configuration -->
+    <SuppressDuplications>${SuppressDuplications:-true}</SuppressDuplications>
+    <DuplicationWindowMinutes>${DuplicationWindowMinutes:-60}</DuplicationWindowMinutes>
+    <AutoResolutionMinutes>${AutoResolutionMinutes:-1440}</AutoResolutionMinutes>
+    <NotificationFrequencyMinutes>${NotificationFrequencyMinutes:-15}</NotificationFrequencyMinutes>
+
+    <!-- Additional Fields -->
+    <CustomField1>${CustomField1:-}</CustomField1>
+    <CustomField2>${CustomField2:-}</CustomField2>
+    <CustomField3>${CustomField3:-}</CustomField3>
+    <CustomField4>${CustomField4:-}</CustomField4>
+    <CustomField5>${CustomField5:-}</CustomField5>
+
+    <!-- Footer Information -->
+    <AgentVersion>${AgentVersion:-6.0.1-enhanced}</AgentVersion>
+    <AgentInstanceID>${AgentInstanceID:-$(uuidgen)}</AgentInstanceID>
+    <AgentTimestamp>${AgentTimestamp:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}</AgentTimestamp>
+    <AgentHealthStatus>${AgentHealthStatus:-HEALTHY}</AgentHealthStatus>
+</data>

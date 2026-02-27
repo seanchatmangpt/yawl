@@ -1,0 +1,2 @@
+SimpleTest: PASSED
+Java25Compilation: FAILED

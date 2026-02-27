@@ -1,0 +1,226 @@
+# Alert Agent Configuration - Enhanced Version
+# Domain: Notification - Alert capability
+# Reasoning: Static mapping for eligibility, Template-based decision making
+# Enhanced: Security, Observability, Performance, Resilience
+
+agent:
+  name: "Enhanced Alert Agent"
+  capability:
+    domain: "Alert"
+    description: "system alerts, critical notifications, warnings, emergency responses"
+    version: "6.0.1-enhanced"
+
+  security:
+    authentication: "mutual_tls"
+    encryption: "TLS_1.3"
+    rate_limiting:
+      requests_per_minute: 120
+      burst_size: 20
+    audit_logging: true
+    authorization:
+      enabled: true
+      model: "RBAC"
+      roles:
+        - name: "alert_worker"
+          permissions: ["alert_execute", "alert_acknowledge"]
+        - name: "alert_admin"
+          permissions: ["alert_configure", "alert_override"]
+
+  observability:
+    metrics:
+      enabled: true
+      endpoint: "${METRICS_ENDPOINT:-http://localhost:8090/metrics}"
+      collection_interval_ms: 5000
+    tracing:
+      enabled: true
+      tracing_provider: "opentelemetry"
+      sample_rate: "1.0"  # Critical alerts need full tracing
+    logging:
+      level: "${LOG_LEVEL:-DEBUG}"
+      format: "json"
+      correlation_id: "X-Trace-ID"
+    health_check:
+      enabled: true
+      endpoint: "/health"
+      interval_ms: 10000
+      timeout_ms: 3000
+
+  registration:
+    auto_discoverable: true
+    metadata:
+      tags: ["critical", "alerts", "emergency", "high-priority"]
+      labels:
+        domain: "notification"
+        priority: "critical"
+        service_type: "alert_system"
+    service_level:
+      availability: "99.99%"
+      target_response_time_ms: 500
+      max_timeout_ms: 10000
+
+  discovery:
+    strategy: "event_driven"
+    mode: "high_priority"
+    event_driven:
+      enabled: true
+      topics: ["yawl.alerts", "yawl.emergencies"]
+      queue: "${EVENT_QUEUE:-redis://localhost:6379/0}"
+      priority_queue: true
+      dead_letter_queue: true
+
+  reasoning:
+    eligibility_engine: "static"
+    decision_engine: "template"
+    static_eligibility: true  # High priority for alerts - no AI delays
+
+    # Static mapping file for critical alerts
+    mapping_file: "config/agents/mappings/alert-static-enhanced.json"
+
+    template_file: "config/agents/templates/alert-enhanced-output.xml"
+
+    # Alert-specific decision template
+    decision_template: |
+      <!-- Enhanced Alert Decision Template -->
+      <data>
+        <AlertID>${AlertID:-SYS-${AlertTimestamp}-${RandomID}}</AlertID>
+        <AlertType>${AlertType:-SYSTEM}</AlertType>
+        <Severity>${Severity:-HIGH}</Severity>
+        <Timestamp>${AlertTimestamp:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}</Timestamp>
+        <Source>${Source:-SYSTEM}</Source>
+        <Message>${Message:-Alert triggered}</Message>
+        <Recipient>${Recipient:-admin}</Recipient>
+        <Channel>${Channel:-email}</Channel>
+        <Status>${Status:-PENDING}</Status>
+        <Priority>${Priority:-CRITICAL}</Priority>
+        <BusinessImpact>${BusinessImpact:-HIGH}</BusinessImpact>
+        <RequiredAction>${RequiredAction:-IMMEDIATE}</RequiredAction>
+        <EscalationLevel>${EscalationLevel:-1}</EscalationLevel>
+        <RetryCount>${RetryCount:-0}</RetryCount>
+        <MaxRetries>${MaxRetries:-3}</MaxRetries>
+        <NotificationTemplate>${NotificationTemplate:-alert}</NotificationTemplate>
+        <SecurityAuditID>${SecurityAuditID:-$(uuidgen)}</SecurityAuditID>
+      </data>
+
+  output:
+    format: "xml"
+
+  server:
+    port: 8098
+    security:
+      enabled: true
+      authentication: "mutual_tls"
+      tls:
+        enabled: true
+        minimum_version: "1.3"
+        certificate: "/certs/alert-agent.crt"
+        private_key: "/certs/alert-agent.key"
+        ca_certificate: "/certs/ca.crt"
+
+  performance:
+    thread_pool:
+      core_threads: 2
+      max_threads: 8
+      queue_capacity: 100
+      keep_alive_ms: 30000
+      priority_queue: true
+    caching:
+      alert_cache:
+        max_entries: 500
+        ttl_seconds: 60
+      template_cache:
+        max_entries: 100
+        ttl_seconds: 3600
+
+  resilience:
+    circuit_breaker:
+      failure_threshold: 3
+      recovery_timeout_ms: 10000
+      half_open_max_requests: 1
+    timeout:
+      request_ms: 5000
+      idle_ms: 10000
+    retry:
+      max_attempts: 2
+      backoff_ms: 1000
+
+  lifecycle:
+    persistence:
+      enabled: true
+      storage: "redis"
+      snapshot_interval_ms: 15000
+      state_retention_days: 3
+    health:
+      checks:
+        - name: "alert_queue_depth"
+          interval_ms: 5000
+          threshold: 100
+        - name: "alert_delivery_rate"
+          interval_ms: 10000
+          threshold_percent: 95
+        - name: "system_resources"
+          threshold_percent: 80
+    degradation:
+      enabled: true
+      levels: ["full", "reduced", "minimal"]
+      trigger_conditions:
+        - error_rate > 0.05
+        - response_time > 3000
+        - memory_usage > 85%
+
+yawl:
+  engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+  username: "${YAWL_USERNAME:-admin}"
+  password: "${YAWL_PASSWORD}"
+
+error_handling:
+  classification:
+    categories: ["alert_critical", "alert_warning", "alert_info", "system_error"]
+  recovery:
+    strategies:
+      - name: "immediate_retry"
+        max_attempts: 3
+        backoff_ms: 500
+      - name: "escalate_to_manager"
+        threshold: "critical"
+      - name: "fallback_to_sms"
+        condition: "email_failure"
+  reporting:
+    levels: ["ERROR", "WARN", "INFO", "DEBUG"]
+    notification:
+      - type: "sms"
+        recipients: ["+1234567890"]
+      - type: "email"
+        recipients: ["alerts-critical@example.com"]
+      - type: "slack"
+        webhook_url: "${CRITICAL_SLACK_WEBHOOK}"
+        priority: "critical"
+
+external:
+  apis:
+    - name: "sms_gateway"
+      url: "${SMS_API_URL}"
+      auth: "api_key"
+      timeout_ms: 5000
+      retries: 2
+    - name: "push_notification"
+      url: "${PUSH_API_URL}"
+      auth: "bearer_token"
+      timeout_ms: 3000
+      retries: 1
+    - name: "emergency_contact"
+      url: "${EMERGENCY_API_URL}"
+      auth: "oauth2"
+      timeout_ms: 10000
+      retries: 3
+
+monitoring:
+  alert_thresholds:
+    response_time_ms: 1000
+    error_rate_percent: 5
+    queue_size: 50
+    cpu_usage_percent: 80
+    memory_usage_percent: 85
+  escalation:
+    levels: [1, 2, 3]
+    delays: [300, 600, 1800]  # seconds
+    contacts: ["admin", "manager", "director"]

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specification xmlns="http://www.yawlfoundation.org/yawl">
+    <name>SimpleWorkflow</name>
+    <documentation>Test workflow for performance benchmarking</documentation>
+    <vertices>
+        <start id="1" x="100" y="100"/>
+        <task id="2" x="300" y="100" name="SimpleTask"/>
+        <stop id="3" x="500" y="100"/>
+    </vertices>
+    <edges>
+        <source id="1" target="2"/>
+        <source id="2" target="3"/>
+    </edges>
+</specification>

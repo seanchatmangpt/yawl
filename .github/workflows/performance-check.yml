@@ -1,0 +1,592 @@
+# YAWL v6.0.0-GA - Performance Regression Detection Workflow
+#
+# This workflow integrates performance regression detection into CI/CD,
+# ensuring that performance regressions are caught early and blocked
+# from merging to main branches.
+#
+# Features:
+# - Matrix testing for microbenchmarks, load-tests, and chaos-tests
+# - Java 25 with optimal configuration
+# - Parallel Maven builds (-T 1.5C)
+# - Performance regression detection with configurable thresholds
+# - Comprehensive error handling and logging
+# - Integration with existing CI/CD pipeline
+
+name: Performance Regression Detection
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - '**/*.md'
+  push:
+    branches: [master, main]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  MAVEN_OPTS: >-
+    -Dmaven.repo.local=${{ github.workspace }}/.m2/repository
+    -Djava.awt.headless=true
+    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+    -Dorg.slf4j.simpleLogger.showDateTime=true
+    -Djava.net.preferIPv4Stack=true
+  JAVA_TOOL_OPTIONS: >-
+    -XX:+UseCompactObjectHeaders
+    -XX:+UseZGC
+    -Xms2g
+    -Xmx4g
+    -XX:MaxGCPauseMillis=10
+    -XX:+UseParallelGC
+    -XX:+AggressiveOpts
+    -XX:+UseStringDeduplication
+    -XX:+OptimizeStringConcat
+    -XX:CompileThreshold=1000
+
+jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      java-version: ${{ steps.setup.outputs.java-version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Shallow fetch for performance
+          submodules: recursive
+      
+      - name: Set up JDK
+        id: setup
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          java-package: 'jdk'
+          cache: 'maven'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y bc jq
+
+  build:
+    name: Build with Parallel Maven
+    needs: setup
+    runs-on: ubuntu-latest-4-32-core
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          java-package: 'jdk'
+          cache: 'maven'
+          server-id: github
+          settings-id: github-packages
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Build project (parallel)
+        run: |
+          echo "📦 Building YAWL project with parallel Maven..."
+          mvn clean compile -T 1.5C -B -q
+          echo "✅ Build completed successfully"
+      
+      - name: Verify build
+        run: |
+          echo "🔍 Verifying build artifacts..."
+          find target -name "*.jar" | head -5
+          echo "✅ Build verification completed"
+
+  performance-microbenchmarks:
+    name: Microbenchmarks
+    needs: [setup, build]
+    runs-on: ubuntu-latest-4-32-core
+    strategy:
+      matrix:
+        benchmark-type: [jmh, concurrency, memory]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          java-package: 'jdk'
+          cache: 'maven'
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Prepare for microbenchmarks
+        run: |
+          echo "🚀 Preparing ${{ matrix.benchmark-type }} microbenchmarks..."
+          mkdir -p test-results/${{ matrix.benchmark-type }}
+      
+      - name: Run microbenchmarks
+        run: |
+          cd test/org/yawlfoundation/yawl/performance
+          
+          # Set up JMH classpath
+          JMH_CP="$(find ../../../../target -name "*.jar" | tr '\n' ':')/usr/share/java/jmh.jar"
+          
+          # Run benchmarks based on type
+          case ${{ matrix.benchmark-type }} in
+            jmh)
+              java -cp "$JMH_CP" $JAVA_OPTS \
+                   org.openjdk.jmh.Main \
+                   EnginePerformanceBaseline \
+                   -rf json \
+                   -wi 3 \
+                   -i 5 \
+                   -f 1 \
+                   -o results.json
+              ;;
+            concurrency)
+              java -cp "$JMH_CP" $JAVA_OPTS \
+                   org.openjdk.jmh.Main \
+                   ConcurrencyBenchmarkSuite \
+                   -rf json \
+                   -wi 3 \
+                   -i 5 \
+                   -f 1 \
+                   -o results.json
+              ;;
+            memory)
+              java -cp "$JMH_CP" $JAVA_OPTS \
+                   org.openjdk.jmh.Main \
+                   MemoryUsageProfiler \
+                   -rf json \
+                   -wi 3 \
+                   -i 5 \
+                   -f 1 \
+                   -o results.json
+              ;;
+          esac
+          
+          # Move results
+          cd ../..
+          mv performance/results.json test-results/${{ matrix.benchmark-type }}/${{ matrix.benchmark-type }}-results.json
+      
+      - name: Upload microbenchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: microbenchmark-results-${{ matrix.benchmark-type }}
+          path: test-results/${{ matrix.benchmark-type }}/*.json
+          retention-days: 30
+
+  performance-load-tests:
+    name: Load Tests
+    needs: [setup, build]
+    runs-on: ubuntu-latest-8-32-core
+    strategy:
+      matrix:
+        load-profile: [light, medium, heavy]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          java-package: 'jdk'
+          cache: 'maven'
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Prepare for load tests
+        run: |
+          echo "🚀 Preparing ${{ matrix.load-profile }} load tests..."
+          mkdir -p test-results/load-tests/${{ matrix.load-profile }}
+      
+      - name: Run load tests
+        run: |
+          echo "🔥 Running ${{ matrix.load-profile }} load tests..."
+          
+          # Set load test parameters based on profile
+          case ${{ matrix.load-profile }} in
+            light)
+              THREADS=10
+              DURATION=30
+              REQUESTS=1000
+              ;;
+            medium)
+              THREADS=50
+              DURATION=60
+              REQUESTS=5000
+              ;;
+            heavy)
+              THREADS=100
+              DURATION=120
+              REQUESTS=10000
+              ;;
+          esac
+          
+          cd test/org/yawlfoundation/yawl/performance
+          
+          # Run load test
+          java -cp "$(find ../../../../target -name "*.jar" | tr '\n' ':')" \
+               $JAVA_OPTS \
+               LoadTestSuite \
+               -t $THREADS \
+               -d $DURATION \
+               -r $REQUESTS \
+               -o load-test-${{ matrix.load-profile }}-results.json
+          
+          # Move results
+          cd ../..
+          mv performance/load-test-${{ matrix.load-profile }}-results.json test-results/load-tests/${{ matrix.load-profile }}/
+      
+      - name: Upload load test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results-${{ matrix.load-profile }}
+          path: test-results/load-tests/${{ matrix.load-profile }}/*.json
+          retention-days: 30
+
+  performance-chaos-tests:
+    name: Chaos Tests
+    needs: [setup, build]
+    runs-on: ubuntu-latest-8-32-core
+    strategy:
+      matrix:
+        failure-type: [latency, failure, resource]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          java-package: 'jdk'
+          cache: 'maven'
+      
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Prepare for chaos tests
+        run: |
+          echo "⚡ Preparing ${{ matrix.failure-type }} chaos tests..."
+          mkdir -p test-results/chaos-tests/${{ matrix.failure-type }}
+      
+      - name: Run chaos tests
+        run: |
+          echo "💀 Running ${{ matrix.failure-type }} chaos tests..."
+          
+          cd test/org/yawlfoundation/yawl/performance
+          
+          # Run chaos test based on type
+          case ${{ matrix.failure-type }} in
+            latency)
+              java -cp "$(find ../../../../target -name "*.jar" | tr '\n' ':')" \
+                   $JAVA_OPTS \
+                   ChaosTestRunner \
+                   --latency-spike 500 \
+                   --duration 60 \
+                   -o chaos-latency-results.json
+              ;;
+            failure)
+              java -cp "$(find ../../../../target -name "*.jar" | tr '\n' ':')" \
+                   $JAVA_OPTS \
+                   ChaosTestRunner \
+                   --failure-rate 0.1 \
+                   --duration 60 \
+                   -o chaos-failure-results.json
+              ;;
+            resource)
+                java -cp "$(find ../../../../target -name "*.jar" | tr '\n' ':')" \
+                     $JAVA_OPTS \
+                     ChaosTestRunner \
+                     --cpu-limit 80 \
+                     --memory-limit 80 \
+                     --duration 60 \
+                     -o chaos-resource-results.json
+              ;;
+          esac
+          
+          # Move results
+          cd ../..
+          mv performance/chaos-${{ matrix.failure-type }}-results.json test-results/chaos-tests/${{ matrix.failure-type }}/
+      
+      - name: Upload chaos test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: chaos-test-results-${{ matrix.failure-type }}
+          path: test-results/chaos-tests/${{ matrix.failure-type }}/*.json
+          retention-days: 30
+
+  regression-detection:
+    name: Regression Detection
+    needs: [setup, performance-microbenchmarks, performance-load-tests, performance-chaos-tests]
+    runs-on: ubuntu-latest-4-32-core
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          java-package: 'jdk'
+          cache: 'maven'
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y bc jq
+      
+      - name: Combine benchmark results
+        run: |
+          echo "🔄 Combining all benchmark results..."
+          mkdir -p combined-results
+          
+          # Combine all JSON files into a single array
+          echo '[' > benchmark-results.json
+          first=true
+          
+          find test-results -name "*.json" -type f | while read file; do
+            if [ "$first" = true ]; then
+              first=false
+            else
+              echo ',' >> benchmark-results.json
+            fi
+            
+            # Extract array content and append
+            jq -c '.[]' "$file" >> benchmark-results.json
+          done
+          
+          echo ']' >> benchmark-results.json
+      
+      - name: Run regression detection
+        run: |
+          echo "🔍 Running regression detection..."
+          ./scripts/regression-detection.sh \
+            performance-baseline.json \
+            benchmark-results.json \
+            10  # 10% threshold
+      
+      - name: Upload regression report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-regression-report
+          path: performance-regression-report-*.json
+          retention-days: 90
+      
+      - name: Generate performance summary
+        run: |
+          echo "📊 Performance Summary"
+          echo "======================"
+          echo "Total benchmarks executed: $(jq '.total_benchmarks' benchmark-results.json 2>/dev/null || echo 'N/A')"
+          echo "Regressions detected: $(jq '.regressions_found' benchmark-results.json 2>/dev/null || echo 'N/A')"
+          echo "Regression threshold: 10%"
+          
+          # Find largest regressions if any
+          if [ -f performance-regression-report-*.json ]; then
+            LATEST_REPORT=$(ls performance-regression-report-*.json | sort | tail -1)
+            echo ""
+            echo "🔴 Regressions (if any):"
+            jq '.details[] | select(.regression_percent > 0)' "$LATEST_REPORT" | head -5
+          fi
+      
+      - name: Upload combined results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            benchmark-results.json
+            performance-regression-report-*.json
+            combined-results/
+          retention-days: 90
+
+  publish-report:
+    name: Publish Performance Report
+    needs: [regression-detection]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: performance-reports
+      
+      - name: Generate HTML report
+        if: always()
+        run: |
+          echo "📄 Generating HTML performance report..."
+          
+          # Create HTML report
+          cat > performance-report.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>YAWL Performance Report</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; }
+                  .header { background: #f0f0f0; padding: 20px; border-radius: 5px; }
+                  .summary { margin: 20px 0; }
+                  .regression { background: #ffebee; border-left: 4px solid #f44336; padding: 10px; margin: 10px 0; }
+                  .pass { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 10px; margin: 10px 0; }
+                  table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                  th { background-color: #f2f2f2; }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>YAWL Performance Regression Report</h1>
+                  <p>Generated on: $(date)</p>
+                  <p>Repository: ${{ github.repository }}</p>
+                  <p>Commit: ${{ github.sha }}</p>
+              </div>
+              
+              <div class="summary">
+                  <h2>Summary</h2>
+                  <p>Total Benchmarks: $(jq '.total_benchmarks' benchmark-results.json 2>/dev/null || echo 'N/A')</p>
+                  <p>Regressions Found: $(jq '.regressions_found' benchmark-results.json 2>/dev/null || echo 'N/A')</p>
+                  <p>Status: <span style="color: $([ $(jq '.status' benchmark-results.json 2>/dev/null) = "REGRESSION" ] && echo red || echo green)">$(jq '.status' benchmark-results.json 2>/dev/null || echo 'N/A')</span></p>
+              </div>
+          EOF
+          
+          # Add regression details if any
+          if [ -f performance-regression-report-*.json ]; then
+            LATEST_REPORT=$(ls performance-regression-report-*.json | sort | tail -1)
+            if [ $(jq '.regressions_found' "$LATEST_REPORT") -gt 0 ]; then
+              echo "<div class='regression'>" >> performance-report.html
+              echo "<h3>Performance Regressions Detected</h3>" >> performance-report.html
+              echo "<table>" >> performance-report.html
+              echo "<tr><th>Benchmark</th><th>Baseline</th><th>Current</th><th>Regression %</th></tr>" >> performance-report.html
+              jq '.details[] | select(.regression_percent > 0)' "$LATEST_REPORT" | while read -r regression; do
+                BENCHMARK=$(echo "$regression" | jq -r '.benchmark')
+                BASELINE=$(echo "$regression" | jq -r '.baseline')
+                CURRENT=$(echo "$regression" | jq -r '.current')
+                PERCENT=$(echo "$regression" | jq -r '.regression_percent')
+                echo "<tr><td>$BENCHMARK</td><td>$BASELINE</td><td>$CURRENT</td><td>$PERCENT%</td></tr>" >> performance-report.html
+              done
+              echo "</table>" >> performance-report.html
+              echo "</div>" >> performance-report.html
+            else
+              echo "<div class='pass'><h3>✅ No Performance Regressions Detected</h3></div>" >> performance-report.html
+            fi
+          fi
+          
+          echo "</body></html>" >> performance-report.html
+      
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report-html
+          path: performance-report.html
+          retention-days: 90
+          if: always()
+      
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'performance-report.html';
+            
+            if (fs.existsSync(path)) {
+              const report = fs.readFileSync(path, 'utf8');
+              
+              const comment = `
+                🔍 **YAWL Performance Regression Report**
+                
+                **Summary:**
+                - Total Benchmarks: ${process.env.TOTAL_BENCHMARKS || 'N/A'}
+                - Regressions Found: ${process.env.REGRESSIONS_FOUND || 'N/A'}
+                - Status: ${process.env.STATUS || 'N/A'}
+                
+                **Full Report:** [View Performance Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+                
+                *Generated by CI/CD Pipeline*
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+  notify:
+    name: Notify Results
+    needs: [regression-detection]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Notify on failure
+        if: needs.regression-detection.result == 'failure'
+        run: |
+          echo "❌ Performance regression detected! Pipeline failed."
+          echo "📄 Check the regression report for details."
+          exit 1
+        continue-on-error: true

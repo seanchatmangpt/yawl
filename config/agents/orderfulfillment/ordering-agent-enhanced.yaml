@@ -1,0 +1,235 @@
+# Ordering Agent Configuration - Enhanced Version
+# Domain: OrderFulfillment - Ordering capability
+# Reasoning: ZAI-based eligibility and decision making
+# Enhanced: Security, Observability, Performance, Resilience
+
+agent:
+  name: "Enhanced Ordering Agent"
+  capability:
+    domain: "Ordering"
+    description: "purchase order approval, order validation, order creation, requisition processing"
+    version: "6.0.1-enhanced"
+
+  security:
+    authentication: "jwt_bearer"
+    encryption: "TLS_1.3"
+    rate_limiting:
+      requests_per_minute: 60
+      burst_size: 10
+    audit_logging: true
+    identity:
+      service_name: "YAWL_Ordering_Agent"
+      service_role: "Autonomous_Workflow_Agent"
+      deployment_info:
+        environment: "${DEPLOYMENT_ENV:-development}"
+        cluster: "${CLUSTER_ID:-default}"
+        instance_id: "${INSTANCE_ID:-$(uuidgen)}"
+
+  observability:
+    metrics:
+      enabled: true
+      endpoint: "${METRICS_ENDPOINT:-http://localhost:8090/metrics}"
+      collection_interval_ms: 10000
+    tracing:
+      enabled: true
+      tracing_provider: "opentelemetry"
+      sample_rate: "0.1"
+    logging:
+      level: "${LOG_LEVEL:-INFO}"
+      format: "json"
+      correlation_id: "X-Trace-ID"
+    health_check:
+      enabled: true
+      endpoint: "/health"
+      interval_ms: 30000
+      timeout_ms: 5000
+
+  discovery:
+    strategy: "adaptive"
+    mode: "smart"
+    adaptive_interval:
+      min_ms: 1000
+      max_ms: 30000
+      backoff_factor: 2.0
+      burst_threshold: 10
+    prediction:
+      enabled: true
+      model: "lightweight_lstm"
+      confidence_threshold: 0.8
+      lookahead_tasks: 3
+    event_driven:
+      enabled: true
+      topics: ["yawl.workitems.available"]
+      queue: "${EVENT_QUEUE:-redis://localhost:6379/0}"
+
+  reasoning:
+    eligibility_engine: "zai"
+    decision_engine: "zai"
+    hybrid_mode: true
+    context_window:
+      max_tokens: 16000
+      working_memory_size: 8000
+    model_fallback:
+      primary_model: "${ZAI_MODEL:-GLM-4.7-Flash}"
+      fallback_model: "GLM-4-Plus"
+      failover_threshold_ms: 5000
+    knowledge_base:
+      integration: "vector_search"
+      similarity_threshold: 0.7
+      update_frequency: "hourly"
+    coordination:
+      enabled: true
+      protocol: "a2a"
+      conflict_resolution: "priority_based"
+      capability_match: "semantic"
+
+    eligibility_prompt: |
+      You are an eligibility analyzer for an Enhanced Ordering Agent in a YAWL workflow system.
+
+      Given a workitem with:
+      - Task Name: {taskName}
+      - Task Description: {taskDescription}
+      - Input Data: {inputData}
+
+      SECURITY CONTEXT: Verify your authentication token is valid
+      AUTHORIZATION LEVEL: Agent has permission for ordering tasks only
+      DATA ENCRYPTION: All communications are TLS 1.3 encrypted
+      AUDIT LOGGING: This decision will be logged for compliance
+
+      Determine if this Enhanced Ordering Agent should handle this task.
+      The Enhanced Ordering Agent handles: purchase orders, order approval, requisitions, order validation,
+      with enhanced security checks and performance monitoring.
+
+      Respond with ONLY a JSON object:
+      {
+        "eligible": true/false,
+        "confidence": 0.0-1.0,
+        "reason": "brief explanation",
+        "security_check": "verified|requires_review",
+        "estimated_processing_time_ms": 1000-5000
+      }
+
+    decision_prompt: |
+      You are the Enhanced Ordering Agent making secure decisions for YAWL workflow tasks.
+
+      Task: {taskName}
+      Description: {taskDescription}
+      Input Data: {inputData}
+
+      SECURITY PROTOCOLS:
+      1. Verify task permissions
+      2. Validate input data integrity
+      3. Apply business rules
+      4. Log audit trail
+      5. Validate output structure
+
+      PERFORMANCE MONITORING:
+      - Decision time is tracked
+      - Resource usage is monitored
+      - Error rates are reported
+
+      Based on the input data and security protocols, make a decision and produce output data.
+      For purchase orders: validate amounts, check budgets, approve/reject with security checks.
+      For order creation: generate order IDs, set status, validate items with audit logging.
+
+      Respond with ONLY a JSON object containing the output data fields:
+      {
+        "OrderID": "...",
+        "Status": "Approved/Rejected/Pending",
+        "ApprovalDate": "YYYY-MM-DD",
+        "SecurityAuditID": "...",
+        "ProcessingTimeMs": "...",
+        "ResourceUsageMB": "...",
+        "Notes": "...",
+        "...": "other relevant fields"
+      }
+
+  output:
+    format: "xml"
+
+  server:
+    port: 8091
+    security:
+      enabled: true
+      authentication: "jwt"
+      authorization: "rbac"
+      tls:
+        enabled: true
+        minimum_version: "1.3"
+        cipher_suites: ["TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"]
+
+  performance:
+    memory_pool:
+      max_heap_mb: 512
+      young_generation_ratio: 0.3
+      garbage_collection_strategy: "G1GC"
+    thread_pool:
+      core_threads: 4
+      max_threads: 16
+      queue_capacity: 1000
+      keep_alive_ms: 60000
+    caching:
+      eligibility_cache:
+        max_entries: 1000
+        ttl_seconds: 300
+      decision_cache:
+        max_entries: 500
+        ttl_seconds: 600
+
+  lifecycle:
+    persistence:
+      enabled: true
+      storage: "redis"
+      snapshot_interval_ms: 30000
+      state_retention_days: 7
+    health:
+      checks:
+        - name: "zai_connectivity"
+          interval_ms: 10000
+          timeout_ms: 5000
+          success_threshold: 0.95
+        - name: "yawl_connection"
+          interval_ms: 5000
+          timeout_ms: 3000
+        - name: "memory_usage"
+          threshold_percent: 80
+
+yawl:
+  engine_url: "${YAWL_ENGINE_URL:-http://localhost:8080/yawl}"
+  username: "${YAWL_USERNAME:-admin}"
+  password: "${YAWL_PASSWORD}"
+
+zai:
+  api_key: "${ZAI_API_KEY}"
+  model: "${ZAI_MODEL:-GLM-4.7-Flash}"
+  base_url: "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4/chat/completions}"
+  timeout_ms: 30000
+  max_retries: 3
+  security:
+    api_key_rotation: "monthly"
+    key_validations: ["not_expired", "permission_check"]
+    rate_limit_config:
+      requests_per_minute: 100
+      max_concurrent: 5
+
+error_handling:
+  classification:
+    categories: ["recoverable", "non_recoverable", "system_critical"]
+  recovery:
+    strategies:
+      - name: "retry_with_backoff"
+        max_attempts: 3
+        backoff_factor: 2
+        max_delay_ms: 10000
+      - name: "circuit_breaker"
+        failure_threshold: 5
+        recovery_timeout_ms: 30000
+      - name: "fallback_to_template"
+        template_file: "generic-error.xml"
+  reporting:
+    levels: ["ERROR", "WARN", "INFO"]
+    notification:
+      - type: "email"
+        recipients: ["yawl-ops@example.com"]
+      - type: "slack"
+        webhook_url: "${SLACK_WEBHOOK}"

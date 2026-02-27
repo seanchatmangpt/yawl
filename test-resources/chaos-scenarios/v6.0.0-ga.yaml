@@ -1,0 +1,535 @@
+# YAWL v6.0.0 GA Chaos Engineering Scenarios Configuration
+# This file defines comprehensive chaos testing scenarios for enhanced resilience validation
+
+metadata:
+  version: "6.0.0-ga"
+  description: "Chaos engineering scenarios for YAWL v6.0.0 GA"
+  created: "2026-02-26"
+  recovery_target_ms: 30000  # 30 seconds maximum recovery time
+  success_rate_threshold: 0.80  # 80% minimum success rate
+
+# Network chaos scenarios
+network_scenarios:
+  latency_spikes:
+    description: "Network latency spikes (100ms - 5s)"
+    parameters:
+      min_delay_ms: 100
+      max_delay_ms: 5000
+      timeout_ms: 10000
+      request_count: 50
+      distribution: "exponential"  # exponential, uniform, normal
+    validation:
+      success_rate_threshold: 0.90
+      max_latency_ms: 8000
+    recovery:
+      expected_recovery_ms: 1000
+      graceful_degradation: true
+
+  network_partitions:
+    description: "Network partition simulation (split-brain scenarios)"
+    parameters:
+      partition_probability: 0.30  # 30% chance of partition
+      partition_duration_ms: 5000
+      request_count: 30
+      partition_size: 50  # Percentage of nodes affected
+    validation:
+      success_rate_threshold: 0.70
+      partition_tolerance_ms: 8000
+    recovery:
+      expected_recovery_ms: 2000
+      conflict_resolution: "last-write-wins"
+
+  packet_loss:
+    description: "Simulated packet loss (0-50% loss rate)"
+    parameters:
+      loss_rate_min: 0.0
+      loss_rate_max: 0.50
+      request_count: 100
+      retry_count: 3
+      exponential_backoff: true
+    validation:
+      success_rate_threshold: 0.85
+      retry_success_rate: 0.95
+    recovery:
+      expected_recovery_ms: 1500
+      circuit_breaker_threshold: 5
+
+  partial_connectivity:
+    description: "Partial network connectivity (60-90% availability)"
+    parameters:
+      availability_min: 0.60
+      availability_max: 0.90
+      request_count: 40
+      timeout_ms: 5000
+      health_check_interval_ms: 1000
+    validation:
+      success_rate_threshold: 0.75
+      avg_response_time_ms: 3000
+    recovery:
+      expected_recovery_ms: 3000
+      failover_enabled: true
+
+# Resource chaos scenarios
+resource_scenarios:
+  memory_pressure:
+    description: "Memory exhaustion and pressure testing"
+    parameters:
+      allocation_size_mb: 100  # Concurrent MB to allocate
+      allocation_rate_mb: 10   # MB per allocation
+      gc_calls: true           # Force GC after allocations
+      test_duration_ms: 10000
+    validation:
+      success_rate_threshold: 0.75
+      memory_usage_threshold_percent: 90
+    recovery:
+      expected_recovery_ms: 5000
+      oom_handling: "graceful"
+    metrics:
+      - memory_usage_percent
+      - gc_count
+      - allocation_rate
+
+  cpu_pressure:
+    description: "CPU utilization and throttling (50-100% utilization)"
+    parameters:
+      target_utilization_percent: 85
+      duration_ms: 8000
+      thread_count: available_processors_minus_1
+      workload_type: "mathematical"  # mathematical, io, mixed
+    validation:
+      success_rate_threshold: 0.80
+      max_cpu_utilization_percent: 100
+    recovery:
+      expected_recovery_ms: 3000
+      priority_handling: true
+    metrics:
+      - cpu_utilization_percent
+      - request_throughput
+      - latency_percentile_95
+
+  disk_pressure:
+    description: "Disk space exhaustion and I/O stress"
+    parameters:
+      file_size_mb: 10
+      file_count: 100
+      write_rate_per_sec: 50
+      read_rate_per_sec: 50
+      test_duration_ms: 15000
+    validation:
+      success_rate_threshold: 0.70
+      disk_usage_threshold_percent: 95
+    recovery:
+      expected_recovery_ms: 10000
+      cache_clearing: true
+    metrics:
+      - disk_usage_percent
+      - iops_read
+      - iops_write
+      - latency_ms
+
+  disk_full:
+    description: "Critical disk space exhaustion"
+    parameters:
+      target_usage_percent: 99
+      large_file_size_mb: 100
+      file_count: 5
+      verify_after: true
+    validation:
+      success_rate_threshold: 0.60
+      no_corruption: true
+    recovery:
+      expected_recovery_ms: 15000
+      cleanup_automated: true
+    metrics:
+      - disk_usage_percent
+      - free_space_mb
+      - error_rate
+
+# Service chaos scenarios
+service_scenarios:
+  service_restarts:
+    description: "Multiple service restart scenarios"
+    parameters:
+      restart_count: 10
+      restart_duration_ms: 5000
+      request_rate_per_sec: 10
+      healthy_check_delay_ms: 1000
+    validation:
+      success_rate_threshold: 0.85
+      no_data_loss: true
+      request_timeout_ms: 10000
+    recovery:
+      expected_recovery_ms: 3000
+      state_preservation: true
+    metrics:
+      - restart_count
+      - downtime_ms
+      - recovery_success_rate
+
+  configuration_changes:
+    description: "Runtime configuration changes"
+    parameters:
+      change_count: 5
+      change_types:
+        - timeout_increase
+        - pool_size_decrease
+        - debug_enable
+        - monitoring_disable
+        - feature_flag_toggle
+      validate_after_change: true
+    validation:
+      success_rate_threshold: 0.80
+      configuration_consistency: true
+    recovery:
+      expected_recovery_ms: 2000
+      rollback_enabled: true
+    metrics:
+      - configuration_change_count
+      - validation_success_rate
+      - performance_impact
+
+  service_unavailability:
+    description: "Service unavailability with failover"
+    parameters:
+      unavailability_rate: 0.40  # 40% chance of unavailability
+      fallback_timeouts_ms: [1000, 2000, 5000]
+      health_check_interval_ms: 500
+      failover_threshold: 3
+    validation:
+      success_rate_threshold: 0.90
+      failover_time_ms: 2000
+    recovery:
+      expected_recovery_ms: 1000
+      automatic_failover: true
+    metrics:
+      - unavailability_rate
+      - failover_time_ms
+      - success_with_failover_percent
+
+  graceful_degradation:
+    description: "Graceful degradation under service stress"
+    parameters:
+      stress_level: high
+      priority_levels: ["high", "medium", "low"]
+      request_weighting: [0.5, 0.3, 0.2]  # high:medium:low
+      degradation_threshold_percent: 80
+    validation:
+      success_rate_threshold: 0.70
+      priority_preservation: true
+    recovery:
+      expected_recovery_ms: 2000
+      level_based_recovery: true
+    metrics:
+      - high_priority_success_rate
+      - medium_priority_success_rate
+      - low_priority_success_rate
+      - overall_degradation_percent
+
+# Data chaos scenarios
+data_scenarios:
+  data_corruption:
+    description: "Data corruption detection and recovery"
+    parameters:
+      corruption_types:
+        - null_values
+        - invalid_versions
+        - truncated_names
+        - special_characters
+        - type_mismatch
+      corruption_rate: 0.10  # 10% corruption rate
+      recovery_attempts: 3
+      validation_after_recovery: true
+    validation:
+      success_rate_threshold: 0.80
+      corruption_detection_rate: 0.95
+      data_integrity: true
+    recovery:
+      expected_recovery_ms: 5000
+      backup_restoration: true
+    metrics:
+      - corruption_detected_count
+      - recovery_success_rate
+      - data_integrity_score
+
+  data_delay:
+    description: "Data delay and timing issues"
+    parameters:
+      delay_range_ms: [0, 5000]
+      timeout_ms: 10000
+      retry_policy: exponential
+      max_retries: 3
+      request_count: 50
+    validation:
+      success_rate_threshold: 0.85
+      avg_delay_ms: 2000
+      timeout_rate_percent: 5
+    recovery:
+      expected_recovery_ms: 3000
+      retry_backoff: true
+    metrics:
+      - avg_latency_ms
+      - timeout_rate_percent
+      - retry_success_rate
+
+  data_duplication:
+    description: "Data duplication and conflict resolution"
+    parameters:
+      duplication_rate: 0.30  # 30% duplication rate
+      conflict_rate: 0.20     # 20% conflict rate
+      conflict_resolution_strategy: "last-write-wins"
+      data_validation_after: true
+    validation:
+      success_rate_threshold: 0.90
+      duplicate_handling_rate: 0.95
+      conflict_resolution_rate: 0.90
+    recovery:
+      expected_recovery_ms: 2000
+      consistency_maintenance: true
+    metrics:
+      - duplicate_count
+      - conflict_count
+      - resolution_success_rate
+      - data_consistency_score
+
+  data_consistency:
+    description: "Data consistency across chaos scenarios"
+    parameters:
+      concurrent_operations: 20
+      validation_interval_ms: 1000
+      consistency_checks:
+        - referential_integrity
+        - data_validation
+        - constraint_validation
+      tolerance_level: "strict"
+    validation:
+      success_rate_threshold: 0.95
+      consistency_score: 0.99
+      violation_count: 0
+    recovery:
+      expected_recovery_ms: 4000
+      automatic_validation: true
+    metrics:
+      - consistency_score
+      - violation_count
+      - recovery_success_rate
+
+# Combined chaos scenarios
+combined_scenarios:
+  network_resource_stress:
+    description: "Network and resource pressure combined"
+    components:
+      - network: latency_spikes
+      - resource: memory_pressure
+    weighting:
+      network: 0.6
+      resource: 0.4
+    validation:
+      success_rate_threshold: 0.70
+      recovery_time_ms: 8000
+    recovery:
+      sequential: false  # Parallel recovery
+
+  service_data_chaos:
+    description: "Service and data chaos combined"
+    components:
+      - service: service_restarts
+      - data: data_corruption
+    weighting:
+      service: 0.7
+      data: 0.3
+    validation:
+      success_rate_threshold: 0.65
+      recovery_time_ms: 12000
+    recovery:
+      priority: "service_first"  # service then data
+
+  full_system_stress:
+    description: "Full system stress test"
+    components:
+      - network: network_partitions
+      - resource: cpu_pressure
+      - service: graceful_degradation
+      - data: data_consistency
+    weighting:
+      network: 0.25
+      resource: 0.25
+      service: 0.25
+      data: 0.25
+    validation:
+      success_rate_threshold: 0.60
+      recovery_time_ms: 20000
+    recovery:
+      hierarchical: true  # Layered recovery approach
+
+# Recovery validation profiles
+recovery_profiles:
+  fast_recovery:
+    description: "Fast recovery scenarios (< 5 seconds)"
+    max_recovery_time_ms: 5000
+    success_rate_threshold: 0.90
+    scenarios:
+      - network_latency_spikes
+      - service_restarts
+      - data_delay
+
+  medium_recovery:
+    description: "Medium recovery scenarios (5-15 seconds)"
+    max_recovery_time_ms: 15000
+    success_rate_threshold: 0.80
+    scenarios:
+      - network_partitions
+      - memory_pressure
+      - data_corruption
+
+  slow_recovery:
+    description: "Slow recovery scenarios (15-30 seconds)"
+    max_recovery_time_ms: 30000
+    success_rate_threshold: 0.70
+    scenarios:
+      - disk_full
+      - full_system_stress
+      - data_consistency
+
+# Test execution configuration
+test_execution:
+  parallel_execution: true
+  max_concurrent_scenarios: 4
+  scenario_timeout_ms: 60000
+  recovery_validation_timeout_ms: 30000
+  failure_retry_count: 2
+
+  reporting:
+    output_format: "detailed"  # detailed, summary, json
+    include_metrics: true
+    include_recovery_timeline: true
+    generate_performance_report: true
+
+  validation_rules:
+    require_recovery_time_validation: true
+    require_success_rate_validation: true
+    require_graceful_degradation: true
+    require_no_data_loss: true
+    require_consistency_maintenance: true
+
+# Metrics collection
+metrics_collection:
+  enabled: true
+  collection_interval_ms: 1000
+  metrics:
+    performance:
+      - request_throughput
+      - latency_percentile_95
+      - error_rate
+      - throughput_variance
+    resource:
+      - memory_usage_percent
+      - cpu_utilization_percent
+      - disk_usage_percent
+      - gc_count
+    reliability:
+      - success_rate
+      - recovery_time_ms
+      - failure_rate
+      - availability_percent
+    chaos:
+      - chaos_duration_ms
+      - chaos_intensity
+      - recovery_attempts
+      - recovery_success_rate
+
+  storage:
+    format: "json"
+    retention_days: 30
+    compression: true
+    export_path: "chaos-test-results/"
+
+# Performance thresholds
+performance_thresholds:
+  network:
+    max_latency_ms: 5000
+    max_packet_loss_percent: 10
+    max_jitter_ms: 1000
+  resource:
+    max_memory_usage_percent: 90
+    max_cpu_utilization_percent: 95
+    max_disk_usage_percent: 95
+  service:
+    max_downtime_ms: 10000
+    max_startup_time_ms: 5000
+    max_configuration_change_time_ms: 2000
+  data:
+    max_data_loss_percent: 0
+    max_consistency_violations: 0
+    max_corruption_detection_time_ms: 1000
+
+# Disaster recovery scenarios
+disaster_recovery:
+  scenarios:
+    complete_partition:
+      description: "Complete network partition"
+      recovery_strategy: "manual_intervention"
+      expected_recovery_time_ms: 60000
+      data_loss_acceptable: false
+
+    catastrophic_failure:
+      description: "Multiple node failures"
+      recovery_strategy: "automatic_failover"
+      expected_recovery_time_ms: 30000
+      data_loss_acceptable: false
+
+    data_corruption:
+      description: "Critical data corruption"
+      recovery_strategy: "backup_restoration"
+      expected_recovery_time_ms: 120000
+      data_loss_acceptable: true
+
+    total_outage:
+      description: "Complete service outage"
+      recovery_strategy: "cold_start"
+      expected_recovery_time_ms: 300000
+      data_loss_acceptable: false
+
+# Validation rules
+validation_rules:
+  general:
+    test_timeout_ms: 300000
+    cleanup_after_test: true
+    isolation_level: "process"
+
+  success_criteria:
+    all_must_pass: true
+    min_success_rate: 0.75
+    max_recovery_time_ms: 30000
+    no_data_corruption: true
+    consistency_maintained: true
+
+  failure_handling:
+    retry_on_failure: true
+    max_retries: 3
+    backoff_strategy: "exponential"
+    failure_threshold_percent: 25
+
+# Environment-specific configurations
+environments:
+  development:
+    chaos_intensity: "low"  # low, medium, high
+    test_duration_ms: 10000
+    recovery_time_ms: 10000
+
+  staging:
+    chaos_intensity: "medium"
+    test_duration_ms: 30000
+    recovery_time_ms: 20000
+
+  production:
+    chaos_intensity: "high"
+    test_duration_ms: 60000
+    recovery_time_ms: 30000
+    safety_checks: true
+
+  disaster_recovery:
+    chaos_intensity: "critical"
+    test_duration_ms: 120000
+    recovery_time_ms: 60000
+    safety_checks: true
+    require_manual_approval: true

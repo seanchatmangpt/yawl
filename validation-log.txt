@@ -1,0 +1,36 @@
+Starting validation at Thu Feb 26 19:49:54 PST 2026
+[Core Integration] ✅ SUCCESS: File exists: src/org/yawlfoundation/yawl/integration/benchmark/BenchmarkIntegrationManager.java
+[Core Integration] ❌ FAILED: Java compilation failed
+[Core Integration] ✅ SUCCESS: File exists: src/org/yawlfoundation/yawl/integration/benchmark/BenchmarkMetrics.java
+[Core Integration] ❌ FAILED: Java compilation failed
+[Core Integration] ✅ SUCCESS: File exists: src/org/yawlfoundation/yawl/integration/benchmark/QualityGateController.java
+[Core Integration] ❌ FAILED: Java compilation failed
+[Core Integration] VALIDATION COMPLETE: 3/3 files validated
+[Test Suite] ✅ SUCCESS: File exists: test/org/yawlfoundation/yawl/integration/benchmark/BenchmarkSuite.java
+[Test Suite] ❌ FAILED: Java compilation failed
+[Test Suite] ✅ SUCCESS: File exists: test/org/yawlfoundation/yawl/integration/benchmark/IntegrationBenchmarks.java
+[Test Suite] ❌ FAILED: Java compilation failed
+[Test Suite] ✅ SUCCESS: File exists: test/org/yawlfoundation/yawl/integration/benchmark/StressTestBenchmarks.java
+[Test Suite] ❌ FAILED: Java compilation failed
+[Test Suite] VALIDATION COMPLETE: 3/3 files validated
+[Configuration] ✅ SUCCESS: File exists: yawl-integration/src/test/resources/chaos-config.properties
+[Configuration] ❌ FAILED: File missing: src/main/resources/benchmark-config.properties
+[Configuration] VALIDATION COMPLETE: 1/2 files validated
+[Performance Benchmark] ✅ SUCCESS: File exists: test/org/yawlfoundation/yawl/performance/ConcurrencyBenchmarkSuite.java
+[Performance Benchmark] ✅ SUCCESS: File exists: test/org/yawlfoundation/yawl/performance/integration/McpA2AIntegrationBenchmark.java
+[Performance Benchmark] ✅ SUCCESS: File exists: test/org/yawlfoundation/yawl/performance/integration/DatabaseConnectionBenchmark.java
+[Performance Benchmark] VALIDATION COMPLETE: 3/3 files validated
+[Integration System] ✅ SUCCESS: 
+[Integration System] ✅ SUCCESS: 
+[Integration System] ✅ SUCCESS: 
+[Integration System] ✅ SUCCESS: 
+[Integration System] ✅ SUCCESS: 
+[Integration System] VALIDATION COMPLETE: 5/5 components validated
+[Quality Gates] ✅ SUCCESS: 
+[Quality Gates] ✅ SUCCESS: 
+[Quality Gates] ✅ SUCCESS: 
+[Quality Gates] VALIDATION COMPLETE: 3/3 gates validated
+[End-to-End] ✅ SUCCESS: Report Generation
+[End-to-End] SUCCESS: Integration status report generated
+[End-to-End] ✅ SUCCESS: Integration Tests
+[End-to-End] SUCCESS: Integration tests implemented

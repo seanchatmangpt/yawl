@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="A2A-Benchmarks" default="build-jmh" basedir=".">
+    
+    <!-- 
+        A2A Communication Benchmarks Build Configuration
+        ===============================================
+        
+        This configuration builds and runs A2A communication benchmarks
+        to validate agent-to-agent message passing performance.
+    -->
+    
+    <property name="src.dir" value="${basedir}/src/main/java"/>
+    <property name="test.dir" value="${basedir}/test"/>
+    <property name="jmh.dir" value="${basedir}/test/org/yawlfoundation/yawl/performance/jmh"/>
+    <property name="integration.dir" value="${basedir}/test/org/yawlfoundation/yawl/integration/a2a"/>
+    <property name="build.dir" value="${basedir}/build"/>
+    <property name="lib.dir" value="${basedir}/lib"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jmh.classes.dir" value="${build.dir}/jmh-classes"/>
+    <property name="jar.dir" value="${build.dir}/jars"/>
+    <property name="report.dir" value="${basedir}/benchmark-results"/>
+    
+    <!-- Classpaths -->
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="*.jar"/>
+    </path>
+    
+    <path id="jmh.classpath">
+        <path refid="classpath"/>
+        <pathelement location="${jmh.classes.dir}"/>
+    </path>
+    
+    <!-- Benchmark-specific dependencies -->
+    <fileset id="jmh.deps" dir="${lib.dir}" includes="jmh-*.jar,jackson-*.jar,slf4j-*.jar,log4j-*.jar"/>
+    
+    <!-- Targets -->
+    
+    <!-- Clean all build artifacts -->
+    <target name="clean" description="Clean all build artifacts">
+        <delete dir="${build.dir}"/>
+        <delete dir="${report.dir}"/>
+    </target>
+    
+    <!-- Initialize build directories -->
+    <target name="init" depends="clean" description="Initialize build directories">
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${jmh.classes.dir}"/>
+        <mkdir dir="${jar.dir}"/>
+        <mkdir dir="${report.dir}"/>
+    </target>
+    
+    <!-- Compile main A2A benchmark classes -->
+    <target name="compile-main" depends="init" description="Compile main A2A classes">
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false">
+            <classpath refid="classpath"/>
+            <compilerarg value="-Xlint:unchecked"/>
+            <compilerarg value="-parameters"/>
+        </javac>
+    </target>
+    
+    <!-- Compile JMH benchmarks -->
+    <target name="compile-jmh" depends="init" description="Compile JMH benchmarks">
+        <javac srcdir="${jmh.dir}" destdir="${jmh.classes.dir}" includeantruntime="false">
+            <classpath refid="jmh.classpath"/>
+            <compilerarg value="-Xlint:unchecked"/>
+            <compilerarg value="-parameters"/>
+            <compilerarg value="--enable-preview"/>
+        </javac>
+    </target>
+    
+    <!-- Compile integration tests -->
+    <target name="compile-integration" depends="init" description="Compile integration tests">
+        <javac srcdir="${integration.dir}" destdir="${jmh.classes.dir}" includeantruntime="false">
+            <classpath refid="jmh.classpath"/>
+            <compilerarg value="-Xlint:unchecked"/>
+            <compilerarg value="-parameters"/>
+        </javac>
+    </target>
+    
+    <!-- Build JMH benchmark JAR -->
+    <target name="build-jmh-jar" depends="compile-jmh" description="Build JMH benchmark JAR">
+        <jar destfile="${jar.dir}/a2a-benchmarks.jar" basedir="${jmh.classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="org.openjdk.jmh.Main"/>
+                <attribute name="Specification-Title" value="A2A Communication Benchmarks"/>
+                <attribute name="Specification-Version" value="6.0.0"/>
+                <attribute name="Implementation-Version" value="${build.number}"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <!-- Build integration test JAR -->
+    <target name="build-integration-jar" depends="compile-integration" description="Build integration test JAR">
+        <jar destfile="${jar.dir}/a2a-integration.jar" basedir="${jmh.classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="org.yawlfoundation.yawl.integration.a2a.A2ACommunicationBenchmarksIntegrationTest"/>
+                <attribute name="Specification-Title" value="A2A Integration Tests"/>
+                <attribute name="Specification-Version" value="6.0.0"/>
+            </manifest>
+        </jar>
+    </target>
+    
+    <!-- Build all benchmark JARs -->
+    <target name="build-jmh" depends="build-jmh-jar, build-integration-jar" 
+            description="Build all A2A benchmark JARs"/>
+    
+    <!-- Run all benchmarks -->
+    <target name="run-all" depends="build-jmh" description="Run all A2A benchmarks">
+        <echo message="Running A2A Communication Benchmarks"/>
+        
+        <!-- Run JMH benchmarks -->
+        <java jar="${jar.dir}/a2a-benchmarks.jar" fork="true">
+            <arg value="-rf"/>
+            <arg value="json"/>
+            <arg value="-rff"/>
+            <arg value="${report.dir}/a2a-jmh-results.json"/>
+            <arg value="-t"/>
+            <arg value="default"/>
+            <arg value="-wi"/>
+            <arg value="3"/>
+            <arg value="-i"/>
+            <arg value="5"/>
+            <arg value="-f"/>
+            <arg value="2"/>
+            <jvmarg value="-Xms2g"/>
+            <jvmarg value="-Xmx4g"/>
+            <jvmarg value="-XX:+UseZGC"/>
+            <jvmarg value="--enable-preview"/>
+        </java>
+        
+        <!-- Run integration tests -->
+        <java jar="${jar.dir}/a2a-integration.jar" fork="true" failonerror="true">
+            <jvmarg value="-Dspring.profiles.active=benchmark"/>
+            <jvmarg value="-Djava.util.logging.config.file=${basedir}/logging.properties"/>
+        </java>
+    </target>
+    
+    <!-- Quick benchmark for development -->
+    <target name="quick-benchmark" depends="build-jmh" description="Run quick benchmarks for development">
+        <echo message="Running quick A2A benchmarks for development"/>
+        
+        <java jar="${jar.dir}/a2a-benchmarks.jar" fork="true">
+            <arg value="-rf"/>
+            <arg value="csv"/>
+            <arg value="-rff"/>
+            <arg value="${report.dir}/a2a-quick-results.csv"/>
+            <arg value="-t"/>
+            <arg value="quick"/>
+            <arg value="-wi"/>
+            <arg value="1"/>
+            <arg value="-i"/>
+            <arg value="3"/>
+            <arg value="-f"/>
+            <arg value="1"/>
+            <jvmarg value="-Xms1g"/>
+            <jvmarg value="-Xmx2g"/>
+        </java>
+    </target>
+    
+    <!-- Generate benchmark report -->
+    <target name="report" depends="build-jmh" description="Generate benchmark report">
+        <echo message="Generating A2A benchmark report"/>
+        
+        <!-- This would typically use a reporting framework -->
+        <copy file="${basedir}/templates/benchmark-report.html" 
+              tofile="${report.dir}/index.html"/>
+        
+        <echo message="Report generated in ${report.dir}/"/>
+    </target>
+    
+    <!-- Benchmark with specific target -->
+    <target name="benchmark-target" depends="build-jmh">
+        <property name="target.name" value="${target.name}"/>
+        <echo message="Running A2A benchmarks for target: ${target.name}"/>
+        
+        <java jar="${jar.dir}/a2a-benchmarks.jar" fork="true">
+            <arg value="-rf"/>
+            <arg value="json"/>
+            <arg value="-rff"/>
+            <arg value="${report.dir}/a2a-${target.name}-results.json"/>
+            <arg value="-t"/>
+            <arg value="${target.name}"/>
+            <arg value="-wi"/>
+            <arg value="3"/>
+            <arg value="-i"/>
+            <arg value="5"/>
+            <arg value="-f"/>
+            <arg value="2"/>
+            <jvmarg value="-Xms2g"/>
+            <jvmarg value="-Xmx4g"/>
+            <jvmarg value="-XX:+UseZGC"/>
+        </java>
+    </target>
+    
+    <!-- Stress test with high concurrency -->
+    <target name="stress-test" depends="build-jmh" description="Run stress test with high concurrency">
+        <echo message="Running stress test with high concurrency"/>
+        
+        <java jar="${jar.dir}/a2a-benchmarks.jar" fork="true">
+            <arg value="-rf"/>
+            <arg value="json"/>
+            <arg value="-rff"/>
+            <arg value="${report.dir}/a2a-stress-results.json"/>
+            <arg value="-t"/>
+            <arg value="stress"/>
+            <arg value="-wi"/>
+            <arg value="1"/>
+            <arg value="-i"/>
+            <arg value="3"/>
+            <arg value="-f"/>
+            <arg value="1"/>
+            <arg value="-tu"/>
+            <arg value="ms"/>
+            <arg value="-rff"/>
+            <arg value="${report.dir}/a2a-stress-results.json"/>
+            <jvmarg value="-Xms4g"/>
+            <jvmarg value="-Xmx8g"/>
+            <jvmarg value="-XX:+UseZGC"/>
+            <jvmarg value="-Djava.util.concurrent.ForkJoinPool.common.parallelism=16"/>
+        </java>
+    </target>
+    
+    <!-- Validate benchmarks after running -->
+    <target name="validate" description="Validate benchmark results">
+        <echo message="Validating A2A benchmark results"/>
+        
+        <condition property="jmh.passed">
+            <available file="${report.dir}/a2a-jmh-results.json"/>
+        </condition>
+        
+        <condition property="integration.passed">
+            <available file="${report.dir}/a2a-integration-results.txt"/>
+        </condition>
+        
+        <fail unless="jmh.passed" message="JMH results not found"/>
+        <fail unless="integration.passed" message="Integration results not found"/>
+        
+        <echo message="All benchmark validations passed"/>
+    </target>
+    
+    <!-- Full benchmark suite -->
+    <target name="full" depends="build-jmh, run-all, validate, report" 
+            description="Run complete A2A benchmark suite"/>
+</project>

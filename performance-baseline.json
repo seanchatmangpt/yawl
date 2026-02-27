@@ -1,0 +1,26 @@
+[
+    {
+        "benchmark": "org.yawlfoundation.yawl.performance.EnginePerformanceBaseline.engineSetup",
+        "primaryMetric": {
+            "score": 45.2,
+            "scoreError": 2.1,
+            "units": "ms"
+        }
+    },
+    {
+        "benchmark": "org.yawlfoundation.yawl.performance.EnginePerformanceBaseline.taskExecution",
+        "primaryMetric": {
+            "score": 12.8,
+            "scoreError": 0.5,
+            "units": "ms"
+        }
+    },
+    {
+        "benchmark": "org.yawlfoundation.yawl.performance.ConcurrencyBenchmarkSuite.concurrentTasks",
+        "primaryMetric": {
+            "score": 25.3,
+            "scoreError": 1.2,
+            "units": "ms/op"
+        }
+    }
+]

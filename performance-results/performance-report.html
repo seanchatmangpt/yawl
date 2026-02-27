@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YAWL v6.0.0-GA Performance Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #f0f0f0; padding: 20px; border-radius: 5px; }
+        .metric { margin: 10px 0; padding: 10px; border-left: 4px solid #ddd; }
+        .pass { border-left-color: #4CAF50; }
+        .warning { border-left-color: #FF9800; }
+        .fail { border-left-color: #F44336; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>YAWL v6.0.0-GA Performance Report</h1>
+        <p>Generated on: $(date)</p>
+    </div>
+    
+    <h2>Benchmark Results Summary</h2>
+    <div id="summary"></div>
+    
+    <h2>Performance Targets</h2>
+    <table>
+        <tr><th>Metric</th><th>Target</th><th>Actual</th><th>Status</th></tr>
+        <tr><td>Engine Startup</td><td>< 60s</td><td>-</td><td>-</td></tr>
+        <tr><td>Case Creation (p95)</td><td>< 500ms</td><td>-</td><td>-</td></tr>
+        <tr><td>Work Item Checkout (p95)</td><td>< 200ms</td><td>-</td><td>-</td></tr>
+        <tr><td>Work Item Checkin (p95)</td><td>< 300ms</td><td>-</td><td>-</td></tr>
+        <tr><td>Task Transition</td><td>< 100ms</td><td>-</td><td>-</td></tr>
+        <tr><td>DB Query (p95)</td><td>< 50ms</td><td>-</td><td>-</td></tr>
+        <tr><td>MCP Throughput</td><td>> 50 tools/sec</td><td>-</td><td>-</td></tr>
+        <tr><td>Memory Optimization</td><td>24.93KB → 10KB</td><td>-</td><td>-</td></tr>
+    </table>
+    
+    <script>
+        // Load summary data and display metrics
+        fetch('benchmark-summary.txt')
+            .then(response => response.text())
+            .then(text => {
+                document.getElementById('summary').innerHTML = 
+                    '<pre>' + text.replace(/PASS/g, '<span style="color: green">PASS</span>')
+                                  .replace(/WARNING/g, '<span style="color: orange">WARNING</span>')
+                                  .replace(/FAIL/g, '<span style="color: red">FAIL</span>') + 
+                    '</pre>';
+            });
+    </script>
+</body>
+</html>

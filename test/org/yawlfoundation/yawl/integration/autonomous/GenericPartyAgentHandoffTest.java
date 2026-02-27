@@ -25,11 +25,13 @@ import org.mockito.MockitoAnnotations;
 
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffRequestService;
 import org.yawlfoundation.yawl.integration.a2a.handoff.HandoffException;
+import org.yawlfoundation.yawl.integration.autonomous.GenericPartyAgent;
 import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
 import org.yawlfoundation.yawl.integration.autonomous.registry.AgentRegistryClient;
 import org.yawlfoundation.yawl.integration.orderfulfillment.AgentCapability;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

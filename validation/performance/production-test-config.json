@@ -1,0 +1,190 @@
+{
+  "test_config": {
+    "name": "YAWL Production Load Test",
+    "description": "Scalability test for 10,000+ concurrent users",
+    "version": "6.0",
+    "duration_minutes": 60,
+    "max_users": 10000,
+    "ramp_up_minutes": 10,
+    "sustain_minutes": 30,
+    "ramp_down_minutes": 10
+  },
+  
+  "service": {
+    "base_url": "http://localhost:8080",
+    "endpoints": {
+      "engine_interface": "/yawl/ib",
+      "resource_service": "/resourceService/rs",
+      "health": "/actuator/health",
+      "mcp_capabilities": "/mcp/v1/capabilities",
+      "a2a_agents": "/a2a/agents"
+    }
+  },
+  
+  "performance_thresholds": {
+    "response_times": {
+      "p95_ms": 500,
+      "p99_ms": 1000,
+      "avg_ms": 250
+    },
+    "error_rates": {
+      "http_failures": 0.01,
+      "custom_errors": 0.005
+    },
+    "critical_operations": {
+      "case_creation_ms": 500,
+      "work_item_checkout_ms": 200,
+      "work_item_checkin_ms": 300,
+      "task_transition_ms": 100,
+      "db_query_ms": 50
+    }
+  },
+  
+  "workload": {
+    "workflow_specs": [
+      "LoanProcessing",
+      "ClaimManagement",
+      "OrderFulfillment",
+      "ResourceAllocation",
+      "DocumentApproval",
+      "ServiceRequest",
+      "IncidentManagement",
+      "ComplianceCheck",
+      "ContractReview",
+      "OnboardingProcess"
+    ],
+    
+    "operation_distribution": {
+      "status_check": 10,
+      "launch_workflow": 25,
+      "get_work_items": 30,
+      "work_item_checkout": 20,
+      "work_item_checkin": 10,
+      "task_transition": 4,
+      "resource_query": 1
+    },
+    
+    "user_behaviors": [
+      {
+        "pattern": "power_user",
+        "weight": 20,
+        "intensity": 5,
+        "sleep_range": [0.1, 1],
+        "description": "High-frequency operations"
+      },
+      {
+        "pattern": "regular_user",
+        "weight": 50,
+        "intensity": 3,
+        "sleep_range": [1, 3],
+        "description": "Moderate activity"
+      },
+      {
+        "pattern": "casual_user",
+        "weight": 30,
+        "intensity": 1,
+        "sleep_range": [2, 5],
+        "description": "Low-frequency usage"
+      }
+    ]
+  },
+  
+  "scaling": {
+    "stages": [
+      { "duration": "2m", "target": 1000, "description": "Initial warm-up" },
+      { "duration": "2m", "target": 3000, "description": "Scale to 3K users" },
+      { "duration": "3m", "target": 6000, "description": "Scale to 6K users" },
+      { "duration": "3m", "target": 10000, "description": "Peak load: 10K users" },
+      { "duration": "30m", "target": 10000, "description": "Sustained peak load" },
+      { "duration": "2m", "target": 7000, "description": "Start ramp down" },
+      { "duration": "2m", "target": 4000, "description": "Reduce to 4K users" },
+      { "duration": "3m", "target": 1500, "description": "Reduce to 1.5K users" },
+      { "duration": "3m", "target": 0, "description": "Clean shutdown" }
+    ]
+  },
+  
+  "monitoring": {
+    "custom_metrics": [
+      "errors",
+      "successes", 
+      "active_users",
+      "throughput",
+      "response_time_ms",
+      "case_creation_time",
+      "work_item_checkout_time",
+      "work_item_checkin_time",
+      "task_transition_time",
+      "db_query_time"
+    ],
+    "tags": {
+      "environment": "production",
+      "test_type": "load",
+      "scale": "large"
+    }
+  },
+  
+  "reporting": {
+    "output_formats": [
+      "stdout",
+      "json",
+      "html"
+    ],
+    "metrics_to_report": [
+      "total_requests",
+      "failed_requests",
+      "success_rate",
+      "p95_response_time",
+      "p99_response_time",
+      "throughput_per_second",
+      "max_concurrent_users",
+      "peak_request_rate"
+    ]
+  },
+  
+  "system_requirements": {
+    "minimum": {
+      "cpu_cores": 8,
+      "memory_gb": 16,
+      "network_mbps": 1000,
+      "storage_gb": 100
+    },
+    "recommended": {
+      "cpu_cores": 16,
+      "memory_gb": 32,
+      "network_mbps": 10000,
+      "storage_gb": 500
+    },
+    "production": {
+      "cpu_cores": 32,
+      "memory_gb": 64,
+      "network_mbps": 10000,
+      "storage_gb": 1000
+    }
+  },
+  
+  "troubleshooting": {
+    "common_issues": [
+      {
+        "issue": "High response times",
+        "causes": ["Database bottlenecks", "Memory pressure", "Network latency"],
+        "solutions": ["Optimize queries", "Increase memory", "Check network"]
+      },
+      {
+        "issue": "High error rates",
+        "causes": ["Connection pool exhaustion", "Timeouts", "Resource limits"],
+        "solutions": ["Increase pool size", "Increase timeouts", "Scale resources"]
+      },
+      {
+        "issue": "Inconsistent performance",
+        "causes": ["Garbage collection", "Disk I/O", "Contention"],
+        "solutions": ["Optimize GC", "Use SSD", "Reduce contention"]
+      }
+    ],
+    "debug_options": {
+      "enable_debug_logging": false,
+      "capture_heap_dumps": false,
+      "record_gc_stats": true,
+      "monitor_thread_counts": true
+    }
+  }
+}

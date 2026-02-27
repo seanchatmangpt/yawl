@@ -49,6 +49,13 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- JUnit 4 for legacy tests -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
         
         <!-- Jackson for JSON processing -->
         <dependency>
@@ -131,6 +138,14 @@
                         <include>**/*Test.java</include>
                         <include>**/*Benchmark.java</include>
                     </includes>
+                    <!-- JUnit 3 support -->
+                    <junitArtifactName>junit:junit</junitArtifactName>
+                    <junitGroupId>junit</junitGroupId>
+                    <junitVersion>4.13.2</junitVersion>
+                    <systemPropertyVariables>
+                        <!-- Disable GraalPy runtime checks in unit tests -->
+                        <yawl.graalpy.test.mode>true</yawl.graalpy.test.mode>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             

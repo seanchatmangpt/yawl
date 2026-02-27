@@ -1,0 +1,41 @@
+Test Category,Status,Executed,Total,Passed,Failed,Skipped,Success Rate,Critical Issues
+Unit Tests,Partial Success,1,5,1,0,4,20%,Java 25 compilation errors
+Integration Tests,Not Executed,0,8,0,0,8,0%,Missing dependencies
+JMH Benchmarks,Compilation Failed,0,12,0,0,12,0%,Syntax errors, missing deps
+Chaos Engineering,Script Exists,0,7,0,0,7,0%,Implementation missing
+Polyglot Integration,Dependency Issues,0,5,0,0,5,0%,Missing runtime deps
+Production Load,Implementation Missing,0,4,0,0,4,0%,Incomplete implementation
+Edge Case Tests,Limited Testing,0,3,0,0,3,0%,Not executed
+Regression Detection,incomplete,0,2,0,0,2,0%,No automation
+CI/CD Integration,Not Tested,0,3,0,0,3,0%,Not configured
+Quality Gates,Configuration Present,0,1,0,0,1,0%,Not validated
+OVERALL,CRITICAL ISSUES,1,42,1,0,41,2.4%,Multiple critical problems
+
+Individual Test Results:
+Test Name,Status,Exit Code,Details
+SimpleTest.java,PASSED,0,Basic test infrastructure works
+BenchmarkRunner.java,FAILED,1,Missing dependencies
+ConcurrencyBenchmarkSuite.java,FAILED,1,Java 25 syntax errors
+IntegrationBenchmarks.java,FAILED,1,Dependencies missing
+AllBenchmarksRunner.java,FAILED,1,JMH compilation errors
+ChaosEngineeringTest.java,FAILED,1,Not implemented
+CloudScalingBenchmark.java,FAILED,1,Implementation incomplete
+MemoryUsageBenchmark.java,FAILED,1,Import issues
+ThreadContentionAnalyzer.java,FAILED,1,Class not found
+BaselineMeasurements.md,PRESENT,N/A,Data available but not tested
+
+Test File Inventory:
+File Type,Count,Status
+Java Benchmark Files,35,❌ Most failed compilation
+Configuration Files,5,✅ Present but not tested
+Test Scripts,2,⚠️ Scripts exist but not executable
+Documentation Files,15,✅ Available
+Total Test Files,57,❌ Only 2.4% functional
+
+Recommendations:
+Priority,Action,Estimated Time,Impact
+HIGH,Fix Java 25 compilation errors,1-2 days,Critical - enables basic tests
+HIGH,Resolve Maven dependencies,1 day,Enables compilation
+MEDIUM,Complete missing test implementations,3-5 days,Expands test coverage
+LOW,Set up CI/CD integration,2-3 days,Enables automation
+LOW,Add quality gate validation,1-2 days,Improves reliability
