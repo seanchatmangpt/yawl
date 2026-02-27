@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772168960821638819,
+  "timestamp_rfc": "2026-02-27T05:09:20.821638819Z",
+  "session_id": "825565e2-929c-4fdf-a552-b24a84efe5fb",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/integration/mcp/spec/YawlGraalPyWorkflowToolSpecifications.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "887e45ba650cdb41639aba0378b38e6b2cc153c5ab2de973c77b3e68b78255fb",
+  "delta_hash": "1388f79c4cfc58f2ff68c7b601e22be0ffb3037af5ea56fc4bbd76aa4b2e059a",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "} catch",
+        "change": "Added"
+      }
+    }
+  ]
+}

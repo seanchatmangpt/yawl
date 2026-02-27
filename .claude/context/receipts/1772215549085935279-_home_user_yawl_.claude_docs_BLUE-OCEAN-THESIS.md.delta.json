@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215549085935279,
+  "timestamp_rfc": "2026-02-27T18:05:49.085935279Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/.claude/docs/BLUE-OCEAN-THESIS.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a59ab942840d529b1f5938d0f315e840c7986aed155789a9c262d62025827043",
+  "delta_hash": "a3f8604352861a8c71d27a793ab2c84064617dbaf1ccde0d325bfdaec6faae9d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "## References",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -16,6 +16,7 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPromptSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlToolSpecifications;
 import org.yawlfoundation.yawl.pi.mcp.PIToolProvider;
+import org.yawlfoundation.yawl.pi.mcp.YawlOcedBridgeToolSpecifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -297,6 +298,7 @@ public class YawlMcpHttpServer {
         List<io.modelcontextprotocol.server.McpServerFeatures.SyncToolSpecification> tools =
             new ArrayList<>(YawlToolSpecifications.createAll(interfaceBClient, interfaceAClient, sessionHandle));
         tools.addAll(new PIToolProvider().createTools(null));
+        tools.addAll(new YawlOcedBridgeToolSpecifications().createAll());
         return tools;
     }
 

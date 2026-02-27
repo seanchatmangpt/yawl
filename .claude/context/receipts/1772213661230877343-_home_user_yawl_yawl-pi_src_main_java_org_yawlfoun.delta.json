@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772213661230877343,
+  "timestamp_rfc": "2026-02-27T17:34:21.230877343Z",
+  "session_id": "319bcb5d-c6f1-4a5d-bec6-0c54a6b2ed12",
+  "file_path": "/home/user/yawl/yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/mcp/PIToolProvider.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5458d6a675e6f9deca6270769a2d2199b73f69c11b4cd603704d835716a6a293",
+  "delta_hash": "424a7bbad0397e86ab455bd05c8dc7f84329a148e51a2e55832d37e1724fc642",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "io",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    }
+  ]
+}
