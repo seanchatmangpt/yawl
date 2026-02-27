@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772225652072459781,
+  "timestamp_rfc": "2026-02-27T20:54:12.072459781Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/scripts/dx.sh",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "0f273dcf6802f33fc41841de6b8cfd2e8e279ff72dfdadc77bdbc32fa2d40d6f",
+  "delta_hash": "04ada17b858edc07ce36bd4c1d878c369066bf5f85a19fab77fb45e0dd8d43d5",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "ALL_MODULES=(",
+        "change": "Added"
+      }
+    }
+  ]
+}

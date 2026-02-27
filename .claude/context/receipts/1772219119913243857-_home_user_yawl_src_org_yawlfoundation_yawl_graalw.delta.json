@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772219119913243857,
+  "timestamp_rfc": "2026-02-27T19:05:19.913243857Z",
+  "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graalwasm/dmn/DmnEvaluationContext.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "17202a4b179b9c081570b1ad53d38ef32d7da69f43445b9e179a34904845ea0f",
+  "delta_hash": "edd9e566fef5b22109d4b6f868b4086de70edfc1c6758fd350104780b0dce2e9",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    }
+  ]
+}

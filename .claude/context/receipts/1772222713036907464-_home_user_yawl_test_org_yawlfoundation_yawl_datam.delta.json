@@ -1,0 +1,75 @@
+{
+  "timestamp_ns": 1772222713036907464,
+  "timestamp_rfc": "2026-02-27T20:05:13.036907464Z",
+  "session_id": "e9f5cb40-7132-4fdd-ac35-60218b6b5f32",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/datamodelling/DataModellingBridgeTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5ed4f552d4a16212a1fd43338f7a62c93b29102a27bd550673c7e59e93d8f4cb",
+  "delta_hash": "827df2184725a9f5b43f33fa313e5c8ed1f4a0d6f908e690bdc839face426566",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@BeforeAll",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private DataModellingBridge bridge;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@TestInstance",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@AfterAll",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "DataModellingBridgeTest",
+        "change": "Added"
+      }
+    }
+  ]
+}

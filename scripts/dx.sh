@@ -78,7 +78,7 @@ ALL_MODULES=(
     # Layer 0 — Foundation (no YAWL deps, parallel)
     yawl-utilities yawl-security yawl-graalpy yawl-graaljs
     # Layer 1 — First consumers (parallel)
-    yawl-elements yawl-ggen yawl-graalwasm
+    yawl-elements yawl-ggen yawl-graalwasm yawl-dmn yawl-data-modelling
     # Layer 2 — Core engine
     yawl-engine
     # Layer 3 — Engine extension

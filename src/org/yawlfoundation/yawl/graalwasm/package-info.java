@@ -29,6 +29,10 @@
  *
  * Rust4pmBridge          (OCEL2 process mining via @aarkue/process_mining_wasm v0.1.3)
  *   └─ JavaScriptExecutionEngine (from yawl-graaljs, JS+WASM polyglot, wasm-bindgen support)
+ *
+ * dmn/DmnWasmBridge      (Full DMN 1.3 support — see subpackage)
+ *   ├─ WasmExecutionEngine → dmn_feel_engine.wasm (FEEL numeric operations)
+ *   └─ Java DMN evaluator (XML parsing, hit policies, FEEL unary tests, DRG)
  * </pre>
  *
  * <h2>Quick Start — General WASM</h2>
@@ -50,12 +54,28 @@
  * }
  * }</pre>
  *
+ * <h2>Quick Start — DMN 1.3 decision evaluation</h2>
+ * <pre>{@code
+ * try (DmnWasmBridge bridge = new DmnWasmBridge()) {
+ *     DmnWasmBridge.DmnModel model = bridge.parseDmnModel(dmnXml);
+ *     DmnEvaluationContext ctx = DmnEvaluationContext.builder()
+ *         .put("age", 35)
+ *         .put("riskCategory", "HIGH")
+ *         .build();
+ *     DmnDecisionResult result = bridge.evaluateDecision(model, "eligibility", ctx);
+ *     result.getSingleResult().ifPresent(row ->
+ *         log.info("Decision: {}", row.get("eligibilityStatus"))
+ *     );
+ * }
+ * }</pre>
+ *
  * <h2>Runtime requirement</h2>
  * <p>GraalVM JDK 24.1+ with wasm language support on classpath. {@link Rust4pmBridge} also
  * requires GraalJS (yawl-graaljs).</p>
  *
  * @see org.yawlfoundation.yawl.graalwasm.WasmExecutionEngine
  * @see org.yawlfoundation.yawl.graalwasm.Rust4pmBridge
+ * @see org.yawlfoundation.yawl.graalwasm.dmn.DmnWasmBridge
  */
 @NullMarked
 package org.yawlfoundation.yawl.graalwasm;

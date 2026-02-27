@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.yawlfoundation</groupId>
+        <artifactId>yawl-parent</artifactId>
+        <version>6.0.0-GA</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>yawl-dmn</artifactId>
+    <packaging>jar</packaging>
+    <name>YAWL DMN — Data Modelling and Decision Engine</name>
+    <description>
+        Full DMN execution module for YAWL, based on the data-modelling-sdk (Rust) pattern.
+        Provides DataModel/Table/Column/Relationship schema types with EndpointCardinality
+        (crow's feet min/max), DmnDecisionService for high-level decision evaluation, and
+        DmnCollectAggregation (SUM, MIN, MAX, COUNT) with WASM-accelerated numeric operations
+        via yawl-graalwasm and the bundled dmn_feel_engine.wasm.
+
+        Follows the data-modelling-sdk's multi-platform SDK design: clean Java API over
+        a GraalWASM compute core, with pluggable import/export and validation.
+    </description>
+
+    <dependencies>
+        <!-- yawl-graalwasm: WasmExecutionEngine + DmnWasmBridge + dmn_feel_engine.wasm -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-graalwasm</artifactId>
+        </dependency>
+        <!-- GraalVM Polyglot API (transitive from yawl-graalwasm, declared here for compilation) -->
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>../src</sourceDirectory>
+        <testSourceDirectory>../test</testSourceDirectory>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs><arg>--enable-preview</arg></compilerArgs>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/dmn/**</include>
+                    </includes>
+                    <testIncludes>
+                        <testInclude>**/org/yawlfoundation/yawl/dmn/**</testInclude>
+                    </testIncludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                            </compilerArgs>
+                            <testIncludes>
+                                <testInclude>**/org/yawlfoundation/yawl/dmn/**</testInclude>
+                            </testIncludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/org/yawlfoundation/yawl/dmn/**Test.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

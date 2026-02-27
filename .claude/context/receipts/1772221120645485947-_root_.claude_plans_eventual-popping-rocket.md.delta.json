@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772221120645485947,
+  "timestamp_rfc": "2026-02-27T19:38:40.645485947Z",
+  "session_id": "f00c96f8-bed2-4c0e-8144-ce913b85a0b3",
+  "file_path": "/root/.claude/plans/eventual-popping-rocket.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "9d09318b87c11825cd0d510af326931434a3a8b7360a4a6a20717d0ba6918840",
+  "delta_hash": "526979aa061195f44bd0bbdd36e866a151e5468a2b5ef415a779c70a5a456d4f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Maximal YAWL Data-Modelling Module Des",
+        "change": "Added"
+      }
+    }
+  ]
+}
