@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172615832632362,
+  "timestamp_rfc": "2026-02-27T06:10:15.832632362Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/.claude/rules/build/build-orchestration.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "3c3a65e76be960022a13ad330b9d48e1a48fad1d1ea4d29a69418fd3a05e5cae",
+  "delta_hash": "56a95bcb43f0263a0ddfc87eeed2a93661023c8c3b54856f03a138f0cdd13862",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "---",
+        "change": "Added"
+      }
+    }
+  ]
+}

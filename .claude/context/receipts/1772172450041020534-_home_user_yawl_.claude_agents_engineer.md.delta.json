@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172450041020534,
+  "timestamp_rfc": "2026-02-27T06:07:30.041020534Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/.claude/agents/engineer.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "5a7d86edb647ad5dda7124e1f9faac5aef4b3420b5dd29183de86e771f57ac49",
+  "delta_hash": "5b31c1a6590e6df3d7769e6790eab446bcb6a18e2926c6c63f506311f282f2a2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "model: claude-haiku-4-5-20251001",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172465936292412,
+  "timestamp_rfc": "2026-02-27T06:07:45.936292412Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/.claude/agents/yawl-architect.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d6c155d7570fcb9159f3707e390e33035decf546adc7d2230ffe77c70e956524",
+  "delta_hash": "887052d0c535809396582b964251ae75e754a6df5e66faf279b495e3d3696741",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "model: claude-sonnet-4-6",
+        "change": "Added"
+      }
+    }
+  ]
+}

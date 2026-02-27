@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172323080820442,
+  "timestamp_rfc": "2026-02-27T06:05:23.080820442Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/scripts/dx.sh",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "8074fd0fb5f4fa9caa2e61539f107692877a8afc9e2c81ad92218934815a6ed2",
+  "delta_hash": "c635242bd41dbfb407bc9b44fe0d204289e9e28fec41c20c4f24ef69f1a9733b",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "TEST_COUNT=$",
+        "change": "Added"
+      }
+    }
+  ]
+}

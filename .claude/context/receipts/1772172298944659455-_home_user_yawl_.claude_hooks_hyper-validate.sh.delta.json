@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172298944659455,
+  "timestamp_rfc": "2026-02-27T06:04:58.944659455Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/.claude/hooks/hyper-validate.sh",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "72a360e7be6c6fa2b1205eca7776d9c34ea25e892f270cd6737c8641472f8a73",
+  "delta_hash": "50a853102fecbba22f1e30f786d7da1221d4e9ae007945d7a2571c1584c15cbd",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "if matches=$",
+        "change": "Added"
+      }
+    }
+  ]
+}

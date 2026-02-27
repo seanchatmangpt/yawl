@@ -1,0 +1,47 @@
+{
+  "timestamp_ns": 1772172394966946900,
+  "timestamp_rfc": "2026-02-27T06:06:34.966946900Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/.claude/rules/testing/chicago-tdd.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "08e75543e7e146e76079542967186128c834583c12b8568f32a2fd136119d545",
+  "delta_hash": "8451059c42d5b839264dd89e1244385a158626ac7f814ec62b07fe0f566d60e2",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@ArchTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "Stream",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@ParameterizedTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "## Framework",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@MethodSource",
+        "change": "Added"
+      }
+    }
+  ]
+}

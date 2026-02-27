@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772172365515709140,
+  "timestamp_rfc": "2026-02-27T06:06:05.515709140Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/.claude/rules/java25/modern-java.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "02f79f074136983890cc82a22b300e942e71cad29b22dadbe797b39ec852fd28",
+  "delta_hash": "0e0a47a482a679ca137a4e1f7e6ed2e0198cd4fa8ea153f81e0afff3b3fd719e",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "## Compact Object Headers",
+        "change": "Added"
+      }
+    }
+  ]
+}

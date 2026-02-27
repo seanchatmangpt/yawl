@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772172671551178779,
+  "timestamp_rfc": "2026-02-27T06:11:11.551178779Z",
+  "session_id": "1123d63f-86d9-489b-83ec-6f87064bf6b8",
+  "file_path": "/home/user/yawl/CLAUDE.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1c2b3d03d657fec8284af2ba4ea3107f6a87bda9c806fec58ec23bb68e7e01c4",
+  "delta_hash": "5a8158d47d90fd423990604bf6384a3feaa2c18dbb28b30e7ba33a5ab638d3d5",
+  "injected": false,
+  "deltas": [
+    {
+      "Rule": {
+        "section": "R RULES (19 files, auto-activate by path)",
+        "predicate": "teams/** → team-decision-framework.md | pom.xml → dx-workflow.md + maven-modules.md + build-orchestration.md",
+        "change": "Added"
+      }
+    },
+    {
+      "Rule": {
+        "section": "R RULES (19 files, auto-activate by path)",
+        "predicate": "schema/**|*.xsd → xsd-validation.md | yawl/engine/**|stateless/** → workflow-patterns.md + interfaces.md + worklet-service.md",
+        "change": "Added"
+      }
+    },
+    {
+      "Rule": {
+        "section": "R RULES (19 files, auto-activate by path)",
+        "predicate": "yawl/integration/** → mcp-a2a-conventions.md + autonomous-agents.md | yawl/resourcing/** → resource-allocation.md",
+        "change": "Added"
+      }
+    },
+    {
+      "Rule": {
+        "section": "R RULES (19 files, auto-activate by path)",
+        "predicate": "**/*.java → modern-java.md | yawl/elements/** → domain-model.md | yawl/observability/** → monitoring-patterns.md",
+        "change": "Added"
+      }
+    },
+    {
+      "Rule": {
+        "section": "R RULES (19 files, auto-activate by path)",
+        "predicate": "scripts/**|*.sh → shell-conventions.md | yawl/authentication/** → crypto-and-tls.md | **/test/** → chicago-tdd.md | Dockerfile* → container-conventions.md",
+        "change": "Added"
+      }
+    },
+    {
+      "Rule": {
+        "section": "R RULES (19 files, auto-activate by path)",
+        "predicate": ".gitignore|.gitattributes → git-discipline.md",
+        "change": "Added"
+      }
+    }
+  ]
+}
