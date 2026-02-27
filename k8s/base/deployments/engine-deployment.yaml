@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: yawl
     app.kubernetes.io/version: "6.0.0"
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app.kubernetes.io/name: yawl-engine
@@ -42,6 +42,15 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
+            - name: JAVA_TOOL_OPTIONS
+              value: >-
+                -XX:+UseZGC
+                -XX:+ZGenerational
+                -XX:+UseCompactObjectHeaders
+                -Xmx8g
+                -Xms4g
+                -XX:+HeapDumpOnOutOfMemoryError
+                -XX:HeapDumpPath=/opt/yawl/logs/heapdump.hprof
             - name: JAVA_OPTS
               valueFrom:
                 configMapKeyRef:
@@ -77,11 +86,11 @@ spec:
                 name: yawl-config
           resources:
             requests:
-              cpu: "500m"
-              memory: "1Gi"
-            limits:
               cpu: "2000m"
-              memory: "2Gi"
+              memory: "4Gi"
+            limits:
+              cpu: "4000m"
+              memory: "10Gi"
           livenessProbe:
             httpGet:
               path: /engine/health
