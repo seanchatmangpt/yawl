@@ -1,9 +1,9 @@
 {
   "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
-  "started_at": "2026-02-27T20:04:38.572793649Z",
-  "ended_at": "2026-02-27T20:04:38.795736598Z",
-  "receipt_count": 233,
-  "chain_hash": "75ec46d70e85a381c40fc18d51be79932d012484d58869d777cc4177201b9f64",
+  "started_at": "2026-02-27T20:05:01.261247115Z",
+  "ended_at": "2026-02-27T20:05:01.409847796Z",
+  "receipt_count": 234,
+  "chain_hash": "3636a790119ae5ddf567ffb8429d681774b83cc1b3e1978def81d0ab5ed7fd2a",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -11467,6 +11467,39 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "# How Java 25 Features Enable YAWL to Ha",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772222691159960500,
+      "timestamp_rfc": "2026-02-27T20:04:51.159960500Z",
+      "session_id": "69a3a52f-576b-4b99-ab60-97d9a4a19aa1",
+      "file_path": "/home/user/yawl/docs/reference/java25-jep-index.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "8f636398d91d443bed9ccbde6a484c7e42d67cc03e3c1fbc39bd95bf55569bee",
+      "delta_hash": "655cb77c8e791a76637c578aaee3b1463f394d1461bf2bd7b35c4e10abcf501b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "public record WorkflowEvent(",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "YEvent",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Java 21–25 JEP Index for YAWL 1M Cases",
             "change": "Added"
           }
         }
