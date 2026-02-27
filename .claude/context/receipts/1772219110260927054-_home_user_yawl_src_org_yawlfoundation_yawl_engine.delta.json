@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772219110260927054,
+  "timestamp_rfc": "2026-02-27T19:05:10.260927054Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "82a7c2aa2fd1f98acddcf6215af11a99f5acb5ee0860f9e615d611663c3cfbf3",
+  "delta_hash": "484df99d4ef22ccd3262957daf77bdc52d26dc8a25732ab97f15077ab3ddc3a3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "YAnnouncer",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "org",
+        "change": "Added"
+      }
+    }
+  ]
+}

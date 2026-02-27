@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772215853714465021,
+  "timestamp_rfc": "2026-02-27T18:10:53.714465021Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/ScopedTenantContext.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d6e3a78a54d9213f22e281f962f0a297b1fd002aafa2f50f2d475521a65af72c",
+  "delta_hash": "f729cda9c40afbf048a578c600a93eb6ed4b5e531c391eb7fb449a1580851008",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "} else {",
+        "change": "Added"
+      }
+    }
+  ]
+}

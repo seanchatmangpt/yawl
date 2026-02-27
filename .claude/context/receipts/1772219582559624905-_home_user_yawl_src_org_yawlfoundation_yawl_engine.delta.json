@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219582559624905,
+  "timestamp_rfc": "2026-02-27T19:13:02.559624905Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/TenantContext.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "ddee5d2407deee4c4691d138e937c9ccfd3df97cfbb5ef268cb7a7b4dc158463",
+  "delta_hash": "0a261b1ca7fa188ec9612f359ca790062f70276f518dd6714329bced87ce9f4c",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String normalizedCaseID = caseID.trim",
+        "change": "Added"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219516738104518,
+  "timestamp_rfc": "2026-02-27T19:11:56.738104518Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/engine/YAnnouncer.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "212ac31c025ca7ff58e68e33f4c64e6127dc8c59a04f6b6b38849a327e384d29",
+  "delta_hash": "c418e156dd5570c93d3c02a5a19b9ad1ce3278eeec71d424497062c28fde2170",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "protected void announceCaseStart(YSpecif",
+        "change": "Added"
+      }
+    }
+  ]
+}

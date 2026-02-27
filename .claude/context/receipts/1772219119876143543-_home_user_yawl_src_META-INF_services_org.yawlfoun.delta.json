@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772219119876143543,
+  "timestamp_rfc": "2026-02-27T19:05:19.876143543Z",
+  "session_id": "83c04326-7351-487b-ad31-08d85ab8baea",
+  "file_path": "/home/user/yawl/src/META-INF/services/org.yawlfoundation.yawl.engine.spi.WorkflowEventBus",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "96d8c5ba96594073af0dbc31e26609724036631d93829d4ef3bf5d3ffe8477f3",
+  "delta_hash": "6e415f8f857cc88ef756f6607f85b46dfaf64547455511f3ef0374cbd727a1b4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "org.yawlfoundation.yawl.engine.spi.FlowW",
+        "change": "Added"
+      }
+    }
+  ]
+}
