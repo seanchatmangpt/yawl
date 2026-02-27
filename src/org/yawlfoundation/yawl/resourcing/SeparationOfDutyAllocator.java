@@ -2,6 +2,7 @@ package org.yawlfoundation.yawl.resourcing;
 
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Enforces separation of duties (four-eyes and Chinese wall policies).
@@ -22,7 +23,7 @@ public class SeparationOfDutyAllocator implements ResourceAllocator {
         Objects.requireNonNull(pool);
         if (pool.isEmpty()) throw new AllocationException("Pool is empty");
         
-        String caseId = workItem.getCaseId();
+        String caseId = workItem.getCaseID().toString();
         Set<String> previous = caseHistory.getOrDefault(caseId, Set.of());
         
         List<Participant> filtered = pool.stream()
