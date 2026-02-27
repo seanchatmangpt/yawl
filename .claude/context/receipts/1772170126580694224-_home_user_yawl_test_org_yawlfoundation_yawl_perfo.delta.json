@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772170126580694224,
+  "timestamp_rfc": "2026-02-27T05:28:46.580694224Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/WorkflowExecutionBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a2775856a4daf054cbc0b834f68f73512ea9be9a0482bdaff325df21c10bc415",
+  "delta_hash": "1b2f69cf3340bfdd98d01aac4adc812341ee99fb03b65d9ff3d516d70343ede1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "void",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "WorkItemState",
+        "change": "Added"
+      }
+    }
+  ]
+}

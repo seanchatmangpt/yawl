@@ -44,7 +44,12 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Benchmark)
 @Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1, jvmArgs = {"-Xms2g", "-Xmx4g", "-XX:+UseG1GC"})
+@Fork(value = 1, jvmArgs = {
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
+})
 public class WorkflowExecutionBenchmark {
 
     @Param({"10", "50", "100"})
@@ -93,20 +98,18 @@ public class WorkflowExecutionBenchmark {
         AtomicInteger completedTasks = new AtomicInteger(0);
 
         for (int stage = 0; stage < stages; stage++) {
-            List<Future<WorkItem>> stageFutures = new ArrayList<>();
+            List<Future<WorkItemState>> stageFutures = new ArrayList<>();
 
             for (int task = 0; task < tasksPerStage; task++) {
                 final int stageId = stage;
                 final int taskId = task;
-                
-                Future<WorkItem> future = executor.submit(() -> {
-                    return executeTask(stageId, taskId);
-                });
+
+                Future<WorkItemState> future = executor.submit(() -> executeTask(stageId, taskId));
                 stageFutures.add(future);
             }
 
-            for (Future<WorkItem> future : stageFutures) {
-                WorkItem item = future.get(30, TimeUnit.SECONDS);
+            for (Future<WorkItemState> future : stageFutures) {
+                WorkItemState item = future.get(30, TimeUnit.SECONDS);
                 completedTasks.incrementAndGet();
                 bh.consume(item);
             }
@@ -123,22 +126,23 @@ public class WorkflowExecutionBenchmark {
     /**
      * Simulate executing a single workflow task.
      * Represents: checkout -> execute -> checkin cycle.
+     * Uses sealed state machine — each transition returns a new record state.
      */
-    private WorkItem executeTask(int stageId, int taskId) {
+    private WorkItemState executeTask(int stageId, int taskId) {
         try {
             Thread.sleep(2);
-            
-            WorkItem item = new WorkItem("stage-" + stageId + "-task-" + taskId);
-            
+
+            WorkItemState item = WorkItemState.create("stage-" + stageId + "-task-" + taskId);
+
             Thread.sleep(3);
-            item.checkout();
-            
+            item = item.checkout();
+
             Thread.sleep(5);
-            item.execute();
-            
+            item = item.execute();
+
             Thread.sleep(3);
-            item.checkin();
-            
+            item = item.checkin();
+
             return item;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -155,36 +159,33 @@ public class WorkflowExecutionBenchmark {
     }
 
     /**
-     * Simplified WorkItem representation for benchmarking.
+     * WorkItem state machine — sealed hierarchy with record states.
+     *
+     * <p>Each transition returns a new immutable record state (no mutable fields).
+     * Java 25: sealed + records enable exhaustive pattern matching in switch expressions.</p>
      */
-    private static class WorkItem {
-        private final String id;
-        private String status;
+    private sealed interface WorkItemState
+            permits WorkItemState.Created, WorkItemState.CheckedOut,
+                    WorkItemState.Executing, WorkItemState.Completed {
 
-        public WorkItem(String id) {
-            this.id = id;
-            this.status = "created";
+        record Created(String id)    implements WorkItemState {}
+        record CheckedOut(String id) implements WorkItemState {}
+        record Executing(String id)  implements WorkItemState {}
+        record Completed(String id)  implements WorkItemState {}
+
+        default String id() {
+            return switch (this) {
+                case Created(var i)    -> i;
+                case CheckedOut(var i) -> i;
+                case Executing(var i)  -> i;
+                case Completed(var i)  -> i;
+            };
         }
 
-        public void checkout() {
-            this.status = "checked-out";
-        }
-
-        public void execute() {
-            this.status = "executing";
-        }
-
-        public void checkin() {
-            this.status = "completed";
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getStatus() {
-            return status;
-        }
+        static WorkItemState create(String id) { return new Created(id); }
+        default WorkItemState checkout()       { return new CheckedOut(id()); }
+        default WorkItemState execute()        { return new Executing(id()); }
+        default WorkItemState checkin()        { return new Completed(id()); }
     }
 
     public static void main(String[] args) throws RunnerException {

@@ -33,6 +33,7 @@ import java.lang.management.MemoryMXBean;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -265,7 +266,7 @@ public class SoakTestRunner {
      * @throws Exception if work item operations fail
      */
     private void completeCase(YStatelessEngine engine, YNetRunner runner) throws Exception {
-        List<YWorkItem> enabledItems = runner.getEnabledWorkItems();
+        Set<YWorkItem> enabledItems = runner.getWorkItemRepository().getEnabledWorkItems();
         for (YWorkItem item : enabledItems) {
             engine.startWorkItem(item);
             engine.completeWorkItem(item, "<data/>", null);

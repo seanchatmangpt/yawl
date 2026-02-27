@@ -1,0 +1,54 @@
+{
+  "timestamp_ns": 1772171260517967194,
+  "timestamp_rfc": "2026-02-27T05:47:40.517967194Z",
+  "session_id": "5947189f-3383-4a96-8431-d348183e9978",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/graaljs/JsTypeMarshaller.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1bd3563fa3a7bc0ca05740a524a481f9506d24af401975528f8ffa65a87ebc28",
+  "delta_hash": "418308c4c55c1214b866200d54b9655720186d9a3dc4a3f16b267f16c10a6c0d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "com",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "JsTypeMarshaller",
+        "change": "Added"
+      }
+    }
+  ]
+}

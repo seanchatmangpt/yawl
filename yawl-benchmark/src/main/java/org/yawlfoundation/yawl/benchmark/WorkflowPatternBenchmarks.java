@@ -19,407 +19,149 @@
 package org.yawlfoundation.yawl.benchmark;
 
 import org.openjdk.jmh.annotations.*;
-import org.yawlfoundation.yawl.elements.YSpecification;
-import org.yawlfoundation.yawl.engine.YEngine;
-import org.yawlfoundation.yawl.engine.YWorkItem;
-import org.yawlfoundation.yawl.stateless.engine.YStatelessEngine;
+import org.yawlfoundation.yawl.exceptions.YSyntaxException;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.elements.YSpecification;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
+import org.yawlfoundation.yawl.stateless.listener.YCaseEventListener;
+import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
+import org.yawlfoundation.yawl.stateless.listener.event.YCaseEvent;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
+import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
-import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import java.util.concurrent.atomic.AtomicReference;
+import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Workflow Pattern Performance Benchmarks
- * 
- * This class benchmarks specific YAWL control flow patterns:
- * - Sequential workflow (baseline)
- * - Parallel Split/Synchronization patterns
- * - Multi-Choice/Merge patterns
- * - Cancel Region patterns
- * - N-out-of-M patterns
+ * Workflow Pattern Performance Benchmarks.
+ *
+ * <p>Measures the end-to-end execution latency for the four principal
+ * workflow control-flow patterns. Each benchmark uses a real
+ * {@link YStatelessEngine} with genuine YAWL specification XML; the
+ * event-driven auto-driver starts and completes every enabled work item
+ * so each case runs to completion without external intervention.</p>
+ *
+ * <p>Patterns benchmarked:</p>
+ * <ul>
+ *   <li>{@link #sequentialPattern} — 2-task linear chain</li>
+ *   <li>{@link #parallelSplitSyncPattern} — AND-split followed by AND-join</li>
+ *   <li>{@link #exclusiveChoicePattern} — XOR-split (default branch)</li>
+ *   <li>{@link #multiChoicePattern} — OR-split (all branches enabled)</li>
+ * </ul>
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 50, time = 1)
-@Fork(3)
+@Fork(value = 3, jvmArgs = {
+    "-Xms2g", "-Xmx4g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-Djmh.executor=VIRTUAL_TPE"
+})
 @Threads(1)
-public class WorkflowPatternBenchmarks {
+public class WorkflowPatternBenchmarks implements YWorkItemEventListener, YCaseEventListener {
 
-    private YEngine engine;
-    private YStatelessEngine statelessEngine;
-    
-    // Test specifications for different patterns
-    private YSpecification sequentialSpec;
-    private YSpecification parallelSplitSyncSpec;
-    private YSpecification multiChoiceMergeSpec;
-    private YSpecification cancelRegionSpec;
-    private YSpecification nOutOfMSpec;
-    
-    private Map<String, String> testCaseIds;
-    private Random random;
-    
-    @Setup
-    public void setup() throws Exception {
-        System.out.println("[Pattern Benchmark Setup] Initializing workflow patterns...");
-        
-        // Initialize engines
-        engine = new YEngine();
-        engine.initialiseEngine(true);
-        statelessEngine = new YStatelessEngine();
-        statelessEngine.initialiseEngine();
-        
-        // Create test specifications (simplified for benchmarking)
-        sequentialSpec = createSequentialWorkflowSpec();
-        parallelSplitSyncSpec = createParallelSplitSyncSpec();
-        multiChoiceMergeSpec = createMultiChoiceMergeSpec();
-        cancelRegionSpec = createCancelRegionSpec();
-        nOutOfMSpec = createNOutOfMSpec();
-        
-        // Generate test cases
-        testCaseIds = new HashMap<>();
-        testCaseIds.put("sequential", UUID.randomUUID().toString());
-        testCaseIds.put("parallel", UUID.randomUUID().toString());
-        testCaseIds.put("multiChoice", UUID.randomUUID().toString());
-        testCaseIds.put("cancelRegion", UUID.randomUUID().toString());
-        testCaseIds.put("nOutOfM", UUID.randomUUID().toString());
-        
-        random = new Random();
-        
-        System.out.println("[Pattern Benchmark Setup] Setup completed with 5 workflow patterns");
+    private YStatelessEngine engine;
+
+    private YSpecification seqSpec;
+    private YSpecification parallelSpec;
+    private YSpecification xorSpec;
+    private YSpecification orSpec;
+
+    private volatile CountDownLatch completionLatch;
+    private final AtomicReference<Exception> listenerError = new AtomicReference<>();
+
+    // ── Setup ─────────────────────────────────────────────────────────────
+
+    @Setup(Level.Trial)
+    public void setup() throws YSyntaxException {
+        engine = new YStatelessEngine();
+        engine.addWorkItemEventListener(this);
+        engine.addCaseEventListener(this);
+
+        seqSpec     = engine.unmarshalSpecification(BenchmarkSpecFactory.SEQUENTIAL_2_TASK);
+        parallelSpec = engine.unmarshalSpecification(BenchmarkSpecFactory.PARALLEL_SPLIT_SYNC);
+        xorSpec     = engine.unmarshalSpecification(BenchmarkSpecFactory.EXCLUSIVE_CHOICE);
+        orSpec      = engine.unmarshalSpecification(BenchmarkSpecFactory.MULTI_CHOICE);
     }
-    
-    @TearDown
-    public void tearDown() {
-        System.out.println("[Pattern Benchmark Teardown] Cleaning up resources...");
-        if (engine != null) {
-            engine.shutdownEngine();
-        }
-    }
-    
-    /**
-     * Benchmark 1: Sequential Workflow Pattern (Baseline)
-     * Measures performance of simple linear workflow execution
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void sequentialWorkflowPerformance() throws Exception {
-        String caseId = testCaseIds.get("sequential");
-        
-        // Execute sequential workflow: Task1 -> Task2 -> Task3 -> Task4
-        executeSequentialCase(caseId, 4);
-    }
-    
-    /**
-     * Benchmark 2: Parallel Split/Synchronization Pattern
-     * Measures performance of parallel execution with synchronization
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void parallelSplitSyncPerformance() throws Exception {
-        String caseId = testCaseIds.get("parallel");
-        
-        // Execute parallel workflow: Start -> [Task1, Task2, Task3] -> Sync -> End
-        executeParallelSplitSyncCase(caseId, 3);
-    }
-    
-    /**
-     * Benchmark 3: Multi-Choice/Merge Pattern
-     * Measures performance of conditional branching and merging
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void multiChoiceMergePerformance() throws Exception {
-        String caseId = testCaseIds.get("multiChoice");
-        
-        // Execute multi-choice workflow with random path selection
-        int choice = random.nextInt(3); // 3 different paths
-        executeMultiChoiceCase(caseId, choice);
-    }
-    
-    /**
-     * Benchmark 4: Cancel Region Pattern
-     * Measures performance of task cancellation and region cleanup
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void cancelRegionPerformance() throws Exception {
-        String caseId = testCaseIds.get("cancelRegion");
-        
-        // Execute workflow with cancellation region
-        executeCancelRegionCase(caseId);
-    }
-    
-    /**
-     * Benchmark 5: N-out-of-M Pattern
-     * Measures performance of majority vote or threshold-based patterns
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void nOutOfMPatternPerformance() throws Exception {
-        String caseId = testCaseIds.get("nOutOfM");
-        
-        // Execute N-out-of-M pattern (e.g., 2-out-of-3)
-        executeNOutOfMCase(caseId, 2, 3);
-    }
-    
-    /**
-     * Benchmark 6: Mixed Pattern Complexity
-     * Measures performance of complex combinations of patterns
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void mixedPatternComplexityPerformance() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Execute complex mixed workflow
-        executeMixedPatternCase(caseId);
-    }
-    
-    /**
-     * Benchmark 7: Pattern Scalability - Increasing Complexity
-     * Measures how performance degrades with increasing workflow complexity
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void patternScalabilityPerformance() throws Exception {
-        int complexityLevel = (int) (System.nanoTime() % 5) + 1; // 1-5 levels
-        
-        // Execute workflow with scaled complexity
-        executeScalablePatternCase(complexityLevel);
-    }
-    
-    /**
-     * Benchmark 8: Pattern Throughput
-     * Measures throughput (cases/second) for each pattern type
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void patternThroughput() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        String patternType = "sequential"; // Focus on one pattern for throughput
-        
-        // Execute case and measure throughput
-        switch (patternType) {
-            case "sequential":
-                executeSequentialCase(caseId, 3);
-                break;
-            case "parallel":
-                executeParallelSplitSyncCase(caseId, 2);
-                break;
-            case "multiChoice":
-                executeMultiChoiceCase(caseId, random.nextInt(2));
-                break;
-            default:
-                executeSequentialCase(caseId, 3);
-        }
-    }
-    
-    /**
-     * Benchmark 9: Pattern Memory Usage
-     * Measures memory consumption for different patterns
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void patternMemoryUsage() throws Exception {
-        Runtime runtime = Runtime.getRuntime();
-        long before = runtime.totalMemory() - runtime.freeMemory();
-        
-        // Execute each pattern and measure memory
-        executeSequentialCase(UUID.randomUUID().toString(), 3);
-        executeParallelSplitSyncCase(UUID.randomUUID().toString(), 2);
-        executeMultiChoiceCase(UUID.randomUUID().toString(), 0);
-        
-        long after = runtime.totalMemory() - runtime.freeMemory();
-        return after - before;
-    }
-    
-    /**
-     * Benchmark 10: Pattern Error Handling
-     * Measures performance degradation during error scenarios
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void patternErrorHandlingPerformance() throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Execute workflow with simulated errors
-        executeCaseWithErrors(caseId);
-    }
-    
-    // Helper methods for pattern execution
-    
-    private void executeSequentialCase(String caseId, int taskCount) throws Exception {
-        // Simplified sequential execution
-        for (int i = 1; i <= taskCount; i++) {
-            String taskId = "task-" + i;
-            YWorkItem workItem = new YWorkItem();
-            workItem.setCaseID(caseId);
-            workItem.setTaskID(taskId);
-            
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-        }
-    }
-    
-    private void executeParallelSplitSyncCase(String caseId, int parallelTasks) throws Exception {
-        // Execute parallel tasks
-        List<YWorkItem> parallelWorkItems = new ArrayList<>();
-        for (int i = 1; i <= parallelTasks; i++) {
-            String taskId = "parallel-task-" + i;
-            YWorkItem workItem = new YWorkItem();
-            workItem.setCaseID(caseId);
-            workItem.setTaskID(taskId);
-            parallelWorkItems.add(workItem);
-            
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-        }
-        
-        // Synchronization point (simplified)
-        YWorkItem syncWorkItem = new YWorkItem();
-        syncWorkItem.setCaseID(caseId);
-        syncWorkItem.setTaskID("sync-task");
-        engine.startWorkItem(syncWorkItem);
-        engine.completeWorkItem(syncWorkItem, Collections.emptyMap());
-    }
-    
-    private void executeMultiChoiceCase(String caseId, int choice) throws Exception {
-        // Execute different paths based on choice
-        YWorkItem choiceWorkItem = new YWorkItem();
-        choiceWorkItem.setCaseID(caseId);
-        choiceWorkItem.setTaskID("choice-" + choice);
-        
-        engine.startWorkItem(choiceWorkItem);
-        engine.completeWorkItem(choiceWorkItem, Collections.emptyMap());
-        
-        // Merge point
-        YWorkItem mergeWorkItem = new YWorkItem();
-        mergeWorkItem.setCaseID(caseId);
-        mergeWorkItem.setTaskID("merge");
-        engine.startWorkItem(mergeWorkItem);
-        engine.completeWorkItem(mergeWorkItem, Collections.emptyMap());
-    }
-    
-    private void executeCancelRegionCase(String caseId) throws Exception {
-        // Execute tasks within cancel region
-        YWorkItem regionWorkItem = new YWorkItem();
-        regionWorkItem.setCaseID(caseId);
-        regionWorkItem.setTaskID("region-task");
-        
-        engine.startWorkItem(regionWorkItem);
-        
-        // Simulate cancellation
-        engine.cancelWorkItem(regionWorkItem);
-    }
-    
-    private void executeNOutOfMCase(String caseId, int n, int m) throws Exception {
-        // Execute N out of M tasks
-        int executed = 0;
-        for (int i = 1; i <= m && executed < n; i++) {
-            String taskId = "n-task-" + i;
-            YWorkItem workItem = new YWorkItem();
-            workItem.setCaseID(caseId);
-            workItem.setTaskID(taskId);
-            
-            engine.startWorkItem(workItem);
-            engine.completeWorkItem(workItem, Collections.emptyMap());
-            executed++;
-        }
-        
-        // Final task after N completion
-        YWorkItem finalWorkItem = new YWorkItem();
-        finalWorkItem.setCaseID(caseId);
-        finalWorkItem.setTaskID("n-final");
-        engine.startWorkItem(finalWorkItem);
-        engine.completeWorkItem(finalWorkItem, Collections.emptyMap());
-    }
-    
-    private void executeMixedPatternCase(String caseId) throws Exception {
-        // Combination of multiple patterns
-        executeSequentialCase(caseId, 2); // Sequential start
-        
-        executeParallelSplitSyncCase(caseId, 2); // Parallel section
-        
-        executeMultiChoiceCase(caseId, 0); // Choice point
-        
-        executeNOutOfMCase(caseId, 1, 2); // N-out-of-M
-    }
-    
-    private void executeScalablePatternCase(int complexity) throws Exception {
-        String caseId = UUID.randomUUID().toString();
-        
-        // Scale complexity based on level
-        int baseTasks = 3;
-        int taskCount = baseTasks + (complexity * 2);
-        
-        for (int level = 1; level <= complexity; level++) {
-            // Nested complexity
-            executeSequentialCase(caseId + "-level-" + level, taskCount / complexity);
-            
-            if (level % 2 == 0) {
-                executeParallelSplitSyncCase(caseId + "-level-" + level, 2);
-            }
-        }
-    }
-    
-    private void executeCaseWithErrors(String caseId) throws Exception {
-        // Execute with simulated errors
-        YWorkItem workItem = new YWorkItem();
-        workItem.setCaseID(caseId);
-        workItem.setTaskID("error-task");
-        
+
+    // ── Event listener ────────────────────────────────────────────────────
+
+    @Override
+    public void handleWorkItemEvent(YWorkItemEvent event) {
+        YWorkItem item = event.getWorkItem();
         try {
-            engine.startWorkItem(workItem);
-            // Simulate error during execution
-            throw new RuntimeException("Simulated error");
+            switch (event.getEventType()) {
+                case ITEM_ENABLED -> engine.startWorkItem(item);
+                case ITEM_STARTED -> engine.completeWorkItem(item, null, null);
+                default -> { /* other transitions not needed */ }
+            }
         } catch (Exception e) {
-            // Handle error
+            listenerError.compareAndSet(null, e);
         }
     }
-    
-    // Helper methods for specification creation (simplified)
-    
-    private YSpecification createSequentialWorkflowSpec() {
-        YSpecification spec = new YSpecification();
-        spec.setID("sequential-workflow");
-        // In real implementation, this would define the workflow net
-        return spec;
+
+    @Override
+    public void handleCaseEvent(YCaseEvent event) {
+        if (event.getEventType() == YEventType.CASE_COMPLETED ||
+                event.getEventType() == YEventType.CASE_CANCELLED) {
+            CountDownLatch latch = completionLatch;
+            if (latch != null) latch.countDown();
+        }
     }
-    
-    private YSpecification createParallelSplitSyncSpec() {
-        YSpecification spec = new YSpecification();
-        spec.setID("parallel-split-sync");
-        return spec;
+
+    // ── Helper ────────────────────────────────────────────────────────────
+
+    private void runCase(YSpecification spec) throws Exception {
+        listenerError.set(null);
+        completionLatch = new CountDownLatch(1);
+        engine.launchCase(spec);
+        if (!completionLatch.await(10, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Case did not complete within timeout");
+        }
+        Exception err = listenerError.get();
+        if (err != null) throw err;
     }
-    
-    private YSpecification createMultiChoiceMergeSpec() {
-        YSpecification spec = new YSpecification();
-        spec.setID("multi-choice-merge");
-        return spec;
+
+    // ── Benchmarks ────────────────────────────────────────────────────────
+
+    /**
+     * 2-task sequential pattern: Start → t1 → t2 → End.
+     * Baseline for all other pattern benchmarks.
+     */
+    @Benchmark
+    public void sequentialPattern() throws Exception {
+        runCase(seqSpec);
     }
-    
-    private YSpecification createCancelRegionSpec() {
-        YSpecification spec = new YSpecification();
-        spec.setID("cancel-region");
-        return spec;
+
+    /**
+     * AND-split / AND-join pattern: split → [branchA || branchB] → sync → End.
+     * Measures token forking + AND-join synchronization overhead.
+     */
+    @Benchmark
+    public void parallelSplitSyncPattern() throws Exception {
+        runCase(parallelSpec);
     }
-    
-    private YSpecification createNOutOfMSpec() {
-        YSpecification spec = new YSpecification();
-        spec.setID("n-out-of-m");
-        return spec;
+
+    /**
+     * XOR-split / XOR-join (exclusive choice): choice → defaultPath → merge → End.
+     * Measures routing guard evaluation overhead.
+     */
+    @Benchmark
+    public void exclusiveChoicePattern() throws Exception {
+        runCase(xorSpec);
+    }
+
+    /**
+     * OR-split (multi-choice): mc → [brA + brB + brC] → End.
+     * Measures OR-split firing all branches simultaneously.
+     */
+    @Benchmark
+    public void multiChoicePattern() throws Exception {
+        runCase(orSpec);
     }
 }

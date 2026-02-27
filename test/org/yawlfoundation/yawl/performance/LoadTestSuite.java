@@ -17,9 +17,13 @@ import org.yawlfoundation.yawl.logging.YLogDataItemList;
 import org.yawlfoundation.yawl.unmarshal.YMarshal;
 import org.yawlfoundation.yawl.util.StringUtil;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import junit.framework.TestCase;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Load testing suite for YAWL Engine.
@@ -33,22 +37,17 @@ import junit.framework.TestCase;
  * - Soak test (moderate load, 30 minutes)
  * 
  * @author YAWL Performance Team
- * @version 5.2
+ * @version 6.0
  * @since 2026-02-16
  */
 @Execution(ExecutionMode.SAME_THREAD)  // Uses YEngine singleton
-public class LoadTestSuite extends TestCase {
-    
+public class LoadTestSuite {
+
     private YEngine engine;
     private YSpecification spec;
-    
-    public LoadTestSuite(String name) {
-        super(name);
-    }
-    
-    @Override
+
+    @BeforeEach
     public void setUp() throws Exception {
-        super.setUp();
         engine = YEngine.getInstance();
         EngineClearer.clear(engine);
         
@@ -67,12 +66,11 @@ public class LoadTestSuite extends TestCase {
         }
     }
     
-    @Override
+    @AfterEach
     public void tearDown() throws Exception {
         if (engine != null) {
             EngineClearer.clear(engine);
         }
-        super.tearDown();
     }
     
     /**
@@ -80,6 +78,7 @@ public class LoadTestSuite extends TestCase {
      * 50 concurrent users for 5 minutes
      * Target: > 99% success rate, p95 latency < 1000ms
      */
+    @Test
     public void testSustainedLoad() throws Exception {
         System.out.println("\n=== LOAD TEST 1: Sustained Load ===");
         System.out.println("Configuration: 50 users, 5 minutes");
@@ -112,6 +111,7 @@ public class LoadTestSuite extends TestCase {
      * 100 concurrent users for 1 minute
      * Target: > 95% success rate
      */
+    @Test
     public void testBurstLoad() throws Exception {
         System.out.println("\n=== LOAD TEST 2: Burst Load ===");
         System.out.println("Configuration: 100 users, 1 minute");
@@ -144,6 +144,7 @@ public class LoadTestSuite extends TestCase {
      * Start with 10 users, ramp to 50 over 2 minutes
      * Target: Success rate remains > 99%
      */
+    @Test
     public void testRampUp() throws Exception {
         System.out.println("\n=== LOAD TEST 3: Ramp-up Test ===");
         System.out.println("Configuration: 10 → 50 users over 2 minutes");

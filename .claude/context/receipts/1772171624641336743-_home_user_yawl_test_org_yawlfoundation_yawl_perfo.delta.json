@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772171624641336743,
+  "timestamp_rfc": "2026-02-27T05:53:44.641336743Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/Java25CompactHeadersBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "edd9ee04bebc72c796a3f34b9d97d345607d632a7cd201d1673a4d079d164ec5",
+  "delta_hash": "74bdf4f5eb7aba7d3a32e0e86bc0f6eb39676726ea7c529ed49389fae05ddf2d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Fork(value = 2, jvmArgs = {",
+        "change": "Added"
+      }
+    }
+  ]
+}

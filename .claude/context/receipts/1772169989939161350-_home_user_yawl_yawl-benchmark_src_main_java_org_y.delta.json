@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772169989939161350,
+  "timestamp_rfc": "2026-02-27T05:26:29.939161350Z",
+  "session_id": "2e362e24-993c-456d-a563-4d5561a53fdb",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/MemoryBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7a541fa69a54b4a211c5bf8d5c764cf093f2f897e845e43b83d95360a0b3a9c0",
+  "delta_hash": "16feea3d67fc1fb23e2adcc5cdb1e4edb7b5e6b53741ce1d1df0b13640a561b1",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Threads",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Fork(value = 3, jvmArgs = {",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "MemoryBenchmarks",
+        "change": "Added"
+      }
+    }
+  ]
+}

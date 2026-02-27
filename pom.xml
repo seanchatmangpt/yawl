@@ -76,6 +76,9 @@
         <module>yawl-control-panel</module>
         <module>yawl-mcp-a2a-app</module>
         <module>yawl-graalpy</module>
+        <module>yawl-benchmark</module>
+        <module>yawl-graaljs</module>
+        <module>yawl-graalwasm</module>
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.
@@ -365,6 +368,16 @@
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-mcp-a2a-app</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-graaljs</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-graalwasm</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -1242,6 +1255,20 @@
                 <groupId>org.graalvm.sdk</groupId>
                 <artifactId>nativeimage</artifactId>
                 <version>${graalvm.version}</version>
+            </dependency>
+            <!-- GraalJS language implementation - pulls JS runtime JARs -->
+            <dependency>
+                <groupId>org.graalvm.polyglot</groupId>
+                <artifactId>js</artifactId>
+                <version>${graalvm.version}</version>
+                <type>pom</type>
+            </dependency>
+            <!-- GraalWasm language implementation - pulls Wasm runtime JARs -->
+            <dependency>
+                <groupId>org.graalvm.polyglot</groupId>
+                <artifactId>wasm</artifactId>
+                <version>${graalvm.version}</version>
+                <type>pom</type>
             </dependency>
 
         </dependencies>
