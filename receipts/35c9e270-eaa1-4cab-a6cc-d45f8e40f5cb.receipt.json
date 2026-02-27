@@ -1,9 +1,9 @@
 {
   "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
-  "started_at": "2026-02-27T17:21:01.921800975Z",
-  "ended_at": "2026-02-27T17:21:01.964861466Z",
-  "receipt_count": 22,
-  "chain_hash": "aaf8099af89ca3edd798e36a53e425c7a6d4def56ec5b17f2ed5a4f66517fb68",
+  "started_at": "2026-02-27T17:34:29.513461824Z",
+  "ended_at": "2026-02-27T17:34:29.546843332Z",
+  "receipt_count": 24,
+  "chain_hash": "dc332611569d35d44aaa6b2a362fefb9657ee0be69c148a04c29badc719c691a",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -1139,6 +1139,135 @@
           "Declaration": {
             "decl_kind": "Function",
             "name": "// 90%",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213073114124212,
+      "timestamp_rfc": "2026-02-27T17:24:33.114124212Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/tmp/MaxStressProbe.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "002fb18200614af550a8c9dbf9a08de3842fbb65b5a4d7844cdd6334b48eac37",
+      "delta_hash": "56a4f3f7b52c847248868c98974680f4714bada77cf9ca5e8e27655260b77555",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "MaxStressProbe",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "long",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YSpecification",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772213130252367795,
+      "timestamp_rfc": "2026-02-27T17:25:30.252367795Z",
+      "session_id": "35c9e270-eaa1-4cab-a6cc-d45f8e40f5cb",
+      "file_path": "/tmp/maxprobe/org/yawlfoundation/yawl/engine/MaxStressProbe.java",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "3f2945ed027139680c6486bc17fd989dcb17cecebabffab3f509826bd8218ed6",
+      "delta_hash": "5c9fb1e404c67eacd3d7fc15a97c6fd83762cb5885a5b58f402a9cb56474cc4b",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "static",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "void",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "long",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "org",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Function",
+            "name": "YSpecification",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "java",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Class",
+            "name": "MaxStressProbe",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "package org.yawlfoundation.yawl.engine;",
             "change": "Added"
           }
         }
