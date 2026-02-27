@@ -80,6 +80,7 @@
         <module>yawl-graaljs</module>
         <module>yawl-graalwasm</module>
         <module>yawl-dmn</module>
+        <module>yawl-data-modelling</module>
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.
@@ -384,6 +385,11 @@
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-dmn</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-data-modelling</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

@@ -73,6 +73,7 @@ fi
 # ── Detect changed modules ───────────────────────────────────────────────
 # NOTE: yawl-worklet removed - not in pom.xml
 ALL_MODULES=(
+    yawl-graaljs yawl-graalwasm yawl-dmn yawl-data-modelling
     yawl-utilities yawl-elements yawl-authentication yawl-engine
     yawl-stateless yawl-resourcing yawl-scheduling
     yawl-security yawl-integration yawl-monitoring yawl-ggen yawl-pi yawl-webapps
