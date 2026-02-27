@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772212443096279270,
+  "timestamp_rfc": "2026-02-27T17:14:03.096279270Z",
+  "session_id": "091f2aef-1109-480e-8596-ef2f74663fc7",
+  "file_path": "/home/user/yawl/yawl-pi/docs/thesis/07-vision-2030.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1aa43269e12d885bb54acaafa35ec60f1c8eb172ae11365c5a1738f3d394d72d",
+  "delta_hash": "04e5f162f14e2a6e7844798122cd4b28a0a1c3c2c32cc1412c032e40f2ed5077",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Chapter 7 — Vision 2030: The Cognitive",
+        "change": "Added"
+      }
+    }
+  ]
+}
