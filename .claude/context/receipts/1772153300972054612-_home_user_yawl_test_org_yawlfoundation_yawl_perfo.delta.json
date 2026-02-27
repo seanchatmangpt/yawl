@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772153300972054612,
+  "timestamp_rfc": "2026-02-27T00:48:20.972054612Z",
+  "session_id": "f82378be-b0ec-4666-b3e0-c41d376176bf",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/AllBenchmarksRunner.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b7966095e316ac33e28a5225a08461a9c6407712fd1bd89b84405e29ff12ed0a",
+  "delta_hash": "50bea7298f34c2edccc31136ba0cc63de60e99f0f0cb82dbf0177856186652cb",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "AllBenchmarksRunner",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}
