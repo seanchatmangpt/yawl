@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.yawlfoundation.yawl.integration.util.ParameterValidator;
+import org.yawlfoundation.yawl.integration.util.SkillLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Top-level data model container, mirroring the {@code DataModel} struct from the
@@ -64,6 +68,9 @@ import java.util.Optional;
  */
 public final class DataModel {
 
+    private static final Logger log = LoggerFactory.getLogger(DataModel.class);
+    private static final SkillLogger skillLogger = SkillLogger.forSkill("dmn-datamodel", "DMN_DataModel");
+
     private final String name;
     private final @Nullable String description;
     private final List<DmnTable> tables;
@@ -71,6 +78,7 @@ public final class DataModel {
     private final Map<String, DmnTable> tableIndex;
 
     private DataModel(Builder builder) {
+        skillLogger.info("Creating DataModel '{}'", builder.name);
         this.name = builder.name;
         this.description = builder.description;
         this.tables = List.copyOf(builder.tables);
@@ -80,6 +88,9 @@ public final class DataModel {
             idx.put(t.getName(), t);
         }
         this.tableIndex = Collections.unmodifiableMap(idx);
+
+        skillLogger.info("Created DataModel '{}' with {} tables and {} relationships",
+                this.name, this.tables.size(), this.relationships.size());
     }
 
     /**
@@ -264,9 +275,8 @@ public final class DataModel {
         private final List<DmnRelationship> relationships = new ArrayList<>();
 
         private Builder(String name) {
-            if (name == null || name.isBlank())
-                throw new IllegalArgumentException("DataModel name must not be null or blank");
-            this.name = name;
+            this.name = ParameterValidator.validateRequired(Map.of("name", name), "name",
+                    "DataModel name must not be null or blank");
         }
 
         /**
@@ -288,14 +298,19 @@ public final class DataModel {
          * @throws IllegalArgumentException if a table with the same name already exists
          */
         public Builder table(DmnTable table) {
-            Objects.requireNonNull(table, "table must not be null");
+            ParameterValidator.validateNotNull(table, "table");
+            ParameterValidator.validateRequired(Map.of("table.name", table.getName()), "table.name",
+                    "Table name must not be null or blank");
+
             for (DmnTable t : tables) {
                 if (t.getName().equals(table.getName())) {
-                    throw new IllegalArgumentException(
-                            "Duplicate table name: '" + table.getName() + "'");
+                    String errorMsg = "Duplicate table name: '" + table.getName() + "'";
+                    skillLogger.warn(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
                 }
             }
             tables.add(table);
+            skillLogger.debug("Added table '{}' to DataModel '{}'", table.getName(), this.name);
             return this;
         }
 
@@ -307,14 +322,19 @@ public final class DataModel {
          * @throws IllegalArgumentException if a relationship with the same name already exists
          */
         public Builder relationship(DmnRelationship relationship) {
-            Objects.requireNonNull(relationship, "relationship must not be null");
+            ParameterValidator.validateNotNull(relationship, "relationship");
+            ParameterValidator.validateRequired(Map.of("relationship.name", relationship.getName()), "relationship.name",
+                    "Relationship name must not be null or blank");
+
             for (DmnRelationship r : relationships) {
                 if (r.getName().equals(relationship.getName())) {
-                    throw new IllegalArgumentException(
-                            "Duplicate relationship name: '" + relationship.getName() + "'");
+                    String errorMsg = "Duplicate relationship name: '" + relationship.getName() + "'";
+                    skillLogger.warn(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
                 }
             }
             relationships.add(relationship);
+            skillLogger.debug("Added relationship '{}' to DataModel '{}'", relationship.getName(), this.name);
             return this;
         }
 

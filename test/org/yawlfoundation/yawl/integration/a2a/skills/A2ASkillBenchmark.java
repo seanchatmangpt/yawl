@@ -232,9 +232,9 @@ public class A2ASkillBenchmark {
         result.printReport();
 
         // Assertions for performance targets
-        assertTrue("Mean should be < 5ms", result.getMean() < 5.0);
-        assertTrue("P99 should be < 10ms", result.getP99() < 10.0);
-        assertTrue("Should achieve > 200 ops/sec", result.getOpsPerSecond() > 200);
+        assertTrue(result.getMean() < 5.0, "Mean should be < 5ms");
+        assertTrue(result.getP99() < 10.0, "P99 should be < 10ms");
+        assertTrue(result.getOpsPerSecond() > 200, "Should achieve > 200 ops/sec");
     }
 
     @Test
@@ -262,8 +262,8 @@ public class A2ASkillBenchmark {
         result.printReport();
 
         // All query aggregates 8 files, should still be fast
-        assertTrue("Mean should be < 15ms", result.getMean() < 15.0);
-        assertTrue("P99 should be < 30ms", result.getP99() < 30.0);
+        assertTrue(result.getMean() < 15.0, "Mean should be < 15ms");
+        assertTrue(result.getP99() < 30.0, "P99 should be < 30ms");
     }
 
     @Test
@@ -350,8 +350,8 @@ public class A2ASkillBenchmark {
             permsResult.getMean(), permsResult.getOpsPerSecond());
 
         // Metadata access should be extremely fast
-        assertTrue("getId should be < 0.001ms", idResult.getMean() < 0.001);
-        assertTrue("Should achieve > 10M ops/sec", idResult.getOpsPerSecond() > 10_000_000);
+        assertTrue(idResult.getMean() < 0.001, "getId should be < 0.001ms");
+        assertTrue(idResult.getOpsPerSecond() > 10_000_000, "Should achieve > 10M ops/sec");
     }
 
     @Test
@@ -391,7 +391,7 @@ public class A2ASkillBenchmark {
         result.printReport();
 
         // Error handling should be fast
-        assertTrue("Error handling should be < 1ms", result.getMean() < 1.0);
+        assertTrue(result.getMean() < 1.0, "Error handling should be < 1ms");
     }
 
     // =========================================================================
@@ -427,7 +427,7 @@ public class A2ASkillBenchmark {
         System.out.printf("getRequiredPerms():    mean=%.6f ms, ops/sec=%.0f%n",
             permsResult.getMean(), permsResult.getOpsPerSecond());
 
-        assertTrue("Should achieve > 10M ops/sec", idResult.getOpsPerSecond() > 10_000_000);
+        assertTrue(idResult.getOpsPerSecond() > 10_000_000, "Should achieve > 10M ops/sec");
     }
 
     @Test
@@ -445,7 +445,7 @@ public class A2ASkillBenchmark {
 
         result.printReport();
 
-        assertTrue("Error handling should be < 1ms", result.getMean() < 1.0);
+        assertTrue(result.getMean() < 1.0, "Error handling should be < 1ms");
     }
 
     // =========================================================================
@@ -538,7 +538,7 @@ public class A2ASkillBenchmark {
                 op, result.getMean(), result.getOpsPerSecond());
 
             // Detection should be fast
-            assertTrue("Forbidden detection should be < 1ms", result.getMean() < 1.0);
+            assertTrue(result.getMean() < 1.0, "Forbidden detection should be < 1ms");
         }
     }
 
@@ -564,7 +564,7 @@ public class A2ASkillBenchmark {
         System.out.printf("getRequiredPerms():    mean=%.6f ms, ops/sec=%.0f%n",
             permsResult.getMean(), permsResult.getOpsPerSecond());
 
-        assertTrue("Should achieve > 10M ops/sec", idResult.getOpsPerSecond() > 10_000_000);
+        assertTrue(idResult.getOpsPerSecond() > 10_000_000, "Should achieve > 10M ops/sec");
     }
 
     // =========================================================================
@@ -730,8 +730,8 @@ public class A2ASkillBenchmark {
         System.out.printf("With 3 params:         mean=%.4f ms, ops/sec=%.0f%n",
             withParamsResult.getMean(), withParamsResult.getOpsPerSecond());
 
-        assertTrue("Simple build should be < 0.1ms", simpleResult.getMean() < 0.1);
-        assertTrue("Should achieve > 1M ops/sec", simpleResult.getOpsPerSecond() > 1_000_000);
+        assertTrue(simpleResult.getMean() < 0.1, "Simple build should be < 0.1ms");
+        assertTrue(simpleResult.getOpsPerSecond() > 1_000_000, "Should achieve > 1M ops/sec");
     }
 
     @Test
@@ -760,7 +760,7 @@ public class A2ASkillBenchmark {
         System.out.printf("getOrDefault:          mean=%.6f ms, ops/sec=%.0f%n",
             defaultResult.getMean(), defaultResult.getOpsPerSecond());
 
-        assertTrue("Should achieve > 50M ops/sec", accessResult.getOpsPerSecond() > 50_000_000);
+        assertTrue(accessResult.getOpsPerSecond() > 50_000_000, "Should achieve > 50M ops/sec");
     }
 
     // =========================================================================
@@ -799,7 +799,7 @@ public class A2ASkillBenchmark {
         System.out.printf("success(data, time):   mean=%.4f ms, ops/sec=%.0f%n",
             successWithTimeResult.getMean(), successWithTimeResult.getOpsPerSecond());
 
-        assertTrue("Result creation should be < 0.1ms", successResult.getMean() < 0.1);
+        assertTrue(successResult.getMean() < 0.1, "Result creation should be < 0.1ms");
     }
 
     // =========================================================================
@@ -862,7 +862,7 @@ public class A2ASkillBenchmark {
         System.out.println();
 
         // This test always passes - it's just for reporting
-        assertTrue("Summary report generated", true);
+        assertTrue(true, "Summary report generated");
     }
 
     // =========================================================================

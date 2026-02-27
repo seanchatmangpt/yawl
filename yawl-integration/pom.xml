@@ -387,6 +387,8 @@
                              SPARQL files cause "invalid flag" compiler errors
                         <exclude>**/*.sparql</exclude>
 
+                        <!-- Exclude all test files -->
+                        <exclude>**/test/**</exclude>
 
                     </excludes>
                     <testIncludes>

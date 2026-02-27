@@ -145,6 +145,8 @@ public final class YawlGraalPyWorkflowToolSpecifications implements AutoCloseabl
                 .inputSchema(schema)
                 .build(),
             (exchange, args) -> {
+                Objects.requireNonNull(args, "Request arguments cannot be null");
+                Objects.requireNonNull(args.arguments(), "Arguments map cannot be null");
                 String description = (String) args.arguments().get("description");
                 if (description == null || description.isBlank()) {
                     return errorResult("description is required and must not be blank");
@@ -157,8 +159,13 @@ public final class YawlGraalPyWorkflowToolSpecifications implements AutoCloseabl
         long start = System.currentTimeMillis();
         try {
             PowlModel model = bridge.generate(description);
+            Objects.requireNonNull(model, "Generated PowlModel cannot be null - check description and bridge configuration");
+
             PetriNet petriNet = converter.convert(model);
+            Objects.requireNonNull(petriNet, "Converted PetriNet cannot be null - check PowlModel completeness");
+
             String yawlXml = exporter.export(petriNet);
+            Objects.requireNonNull(yawlXml, "Exported YAWL XML cannot be null - check PetriNet model");
             long elapsed = System.currentTimeMillis() - start;
 
             String response = "path: graalpy+pm4py\n"

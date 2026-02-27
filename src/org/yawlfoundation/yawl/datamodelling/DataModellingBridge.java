@@ -26,6 +26,9 @@ import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionContext;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionEngine;
 import org.yawlfoundation.yawl.graaljs.JavaScriptSandboxConfig;
+import org.yawlfoundation.yawl.integration.util.GraalVMUtils;
+import org.yawlfoundation.yawl.integration.util.ParameterValidator;
+import org.yawlfoundation.yawl.integration.util.YawlConstants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +36,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Thin Java facade over the data-modelling-sdk WebAssembly module (v2.3.0).
@@ -108,6 +113,12 @@ public final class DataModellingBridge implements AutoCloseable {
     /** Classpath resource: wasm-bindgen ES module JS glue. */
     static final String GLUE_RESOURCE = "wasm/data_modelling_wasm.js";
 
+    /** Maximum data payload size (10MB) from YawlConstants */
+    private static final int MAX_DATA_SIZE = YawlConstants.MAX_DATA_SIZE_BYTES;
+
+    /** Default pool size for concurrent contexts */
+    private static final int DEFAULT_POOL_SIZE = 1;
+
     private final JavaScriptExecutionEngine jsEngine;
     private final Path tempDir;
 
@@ -119,8 +130,17 @@ public final class DataModellingBridge implements AutoCloseable {
      * @throws IllegalArgumentException  if poolSize &lt; 1
      */
     public DataModellingBridge(int poolSize) {
+        ParameterValidator.validateNotNull(poolSize, "poolSize");
         if (poolSize < 1) {
             throw new IllegalArgumentException("poolSize must be at least 1, got: " + poolSize);
+        }
+
+        // Check if GraalVM/WASM is available
+        if (!GraalVMUtils.isAvailable()) {
+            throw new DataModellingException(
+                "GraalVM/WASM not available: " + GraalVMUtils.getFallbackGuidance(),
+                DataModellingException.ErrorKind.MODULE_LOAD_ERROR
+            );
         }
         this.tempDir = extractResourcesToTemp();
 
@@ -141,7 +161,8 @@ public final class DataModellingBridge implements AutoCloseable {
         Path wasmPath = tempDir.resolve("data_modelling_wasm_bg.wasm");
         jsEngine.getContextPool().executeVoid(ctx -> initWasmInContext(ctx, gluePath, wasmPath));
 
-        log.info("DataModellingBridge initialised: poolSize={}", poolSize);
+        log.info("DataModellingBridge initialised with poolSize={}, maxDataSize={}",
+                poolSize, MAX_DATA_SIZE);
     }
 
     /**
@@ -163,7 +184,9 @@ public final class DataModellingBridge implements AutoCloseable {
      * @throws DataModellingException  EXECUTION_ERROR on parse failure
      */
     public String parseOdcsYaml(String yaml) {
-        return call("parse_odcs_yaml", yaml);
+        String validatedYaml = ParameterValidator.validateRequired(Map.of("yaml", yaml), "yaml");
+        ParameterValidator.validateSize(validatedYaml, "ODCS YAML", MAX_DATA_SIZE);
+        return call("parse_odcs_yaml", validatedYaml);
     }
 
     /**
@@ -185,7 +208,21 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String importFromSql(String sql, String dialect) {
-        return call("import_from_sql", sql, dialect);
+        String validatedSql = ParameterValidator.validateRequired(Map.of("sql", sql), "sql");
+        ParameterValidator.validateSize(validatedSql, "SQL content", MAX_DATA_SIZE);
+        String validatedDialect = ParameterValidator.validateRequired(
+            Map.of("dialect", dialect), "dialect",
+            "SQL dialect is required: postgres, mysql, sqlite, generic, or databricks"
+        );
+
+        // Validate dialect format
+        ParameterValidator.validateInSet(
+            validatedDialect.toLowerCase(),
+            Set.of("postgres", "mysql", "sqlite", "generic", "databricks"),
+            "SQL dialect"
+        );
+
+        return call("import_from_sql", validatedSql, validatedDialect);
     }
 
     /**
@@ -195,7 +232,11 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String importFromAvro(String avroContent) {
-        return call("import_from_avro", avroContent);
+        String validatedAvro = ParameterValidator.validateRequired(
+            Map.of("avroContent", avroContent), "avroContent"
+        );
+        ParameterValidator.validateSize(validatedAvro, "Avro content", MAX_DATA_SIZE);
+        return call("import_from_avro", validatedAvro);
     }
 
     /**
@@ -205,7 +246,11 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String importFromJsonSchema(String jsonSchemaContent) {
-        return call("import_from_json_schema", jsonSchemaContent);
+        String validatedJsonSchema = ParameterValidator.validateRequired(
+            Map.of("jsonSchemaContent", jsonSchemaContent), "jsonSchemaContent"
+        );
+        ParameterValidator.validateSize(validatedJsonSchema, "JSON Schema content", MAX_DATA_SIZE);
+        return call("import_from_json_schema", validatedJsonSchema);
     }
 
     /**
@@ -215,7 +260,11 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String importFromProtobuf(String protobufContent) {
-        return call("import_from_protobuf", protobufContent);
+        String validatedProtobuf = ParameterValidator.validateRequired(
+            Map.of("protobufContent", protobufContent), "protobufContent"
+        );
+        ParameterValidator.validateSize(validatedProtobuf, "Protobuf content", MAX_DATA_SIZE);
+        return call("import_from_protobuf", validatedProtobuf);
     }
 
     /**
@@ -225,7 +274,11 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String importFromCads(String yamlContent) {
-        return call("import_from_cads", yamlContent);
+        String validatedCads = ParameterValidator.validateRequired(
+            Map.of("yamlContent", yamlContent), "yamlContent"
+        );
+        ParameterValidator.validateSize(validatedCads, "CADS content", MAX_DATA_SIZE);
+        return call("import_from_cads", validatedCads);
     }
 
     /**
@@ -235,7 +288,11 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String importFromOdps(String yamlContent) {
-        return call("import_from_odps", yamlContent);
+        String validatedOdps = ParameterValidator.validateRequired(
+            Map.of("yamlContent", yamlContent), "yamlContent"
+        );
+        ParameterValidator.validateSize(validatedOdps, "ODPS content", MAX_DATA_SIZE);
+        return call("import_from_odps", validatedOdps);
     }
 
     /**
@@ -247,7 +304,19 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return domain JSON string; never null
      */
     public String importBpmnModel(String domainId, String xmlContent, @Nullable String modelName) {
-        return call("import_bpmn_model", domainId, xmlContent, modelName != null ? modelName : "");
+        String validatedDomainId = ParameterValidator.validateRequired(
+            Map.of("domainId", domainId), "domainId"
+        );
+        String validatedXml = ParameterValidator.validateRequired(
+            Map.of("xmlContent", xmlContent), "xmlContent"
+        );
+        ParameterValidator.validateSize(validatedXml, "BPMN XML content", MAX_DATA_SIZE);
+
+        String validatedModelName = ParameterValidator.getOptional(
+            Map.of("modelName", modelName), "modelName", ""
+        );
+
+        return call("import_bpmn_model", validatedDomainId, validatedXml, validatedModelName);
     }
 
     /**
@@ -259,7 +328,19 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return domain JSON string; never null
      */
     public String importDmnModel(String domainId, String xmlContent, @Nullable String modelName) {
-        return call("import_dmn_model", domainId, xmlContent, modelName != null ? modelName : "");
+        String validatedDomainId = ParameterValidator.validateRequired(
+            Map.of("domainId", domainId), "domainId"
+        );
+        String validatedXml = ParameterValidator.validateRequired(
+            Map.of("xmlContent", xmlContent), "xmlContent"
+        );
+        ParameterValidator.validateSize(validatedXml, "DMN XML content", MAX_DATA_SIZE);
+
+        String validatedModelName = ParameterValidator.getOptional(
+            Map.of("modelName", modelName), "modelName", ""
+        );
+
+        return call("import_dmn_model", validatedDomainId, validatedXml, validatedModelName);
     }
 
     /**
@@ -271,7 +352,19 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return domain JSON string; never null
      */
     public String importOpenapiSpec(String domainId, String content, @Nullable String apiName) {
-        return call("import_openapi_spec", domainId, content, apiName != null ? apiName : "");
+        String validatedDomainId = ParameterValidator.validateRequired(
+            Map.of("domainId", domainId), "domainId"
+        );
+        String validatedContent = ParameterValidator.validateRequired(
+            Map.of("content", content), "content"
+        );
+        ParameterValidator.validateSize(validatedContent, "OpenAPI content", MAX_DATA_SIZE);
+
+        String validatedApiName = ParameterValidator.getOptional(
+            Map.of("apiName", apiName), "apiName", ""
+        );
+
+        return call("import_openapi_spec", validatedDomainId, validatedContent, validatedApiName);
     }
 
     // ── Schema export ─────────────────────────────────────────────────────────
@@ -294,7 +387,24 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return SQL DDL string; never null
      */
     public String exportToSql(String workspaceJson, String dialect) {
-        return call("sanitize_sql_identifier", workspaceJson, dialect);
+        String validatedWorkspaceJson = ParameterValidator.validateRequired(
+            Map.of("workspaceJson", workspaceJson), "workspaceJson"
+        );
+        ParameterValidator.validateSize(validatedWorkspaceJson, "workspace JSON", MAX_DATA_SIZE);
+
+        String validatedDialect = ParameterValidator.validateRequired(
+            Map.of("dialect", dialect), "dialect",
+            "SQL dialect is required: postgres, mysql, sqlite, generic, or databricks"
+        );
+
+        // Validate dialect format
+        ParameterValidator.validateInSet(
+            validatedDialect.toLowerCase(),
+            Set.of("postgres", "mysql", "sqlite", "generic", "databricks"),
+            "SQL dialect"
+        );
+
+        return call("sanitize_sql_identifier", validatedWorkspaceJson, validatedDialect);
     }
 
     /**
@@ -351,7 +461,16 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return ODCS v3.1.0 workspace JSON string; never null
      */
     public String convertToOdcs(String input, @Nullable String format) {
-        return call("convert_to_odcs", input, format != null ? format : "");
+        String validatedInput = ParameterValidator.validateRequired(
+            Map.of("input", input), "input"
+        );
+        ParameterValidator.validateSize(validatedInput, "input content", MAX_DATA_SIZE);
+
+        String validatedFormat = ParameterValidator.getOptional(
+            Map.of("format", format), "format", ""
+        );
+
+        return call("convert_to_odcs", validatedInput, validatedFormat);
     }
 
     /**
@@ -400,7 +519,16 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String createWorkspace(String name, String ownerId) {
-        return call("create_workspace", name, ownerId);
+        String validatedName = ParameterValidator.validateRequired(
+            Map.of("name", name), "name",
+            "Workspace name must not be empty"
+        );
+        String validatedOwnerId = ParameterValidator.validateRequired(
+            Map.of("ownerId", ownerId), "ownerId",
+            "Owner identifier must not be empty"
+        );
+
+        return call("create_workspace", validatedName, validatedOwnerId);
     }
 
     /**
@@ -410,7 +538,11 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return workspace JSON string; never null
      */
     public String parseWorkspaceYaml(String yamlContent) {
-        return call("parse_workspace_yaml", yamlContent);
+        String validatedYaml = ParameterValidator.validateRequired(
+            Map.of("yamlContent", yamlContent), "yamlContent"
+        );
+        ParameterValidator.validateSize(validatedYaml, "workspace YAML", MAX_DATA_SIZE);
+        return call("parse_workspace_yaml", validatedYaml);
     }
 
     /**
@@ -444,7 +576,19 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return domain JSON string; never null
      */
     public String createDomain(String name) {
-        return call("create_domain", name);
+        String validatedName = ParameterValidator.validateRequired(
+            Map.of("name", name), "name",
+            "Domain name must not be empty"
+        );
+
+        // Domain name validation - should follow naming conventions
+        if (!validatedName.matches("^[a-zA-Z0-9_\\-]+$")) {
+            throw new IllegalArgumentException(
+                "Domain name must contain only letters, numbers, underscores, and hyphens"
+            );
+        }
+
+        return call("create_domain", validatedName);
     }
 
     /**
@@ -782,7 +926,11 @@ public final class DataModellingBridge implements AutoCloseable {
      * @throws DataModellingException  EXECUTION_ERROR if validation fails
      */
     public void validateOdps(String yamlContent) {
-        call("validate_odps", yamlContent);
+        String validatedYaml = ParameterValidator.validateRequired(
+            Map.of("yamlContent", yamlContent), "yamlContent"
+        );
+        ParameterValidator.validateSize(validatedYaml, "ODPS YAML content", MAX_DATA_SIZE);
+        call("validate_odps", validatedYaml);
     }
 
     /**
@@ -792,7 +940,10 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return validation result JSON string; never null
      */
     public String validateTableName(String name) {
-        return call("validate_table_name", name);
+        String validatedName = ParameterValidator.validateRequired(
+            Map.of("name", name), "name"
+        );
+        return call("validate_table_name", validatedName);
     }
 
     /**
@@ -802,7 +953,10 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return validation result JSON string; never null
      */
     public String validateColumnName(String name) {
-        return call("validate_column_name", name);
+        String validatedName = ParameterValidator.validateRequired(
+            Map.of("name", name), "name"
+        );
+        return call("validate_column_name", validatedName);
     }
 
     /**
@@ -812,7 +966,10 @@ public final class DataModellingBridge implements AutoCloseable {
      * @return validation result JSON string; never null
      */
     public String validateDataType(String dataType) {
-        return call("validate_data_type", dataType);
+        String validatedDataType = ParameterValidator.validateRequired(
+            Map.of("dataType", dataType), "dataType"
+        );
+        return call("validate_data_type", validatedDataType);
     }
 
     /**
@@ -848,9 +1005,16 @@ public final class DataModellingBridge implements AutoCloseable {
      */
     @Override
     public void close() {
-        jsEngine.close();
-        deleteTempDir(tempDir);
-        log.info("DataModellingBridge closed");
+        try {
+            log.debug("Closing DataModellingBridge and releasing resources");
+            jsEngine.close();
+            deleteTempDir(tempDir);
+            log.info("DataModellingBridge closed successfully");
+        } catch (Exception e) {
+            log.error("Error while closing DataModellingBridge", e);
+            // Continue with cleanup even if there's an error
+            deleteTempDir(tempDir);
+        }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -864,28 +1028,57 @@ public final class DataModellingBridge implements AutoCloseable {
      * @throws DataModellingException  EXECUTION_ERROR if the function traps
      */
     private String call(String functionName, String... args) {
-        return jsEngine.getContextPool().execute(ctx -> {
-            StringBuilder js = new StringBuilder(functionName).append('(');
-            for (int i = 0; i < args.length; i++) {
-                String paramName = "__dm_arg" + i + "__";
-                ctx.getRawContext().getBindings("js").putMember(paramName, args[i]);
-                if (i > 0) js.append(',');
-                js.append(paramName);
-            }
-            js.append(')');
-            try {
-                Value result = ctx.getRawContext().eval("js", js.toString());
-                return result.isNull() ? "" : result.asString();
-            } catch (Exception e) {
-                throw new DataModellingException(
-                        "WASM function '" + functionName + "' failed: " + e.getMessage(),
-                        DataModellingException.ErrorKind.EXECUTION_ERROR, e);
-            } finally {
+        log.debug("Calling WASM function: {} with {} arguments", functionName, args.length);
+
+        try {
+            return jsEngine.getContextPool().execute(ctx -> {
+                StringBuilder js = new StringBuilder(functionName).append('(');
                 for (int i = 0; i < args.length; i++) {
-                    ctx.getRawContext().getBindings("js").removeMember("__dm_arg" + i + "__");
+                    String paramName = "__dm_arg" + i + "__";
+                    ctx.getRawContext().getBindings("js").putMember(paramName, args[i]);
+                    if (i > 0) js.append(',');
+                    js.append(paramName);
                 }
-            }
-        });
+                js.append(')');
+
+                try {
+                    Value result = ctx.getRawContext().eval("js", js.toString());
+                    String resultStr = result.isNull() ? "" : result.asString();
+
+                    log.debug("WASM function {} completed successfully", functionName);
+                    return resultStr;
+                } catch (Exception e) {
+                    // Check if it's a GraalVM-related error
+                    if (GraalVMUtils.isUnavailableException(e)) {
+                        log.error("GraalVM-related error in WASM function {}: {}", functionName, e.getMessage());
+                        throw new DataModellingException(
+                            "GraalVM error in WASM function '" + functionName + "': " +
+                            GraalVMUtils.getFallbackGuidance(),
+                            DataModellingException.ErrorKind.EXECUTION_ERROR, e
+                        );
+                    }
+
+                    log.error("WASM function '{}' failed: {}", functionName, e.getMessage());
+                    throw new DataModellingException(
+                        "WASM function '" + functionName + "' failed: " + e.getMessage(),
+                        DataModellingException.ErrorKind.EXECUTION_ERROR, e
+                    );
+                } finally {
+                    // Clean up parameter bindings
+                    for (int i = 0; i < args.length; i++) {
+                        ctx.getRawContext().getBindings("js").removeMember("__dm_arg" + i + "__");
+                    }
+                }
+            });
+        } catch (DataModellingException e) {
+            throw e; // Re-throw our own exceptions
+        } catch (Exception e) {
+            log.error("Unexpected error executing WASM function {}", functionName, e);
+            throw new DataModellingException(
+                "Unexpected error executing WASM function '" + functionName + "': " + e.getMessage(),
+                DataModellingException.ErrorKind.EXECUTION_ERROR, e
+            );
+        }
     }
 
     /**

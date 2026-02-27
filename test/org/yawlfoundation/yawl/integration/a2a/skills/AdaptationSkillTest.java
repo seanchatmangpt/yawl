@@ -251,4 +251,58 @@ class AdaptationSkillTest {
         assertTrue((boolean) result.get("adapted"),
             "Lowercase DEADLINE_EXCEEDED must still match");
     }
+
+    // =========================================================================
+    // Exception Behavior Tests (New)
+    // =========================================================================
+
+    @Test
+    void testInvalidSeverityThrowsException() {
+        // Test that invalid severity throws IllegalArgumentException instead of defaulting to MEDIUM
+        SkillRequest request = SkillRequest.builder("adapt_to_event")
+            .parameter("eventType", "DEADLINE_EXCEEDED")
+            .parameter("severity", "INVALID_SEVERITY")
+            .build();
+
+        SkillResult result = skill.execute(request);
+
+        assertTrue(result.isError(), "Invalid severity must return error");
+        assertTrue(result.getError().contains("Invalid severity: INVALID_SEVERITY"),
+            "Error must contain the exact invalid severity value");
+    }
+
+    @Test
+    void testInvalidSeverityWithDifferentValues() {
+        String[] invalidSeverities = {"INVALID", "unknown", "HIGHX", "CRITICAL!"};
+
+        for (String severity : invalidSeverities) {
+            SkillRequest request = SkillRequest.builder("adapt_to_event")
+                .parameter("eventType", "DEADLINE_EXCEEDED")
+                .parameter("severity", severity)
+                .build();
+
+            SkillResult result = skill.execute(request);
+
+            assertTrue(result.isError(), "Severity '" + severity + "' must throw exception");
+            assertTrue(result.getError().contains("Invalid severity: " + severity),
+                "Error must mention invalid severity: " + severity);
+        }
+    }
+
+    @Test
+    void testValidSeverityStillWorks() {
+        String[] validSeverities = {"LOW", "MEDIUM", "HIGH", "CRITICAL"};
+
+        for (String severity : validSeverities) {
+            SkillRequest request = SkillRequest.builder("adapt_to_event")
+                .parameter("eventType", "DEADLINE_EXCEEDED")
+                .parameter("severity", severity)
+                .build();
+
+            SkillResult result = skill.execute(request);
+
+            assertTrue(result.isSuccess(), "Valid severity '" + severity + "' must work");
+            assertEquals(severity, result.get("severity"), "Severity must be preserved");
+        }
+    }
 }
