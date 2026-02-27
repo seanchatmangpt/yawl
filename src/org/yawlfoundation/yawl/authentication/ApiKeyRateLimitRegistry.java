@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+
 /**
  * Per-tenant sliding window rate limiter for A2A API requests.
  *
@@ -156,17 +157,17 @@ public class ApiKeyRateLimitRegistry {
      * @param rateLimitProvider provider for rate limits per minute
      * @param windowProvider provider for window sizes in milliseconds
      */
-    public ApiKeyRateLimitRegistry(RateLimitSettingsProvider.RateLimitQuery rateLimitProvider,
-                                  RateLimitSettingsProvider.WindowQuery windowProvider) {
+    public ApiKeyRateLimitRegistry(RateLimitQuery rateLimitProvider,
+                                  WindowQuery windowProvider) {
         this.settingsProvider = new RateLimitSettingsProvider() {
             @Override
             public long getRateLimit(String tenantId) {
-                return DEFAULT_RATE_LIMIT;
+                return rateLimitProvider.getRateLimit(tenantId);
             }
 
             @Override
             public long getWindowMs(String tenantId) {
-                return DEFAULT_WINDOW_MS;
+                return windowProvider.getWindowMs(tenantId);
             }
         };
         this.rateLimitStates = new ConcurrentHashMap<>();
