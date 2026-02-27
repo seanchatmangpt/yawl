@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://www.citi.qut.edu.au/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.citi.qut.edu.au/yawl YAWL_Schema.xsd">
+  <specification uri="EmptyNetSpecification.xml">
+    <metaData />
+    <rootNet id="top">
+      <processControlElements>
+        <inputCondition id="i-top">
+          <name>start</name>
+        </inputCondition>
+        <outputCondition id="o-top">
+          <name>end</name>
+        </outputCondition>
+      </processControlElements>
+    </rootNet>
+  </specification>
+</specificationSet>

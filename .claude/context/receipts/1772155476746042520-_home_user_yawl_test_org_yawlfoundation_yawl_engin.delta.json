@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772155476746042520,
+  "timestamp_rfc": "2026-02-27T01:24:36.746042520Z",
+  "session_id": "7a22268e-5b6a-4d1c-8f8e-70c7147201d5",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/engine/StatefulEngineStressTest.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1e0d3d14bdf864acc25539845aecdd953d95eba627b16557a2f346a1b43efbb7",
+  "delta_hash": "36398625145b67672b1003125ac356855ce2352c0e3298dea52f68e866b7acf8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "ScopedValue.where",
+        "change": "Added"
+      }
+    }
+  ]
+}

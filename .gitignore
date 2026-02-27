@@ -17,6 +17,7 @@ dependency-reduced-pom.xml
 maven_compile.log
 maven*.log
 build-log.txt
+report.txt
 
 # Maven cache (local only)
 .m2/
@@ -66,6 +67,7 @@ out/
 .project
 .settings/
 bin/
+!yawl-hooks/bin/
 .factorypath
 
 # =============================================================================
@@ -238,3 +240,5 @@ checksums/*.md5
 docs/v6/latest/
 docs/v6/performance-history/
 docs/v6/static-analysis-history/
+_build/
+META-INF/

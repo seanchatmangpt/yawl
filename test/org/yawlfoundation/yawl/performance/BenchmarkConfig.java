@@ -24,6 +24,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.profile.GCProfiler;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -99,6 +100,11 @@ public class BenchmarkConfig {
             .threads(THREAD_COUNT)
             .resultFormat(ResultFormatType.JSON)
             .result(RESULTS_DIR + "/concurrency-benchmarks.json")
+            // GCProfiler adds gc.alloc.rate.norm (bytes/op) to results.
+            // Tracks allocations *per operation* — unlike bytes/sec, this metric
+            // does not mask improvements when faster code also runs more often.
+            // (Apache Kafka JMH pattern: https://github.com/apache/kafka/blob/trunk/jmh-benchmarks/README.md)
+            .addProfiler(GCProfiler.class)
             .jvmArgs(JVM_CONFIG.split(" "))
             .build();
 
@@ -123,6 +129,7 @@ public class BenchmarkConfig {
             .threads(THREAD_COUNT)
             .resultFormat(ResultFormatType.JSON)
             .result(RESULTS_DIR + "/memory-benchmarks.json")
+            .addProfiler(GCProfiler.class)
             .jvmArgs(JVM_CONFIG.split(" "))
             .build();
 
@@ -147,6 +154,7 @@ public class BenchmarkConfig {
             .threads(THREAD_COUNT)
             .resultFormat(ResultFormatType.JSON)
             .result(RESULTS_DIR + "/contention-benchmarks.json")
+            .addProfiler(GCProfiler.class)
             .jvmArgs(JVM_CONFIG.split(" "))
             .build();
 

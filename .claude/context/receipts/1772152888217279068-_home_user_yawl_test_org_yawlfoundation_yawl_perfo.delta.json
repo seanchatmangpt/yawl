@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772152888217279068,
+  "timestamp_rfc": "2026-02-27T00:41:28.217279068Z",
+  "session_id": "86e44b67-bcb0-4b38-b172-73dd4aad8312",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/LoadTestSuite.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "a55fb319349f00c7788987c8a7395cf954ec063a73a07ecc937e2e6f7f4ea6c4",
+  "delta_hash": "ccb3b4d91c08369c7063e2a832eb50df5dba627feb4363a1a217cdbf7be224e3",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/**",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private Future<?> submitWorker(ExecutorS",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "LoadTestResult",
+        "change": "Added"
+      }
+    }
+  ]
+}

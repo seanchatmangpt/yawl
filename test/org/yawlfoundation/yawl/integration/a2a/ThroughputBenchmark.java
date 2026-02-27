@@ -18,362 +18,194 @@
 
 package org.yawlfoundation.yawl.integration.a2a;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.*;
+import org.yawlfoundation.yawl.elements.YSpecification;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
+import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
+import org.yawlfoundation.yawl.stateless.listener.YWorkItemEventListener;
+import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
+import org.yawlfoundation.yawl.stateless.listener.event.YWorkItemEvent;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Comprehensive throughput benchmark for YAWL HTTP client modernization
+ * Throughput and correctness benchmark using real {@link YStatelessEngine}.
  *
- * Validates the 5-10x throughput improvement claim by comparing:
- * 1. Legacy blocking implementation
- * 2. Virtual thread async implementation
- * 3. Reactive streaming implementation
+ * <p>Replaces the previous implementation that:</p>
+ * <ul>
+ *   <li>Required an external YAWL server via {@code YAWL_ENGINE_URL} env var,
+ *       skipping the entire test in CI with {@code assumeTrue}</li>
+ *   <li>Used {@code Thread.sleep(10)} to simulate "work"</li>
+ *   <li>Had a {@code totalLatency} counter that was never incremented,
+ *       making average latency always 0 or NaN</li>
+ *   <li>Referenced non-existent {@code ModernYawlEngineAdapter} and
+ *       {@code VirtualThreadMetrics} classes</li>
+ * </ul>
+ *
+ * <h2>Self-checking invariants</h2>
+ * <ul>
+ *   <li>Percentile monotonicity: p50 ≤ p95 at each measurement point</li>
+ *   <li>Error rate: cascade errors must stay under 10% of enabled events</li>
+ *   <li>Degradation floor: throughput at 20× concurrency ≥ 10% of baseline</li>
+ * </ul>
+ *
+ * <p>Chicago TDD: real engine operations only, no mocks, no external dependencies.</p>
  *
  * @author YAWL Foundation
- * @version 6.0.1
+ * @version 6.0.0
  */
-@Execution(ExecutionMode.CONCURRENT)
+@Tag("benchmark")
+@DisplayName("Throughput Benchmark — real YStatelessEngine workflow operations")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ThroughputBenchmark {
 
-    private static final String TEST_SPECIFICATION = "PerformanceTest:1.0";
-    private static final int WARMUP_ITERATIONS = 100;
-    private static final int THROUGHPUT_TEST_ITERATIONS = 1000;
-    private static final int CONCURRENCY_LEVEL = 50;
-
-    private static ModernYawlEngineAdapter adapter;
-    private static VirtualThreadMetrics metrics;
-
-    @BeforeAll
-    static void setup() throws Exception {
-        assumeTrue(
-            System.getenv("YAWL_ENGINE_URL") != null,
-            "YAWL_ENGINE_URL environment variable must be set for benchmark"
-        );
-
-        adapter = ModernYawlEngineAdapter.fromEnvironment();
-        metrics = new VirtualThreadMetrics();
-        adapter.connect(Duration.ofSeconds(30));
-    }
-
-    @BeforeEach
-    void warmup() throws Exception {
-        System.out.println("Warming up with " + WARMUP_ITERATIONS + " operations...");
-
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            try {
-                String caseId = adapter.launchCase(TEST_SPECIFICATION,
-                    String.format("{\"warmup\": true, \"iteration\": %d}", i));
-                if (i % 25 == 0) {
-                    System.out.printf("Warmup progress: %d/%d%n", i, WARMUP_ITERATIONS);
-                }
-            } catch (Exception e) {
-                // Ignore warmup failures
-            }
-        }
-
-        System.out.println("Warmup completed.");
-    }
+    // ── B1: Sequential workflow throughput ────────────────────────────────────
 
     @Test
-    @DisplayName("Benchmark: Legacy Blocking Implementation")
-    void testLegacyBlockingThroughput() throws Exception {
-        System.out.println("\n=== Testing Legacy Blocking Implementation ===");
+    @Order(1)
+    @DisplayName("B1: Sequential workflow throughput — 100 case starts, measure ops/sec")
+    void testSequentialWorkflowThroughput() throws Exception {
+        YStatelessEngine engine = new YStatelessEngine();
+        YSpecification spec = loadSpec(engine);
 
-        long startTime = System.nanoTime();
-        AtomicLong successCount = new AtomicLong(0);
-        AtomicLong failureCount = new AtomicLong(0);
-        AtomicLong totalLatency = new AtomicLong(0);
+        int caseCount = 100;
+        long[] latenciesNs = new long[caseCount];
 
-        List<Future<?>> futures = new ArrayList<>();
-        ExecutorService executor = Executors.newFixedThreadPool(CONCURRENCY_LEVEL);
+        long totalStart = System.nanoTime();
+        for (int i = 0; i < caseCount; i++) {
+            long opStart = System.nanoTime();
+            List<YNetRunner> runners = engine.launchCasesParallel(spec, List.of("seq-" + i));
+            latenciesNs[i] = System.nanoTime() - opStart;
+            assertFalse(runners.isEmpty(), "Case " + i + " must produce a runner");
+        }
+        double totalSec = (System.nanoTime() - totalStart) / 1_000_000_000.0;
 
-        // Submit blocking operations
-        for (int i = 0; i < THROUGHPUT_TEST_ITERATIONS; i++) {
-            final int iteration = i;
-            Future<?> future = executor.submit(() -> {
-                long operationStart = System.nanoTime();
-                try {
-                    String caseId = adapter.launchCase(
-                        TEST_SPECIFICATION,
-                        String.format("{\"legacy\": true, \"iteration\": %d}", iteration)
-                    );
+        long[] sorted = latenciesNs.clone();
+        Arrays.sort(sorted);
+        double p50ms = sorted[caseCount / 2]           / 1_000_000.0;
+        double p95ms = sorted[(int)(caseCount * 0.95)] / 1_000_000.0;
+        double throughput = caseCount / totalSec;
 
-                    if (caseId != null && !caseId.contains("error")) {
-                        successCount.incrementAndGet();
-                    } else {
-                        failureCount.incrementAndGet();
+        System.out.printf("%n=== SEQUENTIAL THROUGHPUT ===%n");
+        System.out.printf("Cases: %d in %.2f sec = %.1f ops/sec%n", caseCount, totalSec, throughput);
+        System.out.printf("P50: %.1f ms, P95: %.1f ms%n%n", p50ms, p95ms);
+
+        // Self-check: percentile monotonicity
+        assertTrue(p50ms <= p95ms,
+                String.format("Percentile monotonicity violated: p50=%.1f > p95=%.1f", p50ms, p95ms));
+        assertTrue(throughput > 0, "Sequential throughput must be positive");
+    }
+
+    // ── B2: Concurrent case correctness ───────────────────────────────────────
+
+    @Test
+    @Order(2)
+    @DisplayName("B2: Concurrent case correctness — 20 parallel cases with event-driven completion")
+    void testConcurrentCaseCorrectness() throws Exception {
+        YStatelessEngine engine = new YStatelessEngine();
+        YSpecification spec = loadSpec(engine);
+        List<String> errors          = new CopyOnWriteArrayList<>();
+        AtomicLong enabledEvents     = new AtomicLong(0);
+        AtomicLong completedAttempts = new AtomicLong(0);
+
+        engine.addWorkItemEventListener(new YWorkItemEventListener() {
+            @Override
+            public void handleWorkItemEvent(YWorkItemEvent event) {
+                YWorkItem item = event.getWorkItem();
+                if (event.getEventType() == YEventType.ITEM_ENABLED) {
+                    enabledEvents.incrementAndGet();
+                    try {
+                        YWorkItem started = engine.startWorkItem(item);
+                        engine.completeWorkItem(started, "<data/>", null);
+                        completedAttempts.incrementAndGet();
+                    } catch (Exception e) {
+                        errors.add(e.getMessage());
                     }
-
-                    long latency = System.nanoTime() - operationStart;
-                    totalLatency.addAndGet(latency);
-
-                } catch (Exception e) {
-                    failureCount.incrementAndGet();
                 }
-            });
-
-            futures.add(future);
-        }
-
-        // Wait for all operations
-        for (Future<?> future : futures) {
-            try {
-                future.get(30, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                // Timeout or error
             }
+        });
+
+        int concurrency = 20;
+        List<String> caseParams = new ArrayList<>();
+        for (int i = 0; i < concurrency; i++) caseParams.add("conc-" + i);
+
+        List<YNetRunner> runners = engine.launchCasesParallel(spec, caseParams);
+
+        System.out.printf("%n=== CONCURRENT CORRECTNESS (20 cases) ===%n");
+        System.out.printf("Runners: %d/%d, ITEM_ENABLED events: %d, Errors: %d%n%n",
+                runners.size(), concurrency, enabledEvents.get(), errors.size());
+
+        assertFalse(runners.isEmpty(),
+                "At least 1 of 20 concurrent cases must produce a runner");
+
+        // Self-check: error rate must be under 10% of enabled events
+        long totalEnabled = enabledEvents.get();
+        if (totalEnabled > 0) {
+            double errorRate = (double) errors.size() / totalEnabled;
+            assertTrue(errorRate < 0.10,
+                    String.format("Error rate %.1f%% exceeds 10%% threshold. Errors: %s",
+                            errorRate * 100,
+                            errors.subList(0, Math.min(3, errors.size()))));
         }
-
-        executor.shutdown();
-        long endTime = System.nanoTime();
-
-        double durationSeconds = (endTime - startTime) / 1_000_000_000.0;
-        double throughput = successCount.get() / durationSeconds;
-        double avgLatency = totalLatency.get() / (double) successCount.get() / 1_000_000.0;
-        double successRate = (double) successCount.get() / THROUGHPUT_TEST_ITERATIONS * 100;
-
-        printResults("Legacy Blocking", durationSeconds, throughput, avgLatency, successRate);
-
-        // Validate baseline performance
-        assertTrue(throughput > 5, "Legacy baseline should achieve >5 ops/sec");
-        assertTrue(successRate > 95, "Legacy success rate should be >95%");
     }
 
-    @Test
-    @DisplayName("Benchmark: Virtual Thread Async Implementation")
-    void testVirtualThreadAsyncThroughput() throws Exception {
-        System.out.println("\n=== Testing Virtual Thread Async Implementation ===");
-
-        long startTime = System.nanoTime();
-        AtomicInteger successCount = new AtomicInteger(0);
-        AtomicInteger failureCount = new AtomicInteger(0);
-        AtomicLong totalLatency = new AtomicLong(0);
-
-        List<CompletableFuture<?>> futures = new ArrayList<>();
-
-        // Submit async operations using virtual threads
-        for (int i = 0; i < THROUGHPUT_TEST_ITERATIONS; i++) {
-            final int iteration = i;
-            CompletableFuture<Void> future = adapter.launchCaseAsync(
-                TEST_SPECIFICATION,
-                String.format("{\"virtual\": true, \"iteration\": %d}", iteration)
-            ).whenComplete((caseId, error) -> {
-                if (error == null && caseId != null && !caseId.contains("error")) {
-                    successCount.incrementAndGet();
-                } else {
-                    failureCount.incrementAndGet();
-                }
-            });
-
-            futures.add(future);
-        }
-
-        // Wait for all operations
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-            .get(60, TimeUnit.SECONDS);
-
-        long endTime = System.nanoTime();
-
-        double durationSeconds = (endTime - startTime) / 1_000_000_000.0;
-        double throughput = successCount.get() / durationSeconds;
-        double avgLatency = totalLatency.get() / (double) successCount.get() / 1_000_000.0;
-        double successRate = (double) successCount.get() / THROUGHPUT_TEST_ITERATIONS * 100;
-
-        printResults("Virtual Thread Async", durationSeconds, throughput, avgLatency, successRate);
-
-        // Validate virtual thread performance (5-10x improvement)
-        assertTrue(throughput > 50, "Virtual thread should achieve >50 ops/sec");
-        double improvementRatio = throughput / 10; // Compared to legacy baseline
-        assertTrue(improvementRatio >= 5, "Should show at least 5x improvement over legacy");
-        assertTrue(successRate > 98, "Virtual thread success rate should be >98%");
-    }
+    // ── B3: Throughput degradation bound ─────────────────────────────────────
 
     @Test
-    @DisplayName("Benchmark: Structured Concurrency")
-    void testStructuredConcurrencyThroughput() throws Exception {
-        System.out.println("\n=== Testing Structured Concurrency ===");
+    @Order(3)
+    @DisplayName("B3: Throughput degradation bound — minimum 10% efficiency at 20× concurrency")
+    void testThroughputDegradationBound() throws Exception {
+        YStatelessEngine engine = new YStatelessEngine();
+        YSpecification spec = loadSpec(engine);
 
-        // First create test cases
-        List<String> caseIds = new ArrayList<>();
-        for (int i = 0; i < THROUGHPUT_TEST_ITERATIONS / 10; i++) {
-            String caseId = adapter.launchCaseAsync(
-                TEST_SPECIFICATION,
-                String.format("{\"structured\": true, \"batch\": %d}", i)
-            ).get(10, TimeUnit.SECONDS);
-            caseIds.add(caseId);
-        }
+        int[] concurrencyLevels = {1, 5, 10, 20};
+        double baselineThroughput = -1;
 
-        long startTime = System.nanoTime();
-        AtomicInteger completedCount = new AtomicInteger(0);
-        AtomicInteger failureCount = new AtomicInteger(0);
+        System.out.printf("%n=== THROUGHPUT DEGRADATION BOUND ===%n");
+        System.out.printf("%-12s %-15s %-12s%n", "Concurrency", "Throughput", "Efficiency");
+        System.out.println("-".repeat(39));
 
-        // Process cases using structured concurrency
-        int batchSize = 10;
-        for (int batch = 0; batch < caseIds.size(); batch += batchSize) {
-            int end = Math.min(batch + batchSize, caseIds.size());
+        for (int level : concurrencyLevels) {
+            List<String> caseParams = new ArrayList<>();
+            for (int i = 0; i < level; i++) caseParams.add("degrade-" + level + "-" + i);
 
-            try (StructuredTaskScope.ShutdownOnFailure scope = new StructuredTaskScope.ShutdownOnFailure()) {
-                List<StructuredTaskScope.Subtask<String>> subtasks = new ArrayList<>();
+            long start    = System.nanoTime();
+            List<YNetRunner> runners = engine.launchCasesParallel(spec, caseParams);
+            double elapsedSec = (System.nanoTime() - start) / 1_000_000_000.0;
+            double throughput = level / Math.max(0.001, elapsedSec);
 
-                for (int i = batch; i < end; i++) {
-                    final String caseId = caseIds.get(i);
-                    StructuredTaskScope.Subtask<String> subtask = scope.fork(() -> {
-                        // Simulate processing
-                        Thread.sleep(10); // Simulate work
-                        return caseId + "-processed";
-                    });
-                    subtasks.add(subtask);
-                }
+            double efficiency = (baselineThroughput > 0) ? throughput / baselineThroughput : 1.0;
+            System.out.printf("%-12d %-15.1f %-12.1f%%%n", level, throughput, efficiency * 100);
 
-                scope.join();
-                scope.throwIfFailed();
-
-                completedCount.addAndGet(subtasks.size());
-            } catch (Exception e) {
-                failureCount.addAndGet(end - batch);
+            if (baselineThroughput < 0) {
+                baselineThroughput = throughput;
             }
+
+            // 10% efficiency floor: throughput at any level >= 10% of single-case baseline
+            double minThroughput = baselineThroughput * 0.10;
+            assertTrue(throughput >= minThroughput,
+                    String.format("Throughput cliff at level=%d: %.1f < min=%.1f ops/sec",
+                            level, throughput, minThroughput));
         }
-
-        long endTime = System.nanoTime();
-
-        double durationSeconds = (endTime - startTime) / 1_000_000_000.0;
-        double throughput = completedCount.get() / durationSeconds;
-        double successRate = (double) completedCount.get() / caseIds.size() * 100;
-
-        System.out.printf("Structured Concurrency Results:%n");
-        System.out.printf("  Completed: %d/%d%n", completedCount.get(), caseIds.size());
-        System.out.printf("  Failures: %d%n", failureCount.get());
-        System.out.printf("  Duration: %.2f seconds%n", durationSeconds);
-        System.out.printf("  Throughput: %.2f ops/sec%n", throughput);
-        System.out.printf("  Success Rate: %.1f%%%n", successRate);
-
-        // Validate structured concurrency
-        assertTrue(throughput > 100, "Structured concurrency should achieve >100 ops/sec");
-        assertTrue(successRate > 95, "Structured concurrency success rate should be >95%");
+        System.out.println();
     }
 
-    @Test
-    @DisplayName("Benchmark: Circuit Breaker Resilience")
-    void testCircuitBreakerResilience() throws Exception {
-        System.out.println("\n=== Testing Circuit Breaker Resilience ===");
+    // ── Spec loader ───────────────────────────────────────────────────────────
 
-        AtomicInteger successCount = new AtomicInteger(0);
-        AtomicInteger circuitBreakerTripped = new AtomicInteger(0);
-        AtomicInteger normalFailureCount = new AtomicInteger(0);
-
-        // Simulate mixed workload with failures
-        for (int i = 0; i < THROUGHPUT_TEST_ITERATIONS; i++) {
-            final int iteration = i;
-
-            // Simulate 20% failure rate
-            boolean shouldFail = iteration % 5 == 0;
-
-            try {
-                CompletableFuture<String> future = adapter.launchCaseAsync(
-                    TEST_SPECIFICATION,
-                    String.format("{\"circuit-test\": true, \"iteration\": %d, \"shouldFail\": %b}",
-                        iteration, shouldFail)
-                );
-
-                if (shouldFail) {
-                    // Simulate failure
-                    future.exceptionally(error -> {
-                        normalFailureCount.incrementAndGet();
-                        return null;
-                    });
-                } else {
-                    future.thenAccept(caseId -> {
-                        successCount.incrementAndGet();
-                    });
-                }
-
-                Thread.sleep(10); // Rate limit
-
-            } catch (CircuitBreakerAutoRecovery.CircuitBreakerOpenException e) {
-                circuitBreakerTripped.incrementAndGet();
-                Thread.sleep(100); // Wait for recovery
-            } catch (Exception e) {
-                normalFailureCount.incrementAndGet();
-            }
-        }
-
-        double successRate = (double) successCount.get() / (THROUGHPUT_TEST_ITERATIONS - circuitBreakerTripped.get()) * 100;
-
-        System.out.printf("Circuit Breaker Results:%n");
-        System.out.printf("  Successful operations: %d%n", successCount.get());
-        System.out.printf("  Circuit breaker trips: %d%n", circuitBreakerTripped.get());
-        System.out.printf("  Normal failures: %d%n", normalFailureCount.get());
-        System.out.printf("  Success Rate (excluding trips): %.1f%%%n", successRate);
-
-        // Validate circuit breaker behavior
-        assertTrue(circuitBreakerTripped.get() > 0, "Circuit breaker should trip under failure load");
-        assertTrue(successRate > 80, "Should maintain good success rate with circuit protection");
-    }
-
-    @Test
-    @DisplayName("Benchmark: Memory Efficiency")
-    void testMemoryEfficiency() throws Exception {
-        System.out.println("\n=== Testing Memory Efficiency ===");
-
-        Runtime runtime = Runtime.getRuntime();
-        long initialMemory = runtime.totalMemory() - runtime.freeMemory();
-
-        // Execute operations with virtual threads
-        for (int i = 0; i < THROUGHPUT_TEST_ITERATIONS / 2; i++) {
-            adapter.launchCaseAsync(
-                TEST_SPECIFICATION,
-                String.format("{\"memory-test\": true, \"iteration\": %d}", i)
-            ).get(10, TimeUnit.SECONDS);
-        }
-
-        long peakMemory = runtime.totalMemory() - runtime.freeMemory();
-        long memoryUsed = peakMemory - initialMemory;
-
-        double memoryPerOperation = (double) memoryUsed / (THROUGHPUT_TEST_ITERATIONS / 2) / 1024; // KB per operation
-
-        System.out.printf("Memory Efficiency Results:%n");
-        System.out.printf("  Initial memory: %d MB%n", initialMemory / (1024 * 1024));
-        System.out.printf("  Peak memory: %d MB%n", peakMemory / (1024 * 1024));
-        System.out.printf("  Memory used: %d MB%n", memoryUsed / (1024 * 1024));
-        System.out.printf("  Memory per operation: %.2f KB%n", memoryPerOperation);
-
-        // Validate memory efficiency
-        assertTrue(memoryPerOperation < 50, "Should use <50KB per operation with virtual threads");
-    }
-
-    @AfterAll
-    static void cleanup() {
-        if (adapter != null) {
-            adapter.disconnect();
-        }
-    }
-
-    private void printResults(String implementation, double duration, double throughput,
-                             double latency, double successRate) {
-        System.out.printf("%s Results:%n", implementation);
-        System.out.printf("  Duration: %.2f seconds%n", duration);
-        System.out.printf("  Throughput: %.2f operations/second%n", throughput);
-        System.out.printf("  Average Latency: %.2f ms%n", latency);
-        System.out.printf("  Success Rate: %.1f%%%n", successRate);
-        System.out.printf("  Operations Completed: %.0f%n", throughput * duration);
-
-        if (implementation.equals("Virtual Thread Async")) {
-            System.out.printf("  Improvement Factor: %.1fx%n", throughput / 10);
-        }
+    private YSpecification loadSpec(YStatelessEngine engine) throws Exception {
+        InputStream is = getClass().getResourceAsStream(
+                "/org/yawlfoundation/yawl/stateless/resources/MinimalSpec.xml");
+        assertNotNull(is, "MinimalSpec.xml must be on classpath");
+        String specXml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        YSpecification spec = engine.unmarshalSpecification(specXml);
+        assertNotNull(spec, "Spec must unmarshal successfully");
+        return spec;
     }
 }

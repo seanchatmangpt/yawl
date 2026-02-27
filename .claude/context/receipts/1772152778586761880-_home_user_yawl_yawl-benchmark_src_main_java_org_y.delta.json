@@ -1,0 +1,33 @@
+{
+  "timestamp_ns": 1772152778586761880,
+  "timestamp_rfc": "2026-02-27T00:39:38.586761880Z",
+  "session_id": "86e44b67-bcb0-4b38-b172-73dd4aad8312",
+  "file_path": "/home/user/yawl/yawl-benchmark/src/main/java/org/yawlfoundation/yawl/benchmark/ConcurrencyBenchmarks.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "41f1f2d1e4c028064a3d212f7195e29583308f0688bdd2edbc4d8fc89afe74de",
+  "delta_hash": "23c62e769d26eb96d7058c4612a28189b2dd4bbe3881bab5fba5463e97a97d58",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// Scaling curve from 1→64: exposes the ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Param",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private int threadCount;",
+        "change": "Added"
+      }
+    }
+  ]
+}

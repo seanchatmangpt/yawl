@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specification xmlns="http://www.yawlfoundation.org/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://www.yawlfoundation.org/yawl http://www.yawlfoundation.org/yawl/yawlSchema.xsd">
+    <header name="ParallelSplitWorkflow" version="1.0.0"
+            xmlns:yawl="http://www.yawlfoundation.org/yawl"
+            xmlns:yawl:data="http://www.yawlfoundation.org/yawl/dataType">
+        <documentation>
+            <description>Workflow with parallel split and sync testing</description>
+            <author>YAWL Foundation</author>
+            <version>1.0.0</version>
+        </documentation>
+    </header>
+
+    <dataModel>
+        <dataElements>
+            <variable name="inputData" yawl:data:Type="string"/>
+            <variable name="parallelResult1" yawl:data:Type="string"/>
+            <variable name="parallelResult2" yawl:data:Type="string"/>
+            <variable name="combinedResult" yawl:data:Type="string"/>
+        </dataElements>
+    </dataModel>
+
+    <processModel>
+        <net name="ParallelSplitNet" imports="ParallelSplitWorkflow" exports="output">
+            <inputCondition name="i" yawl:joins="AND"/>
+            <outputCondition name="o" yawl:splits="AND"/>
+
+            <task name="TaskA" joins="AND" splits="OR">
+                <inputConditionRef>i</inputConditionRef>
+                <outputConditionRef name="parallel1"/>
+                <outputConditionRef name="parallel2"/>
+            </task>
+
+            <task name="TaskB1" joins="OR" splits="AND">
+                <inputConditionRef>parallel1</inputConditionRef>
+                <outputConditionRef name="sync"/>
+            </task>
+
+            <task name="TaskB2" joins="OR" splits="AND">
+                <inputConditionRef>parallel2</inputConditionRef>
+                <outputConditionRef>sync</outputConditionRef>
+            </task>
+
+            <condition name="parallel1" joins="OR" splits="OR"/>
+            <condition name="parallel2" joins="OR" splits="OR"/>
+            <condition name="sync" joins="AND" splits="AND"/>
+        </net>
+    </processModel>
+
+    <conditionExpressions>
+        <condition name="TaskACondition" expression="true"/>
+        <condition name="TaskB1Condition" expression="true"/>
+        <condition name="TaskB2Condition" expression="true"/>
+        <condition name="parallel1Condition" expression="true"/>
+        <condition name="parallel2Condition" expression="true"/>
+        <condition name="syncCondition" expression="true"/>
+    </conditionExpressions>
+
+    <synchronisationExpression
+            yawl:joins="AND" yawl:splits="OR"/>
+</specification>

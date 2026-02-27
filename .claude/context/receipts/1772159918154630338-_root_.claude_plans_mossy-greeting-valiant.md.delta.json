@@ -1,0 +1,75 @@
+{
+  "timestamp_ns": 1772159918154630338,
+  "timestamp_rfc": "2026-02-27T02:38:38.154630338Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/mossy-greeting-valiant.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "08f53e37844463838e6cd3689aef7835574ffd6213fd23b28716a448e3bc9c12",
+  "delta_hash": "df8a883a4941b98c7e55dd169fde6ec96cc3097a896def02c315f86262c04c8d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final YSpecification spec;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@DisplayName",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "DualEngineOracleTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "private final YEngine engine;",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Test",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Plan: Replace Trivial Benchmarks with ",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "GraalPyCodeletLoadTest",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "TargetValidator",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Tag",
+        "change": "Added"
+      }
+    }
+  ]
+}

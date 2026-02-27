@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specification xmlns="http://www.yawlfoundation.org/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://www.yawlfoundation.org/yawl http://www.yawlfoundation.org/yawl/yawlSchema.xsd">
+    <header name="ComplexNestedWorkflow" version="1.0.0"
+            xmlns:yawl="http://www.yawlfoundation.org/yawl"
+            xmlns:yawl:data="http://www.yawlfoundation.org/yawl/dataType">
+        <documentation>
+            <description>Complex workflow with nested patterns</description>
+            <author>YAWL Foundation</author>
+            <version>1.0.0</version>
+        </documentation>
+    </header>
+
+    <dataModel>
+        <dataElements>
+            <variable name="initialData" yawl:data:Type="string"/>
+            <variable name="branchAData" yawl:data:Type="string"/>
+            <variable name="branchBData" yawl:data:Type="string"/>
+            <variable name="subTaskData1" yawl:data:Type="string"/>
+            <variable name="subTaskData2" yawl:data:Type="string"/>
+            <variable name="finalData" yawl:data:Type="string"/>
+        </dataElements>
+    </dataModel>
+
+    <processModel>
+        <net name="ComplexNestedNet" imports="ComplexNestedWorkflow" exports="output">
+            <inputCondition name="i" yawl:joins="AND"/>
+            <outputCondition name="o" yawl:splits="AND"/>
+
+            <!-- Initial task -->
+            <task name="StartTask" joins="AND" splits="OR">
+                <inputConditionRef>i</inputConditionRef>
+                <outputConditionRef name="parallelSplit"/>
+            </task>
+
+            <!-- Parallel split -->
+            <task name="BranchA" joins="AND" splits="OR">
+                <inputConditionRef>parallelSplit</inputConditionRef>
+                <outputConditionRef name="branchA"/>
+                <outputConditionRef name="branchB"/>
+            </task>
+
+            <task name="BranchB" joins="AND" splits="OR">
+                <inputConditionRef>parallelSplit</inputConditionRef>
+                <outputConditionRef name="branchA"/>
+                <outputConditionRef name="branchB"/>
+            </task>
+
+            <!-- Branch A - nested parallel -->
+            <condition name="branchA" joins="OR" splits="OR"/>
+            <condition name="branchB" joins="OR" splits="OR"/>
+
+            <task name="SubTask1A" joins="OR" splits="OR">
+                <inputConditionRef>branchA</inputConditionRef>
+                <outputConditionRef name="nestedSplitA"/>
+                <outputConditionRef name="nestedSyncB"/>
+            </task>
+
+            <task name="SubTask2A" joins="OR" splits="OR">
+                <inputConditionRef>branchA</inputConditionRef>
+                <outputConditionRef name="nestedSyncA"/>
+                <outputConditionRef name="nestedSplitB"/>
+            </task>
+
+            <!-- Branch B - nested sequence -->
+            <task name="SubTask1B" joins="OR" splits="OR">
+                <inputConditionRef>branchB</inputConditionRef>
+                <outputConditionRef name="branchBNext"/>
+            </task>
+
+            <task name="SubTask2B" joins="OR" splits="OR">
+                <inputConditionRef>branchBNext</inputConditionRef>
+                <outputConditionRef name="nestedSyncC"/>
+            </task>
+
+            <condition name="nestedSplitA" joins="OR" splits="OR"/>
+            <condition name="nestedSplitB" joins="OR" splits="OR"/>
+            <condition name="nestedSyncA" joins="OR" splits="OR"/>
+            <condition name="nestedSyncB" joins="OR" splits="OR"/>
+            <condition name="nestedSyncC" joins="OR" splits="OR"/>
+            <condition name="branchBNext" joins="OR" splits="OR"/>
+
+            <!-- Synchronization points -->
+            <task name="SyncA" joins="AND" splits="AND">
+                <inputConditionRef>nestedSyncA</inputConditionRef>
+                <outputConditionRef name="mainSync"/>
+            </task>
+
+            <task name="SyncB" joins="AND" splits="AND">
+                <inputConditionRef>nestedSyncB</inputConditionRef>
+                <outputConditionRef>mainSync</outputConditionRef>
+            </task>
+
+            <task name="SyncC" joins="AND" splits="AND">
+                <inputConditionRef>nestedSyncC</inputConditionRef>
+                <outputConditionRef>mainSync</outputConditionRef>
+            </task>
+
+            <condition name="mainSync" joins="AND" splits="AND"/>
+
+            <!-- Final task -->
+            <task name="FinalTask" joins="AND" splits="AND">
+                <inputConditionRef>mainSync</inputConditionRef>
+                <outputConditionRef>o</outputConditionRef>
+            </task>
+        </net>
+    </processModel>
+
+    <conditionExpressions>
+        <condition name="StartTaskCondition" expression="true"/>
+        <condition name="BranchACondition" expression="true"/>
+        <condition name="BranchBCondition" expression="true"/>
+        <condition name="SubTask1ACondition" expression="true"/>
+        <condition name="SubTask2ACondition" expression="true"/>
+        <condition name="SubTask1BCondition" expression="true"/>
+        <condition name="SubTask2BCondition" expression="true"/>
+        <condition name="SyncACondition" expression="true"/>
+        <condition name="SyncBCondition" expression="true"/>
+        <condition name="SyncCCondition" expression="true"/>
+        <condition name="FinalTaskCondition" expression="true"/>
+    </conditionExpressions>
+
+    <synchronisationExpression
+            yawl:joins="AND" yawl:splits="OR"/>
+</specification>

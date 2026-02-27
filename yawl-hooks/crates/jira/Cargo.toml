@@ -1,0 +1,15 @@
+[package]
+name = "jira"
+version = "0.1.0"
+edition = "2021"
+description = "YAWL Intelligence Layer — JIRA ticket system and context injection"
+
+[dependencies]
+delta       = { path = "../delta" }
+differ      = { path = "../differ" }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+toml        = { workspace = true }
+chrono      = { workspace = true }
+anyhow      = { workspace = true }
+thiserror   = { workspace = true }

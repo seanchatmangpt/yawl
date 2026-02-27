@@ -9,7 +9,7 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
 
-        <version>6.0.0</version>
+        <version>6.0.0-GA</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

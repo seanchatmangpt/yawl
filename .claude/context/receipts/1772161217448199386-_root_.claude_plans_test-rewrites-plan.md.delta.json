@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772161217448199386,
+  "timestamp_rfc": "2026-02-27T03:00:17.448199386Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/test-rewrites-plan.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "b2bc92e508dbc73c37e1c91a6c173d92db99cb77a1e840dab2cf84bbd8f0b136",
+  "delta_hash": "691251891f66de57e5af7b3e802a7d18451091b317f838d13d2c71010eba51d8",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Test File Rewrites Plan",
+        "change": "Added"
+      }
+    }
+  ]
+}

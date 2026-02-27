@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772154244737120537,
+  "timestamp_rfc": "2026-02-27T01:04:04.737120537Z",
+  "session_id": "7a22268e-5b6a-4d1c-8f8e-70c7147201d5",
+  "file_path": "/home/user/yawl/src/org/yawlfoundation/yawl/util/java25/StreamMetrics.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "15a37d2485ca58708b9807f60a7672e36f000e836d137b60cfda0cc81305174c",
+  "delta_hash": "eeb55a2890d0d14166f0ce0aeac6d8029498cb58338cf4bde2974e09a77533d7",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "java",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "record",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Override",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "StreamMetrics",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "String",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "/*",
+        "change": "Added"
+      }
+    }
+  ]
+}

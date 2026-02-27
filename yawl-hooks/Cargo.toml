@@ -1,0 +1,29 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/delta",
+    "crates/differ",
+    "crates/jira",
+    "crates/scout",
+    "bin/yawl-jira",
+    "bin/yawl-scout",
+]
+
+[workspace.dependencies]
+blake3      = "1.5"
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+toml        = "0.8"
+imara-diff  = "0.1"
+dissimilar   = "1.0"
+ureq        = { version = "2", features = ["json"] }
+chrono      = { version = "0.4", features = ["serde"] }
+clap        = { version = "4", features = ["derive"] }
+anyhow      = "1"
+thiserror   = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

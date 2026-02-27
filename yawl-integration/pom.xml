@@ -9,7 +9,7 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
 
-        <version>6.0.0</version>
+        <version>6.0.0-GA</version>
     <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -28,6 +28,12 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-stateless</artifactId>
+        </dependency>
+        <dependency>
+            <!-- RL process generation engine: POWL model, GRPO optimizer, reward scoring -->
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-ggen</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- MCP SDK (io.modelcontextprotocol.sdk 1.0.0-RC3 from GitHub releases)

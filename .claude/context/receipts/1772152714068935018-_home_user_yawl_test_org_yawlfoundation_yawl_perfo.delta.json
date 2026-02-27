@@ -1,0 +1,61 @@
+{
+  "timestamp_ns": 1772152714068935018,
+  "timestamp_rfc": "2026-02-27T00:38:34.068935018Z",
+  "session_id": "86e44b67-bcb0-4b38-b172-73dd4aad8312",
+  "file_path": "/home/user/yawl/test/org/yawlfoundation/yawl/performance/jmh/Java25VirtualThreadBenchmark.java",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "7304719f351ccb0a81319d405eba2e273754e65082adfdfb43fb93ee144ef465",
+  "delta_hash": "bf406909103cea9cfc4ba640fc57f63535975c2a7e9ec412b4e776c76e249ac4",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@OutputTimeUnit",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@State",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "// Mode.Throughput only: Mode.AverageTim",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Warmup",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@Measurement",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "@Fork(value = 2, jvmArgs = {",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "@BenchmarkMode",
+        "change": "Added"
+      }
+    }
+  ]
+}

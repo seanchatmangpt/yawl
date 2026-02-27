@@ -370,6 +370,14 @@ public class ExecutionHarness {
 
     /**
      * Wait for case completion with timeout.
+     *
+     * <p>Uses {@code endOfNetReached()} rather than the full {@code isCompleted()} predicate
+     * to avoid a race condition: {@code isEmpty()} (the other half of {@code isCompleted()})
+     * is unsynchronised and can transiently return {@code true} between task firings, causing
+     * the polling loop to exit before all agents have written their results to the shared
+     * context map. {@code endOfNetReached()} is only {@code true} once the output condition
+     * has received a token — i.e., after the last task in the net has genuinely completed
+     * and its completion handler has had time to update context.</p>
      */
     private void waitForCaseCompletion() throws PatternExecutionException {
         if (currentRunner == null) {
@@ -378,7 +386,7 @@ public class ExecutionHarness {
 
         Instant deadline = Instant.now().plus(timeout);
         while (Instant.now().isBefore(deadline)) {
-            if (currentRunner.isCompleted()) {
+            if (currentRunner.endOfNetReached()) {
                 return;
             }
 
@@ -513,6 +521,11 @@ public class ExecutionHarness {
                     }
                     case ITEM_STARTED -> {
                         if (!item.hasCompletedStatus() && !item.isParent()) {
+                            // Invoke custom handler before auto-completion so agents can
+                            // process the work item and update shared context first.
+                            if (handler != null) {
+                                handler.handleWorkItem(item);
+                            }
                             Element eData = item.getDataElement();
                             String data = eData != null ? JDOMUtil.elementToString(eData) : "<data/>";
                             LOG.fine(() -> "Completing work item: " + itemId);

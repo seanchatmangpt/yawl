@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  YAWL v6.0.0-Beta - Maven Module Template
+  YAWL v6.0.0-GA - Maven Module Template
 
   This template provides a consistent structure for YAWL modules.
 
@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-Beta</version>
+        <version>6.0.0-GA</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

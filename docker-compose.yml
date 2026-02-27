@@ -1,5 +1,5 @@
 # =============================================================================
-# YAWL v6.0.0-Beta - Docker Compose Configuration
+# YAWL v6.0.0-GA - Docker Compose Configuration
 # =============================================================================
 # Enterprise workflow engine with Petri net semantics and virtual threads support.
 #
@@ -31,7 +31,7 @@ services:
       context: .
       dockerfile: docker/production/Dockerfile.engine
       args:
-        VERSION: 6.0.0-Beta
+        VERSION: 6.0.0-GA
         BUILD_DATE: ${BUILD_DATE:-2026-02-16}
         VCS_REF: ${VCS_REF:-}
     image: yawl-engine:6.0.0-alpha
@@ -206,7 +206,7 @@ services:
       context: .
       dockerfile: docker/production/Dockerfile.engine
       args:
-        VERSION: 6.0.0-Beta
+        VERSION: 6.0.0-GA
         BUILD_DATE: ${BUILD_DATE:-2026-02-16}
         VCS_REF: ${VCS_REF:-}
     image: yawl-engine:6.0.0-alpha

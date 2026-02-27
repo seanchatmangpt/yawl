@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specification xmlns="http://www.yawlfoundation.org/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://www.yawlfoundation.org/yawl http://www.yawlfoundation.org/yawl/yawlSchema.xsd">
+    <header name="SequenceWorkflow" version="1.0.0" xmlns:yawl="http://www.yawlfoundation.org/yawl"
+            xmlns:yawl:data="http://www.yawlfoundation.org/yawl/dataType">
+        <documentation>
+            <description>Simple sequential workflow for testing</description>
+            <author>YAWL Foundation</author>
+            <version>1.0.0</version>
+        </documentation>
+    </header>
+
+    <dataModel>
+        <dataElements>
+            <variable name="inputData" yawl:data:Type="string"/>
+            <variable name="processedData" yawl:data:Type="string"/>
+            <variable name="outputData" yawl:data:Type="string"/>
+        </dataElements>
+    </dataModel>
+
+    <processModel>
+        <net name="SequenceWorkflowNet" imports="SequenceWorkflow" exports="output">
+            <inputCondition name="i" yawl:joins="AND"/>
+            <outputCondition name="o" yawl:splits="AND"/>
+
+            <task name="Task1" joins="AND" splits="AND">
+                <inputConditionRef>i</inputConditionRef>
+                <outputConditionRef name="mid"/>
+            </task>
+
+            <task name="Task2" joins="AND" splits="AND">
+                <inputConditionRef>mid</inputConditionRef>
+                <outputConditionRef>o</outputConditionRef>
+            </task>
+
+            <condition name="mid" joins="AND" splits="AND"/>
+        </net>
+    </processModel>
+
+    <conditionExpressions>
+        <condition name="Task1Condition" expression="true"/>
+        <condition name="Task2Condition" expression="true"/>
+        <condition name="midCondition" expression="true"/>
+    </conditionExpressions>
+
+    <synchronisationExpression
+            yawl:joins="AND" yawl:splits="AND"/>
+</specification>
