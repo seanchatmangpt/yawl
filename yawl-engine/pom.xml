@@ -342,6 +342,10 @@
                         <exclude>**/*.jpg</exclude>
                         <exclude>**/*.png</exclude>
                         <exclude>**/*.gif</exclude>
+                        <!-- Stress/test files in src/test/java require JUnit which is test-scope only -->
+                        <exclude>**/test/java/**</exclude>
+                        <!-- TenantBillingReportController uses Spring Web, compiled in yawl-integration -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/TenantBillingReportController.java</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>

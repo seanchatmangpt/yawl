@@ -525,8 +525,9 @@ public class VirtualThreadPool {
         if (maxConcurrency <= 0) throw new IllegalArgumentException("maxConcurrency must be > 0");
 
         var semaphore = new Semaphore(maxConcurrency);
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            var subtasks = tasks.stream()
+        try (var scope = StructuredTaskScope.<T, Void>open(
+                StructuredTaskScope.Joiner.<T>awaitAllSuccessfulOrThrow())) {
+            List<StructuredTaskScope.Subtask<T>> subtasks = tasks.stream()
                     .map(task -> scope.fork(() -> {
                         semaphore.acquire();
                         try {
@@ -536,10 +537,12 @@ public class VirtualThreadPool {
                         }
                     }))
                     .toList();
-            scope.join().throwIfFailed();
+            scope.join();
             return subtasks.stream()
                     .map(StructuredTaskScope.Subtask::get)
                     .toList();
+        } catch (StructuredTaskScope.FailedException e) {
+            throw new ExecutionException(e.getCause());
         }
     }
 
@@ -575,16 +578,19 @@ public class VirtualThreadPool {
      */
     public <T> Future<T> submitWithTimeout(Callable<T> task, Duration timeout) {
         return executor.submit(() -> {
-            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+            try (var scope = StructuredTaskScope.<T, Void>open(
+                    StructuredTaskScope.Joiner.<T>awaitAll(),
+                    config -> config.withTimeout(timeout))) {
                 var subtask = scope.fork(task);
-                scope.joinUntil(Instant.now().plus(timeout));
-                scope.throwIfFailed();
-                // If subtask not done (timeout), ShutdownOnFailure cancelled it above via joinUntil
-                if (subtask.state() != StructuredTaskScope.Subtask.State.SUCCESS) {
+                scope.join();
+                if (subtask.state() == StructuredTaskScope.Subtask.State.SUCCESS) {
+                    return subtask.get();
+                } else if (scope.isCancelled()) {
                     throw new java.util.concurrent.TimeoutException(
                             "Task timed out after " + timeout);
+                } else {
+                    throw new ExecutionException(subtask.exception());
                 }
-                return subtask.get();
             }
         });
     }
