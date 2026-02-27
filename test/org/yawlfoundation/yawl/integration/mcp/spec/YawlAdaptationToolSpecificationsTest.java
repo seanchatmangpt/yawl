@@ -220,4 +220,53 @@ class YawlAdaptationToolSpecificationsTest {
             .map(c -> ((McpSchema.TextContent) c).text())
             .findFirst().orElse("");
     }
+
+    // =========================================================================
+    // Exception Behavior Tests (New)
+    // =========================================================================
+
+    @Test
+    void testInvalidSeverityThrowsException() {
+        // Test that invalid severity throws IllegalArgumentException instead of defaulting to MEDIUM
+        McpServerFeatures.SyncToolSpecification tool = findTool("yawl_evaluate_event");
+        McpSchema.CallToolResult result = invoke(tool,
+            Map.of("eventType", "DEADLINE_EXCEEDED", "severity", "INVALID_SEVERITY"));
+
+        assertTrue(result.isError(), "Invalid severity must return error");
+        String text = extractText(result);
+        assertTrue(text.contains("Invalid severity: INVALID_SEVERITY"),
+            "Error must contain the exact invalid severity value");
+    }
+
+    @Test
+    void testInvalidSeverityWithDifferentValues() {
+        String[] invalidSeverities = {"INVALID", "unknown", "HIGHX", "CRITICAL!"};
+
+        for (String severity : invalidSeverities) {
+            McpServerFeatures.SyncToolSpecification tool = findTool("yawl_evaluate_event");
+            McpSchema.CallToolResult result = invoke(tool,
+                Map.of("eventType", "DEADLINE_EXCEEDED", "severity", severity));
+
+            assertTrue(result.isError(), "Severity '" + severity + "' must throw exception");
+            String text = extractText(result);
+            assertTrue(text.contains("Invalid severity: " + severity),
+                "Error must mention invalid severity: " + severity);
+        }
+    }
+
+    @Test
+    void testValidSeverityStillWorks() {
+        String[] validSeverities = {"LOW", "MEDIUM", "HIGH", "CRITICAL"};
+
+        for (String severity : validSeverities) {
+            McpServerFeatures.SyncToolSpecification tool = findTool("yawl_evaluate_event");
+            McpSchema.CallToolResult result = invoke(tool,
+                Map.of("eventType", "DEADLINE_EXCEEDED", "severity", severity));
+
+            assertFalse(result.isError(), "Valid severity '" + severity + "' must work");
+            String text = extractText(result);
+            assertTrue(text.contains(severity),
+                "Response should contain the specified severity: " + text);
+        }
+    }
 }

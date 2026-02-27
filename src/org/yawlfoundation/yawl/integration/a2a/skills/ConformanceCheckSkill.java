@@ -26,6 +26,9 @@ import org.yawlfoundation.yawl.ggen.rl.PowlParseException;
 import org.yawlfoundation.yawl.ggen.rl.scoring.FootprintExtractor;
 import org.yawlfoundation.yawl.ggen.rl.scoring.FootprintMatrix;
 import org.yawlfoundation.yawl.ggen.rl.scoring.FootprintScorer;
+import org.yawlfoundation.yawl.integration.util.SkillExecutionTimer;
+import org.yawlfoundation.yawl.integration.util.SkillLogger;
+import org.yawlfoundation.yawl.integration.util.YawlConstants;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,7 +58,9 @@ import java.util.Set;
  */
 public class ConformanceCheckSkill implements A2ASkill {
 
-    private static final Logger _log = LoggerFactory.getLogger(ConformanceCheckSkill.class);
+    private static final String SKILL_ID = "conformance_check";
+    private static final String SKILL_NAME = "Behavioral Conformance Check";
+    private final SkillLogger logger = SkillLogger.forSkill(SKILL_ID, SKILL_NAME);
     private final FootprintExtractor extractor;
 
     public ConformanceCheckSkill() {
@@ -81,7 +86,7 @@ public class ConformanceCheckSkill implements A2ASkill {
 
     @Override
     public Set<String> getRequiredPermissions() {
-        return Set.of("workflow:analyze");
+        return YawlConstants.DEFAULT_PERMISSIONS;
     }
 
     @Override
@@ -91,6 +96,10 @@ public class ConformanceCheckSkill implements A2ASkill {
 
     @Override
     public SkillResult execute(SkillRequest request) {
+        if (request == null) {
+            return SkillResult.error("Request cannot be null");
+        }
+
         String powlModelJson = request.getParameter("powlModelJson");
         String refJson = request.getParameter("referenceModelJson");
         String candJson = request.getParameter("candidateModelJson");
@@ -114,42 +123,48 @@ public class ConformanceCheckSkill implements A2ASkill {
     // =========================================================================
 
     private SkillResult executeExtract(String powlJson) {
-        long start = System.currentTimeMillis();
+        SkillExecutionTimer timer = SkillExecutionTimer.start("ConformanceCheckSkill.extract");
 
-        PowlModel model;
         try {
-            model = PowlJsonMarshaller.fromJson(powlJson, "skill-extract-model");
-        } catch (PowlParseException e) {
-            return SkillResult.error("Failed to parse powlModelJson: " + e.getMessage());
+            PowlModel model;
+            try {
+                model = PowlJsonMarshaller.fromJson(powlJson, "skill-extract-model");
+            } catch (PowlParseException e) {
+                return SkillResult.error("Failed to parse powlModelJson: " + e.getMessage());
+            }
+
+            FootprintMatrix matrix = extractor.extract(model);
+            long elapsed = timer.endAndLog();
+
+            logger.info("extract mode, ds={}, conc={}, excl={}, elapsed={}ms",
+                matrix.directSuccession().size(), matrix.concurrency().size(),
+                matrix.exclusive().size());
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("mode", "extract");
+            data.put("directSuccession", matrix.directSuccession().stream()
+                .map(p -> p.get(0) + " → " + p.get(1))
+                .sorted()
+                .toList());
+            data.put("concurrency", matrix.concurrency().stream()
+                .map(p -> p.get(0) + " ‖ " + p.get(1))
+                .sorted()
+                .toList());
+            data.put("exclusive", matrix.exclusive().stream()
+                .map(p -> p.get(0) + " ⊕ " + p.get(1))
+                .sorted()
+                .toList());
+            data.put("directSuccessionCount", matrix.directSuccession().size());
+            data.put("concurrencyCount", matrix.concurrency().size());
+            data.put("exclusiveCount", matrix.exclusive().size());
+            data.put("activityCount", countActivities(matrix));
+            data.put("elapsed_ms", elapsed);
+            return SkillResult.success(data, elapsed);
+        } catch (Exception e) {
+            timer.endAndLog();
+            logger.error("Error in extract mode", e);
+            return SkillResult.error("Extract failed: " + e.getMessage());
         }
-
-        FootprintMatrix matrix = extractor.extract(model);
-        long elapsed = System.currentTimeMillis() - start;
-
-        _log.info("ConformanceCheckSkill: extract mode, ds={}, conc={}, excl={}, elapsed={}ms",
-            matrix.directSuccession().size(), matrix.concurrency().size(),
-            matrix.exclusive().size(), elapsed);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("mode", "extract");
-        data.put("directSuccession", matrix.directSuccession().stream()
-            .map(p -> p.get(0) + " → " + p.get(1))
-            .sorted()
-            .toList());
-        data.put("concurrency", matrix.concurrency().stream()
-            .map(p -> p.get(0) + " ‖ " + p.get(1))
-            .sorted()
-            .toList());
-        data.put("exclusive", matrix.exclusive().stream()
-            .map(p -> p.get(0) + " ⊕ " + p.get(1))
-            .sorted()
-            .toList());
-        data.put("directSuccessionCount", matrix.directSuccession().size());
-        data.put("concurrencyCount", matrix.concurrency().size());
-        data.put("exclusiveCount", matrix.exclusive().size());
-        data.put("activityCount", countActivities(matrix));
-        data.put("elapsed_ms", elapsed);
-        return SkillResult.success(data, elapsed);
     }
 
     // =========================================================================
@@ -157,44 +172,53 @@ public class ConformanceCheckSkill implements A2ASkill {
     // =========================================================================
 
     private SkillResult executeCompare(String refJson, String candJson) {
-        long start = System.currentTimeMillis();
+        SkillExecutionTimer timer = SkillExecutionTimer.start("ConformanceCheckSkill.compare");
 
-        PowlModel refModel;
         try {
-            refModel = PowlJsonMarshaller.fromJson(refJson, "skill-ref-model");
-        } catch (PowlParseException e) {
-            return SkillResult.error("Failed to parse referenceModelJson: " + e.getMessage());
+            PowlModel refModel;
+            try {
+                refModel = PowlJsonMarshaller.fromJson(refJson, "skill-ref-model");
+            } catch (PowlParseException e) {
+                return SkillResult.error("Failed to parse referenceModelJson: " + e.getMessage());
+            }
+
+            PowlModel candModel;
+            try {
+                candModel = PowlJsonMarshaller.fromJson(candJson, "skill-cand-model");
+            } catch (PowlParseException e) {
+                return SkillResult.error("Failed to parse candidateModelJson: " + e.getMessage());
+            }
+
+            FootprintMatrix refMatrix = extractor.extract(refModel);
+            FootprintScorer scorer = new FootprintScorer(refMatrix);
+            double score = scorer.score(candModel, "");
+            if (Double.isNaN(score) || score < 0.0 || score > 1.0) {
+                throw new IllegalStateException("No conformance result available");
+            }
+
+            FootprintMatrix candMatrix = extractor.extract(candModel);
+            double dsSim = jaccardSimilarity(candMatrix.directSuccession(), refMatrix.directSuccession());
+            double concSim = jaccardSimilarity(candMatrix.concurrency(), refMatrix.concurrency());
+            double exclSim = jaccardSimilarity(candMatrix.exclusive(), refMatrix.exclusive());
+
+            long elapsed = timer.endAndLog();
+
+            logger.info("compare mode, score={:.4f}, elapsed={}ms", score);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("mode", "compare");
+            data.put("score", score);
+            data.put("directSuccessionJaccard", dsSim);
+            data.put("concurrencyJaccard", concSim);
+            data.put("exclusiveJaccard", exclSim);
+            data.put("interpretation", interpretScore(score));
+            data.put("elapsed_ms", elapsed);
+            return SkillResult.success(data, elapsed);
+        } catch (Exception e) {
+            timer.endAndLog();
+            logger.error("Error in compare mode", e);
+            return SkillResult.error("Compare failed: " + e.getMessage());
         }
-
-        PowlModel candModel;
-        try {
-            candModel = PowlJsonMarshaller.fromJson(candJson, "skill-cand-model");
-        } catch (PowlParseException e) {
-            return SkillResult.error("Failed to parse candidateModelJson: " + e.getMessage());
-        }
-
-        FootprintMatrix refMatrix = extractor.extract(refModel);
-        FootprintScorer scorer = new FootprintScorer(refMatrix);
-        double score = scorer.score(candModel, "");
-
-        FootprintMatrix candMatrix = extractor.extract(candModel);
-        double dsSim = jaccardSimilarity(candMatrix.directSuccession(), refMatrix.directSuccession());
-        double concSim = jaccardSimilarity(candMatrix.concurrency(), refMatrix.concurrency());
-        double exclSim = jaccardSimilarity(candMatrix.exclusive(), refMatrix.exclusive());
-
-        long elapsed = System.currentTimeMillis() - start;
-
-        _log.info("ConformanceCheckSkill: compare mode, score={:.4f}, elapsed={}ms", score, elapsed);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("mode", "compare");
-        data.put("score", score);
-        data.put("directSuccessionJaccard", dsSim);
-        data.put("concurrencyJaccard", concSim);
-        data.put("exclusiveJaccard", exclSim);
-        data.put("interpretation", interpretScore(score));
-        data.put("elapsed_ms", elapsed);
-        return SkillResult.success(data, elapsed);
     }
 
     // =========================================================================

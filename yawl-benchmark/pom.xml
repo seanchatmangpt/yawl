@@ -48,6 +48,21 @@
             <artifactId>yawl-stateless</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-integration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-ggen</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-graalpy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- JMH for Microbenchmarks -->
         <dependency>

@@ -25,6 +25,11 @@ import org.yawlfoundation.yawl.integration.adaptation.EventDrivenAdaptationEngin
 import org.yawlfoundation.yawl.integration.adaptation.EventSeverity;
 import org.yawlfoundation.yawl.integration.adaptation.ProcessEvent;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlAdaptationToolSpecifications;
+import org.yawlfoundation.yawl.integration.util.EventSeverityUtils;
+import org.yawlfoundation.yawl.integration.util.PayloadParser;
+import org.yawlfoundation.yawl.integration.util.SkillExecutionTimer;
+import org.yawlfoundation.yawl.integration.util.YawlConstants;
+import org.yawlfoundation.yawl.integration.util.SkillLogger;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -58,7 +63,9 @@ import java.util.UUID;
  */
 public class AdaptationSkill implements A2ASkill {
 
-    private static final Logger _log = LoggerFactory.getLogger(AdaptationSkill.class);
+    private static final String SKILL_ID = "adapt_to_event";
+    private static final String SKILL_NAME = "Event-Driven Process Adaptation";
+    private final SkillLogger logger = SkillLogger.forSkill(SKILL_ID, SKILL_NAME);
     private final EventDrivenAdaptationEngine engine;
 
     public AdaptationSkill() {
@@ -85,7 +92,7 @@ public class AdaptationSkill implements A2ASkill {
 
     @Override
     public Set<String> getRequiredPermissions() {
-        return Set.of("workflow:adapt");
+        return YawlConstants.DEFAULT_PERMISSIONS;
     }
 
     @Override
@@ -103,65 +110,47 @@ public class AdaptationSkill implements A2ASkill {
                 + "FRAUD_ALERT, ERROR, PRIORITY_INCREASE");
         }
 
-        EventSeverity severity = parseSeverity(request.getParameter("severity"));
-        Map<String, Object> payload = parsePayload(request.getParameter("payload"));
+        SkillExecutionTimer timer = SkillExecutionTimer.start("AdaptationSkill.execute");
 
-        long start = System.currentTimeMillis();
-
-        ProcessEvent event = new ProcessEvent(
-            UUID.randomUUID().toString(),
-            eventType.trim().toUpperCase(),
-            "a2a-client",
-            Instant.now(),
-            payload,
-            severity
-        );
-
-        AdaptationResult result = engine.process(event);
-        long elapsed = System.currentTimeMillis() - start;
-
-        _log.info("AdaptationSkill: eventType={}, adapted={}, action={}, elapsed={}ms",
-            event.eventType(), result.adapted(),
-            result.adapted() ? result.executedAction() : "NO_MATCH", elapsed);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("adapted", result.adapted());
-        data.put("action", result.adapted() ? result.executedAction().name() : "NO_MATCH");
-        data.put("actionDescription", result.adapted()
-            ? result.executedAction().description()
-            : "No adaptation rules matched this event");
-        data.put("matchedRuleCount", result.matchedRules().size());
-        data.put("explanation", result.explanation());
-        data.put("eventType", event.eventType());
-        data.put("severity", event.severity().name());
-        data.put("elapsed_ms", elapsed);
-        return SkillResult.success(data, elapsed);
-    }
-
-    private EventSeverity parseSeverity(String severityStr) {
-        if (severityStr == null || severityStr.isBlank()) return EventSeverity.MEDIUM;
         try {
-            return EventSeverity.valueOf(severityStr.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return EventSeverity.MEDIUM;
+            EventSeverity severity = EventSeverity.valueOf(EventSeverityUtils.parseSeverity(request.getParameter("severity")));
+            Map<String, String> parsedPayload = PayloadParser.parse(request.getParameter("payload"));
+            Map<String, Object> payload = new HashMap<>();
+            parsedPayload.forEach(payload::put);
+
+            ProcessEvent event = new ProcessEvent(
+                UUID.randomUUID().toString(),
+                eventType.trim().toUpperCase(),
+                YawlConstants.PERMISSION_A2A_CLIENT,
+                Instant.now(),
+                payload,
+                severity
+            );
+
+            AdaptationResult result = engine.process(event);
+            long elapsed = timer.endAndLog();
+
+            logger.info("eventType={}, adapted={}, action={}, elapsed={}ms",
+                event.eventType(), result.adapted(),
+                result.adapted() ? result.executedAction() : "NO_MATCH");
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("adapted", result.adapted());
+            data.put("action", result.adapted() ? result.executedAction().name() : "NO_MATCH");
+            data.put("actionDescription", result.adapted()
+                ? result.executedAction().description()
+                : "No adaptation rules matched this event");
+            data.put("matchedRuleCount", result.matchedRules().size());
+            data.put("explanation", result.explanation());
+            data.put("eventType", event.eventType());
+            data.put("severity", event.severity().name());
+            data.put("elapsed_ms", elapsed);
+            return SkillResult.success(data, elapsed);
+        } catch (Exception e) {
+            timer.endAndLog();
+            logger.error("Error processing adaptation", e);
+            return SkillResult.error("Adaptation failed: " + e.getMessage());
         }
     }
 
-    private Map<String, Object> parsePayload(String payloadStr) {
-        if (payloadStr == null || payloadStr.isBlank()) return Map.of();
-        Map<String, Object> payload = new HashMap<>();
-        for (String pair : payloadStr.split("[,;]")) {
-            String[] parts = pair.trim().split("=", 2);
-            if (parts.length == 2) {
-                String key = parts[0].trim();
-                String val = parts[1].trim();
-                try {
-                    payload.put(key, Double.parseDouble(val));
-                } catch (NumberFormatException e) {
-                    payload.put(key, val);
-                }
-            }
-        }
-        return Map.copyOf(payload);
-    }
-}
+  }

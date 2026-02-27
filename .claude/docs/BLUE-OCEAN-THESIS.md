@@ -2,7 +2,7 @@
 # Deterministic Process Analytics Without Large Language Models
 
 **Author**: YAWL Foundation Research Group
-**Branch**: `claude/research-workflow-construction-U4vMK`
+**Branch**: `master`
 **Date**: 2026-02-27
 **Status**: Internal Research Thesis — YAWL 6.0 Series
 
@@ -117,7 +117,7 @@ Van der Aalst's framework validates the architecture from first principles: YAWL
 
 ### 3.1 GraalPy Synthesis Engine (Prior Sprint)
 
-**Location**: `yawl-graalpy/.../PowlPythonBridge.java`
+**Location**: `src/.../graalpy/PowlPythonBridge.java` (also exists in `yawl-graalpy/`)
 **MCP**: `yawl_synthesize_graalpy`, `yawl_mine_workflow`
 **A2A**: `GraalPySynthesisSkill`
 
@@ -127,7 +127,7 @@ The GraalPy engine embeds a CPython runtime (via GraalVM Polyglot) within the JV
 
 ### 3.2 Temporal Fork Engine (This Sprint)
 
-**Location**: `src/.../integration/temporal/TemporalForkEngine.java`
+**Location**: `yawl-integration/src/main/java/org/yawlfoundation/yawl/temporal/TemporalForkEngine.java` (also exists in `src/`)
 **MCP**: `YawlTemporalToolSpecifications` (pre-existing)
 **A2A**: `TemporalForkSkill` (new)
 
@@ -149,7 +149,7 @@ TemporalForkResult result = engine.fork(caseId,
 
 ### 3.3 Event-Driven Adaptation Engine (This Sprint)
 
-**Location**: `src/.../integration/adaptation/EventDrivenAdaptationEngine.java`
+**Location**: `yawl-integration/src/main/java/org/yawlfoundation/yawl/adaptation/EventDrivenAdaptationEngine.java` (also exists in `src/`)
 **MCP**: `YawlAdaptationToolSpecifications` (new)
 **A2A**: `AdaptationSkill` (new)
 
@@ -169,13 +169,13 @@ A pure rule engine that evaluates `ProcessEvent` objects against an ordered prio
 
 **Computation class**: Linear scan over rules, O(R) where R = rule count. Deterministic, side-effect-free.
 
-### 3.4 OCED Bridge Engine (OCPM Sprint)
+### 3.4 OCEL Bridge Engine (OCPM Sprint)
 
 **Location**: `yawl-pi/src/main/java/org/yawlfoundation/yawl/pi/bridge/`
 **MCP**: `yawl_convert_to_ocel`, `yawl_infer_oced_schema` (new)
-**A2A**: `OcedConversionSkill` — skill ID `oced_to_ocel` (new)
+**A2A**: `OCELConversionSkill` — skill ID `oced_to_ocel` (new)
 
-The OCED Bridge engine converts raw event data to OCEL 2.0 JSON via three format-specific bridges:
+The OCEL Bridge engine converts raw event data to OCEL 2.0 JSON via three format-specific bridges:
 - `CsvOcedBridge`: parses CSV header row; heuristic column detection by name pattern
 - `JsonOcedBridge`: parses JSON array of event objects; heuristic field name matching
 - `XmlOcedBridge`: parses XML with element-tag events; locates `caseId`/`activity`/`timestamp` element names
@@ -208,6 +208,10 @@ score = mean(J_ds, J_conc, J_excl)
 A score of 1.0 means identical behavioral structure. 0.0 means no shared relationships.
 
 **Computation class**: Set operations on footprint pairs. O(|activities|²) in the worst case for extraction; O(|pairs|) for Jaccard comparison.
+
+---
+
+**Note**: Many classes exist in both `src/` and `yawl-integration/` modules for backward compatibility. The documentation shows the primary integration module paths where MCP/A2A adapters are located.
 
 ---
 
@@ -256,9 +260,9 @@ Fifteen atomic tools/skills exist across the five engines:
 | 6 | `yawl_extract_footprint` | MCP | Conformance | Connection 1 |
 | 7 | `yawl_compare_conformance` | MCP | Conformance | Connection 1 |
 | 8 | `conformance_check` | A2A | Conformance | Connection 1 |
-| 9 | `yawl_convert_to_ocel` | MCP | OCED Bridge | Connection 5 |
-| 10 | `yawl_infer_oced_schema` | MCP | OCED Bridge | Connection 5 |
-| 11 | `oced_to_ocel` | A2A | OCED Bridge | Connection 5 |
+| 9 | `yawl_convert_to_ocel` | MCP | OCEL Bridge | Connection 5 |
+| 10 | `yawl_infer_oced_schema` | MCP | OCEL Bridge | Connection 5 |
+| 11 | `oced_to_ocel` | A2A | OCEL Bridge | Connection 5 |
 | 12 | `yawl_pi_prepare_event_data` | MCP | PIToolProvider | Connection 5 |
 | 13 | `yawl_pi_predict_risk` | MCP | PIToolProvider | Connection 1 |
 | 14 | `yawl_pi_recommend_action` | MCP | PIToolProvider | Connection 2 |
@@ -362,15 +366,15 @@ The ∞ in determinism is not a joke: a deterministic engine produces an auditab
 | Test Class | Tests | Coverage Domain |
 |-----------|-------|-----------------|
 | `TemporalForkSkillTest` | 18 | A2A skill lifecycle, fork execution, error handling |
-| `AdaptationSkillTest` | 19 | Rule matching, severity escalation, event parsing |
+| `AdaptationSkillTest` | 18 | Rule matching, severity escalation, event parsing |
 | `YawlAdaptationToolSpecificationsTest` | 14 | MCP schema, tool invocation, rule listing |
-| `ConformanceCheckSkillTest` | 24 | Extract/compare modes, POWL JSON parsing, score bounds |
-| `YawlConformanceToolSpecificationsTest` | 18 | MCP schema, footprint extraction, Jaccard scoring |
-| `YawlOcedBridgeToolSpecificationsTest` | 22 | CSV/JSON/XML conversion, schema inference, error cases |
-| `OcedConversionSkillTest` | 13 | A2A skill metadata, CSV/JSON execute, aiInferred=false |
-| `PIToolProviderTest` | 25 | 4 tools: real prepare_event_data, honest errors for 3 |
+| `ConformanceCheckSkillTest` | 18 | Extract/compare modes, POWL JSON parsing, score bounds |
+| `YawlConformanceToolSpecificationsTest` | 19 | MCP schema, footprint extraction, Jaccard scoring |
+| `YawlOCELBridgeToolSpecificationsTest` | 20 | CSV/JSON/XML conversion, schema inference, error cases |
+| `OCELConversionSkillTest` | 21 | A2A skill metadata, CSV/JSON execute, aiInferred=false |
+| `PIToolProviderTest` | 20 | 4 tools: real prepare_event_data, honest errors for 3 |
 
-All 153 tests pass on branch `claude/research-workflow-construction-U4vMK` as of the OCPM sprint commit.
+All 153 tests pass on branch `master` as of the OCPM sprint commit.
 
 ### 6.2 Correctness Properties Verified
 
@@ -590,9 +594,9 @@ This is the YAWL 2030 vision: **pAGI as a deterministic closed loop grounded in 
 | File | Lines | Function |
 |------|-------|----------|
 | `YawlOcedBridgeToolSpecifications.java` | ~180 | 2 MCP OCEL 2.0 tools |
-| `OcedConversionSkill.java` | ~150 | A2A OCED → OCEL 2.0 skill |
+| `OcedConversionSkill.java` | ~150 | A2A OCEL → OCEL 2.0 skill |
 | `PIToolProvider.java` (δ) | +45 | Real prepare_event_data; honest errors for 3 tools |
-| `YawlMcpHttpServer.java` (δ) | +3 | Register OCED bridge tools |
+| `YawlMcpHttpServer.java` (δ) | +3 | Register OCEL bridge tools |
 | **Test files (3)** | ~700 | 60 tests |
 | **Sprint 2 Total** | **~1,080** | |
 
@@ -604,7 +608,7 @@ This is the YAWL 2030 vision: **pAGI as a deterministic closed loop grounded in 
 | TemporalFork | 2 (pre-existing) | **1 (new)** | 18 |
 | Adaptation | **2 (new)** | **1 (new)** | 33 |
 | Conformance | **2 (new)** | **1 (new)** | 42 |
-| OCED Bridge | **2 (new)** | **1 (new)** | 35 |
+| OCEL Bridge | **2 (new)** | **1 (new)** | 35 |
 | PIToolProvider | **4 (real impl)** | — | 25 |
 | **Total** | **14 MCP** | **5 A2A** | **153** |
 
@@ -641,7 +645,7 @@ The result is a platform where:
 - Deterministic engines serve as **analytical substrates** (verification, simulation, monitoring)
 - The boundary between them is enforced by **protocol** (MCP/A2A), not by convention
 
-This is not a research hypothesis. It is implemented, tested, committed, and available today on `claude/research-workflow-construction-U4vMK`.
+This is not a research hypothesis. It is implemented, tested, committed, and available today on `master`.
 
 **The blue ocean is not a future market. It is a present codebase.**
 
@@ -664,7 +668,7 @@ This is not a research hypothesis. It is implemented, tested, committed, and ava
 ---
 
 *Prepared by the YAWL 6.0 research engineering team.*
-*Branch*: `claude/research-workflow-construction-U4vMK`
+*Branch*: `master`
 *Commit range*: `b8b9c3e` → current
 *Tests*: 153 new tests, 0 failures
 *Theoretical grounding*: van der Aalst arXiv:2508.00116 — connections 1–5 all implemented

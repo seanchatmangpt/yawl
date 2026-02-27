@@ -26,10 +26,15 @@ import org.yawlfoundation.yawl.ggen.rl.PowlParseException;
 import org.yawlfoundation.yawl.ggen.rl.scoring.FootprintExtractor;
 import org.yawlfoundation.yawl.ggen.rl.scoring.FootprintMatrix;
 import org.yawlfoundation.yawl.ggen.rl.scoring.FootprintScorer;
+import org.yawlfoundation.yawl.integration.mcp.util.McpResponseBuilder;
+import org.yawlfoundation.yawl.integration.mcp.util.McpLogger;
+import org.yawlfoundation.yawl.integration.util.SimilarityMetrics;
+import org.yawlfoundation.yawl.integration.util.YawlConstants;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
@@ -58,6 +63,7 @@ import java.util.stream.Collectors;
 public final class YawlConformanceToolSpecifications {
 
     private final FootprintExtractor extractor;
+    private final McpLogger logger = McpLogger.forTool(YawlConstants.TOOL_CONFORMANCE);
 
     public YawlConformanceToolSpecifications() {
         this.extractor = new FootprintExtractor();
@@ -85,7 +91,7 @@ public final class YawlConformanceToolSpecifications {
             "description", "POWL model JSON string, e.g. from powl_generator.py or yawl_synthesize_graalpy"));
 
         McpSchema.Tool tool = McpSchema.Tool.builder()
-            .name("yawl_extract_footprint")
+            .name(YawlConstants.TOOL_EXTRACT_FOOTPRINT)
             .description("Extract a behavioral footprint matrix from a POWL workflow model JSON. "
                 + "The footprint captures three types of control-flow relationships between activities: "
                 + "directSuccession (sequential order), concurrency (parallel execution), "
@@ -99,21 +105,21 @@ public final class YawlConformanceToolSpecifications {
             long start = System.currentTimeMillis();
             String powlJson = getString(request.arguments(), "powlModelJson", null);
             if (powlJson == null || powlJson.isBlank()) {
-                return errorResult("'powlModelJson' parameter is required.");
+                return McpResponseBuilder.error("'powlModelJson' parameter is required.");
             }
 
             PowlModel model;
             try {
                 model = PowlJsonMarshaller.fromJson(powlJson, "extract-footprint-model");
             } catch (PowlParseException e) {
-                return errorResult("Failed to parse POWL JSON: " + e.getMessage());
+                return McpResponseBuilder.error("Failed to parse POWL JSON: " + e.getMessage());
             }
 
             FootprintMatrix matrix = extractor.extract(model);
             long elapsed = System.currentTimeMillis() - start;
 
             String response = buildFootprintResponse(matrix, elapsed);
-            return successResult(response);
+            return McpResponseBuilder.successWithTiming(response, "extractFootprint", elapsed);
         });
     }
 
@@ -129,7 +135,7 @@ public final class YawlConformanceToolSpecifications {
             "description", "Candidate POWL model JSON to compare against the reference"));
 
         McpSchema.Tool tool = McpSchema.Tool.builder()
-            .name("yawl_compare_conformance")
+            .name(YawlConstants.TOOL_COMPARE_CONFORMANCE)
             .description("Compare two POWL workflow models and compute a behavioral conformance score. "
                 + "Uses macro-averaged Jaccard similarity across three footprint dimensions: "
                 + "directSuccession, concurrency, and exclusivity. Score in [0.0, 1.0]. "
@@ -141,28 +147,29 @@ public final class YawlConformanceToolSpecifications {
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             long start = System.currentTimeMillis();
+            Objects.requireNonNull(request, "Request cannot be null");
             String refJson = getString(request.arguments(), "referenceModelJson", null);
             String candJson = getString(request.arguments(), "candidateModelJson", null);
 
             if (refJson == null || refJson.isBlank()) {
-                return errorResult("'referenceModelJson' parameter is required.");
+                return McpResponseBuilder.error("'referenceModelJson' parameter is required.");
             }
             if (candJson == null || candJson.isBlank()) {
-                return errorResult("'candidateModelJson' parameter is required.");
+                return McpResponseBuilder.error("'candidateModelJson' parameter is required.");
             }
 
             PowlModel refModel;
             try {
                 refModel = PowlJsonMarshaller.fromJson(refJson, "reference-model");
             } catch (PowlParseException e) {
-                return errorResult("Failed to parse referenceModelJson: " + e.getMessage());
+                return McpResponseBuilder.error("Failed to parse referenceModelJson: " + e.getMessage());
             }
 
             PowlModel candModel;
             try {
                 candModel = PowlJsonMarshaller.fromJson(candJson, "candidate-model");
             } catch (PowlParseException e) {
-                return errorResult("Failed to parse candidateModelJson: " + e.getMessage());
+                return McpResponseBuilder.error("Failed to parse candidateModelJson: " + e.getMessage());
             }
 
             FootprintMatrix refMatrix = extractor.extract(refModel);
@@ -170,14 +177,27 @@ public final class YawlConformanceToolSpecifications {
             double score = scorer.score(candModel, "");
 
             FootprintMatrix candMatrix = extractor.extract(candModel);
-            double dsSim = jaccardSimilarity(candMatrix.directSuccession(), refMatrix.directSuccession());
-            double concSim = jaccardSimilarity(candMatrix.concurrency(), refMatrix.concurrency());
-            double exclSim = jaccardSimilarity(candMatrix.exclusive(), refMatrix.exclusive());
+            double dsSim = SimilarityMetrics.jaccardSimilarity(candMatrix.directSuccession(), refMatrix.directSuccession());
+            double concSim = SimilarityMetrics.jaccardSimilarity(candMatrix.concurrency(), refMatrix.concurrency());
+            double exclSim = SimilarityMetrics.jaccardSimilarity(candMatrix.exclusive(), refMatrix.exclusive());
 
             long elapsed = System.currentTimeMillis() - start;
 
-            String response = buildConformanceResponse(score, dsSim, concSim, exclSim, elapsed);
-            return successResult(response);
+            // Build conformance response
+            String interpretation = SimilarityMetrics.interpretScore(score);
+            StringBuilder sb = new StringBuilder();
+            sb.append("Conformance Check Result\n");
+            sb.append("========================\n");
+            sb.append(String.format("Overall Score:        %.4f  [%s]%n", score, interpretation));
+            sb.append(String.format("Direct Succession:    %.4f%n", dsSim));
+            sb.append(String.format("Concurrency:          %.4f%n", concSim));
+            sb.append(String.format("Exclusivity:          %.4f%n", exclSim));
+            sb.append("\nInterpretation:\n");
+            sb.append("  ").append(SimilarityMetrics.getDetailedInterpretation(score)).append("\n");
+            sb.append("\nElapsed: ").append(elapsed).append("ms");
+
+            String response = sb.toString();
+            return McpResponseBuilder.successWithTiming(response, "compareConformance", elapsed);
         });
     }
 
@@ -238,39 +258,13 @@ public final class YawlConformanceToolSpecifications {
         return sb.toString();
     }
 
-    private String buildConformanceResponse(double score, double dsSim,
-                                            double concSim, double exclSim, long elapsed) {
-        String interpretation = interpretScore(score);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Conformance Check Result\n");
-        sb.append("========================\n");
-        sb.append(String.format("Overall Score:        %.4f  [%s]%n", score, interpretation));
-        sb.append(String.format("Direct Succession:    %.4f%n", dsSim));
-        sb.append(String.format("Concurrency:          %.4f%n", concSim));
-        sb.append(String.format("Exclusivity:          %.4f%n", exclSim));
-        sb.append("\nInterpretation:\n");
-        sb.append("  ").append(interpretDetail(score)).append("\n");
-        sb.append("\nElapsed: ").append(elapsed).append("ms");
-        return sb.toString();
-    }
-
+  
     private String interpretScore(double score) {
-        if (score >= 0.8) return "HIGH";
-        if (score >= 0.5) return "MEDIUM";
-        return "LOW";
+        return SimilarityMetrics.interpretScore(score);
     }
 
     private String interpretDetail(double score) {
-        if (score >= 0.8) {
-            return "HIGH conformance — the candidate model closely matches the reference model's "
-                 + "behavioral structure across sequence, concurrency, and exclusive choice.";
-        }
-        if (score >= 0.5) {
-            return "MEDIUM conformance — partial structural agreement; some control-flow "
-                 + "relationships differ between candidate and reference.";
-        }
-        return "LOW conformance — significant behavioral divergence; the candidate model "
-             + "does not closely match the reference model's control-flow structure.";
+        return SimilarityMetrics.getDetailedInterpretation(score);
     }
 
     private int countActivities(FootprintMatrix matrix) {
@@ -281,28 +275,12 @@ public final class YawlConformanceToolSpecifications {
         return activities.size();
     }
 
-    private double jaccardSimilarity(java.util.Set<java.util.List<String>> a,
-                                     java.util.Set<java.util.List<String>> b) {
-        if (a.isEmpty() && b.isEmpty()) return 1.0;
-        var intersection = new java.util.HashSet<>(a);
-        intersection.retainAll(b);
-        var union = new java.util.HashSet<>(a);
-        union.addAll(b);
-        return union.isEmpty() ? 0.0 : (double) intersection.size() / union.size();
-    }
-
+    
     private String getString(Map<String, Object> args, String key, String defaultValue) {
+        if (args == null) {
+            throw new IllegalArgumentException("Arguments map cannot be null");
+        }
         Object val = args.get(key);
         return val instanceof String s ? s : defaultValue;
-    }
-
-    private static McpSchema.CallToolResult successResult(String text) {
-        return new McpSchema.CallToolResult(
-            List.of(new McpSchema.TextContent(text)), false, null, null);
-    }
-
-    private static McpSchema.CallToolResult errorResult(String message) {
-        return new McpSchema.CallToolResult(
-            List.of(new McpSchema.TextContent(message)), true, null, null);
     }
 }

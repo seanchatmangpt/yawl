@@ -27,6 +27,11 @@ import org.yawlfoundation.yawl.integration.adaptation.AdaptationRule;
 import org.yawlfoundation.yawl.integration.adaptation.EventDrivenAdaptationEngine;
 import org.yawlfoundation.yawl.integration.adaptation.EventSeverity;
 import org.yawlfoundation.yawl.integration.adaptation.ProcessEvent;
+import org.yawlfoundation.yawl.integration.util.EventSeverityUtils;
+import org.yawlfoundation.yawl.integration.mcp.util.McpResponseBuilder;
+import org.yawlfoundation.yawl.integration.mcp.util.McpLogger;
+import org.yawlfoundation.yawl.integration.util.PayloadParser;
+import org.yawlfoundation.yawl.integration.util.YawlConstants;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -63,6 +68,7 @@ public final class YawlAdaptationToolSpecifications {
 
     public static final List<AdaptationRule> DEFAULT_RULES = buildDefaultRules();
     private final EventDrivenAdaptationEngine engine;
+    private final McpLogger logger = McpLogger.forTool(YawlConstants.TOOL_EVALUATE_EVENT);
 
     public YawlAdaptationToolSpecifications() {
         this.engine = new EventDrivenAdaptationEngine(DEFAULT_RULES);
@@ -94,7 +100,7 @@ public final class YawlAdaptationToolSpecifications {
             "description", "Optional key=value pairs, e.g. 'risk_score=0.95'"));
 
         McpSchema.Tool tool = McpSchema.Tool.builder()
-            .name("yawl_evaluate_event")
+            .name(YawlConstants.TOOL_EVALUATE_EVENT)
             .description("Evaluate a process event against the built-in YAWL adaptation ruleset and return "
                 + "the matching adaptation action. No LLM required — pure deterministic rule matching. "
                 + "Built-in rules cover: DEADLINE_EXCEEDED, RESOURCE_UNAVAILABLE, SLA_BREACH, "
@@ -107,11 +113,28 @@ public final class YawlAdaptationToolSpecifications {
             long start = System.currentTimeMillis();
             String eventType = getString(request.arguments(), "eventType", null);
             if (eventType == null || eventType.isBlank()) {
-                return errorResult("'eventType' parameter is required.");
+                return McpResponseBuilder.error("'eventType' parameter is required.");
             }
 
-            EventSeverity severity = parseSeverity(getString(request.arguments(), "severity", "MEDIUM"));
-            Map<String, Object> payload = parsePayload(getString(request.arguments(), "payload", ""));
+            EventSeverity severity = org.yawlfoundation.yawl.integration.adaptation.EventSeverity.valueOf(
+                EventSeverityUtils.parseSeverity(getString(request.arguments(), "severity", "MEDIUM")));
+            String payloadStr = getString(request.arguments(), "payload", "");
+            Map<String, Object> payload = new java.util.HashMap<>();
+            if (!payloadStr.isBlank()) {
+                // Parse simple key=value pairs separated by commas or semicolons
+                for (String pair : payloadStr.split("[,;]")) {
+                    String[] parts = pair.trim().split("=", 2);
+                    if (parts.length == 2) {
+                        String key = parts[0].trim();
+                        String val = parts[1].trim();
+                        try {
+                            payload.put(key, Double.parseDouble(val));
+                        } catch (NumberFormatException e) {
+                            payload.put(key, val);
+                        }
+                    }
+                }
+            }
 
             ProcessEvent event = new ProcessEvent(
                 UUID.randomUUID().toString(),
@@ -126,7 +149,7 @@ public final class YawlAdaptationToolSpecifications {
             long elapsed = System.currentTimeMillis() - start;
 
             String response = buildEvaluateResponse(event, result, elapsed);
-            return successResult(response);
+            return McpResponseBuilder.successWithTiming(response, "evaluateEvent", elapsed);
         });
     }
 
@@ -136,7 +159,7 @@ public final class YawlAdaptationToolSpecifications {
 
     private McpServerFeatures.SyncToolSpecification buildListRulesTool() {
         McpSchema.Tool tool = McpSchema.Tool.builder()
-            .name("yawl_list_adaptation_rules")
+            .name(YawlConstants.TOOL_LIST_RULES)
             .description("List all active adaptation rules in the YAWL event-driven adaptation engine. "
                 + "Returns each rule's ID, event type trigger, action, priority, and description. "
                 + "No LLM required — purely reads the configured ruleset.")
@@ -145,6 +168,7 @@ public final class YawlAdaptationToolSpecifications {
             .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, args) -> {
+            long start = System.currentTimeMillis();
             StringBuilder sb = new StringBuilder();
             sb.append("YAWL Adaptation Rules (").append(DEFAULT_RULES.size()).append(" total):\n\n");
 
@@ -156,7 +180,7 @@ public final class YawlAdaptationToolSpecifications {
                 sb.append("   Priority: ").append(rule.priority()).append("\n");
                 sb.append("   Desc:     ").append(rule.description()).append("\n\n");
             }
-            return successResult(sb.toString().trim());
+            return McpResponseBuilder.successWithTiming(sb.toString().trim(), "listRules", System.currentTimeMillis() - start);
         });
     }
 
@@ -276,49 +300,8 @@ public final class YawlAdaptationToolSpecifications {
         return sb.toString();
     }
 
-    private EventSeverity parseSeverity(String severityStr) {
-        if (severityStr == null) return EventSeverity.MEDIUM;
-        try {
-            return EventSeverity.valueOf(severityStr.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return EventSeverity.MEDIUM;
-        }
-    }
-
-    private Map<String, Object> parsePayload(String payloadStr) {
-        if (payloadStr == null || payloadStr.isBlank()) {
-            return Map.of();
-        }
-        // Parse simple key=value pairs separated by commas or semicolons
-        Map<String, Object> payload = new java.util.HashMap<>();
-        for (String pair : payloadStr.split("[,;]")) {
-            String[] parts = pair.trim().split("=", 2);
-            if (parts.length == 2) {
-                String key = parts[0].trim();
-                String val = parts[1].trim();
-                try {
-                    payload.put(key, Double.parseDouble(val));
-                } catch (NumberFormatException e) {
-                    payload.put(key, val);
-                }
-            }
-        }
-        return Map.copyOf(payload);
-    }
-
-    @SuppressWarnings("unchecked")
     private String getString(Map<String, Object> args, String key, String defaultValue) {
         Object val = args.get(key);
         return val instanceof String s ? s : defaultValue;
-    }
-
-    private static McpSchema.CallToolResult successResult(String text) {
-        return new McpSchema.CallToolResult(
-            List.of(new McpSchema.TextContent(text)), false, null, null);
-    }
-
-    private static McpSchema.CallToolResult errorResult(String message) {
-        return new McpSchema.CallToolResult(
-            List.of(new McpSchema.TextContent(message)), true, null, null);
     }
 }

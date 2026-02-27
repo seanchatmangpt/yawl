@@ -26,6 +26,7 @@ import org.yawlfoundation.yawl.pi.bridge.OcedBridge;
 import org.yawlfoundation.yawl.pi.bridge.OcedBridgeFactory;
 import org.yawlfoundation.yawl.pi.bridge.OcedSchema;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ import java.util.Set;
  *
  * <h2>Parameters</h2>
  * <ul>
- *   <li>{@code eventData} — required; raw CSV, JSON, or XML/XES event data</li>
+ *   <li>{@code eventData} — required; raw CSV, JSON, or XML/XES event data (max 10MB)</li>
  *   <li>{@code format} — optional; 'csv', 'json', or 'xml' (auto-detected if omitted)</li>
  * </ul>
  *
@@ -60,6 +61,16 @@ import java.util.Set;
  * @since YAWL 6.0
  */
 public class OcedConversionSkill implements A2ASkill {
+
+    private static final int MAX_DATA_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
+    private void validateDataSize(String data, String paramName) {
+        if (data != null && data.getBytes(StandardCharsets.UTF_8).length > MAX_DATA_SIZE_BYTES) {
+            throw new IllegalArgumentException(
+                paramName + " exceeds maximum size of " + (MAX_DATA_SIZE_BYTES / 1024 / 1024) + "MB"
+            );
+        }
+    }
 
     @Override
     public String getId() {
@@ -102,6 +113,8 @@ public class OcedConversionSkill implements A2ASkill {
                 "Parameter 'eventData' is required. "
                 + "Provide raw CSV rows, a JSON array of event objects, or XES/XML event log data.");
         }
+
+        validateDataSize(eventData, "eventData");
 
         String format = request.getParameter("format");
         long start = System.currentTimeMillis();

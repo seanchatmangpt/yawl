@@ -25,9 +25,11 @@ import org.yawlfoundation.yawl.pi.bridge.OcedBridge;
 import org.yawlfoundation.yawl.pi.bridge.OcedBridgeFactory;
 import org.yawlfoundation.yawl.pi.bridge.OcedSchema;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * MCP tool specifications for OCED → OCEL 2.0 format conversion — no LLM required.
@@ -42,9 +44,9 @@ import java.util.Map;
  *
  * <ul>
  *   <li>{@code yawl_convert_to_ocel} — auto-detect or explicit format, infer schema,
- *       return OCEL 2.0 JSON</li>
+ *       return OCEL 2.0 JSON (max 10MB input)</li>
  *   <li>{@code yawl_infer_oced_schema} — return inferred schema columns without
- *       performing the full conversion</li>
+ *       performing the full conversion (max 2KB input)</li>
  * </ul>
  *
  * <p>OCEL 2.0 JSON is interoperable with PM4Py, ocpa, PM4JS, and Celonis Process Sphere™.</p>
@@ -55,6 +57,17 @@ import java.util.Map;
  * @since YAWL 6.0
  */
 public final class YawlOcedBridgeToolSpecifications {
+
+    private static final int MAX_DATA_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+    private static final int MAX_SAMPLE_SIZE_BYTES = 2 * 1024; // 2KB
+
+    private void validateDataSize(String data, String paramName, int maxBytes) {
+        if (data != null && data.getBytes(StandardCharsets.UTF_8).length > maxBytes) {
+            throw new IllegalArgumentException(
+                paramName + " exceeds maximum size of " + (maxBytes / 1024) + "KB"
+            );
+        }
+    }
 
     /**
      * Creates all OCED bridge MCP tool specifications.
@@ -77,7 +90,7 @@ public final class YawlOcedBridgeToolSpecifications {
         props.put("eventData", Map.of("type", "string",
             "description", "Raw event log data: CSV rows, JSON array of event objects, or XES/XML. "
                 + "CSV must have a header row. JSON must be an array of objects. "
-                + "XML should follow XES standard."));
+                + "XML should follow XES standard. Maximum size: 10MB."));
         props.put("format", Map.of("type", "string",
             "description", "Format hint: 'csv', 'json', or 'xml'. Omit for auto-detection from content."));
 
@@ -95,10 +108,15 @@ public final class YawlOcedBridgeToolSpecifications {
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             long start = System.currentTimeMillis();
+            Objects.requireNonNull(request, "Request cannot be null");
+            Objects.requireNonNull(request.arguments(), "Request arguments cannot be null");
+
             String eventData = getString(request.arguments(), "eventData", null);
             if (eventData == null || eventData.isBlank()) {
                 return errorResult("'eventData' parameter is required.");
             }
+
+            validateDataSize(eventData, "eventData", MAX_DATA_SIZE_BYTES);
 
             String format = getString(request.arguments(), "format", null);
 
@@ -133,7 +151,7 @@ public final class YawlOcedBridgeToolSpecifications {
         LinkedHashMap<String, Object> props = new LinkedHashMap<>();
         props.put("dataSample", Map.of("type", "string",
             "description", "Sample of event log data (first 10 rows or 2KB). "
-                + "Supports CSV, JSON array, or XML/XES."));
+                + "Supports CSV, JSON array, or XML/XES. Maximum size: 2KB."));
         props.put("format", Map.of("type", "string",
             "description", "Format hint: 'csv', 'json', or 'xml'. Omit for auto-detection."));
 
@@ -151,10 +169,15 @@ public final class YawlOcedBridgeToolSpecifications {
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             long start = System.currentTimeMillis();
+            Objects.requireNonNull(request, "Request cannot be null");
+            Objects.requireNonNull(request.arguments(), "Request arguments cannot be null");
+
             String dataSample = getString(request.arguments(), "dataSample", null);
             if (dataSample == null || dataSample.isBlank()) {
                 return errorResult("'dataSample' parameter is required.");
             }
+
+            validateDataSize(dataSample, "dataSample", MAX_SAMPLE_SIZE_BYTES);
 
             String format = getString(request.arguments(), "format", null);
 
