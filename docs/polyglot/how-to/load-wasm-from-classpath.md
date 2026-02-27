@@ -2,214 +2,154 @@
 
 ## Problem
 
-You have a compiled WebAssembly (.wasm) module that you want to include with your YAWL application and load at runtime without managing external file paths.
+You have a compiled WebAssembly module (`.wasm` file) and need to load it from your application's classpath.
 
 ## Solution
 
-Place the .wasm file in `src/main/resources/wasm/`, configure Maven to include it, then load it via `WasmExecutionEngine.loadModuleFromClasspath()`.
+Place the `.wasm` file in `src/main/resources/wasm/`, declare it in `pom.xml`, load via `loadModuleFromClasspath`, and execute functions using try-with-resources to ensure cleanup.
 
-### Step 1: Organize your WASM module
+### Project structure
 
-Create the directory structure:
 ```
-src/main/resources/
-└── wasm/
-    └── my-module.wasm
+src/main/resources/wasm/
+├── my-module.wasm              # Your compiled WASM binary
+└── process-mining.wasm         # Example: rust4pm WASM module
 ```
 
-Copy your compiled .wasm binary into this directory.
-
-### Step 2: Update pom.xml
-
-Ensure the Maven Resource Plugin includes .wasm files:
+### Add resource to pom.xml
 
 ```xml
-<project>
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>org.yawlfoundation</groupId>
-    <artifactId>yawl-my-wasm-task</artifactId>
-    <version>6.0.0-GA</version>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-graalwasm</artifactId>
-            <version>6.0.0-GA</version>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                    <!-- .wasm files are binary, not text -->
-                </configuration>
-            </plugin>
-        </plugins>
-
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*.wasm</include>
-                    <include>**/*.js</include>
-                    <include>**/*.properties</include>
-                </includes>
-            </resource>
-        </resources>
-    </build>
-</project>
+<build>
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>wasm/**/*.wasm</include>
+            </includes>
+        </resource>
+    </resources>
+</build>
 ```
 
-### Step 3: Load and execute the module
+### Load and execute WASM module
 
 ```java
 import org.yawlfoundation.yawl.graalwasm.WasmExecutionEngine;
 import org.yawlfoundation.yawl.graalwasm.WasmModule;
 import org.yawlfoundation.yawl.graalwasm.WasmSandboxConfig;
-import org.yawlfoundation.yawl.graalwasm.WasmException;
-import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine;
 import org.graalvm.polyglot.Value;
 
-// Create engine with pure WASM sandbox
+// Initialize engine once per application
 WasmExecutionEngine engine = WasmExecutionEngine.builder()
     .sandboxConfig(WasmSandboxConfig.pureWasm())
     .build();
 
-try {
-    // Load from classpath: src/main/resources/wasm/my-module.wasm
-    WasmModule module = engine.loadModuleFromClasspath(
-        "wasm/my-module.wasm",
-        "myModule"
-    );
+// Load module from classpath (throws WasmException if not found)
+WasmModule module = engine.loadModuleFromClasspath(
+    "wasm/my-module.wasm",
+    "myModule"
+);
 
-    try {
-        // Execute WASM function: add(int, int) -> int
-        Value result = module.execute("add", 10, 20);
-        int sum = result.asInt();
-        System.out.println("Result: " + sum);  // Output: Result: 30
-
-    } finally {
-        // CRITICAL: WasmModule must be closed to release the Context
-        module.close();
-    }
-
-} catch (WasmException e) {
+// Use try-with-resources to ensure module is closed
+try (module) {
+    // Execute a function exported from the WASM module
+    Value result = module.execute("add", 5, 3);
+    int sum = result.asInt();  // 8
+    System.out.println("5 + 3 = " + sum);
+} catch (Exception e) {
     System.err.println("WASM execution failed: " + e.getMessage());
-    // Inspect e.getErrorKind() for specific error types
-} finally {
-    engine.close();
 }
 ```
 
-### For wasm-bindgen modules (like Rust4pmBridge)
-
-If your .wasm module was compiled with `wasm-bindgen` (which generates JavaScript glue code), use the combined JS+WASM sandbox:
+### Example: Compute with multiple return values
 
 ```java
-import org.yawlfoundation.yawl.graaljs.JavaScriptSandboxConfig;
+WasmModule module = engine.loadModuleFromClasspath(
+    "wasm/stats-module.wasm",
+    "statsModule"
+);
 
-WasmExecutionEngine engine = WasmExecutionEngine.builder()
-    .sandboxConfig(WasmSandboxConfig.withJs())
-    .build();
+try (module) {
+    // WASM function returns struct/tuple
+    Value stats = module.execute("computeStats", new int[]{1, 2, 3, 4, 5});
+    
+    // Access fields (depends on WASM module export signature)
+    int mean = stats.getMember("mean").asInt();
+    int sum = stats.getMember("sum").asInt();
+    
+    System.out.println("Mean: " + mean + ", Sum: " + sum);
+}
+```
 
-try {
-    WasmModule module = engine.loadModuleFromClasspath(
-        "wasm/process_mining_wasm.js",  // Note: .js file, which loads .wasm internally
-        "processMiningModule"
-    );
+### Load from file path (if not in classpath)
 
-    try {
-        // Execute wasm-bindgen function
-        Value result = module.execute("analyzeTrace", jsonString);
-        // Process result...
-    } finally {
-        module.close();
-    }
+```java
+// For development or external WASM files
+WasmModule module = engine.loadModuleFromPath(
+    Path.of("/opt/wasm/custom-processor.wasm"),
+    "processor"
+);
 
+try (module) {
+    Value output = module.execute("process", inputData);
+    // ...
+}
+```
+
+### CRITICAL: Always close the module
+
+Forgetting to close a `WasmModule` leaks the underlying GraalVM Context:
+
+```java
+// WRONG: Memory leak
+WasmModule module = engine.loadModuleFromClasspath("wasm/my.wasm", "m");
+module.execute("fn", 1, 2);
+// Module not closed!
+
+// CORRECT: Automatic cleanup
+try (WasmModule module = engine.loadModuleFromClasspath("wasm/my.wasm", "m")) {
+    module.execute("fn", 1, 2);
+}  // AutoCloseable.close() called automatically
+```
+
+### Handle WASM exceptions
+
+```java
+import org.yawlfoundation.yawl.graalwasm.WasmException;
+
+try (WasmModule module = engine.loadModuleFromClasspath("wasm/math.wasm", "math")) {
+    // WASM may trap (execution error)
+    Value result = module.execute("divide", 10, 0);
 } catch (WasmException e) {
-    // Handle error...
+    System.err.println("WASM error: " + e.getMessage());
+    System.err.println("Kind: " + e.getErrorKind());  // MODULE_LOAD_ERROR, EXECUTION_ERROR, etc.
 }
 ```
 
-## Common patterns
+### Cache binary across multiple loads
 
-### Loading multiple WASM modules from the same engine
+The engine maintains a `WasmBinaryCache`. Subsequent loads of the same `.wasm` file are instant:
 
 ```java
-WasmExecutionEngine engine = WasmExecutionEngine.builder()
-    .sandboxConfig(WasmSandboxConfig.pureWasm())
-    .build();
+// First load: parses and caches binary (fast)
+WasmModule m1 = engine.loadModuleFromClasspath("wasm/common.wasm", "mod1");
+try (m1) { m1.execute("work"); }
 
-try {
-    WasmModule mathModule = engine.loadModuleFromClasspath(
-        "wasm/math-functions.wasm", "mathModule");
-    WasmModule stringModule = engine.loadModuleFromClasspath(
-        "wasm/string-functions.wasm", "stringModule");
-
-    try {
-        Value math1 = mathModule.execute("multiply", 3, 7);
-        Value str1 = stringModule.execute("reverse", "hello");
-
-        System.out.println(math1.asInt());      // 21
-        System.out.println(str1.asString());    // "olleh"
-    } finally {
-        mathModule.close();
-        stringModule.close();
-    }
-} finally {
-    engine.close();
-}
+// Second load: instant, uses cached binary
+WasmModule m2 = engine.loadModuleFromClasspath("wasm/common.wasm", "mod2");
+try (m2) { m2.execute("work"); }
 ```
 
-### Error handling for missing resources
+Clear the cache if needed:
 
 ```java
-try {
-    WasmModule module = engine.loadModuleFromClasspath(
-        "wasm/nonexistent.wasm", "missing");
-} catch (WasmException e) {
-    if (e.getErrorKind() == WasmException.ErrorKind.MODULE_LOAD_ERROR) {
-        System.err.println("WASM file not found in classpath: " + e.getMessage());
-        // Fall back to alternate implementation
-    }
-}
+engine.close();  // Clears binary cache and closes engine
 ```
 
-### Loading from filesystem instead of classpath
+## Tips
 
-```java
-try {
-    // If your .wasm is outside the classpath (e.g., /tmp/my-module.wasm)
-    WasmModule module = engine.loadModuleFromPath(
-        Paths.get("/tmp/my-module.wasm"),
-        "tmpModule"
-    );
+- **Keep modules small**: Each module takes 1-10 MB per instance.
+- **Reuse engine**: Create once and keep alive for multiple module loads.
+- **Try-with-resources is mandatory**: Use `try (WasmModule m = ...)` for automatic cleanup.
+- **Classpath vs. filesystem**: Use classpath for bundled modules (simpler packaging). Use filesystem for dynamically loaded modules.
 
-    try {
-        Value result = module.execute("someFunction");
-    } finally {
-        module.close();
-    }
-} catch (WasmException e) {
-    System.err.println("Failed to load WASM from path: " + e.getMessage());
-}
-```
-
-## Notes
-
-- **Module names**: The module name (e.g., `"myModule"`) is used for debugging and context tracking; it doesn't need to match the filename.
-- **Binary vs text**: .wasm files are binary; Maven Resource Plugin handles them correctly by default.
-- **Context lifecycle**: Each `WasmModule` holds a GraalVM Context. **You must call `close()` to avoid leaking memory.** Use try-with-resources or explicit try-finally.
-- **Pure WASM**: Use `pureWasm()` sandbox for modules with only WASM exports; use `withJs()` for wasm-bindgen modules.
-- **Caching**: The binary cache is managed by `WasmBinaryCache` internally; repeated loads of the same module name use cached binaries.
-
-## Related guides
-
-- [WebAssembly binding strategies](../explanation/wasm-binding-strategies.md)
-- [Configure sandbox restrictions](./configure-sandbox.md)
-- [Choosing between GraalPy, GraalJS, and GraalWasm](../explanation/when-to-use-which.md)
