@@ -1,9 +1,9 @@
 {
-  "session_id": "f7c047c1-4438-43c6-9562-7e5fb404fe29",
-  "started_at": "2026-02-26T21:28:44.263193241Z",
-  "ended_at": "2026-02-26T21:28:44.268176443Z",
-  "receipt_count": 4,
-  "chain_hash": "7539c9884d50be788393e2f278ac35de645addb0ab8345ace57a030f72f92496",
+  "session_id": "8fcfbe24-bd35-41a1-9436-62c56517810a",
+  "started_at": "2026-02-27T00:07:08.474670739Z",
+  "ended_at": "2026-02-27T00:07:08.490013308Z",
+  "receipt_count": 6,
+  "chain_hash": "441d31234af320f59a37f913a1737b15fbba3c1d517ce37eba7c53ec95a2effc",
   "receipts": [
     {
       "timestamp_ns": 1772088056739810825,
@@ -76,6 +76,58 @@
           "Declaration": {
             "decl_kind": "Field",
             "name": "# Plan: Selective Merge from `claude/jak",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772147284167227311,
+      "timestamp_rfc": "2026-02-26T23:08:04.167227311Z",
+      "session_id": "c0dde875-31b6-4320-a776-b05c5c59cd78",
+      "file_path": "/root/.claude/plans/structured-finding-truffle.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "371d777060b699023723506e79d1d1ee7fbbf3abd68dd2b483e532b2ac3e4a6b",
+      "delta_hash": "6f686fbbb817a402a5f362c6d09fb7a194d097b8dccc4e0b45a40edf039df0e9",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Plan: 80/20 Finish — Jakarta Migration",
+            "change": "Added"
+          }
+        }
+      ]
+    },
+    {
+      "timestamp_ns": 1772147395721130287,
+      "timestamp_rfc": "2026-02-26T23:09:55.721130287Z",
+      "session_id": "c0dde875-31b6-4320-a776-b05c5c59cd78",
+      "file_path": "/root/.claude/plans/structured-finding-truffle.md",
+      "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "output_hash": "93700932ba80708b1aac9421fedcd5e93b89174191e2e0c99cdca88124015718",
+      "delta_hash": "232f05ce3110d4cdf8a8402fa655eac5d75c8dcc2394003f927d8457c72eec26",
+      "injected": false,
+      "deltas": [
+        {
+          "Declaration": {
+            "decl_kind": "Field",
+            "name": "# Plan: 80/20 Finish — Jakarta Migration",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "javax",
+            "change": "Added"
+          }
+        },
+        {
+          "Declaration": {
+            "decl_kind": "Import",
+            "name": "jakarta",
             "change": "Added"
           }
         }
