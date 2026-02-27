@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772161413551784520,
+  "timestamp_rfc": "2026-02-27T03:03:33.551784520Z",
+  "session_id": "52ef9531-b5cd-4a80-ac7e-c21c12ae891a",
+  "file_path": "/root/.claude/plans/mossy-greeting-valiant-agent-a90676973e2697b9a.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "94752eec8c258496ed6aac654c12a0f67e796bc0b42593af27a40668f444b1ec",
+  "delta_hash": "69d9fcdb795891401aad400255c32302347d952895e85f58ae16befbc3099271",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "## Compilation Check Command",
+        "change": "Added"
+      }
+    }
+  ]
+}
