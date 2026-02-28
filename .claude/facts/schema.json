@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-schema-facts.sh",
+  "data": {
+    "xsd_files": [],
+    "schema_versions": ["1.0"],
+    "schema_names": [],
+    "validation_files": [],
+    "total_xsd_files": 0,
+    "unique_schema_versions": ["1.0"],
+    "has_dependencies": false
+  }
+}

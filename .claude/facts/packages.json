@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-packages-facts.sh",
+  "data": {
+    "total_packages": 12,
+    "package_info_files": 10,
+    "coverage_percentage": 83,
+    "package_analysis": [],
+    "all_packages": ["org.yawlfoundation.yawl.engine", "org.yawlfoundation.yawl.elements", "org.yawlfoundation.yawl.stateless"],
+    "packages_with_info": 83,
+    "package_info_coverage_rate": 0.83
+  }
+}

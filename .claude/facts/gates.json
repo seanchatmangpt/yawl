@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-gates-facts.sh",
+  "data": {
+    "gate_files_count": 12,
+    "gate_classes_count": 25,
+    "gate_methods_count": 84,
+    "total_gates": 25,
+    "validation_gates": 18,
+    "security_gates": 7
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-engine-facts.sh",
+  "data": {
+    "y_engine_files": [],
+    "y_stateless_engine_files": [],
+    "all_engine_classes": [],
+    "total_engine_files": 0,
+    "engine_count": 0,
+    "stateless_engine_count": 0
+  }
+}

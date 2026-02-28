@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-reactor-facts.sh",
+  "data": {
+    "root_pom": "pom.xml",
+    "total_modules": 3,
+    "module_dependency_count": 12,
+    "depth": 4
+  }
+}
