@@ -225,7 +225,8 @@ compute_module_semantic_hash() {
     java_files=$(collect_java_files "$module")
 
     local file_count=0
-    local file_hashes="[]"
+    local -a file_hashes_array=()
+    local -a file_entries_array=()
     # Collect all file semantics and hashes in order for deterministic module hash
     local -a semantic_lines=()
 
@@ -244,17 +245,20 @@ compute_module_semantic_hash() {
 
         # Collect semantics for module-level hash (deterministic order via sorted java_files)
         semantic_lines+=("${file_hash}")
+        file_entries_array+=("{\"file\":\"${relative_path}\",\"hash\":\"${file_hash}\"}")
         ((file_count++))
-
-        # Track file hash
-        file_hashes=$(echo "$file_hashes" | jq \
-            --arg file "$relative_path" \
-            --arg hash "$file_hash" \
-            '. += [{"file": $file, "hash": $hash}]')
 
         log "File: $relative_path → $file_hash"
 
     done <<< "$java_files"
+
+    # Build file_hashes JSON array from bash array
+    local file_hashes="["
+    for i in "${!file_entries_array[@]}"; do
+        [[ $i -gt 0 ]] && file_hashes+=","
+        file_hashes+="${file_entries_array[$i]}"
+    done
+    file_hashes+="]"
 
     # Compute module-level hash: hash of concatenated file hashes (deterministic)
     local module_hash

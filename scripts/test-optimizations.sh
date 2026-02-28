@@ -211,6 +211,34 @@ run_all_tests() {
     echo ""
 }
 
+print_summary() {
+    printf "\n${C_CYAN}════════════════════════════════════════════════════════════${C_RESET}\n" >&2
+    printf "${C_CYAN}RESULTS SUMMARY${C_RESET}\n" >&2
+    printf "${C_CYAN}════════════════════════════════════════════════════════════${C_RESET}\n" >&2
+
+    local i name status icon
+    for i in {1..10}; do
+        if [[ -n "${TEST_STATUS["test_${i}"]:-}" ]]; then
+            status="${TEST_STATUS["test_${i}"]}"
+            icon="${C_GREEN}✓${C_RESET}"
+            [[ "$status" == "FAIL" ]] && icon="${C_RED}✗${C_RESET}"
+            case "$i" in
+                1) name="Impact Graph" ;;
+                2) name="Test Result Caching" ;;
+                3) name="CDS Archives" ;;
+                4) name="Semantic Change Detection" ;;
+                5) name="Test Clustering" ;;
+                6) name="Warm Bytecode Cache" ;;
+                7) name="TEP Fail-Fast" ;;
+                8) name="Semantic Caching" ;;
+                9) name="TIP Predictions" ;;
+                10) name="Code Bifurcation" ;;
+            esac
+            printf "%s Test %2d: %-30s [%s]\n" "$icon" "$i" "$name" "$status" >&2
+        fi
+    done
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --verbose)        VERBOSE=1; shift ;;
@@ -243,31 +271,7 @@ else
 fi
 
 generate_results_json
-
-printf "\n${C_CYAN}════════════════════════════════════════════════════════════${C_RESET}\n" >&2
-printf "${C_CYAN}RESULTS SUMMARY${C_RESET}\n" >&2
-printf "${C_CYAN}════════════════════════════════════════════════════════════${C_RESET}\n" >&2
-
-for i in {1..10}; do
-    if [[ -n "${TEST_STATUS["test_${i}"]:-}" ]]; then
-        local status="${TEST_STATUS["test_${i}"]}"
-        local icon="${C_GREEN}✓${C_RESET}"
-        [[ "$status" == "FAIL" ]] && icon="${C_RED}✗${C_RESET}"
-        case "$i" in
-            1) name="Impact Graph" ;;
-            2) name="Test Result Caching" ;;
-            3) name="CDS Archives" ;;
-            4) name="Semantic Change Detection" ;;
-            5) name="Test Clustering" ;;
-            6) name="Warm Bytecode Cache" ;;
-            7) name="TEP Fail-Fast" ;;
-            8) name="Semantic Caching" ;;
-            9) name="TIP Predictions" ;;
-            10) name="Code Bifurcation" ;;
-        esac
-        printf "%s Test %2d: %-30s [%s]\n" "$icon" "$i" "$name" "$status" >&2
-    fi
-done
+print_summary
 
 cleanup_test_environment
 exit 0
