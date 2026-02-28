@@ -153,6 +153,20 @@ fi
 # Profile
 MVN_ARGS+=("-P" "agent-dx")
 
+# Maven 4: Detect version and enable concurrent builder
+# Maven 4 introduces tree-based lifecycle where modules start as soon as
+# dependencies reach 'ready' phase, enabling graph-optimal parallelization.
+BUILDER_FLAG=""
+MVN_VERSION=$($MVN_CMD --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+if [[ "${MVN_VERSION%%.*}" -ge 4 ]]; then
+    BUILDER_FLAG="-b concurrent"
+    # Maven 4 resume support: continue from failed module
+    if [[ "${DX_RESUME:-0}" == "1" ]]; then
+        MVN_ARGS+=("-r")
+    fi
+fi
+[[ -n "$BUILDER_FLAG" ]] && MVN_ARGS+=("$BUILDER_FLAG")
+
 # Offline
 [[ -n "$OFFLINE_FLAG" ]] && MVN_ARGS+=("$OFFLINE_FLAG")
 
