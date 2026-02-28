@@ -814,7 +814,7 @@ extract_slowest_tests() {
 echo ""
 if [[ $EXIT_CODE -eq 0 ]]; then
     # Build success message with warm cache info if applicable
-    local success_msg="${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d"
+    success_msg="${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d"
     if [[ -n "$WARM_CACHE_MODULES_SKIPPED" ]]; then
         success_msg+=" | warm cache: %d module(s)"
     fi

@@ -225,8 +225,8 @@ public final class YawlProcessMiningToolSpecifications {
                     sb.append("Variants: ").append(report.variantCount).append("\n\n");
                     if (report.performance != null) {
                         sb.append("Performance:\n");
-                        sb.append("  Avg Flow Time: ").append(report.performance.avgFlowTimeMs).append(" ms\n");
-                        sb.append("  Throughput: ").append(String.format("%.2f", report.performance.throughputPerHour)).append(" cases/hour\n\n");
+                        sb.append("  Avg Flow Time: ").append(report.performance.avgFlowTimeMs()).append(" ms\n");
+                        sb.append("  Throughput: ").append(String.format("%.2f", report.performance.throughputPerHour())).append(" cases/hour\n\n");
                     }
                     if (report.conformance != null) {
                         sb.append("Conformance:\n");
@@ -306,8 +306,8 @@ public final class YawlProcessMiningToolSpecifications {
                     sb.append("====================\n\n");
                     sb.append("Specification: ").append(specId.getIdentifier()).append("\n");
                     if (report.performance != null) {
-                        sb.append("Avg Flow Time: ").append(report.performance.avgFlowTimeMs).append(" ms\n");
-                        sb.append("Throughput: ").append(String.format("%.2f", report.performance.throughputPerHour)).append(" cases/hour\n");
+                        sb.append("Avg Flow Time: ").append(report.performance.avgFlowTimeMs()).append(" ms\n");
+                        sb.append("Throughput: ").append(String.format("%.2f", report.performance.throughputPerHour())).append(" cases/hour\n");
                     }
                     sb.append("Traces: ").append(report.traceCount).append("\n");
                     return new McpSchema.CallToolResult(

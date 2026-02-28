@@ -30,6 +30,12 @@
             <artifactId>yawl-stateless</artifactId>
         </dependency>
         <dependency>
+            <!-- GraalPy execution engine: PythonExecutionEngine, TypeMarshaller, PythonException -->
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-graalpy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <!-- RL process generation engine: POWL model, GRPO optimizer, reward scoring -->
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-ggen</artifactId>
@@ -339,6 +345,13 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
 
+        <resources>
+            <!-- Include pm4py_bridge.py and other Python scripts on the classpath -->
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -394,6 +407,8 @@
                         <!-- Exclude testcontainers-dependent tests: MySQLContainerIntegrationTest, PostgresContainerIntegrationTest, ContainerTestSuite, RequiresDocker -->
                         <testInclude>**/org/yawlfoundation/yawl/containers/YawlContainerFixtures.java</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/containers/WorkflowDataFactory.java</testInclude>
+                        <!-- GraalPy process mining tests (null-arg + isHealthy false on standard JDK) -->
+                        <testInclude>**/org/yawlfoundation/yawl/integration/processmining/GraalPyProcessMiningServiceTest.java</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/mcp/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/spiffe/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/dedup/**</testInclude>
