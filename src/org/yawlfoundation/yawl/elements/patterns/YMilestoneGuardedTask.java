@@ -75,12 +75,14 @@ public class YMilestoneGuardedTask extends YAtomicTask {
      * Adds a milestone guard to this task.
      *
      * @param milestone the milestone condition
+     * @throws IllegalArgumentException if milestone is null
      */
     public void addMilestoneGuard(YMilestoneCondition milestone) {
-        if (milestone != null) {
-            _milestoneGuards.add(milestone);
-            _milestoneStateCache.put(milestone.getID(), milestone.isReached());
+        if (milestone == null) {
+            throw new IllegalArgumentException("Milestone condition cannot be null");
         }
+        _milestoneGuards.add(milestone);
+        _milestoneStateCache.put(milestone.getID(), milestone.isReached());
     }
 
     /**
@@ -139,13 +141,14 @@ public class YMilestoneGuardedTask extends YAtomicTask {
      * @return true if guard conditions are satisfied
      */
     public boolean canExecute() {
+        // If no guards defined, task can execute
+        if (_milestoneGuards.isEmpty()) {
+            return true;
+        }
+
         updateMilestoneCache();
 
         Set<Boolean> states = new HashSet<>(_milestoneStateCache.values());
-        if (states.isEmpty() && !_milestoneGuards.isEmpty()) {
-            // If no states cached but guards exist, all are false
-            return false;
-        }
         return _guardOperator.evaluate(states);
     }
 
@@ -162,11 +165,14 @@ public class YMilestoneGuardedTask extends YAtomicTask {
      * Sets the guard operator.
      *
      * @param operator the guard operator
+     * @throws IllegalArgumentException if operator is null
      */
     public void setGuardOperator(MilestoneGuardOperator operator) {
-        if (operator != null) {
-            this._guardOperator = operator;
+        if (operator == null) {
+            throw new IllegalArgumentException(
+                "Guard operator cannot be null. Must be one of: AND, OR, XOR");
         }
+        this._guardOperator = operator;
     }
 
     /**
@@ -174,8 +180,10 @@ public class YMilestoneGuardedTask extends YAtomicTask {
      *
      * @param milestoneId the milestone identifier
      */
-    public void onMilestoneReached(String milestoneId) {
-        _milestoneStateCache.put(milestoneId, true);
+    public synchronized void onMilestoneReached(String milestoneId) {
+        if (milestoneId != null) {
+            _milestoneStateCache.put(milestoneId, true);
+        }
     }
 
     /**
@@ -183,8 +191,10 @@ public class YMilestoneGuardedTask extends YAtomicTask {
      *
      * @param milestoneId the milestone identifier
      */
-    public void onMilestoneExpired(String milestoneId) {
-        _milestoneStateCache.put(milestoneId, false);
+    public synchronized void onMilestoneExpired(String milestoneId) {
+        if (milestoneId != null) {
+            _milestoneStateCache.put(milestoneId, false);
+        }
     }
 
     /**

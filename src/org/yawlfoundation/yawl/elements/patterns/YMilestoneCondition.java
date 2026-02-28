@@ -221,23 +221,30 @@ public class YMilestoneCondition extends YCondition {
      * @param expression the XQuery/XPath expression
      * @param dataDoc the data document to evaluate against
      * @return the boolean result
-     * @throws YQueryException if evaluation fails
+     * @throws YQueryException if evaluation fails or dataDoc is null
      * @throws SaxonApiException if Saxon processing fails
      */
     private boolean evaluateExpression(String expression, Document dataDoc)
             throws YQueryException, SaxonApiException {
         if (dataDoc == null) {
-            return false;
+            throw new YQueryException(
+                "Cannot evaluate milestone expression: net data document is required " +
+                "to evaluate expression '" + expression + "'");
         }
         try {
             String result = SaxonUtil.evaluateQuery(expression, dataDoc);
-            // Convert result to boolean
+            // Convert result to boolean - explicitly evaluate null and empty as false
             if (result == null || result.isEmpty()) {
                 return false;
             }
-            return Boolean.parseBoolean(result.toLowerCase().trim());
-        } catch (Exception e) {
+            // Parse boolean value from query result
+            String trimmed = result.toLowerCase().trim();
+            return "true".equals(trimmed) || "1".equals(trimmed) || "yes".equals(trimmed);
+        } catch (SaxonApiException e) {
             throw new YQueryException("Failed to evaluate milestone expression: " +
+                                     expression, e);
+        } catch (Exception e) {
+            throw new YQueryException("Unexpected error evaluating milestone expression: " +
                                      expression, e);
         }
     }

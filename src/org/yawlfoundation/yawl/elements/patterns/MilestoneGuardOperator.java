@@ -82,19 +82,25 @@ public enum MilestoneGuardOperator {
      * Parses a string to a guard operator.
      *
      * @param value the string value
-     * @return the guard operator, defaults to AND if unknown
+     * @return the guard operator
+     * @throws IllegalArgumentException if value is null or unrecognized
      */
     public static MilestoneGuardOperator fromString(String value) {
         if (value == null) {
-            return AND;
+            throw new IllegalArgumentException(
+                "Milestone guard operator cannot be null. Must be one of: AND, OR, XOR");
         }
-        switch (value.toUpperCase()) {
+        switch (value.toUpperCase().trim()) {
+            case "AND":
+                return AND;
             case "OR":
                 return OR;
             case "XOR":
                 return XOR;
             default:
-                return AND;
+                throw new IllegalArgumentException(
+                    "Unknown milestone guard operator: '" + value + "'. " +
+                    "Must be one of: AND, OR, XOR");
         }
     }
 }
