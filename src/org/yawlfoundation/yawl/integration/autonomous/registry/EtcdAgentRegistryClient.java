@@ -100,14 +100,7 @@ public class EtcdAgentRegistryClient {
                 .build();
         this.objectMapper = new ObjectMapper();
         this.localCache = new ConcurrentHashMap<>();
-        this.heartbeatExecutor = Executors.newScheduledThreadPool(
-                4,
-                r -> {
-                    Thread t = Thread.ofVirtual().unstarted(r);
-                    t.setName("agent-heartbeat-" + UUID.randomUUID());
-                    return t;
-                }
-        );
+        this.heartbeatExecutor = Executors.newVirtualThreadPerTaskExecutor();
         this.activeHeartbeats = new ConcurrentHashMap<>();
 
         LOGGER.info("Initialized EtcdAgentRegistryClient with URL: {} TTL: {}s",

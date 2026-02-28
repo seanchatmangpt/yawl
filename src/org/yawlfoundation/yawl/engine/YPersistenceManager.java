@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jakarta.persistence.Query;
 
@@ -115,8 +116,10 @@ public class YPersistenceManager {
     private static final boolean UPDATE = true;
     private static Logger logger = null;
 
-    // JEP 491 (Java 25): virtual threads no longer pin carrier threads on synchronized.
-    // doPersistAction uses the synchronized keyword directly — simpler and safe on Java 25.
+    // Lock for mutual exclusion in doPersistAction (scales to millions of virtual threads).
+    // ReentrantLock is preferred over synchronized for explicit lock management and fairness tuning.
+    // Lock acquisition order (deadlock prevention): _persistLock only, no nested acquisitions.
+    private final ReentrantLock _persistLock = new ReentrantLock();
 
     protected static SessionFactory factory = null;
     private boolean restoring = false;
@@ -471,43 +474,48 @@ public class YPersistenceManager {
      * On failure, the current transaction is rolled back before re-throwing
      * the exception to ensure data consistency.</p>
      *
-     * <p>Uses {@code synchronized} for mutual exclusion. On Java 25 (JEP 491), virtual
-     * threads no longer pin carrier threads when entering a {@code synchronized} block,
-     * so this is equivalent to the previous {@code ReentrantLock} approach — but simpler.</p>
+     * <p>Uses {@code ReentrantLock} for mutual exclusion to support 10M+ virtual threads
+     * without pinning carrier threads. Lock acquisition order (deadlock prevention):
+     * _persistLock is the only lock acquired by this method.</p>
      *
      * @param obj    the object to persist or update
      * @param update {@code true} to merge (UPDATE); {@code false} to persist (INSERT)
      * @throws YPersistenceException if the operation fails or the rollback fails
      */
-    private synchronized void doPersistAction(Object obj, boolean update)
+    private void doPersistAction(Object obj, boolean update)
             throws YPersistenceException {
 
-        logger.debug("--> doPersistAction: Mode={}; Object={}:{}; Identity={}",
-                (update ? "Update" : "Create"),
-                obj.getClass().getName(), obj.toString(),
-                System.identityHashCode(obj));
-
+        _persistLock.lock();
         try {
-            if (update) {
-                merge(obj);                       // Hibernate 6.x: replaces saveOrUpdate()
-            } else {
-                getSession().persist(obj);        // Hibernate 6.x: replaces save()
-            }
-        } catch (Exception e) {
-            logger.error("Failure persisting instance of {}: {}",
-                    obj.getClass().getName(), e.getMessage());
+            logger.debug("--> doPersistAction: Mode={}; Object={}:{}; Identity={}",
+                    (update ? "Update" : "Create"),
+                    obj.getClass().getName(), obj.toString(),
+                    System.identityHashCode(obj));
+
             try {
-                if (isActiveTransaction()) {
-                    getTransaction().rollback();
+                if (update) {
+                    merge(obj);                       // Hibernate 6.x: replaces saveOrUpdate()
+                } else {
+                    getSession().persist(obj);        // Hibernate 6.x: replaces save()
                 }
-            } catch (Exception rollbackEx) {
+            } catch (Exception e) {
+                logger.error("Failure persisting instance of {}: {}",
+                        obj.getClass().getName(), e.getMessage());
+                try {
+                    if (isActiveTransaction()) {
+                        getTransaction().rollback();
+                    }
+                } catch (Exception rollbackEx) {
+                    throw new YPersistenceException(
+                            "Failure to rollback transactional session after persist error", rollbackEx);
+                }
                 throw new YPersistenceException(
-                        "Failure to rollback transactional session after persist error", rollbackEx);
+                        "Failure detected whilst persisting instance of " + obj.getClass().getName(), e);
             }
-            throw new YPersistenceException(
-                    "Failure detected whilst persisting instance of " + obj.getClass().getName(), e);
+            logger.debug("<-- doPersistAction");
+        } finally {
+            _persistLock.unlock();
         }
-        logger.debug("<-- doPersistAction");
     }
 
 

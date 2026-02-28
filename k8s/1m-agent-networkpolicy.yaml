@@ -1,0 +1,219 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: 1m-agent
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/part-of: yawl
+spec:
+  # Apply to all 1m-agent pods
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: 1m-agent
+
+  # Define both ingress and egress rules (deny-all by default)
+  policyTypes:
+    - Ingress
+    - Egress
+
+  # INGRESS: Allow traffic from nginx-ingress controller and YAWL components
+  ingress:
+    # Allow from nginx-ingress controller (LoadBalancer)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+    # Allow pod-to-pod communication (A2A) from other 1m-agent pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: 1m-agent
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+    # Allow from YAWL engine for task dispatch
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: yawl-engine
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+    # Allow from YAWL monitor/observability services
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: otel-collector
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+    # Allow from Kubernetes API server for probes/metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+  # EGRESS: Allow outbound traffic to required services
+  egress:
+    # Allow DNS queries (port 53 TCP & UDP)
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+          name: dns
+        - protocol: TCP
+          port: 53
+          name: dns
+
+    # Allow to YAWL Engine (Interfaces A, B, X, E)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: yawl-engine
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+    # Allow to other 1m-agent pods (A2A communication)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: 1m-agent
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+    # Allow to etcd (distributed coordination, if applicable)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: etcd
+      ports:
+        - protocol: TCP
+          port: 2379
+          name: etcd-client
+        - protocol: TCP
+          port: 2380
+          name: etcd-peer
+
+    # Allow to PostgreSQL database (if applicable)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+          name: postgres
+
+    # Allow to Redis cache (if applicable)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+          name: redis
+
+    # Allow to OpenTelemetry collector (observability)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: otel-collector
+      ports:
+        - protocol: TCP
+          port: 4317
+          name: otlp-grpc
+        - protocol: TCP
+          port: 4318
+          name: otlp-http
+
+    # Allow to other YAWL services
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: yawl
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http
+
+    # Allow external HTTPS (for external agent calls, if needed)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+          name: https
+
+    # Kubernetes API server access for metadata queries
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+          podSelector:
+            matchLabels:
+              component: kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 443
+          name: https
+---
+# Optional: NetworkPolicy for 1m-agent services in other namespaces
+# Allow external services to discover 1m-agent
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: 1m-agent-allow-external-discovery
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: network-policy-external
+    app.kubernetes.io/part-of: yawl
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: 1m-agent
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow from all namespaces (for agent discovery via service)
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+          name: http

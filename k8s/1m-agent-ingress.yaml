@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: 1m-agent
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: autonomous-agent
+    app.kubernetes.io/part-of: yawl
+spec:
+  type: ClusterIP
+  sessionAffinity: None  # Stateless - no sticky sessions
+  selector:
+    app.kubernetes.io/name: 1m-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: 1m-agent-ingress
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: yawl
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers: "4 256k"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization, X-Requested-With"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - 1m-agent.yawl.example.com
+      secretName: 1m-agent-tls-secret
+  rules:
+    - host: 1m-agent.yawl.example.com
+      http:
+        paths:
+          # API endpoints
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: 1m-agent
+                port:
+                  number: 8080
+
+          # A2A (Agent-to-Agent) communication
+          - path: /a2a
+            pathType: Prefix
+            backend:
+              service:
+                name: 1m-agent
+                port:
+                  number: 8080
+
+          # MCP endpoints
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: 1m-agent
+                port:
+                  number: 8080
+
+          # Marketplace endpoints
+          - path: /marketplace
+            pathType: Prefix
+            backend:
+              service:
+                name: 1m-agent
+                port:
+                  number: 8080
+
+          # Health check endpoints
+          - path: /actuator/health
+            pathType: Prefix
+            backend:
+              service:
+                name: 1m-agent
+                port:
+                  number: 8080
+
+          # Metrics endpoint
+          - path: /actuator/prometheus
+            pathType: Prefix
+            backend:
+              service:
+                name: 1m-agent
+                port:
+                  number: 8080
+
+          # Root path
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: 1m-agent
+                port:
+                  number: 8080

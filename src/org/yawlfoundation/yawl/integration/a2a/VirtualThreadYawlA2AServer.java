@@ -140,7 +140,6 @@ public class VirtualThreadYawlA2AServer {
     // Default configuration
     private static final int DEFAULT_GRACEFUL_SHUTDOWN_SECONDS = 30;
     private static final int DEFAULT_HTTP_CLIENT_TIMEOUT_SECONDS = 60;
-    private static final int HTTP_CLIENT_CONNECTION_POOL_SIZE = 100;
 
     // Configuration
     private final String yawlEngineUrl;
