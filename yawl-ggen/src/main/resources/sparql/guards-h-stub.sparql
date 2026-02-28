@@ -1,0 +1,17 @@
+PREFIX code: <http://yawlfoundation.org/ggen/code#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?line ?content
+WHERE {
+    ?method a code:Method ;
+            code:returnStatement ?ret ;
+            code:lineNumber ?line ;
+            code:methodBody ?body .
+
+    ?ret code:lineNumber ?line .
+
+    FILTER(REGEX(STR(?ret), "^(null|\"\"|\\'|\\'|0|Collections\\.empty|new\\s+(HashMap|ArrayList)\\(\\))$") &&
+           NOT REGEX(STR(?body), "throw"))
+
+    BIND(CONCAT("Placeholder return at line ", STR(?line), ": ", ?ret) AS ?content)
+}

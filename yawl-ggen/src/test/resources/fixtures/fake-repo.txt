@@ -1,0 +1,3 @@
+public class FakeRepository implements Repository {
+    public void save(Object obj) { }
+}

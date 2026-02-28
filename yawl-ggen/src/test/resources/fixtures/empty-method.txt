@@ -1,0 +1,3 @@
+public class TestCode {
+    public void initialize() { }
+}
