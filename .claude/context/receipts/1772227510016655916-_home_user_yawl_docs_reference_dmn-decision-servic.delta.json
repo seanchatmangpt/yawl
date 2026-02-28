@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772227510016655916,
+  "timestamp_rfc": "2026-02-27T21:25:10.016655916Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/reference/dmn-decision-service.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "1729e719d01d0abc3ced7fb4039f74884ff8146bcc0043b470dc4fd8f8d77ea4",
+  "delta_hash": "fdf31ed98f547ce23fabd65948c392ba6033107f1f104a70c4279bdac057f61f",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# DMN Decision Service API Reference",
+        "change": "Added"
+      }
+    }
+  ]
+}

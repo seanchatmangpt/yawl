@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772227667304366656,
+  "timestamp_rfc": "2026-02-27T21:27:47.304366656Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/diataxis/INDEX.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "20c12f314672c395310aa515f4019e98672c99a8d2dd83d90d8b89de81193731",
+  "delta_hash": "4514283efb7f8cbcc4a9644ec950e18aee377c75368257b3beeba16547ec84cf",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "| 13 | [Scale to 1M Cases]",
+        "change": "Added"
+      }
+    }
+  ]
+}

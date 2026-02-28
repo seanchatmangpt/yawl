@@ -1,0 +1,26 @@
+{
+  "timestamp_ns": 1772227637910235242,
+  "timestamp_rfc": "2026-02-27T21:27:17.910235242Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/explanation/dmn-graalwasm-engine.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "bb12a3a75b2e799e442d592ab5739ad40b58475b88aebdc82e3762f41ed9f0ef",
+  "delta_hash": "3d7e421b40447c20235e6019f490256a8dad163d622c5708ccc8d2519ca36504",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# The DMN GraalWASM Engine",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}

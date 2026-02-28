@@ -1,0 +1,19 @@
+{
+  "timestamp_ns": 1772233548764691730,
+  "timestamp_rfc": "2026-02-27T23:05:48.764691730Z",
+  "session_id": "c86c43cc-9eaf-415e-86d3-65790d30d8da",
+  "file_path": "/home/user/yawl/DOGFOOD_INTEGRATION_SUMMARY.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "d503b46aa1637da2c36c89e78c0ba870e3794aa63c712108a77f7f2d0fa95989",
+  "delta_hash": "7a4208cfa1d27737250d371322fdfd0242be6a68c2f86d2e88332c1d41153b7d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Dogfood Integration Summary",
+        "change": "Added"
+      }
+    }
+  ]
+}

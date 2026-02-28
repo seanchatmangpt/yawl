@@ -1,0 +1,40 @@
+{
+  "timestamp_ns": 1772226759157486766,
+  "timestamp_rfc": "2026-02-27T21:12:39.157486766Z",
+  "session_id": "02f376c8-2882-4886-8ca5-38e8fe6682fb",
+  "file_path": "/home/user/yawl/docs/tutorials/11-data-modelling-bridge.md",
+  "input_hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "output_hash": "4769bdda8150177c205e90d80d770801e6ee1307505fc96773dc4d0f47934c31",
+  "delta_hash": "d8a580370cb7dfff588dd01cf297698bf0f45925cea4cb39eb7dc7455e428e1d",
+  "injected": false,
+  "deltas": [
+    {
+      "Declaration": {
+        "decl_kind": "Class",
+        "name": "DataModellingDemo",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Field",
+        "name": "# Tutorial: Schema Modelling with DataMo",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Import",
+        "name": "org",
+        "change": "Added"
+      }
+    },
+    {
+      "Declaration": {
+        "decl_kind": "Function",
+        "name": "static",
+        "change": "Added"
+      }
+    }
+  ]
+}
