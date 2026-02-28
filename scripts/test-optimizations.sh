@@ -2,17 +2,7 @@
 # ==========================================================================
 # test-optimizations.sh — Regression Testing Framework for Phase 4 Optimizations
 #
-# Runs comprehensive regression tests for all 10 optimizations:
-#   1. Impact graph (reduce test count)
-#   2. Test result caching (cache hits)
-#   3. CDS archives (startup time)
-#   4. Semantic change detection (skip spurious rebuilds)
-#   5. Test clustering (load balancing)
-#   6. Warm bytecode cache (module reuse)
-#   7. TEP fail-fast (pipeline efficiency)
-#   8. Semantic caching (format changes)
-#   9. TIP predictions (prediction accuracy)
-#  10. Code bifurcation (feedback tier speed)
+# Runs comprehensive regression tests for all 10 optimizations
 #
 # Usage:
 #   bash scripts/test-optimizations.sh                 # Run all tests
@@ -167,6 +157,8 @@ generate_results_json() {
 
     local total=$((passed + failed))
     local pass_rate=$((total > 0 ? passed * 100 / total : 0))
+
+    mkdir -p "$(dirname "${RESULTS_FILE}")"
 
     cat > "${RESULTS_FILE}" << EOF
 {

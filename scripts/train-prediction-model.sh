@@ -70,7 +70,7 @@ printf "${C_CYAN}[TIP] Prediction Model Trainer${C_RESET}\n"
 
 # ── Extract training data from test metrics ────────────────────────────────
 extract_training_data() {
-    printf "  Extracting training data from test metrics...\n"
+    printf "  Extracting training data from test metrics...\n" >&2
 
     python3 << 'PYTHON_EOF'
 import json
@@ -159,7 +159,7 @@ PYTHON_EOF
 fit_model() {
     local training_json="$1"
 
-    printf "  Fitting linear regression model...\n"
+    printf "  Fitting linear regression model...\n" >&2
 
     python3 << PYTHON_EOF
 import json
@@ -285,7 +285,7 @@ PYTHON_EOF
 
 # ── Bootstrap with synthetic data ──────────────────────────────────────────
 bootstrap_with_synthetic_data() {
-    printf "  Bootstrapping with synthetic historical data...\n"
+    printf "  Bootstrapping with synthetic historical data...\n" >&2
 
     python3 << 'BOOTSTRAP_PYTHON'
 import json

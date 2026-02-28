@@ -1,1 +1,22 @@
-{"timestamp": "2026-02-28T07:27:27.113184Z", "samples_count": 0, "coefficients": {"loc_coeff": 0.001, "test_count_coeff": 100, "intercept": 500}, "r_squared": 0.0, "status": "no_data", "reason": "No training data provided"}
+{
+  "timestamp": "2026-02-28T07:31:26.681022Z",
+  "samples_count": 10,
+  "coefficients": {
+    "loc_coeff": 4.398022,
+    "test_count_coeff": 10,
+    "intercept": 100
+  },
+  "r_squared": 0.0,
+  "status": "trained",
+  "features": {
+    "x1": "module_loc",
+    "x2": "test_count",
+    "y": "exec_time_ms"
+  },
+  "diagnostics": {
+    "mean_loc": 3480.0,
+    "mean_test_count": 5.1,
+    "mean_exec_time": 5765.0,
+    "variance_explained": 0.0
+  }
+}
