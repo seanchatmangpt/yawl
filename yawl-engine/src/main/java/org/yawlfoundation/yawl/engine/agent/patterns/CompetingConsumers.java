@@ -108,9 +108,8 @@ public final class CompetingConsumers {
      *
      * @param timeout How long to wait for workers to stop
      * @return true if all workers stopped, false if timeout
-     * @throws InterruptedException if thread is interrupted
      */
-    public boolean shutdown(Duration timeout) throws InterruptedException {
+    public boolean shutdown(Duration timeout) {
         shutdown = true;
 
         // Send shutdown signal to all workers
@@ -119,9 +118,9 @@ public final class CompetingConsumers {
         }
 
         // Wait for all workers to complete
-        long deadline = System.nanoTime() + timeout.toNanos();
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
         for (ActorRef worker : workers) {
-            long remaining = deadline - System.nanoTime();
+            long remaining = deadline - System.currentTimeMillis();
             if (remaining <= 0) {
                 return false;  // Timeout
             }
