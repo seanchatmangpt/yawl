@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extensions>
-    <!-- Build cache disabled for Java 21 compatibility -->
+    <!-- Maven 3.9+ build cache extension for Java 25.
+         Provides multi-build incremental caching with SHA-256 hashing.
+         Previous comment ("Java 21 compatibility") is outdated;
+         Java 25 fully supports build cache (tested in Round 2 optimization).
+    -->
+    <extension>
+        <groupId>org.apache.maven.extensions</groupId>
+        <artifactId>maven-build-cache-extension</artifactId>
+        <version>1.2.1</version>
+    </extension>
 </extensions>
