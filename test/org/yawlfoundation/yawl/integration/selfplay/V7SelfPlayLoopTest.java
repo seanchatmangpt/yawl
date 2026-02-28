@@ -90,32 +90,16 @@ class V7SelfPlayLoopTest {
     /**
      * Initialize a real YEngine for test execution.
      * Chicago TDD: uses actual YAWL runtime, not a mock.
+     * Z.AI infrastructure is always available in this environment (ZAI_API_KEY is set).
+     * YEngine creation will fail fast if actual infrastructure is not initialized.
      */
     private static YEngine createYEngine() {
         // YEngine initialization for V7 self-play loop
-        // This connects to the YAWL stateless engine with real A2A protocol support
-        try {
-            // The actual YEngine is initialized with real infrastructure:
-            // - Real database persistence (H2 or PostgreSQL)
-            // - Real A2A message passing channels
-            // - Real audit log persistence
-            YEngine engine = new YEngine();
-            return engine;
-        } catch (Exception e) {
-            // If YEngine initialization fails, throw explicitly with guidance
-            throw new UnsupportedOperationException(
-                "Z.AI orchestrator infrastructure not available in this test environment. " +
-                "Chicago TDD requires real agent implementations, not mocks. " +
-                "To run V7SelfPlayLoopTest: " +
-                "1. Ensure YAWL YEngine is initialized (check YEngine startup logs) " +
-                "2. Verify Z.AI_API_KEY is set in environment: " +
-                (System.getenv("ZAI_API_KEY") != null ? "✓ SET" : "✗ NOT SET") + " " +
-                "3. Configure agent endpoints in application.properties " +
-                "4. Re-run test. " +
-                "See .claude/rules/chicago-tdd.md for details.",
-                e
-            );
-        }
+        // This connects to the YAWL stateless engine with real A2A protocol support:
+        // - Real database persistence (H2 or PostgreSQL)
+        // - Real A2A message passing channels
+        // - Real audit log persistence
+        return new YEngine();
     }
 
     /**
