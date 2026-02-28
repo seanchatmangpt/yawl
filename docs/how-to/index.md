@@ -98,6 +98,12 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 |-------|------|
 | [godspeed/run-the-full-circuit.md](godspeed/run-the-full-circuit.md) | Run complete GODSPEED validation circuit (Ψ→Λ→H→Q→Ω) |
 
+## H-Guards (Production Quality Standards)
+
+| Guide | Task |
+|-------|------|
+| [h-guards/fix-guard-violations.md](h-guards/fix-guard-violations.md) | Fix H-Guards violations (TODO, mock, stub, empty, fallback, lie, silent) |
+
 ## Development
 
 | Guide | Task |
