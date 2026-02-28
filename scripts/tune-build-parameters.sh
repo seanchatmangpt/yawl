@@ -375,8 +375,9 @@ sweep_parameter() {
     local best_result=$(analyze_sweet_spot "${param_name}" "${sweep_file}")
     if [ -n "${best_result}" ]; then
         local best_value=$(echo "${best_result}" | cut -d'|' -f1)
-        sed -i "s/^${best_value},.*,false$/&/" "${sweep_file}"
-        sed -i "s/^${best_value},\(.*\),false$/\1,true/" "${sweep_file}"
+        # Update the line with the optimal value (simple awk-based replacement)
+        awk -v val="$best_value" -F, 'BEGIN {OFS=","} $1==val {$NF="true"} {print}' "${sweep_file}" > "${sweep_file}.tmp"
+        mv "${sweep_file}.tmp" "${sweep_file}"
     fi
 
     log_success "Sweep complete: ${sweep_file}"

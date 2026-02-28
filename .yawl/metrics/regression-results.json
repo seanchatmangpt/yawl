@@ -1,10 +1,22 @@
 {
   "phase": "regression-testing",
-  "timestamp": "2024-01-01T00:00:00Z",
+  "timestamp": "2026-02-28T07:32:27Z",
   "summary": {
-    "total_tests": 2,
-    "passed": 2,
-    "failed": 0,
-    "pass_rate": "100%"
+    "total_tests": 10,
+    "passed": 9,
+    "failed": 1,
+    "pass_rate": "90%"
+  },
+  "tests": {
+    "test_1": {"name": "Impact Graph", "status": "PASS"},
+    "test_2": {"name": "Test Result Caching", "status": "PASS"},
+    "test_3": {"name": "CDS Archives", "status": "FAIL"},
+    "test_4": {"name": "Semantic Change Detection", "status": "PASS"},
+    "test_5": {"name": "Test Clustering", "status": "PASS"},
+    "test_6": {"name": "Warm Bytecode Cache", "status": "PASS"},
+    "test_7": {"name": "TEP Fail-Fast", "status": "PASS"},
+    "test_8": {"name": "Semantic Caching", "status": "PASS"},
+    "test_9": {"name": "TIP Predictions", "status": "PASS"},
+    "test_10": {"name": "Code Bifurcation", "status": "PASS"}
   }
 }
