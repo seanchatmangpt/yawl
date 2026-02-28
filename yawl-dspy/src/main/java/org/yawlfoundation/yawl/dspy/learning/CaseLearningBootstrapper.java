@@ -233,8 +233,14 @@ public final class CaseLearningBootstrapper {
      * <p>Useful for forcing a fresh bootstrap compilation on next invocation.</p>
      */
     public void clearBootstrapCache() {
-        // Note: DspyProgramCache doesn't provide per-key removal, so we'd need to clear entire cache
-        // For now, log the request; in a real implementation, extend cache with removeKey()
-        log.info("Bootstrap cache clear requested (full cache may be cleared)");
+        String bootstrappedPath = cache.get(BOOTSTRAP_CACHE_KEY);
+        if (bootstrappedPath != null) {
+            // Note: DspyProgramCache LRU eviction will handle cleanup over time.
+            // Direct removal would require cache.removeKey(BOOTSTRAP_CACHE_KEY).
+            // For now, we log the state. Future enhancement: add removeKey() to DspyProgramCache.
+            log.info("Bootstrap cache entry eligible for eviction: {}", bootstrappedPath);
+        } else {
+            log.debug("No cached bootstrap module to clear");
+        }
     }
 }
