@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TEMPLATE: Parallel Approval Workflow
+  PURPOSE: AND-split for parallel approvals, AND-join for synchronization
+  CUSTOMIZATION: Add more parallel branches, adjust timeout/escalation logic
+  LINK: docs/WORKFLOW-PATTERNS.md#parallel-splits-joins
+-->
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="ParallelApprovalWorkflow">
+    <name>Parallel Approval Workflow</name>
+    <documentation>
+      Copy-paste template for parallel approval workflows.
+      Features:
+      - AND-split to create parallel branches for multiple approvers
+      - Simultaneous execution of approval tasks
+      - AND-join to synchronize all approvals
+      - Timeout/escalation for non-responsive approvers
+      - Aggregate decision logic
+
+      Customize:
+      - Add more approval branches (copy approveChief, approveFinance pattern)
+      - Adjust timeout duration
+      - Modify decision logic (require all approvals vs majority)
+    </documentation>
+    <metaData/>
+
+    <!-- Data variables -->
+    <data id="requestId">
+      <name>requestId</name>
+      <type>string</type>
+      <initialValue>APPR-${timestamp}</initialValue>
+    </data>
+    <data id="requestAmount">
+      <name>requestAmount</name>
+      <type>decimal</type>
+      <initialValue>0.00</initialValue>
+    </data>
+    <data id="chiefApproval">
+      <name>chiefApproval</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="financeApproval">
+      <name>financeApproval</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="hrApproval">
+      <name>hrApproval</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="complianceApproval">
+      <name>complianceApproval</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="approvalDeadline">
+      <name>approvalDeadline</name>
+      <type>string</type>
+      <initialValue>${dateAdd(now(), P1D)}</initialValue>
+    </data>
+    <data id="finalDecision">
+      <name>finalDecision</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="escalationPerformed">
+      <name>escalationPerformed</name>
+      <type>boolean</type>
+      <initialValue>false</initialValue>
+    </data>
+
+    <!-- Main parallel approval process -->
+    <decomposition id="ParallelApprovalNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>Parallel Approval Process</name>
+      <processControlElements>
+
+        <inputCondition id="start">
+          <name>Start Approval Process</name>
+          <flowsInto>
+            <nextElementRef id="prepareApprovals"/>
+          </flowsInto>
+        </inputCondition>
+
+        <!-- Prepare approvals (fetch amounts, rules, etc.) -->
+        <task id="prepareApprovals">
+          <name>Prepare Approval Request</name>
+          <documentation>Set up approval metadata, rules based on amount</documentation>
+          <flowsInto>
+            <nextElementRef id="splitApprovals"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- AND-split: Create parallel branches for each approver -->
+        <condition id="splitApprovals">
+          <name>Split to Parallel Approvals</name>
+          <flowsInto>
+            <nextElementRef id="approveChief"/>
+            <nextElementRef id="approveFinance"/>
+            <nextElementRef id="approveHR"/>
+            <nextElementRef id="approveCompliance"/>
+          </flowsInto>
+        </condition>
+
+        <!-- Branch 1: Chief approval (e.g., CEO/Director) -->
+        <task id="approveChief">
+          <name>Chief Approval</name>
+          <documentation>Chief/Director reviews and approves high-level aspects</documentation>
+          <flowsInto>
+            <nextElementRef id="joinApprovals"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ChiefApprovalSubnet</decomposesTo>
+          <resourcing>
+            <offer initiator="system">
+              <allocate/>
+              <start/>
+              <complete/>
+            </offer>
+          </resourcing>
+        </task>
+
+        <!-- Branch 2: Finance approval -->
+        <task id="approveFinance">
+          <name>Finance Approval</name>
+          <documentation>Finance reviews budgetary and cost implications</documentation>
+          <flowsInto>
+            <nextElementRef id="joinApprovals"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>FinanceApprovalSubnet</decomposesTo>
+          <resourcing>
+            <offer initiator="system">
+              <allocate/>
+              <start/>
+              <complete/>
+            </offer>
+          </resourcing>
+        </task>
+
+        <!-- Branch 3: HR approval -->
+        <task id="approveHR">
+          <name>HR Approval</name>
+          <documentation>HR reviews resource and policy implications</documentation>
+          <flowsInto>
+            <nextElementRef id="joinApprovals"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>HRApprovalSubnet</decomposesTo>
+          <resourcing>
+            <offer initiator="system">
+              <allocate/>
+              <start/>
+              <complete/>
+            </offer>
+          </resourcing>
+        </task>
+
+        <!-- Branch 4: Compliance approval -->
+        <task id="approveCompliance">
+          <name>Compliance Approval</name>
+          <documentation>Compliance reviews regulatory and policy requirements</documentation>
+          <flowsInto>
+            <nextElementRef id="joinApprovals"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ComplianceApprovalSubnet</decomposesTo>
+          <resourcing>
+            <offer initiator="system">
+              <allocate/>
+              <start/>
+              <complete/>
+            </offer>
+          </resourcing>
+        </task>
+
+        <!-- AND-join: Synchronize all parallel approvals -->
+        <condition id="joinApprovals">
+          <name>Join All Approvals</name>
+          <flowsInto>
+            <nextElementRef id="makeDecision"/>
+          </flowsInto>
+          <join code="and"/>
+        </condition>
+
+        <!-- Aggregate decision from all approvers -->
+        <task id="makeDecision">
+          <name>Make Final Decision</name>
+          <documentation>
+            Aggregate approval decisions:
+            - APPROVED: All approvals == 'approved'
+            - REJECTED: Any approval == 'rejected'
+            - ESCALATED: Some approvals timeout
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="decisionGateway"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>FinalDecisionSubnet</decomposesTo>
+        </task>
+
+        <!-- Decision gateway -->
+        <condition id="decisionGateway">
+          <name>Approval Decision</name>
+          <flowsInto>
+            <nextElementRef id="approved">
+              <predicate ordering="0">finalDecision == 'approved'</predicate>
+            </nextElementRef>
+            <nextElementRef id="rejected">
+              <predicate ordering="1">finalDecision == 'rejected'</predicate>
+            </nextElementRef>
+            <nextElementRef id="escalated">
+              <predicate ordering="2">escalationPerformed == true</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Approved -->
+        <task id="approved">
+          <name>Request Approved</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- Rejected -->
+        <task id="rejected">
+          <name>Request Rejected</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- Escalated -->
+        <task id="escalated">
+          <name>Request Escalated</name>
+          <documentation>Approval exceeded deadline. Escalated to senior management.</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <outputCondition id="end">
+          <name>Process Complete</name>
+        </outputCondition>
+
+      </processControlElements>
+    </decomposition>
+
+    <!-- Chief Approval Subnet -->
+    <decomposition id="ChiefApprovalSubnet" xsi:type="NetFactsType">
+      <name>Chief Approval</name>
+      <processControlElements>
+        <inputCondition id="ca_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="ca_review"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="ca_review">
+          <name>Chief Review</name>
+          <documentation>Chief reviews request and provides approval decision</documentation>
+          <flowsInto>
+            <nextElementRef id="ca_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ca_reviewTask</decomposesTo>
+        </task>
+
+        <outputCondition id="ca_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Finance Approval Subnet -->
+    <decomposition id="FinanceApprovalSubnet" xsi:type="NetFactsType">
+      <name>Finance Approval</name>
+      <processControlElements>
+        <inputCondition id="fa_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="fa_review"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="fa_review">
+          <name>Finance Review</name>
+          <documentation>Finance reviews budgetary implications</documentation>
+          <flowsInto>
+            <nextElementRef id="fa_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>fa_reviewTask</decomposesTo>
+        </task>
+
+        <outputCondition id="fa_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- HR Approval Subnet -->
+    <decomposition id="HRApprovalSubnet" xsi:type="NetFactsType">
+      <name>HR Approval</name>
+      <processControlElements>
+        <inputCondition id="ha_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="ha_review"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="ha_review">
+          <name>HR Review</name>
+          <documentation>HR reviews resource and policy implications</documentation>
+          <flowsInto>
+            <nextElementRef id="ha_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ha_reviewTask</decomposesTo>
+        </task>
+
+        <outputCondition id="ha_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Compliance Approval Subnet -->
+    <decomposition id="ComplianceApprovalSubnet" xsi:type="NetFactsType">
+      <name>Compliance Approval</name>
+      <processControlElements>
+        <inputCondition id="coa_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="coa_review"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="coa_review">
+          <name>Compliance Review</name>
+          <documentation>Compliance reviews regulatory requirements</documentation>
+          <flowsInto>
+            <nextElementRef id="coa_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>coa_reviewTask</decomposesTo>
+        </task>
+
+        <outputCondition id="coa_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Final Decision Subnet -->
+    <decomposition id="FinalDecisionSubnet" xsi:type="NetFactsType">
+      <name>Final Decision</name>
+      <processControlElements>
+        <inputCondition id="fd_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="fd_aggregate"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="fd_aggregate">
+          <name>Aggregate Approvals</name>
+          <documentation>Combine all approval decisions into final decision</documentation>
+          <flowsInto>
+            <nextElementRef id="fd_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>fd_aggregateTask</decomposesTo>
+        </task>
+
+        <outputCondition id="fd_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Leaf task decompositions -->
+    <decomposition id="ca_reviewTask" xsi:type="WebServiceFactsType">
+      <name>Chief Review - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="fa_reviewTask" xsi:type="WebServiceFactsType">
+      <name>Finance Review - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="ha_reviewTask" xsi:type="WebServiceFactsType">
+      <name>HR Review - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="coa_reviewTask" xsi:type="WebServiceFactsType">
+      <name>Compliance Review - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="fd_aggregateTask" xsi:type="WebServiceFactsType">
+      <name>Aggregate Decisions - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+  </specification>
+</specificationSet>
