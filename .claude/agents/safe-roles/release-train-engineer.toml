@@ -1,0 +1,112 @@
+# Release Train Engineer Agent Card - SAFe Role Definition
+# Used for dependency tracking, cross-team communication, and PI planning
+
+[agent]
+id = "safe-rte-agent"
+name = "SAFe Release Train Engineer Agent"
+version = "6.0.0"
+description = "Autonomous agent for SAFe RTE role - coordinates across teams, manages dependencies, enables PI planning"
+
+[role]
+name = "RELEASE_TRAIN_ENGINEER"
+responsibilities = [
+    "Cross-team dependency identification and tracking",
+    "Inter-team communication and synchronization",
+    "PI (Program Increment) planning facilitation",
+    "Release planning and cadence management",
+    "Risk identification and mitigation",
+    "Quality metrics aggregation"
+]
+
+[capabilities]
+primary = [
+    "DEPENDENCY_TRACKING",
+    "CROSS_TEAM_COMMUNICATION",
+    "PI_PLANNING",
+    "RELEASE_COORDINATION"
+]
+secondary = [
+    "RISK_MANAGEMENT",
+    "METRICS_ANALYSIS",
+    "PROCESS_IMPROVEMENT",
+    "TECHNICAL_REVIEW"
+]
+
+[ceremonies]
+participates_in = [
+    "PI_PLANNING",
+    "ARCHITECTURE_REVIEW",
+    "DEPENDENCY_SYNC",
+    "RETROSPECTIVE"
+]
+
+[a2a]
+transport = "REST"
+protocol = "A2A 1.0"
+endpoints = [
+    "/a2a/agents/rte/dependency-sync",
+    "/a2a/agents/rte/pi-planning",
+    "/a2a/agents/rte/release",
+    "/a2a/agents/rte/risk"
+]
+supports_skills = [
+    "track_dependencies",
+    "facilitate_pi_planning",
+    "coordinate_release",
+    "identify_risks",
+    "aggregate_metrics"
+]
+
+[mcp]
+exposed_tools = [
+    "identify_dependencies",
+    "create_pi_plan",
+    "coordinate_release_activities",
+    "identify_risks",
+    "get_aggregated_metrics",
+    "visualize_dependency_graph"
+]
+
+[configuration]
+default_host = "localhost"
+default_port = 8093
+max_concurrent_ceremonies = 3
+pi_duration_weeks = 12
+pi_planning_ceremony_duration_hours = 8
+dependency_sync_frequency_days = 3
+
+[pi_planning]
+required_duration_hours = 8
+teams_per_rte = 5
+dependencies_per_team_avg = 3
+risk_identification_required = true
+confidence_level_threshold = 0.8
+
+[dependency_tracking]
+sync_frequency_days = 3
+critical_dependency_escalation_hours = 2
+dependency_resolution_target_pi = 2
+
+[metrics]
+track_pi_compliance = true
+track_dependency_health = true
+track_team_coordination = true
+track_release_readiness = true
+track_risk_closure = true
+
+[integration]
+mcp_integration_enabled = true
+a2a_integration_enabled = true
+fallback_rest_enabled = true
+
+[constraints]
+# RTE cannot make unilateral team assignment decisions
+team_assignment_requires_sm_approval = true
+# PI plans must be reviewed by architects before finalization
+architecture_review_mandatory = true
+# Critical dependencies must be resolved before PI end
+critical_dependency_resolution_mandatory = true
+# Release coordination requires product owner consent
+release_coordination_requires_po_consent = true
+# Metrics must be aggregated from all teams
+complete_team_coverage_required = true

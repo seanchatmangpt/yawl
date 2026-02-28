@@ -1,0 +1,121 @@
+# Architect Agent Card - SAFe Role Definition
+# Used for solution design, architecture reviews, and technical decisions
+
+[agent]
+id = "safe-arch-agent"
+name = "SAFe Architect Agent"
+version = "6.0.0"
+description = "Autonomous agent for SAFe Architect role - designs solutions, reviews technical decisions, manages technical debt"
+
+[role]
+name = "ARCHITECT"
+responsibilities = [
+    "Solution architecture design and analysis",
+    "Technical design review and approval",
+    "Technology evaluation and recommendation",
+    "Technical debt management and prioritization",
+    "System integration and interoperability",
+    "Security and scalability assessment"
+]
+
+[capabilities]
+primary = [
+    "ARCHITECTURE_DESIGN",
+    "TECHNICAL_REVIEW",
+    "TECHNOLOGY_EVALUATION",
+    "TECHNICAL_DEBT_MANAGEMENT"
+]
+secondary = [
+    "RISK_MANAGEMENT",
+    "COMPLIANCE_VERIFICATION",
+    "SECURITY_TESTING",
+    "PROCESS_IMPROVEMENT"
+]
+
+[ceremonies]
+participates_in = [
+    "ARCHITECTURE_REVIEW",
+    "PI_PLANNING",
+    "DEPENDENCY_SYNC",
+    "RETROSPECTIVE"
+]
+
+[a2a]
+transport = "REST"
+protocol = "A2A 1.0"
+endpoints = [
+    "/a2a/agents/arch/design-review",
+    "/a2a/agents/arch/technical-debt",
+    "/a2a/agents/arch/technology",
+    "/a2a/agents/arch/risk"
+]
+supports_skills = [
+    "design_architecture",
+    "review_design",
+    "evaluate_technology",
+    "assess_technical_debt",
+    "identify_risks"
+]
+
+[mcp]
+exposed_tools = [
+    "create_architecture_design",
+    "review_technical_design",
+    "evaluate_technology_options",
+    "prioritize_technical_debt",
+    "assess_integration_impact",
+    "generate_architecture_diagram"
+]
+
+[configuration]
+default_host = "localhost"
+default_port = 8094
+max_concurrent_ceremonies = 4
+design_review_duration_hours = 2
+technology_evaluation_duration_hours = 4
+technical_debt_review_frequency_weeks = 4
+
+[design_review]
+required_stakeholders = ["ARCHITECT", "TEAM_MEMBER", "QA_TESTER"]
+mandatory_considerations = [
+    "security",
+    "performance",
+    "scalability",
+    "maintainability",
+    "testability"
+]
+approval_authority = true
+
+[technical_debt]
+max_acceptable_score = 50
+review_frequency_weeks = 4
+prioritization_factors = [
+    "impact_on_velocity",
+    "security_risk",
+    "maintainability_impact",
+    "performance_degradation"
+]
+
+[metrics]
+track_design_quality = true
+track_technology_decisions = true
+track_technical_debt_trend = true
+track_architecture_compliance = true
+track_design_review_efficiency = true
+
+[integration]
+mcp_integration_enabled = true
+a2a_integration_enabled = true
+fallback_rest_enabled = true
+
+[constraints]
+# All major design decisions require architect approval
+major_design_approval_required = true
+# Technology selection must go through evaluation process
+technology_evaluation_mandatory = true
+# Technical debt cannot exceed acceptable threshold
+technical_debt_threshold_enforcement = true
+# Security review mandatory for customer-facing features
+security_review_mandatory = true
+# Performance impact assessment required for all changes
+performance_assessment_required = true
