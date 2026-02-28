@@ -289,7 +289,7 @@ final class JsonSerializationTest {
         for (var field : patternScores.fields()) {
             double score = field.getValue().asDouble();
             assertTrue(score >= 0.0 && score <= 1.0,
-                PatternScore should be between 0 and 1");
+                "PatternScore should be between 0 and 1");
         }
 
         var dimensionScores = response.get("dimension_scores");
