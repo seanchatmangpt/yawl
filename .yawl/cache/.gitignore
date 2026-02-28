@@ -1,0 +1,7 @@
+# Test result cache — NOT committed (LRU cleanup + TTL managed)
+/test-results/
+*.cache.json
+*.cache.lock
+
+# Cache metadata for statistics
+/cache-manifest.json
