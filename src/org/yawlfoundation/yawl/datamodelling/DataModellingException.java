@@ -46,7 +46,11 @@ public final class DataModellingException extends RuntimeException {
         /** WASM function execution trapped (invalid input, unsupported format). */
         EXECUTION_ERROR,
         /** Bridge is closed; operation cannot proceed. */
-        CLOSED_ERROR
+        CLOSED_ERROR,
+        /** JSON parsing/deserialization failure. */
+        JSON_PARSE_ERROR,
+        /** JSON serialization/encoding failure. */
+        JSON_SERIALIZE_ERROR
     }
 
     /**

@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * Thin Java facade over the data-modelling-sdk WebAssembly module (v2.3.0).
@@ -839,6 +840,214 @@ public final class DataModellingBridge implements AutoCloseable {
         return call("detect_naming_conflicts", existingTablesJson, newTablesJson);
     }
 
+    // ── Pipeline Integration (Phase 2) ───────────────────────────────────────
+
+    /**
+     * Infers schema from JSON data with automatic type detection and constraint analysis.
+     *
+     * <p>Analyzes JSON data structure to determine column types, primary keys, foreign keys,
+     * and constraints. Returns inferred schema as JSON compatible with Phase 1 models.</p>
+     *
+     * @param jsonData           JSON array or object content; must not be null
+     * @param config             inference configuration; must not be null
+     * @return inferred schema as JSON string; never null
+     * @throws DataModellingException  EXECUTION_ERROR if inference fails
+     * @throws UnsupportedOperationException if WASM SDK does not expose schema inference
+     */
+    public String inferSchemaFromJson(String jsonData, org.yawlfoundation.yawl.datamodelling.pipeline.InferenceConfig config) {
+        throw new UnsupportedOperationException(
+                "Schema inference from JSON requires WASM SDK support. "
+                + "The data-modelling-sdk v2.3.0 includes schema inference module, but it is not yet exposed. "
+                + "Implement via WASM export when SDK adds infer_schema_from_json() function. "
+                + "Expected: JSON with fields array, detected primaryKey, foreignKeys, constraints, and confidence score.");
+    }
+
+    /**
+     * Maps source schema fields to target schema with fuzzy/LLM matching.
+     *
+     * <p>Analyzes field names, types, and semantic meaning to generate field mappings
+     * from source to target schema with confidence scores.</p>
+     *
+     * @param sourceSchema       source schema JSON; must not be null
+     * @param targetSchema       target schema JSON; must not be null
+     * @param config             mapping configuration; must not be null
+     * @return mapping result JSON with fieldMappings array; never null
+     * @throws DataModellingException  EXECUTION_ERROR if mapping fails
+     * @throws UnsupportedOperationException if WASM SDK does not expose schema mapping
+     */
+    public String mapSchemas(String sourceSchema, String targetSchema,
+                            org.yawlfoundation.yawl.datamodelling.pipeline.MappingConfig config) {
+        throw new UnsupportedOperationException(
+                "Schema field mapping requires WASM SDK support. "
+                + "The data-modelling-sdk v2.3.0 includes mapping module, but it is not yet exposed. "
+                + "Implement via WASM export when SDK adds map_schemas() function. "
+                + "Expected: JSON with fieldMappings (sourceField, targetField, confidence), "
+                + "transformationScript (SQL/JQ/Python/PySpark), and mappingCompleteness score.");
+    }
+
+    /**
+     * Generates transformation script from field mappings.
+     *
+     * <p>Synthesizes SQL, JQ, Python, or PySpark transformation code based on field mappings
+     * and type conversions.</p>
+     *
+     * @param mappingResultJson  mapping result JSON from mapSchemas(); must not be null
+     * @param format             output format: "sql", "jq", "python", "pyspark"; must not be null
+     * @return transformation script as string; never null
+     * @throws DataModellingException  EXECUTION_ERROR if generation fails
+     * @throws UnsupportedOperationException if WASM SDK does not expose transformation generation
+     */
+    public String generateTransform(String mappingResultJson, String format) {
+        throw new UnsupportedOperationException(
+                "Transformation script generation requires WASM SDK support. "
+                + "The data-modelling-sdk v2.3.0 includes transformation generation, but it is not yet exposed. "
+                + "Implement via WASM export when SDK adds generate_transform() function. "
+                + "Expected: String with executable " + format + " transformation script.");
+    }
+
+    // ── LLM Integration (Phase 3) ─────────────────────────────────────────────
+
+    /**
+     * Refines a schema using LLM in offline mode (llama.cpp or compatible local inference).
+     *
+     * <p>This method delegates to the data-modelling-sdk's offline LLM refinement logic,
+     * which runs a local LLM without external API calls. Useful for privacy-sensitive
+     * or air-gapped environments.</p>
+     *
+     * @param schema              the schema to refine (JSON or YAML); must not be null
+     * @param samples             sample data records for context; may be empty
+     * @param objectives          refinement objectives; may be empty
+     * @param context             optional documentation context; may be null
+     * @param config              LLM configuration; must not be null
+     * @return refined schema JSON; never null
+     * @throws DataModellingException  EXECUTION_ERROR if offline LLM unavailable or refinement fails
+     */
+    public String refineSchemaWithLlmOffline(String schema, String[] samples,
+                                              String[] objectives, String context,
+                                              org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("refine_schema_with_llm_offline",
+                schema,
+                stringArrayToJson(samples),
+                stringArrayToJson(objectives),
+                context != null ? context : "",
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                String.valueOf(config.getMaxTokens()));
+    }
+
+    /**
+     * Refines a schema using LLM in online mode (Ollama HTTP API).
+     *
+     * <p>This method delegates to the data-modelling-sdk's online LLM refinement logic,
+     * which calls the Ollama API endpoint specified in the configuration.</p>
+     *
+     * @param schema              the schema to refine (JSON or YAML); must not be null
+     * @param samples             sample data records for context; may be empty
+     * @param objectives          refinement objectives; may be empty
+     * @param context             optional documentation context; may be null
+     * @param config              LLM configuration; must not be null
+     * @return refined schema JSON; never null
+     * @throws DataModellingException  EXECUTION_ERROR if online LLM unavailable or refinement fails
+     */
+    public String refineSchemaWithLlmOnline(String schema, String[] samples,
+                                             String[] objectives, String context,
+                                             org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("refine_schema_with_llm_online",
+                schema,
+                stringArrayToJson(samples),
+                stringArrayToJson(objectives),
+                context != null ? context : "",
+                config.getModel(),
+                config.getBaseUrl(),
+                String.valueOf(config.getTemperature()),
+                String.valueOf(config.getMaxTokens()),
+                String.valueOf(config.getTimeoutSeconds()));
+    }
+
+    /**
+     * Matches fields between source and target schemas using LLM analysis.
+     *
+     * <p>Returns a JSON object mapping source fields to target fields with
+     * confidence scores based on semantic understanding.</p>
+     *
+     * @param sourceSchema  the source schema JSON; must not be null
+     * @param targetSchema  the target schema JSON; must not be null
+     * @param config        LLM configuration; must not be null
+     * @return JSON object with field mappings and scores; never null
+     * @throws DataModellingException  EXECUTION_ERROR if LLM unavailable or matching fails
+     */
+    public String matchFieldsWithLlm(String sourceSchema, String targetSchema,
+                                      org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("match_fields_with_llm",
+                sourceSchema,
+                targetSchema,
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                config.getBaseUrl());
+    }
+
+    /**
+     * Enriches schema documentation using LLM analysis.
+     *
+     * <p>Generates meaningful descriptions for tables, columns, and relationships
+     * based on naming patterns and data characteristics.</p>
+     *
+     * @param schema  the schema to enrich; must not be null
+     * @param config  LLM configuration; must not be null
+     * @return enriched schema with documentation; never null
+     * @throws DataModellingException  EXECUTION_ERROR if enrichment fails
+     */
+    public String enrichDocumentationWithLlm(String schema,
+                                              org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("enrich_documentation_with_llm",
+                schema,
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                config.getBaseUrl());
+    }
+
+    /**
+     * Detects semantic patterns in a schema using LLM.
+     *
+     * <p>Identifies patterns such as PII fields, temporal fields, categorical data,
+     * and other domain-specific patterns that may have governance implications.</p>
+     *
+     * @param schema  the schema to analyze; must not be null
+     * @param config  LLM configuration; must not be null
+     * @return JSON object with detected patterns; never null
+     * @throws DataModellingException  EXECUTION_ERROR if pattern detection fails
+     */
+    public String detectPatternsWithLlm(String schema,
+                                         org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("detect_patterns_with_llm",
+                schema,
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                config.getBaseUrl());
+    }
+
+    /**
+     * Checks whether the LLM service is available and responsive.
+     *
+     * <p>Performs a health check against either the offline or online LLM endpoint,
+     * depending on configuration.</p>
+     *
+     * @param config  LLM configuration; must not be null
+     * @return {@code "true"} or {@code "false"} as JSON string; never null
+     */
+    public String checkLlmAvailability(org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        try {
+            String result = call("check_llm_availability",
+                    config.getMode().getValue(),
+                    config.getBaseUrl(),
+                    String.valueOf(config.getTimeoutSeconds()));
+            return result;
+        } catch (Exception e) {
+            log.warn("LLM availability check failed: {}", e.getMessage());
+            return "false";
+        }
+    }
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /**
@@ -1022,5 +1231,61 @@ public final class DataModellingBridge implements AutoCloseable {
         } catch (IOException e) {
             log.warn("Cannot clean up WASM temp directory {}: {}", dir, e.getMessage());
         }
+    }
+
+    /**
+     * Converts a string array to JSON array representation.
+     *
+     * <p>Escapes special characters and wraps each element as a JSON string.</p>
+     *
+     * @param array the array to convert; may be null
+     * @return JSON array string; never null (returns "[]" if array is null or empty)
+     */
+    private String stringArrayToJson(String[] array) {
+        if (array == null || array.length == 0) {
+            return "[]";
+        }
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < array.length; i++) {
+            if (i > 0) json.append(",");
+            json.append('"')
+                    .append(escapeJsonString(array[i]))
+                    .append('"');
+        }
+        json.append("]");
+        return json.toString();
+    }
+
+    /**
+     * Escapes a string for use as a JSON string value.
+     *
+     * <p>Handles quotes, backslashes, control characters, etc.</p>
+     *
+     * @param value the string to escape; must not be null
+     * @return escaped string; never null
+     * @throws NullPointerException if value is null
+     */
+    private String escapeJsonString(String value) {
+        Objects.requireNonNull(value, "value must not be null");
+        StringBuilder escaped = new StringBuilder();
+        for (char c : value.toCharArray()) {
+            switch (c) {
+                case '"' -> escaped.append("\\\"");
+                case '\\' -> escaped.append("\\\\");
+                case '\b' -> escaped.append("\\b");
+                case '\f' -> escaped.append("\\f");
+                case '\n' -> escaped.append("\\n");
+                case '\r' -> escaped.append("\\r");
+                case '\t' -> escaped.append("\\t");
+                default -> {
+                    if (c < 32 || c >= 127) {
+                        escaped.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        escaped.append(c);
+                    }
+                }
+            }
+        }
+        return escaped.toString();
     }
 }
