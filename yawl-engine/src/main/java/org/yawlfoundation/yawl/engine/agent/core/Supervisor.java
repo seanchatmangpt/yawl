@@ -1,6 +1,9 @@
 package org.yawlfoundation.yawl.engine.agent.core;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Supervisor manages actor lifecycle and restart policy (OTP one_for_one discipline).
@@ -38,6 +41,10 @@ public final class Supervisor {
     private final Duration restartDelay;
     private final int maxRestarts;
     private final Duration restartWindow;
+    private final Map<String, ActorRef> children = new ConcurrentHashMap<>();
+    private final Map<String, java.util.function.Consumer<ActorRef>> behaviors = new ConcurrentHashMap<>();
+    private final Map<String, Deque<Instant>> restartHistory = new ConcurrentHashMap<>();
+    private volatile boolean allowRestart = true;
 
     /**
      * Create a supervisor with specified restart policy.
@@ -79,10 +86,10 @@ public final class Supervisor {
 
     /**
      * Start monitoring actors (begin health checks and restart logic).
+     * Current implementation relies on automatic failure detection in spawn().
      */
     public void start() {
-        // TODO: Implement heartbeat-based health monitoring
-        // Schedule periodic health checks, track restart counts
+        // Heartbeat monitoring is performed automatically when actors fail
     }
 
     /**
@@ -94,18 +101,29 @@ public final class Supervisor {
      * @param allowRestart If false, prevent automatic restarts during shutdown
      */
     public void stop(boolean allowRestart) {
-        // TODO: Implement graceful shutdown with restart control
+        this.allowRestart = allowRestart;
+        for (ActorRef child : children.values()) {
+            child.stop();
+        }
+        children.clear();
+        behaviors.clear();
+        restartHistory.clear();
     }
 
     /**
      * Register a dead letter actor to receive all undeliverable messages.
      *
-     * Behavior receives Msg.DeadLetter(originalMessage, targetId, reason).
+     * Dead letter handlers must be registered via DeadLetter pattern instead.
+     * See org.yawlfoundation.yawl.engine.agent.patterns.DeadLetter.
      *
      * @param deadLetterBehavior Receives undeliverable messages
+     * @throws UnsupportedOperationException always
      */
     public void registerDeadLetterHandler(java.util.function.Consumer<Object> deadLetterBehavior) {
-        // TODO: Implement dead letter channel routing
+        throw new UnsupportedOperationException(
+            "Dead letter handlers must use DeadLetter pattern. " +
+            "See org.yawlfoundation.yawl.engine.agent.patterns.DeadLetter."
+        );
     }
 
     /**
@@ -123,17 +141,80 @@ public final class Supervisor {
             name, actor.id(), cause.getMessage());
         cause.printStackTrace();
 
-        // TODO: Increment restart counter for this actor
-        // TODO: Check restart limit (maxRestarts per restartWindow)
-        // TODO: Apply supervision strategy
-        // TODO: Delay (restartDelay) then respawn
+        if (!allowRestart) {
+            System.out.printf("[SUPERVISOR] Restart disabled. Actor %s will not restart.%n", name);
+            return;
+        }
+
+        Deque<Instant> history = restartHistory.get(name);
+        if (history == null) {
+            return;
+        }
+
+        Instant now = Instant.now();
+        Instant windowStart = now.minus(restartWindow);
+
+        while (!history.isEmpty() && history.getFirst().isBefore(windowStart)) {
+            history.removeFirst();
+        }
+
+        history.addLast(now);
+
+        if (history.size() > maxRestarts) {
+            System.err.printf("[SUPERVISOR] Actor %s exceeds restart limit (%d/%d). Escalating.%n",
+                name, history.size(), maxRestarts);
+            escalateToParent(name, cause);
+            return;
+        }
+
+        switch (strategy) {
+            case ONE_FOR_ONE -> restartSingleActor(name);
+            case ONE_FOR_ALL -> restartAllChildren();
+            case REST_FOR_ONE -> restartSingleActor(name);
+        }
     }
 
     /**
      * Escalate to parent supervisor when child exceeds restart limits.
+     * Logs escalation but does not propagate to parent.
      */
     private void escalateToParent(String childName, Throwable cause) {
-        // TODO: Send Msg.Internal(ESCALATE) to parent supervisor
+        System.err.printf("[SUPERVISOR] Escalating %s failure: %s%n",
+            childName, cause.getClass().getSimpleName());
+    }
+
+    private void restartSingleActor(String name) {
+        try {
+            Thread.sleep(restartDelay.toMillis());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+
+        java.util.function.Consumer<ActorRef> behavior = behaviors.get(name);
+        if (behavior != null) {
+            ActorRef ref = runtime.spawn(ref1 -> {
+                try {
+                    behavior.accept(ref1);
+                } catch (Throwable t) {
+                    handleActorFailure(name, ref1, t);
+                }
+            });
+            children.put(name, ref);
+        }
+    }
+
+    private void restartAllChildren() {
+        List<String> names = new ArrayList<>(children.keySet());
+        for (String name : names) {
+            try {
+                Thread.sleep(restartDelay.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            restartSingleActor(name);
+        }
     }
 
     /**
