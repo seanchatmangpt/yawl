@@ -30,6 +30,14 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | 08 | [MCP Agent Integration](../tutorials/08-mcp-agent-integration.md) | Connect an AI agent via the MCP server |
 | 09 | [Marketplace Quick Start](../tutorials/09-marketplace-quick-start.md) | Deploy YAWL to a cloud marketplace |
 
+### Deployment & Application Modules
+| # | Tutorial | What you learn |
+|---|----------|----------------|
+| DM-01 | [YAWL Stateless Engine Getting Started](../tutorials/yawl-stateless-getting-started.md) | Run stateless (event-driven) engine; deploy workflow; execute cases |
+| DM-02 | [YAWL Web Applications Getting Started](../tutorials/yawl-webapps-getting-started.md) | Deploy engine webapp; configure servlet container; call REST API |
+| DM-03 | [YAWL Control Panel Getting Started](../tutorials/yawl-control-panel-getting-started.md) | Run Swing admin UI; manage specifications; monitor cases |
+| DM-04 | [YAWL MCP/A2A Getting Started](../tutorials/yawl-mcp-a2a-getting-started.md) | Connect AI agents via MCP; enable A2A communication |
+
 ### Advanced Topics
 | # | Tutorial | What you learn |
 |---|----------|----------------|
@@ -55,6 +63,13 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | PL-02 | [GraalJS Getting Started](../polyglot/tutorials/02-graaljs-getting-started.md) | Execute JavaScript code within workflows |
 | PL-03 | [GraalWASM Getting Started](../polyglot/tutorials/03-graalwasm-getting-started.md) | Execute WebAssembly within workflows |
 | PL-04 | [Rust for Process Mining (OCEL2)](../polyglot/tutorials/04-rust4pm-ocel2.md) | Build Rust-based process mining tools for OCEL2 |
+| PL-05 | [Code Generation with ggen](../tutorials/polyglot-ggen-getting-started.md) | Generate YAWL specs deterministically via RDF+SPARQL |
+
+### Schema Modelling & Code Generation
+| # | Tutorial | What you learn |
+|---|----------|----------------|
+| SC-01 | [Data Modelling Getting Started](../tutorials/11-data-modelling-bridge.md) | Import schemas, validate domains, manage ADRs |
+| SC-02 | [DMN Decision Evaluation](../tutorials/14-dmn-decision-service.md) | Evaluate DMN tables with schema validation |
 
 ---
 
@@ -117,6 +132,15 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Virtual Threads Deployment](../how-to/deployment/virtual-threads-deploy.md) | Deploy with virtual threads |
 | [Virtual Threads](../how-to/deployment/virtual-threads.md) | Configure virtual threads |
 | [Kubernetes Actuator](../how-to/deployment/kubernetes-actuator.md) | Kubernetes deployment automation |
+
+### Application Module Deployment
+| Guide | Task |
+|-------|------|
+| [Stateless Engine Deployment](../how-to/deployment/stateless-deployment.md) | Deploy YStatelessEngine to K8s, Docker Compose, cloud platforms |
+| [Engine Webapp Configuration](../how-to/deployment/webapps-deployment.md) | Configure and deploy yawl-engine-webapp |
+| [Control Panel Setup](../how-to/deployment/control-panel-deployment.md) | Deploy and configure YAWL Control Panel |
+| [MCP/A2A Deployment](../how-to/deployment/mcp-a2a-deployment.md) | Deploy MCP/A2A application to production |
+| [Stateless Event Store Configuration](../how-to/deployment/stateless-event-store.md) | Configure Kafka, RabbitMQ, or S3 for event sourcing |
 
 ### CI/CD
 | Guide | Task |
@@ -213,6 +237,8 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Manage Decision Records & Knowledge Base](../how-to/manage-knowledge-and-decisions.md) | Create/export MADR decision records, KB articles, and Excalidraw sketches with indexes |
 | [Validate Data Schemas](../how-to/validate-data-schemas.md) | Validate ODPS, table/column names, data types, circular dependencies, naming conflicts |
 | [Evaluate DMN Decisions](../how-to/evaluate-dmn-decisions.md) | Parse DMN XML, build DataModel schema, evaluate with COLLECT aggregation |
+| [Data Modelling Schema Validation](../how-to/data-modelling-schema-validation.md) | Import SQL, create ODCS domains, manage ADRs, validate against schema in workflows |
+| [Write Tera Templates for Code Generation](../how-to/ggen-tera-templates.md) | Create YAWL specs, service stubs, and config files from RDF via Tera templates |
 
 ### Export & Pipeline
 | Guide | Task |
@@ -263,6 +289,11 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Error Codes](../reference/error-codes.md) | All error codes with descriptions |
 | [YAWL Schema](../reference/yawl-schema.md) | XSD schema reference |
 | [Implementation Status](../reference/implementation-status.md) | Feature completion matrix |
+| [Stateless Engine API](../reference/stateless-engine-reference.md) | YStatelessEngine, YNetRunner, YWorkItem API reference |
+| [Stateless Engine Configuration](../reference/stateless-engine-config.md) | YStatelessEngine configuration properties |
+| [Engine Webapp Configuration](../reference/webapps-configuration.md) | yawl-engine-webapp deployment properties |
+| [Control Panel Configuration](../reference/control-panel-configuration.md) | Control Panel settings and preferences |
+| [MCP/A2A Configuration](../reference/mcp-a2a-configuration.md) | MCP and A2A server configuration |
 
 ### Interfaces
 | Reference | Contents |
@@ -307,8 +338,10 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 ### Schema Modelling & DMN
 | Reference | Contents |
 |-----------|----------|
-| [DataModellingBridge API](../reference/data-modelling-bridge.md) | All 50+ methods: schema import, export, conversion, workspace, domain, decisions, KB, sketches, validation |
+| [DataModellingBridge API](../reference/data-modelling-api.md) | DataModellingBridge: ODCS, SQL, OpenAPI, BPMN, DMN import-export; domain management; ADRs |
+| [Data Modelling Bridge (Legacy)](../reference/data-modelling-bridge.md) | All 50+ methods: schema import, export, conversion, workspace, domain, decisions, KB, sketches, validation |
 | [DMN Decision Service API](../reference/dmn-decision-service.md) | DmnDecisionService, DataModel, DmnTable, DmnColumn, DmnRelationship, DmnCollectAggregation, EndpointCardinality |
+| [ggen API Reference](../reference/ggen-api.md) | RdfKnowledgeBase, SparqlQueryExecutor, TeraTemplateRenderer, CodeGenerator, PnmlSynthesizer, validation |
 
 ### Build & Infrastructure
 | Reference | Contents |
@@ -382,6 +415,7 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 |-------------|-------------------|
 | [v6 Architecture](../explanation/v6-architecture.md) | YAWL v6 overall architecture |
 | [Dual-Engine Architecture](../explanation/dual-engine-architecture.md) | Stateful + stateless engine design |
+| [Stateless vs Persistent Architecture](../explanation/stateless-vs-persistent-architecture.md) | Compare stateless and persistent execution models |
 | [Interface Architecture](../explanation/interface-architecture.md) | A/B/E/X interface layering |
 | [Shared-Src Build Strategy](../explanation/shared-src-build-strategy.md) | Why shared-src exists and how it works |
 | [Maven-First Architecture](../explanation/maven-first-architecture.md) | Maven-centric build philosophy |
@@ -389,6 +423,10 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [CI/CD Architecture](../explanation/cicd-architecture.md) | Continuous integration and deployment |
 | [Architecture Comparison](../explanation/architecture-comparison.md) | Compare YAWL with other engines |
 | [Architecture Refactoring](../explanation/architecture-refactoring.md) | Refactoring patterns and practices |
+| [Event-Sourced Architecture](../explanation/event-sourced-architecture.md) | Event sourcing patterns for stateless engine |
+| [Stateless Engine Design](../explanation/stateless-engine-design.md) | Design patterns for event-driven execution |
+| [MCP/A2A Architecture](../explanation/mcp-a2a-architecture.md) | AI agent integration architecture |
+| [Control Panel Architecture](../explanation/control-panel-architecture.md) | Swing-based admin UI design |
 
 ### Workflow Execution & Adaptation
 | Explanation | What it addresses |
@@ -432,10 +470,17 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 ### Polyglot & Emerging Technologies
 | Explanation | What it addresses |
 |-------------|-------------------|
+| [Polyglot Execution Model](../explanation/polyglot-execution-unified.md) | Unified GraalVM polyglot execution across Python, JavaScript, WebAssembly |
 | [Polyglot Architecture](../polyglot/explanation/polyglot-architecture.md) | Multi-language execution |
 | [Type Marshalling](../polyglot/explanation/type-marshalling.md) | Cross-language type conversion |
 | [WASM Binding Strategies](../polyglot/explanation/wasm-binding-strategies.md) | WebAssembly integration patterns |
 | [When to Use Which](../polyglot/explanation/when-to-use-which.md) | Choose the right polyglot language |
+
+### Code Generation & Schema
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [ggen Architecture](../explanation/ggen-architecture.md) | Deterministic code generation via RDF+SPARQL+Tera, traceability, process mining synthesis |
+| [Data Modelling SDK as Facade](../explanation/data-modelling-sdk-facade.md) | Why data-modelling-sdk is Rust, not Java; single source of truth across languages |
 
 ### Build System & Quality
 | Explanation | What it addresses |
