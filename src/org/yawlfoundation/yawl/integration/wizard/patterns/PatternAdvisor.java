@@ -295,7 +295,7 @@ public final class PatternAdvisor {
                 break;
             case STRUCTURAL:
                 // Structural patterns score high if loops/cycles required
-                if (requirements.stream().anyMatch(r -> r.contains("loop") || r.contains("cycle"))) {
+                if (requirements.stream().anyMatch(r -> r.contains("loop") || r.contains("cycle") || r.contains("termination"))) {
                     score = 18;
                 } else {
                     score = 5;
@@ -303,7 +303,7 @@ public final class PatternAdvisor {
                 break;
             case MULTIPLE_INSTANCES:
                 // MI patterns score high if multiple instances required
-                if (requirements.stream().anyMatch(r -> r.contains("instance") || r.contains("multiple"))) {
+                if (requirements.stream().anyMatch(r -> r.contains("instance") || r.contains("multiple") || r.contains("thread"))) {
                     score = 18;
                 } else {
                     score = 3;
@@ -319,10 +319,34 @@ public final class PatternAdvisor {
                 break;
             case CANCELLATION:
                 // Cancellation patterns score high if cancellation/abort required
-                if (requirements.stream().anyMatch(r -> r.contains("cancel") || r.contains("abort"))) {
+                if (requirements.stream().anyMatch(r -> r.contains("cancel") || r.contains("abort") || r.contains("region"))) {
                     score = 18;
                 } else {
                     score = 3;
+                }
+                break;
+            case ITERATION:
+                // Iteration patterns score high if looping/recursion required
+                if (requirements.stream().anyMatch(r -> r.contains("loop") || r.contains("recursion") || r.contains("iteration"))) {
+                    score = 18;
+                } else {
+                    score = 5;
+                }
+                break;
+            case TRIGGER:
+                // Trigger patterns score high for event-driven configs
+                if (a2aAgentCount >= 1 || requirements.stream().anyMatch(r -> r.contains("trigger") || r.contains("event"))) {
+                    score = 18;
+                } else {
+                    score = 5;
+                }
+                break;
+            case SYNCHRONISATION:
+                // Synchronisation patterns score high for multi-agent configs
+                if (a2aAgentCount >= 2 || requirements.stream().anyMatch(r -> r.contains("synchron") || r.contains("predicate"))) {
+                    score = 18;
+                } else {
+                    score = 5;
                 }
                 break;
         }

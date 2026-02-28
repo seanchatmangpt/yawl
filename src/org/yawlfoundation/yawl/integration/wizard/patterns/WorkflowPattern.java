@@ -5,11 +5,18 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Van der Aalst's 20 fundamental workflow control flow patterns.
+ * Van der Aalst's 43 fundamental workflow control flow patterns.
  *
- * <p>Represents all workflow patterns from the seminal paper:
+ * <p>Represents all workflow patterns from the seminal papers:
  * van der Aalst, W.M.P., ter Hofstede, A.H.M., Kiepuszewski, B.,
  * Barros, A.P. (2003). "Workflow Patterns." Distributed and Parallel Databases, 14, 5–51.
+ * van der Aalst, W.M.P., ter Hofstede, A.H.M. (2006). "Workflow Patterns: The Definitive Guide."
+ *
+ * <p>Includes:
+ * <ul>
+ *   <li>WP-1 to WP-20: Basic, Advanced, Structural, Multiple Instance, State-Based, Cancellation patterns</li>
+ *   <li>WCP-21 to WCP-43: Extended patterns including Iteration, Triggers, Advanced Cancellation, Synchronisation</li>
+ * </ul>
  *
  * <p>Each pattern is annotated with suitability scores for MCP tool orchestration
  * (0-10 scale) and A2A agent coordination, reflecting how naturally each pattern
@@ -353,6 +360,376 @@ public enum WorkflowPattern {
         8,  // MCP suitability: very good (abort all tool executions)
         8,  // A2A suitability: very good (abort all agent tasks in case)
         "{p_active_tasks} → t_cancel_case → p_cleanup_all → p_case_end (terminal)"
+    ),
+
+    // Extended Patterns (WCP-21 to WCP-43)
+
+    /**
+     * WCP-21: Structured Loop.
+     * A block of activities is repeated while a condition holds.
+     * Petri net: backward edge with condition-controlled looping.
+     */
+    STRUCTURED_LOOP(
+        "WCP-21",
+        "Structured Loop",
+        PatternCategory.ITERATION,
+        "A block of activities is repeated while a condition is true. "
+            + "Condition is evaluated at the beginning of each iteration.",
+        7,  // MCP suitability: good (structured loop orchestration)
+        6,  // A2A suitability: moderate (agent loop state tracking)
+        "Place-transition net: p_loop_start → {t_block} → p_loop_condition[check] →? t_back_to_start | t_exit"
+    ),
+
+    /**
+     * WCP-22: Recursion.
+     * A process instance can spawn recursively nested instances of itself.
+     * Petri net: recursive call enabling nested case instances.
+     */
+    RECURSION(
+        "WCP-22",
+        "Recursion",
+        PatternCategory.ITERATION,
+        "A workflow instance can recursively create new instances of the same workflow. "
+            + "Each recursive instance maintains its own state.",
+        6,  // MCP suitability: moderate (recursive tool invocation)
+        6,  // A2A suitability: moderate (recursive agent spawning)
+        "Place-transition net: p_task → t_spawn_recursive[n times] → {nested instances} → t_join_recursive"
+    ),
+
+    /**
+     * WCP-23: Transient Trigger.
+     * A trigger fires at most once when enabled; if not accepted immediately, it is lost.
+     * Petri net: message passing without buffering.
+     */
+    TRANSIENT_TRIGGER(
+        "WCP-23",
+        "Transient Trigger",
+        PatternCategory.TRIGGER,
+        "A trigger fires at most once; if not accepted immediately upon firing, the trigger is lost. "
+            + "No buffering or queueing of triggers occurs.",
+        6,  // MCP suitability: moderate (non-buffered message handling)
+        8,  // A2A suitability: excellent (event-driven external triggers)
+        "Place-transition net: t_external → p_trigger[non-buffered] → t_action (fire-and-forget)"
+    ),
+
+    /**
+     * WCP-24: Persistent Trigger.
+     * A trigger remains active until explicitly consumed; multiple tasks may be triggered.
+     * Petri net: trigger place remains marked until consumed.
+     */
+    PERSISTENT_TRIGGER(
+        "WCP-24",
+        "Persistent Trigger",
+        PatternCategory.TRIGGER,
+        "A trigger remains active until explicitly consumed by a task. "
+            + "Multiple tasks can observe and react to a persistent trigger.",
+        6,  // MCP suitability: moderate (buffered event handling)
+        8,  // A2A suitability: excellent (observable event state)
+        "Place-transition net: t_external → p_trigger[buffered] → {t_action_1, t_action_2, ...}"
+    ),
+
+    /**
+     * WCP-25: Cancel Region.
+     * A region of the workflow can be cancelled as a single unit.
+     * Petri net: atomic removal of all tokens in region upon cancellation.
+     */
+    CANCEL_REGION(
+        "WCP-25",
+        "Cancel Region",
+        PatternCategory.CANCELLATION,
+        "A specific region (block) of the workflow can be cancelled as a unit. "
+            + "All active tasks within the region are terminated atomically.",
+        7,  // MCP suitability: good (scoped cancellation)
+        7,  // A2A suitability: good (scoped agent task termination)
+        "Place-transition net: {p_region_tasks} → t_cancel_region → p_region_cleanup → p_resume_after_region"
+    ),
+
+    /**
+     * WCP-26: Cancel Multiple Instance Activity.
+     * All instances of a multiple instance activity can be cancelled.
+     * Petri net: removes all instance tokens; remaining instances are discarded.
+     */
+    CANCEL_MI_ACTIVITY(
+        "WCP-26",
+        "Cancel Multiple Instance Activity",
+        PatternCategory.CANCELLATION,
+        "All instances of a multiple instance activity are cancelled. "
+            + "Remaining instances are terminated immediately.",
+        7,  // MCP suitability: good (parallel cancellation)
+        7,  // A2A suitability: good (cancel all parallel agent tasks)
+        "Place-transition net: {p_instance_1, ..., p_instance_N} → t_cancel_all_instances → p_post_mi"
+    ),
+
+    /**
+     * WCP-27: Complete Multiple Instance Activity.
+     * A multiple instance activity can be completed early without waiting for all instances.
+     * Petri net: remaining instances are removed upon early completion.
+     */
+    COMPLETE_MI_ACTIVITY(
+        "WCP-27",
+        "Complete Multiple Instance Activity",
+        PatternCategory.CANCELLATION,
+        "A multiple instance activity can be completed early without waiting for all instances to finish. "
+            + "Remaining instances are terminated and cleanup occurs.",
+        7,  // MCP suitability: good (early completion of parallel activity)
+        7,  // A2A suitability: good (early completion of parallel agent tasks)
+        "Place-transition net: {p_instance_completed, p_instance_pending} → t_complete_mi[early] → p_post_mi"
+    ),
+
+    /**
+     * WCP-28: Blocking Discriminator.
+     * Multiple incoming branches; after the first completes, remaining branches wait until discarded.
+     * Petri net: blocking join; remaining branches remain enabled until discriminator completes.
+     */
+    BLOCKING_DISCRIMINATOR(
+        "WCP-28",
+        "Blocking Discriminator",
+        PatternCategory.ADVANCED_BRANCHING,
+        "Multiple incoming branches; after the first completes, the transition fires but remaining branches "
+            + "remain enabled until the discriminator's next firing (blocking behavior).",
+        5,  // MCP suitability: low (complex stateful blocking)
+        5,  // A2A suitability: low (complex distributed state)
+        "Place-transition net: {p_branch_1, p_branch_2, ...} → t_discriminator[blocking] → p_output"
+    ),
+
+    /**
+     * WCP-29: Cancelling Discriminator.
+     * Multiple incoming branches; after the first completes, remaining branches are cancelled.
+     * Petri net: first completion triggers cancel of other branches.
+     */
+    CANCELLING_DISCRIMINATOR(
+        "WCP-29",
+        "Cancelling Discriminator",
+        PatternCategory.ADVANCED_BRANCHING,
+        "Multiple incoming branches; the first to complete fires the transition and all remaining branches "
+            + "are cancelled immediately.",
+        6,  // MCP suitability: moderate (cancel-on-first winner)
+        6,  // A2A suitability: moderate (distributed race cancellation)
+        "Place-transition net: {p_branch_1, p_branch_2, ...} → t_discriminator[cancel others] → p_output"
+    ),
+
+    /**
+     * WCP-30: Structured Partial Join.
+     * A subset of incoming branches (M out of N) must complete; the join completes when M conditions are met.
+     * Petri net: join with M-of-N firing semantics (known statically).
+     */
+    STRUCTURED_PARTIAL_JOIN(
+        "WCP-30",
+        "Structured Partial Join",
+        PatternCategory.ADVANCED_BRANCHING,
+        "A join waits for a specific number (M) of incoming branches to complete, where M < N. "
+            + "M is known at design time.",
+        5,  // MCP suitability: low (cardinality tracking)
+        5,  // A2A suitability: low (distributed quorum)
+        "Place-transition net: {p_branch_1, ..., p_branch_N} → t_partial_join[M of N] → p_output"
+    ),
+
+    /**
+     * WCP-31: Blocking Partial Join.
+     * Like WCP-30 but remaining branches do not fire after M completions; they remain blocked.
+     * Petri net: partial join with blocking semantics.
+     */
+    BLOCKING_PARTIAL_JOIN(
+        "WCP-31",
+        "Blocking Partial Join",
+        PatternCategory.ADVANCED_BRANCHING,
+        "A join waits for M of N branches; after M complete, remaining branches are blocked "
+            + "and do not proceed until re-enabled.",
+        5,  // MCP suitability: low (blocking quorum)
+        5,  // A2A suitability: low (blocking distributed state)
+        "Place-transition net: {p_branch_1, ..., p_branch_N} → t_partial_join[M of N, blocking] → p_output"
+    ),
+
+    /**
+     * WCP-32: Cancelling Partial Join.
+     * Like WCP-30 but after M branches complete, remaining branches are cancelled.
+     * Petri net: partial join with cancellation semantics.
+     */
+    CANCELLING_PARTIAL_JOIN(
+        "WCP-32",
+        "Cancelling Partial Join",
+        PatternCategory.ADVANCED_BRANCHING,
+        "A join waits for M of N branches; after M complete, the join fires and remaining branches "
+            + "are cancelled.",
+        6,  // MCP suitability: moderate (quorum with cancellation)
+        6,  // A2A suitability: moderate (quorum with distributed cancellation)
+        "Place-transition net: {p_branch_1, ..., p_branch_N} → t_partial_join[M of N, cancel] → p_output"
+    ),
+
+    /**
+     * WCP-33: Generalised AND-Join.
+     * A join that synchronizes based on a dynamic predicate over input cardinalities.
+     * Petri net: join with arbitrary cardinality predicate.
+     */
+    GENERALISED_AND_JOIN(
+        "WCP-33",
+        "Generalised AND-Join",
+        PatternCategory.SYNCHRONISATION,
+        "A join that synchronizes based on a predicate evaluated over the cardinality of incoming branches. "
+            + "Predicate can be arbitrary logical expression.",
+        5,  // MCP suitability: low (complex predicate evaluation)
+        5,  // A2A suitability: low (complex distributed condition)
+        "Place-transition net: {p_branch_1, ..., p_branch_N} → t_join[predicate(card)] → p_output"
+    ),
+
+    /**
+     * WCP-34: Static Partial Join for Multiple Instances.
+     * Multiple instances of a task await M of N completions for a static (design-time) count.
+     * Petri net: partial join applied across multiple instances.
+     */
+    STATIC_PARTIAL_JOIN_MI(
+        "WCP-34",
+        "Static Partial Join for Multiple Instances",
+        PatternCategory.ADVANCED_BRANCHING,
+        "Multiple instances of a task await completion of M of N instances, where N is statically known. "
+            + "Join completes when M instances finish.",
+        6,  // MCP suitability: moderate (static quorum on instances)
+        6,  // A2A suitability: moderate (static quorum on agents)
+        "Place-transition net: {p_instance_1, ..., p_instance_N} → t_partial_join_mi[M of N] → p_post_mi"
+    ),
+
+    /**
+     * WCP-35: Cancelling Partial Join for Multiple Instances.
+     * Like WCP-34 but after M completions, remaining instances are cancelled.
+     * Petri net: partial join on multiple instances with cancellation.
+     */
+    CANCELLING_PARTIAL_JOIN_MI(
+        "WCP-35",
+        "Cancelling Partial Join for Multiple Instances",
+        PatternCategory.ADVANCED_BRANCHING,
+        "Multiple instances await M of N completions (N known statically); after M complete, "
+            + "remaining instances are cancelled.",
+        6,  // MCP suitability: moderate (quorum with instance cancellation)
+        6,  // A2A suitability: moderate (quorum with agent instance cancellation)
+        "Place-transition net: {p_instance_1, ..., p_instance_N} → t_partial_join_mi[M cancel] → p_post_mi"
+    ),
+
+    /**
+     * WCP-36: Multiple Instances Without A Priori Runtime Knowledge (dynamic join).
+     * Multiple instances are created dynamically; join waits for all to complete.
+     * Petri net: dynamic instance creation with dynamic join.
+     */
+    MI_NO_APRIORI_DYNAMIC_JOIN(
+        "WCP-36",
+        "Multiple Instances without A Priori Runtime Knowledge (dynamic join)",
+        PatternCategory.MULTIPLE_INSTANCES,
+        "Multiple instances are created dynamically with count unknown at design or start time. "
+            + "Join waits for all dynamically created instances to complete.",
+        4,  // MCP suitability: low (unbounded dynamic join)
+        4,  // A2A suitability: low (unbounded dynamic agent join)
+        "Place-transition net: p_mi_start → t_dynamic_create[N instances] →* {t_1...t_N} → t_dynamic_join → p_end"
+    ),
+
+    /**
+     * WCP-37: Interleaved Routing (state-based, variant).
+     * Parallel paths with interleaving at fine granularity; paths can dynamically merge and re-split.
+     * Petri net: arbitrary interleaving of concurrent transitions.
+     */
+    INTERLEAVED_ROUTING(
+        "WCP-37",
+        "Interleaved Routing",
+        PatternCategory.STATE_BASED,
+        "Multiple paths execute concurrently with fine-grained interleaving. "
+            + "Paths may dynamically merge and re-split based on state conditions.",
+        5,  // MCP suitability: low (fine-grained scheduling)
+        5,  // A2A suitability: low (complex distributed interleaving)
+        "Place-transition net: p_parallel → {t_block_1, t_block_2, ...} [arbitrary interleaving]"
+    ),
+
+    /**
+     * WCP-38: Critical Section.
+     * A critical section prevents concurrent execution; only one instance may execute at a time.
+     * Petri net: mutual exclusion via single resource place.
+     */
+    CRITICAL_SECTION(
+        "WCP-38",
+        "Critical Section",
+        PatternCategory.STATE_BASED,
+        "A critical section ensures mutual exclusion; only one task/instance executes within the section at a time. "
+            + "Others must wait.",
+        6,  // MCP suitability: moderate (locking/serialization)
+        6,  // A2A suitability: moderate (distributed mutex)
+        "Place-transition net: p_mutex[1 token] → t_critical[acquire] → p_critical_section → t_release → p_mutex"
+    ),
+
+    /**
+     * WCP-39: Interleaved Parallel Routing (generalised).
+     * Generalization of WCP-17; allows dynamic parallel/serial composition changes.
+     * Petri net: dynamic transition between parallel and serial modes.
+     */
+    INTERLEAVED_PARALLEL_GENERAL(
+        "WCP-39",
+        "Interleaved Parallel Routing (generalised)",
+        PatternCategory.STATE_BASED,
+        "Generalization of interleaved parallel routing allowing dynamic composition changes. "
+            + "Paths can transition between parallel and serialized execution modes.",
+        5,  // MCP suitability: low (dynamic mode switching)
+        5,  // A2A suitability: low (dynamic topology)
+        "Place-transition net: {p_serial, p_parallel} ↔ t_mode_switch (dynamic)"
+    ),
+
+    /**
+     * WCP-40: Thread Merge.
+     * Threads (parallel paths) are merged; single output when all threads join.
+     * Petri net: synchronizing merge of thread identifiers.
+     */
+    THREAD_MERGE(
+        "WCP-40",
+        "Thread Merge",
+        PatternCategory.MULTIPLE_INSTANCES,
+        "Multiple parallel threads (paths) are merged into a single path. "
+            + "All threads must complete before merge fires.",
+        7,  // MCP suitability: good (thread pool synchronization)
+        7,  // A2A suitability: good (thread merge in agents)
+        "Place-transition net: {p_thread_1, ..., p_thread_N} → t_thread_merge → p_merged"
+    ),
+
+    /**
+     * WCP-41: Thread Split.
+     * A single path splits into multiple parallel threads.
+     * Petri net: creates multiple parallel execution paths.
+     */
+    THREAD_SPLIT(
+        "WCP-41",
+        "Thread Split",
+        PatternCategory.MULTIPLE_INSTANCES,
+        "A single path splits into multiple parallel threads. "
+            + "Each thread executes independently.",
+        7,  // MCP suitability: good (parallel thread creation)
+        7,  // A2A suitability: good (parallel agent thread creation)
+        "Place-transition net: p_input → t_thread_split → {p_thread_1, ..., p_thread_N}"
+    ),
+
+    /**
+     * WCP-42: Explicit Termination.
+     * A case instance explicitly terminates via an end-of-case event.
+     * Petri net: explicit transition to terminal state.
+     */
+    EXPLICIT_TERMINATION(
+        "WCP-42",
+        "Explicit Termination",
+        PatternCategory.STRUCTURAL,
+        "A case instance explicitly terminates upon reaching an explicit end condition or event. "
+            + "Termination is not implicit but programmatically controlled.",
+        7,  // MCP suitability: good (explicit completion event)
+        7,  // A2A suitability: good (explicit agent case termination)
+        "Place-transition net: {p_active_tasks} → t_explicit_end → p_case_end (explicit)"
+    ),
+
+    /**
+     * WCP-43: Multiple Instances with A Priori Design-Time Knowledge (generalised).
+     * Generalization of WCP-13; allows complex instance patterns and flexible join semantics.
+     * Petri net: static instance count with generalized join.
+     */
+    MI_WITH_APRIORI_DESIGN_GENERAL(
+        "WCP-43",
+        "Multiple Instances with A Priori Design-Time Knowledge (generalised)",
+        PatternCategory.MULTIPLE_INSTANCES,
+        "Multiple instances are created with count known at design time (generalization of WCP-13). "
+            + "Allows complex instance patterns and flexible join semantics.",
+        7,  // MCP suitability: good (static parallel instances with complex join)
+        7,  // A2A suitability: good (static agent instances with complex join)
+        "Place-transition net: p_mi_start →* {t_1...t_N} → t_join[generalized] → p_end (N known at design)"
     );
 
     private final String code;

@@ -57,6 +57,7 @@ public final class SoundnessVerifier {
     private final Map<String, Set<String>> transitionToPlaces;
     private final String startPlace;
     private final String endPlace;
+    private final WfNetSoundnessProver soundnessProver = new WfNetSoundnessProver();
 
     // Cached reachability for optimization
     private Set<String> reachablePlaces;
@@ -90,6 +91,18 @@ public final class SoundnessVerifier {
         if (endPlace.isBlank()) {
             throw new IllegalArgumentException("endPlace must not be empty");
         }
+    }
+
+    /**
+     * Proves soundness of this Petri net using van der Aalst's theorem (1997).
+     *
+     * <p>Delegates to WfNetSoundnessProver to validate structure and check that the
+     * short-circuited net N* is both live and bounded.
+     *
+     * @return a SoundnessProof with complete proof details
+     */
+    public WfNetSoundnessProver.SoundnessProof proveWfNetSoundness() {
+        return soundnessProver.prove(placeToTransitions, transitionToPlaces, startPlace, endPlace);
     }
 
     /**
