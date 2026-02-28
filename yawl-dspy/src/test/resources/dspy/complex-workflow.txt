@@ -1,0 +1,24 @@
+Multi-stage document processing pipeline
+
+Stage 1: Extract key information
+- Input: document_text (PDF or plain text)
+- Extract: author, publication_date, main_topic, summary
+- Output: structured_info (JSON)
+
+Stage 2: Classify document type
+- Input: document_text, structured_info
+- Classify as: research_paper|news|blog|report|other
+- Assign confidence score
+- Output: document_type, classification_score
+
+Stage 3: Generate recommendations
+- Input: document_type, main_topic, summary
+- Generate 3-5 actionable recommendations
+- Rank by relevance
+- Output: recommendations (list of strings)
+
+Final output:
+- structured_info: extracted information
+- classification: type and confidence
+- recommendations: ranked list
+- processing_time: milliseconds
