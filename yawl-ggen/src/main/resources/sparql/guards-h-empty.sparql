@@ -1,0 +1,15 @@
+PREFIX code: <http://yawlfoundation.org/ggen/code#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?line ?content
+WHERE {
+    ?method a code:Method ;
+            code:methodBody ?body ;
+            code:lineNumber ?line ;
+            code:returnType ?returnType .
+
+    FILTER(REGEX(STR(?returnType), "void") &&
+           REGEX(STR(?body), "^\\s*$"))
+
+    BIND(CONCAT("Empty void method at line ", STR(?line)) AS ?content)
+}

@@ -1,0 +1,16 @@
+PREFIX code: <http://yawlfoundation.org/ggen/code#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?line ?content
+WHERE {
+    ?catchBlock a code:CatchBlock ;
+               code:catchContent ?content ;
+               code:exceptionType ?exceptionType .
+
+    FILTER(REGEX(STR(?content), "return.*fake") ||
+           REGEX(STR(?content), "return.*empty") ||
+           REGEX(STR(?content), "return.*Collections") ||
+           REGEX(STR(?content), "return\\s+(null|0|false)"))
+
+    BIND("Silent fallback in catch block" AS ?line)
+}
