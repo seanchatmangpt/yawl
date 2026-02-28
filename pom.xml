@@ -3719,6 +3719,11 @@
                 <!-- Slightly reduced timeout for integration tests (from 180s default) -->
                 <integration.test.timeout.default>120 s</integration.test.timeout.default>
                 <integration.test.timeout.method>180 s</integration.test.timeout.method>
+                <!-- Phase 3: Enable thread-local YEngine isolation for parallel test execution.
+                     This property is passed to both Surefire and Failsafe via systemPropertyVariables.
+                     Each test thread gets its own isolated YEngine instance, eliminating cross-thread
+                     state corruption. Backward compatible: existing tests need no changes. -->
+                <yawl.test.threadlocal.isolation>true</yawl.test.threadlocal.isolation>
             </properties>
             <build>
                 <plugins>
@@ -3737,6 +3742,8 @@
                                 <junit.jupiter.execution.timeout.default>${integration.test.timeout.default}</junit.jupiter.execution.timeout.default>
                                 <junit.jupiter.execution.timeout.testable.method.default>${integration.test.timeout.method}</junit.jupiter.execution.timeout.testable.method.default>
                                 <junit.jupiter.execution.timeout.lifecycle.method.default>${integration.test.timeout.method}</junit.jupiter.execution.timeout.lifecycle.method.default>
+                                <!-- Phase 3: Enable thread-local YEngine isolation for parallel test execution -->
+                                <yawl.test.threadlocal.isolation>${yawl.test.threadlocal.isolation}</yawl.test.threadlocal.isolation>
                             </systemPropertyVariables>
                             <!-- Increased parallelism: 2.0 factor (1.5 = default conservative) -->
                             <properties>
@@ -3764,6 +3771,8 @@
                                 <junit.jupiter.execution.timeout.default>60 s</junit.jupiter.execution.timeout.default>
                                 <junit.jupiter.execution.timeout.testable.method.default>120 s</junit.jupiter.execution.timeout.testable.method.default>
                                 <junit.jupiter.execution.timeout.lifecycle.method.default>120 s</junit.jupiter.execution.timeout.lifecycle.method.default>
+                                <!-- Phase 3: Enable thread-local YEngine isolation for parallel test execution -->
+                                <yawl.test.threadlocal.isolation>${yawl.test.threadlocal.isolation}</yawl.test.threadlocal.isolation>
                             </systemPropertyVariables>
                             <properties>
                                 <configurationParameters>
