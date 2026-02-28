@@ -1,0 +1,10 @@
+# CDS (Class Data Sharing) archives
+# These are Java 25+ generated binary files for class pre-loading.
+# They are generated on-demand and should not be committed.
+# They are platform/Java-version specific.
+
+*.jsa
+*.lst
+
+# Metadata is tracked for cache validation, exclude binary metadata
+metadata.json

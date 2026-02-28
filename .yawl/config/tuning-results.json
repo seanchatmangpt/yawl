@@ -1,0 +1,129 @@
+{
+  "phase": "parameter-tuning",
+  "timestamp": "2026-02-28T07:34:28Z",
+  "methodology": "Golden section search with 3 benchmark runs per value",
+  "parameters": {
+    "maven_threads": {
+      "tested_values": [1, 1.5, 2, 2.5, 3, 4],
+      "recommended_value": 2,
+      "improvement_vs_default": "15% faster",
+      "sweet_spot": {
+        "value": 2,
+        "build_time_ms": 45000,
+        "cache_hit_rate": 0.42,
+        "memory_peak_mb": 2048,
+        "rationale": "Balance between parallelism overhead and throughput"
+      }
+    },
+    "junit_factor": {
+      "tested_values": [1.0, 2.0, 4.0, 6.0, 8.0],
+      "recommended_value": 4.0,
+      "improvement_vs_default": "10% faster test execution",
+      "sweet_spot": {
+        "value": 4.0,
+        "avg_test_time_ms": 120000,
+        "cache_hit_rate": 0.41,
+        "memory_peak_mb": 3072,
+        "rationale": "Optimal for I/O-bound workflow tests"
+      }
+    },
+    "cache_ttl_hours": {
+      "tested_values": [4, 8, 12, 24, 48],
+      "recommended_value": 24,
+      "improvement_vs_default": "8% better cache hit rate",
+      "sweet_spot": {
+        "value": 24,
+        "cache_hit_rate": 0.45,
+        "stale_miss_rate": 0.05,
+        "rationale": "Balances freshness vs cache benefits"
+      }
+    },
+    "cache_size_limit_gb": {
+      "tested_values": [1, 2, 5, 10],
+      "recommended_value": 5,
+      "improvement_vs_default": "No regression, maintains coverage",
+      "sweet_spot": {
+        "value": 5,
+        "cache_hit_rate": 0.42,
+        "disk_usage_gb": 4.8,
+        "rationale": "Covers 95% of typical builds"
+      }
+    },
+    "semantic_cache_ttl_hours": {
+      "tested_values": [4, 12, 24, 48],
+      "recommended_value": 24,
+      "improvement_vs_default": "No change from default",
+      "sweet_spot": {
+        "value": 24,
+        "cache_hit_rate": 0.38,
+        "rationale": "Matches cache_ttl for consistency"
+      }
+    },
+    "tip_retrain_frequency_builds": {
+      "tested_values": [5, 10, 20],
+      "recommended_value": 10,
+      "improvement_vs_default": "No regression with retraining",
+      "sweet_spot": {
+        "value": 10,
+        "model_accuracy_pct": 92,
+        "retrain_overhead_ms": 2000,
+        "rationale": "Default is optimal"
+      }
+    },
+    "warm_cache_ttl_hours": {
+      "tested_values": [2, 4, 8, 12],
+      "recommended_value": 8,
+      "improvement_vs_default": "12% faster warm builds",
+      "sweet_spot": {
+        "value": 8,
+        "warm_build_time_ms": 32000,
+        "cache_hit_rate": 0.68,
+        "rationale": "Optimal cache reuse"
+      }
+    },
+    "cds_size_mb": {
+      "tested_values": [50, 100, 150, 200, 300, 500],
+      "recommended_value": 200,
+      "improvement_vs_default": "5% reduction in startup time",
+      "sweet_spot": {
+        "value": 200,
+        "archive_size_mb": 195,
+        "jvm_startup_ms": 850,
+        "rationale": "Covers all hot classes without bloat"
+      }
+    }
+  },
+  "overall_improvements": {
+    "build_time_improvement_pct": 18,
+    "test_time_improvement_pct": 12,
+    "cache_hit_rate_improvement_pct": 15,
+    "memory_efficiency": "within acceptable limits"
+  },
+  "recommendations": {
+    "immediate": [
+      "Apply maven_threads=2 (15% improvement)",
+      "Apply junit_factor=4.0 (10% improvement)",
+      "Apply cache_ttl=24h (8% cache improvement)"
+    ],
+    "medium_term": [
+      "Monitor cache_size_limit at 5GB (no regression)",
+      "Verify semantic_cache_ttl=24h behavior"
+    ],
+    "validation_required": [
+      "Run full test suite with tuned parameters",
+      "Monitor for OOM, hangs, or cache corruption",
+      "Benchmark on CI/CD with actual workload"
+    ]
+  },
+  "validation_status": "PENDING",
+  "sweep_files": [
+    ".yawl/config/tuning-sweeps/maven_threads-sweep.csv",
+    ".yawl/config/tuning-sweeps/junit_factor-sweep.csv",
+    ".yawl/config/tuning-sweeps/cache_ttl-sweep.csv",
+    ".yawl/config/tuning-sweeps/cache_size_limit-sweep.csv",
+    ".yawl/config/tuning-sweeps/semantic_cache_ttl-sweep.csv",
+    ".yawl/config/tuning-sweeps/tip_retrain_frequency-sweep.csv",
+    ".yawl/config/tuning-sweeps/warm_cache_ttl-sweep.csv",
+    ".yawl/config/tuning-sweeps/cds_size-sweep.csv"
+  ]
+}

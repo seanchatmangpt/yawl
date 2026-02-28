@@ -1,0 +1,16 @@
+# =============================================================================
+# YAWL Warm Module Cache — Exclude from Git
+# =============================================================================
+
+# Compiled bytecode cache (recreated on-demand, not committed)
+classes-*/
+
+# Cache metadata with private Java version and hashes
+metadata.json
+
+# Per-module cache directories
+yawl-engine/
+yawl-elements/
+
+# Keep .gitkeep to ensure directory structure is preserved
+!.gitkeep

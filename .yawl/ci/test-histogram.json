@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-02-28T07:22:27.363389Z",
+  "clusters": {
+    "cluster_1": {
+      "description": "Fast tests (<100ms)",
+      "min_ms": 0,
+      "max_ms": 100,
+      "count": 2,
+      "percentage": 33.3
+    },
+    "cluster_2": {
+      "description": "Medium tests (100ms-5s)",
+      "min_ms": 100,
+      "max_ms": 5000,
+      "count": 1,
+      "percentage": 16.7
+    },
+    "cluster_3": {
+      "description": "Slow tests (5s-30s)",
+      "min_ms": 5000,
+      "max_ms": 30000,
+      "count": 3,
+      "percentage": 50.0
+    },
+    "cluster_4": {
+      "description": "Resource-heavy tests (>30s)",
+      "min_ms": 30000,
+      "max_ms": null,
+      "count": 0,
+      "percentage": 0.0
+    }
+  },
+  "summary": {
+    "total_tests": 6,
+    "total_time_ms": 48835,
+    "avg_time_ms": 8139,
+    "min_time_ms": 50,
+    "max_time_ms": 25000
+  }
+}

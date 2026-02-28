@@ -1,0 +1,234 @@
+{
+  "algorithm": "sha256",
+  "file_count": 56,
+  "files": [
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/api/ConversionJob.java",
+      "hash": "468097fdfc1a5e323b2c4b6e330c1193d1db0ee7f6f55409a34ab3a153b7f83b"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/api/InMemoryJobQueue.java",
+      "hash": "c1c7066a32ee67081b69eb9018c89e7378aa005431f6f8b49a6705bac3d27545"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/api/ProcessConversionRequest.java",
+      "hash": "89ff2180637ef48a123ffe772d4aa20dca8b7acd84c72009e8ccfb0c99788614"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/api/ProcessConversionResponse.java",
+      "hash": "735e719b27e95067c02d45d59e3e30f3a4911e4bad8252ca51e507ece8e94872"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/api/ProcessConversionServlet.java",
+      "hash": "a02449910aa3307a1515b6572a2c00963ede16bfda9a7cb49c4652545fb20317"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/ai/AiValidationLoop.java",
+      "hash": "67570b3a429d7b99bcb9df9717cb7921f11a4da8f7df38d6d24728fa713460ab"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/ai/OllamaValidationClient.java",
+      "hash": "62ee676bd8f373a3e5b46651b210e68bb814e5d74d8c371d4a5922b1c9eafb33"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/ai/ValidationExhaustedException.java",
+      "hash": "b4a3706ab9a2a8e11bad34a36aea6c1feb968461948ebd1a168ba70d8f2175f8"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/ai/ValidationResult.java",
+      "hash": "a36a899ed26d17056a5ab3625fa1b4e28ae879a2cb8ad84d3492e82fd435fd71"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/cloud/CelonicsMiningClient.java",
+      "hash": "3ea1e210b83d0c8e1e5152ed0a196c684722d58f89a56d87980fa5955b1257fd"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/cloud/CloudMiningClient.java",
+      "hash": "68cc6a44c5a447cdc040a85062c50376c465fdb710750e05ba7b88a496bd726c"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/cloud/CloudMiningClientFactory.java",
+      "hash": "4c82538bfd08e8bfb618c4df77b9c071dfcad8371d09264957eea2cd31ce2bad"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/cloud/SignavioClient.java",
+      "hash": "107cd989653ae339a4f1a808a10c2f7da880e435b36057572869fe1586fa4c5e"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/cloud/UiPathAutomationClient.java",
+      "hash": "36314bec76f20f64413135cc07687060a90dc9bdca4ccb7eb5e191dea6e7c5a2"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/generators/BpelExporter.java",
+      "hash": "710c9e0b6292d65509addd0894070b6216315d5e127660b5ff59f164cef5c1e6"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/generators/CamundaBpmnExporter.java",
+      "hash": "0745682542ddbcfa33f01a29efdf5db04dd40c1710e779ff90c788e90fc2ad34"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/generators/ProcessExporterFactory.java",
+      "hash": "6468e4d8db4420c30723d32531e3f76b03fc597972faf7edd2f21cdf22a50ee7"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/generators/TerraformGenerator.java",
+      "hash": "dd021f594d5681ae573ec4ead6b24d3b459eac14954ca30cc47b019ab52c9ea2"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/generators/YawlSpecExporter.java",
+      "hash": "fbeb37243ab0acbede96a904d6bf0524e37049a3ce8aed859a9d1831f5b65b97"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/Arc.java",
+      "hash": "75514f7d0747351abf1f3124369521a532e21933879278d3cadcd7e0ee73cc97"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/PetriNet.java",
+      "hash": "92194a9f8286471f087a6b1f042eb02916033d3428f2f31a93d30b07362990eb"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/Place.java",
+      "hash": "57098edd5a8928408433dc64febcd4cd81b25870ea33154f67835835d2060f78"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/PnmlElement.java",
+      "hash": "6a9c8794f95ce9746c31ef422cba767b5637bc87ab2788022de02825034f23e7"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/Transition.java",
+      "hash": "d31325d59afece07294eaf2257a1f5c8f457ce49bf7bc3290ed29a75de4d8b24"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/XesEvent.java",
+      "hash": "31453cf85df1404ee50749b7615c3fb081fb11d0ea4c39b9b3001577878dcc96"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/XesLog.java",
+      "hash": "5db0ed4bc35cc6f2c86373cdadfea65c8a6f88df1355ad64bc1c6902849016cf"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/model/XesTrace.java",
+      "hash": "721bdf0e3701f754286c4f14f6ecc4a84be206c80cee24244bd3c04af1aa3726"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/parser/BpmnParser.java",
+      "hash": "e428702265ebef185fca7e92d460e12acc61a62996a25c1574a40c787eb55ada"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/parser/PnmlParser.java",
+      "hash": "33b9c15e60dcb1ced1259514a5fb24b3ed56c96fee456774d67bc5f534d529a4"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/parser/XesParser.java",
+      "hash": "ac8f7504e1c250afbb2e31c409f0c4a2fb8760115789ef0ef672b0f9b8f3edf8"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/mining/rdf/RdfAstConverter.java",
+      "hash": "9baa685e650a6b5ed91d3b0925e3c7b4e83439775f6e6f8cb640ad758b893315"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/polyglot/PowlJsonMarshaller.java",
+      "hash": "bacd09b179d0079cd5142e4d5bbca0542101b27b8da683be94fcee25fb003242"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/polyglot/PowlPythonBridge.java",
+      "hash": "bde77726aa0160ac4c9b9a040cd0e068c4ba25d568fe07aea0411141e10e3183"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/powl/PowlModel.java",
+      "hash": "ff081b3d506c42c633d0da8ab0a5d1183c7ac244b718011b2157261af1e64656"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/powl/PowlOperatorNode.java",
+      "hash": "c0a8d675d87f9cf390835add47bb9f9d9f05aa0819e200f40bf72f18118d18a7"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/powl/PowlToYawlConverter.java",
+      "hash": "5b5eed8478264ab517d231d1226521a1f26471a98df594d2d6819a658ca1b8ea"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/powl/PowlValidator.java",
+      "hash": "49d5b76051de2e285be5461172818f1656f7f25cbd32b0a92934b4b892ad9578"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/powl/ValidationReport.java",
+      "hash": "be28d7a200a5d771660692b35af65373c6064b6267b7be58a22d603b24cac18a"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/CandidateSampler.java",
+      "hash": "565460de106c61e7808b519997523d86333252be02d7c633d0ac47bb5fc5f7c9"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/CandidateSet.java",
+      "hash": "b6d82aa1abea9371a441544a0464ac177d81dd75f49e34090a3988992426961c"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/GroupAdvantage.java",
+      "hash": "140b8b901039a354cd8fc96e9ab8adb4fac66556aa0a3b2c4a276e26919f383e"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/GrpoOptimizer.java",
+      "hash": "b02ddc99e4b5200dc96a68e61504edddf08d2843bcdff7112b614239346de00b"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/LlmGateway.java",
+      "hash": "24e2ad1453daa8d71cb0f9ee2dc2e52f6a020e8fc4a5a314398c9171a1fdd183"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/OllamaCandidateSampler.java",
+      "hash": "35a3526b8ba300c543ed30bd7b28e464b7acca7ae74757554c7588d2b025dbb8"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/PowlTextParser.java",
+      "hash": "c5266db0370e4e3a674e69afaff22a8c2db9df6493c53f61144a5d70a737bb3d"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/RlGenerationEngine.java",
+      "hash": "49f324552ef7eb9a4dd44020342e0f0c1a40b16e01e1e1fb922cba8db28856fb"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/ZaiLlmGateway.java",
+      "hash": "a4c44ab55f8bd97573713c75aa61ffb7403ade272fedaf0bf6b20cf8f8c62f21"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/scoring/CompositeRewardFunction.java",
+      "hash": "73227c2b664ccd3474cb2cb31c1d0e3989295296a8a730e0c5dcb74bd2083030"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/scoring/FootprintExtractor.java",
+      "hash": "da042b05792db9e1b3786e988d10ca60faefe3a5bcd2305ced3468d643715e50"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/scoring/FootprintMatrix.java",
+      "hash": "354d850fe0b09f5ac00a04efff198e634612002ec3a9004822ccbd2b2c11bd64"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/scoring/FootprintScorer.java",
+      "hash": "489bca51bc17340e743dd2a3e27b00baa03ead26f4400aa470f99112b16c812f"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/scoring/LlmJudgeScorer.java",
+      "hash": "f6cd2e9b6bd5d51bbb5e52506e3730aa2f034591887d78767dd3ae6e65d75150"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/rl/scoring/RewardFunction.java",
+      "hash": "77b89d17f1a142f70bb13e495bb3578ae920cc4c4b1e87d6b8ad6f68f959f4cd"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/sandbox/DockerSandboxExecutor.java",
+      "hash": "e76045a499800449b02fe0103dbaa9b5cbe872352f6992cbc5760cb7346673e2"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/sandbox/SandboxConfig.java",
+      "hash": "2140aec424324ce1d2ff95af8345582856a2f52afd294548d61bb387e5b25a86"
+    },
+    {
+      "file": "yawl-ggen/src/main/java/org/yawlfoundation/yawl/ggen/sandbox/SandboxExecutor.java",
+      "hash": "34beb7562f8709dc8a8285f20c85550347063237571493c0573a1c947fea4fa4"
+    }
+  ],
+  "hash": "a4a207f18a65de985e045d2db0356255a8335fff0ad10a7843d10074215a3f5e",
+  "module": "yawl-ggen",
+  "status": "computed",
+  "timestamp": "2026-02-28T07:41:15Z"
+}

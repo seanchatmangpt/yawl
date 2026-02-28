@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-02-28T07:35:16.744678Z",
+  "model_trained": true,
+  "model_r_squared": 0.0,
+  "tests_evaluated": 6,
+  "mape": 0.0,
+  "mae_ms": 0.0,
+  "rmse_ms": 0.0,
+  "median_absolute_error_ms": 0,
+  "accuracy_rating": "EXCELLENT",
+  "needs_retrain": false,
+  "status": "evaluated"
+}

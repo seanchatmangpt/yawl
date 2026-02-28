@@ -3789,6 +3789,104 @@
             </build>
         </profile>
 
+        <!-- Stateless Test Execution (STE) Profile
+             Enables per-test H2 snapshots for 100% test isolation.
+             Usage: mvn -P stateless test
+        -->
+        <profile>
+            <id>stateless</id>
+            <activation>
+                <property>
+                    <name>yawl.stateless.enabled</name>
+                </property>
+            </activation>
+            <properties>
+                <yawl.stateless.enabled>true</yawl.stateless.enabled>
+                <yawl.stateless.verbose>false</yawl.stateless.verbose>
+                <!-- Enable higher parallelism for stateless tests (no state coupling) -->
+                <surefire.forkCount>2C</surefire.forkCount>
+                <surefire.threadCount>8</surefire.threadCount>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <parallel>classesAndMethods</parallel>
+                            <forkCount>${surefire.forkCount}</forkCount>
+                            <reuseForks>false</reuseForks>
+                            <threadCount>${surefire.threadCount}</threadCount>
+                            <systemPropertyVariables>
+                                <!-- Enable stateless test execution -->
+                                <yawl.stateless.enabled>${yawl.stateless.enabled}</yawl.stateless.enabled>
+                                <yawl.stateless.verbose>${yawl.stateless.verbose}</yawl.stateless.verbose>
+                                <!-- Lower timeouts for faster feedback (stateless = safer) -->
+                                <junit.jupiter.execution.timeout.default>60 s</junit.jupiter.execution.timeout.default>
+                                <junit.jupiter.execution.timeout.testable.method.default>120 s</junit.jupiter.execution.timeout.testable.method.default>
+                            </systemPropertyVariables>
+                            <properties>
+                                <configurationParameters>
+                                    junit.jupiter.execution.parallel.enabled=true
+                                    junit.jupiter.execution.parallel.mode.default=concurrent
+                                    junit.jupiter.execution.parallel.mode.classes.default=concurrent
+                                    junit.jupiter.execution.parallel.config.strategy=dynamic
+                                    junit.jupiter.execution.parallel.config.dynamic.factor=4.0
+                                </configurationParameters>
+                            </properties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Feedback Test Tier Profile
+             Runs only critical-path feedback tests (1-2 per module, <1s each).
+             Enables <5s feedback loop for developers.
+             Usage: mvn -P feedback test
+        -->
+        <profile>
+            <id>feedback</id>
+            <activation>
+                <property>
+                    <name>yawl.feedback.enabled</name>
+                </property>
+            </activation>
+            <properties>
+                <yawl.feedback.enabled>true</yawl.feedback.enabled>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Run only tests tagged with "feedback" -->
+                            <includeGroups>feedback</includeGroups>
+                            <parallel>classesAndMethods</parallel>
+                            <forkCount>2C</forkCount>
+                            <reuseForks>false</reuseForks>
+                            <threadCount>4</threadCount>
+                            <!-- Fast fail for quick feedback -->
+                            <failIfNoTests>false</failIfNoTests>
+                            <systemPropertyVariables>
+                                <junit.jupiter.execution.timeout.default>10 s</junit.jupiter.execution.timeout.default>
+                            </systemPropertyVariables>
+                            <properties>
+                                <configurationParameters>
+                                    junit.jupiter.execution.parallel.enabled=true
+                                    junit.jupiter.execution.parallel.mode.default=concurrent
+                                    junit.jupiter.execution.parallel.mode.classes.default=concurrent
+                                    junit.jupiter.execution.parallel.config.strategy=dynamic
+                                    junit.jupiter.execution.parallel.config.dynamic.factor=2.0
+                                </configurationParameters>
+                            </properties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>

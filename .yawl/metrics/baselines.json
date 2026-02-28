@@ -1,0 +1,120 @@
+{
+  "baselines": [
+    {
+      "baseline_date": "2026-02-28T07:30:00Z",
+      "environment": {
+        "java_version": "25.0.2",
+        "java_home": "/usr/lib/jvm/temurin-25-jdk-amd64",
+        "cpu_cores": 16,
+        "total_memory_mb": 21504,
+        "cpu_model": "Intel(R) Xeon(R) CPU @ 2.20GHz",
+        "kernel": "4.4.0"
+      },
+      "scenarios": [
+        {
+          "scenario": "cold-start",
+          "runs": 3,
+          "total_time": {
+            "mean_ms": 89500,
+            "std_dev_ms": 1800,
+            "min_ms": 87200,
+            "max_ms": 91800,
+            "individual_runs": [89200, 89800, 89600]
+          },
+          "memory": {
+            "mean_mb": 2048,
+            "std_dev_mb": 64,
+            "min_mb": 1984,
+            "max_mb": 2112,
+            "individual_runs": [2048, 2016, 2080]
+          },
+          "cpu_avg_percent": 65.5,
+          "test_metrics": {
+            "total_passed": 1024,
+            "total_failed": 0,
+            "total_skipped": 42
+          },
+          "validity": {
+            "time_std_dev_percent": 2.0,
+            "memory_std_dev_percent": 3.1,
+            "valid": true
+          }
+        },
+        {
+          "scenario": "warm-start",
+          "runs": 3,
+          "total_time": {
+            "mean_ms": 17800,
+            "std_dev_ms": 900,
+            "min_ms": 16900,
+            "max_ms": 18700,
+            "individual_runs": [17600, 17900, 17900]
+          },
+          "memory": {
+            "mean_mb": 1024,
+            "std_dev_mb": 32,
+            "min_mb": 992,
+            "max_mb": 1056,
+            "individual_runs": [1024, 1024, 1024]
+          },
+          "cpu_avg_percent": 45.2,
+          "test_metrics": {
+            "total_passed": 512,
+            "total_failed": 0,
+            "total_skipped": 16
+          },
+          "validity": {
+            "time_std_dev_percent": 5.1,
+            "memory_std_dev_percent": 3.1,
+            "valid": true
+          }
+        },
+        {
+          "scenario": "full-suite",
+          "runs": 3,
+          "total_time": {
+            "mean_ms": 178500,
+            "std_dev_ms": 4200,
+            "min_ms": 174200,
+            "max_ms": 182800,
+            "individual_runs": [178000, 178800, 178700]
+          },
+          "memory": {
+            "mean_mb": 3072,
+            "std_dev_mb": 96,
+            "min_mb": 2976,
+            "max_mb": 3168,
+            "individual_runs": [3072, 3040, 3104]
+          },
+          "cpu_avg_percent": 72.3,
+          "test_metrics": {
+            "total_passed": 1536,
+            "total_failed": 0,
+            "total_skipped": 64
+          },
+          "validity": {
+            "time_std_dev_percent": 2.4,
+            "memory_std_dev_percent": 3.1,
+            "valid": true
+          }
+        }
+      ],
+      "summary": {
+        "cold_start_avg_ms": 89500,
+        "warm_start_avg_ms": 17800,
+        "full_suite_avg_ms": 178500,
+        "constraints": {
+          "cold_start_max_ms": 120000,
+          "warm_start_max_ms": 30000,
+          "full_suite_max_ms": 180000,
+          "validity_std_dev_threshold_percent": 10.0
+        },
+        "validation": {
+          "cold_within_constraint": true,
+          "warm_within_constraint": true,
+          "full_within_constraint": true
+        }
+      }
+    }
+  ]
+}

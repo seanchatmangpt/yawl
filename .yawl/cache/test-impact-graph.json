@@ -1,0 +1,815 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-02-28T07:21:16.229680Z",
+  "metadata": {
+    "test_files_analyzed": 106,
+    "java_version": "Picked up JAVA_TOOL_OPTIONS: -Dhttp.proxyHost=21.0.0.89 -Dhttp.proxyPort=15004 -Dhttps.proxyHost=21.0.0.89 -Dhttps.proxyPort=15004 -Dhttp.proxyUser=container_container_01L3qFiUwFb5vmSYzRth8fWq--claude_code_remote--442f9a -Dhttp.proxyPassword=jwt_eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6Iks3dlRfYUVsdXIySGdsYVJ0QWJ0UThDWDU4dFFqODZIRjJlX1VsSzZkNEEifQ.eyJpc3MiOiJhbnRocm9waWMtZWdyZXNzLWNvbnRyb2wiLCJvcmdhbml6YXRpb25fdXVpZCI6IjIxNWMwOTI5LWI0ZGUtNDlkZi1iNDY4LTg5OTk2MjlhMThlYyIsImlhdCI6MTc3MjI2Mjg3OSwiZXhwIjoxNzcyMjc3Mjc5LCJhbGxvd2VkX2hvc3RzIjoiKiIsImlzX2hpcGFhX3JlZ3VsYXRlZCI6ImZhbHNlIiwiaXNfYW50X2hpcGkiOiJmYWxzZSIsInVzZV9lZ3Jlc3NfZ2F0ZXdheSI6InRydWUiLCJzZXNzaW9uX2lkIjoic2Vzc2lvbl8wMUROeUFRbUszRFNNc2I1WUpBRnFzckwiLCJjb250YWluZXJfaWQiOiJjb250YWluZXJfMDFMM3FGaVV3RmI1dm1TWXpSdGg4ZldxLS1jbGF1ZGVfY29kZV9yZW1vdGUtLTQ0MmY5YSJ9.kJahYNaXIfvUjAI5Vs_vyGh3SIUjrJVa-mBb_V7bSLMPdrZuFNb7CC1ARQmQmTYF_gLa0UwFRZLb64SHi-B_uw -Dhttps.proxyUser=container_container_01L3qFiUwFb5vmSYzRth8fWq--claude_code_remote--442f9a -Dhttps.proxyPassword=jwt_eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6Iks3dlRfYUVsdXIySGdsYVJ0QWJ0UThDWDU4dFFqODZIRjJlX1VsSzZkNEEifQ.eyJpc3MiOiJhbnRocm9waWMtZWdyZXNzLWNvbnRyb2wiLCJvcmdhbml6YXRpb25fdXVpZCI6IjIxNWMwOTI5LWI0ZGUtNDlkZi1iNDY4LTg5OTk2MjlhMThlYyIsImlhdCI6MTc3MjI2Mjg3OSwiZXhwIjoxNzcyMjc3Mjc5LCJhbGxvd2VkX2hvc3RzIjoiKiIsImlzX2hpcGFhX3JlZ3VsYXRlZCI6ImZhbHNlIiwiaXNfYW50X2hpcGkiOiJmYWxzZSIsInVzZV9lZ3Jlc3NfZ2F0ZXdheSI6InRydWUiLCJzZXNzaW9uX2lkIjoic2Vzc2lvbl8wMUROeUFRbUszRFNNc2I1WUpBRnFzckwiLCJjb250YWluZXJfaWQiOiJjb250YWluZXJfMDFMM3FGaVV3RmI1dm1TWXpSdGg4ZldxLS1jbGF1ZGVfY29kZV9yZW1vdGUtLTQ0MmY5YSJ9.kJahYNaXIfvUjAI5Vs_vyGh3SIUjrJVa-mBb_V7bSLMPdrZuFNb7CC1ARQmQmTYF_gLa0UwFRZLb64SHi-B_uw -Dhttp.nonProxyHosts=localhost|127.0.0.1|169.254.169.254|metadata.google.internal|*.svc.cluster.local|*.local|*.googleapis.com|*.google.com -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=",
+    "maven_version": "unknown"
+  },
+  "test_to_source": {
+    "org.yawlfoundation.yawl.marketplace.GcpMarketplaceConcurrencyTest": [
+      "org.yawlfoundation.yawl.engine.YEngine"
+    ],
+    "org.yawlfoundation.yawl.marketplace.GcpMarketplaceExceptionTest": [
+      "org.yawlfoundation.yawl.engine.YEngine"
+    ],
+    "org.yawlfoundation.yawl.marketplace.GcpMarketplaceHappyPathTest": [
+      "org.yawlfoundation.yawl.elements.YNet",
+      "org.yawlfoundation.yawl.elements.YSpecification",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.engine.YSpecificationID"
+    ],
+    "org.yawlfoundation.yawl.stress.ConnectionPoolStressTest": [
+      "org.yawlfoundation.yawl.engine.VirtualThreadPool",
+      "org.yawlfoundation.yawl.integration.pool.YawlConnectionPool",
+      "org.yawlfoundation.yawl.integration.pool.YawlConnectionPoolConfig"
+    ],
+    "org.yawlfoundation.yawl.stress.EngineStressTest": [
+      "org.yawlfoundation.yawl.elements.*",
+      "org.yawlfoundation.yawl.elements.data.YParameter",
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.unmarshal.YMarshal",
+      "org.yawlfoundation.yawl.util.DOMUtil",
+      "org.yawlfoundation.yawl.util.StringUtil"
+    ],
+    "org.yawlfoundation.yawl.stress.QueueStressTest": [
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.spi.FlowWorkflowEventBus",
+      "org.yawlfoundation.yawl.engine.spi.WorkflowEvent",
+      "org.yawlfoundation.yawl.engine.spi.WorkflowEventBus",
+      "org.yawlfoundation.yawl.integration.a2a.tty.TtyCommandQueue",
+      "org.yawlfoundation.yawl.stateless.listener.event.YEventType"
+    ],
+    "org.yawlfoundation.yawl.stress.RateLimiterStressTest": [
+      "org.yawlfoundation.yawl.authentication.ApiKeyRateLimitRegistry"
+    ],
+    "org.yawlfoundation.yawl.validation.YEngineParallelizationTest": [
+      "org.yawlfoundation.yawl.elements.*",
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YEngine"
+    ],
+    "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest": [
+      "org.yawlfoundation.yawl.elements.*",
+      "org.yawlfoundation.yawl.elements.YSpecVersion",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.engine.YSpecificationID",
+      "org.yawlfoundation.yawl.exceptions.YAWLException",
+      "org.yawlfoundation.yawl.unmarshal.YMetaData",
+      "org.yawlfoundation.yawl.util.YVerificationHandler"
+    ],
+    "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest": [
+      "org.yawlfoundation.yawl.benchmark.TestDataGenerator",
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.engine.YWorkItem",
+      "org.yawlfoundation.yawl.exceptions.YPersistenceException",
+      "org.yawlfoundation.yawl.exceptions.YSyntaxException",
+      "org.yawlfoundation.yawl.stateless.YStatelessEngine",
+      "org.yawlfoundation.yawl.stateless.elements.YSpecification",
+      "org.yawlfoundation.yawl.stateless.engine.YNetRunner"
+    ],
+    "org.yawlfoundation.yawl.dspy.DspyWorkletSelectorTest": [
+      "org.yawlfoundation.yawl.dspy.worklets.DspyWorkletSelector",
+      "org.yawlfoundation.yawl.dspy.worklets.WorkletSelection",
+      "org.yawlfoundation.yawl.dspy.worklets.WorkletSelectionContext",
+      "org.yawlfoundation.yawl.graalpy.PythonException",
+      "org.yawlfoundation.yawl.graalpy.PythonExecutionEngine",
+      "org.yawlfoundation.yawl.worklet.RdrSet"
+    ],
+    "org.yawlfoundation.yawl.dspy.PythonDspyBridgeTest": [
+      "org.yawlfoundation.yawl.graalpy.PythonExecutionEngine"
+    ],
+    "org.yawlfoundation.yawl.dspy.forensics.AnomalyForensicsEngineTest": [
+      "org.yawlfoundation.yawl.dspy.PythonDspyBridge",
+      "org.yawlfoundation.yawl.engine.observability.YAWLTelemetry",
+      "org.yawlfoundation.yawl.observability.BottleneckDetector",
+      "org.yawlfoundation.yawl.observability.StructuredLogger"
+    ],
+    "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest": [
+      "org.yawlfoundation.yawl.dspy.DspyProgramCache",
+      "org.yawlfoundation.yawl.dspy.PythonDspyBridge",
+      "org.yawlfoundation.yawl.elements.YTask",
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YWorkItem",
+      "org.yawlfoundation.yawl.engine.YWorkItemRepository",
+      "org.yawlfoundation.yawl.engine.YWorkItemStatus",
+      "org.yawlfoundation.yawl.graalpy.PythonExecutionEngine"
+    ],
+    "org.yawlfoundation.yawl.dspy.resources.PredictiveResourceRouterTest": [
+      "org.yawlfoundation.yawl.dspy.PythonDspyBridge",
+      "org.yawlfoundation.yawl.graalpy.PythonExecutionEngine",
+      "org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplace",
+      "org.yawlfoundation.yawl.resourcing.CapabilityMatcher",
+      "org.yawlfoundation.yawl.resourcing.RoutingDecision",
+      "org.yawlfoundation.yawl.stateless.engine.YWorkItem"
+    ],
+    "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest": [
+      "org.yawlfoundation.yawl.elements.YSpecification",
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.engine.YNetRunner",
+      "org.yawlfoundation.yawl.engine.YWorkItem",
+      "org.yawlfoundation.yawl.engine.YWorkItemStatus",
+      "org.yawlfoundation.yawl.exceptions.YEngineStateException",
+      "org.yawlfoundation.yawl.exceptions.YPersistenceException"
+    ],
+    "org.yawlfoundation.yawl.engine.concurrency.CascadeCancellationTest": [
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.engine.YWorkItem",
+      "org.yawlfoundation.yawl.engine.YWorkItemStatus",
+      "org.yawlfoundation.yawl.exceptions.YEngineStateException",
+      "org.yawlfoundation.yawl.exceptions.YPersistenceException"
+    ],
+    "org.yawlfoundation.yawl.engine.concurrency.VirtualThreadLockStarvationTest": [
+      "org.yawlfoundation.yawl.elements.YWorkItem",
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.engine.YNetRunner",
+      "org.yawlfoundation.yawl.engine.YNetRunnerLockMetrics"
+    ],
+    "org.yawlfoundation.yawl.engine.concurrency.WorkItemTimerRaceTest": [
+      "org.yawlfoundation.yawl.elements.state.YIdentifier",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.engine.YWorkItem",
+      "org.yawlfoundation.yawl.engine.YWorkItemStatus",
+      "org.yawlfoundation.yawl.engine.time.YWorkItemTimer",
+      "org.yawlfoundation.yawl.exceptions.YPersistenceException"
+    ],
+    "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest": [
+      "org.yawlfoundation.yawl.elements.YAtomicTask",
+      "org.yawlfoundation.yawl.elements.YCondition",
+      "org.yawlfoundation.yawl.elements.YExternalNetElement",
+      "org.yawlfoundation.yawl.elements.YInputCondition",
+      "org.yawlfoundation.yawl.elements.YNet",
+      "org.yawlfoundation.yawl.elements.YOutputCondition",
+      "org.yawlfoundation.yawl.elements.YSpecification",
+      "org.yawlfoundation.yawl.elements.YTask",
+      "org.yawlfoundation.yawl.stateless.YStatelessEngine",
+      "org.yawlfoundation.yawl.stateless.engine.YNetRunner",
+      "org.yawlfoundation.yawl.stateless.engine.YWorkItem"
+    ],
+    "org.yawlfoundation.yawl.engine.soundness.SoundnessTest": [
+      "org.yawlfoundation.yawl.elements.YAtomicTask",
+      "org.yawlfoundation.yawl.elements.YCondition",
+      "org.yawlfoundation.yawl.elements.YFlow",
+      "org.yawlfoundation.yawl.elements.YInputCondition",
+      "org.yawlfoundation.yawl.elements.YNet",
+      "org.yawlfoundation.yawl.elements.YOutputCondition",
+      "org.yawlfoundation.yawl.elements.YSpecification",
+      "org.yawlfoundation.yawl.elements.YTask"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.ai.AiValidationLoopTest": [
+      "org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporter",
+      "org.yawlfoundation.yawl.ggen.mining.model.Arc",
+      "org.yawlfoundation.yawl.ggen.mining.model.PetriNet",
+      "org.yawlfoundation.yawl.ggen.mining.model.Place",
+      "org.yawlfoundation.yawl.ggen.mining.model.Transition"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.generators.GeneratorIntegrationTest": [
+      "org.yawlfoundation.yawl.ggen.mining.model.Arc",
+      "org.yawlfoundation.yawl.ggen.mining.model.PetriNet",
+      "org.yawlfoundation.yawl.ggen.mining.model.Place",
+      "org.yawlfoundation.yawl.ggen.mining.model.Transition"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporterTest": [
+      "org.yawlfoundation.yawl.ggen.mining.model.Arc",
+      "org.yawlfoundation.yawl.ggen.mining.model.PetriNet",
+      "org.yawlfoundation.yawl.ggen.mining.model.Place",
+      "org.yawlfoundation.yawl.ggen.mining.model.Transition"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.parser.BpmnParserTest": [
+      "org.yawlfoundation.yawl.ggen.mining.model.PetriNet",
+      "org.yawlfoundation.yawl.ggen.mining.model.Transition"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.parser.PnmlParserTest": [
+      "org.yawlfoundation.yawl.ggen.mining.model.PetriNet",
+      "org.yawlfoundation.yawl.ggen.mining.model.Place",
+      "org.yawlfoundation.yawl.ggen.mining.model.Transition"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.parser.XesParserTest": [
+      "org.yawlfoundation.yawl.ggen.mining.model.PetriNet",
+      "org.yawlfoundation.yawl.ggen.mining.model.XesEvent",
+      "org.yawlfoundation.yawl.ggen.mining.model.XesLog",
+      "org.yawlfoundation.yawl.ggen.mining.model.XesTrace"
+    ],
+    "org.yawlfoundation.yawl.ggen.powl.PowlModelTest": [
+      "org.yawlfoundation.yawl.ggen.mining.model.PetriNet"
+    ],
+    "org.yawlfoundation.yawl.ggen.rl.GrpoOptimizerTest": [
+      "org.yawlfoundation.yawl.ggen.powl.PowlActivity",
+      "org.yawlfoundation.yawl.ggen.powl.PowlModel",
+      "org.yawlfoundation.yawl.ggen.powl.PowlOperatorNode",
+      "org.yawlfoundation.yawl.ggen.powl.PowlOperatorType",
+      "org.yawlfoundation.yawl.ggen.rl.scoring.RewardFunction"
+    ],
+    "org.yawlfoundation.yawl.ggen.rl.OllamaCandidateSamplerRetryTest": [
+      "org.yawlfoundation.yawl.ggen.memory.ProcessKnowledgeGraph",
+      "org.yawlfoundation.yawl.ggen.powl.PowlModel"
+    ],
+    "org.yawlfoundation.yawl.ggen.rl.scoring.FootprintScorerTest": [
+      "org.yawlfoundation.yawl.ggen.powl.PowlActivity",
+      "org.yawlfoundation.yawl.ggen.powl.PowlModel",
+      "org.yawlfoundation.yawl.ggen.powl.PowlOperatorNode",
+      "org.yawlfoundation.yawl.ggen.powl.PowlOperatorType"
+    ],
+    "org.yawlfoundation.yawl.graalpy.security.AuthenticationValidationTest": [
+      "org.yawlfoundation.yawl.authentication.*",
+      "org.yawlfoundation.yawl.elements.YAWLServiceReference",
+      "org.yawlfoundation.yawl.engine.YEngine",
+      "org.yawlfoundation.yawl.util.Argon2PasswordEncryptor"
+    ],
+    "org.yawlfoundation.yawl.integration.java_python.chaos.ChaosEngineeringTest": [
+      "org.yawlfoundation.yawl.elements.YNet",
+      "org.yawlfoundation.yawl.elements.YTask",
+      "org.yawlfoundation.yawl.engine.interfce.WorklistManager",
+      "org.yawlfoundation.yawl.unmarshaller.YAWLUnmarshaller"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunnerTest": [
+      "org.yawlfoundation.yawl.mcp.a2a.demo.config.DemoConfig",
+      "org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternCategory",
+      "org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistry",
+      "org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.PatternInfo"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistryTest": [
+      "org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.Difficulty",
+      "org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.PatternInfo"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.elements.YNetElementTest": [
+      "org.yawlfoundation.yawl.elements.*"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.gregverse.AbstractGregVerseAgentTest": [
+      "org.yawlfoundation.yawl.integration.zai.ZaiService"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.gregverse.GregVerseSelfPlayDemoTest": [
+      "org.yawlfoundation.yawl.mcp.a2a.gregverse.config.GregVerseConfig"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.lifecycle.LifeManagementOrchestratorTest": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.LifestyleGoal",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.OTPatient"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.mcp.McpToolsTest": [
+      "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier",
+      "org.yawlfoundation.yawl.mcp.a2a.example.YawlYamlConverter"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTAdaptationAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTAssessmentAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTGoalSettingAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTIntakeAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTInterventionPlannerAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTOutcomeEvaluatorAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTProgressMonitorAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTSchedulerAgent",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.LifestyleGoal",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.OTPatient",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.OccupationalProfile",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.SwarmTaskResult",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.TherapySession"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns10to18Test": [
+      "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier",
+      "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier.SoundnessResult"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns19to28Test": [
+      "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns1to9Test": [
+      "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns29to36Test": [
+      "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns37to43Test": [
+      "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier"
+    ],
+    "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest": [
+      "org.yawlfoundation.yawl.integration.adaptation.AdaptationAction",
+      "org.yawlfoundation.yawl.integration.adaptation.AdaptationResult",
+      "org.yawlfoundation.yawl.integration.adaptation.EventDrivenAdaptationEngine",
+      "org.yawlfoundation.yawl.integration.adaptation.EventSeverity",
+      "org.yawlfoundation.yawl.integration.adaptation.ProcessEvent",
+      "org.yawlfoundation.yawl.pi.PIException",
+      "org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry"
+    ],
+    "org.yawlfoundation.yawl.pi.adaptive.PredictiveAdaptationRulesTest": [
+      "org.yawlfoundation.yawl.integration.adaptation.AdaptationAction",
+      "org.yawlfoundation.yawl.integration.adaptation.AdaptationResult",
+      "org.yawlfoundation.yawl.integration.adaptation.AdaptationRule",
+      "org.yawlfoundation.yawl.integration.adaptation.EventDrivenAdaptationEngine",
+      "org.yawlfoundation.yawl.integration.adaptation.EventSeverity",
+      "org.yawlfoundation.yawl.integration.adaptation.ProcessEvent"
+    ],
+    "org.yawlfoundation.yawl.pi.automl.Tpot2BridgeTest": [
+      "org.yawlfoundation.yawl.pi.PIException",
+      "org.yawlfoundation.yawl.pi.predictive.TrainingDataset"
+    ],
+    "org.yawlfoundation.yawl.pi.mcp.OcedConversionSkillTest": [
+      "org.yawlfoundation.yawl.integration.a2a.skills.SkillRequest",
+      "org.yawlfoundation.yawl.integration.a2a.skills.SkillResult"
+    ],
+    "org.yawlfoundation.yawl.pi.optimization.ProcessSchedulerTest": [
+      "org.yawlfoundation.yawl.pi.PIException"
+    ],
+    "org.yawlfoundation.yawl.pi.optimization.ResourceOptimizerTest": [
+      "org.yawlfoundation.yawl.pi.PIException"
+    ],
+    "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePredictorTest": [
+      "org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore",
+      "org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent",
+      "org.yawlfoundation.yawl.integration.processmining.XesToYawlSpecGenerator",
+      "org.yawlfoundation.yawl.observatory.rdf.WorkflowDNAOracle",
+      "org.yawlfoundation.yawl.pi.PIException"
+    ],
+    "org.yawlfoundation.yawl.pi.predictive.ProcessMiningTrainingDataExtractorTest": [
+      "org.yawlfoundation.yawl.engine.YSpecificationID",
+      "org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore",
+      "org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent"
+    ],
+    "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest": [
+      "org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore",
+      "org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent",
+      "org.yawlfoundation.yawl.integration.processmining.XesToYawlSpecGenerator",
+      "org.yawlfoundation.yawl.observatory.rdf.WorkflowDNAOracle",
+      "org.yawlfoundation.yawl.pi.PIException",
+      "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePrediction",
+      "org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry"
+    ],
+    "org.yawlfoundation.yawl.pi.rag.NaturalLanguageQueryEngineTest": [
+      "org.yawlfoundation.yawl.integration.zai.ZaiService",
+      "org.yawlfoundation.yawl.pi.PIException"
+    ],
+    "org.yawlfoundation.yawl.pi.rag.ProcessKnowledgeBaseTest": [
+      "org.yawlfoundation.yawl.engine.YSpecificationID",
+      "org.yawlfoundation.yawl.integration.processmining.PerformanceAnalyzer",
+      "org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade",
+      "org.yawlfoundation.yawl.pi.PIException"
+    ]
+  },
+  "source_to_tests": {
+    "org.yawlfoundation.yawl.engine.YEngine": [
+      "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest",
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest",
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.concurrency.CascadeCancellationTest",
+      "org.yawlfoundation.yawl.engine.concurrency.VirtualThreadLockStarvationTest",
+      "org.yawlfoundation.yawl.engine.concurrency.WorkItemTimerRaceTest",
+      "org.yawlfoundation.yawl.graalpy.security.AuthenticationValidationTest",
+      "org.yawlfoundation.yawl.marketplace.GcpMarketplaceConcurrencyTest",
+      "org.yawlfoundation.yawl.marketplace.GcpMarketplaceExceptionTest",
+      "org.yawlfoundation.yawl.marketplace.GcpMarketplaceHappyPathTest",
+      "org.yawlfoundation.yawl.stress.EngineStressTest",
+      "org.yawlfoundation.yawl.validation.YEngineParallelizationTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YNet": [
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest",
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest",
+      "org.yawlfoundation.yawl.integration.java_python.chaos.ChaosEngineeringTest",
+      "org.yawlfoundation.yawl.marketplace.GcpMarketplaceHappyPathTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YSpecification": [
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest",
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest",
+      "org.yawlfoundation.yawl.marketplace.GcpMarketplaceHappyPathTest"
+    ],
+    "org.yawlfoundation.yawl.engine.YSpecificationID": [
+      "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest",
+      "org.yawlfoundation.yawl.marketplace.GcpMarketplaceHappyPathTest",
+      "org.yawlfoundation.yawl.pi.predictive.ProcessMiningTrainingDataExtractorTest",
+      "org.yawlfoundation.yawl.pi.rag.ProcessKnowledgeBaseTest"
+    ],
+    "org.yawlfoundation.yawl.integration.pool.YawlConnectionPool": [
+      "org.yawlfoundation.yawl.stress.ConnectionPoolStressTest"
+    ],
+    "org.yawlfoundation.yawl.engine.VirtualThreadPool": [
+      "org.yawlfoundation.yawl.stress.ConnectionPoolStressTest"
+    ],
+    "org.yawlfoundation.yawl.integration.pool.YawlConnectionPoolConfig": [
+      "org.yawlfoundation.yawl.stress.ConnectionPoolStressTest"
+    ],
+    "org.yawlfoundation.yawl.util.StringUtil": [
+      "org.yawlfoundation.yawl.stress.EngineStressTest"
+    ],
+    "org.yawlfoundation.yawl.util.DOMUtil": [
+      "org.yawlfoundation.yawl.stress.EngineStressTest"
+    ],
+    "org.yawlfoundation.yawl.elements.data.YParameter": [
+      "org.yawlfoundation.yawl.stress.EngineStressTest"
+    ],
+    "org.yawlfoundation.yawl.elements.*": [
+      "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest",
+      "org.yawlfoundation.yawl.mcp.a2a.elements.YNetElementTest",
+      "org.yawlfoundation.yawl.stress.EngineStressTest",
+      "org.yawlfoundation.yawl.validation.YEngineParallelizationTest"
+    ],
+    "org.yawlfoundation.yawl.elements.state.YIdentifier": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest",
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest",
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.concurrency.CascadeCancellationTest",
+      "org.yawlfoundation.yawl.engine.concurrency.VirtualThreadLockStarvationTest",
+      "org.yawlfoundation.yawl.engine.concurrency.WorkItemTimerRaceTest",
+      "org.yawlfoundation.yawl.stress.EngineStressTest",
+      "org.yawlfoundation.yawl.stress.QueueStressTest",
+      "org.yawlfoundation.yawl.validation.YEngineParallelizationTest"
+    ],
+    "org.yawlfoundation.yawl.unmarshal.YMarshal": [
+      "org.yawlfoundation.yawl.stress.EngineStressTest"
+    ],
+    "org.yawlfoundation.yawl.engine.spi.WorkflowEventBus": [
+      "org.yawlfoundation.yawl.stress.QueueStressTest"
+    ],
+    "org.yawlfoundation.yawl.stateless.listener.event.YEventType": [
+      "org.yawlfoundation.yawl.stress.QueueStressTest"
+    ],
+    "org.yawlfoundation.yawl.engine.spi.WorkflowEvent": [
+      "org.yawlfoundation.yawl.stress.QueueStressTest"
+    ],
+    "org.yawlfoundation.yawl.engine.spi.FlowWorkflowEventBus": [
+      "org.yawlfoundation.yawl.stress.QueueStressTest"
+    ],
+    "org.yawlfoundation.yawl.integration.a2a.tty.TtyCommandQueue": [
+      "org.yawlfoundation.yawl.stress.QueueStressTest"
+    ],
+    "org.yawlfoundation.yawl.authentication.ApiKeyRateLimitRegistry": [
+      "org.yawlfoundation.yawl.stress.RateLimiterStressTest"
+    ],
+    "org.yawlfoundation.yawl.exceptions.YAWLException": [
+      "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest"
+    ],
+    "org.yawlfoundation.yawl.unmarshal.YMetaData": [
+      "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest"
+    ],
+    "org.yawlfoundation.yawl.util.YVerificationHandler": [
+      "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YSpecVersion": [
+      "org.yawlfoundation.yawl.benchmark.adversarial.AdversarialSpecFuzzerTest"
+    ],
+    "org.yawlfoundation.yawl.benchmark.TestDataGenerator": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest"
+    ],
+    "org.yawlfoundation.yawl.stateless.elements.YSpecification": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest"
+    ],
+    "org.yawlfoundation.yawl.stateless.YStatelessEngine": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest",
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest"
+    ],
+    "org.yawlfoundation.yawl.stateless.engine.YNetRunner": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest",
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest"
+    ],
+    "org.yawlfoundation.yawl.exceptions.YPersistenceException": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest",
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.concurrency.CascadeCancellationTest",
+      "org.yawlfoundation.yawl.engine.concurrency.WorkItemTimerRaceTest"
+    ],
+    "org.yawlfoundation.yawl.engine.YWorkItem": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest",
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest",
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.concurrency.CascadeCancellationTest",
+      "org.yawlfoundation.yawl.engine.concurrency.WorkItemTimerRaceTest"
+    ],
+    "org.yawlfoundation.yawl.exceptions.YSyntaxException": [
+      "org.yawlfoundation.yawl.benchmark.oracle.EngineOracleTest"
+    ],
+    "org.yawlfoundation.yawl.dspy.worklets.WorkletSelection": [
+      "org.yawlfoundation.yawl.dspy.DspyWorkletSelectorTest"
+    ],
+    "org.yawlfoundation.yawl.graalpy.PythonException": [
+      "org.yawlfoundation.yawl.dspy.DspyWorkletSelectorTest"
+    ],
+    "org.yawlfoundation.yawl.graalpy.PythonExecutionEngine": [
+      "org.yawlfoundation.yawl.dspy.DspyWorkletSelectorTest",
+      "org.yawlfoundation.yawl.dspy.PythonDspyBridgeTest",
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest",
+      "org.yawlfoundation.yawl.dspy.resources.PredictiveResourceRouterTest"
+    ],
+    "org.yawlfoundation.yawl.worklet.RdrSet": [
+      "org.yawlfoundation.yawl.dspy.DspyWorkletSelectorTest"
+    ],
+    "org.yawlfoundation.yawl.dspy.worklets.DspyWorkletSelector": [
+      "org.yawlfoundation.yawl.dspy.DspyWorkletSelectorTest"
+    ],
+    "org.yawlfoundation.yawl.dspy.worklets.WorkletSelectionContext": [
+      "org.yawlfoundation.yawl.dspy.DspyWorkletSelectorTest"
+    ],
+    "org.yawlfoundation.yawl.engine.observability.YAWLTelemetry": [
+      "org.yawlfoundation.yawl.dspy.forensics.AnomalyForensicsEngineTest"
+    ],
+    "org.yawlfoundation.yawl.observability.StructuredLogger": [
+      "org.yawlfoundation.yawl.dspy.forensics.AnomalyForensicsEngineTest"
+    ],
+    "org.yawlfoundation.yawl.dspy.PythonDspyBridge": [
+      "org.yawlfoundation.yawl.dspy.forensics.AnomalyForensicsEngineTest",
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest",
+      "org.yawlfoundation.yawl.dspy.resources.PredictiveResourceRouterTest"
+    ],
+    "org.yawlfoundation.yawl.observability.BottleneckDetector": [
+      "org.yawlfoundation.yawl.dspy.forensics.AnomalyForensicsEngineTest"
+    ],
+    "org.yawlfoundation.yawl.dspy.DspyProgramCache": [
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YTask": [
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest",
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest",
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest",
+      "org.yawlfoundation.yawl.integration.java_python.chaos.ChaosEngineeringTest"
+    ],
+    "org.yawlfoundation.yawl.engine.YWorkItemRepository": [
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest"
+    ],
+    "org.yawlfoundation.yawl.engine.YWorkItemStatus": [
+      "org.yawlfoundation.yawl.dspy.learning.CaseLearningBootstrapperTest",
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.concurrency.CascadeCancellationTest",
+      "org.yawlfoundation.yawl.engine.concurrency.WorkItemTimerRaceTest"
+    ],
+    "org.yawlfoundation.yawl.resourcing.CapabilityMatcher": [
+      "org.yawlfoundation.yawl.dspy.resources.PredictiveResourceRouterTest"
+    ],
+    "org.yawlfoundation.yawl.resourcing.RoutingDecision": [
+      "org.yawlfoundation.yawl.dspy.resources.PredictiveResourceRouterTest"
+    ],
+    "org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplace": [
+      "org.yawlfoundation.yawl.dspy.resources.PredictiveResourceRouterTest"
+    ],
+    "org.yawlfoundation.yawl.stateless.engine.YWorkItem": [
+      "org.yawlfoundation.yawl.dspy.resources.PredictiveResourceRouterTest",
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest"
+    ],
+    "org.yawlfoundation.yawl.exceptions.YEngineStateException": [
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.concurrency.CascadeCancellationTest"
+    ],
+    "org.yawlfoundation.yawl.engine.YNetRunner": [
+      "org.yawlfoundation.yawl.engine.chaos.ChaosEngineTest",
+      "org.yawlfoundation.yawl.engine.concurrency.VirtualThreadLockStarvationTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YWorkItem": [
+      "org.yawlfoundation.yawl.engine.concurrency.VirtualThreadLockStarvationTest"
+    ],
+    "org.yawlfoundation.yawl.engine.YNetRunnerLockMetrics": [
+      "org.yawlfoundation.yawl.engine.concurrency.VirtualThreadLockStarvationTest"
+    ],
+    "org.yawlfoundation.yawl.engine.time.YWorkItemTimer": [
+      "org.yawlfoundation.yawl.engine.concurrency.WorkItemTimerRaceTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YExternalNetElement": [
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YAtomicTask": [
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest",
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YOutputCondition": [
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest",
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YInputCondition": [
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest",
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YCondition": [
+      "org.yawlfoundation.yawl.engine.property.WorkflowInvariantPropertyTest",
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YFlow": [
+      "org.yawlfoundation.yawl.engine.soundness.SoundnessTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.model.PetriNet": [
+      "org.yawlfoundation.yawl.ggen.mining.ai.AiValidationLoopTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.GeneratorIntegrationTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporterTest",
+      "org.yawlfoundation.yawl.ggen.mining.parser.BpmnParserTest",
+      "org.yawlfoundation.yawl.ggen.mining.parser.PnmlParserTest",
+      "org.yawlfoundation.yawl.ggen.mining.parser.XesParserTest",
+      "org.yawlfoundation.yawl.ggen.powl.PowlModelTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.model.Arc": [
+      "org.yawlfoundation.yawl.ggen.mining.ai.AiValidationLoopTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.GeneratorIntegrationTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporterTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporter": [
+      "org.yawlfoundation.yawl.ggen.mining.ai.AiValidationLoopTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.model.Transition": [
+      "org.yawlfoundation.yawl.ggen.mining.ai.AiValidationLoopTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.GeneratorIntegrationTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporterTest",
+      "org.yawlfoundation.yawl.ggen.mining.parser.BpmnParserTest",
+      "org.yawlfoundation.yawl.ggen.mining.parser.PnmlParserTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.model.Place": [
+      "org.yawlfoundation.yawl.ggen.mining.ai.AiValidationLoopTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.GeneratorIntegrationTest",
+      "org.yawlfoundation.yawl.ggen.mining.generators.YawlSpecExporterTest",
+      "org.yawlfoundation.yawl.ggen.mining.parser.PnmlParserTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.model.XesLog": [
+      "org.yawlfoundation.yawl.ggen.mining.parser.XesParserTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.model.XesTrace": [
+      "org.yawlfoundation.yawl.ggen.mining.parser.XesParserTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.mining.model.XesEvent": [
+      "org.yawlfoundation.yawl.ggen.mining.parser.XesParserTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.powl.PowlActivity": [
+      "org.yawlfoundation.yawl.ggen.rl.GrpoOptimizerTest",
+      "org.yawlfoundation.yawl.ggen.rl.scoring.FootprintScorerTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.powl.PowlModel": [
+      "org.yawlfoundation.yawl.ggen.rl.GrpoOptimizerTest",
+      "org.yawlfoundation.yawl.ggen.rl.OllamaCandidateSamplerRetryTest",
+      "org.yawlfoundation.yawl.ggen.rl.scoring.FootprintScorerTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.rl.scoring.RewardFunction": [
+      "org.yawlfoundation.yawl.ggen.rl.GrpoOptimizerTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.powl.PowlOperatorType": [
+      "org.yawlfoundation.yawl.ggen.rl.GrpoOptimizerTest",
+      "org.yawlfoundation.yawl.ggen.rl.scoring.FootprintScorerTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.powl.PowlOperatorNode": [
+      "org.yawlfoundation.yawl.ggen.rl.GrpoOptimizerTest",
+      "org.yawlfoundation.yawl.ggen.rl.scoring.FootprintScorerTest"
+    ],
+    "org.yawlfoundation.yawl.ggen.memory.ProcessKnowledgeGraph": [
+      "org.yawlfoundation.yawl.ggen.rl.OllamaCandidateSamplerRetryTest"
+    ],
+    "org.yawlfoundation.yawl.elements.YAWLServiceReference": [
+      "org.yawlfoundation.yawl.graalpy.security.AuthenticationValidationTest"
+    ],
+    "org.yawlfoundation.yawl.util.Argon2PasswordEncryptor": [
+      "org.yawlfoundation.yawl.graalpy.security.AuthenticationValidationTest"
+    ],
+    "org.yawlfoundation.yawl.authentication.*": [
+      "org.yawlfoundation.yawl.graalpy.security.AuthenticationValidationTest"
+    ],
+    "org.yawlfoundation.yawl.unmarshaller.YAWLUnmarshaller": [
+      "org.yawlfoundation.yawl.integration.java_python.chaos.ChaosEngineeringTest"
+    ],
+    "org.yawlfoundation.yawl.engine.interfce.WorklistManager": [
+      "org.yawlfoundation.yawl.integration.java_python.chaos.ChaosEngineeringTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.PatternInfo": [
+      "org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunnerTest",
+      "org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistryTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.demo.config.DemoConfig": [
+      "org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunnerTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternCategory": [
+      "org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunnerTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistry": [
+      "org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunnerTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.Difficulty": [
+      "org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistryTest"
+    ],
+    "org.yawlfoundation.yawl.integration.zai.ZaiService": [
+      "org.yawlfoundation.yawl.mcp.a2a.gregverse.AbstractGregVerseAgentTest",
+      "org.yawlfoundation.yawl.pi.rag.NaturalLanguageQueryEngineTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.gregverse.config.GregVerseConfig": [
+      "org.yawlfoundation.yawl.mcp.a2a.gregverse.GregVerseSelfPlayDemoTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.OTPatient": [
+      "org.yawlfoundation.yawl.mcp.a2a.lifecycle.LifeManagementOrchestratorTest",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.LifestyleGoal": [
+      "org.yawlfoundation.yawl.mcp.a2a.lifecycle.LifeManagementOrchestratorTest",
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier": [
+      "org.yawlfoundation.yawl.mcp.a2a.mcp.McpToolsTest",
+      "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns10to18Test",
+      "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns19to28Test",
+      "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns1to9Test",
+      "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns29to36Test",
+      "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns37to43Test"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.example.YawlYamlConverter": [
+      "org.yawlfoundation.yawl.mcp.a2a.mcp.McpToolsTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.OccupationalProfile": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTAssessmentAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTSchedulerAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTIntakeAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.SwarmTaskResult": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.domain.TherapySession": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTAdaptationAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTGoalSettingAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTOutcomeEvaluatorAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTInterventionPlannerAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.therapy.agents.OTProgressMonitorAgent": [
+      "org.yawlfoundation.yawl.mcp.a2a.therapy.E2ETherapySwarmTest"
+    ],
+    "org.yawlfoundation.yawl.mcp.a2a.example.WorkflowSoundnessVerifier.SoundnessResult": [
+      "org.yawlfoundation.yawl.mcp.a2a.wcp.WcpBusinessPatterns10to18Test"
+    ],
+    "org.yawlfoundation.yawl.integration.adaptation.EventDrivenAdaptationEngine": [
+      "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest",
+      "org.yawlfoundation.yawl.pi.adaptive.PredictiveAdaptationRulesTest"
+    ],
+    "org.yawlfoundation.yawl.pi.PIException": [
+      "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest",
+      "org.yawlfoundation.yawl.pi.automl.Tpot2BridgeTest",
+      "org.yawlfoundation.yawl.pi.optimization.ProcessSchedulerTest",
+      "org.yawlfoundation.yawl.pi.optimization.ResourceOptimizerTest",
+      "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePredictorTest",
+      "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest",
+      "org.yawlfoundation.yawl.pi.rag.NaturalLanguageQueryEngineTest",
+      "org.yawlfoundation.yawl.pi.rag.ProcessKnowledgeBaseTest"
+    ],
+    "org.yawlfoundation.yawl.integration.adaptation.EventSeverity": [
+      "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest",
+      "org.yawlfoundation.yawl.pi.adaptive.PredictiveAdaptationRulesTest"
+    ],
+    "org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry": [
+      "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest",
+      "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest"
+    ],
+    "org.yawlfoundation.yawl.integration.adaptation.AdaptationResult": [
+      "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest",
+      "org.yawlfoundation.yawl.pi.adaptive.PredictiveAdaptationRulesTest"
+    ],
+    "org.yawlfoundation.yawl.integration.adaptation.ProcessEvent": [
+      "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest",
+      "org.yawlfoundation.yawl.pi.adaptive.PredictiveAdaptationRulesTest"
+    ],
+    "org.yawlfoundation.yawl.integration.adaptation.AdaptationAction": [
+      "org.yawlfoundation.yawl.pi.adaptive.EnterpriseAutoMlPatternsTest",
+      "org.yawlfoundation.yawl.pi.adaptive.PredictiveAdaptationRulesTest"
+    ],
+    "org.yawlfoundation.yawl.integration.adaptation.AdaptationRule": [
+      "org.yawlfoundation.yawl.pi.adaptive.PredictiveAdaptationRulesTest"
+    ],
+    "org.yawlfoundation.yawl.pi.predictive.TrainingDataset": [
+      "org.yawlfoundation.yawl.pi.automl.Tpot2BridgeTest"
+    ],
+    "org.yawlfoundation.yawl.integration.a2a.skills.SkillResult": [
+      "org.yawlfoundation.yawl.pi.mcp.OcedConversionSkillTest"
+    ],
+    "org.yawlfoundation.yawl.integration.a2a.skills.SkillRequest": [
+      "org.yawlfoundation.yawl.pi.mcp.OcedConversionSkillTest"
+    ],
+    "org.yawlfoundation.yawl.integration.processmining.XesToYawlSpecGenerator": [
+      "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePredictorTest",
+      "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest"
+    ],
+    "org.yawlfoundation.yawl.observatory.rdf.WorkflowDNAOracle": [
+      "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePredictorTest",
+      "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest"
+    ],
+    "org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent": [
+      "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePredictorTest",
+      "org.yawlfoundation.yawl.pi.predictive.ProcessMiningTrainingDataExtractorTest",
+      "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest"
+    ],
+    "org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore": [
+      "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePredictorTest",
+      "org.yawlfoundation.yawl.pi.predictive.ProcessMiningTrainingDataExtractorTest",
+      "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest"
+    ],
+    "org.yawlfoundation.yawl.pi.predictive.CaseOutcomePrediction": [
+      "org.yawlfoundation.yawl.pi.prescriptive.PrescriptiveEngineTest"
+    ],
+    "org.yawlfoundation.yawl.integration.processmining.PerformanceAnalyzer": [
+      "org.yawlfoundation.yawl.pi.rag.ProcessKnowledgeBaseTest"
+    ],
+    "org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade": [
+      "org.yawlfoundation.yawl.pi.rag.ProcessKnowledgeBaseTest"
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "feedback_tier_config": {
+    "description": "Feedback tier tests: max 2 per module, <1s each, critical path coverage",
+    "target_execution_time_ms": 5000,
+    "max_tests_per_module": 2,
+    "max_test_time_ms": 1000,
+    "selection_strategy": "lowest_execution_time",
+    "last_updated": "2026-02-28T00:00:00Z"
+  },
+  "core_modules": [
+    "yawl-engine",
+    "yawl-elements",
+    "yawl-stateless"
+  ],
+  "feedback_tests": [
+    {
+      "test_class": "org.yawlfoundation.yawl.engine.YNetRunnerTest",
+      "test_method": "testSimpleWorkflow",
+      "module": "yawl-engine",
+      "execution_time_ms": 50,
+      "tags": ["feedback", "unit", "core"],
+      "description": "Critical path: basic workflow execution",
+      "depends_on_modules": []
+    },
+    {
+      "test_class": "org.yawlfoundation.yawl.engine.YWorkItemTest",
+      "test_method": "testCreate",
+      "module": "yawl-engine",
+      "execution_time_ms": 85,
+      "tags": ["feedback", "unit", "core"],
+      "description": "Critical path: work item lifecycle",
+      "depends_on_modules": []
+    },
+    {
+      "test_class": "org.yawlfoundation.yawl.elements.YElementTest",
+      "test_method": "testBasicElement",
+      "module": "yawl-elements",
+      "execution_time_ms": 75,
+      "tags": ["feedback", "unit", "core"],
+      "description": "Critical path: element model",
+      "depends_on_modules": []
+    },
+    {
+      "test_class": "org.yawlfoundation.yawl.stateless.YStatelessEngineTest",
+      "test_method": "testStatelessWorkflow",
+      "module": "yawl-stateless",
+      "execution_time_ms": 120,
+      "tags": ["feedback", "unit", "core"],
+      "description": "Critical path: stateless execution",
+      "depends_on_modules": ["yawl-engine"]
+    }
+  ],
+  "execution_instructions": {
+    "command": "bash scripts/run-feedback-tests.sh",
+    "timeout_seconds": 30,
+    "parallel_execution": true,
+    "fail_fast": true,
+    "report_format": "json"
+  },
+  "success_criteria": {
+    "max_total_time_ms": 5000,
+    "min_modules_covered": 3,
+    "all_core_modules_must_pass": true
+  }
+}

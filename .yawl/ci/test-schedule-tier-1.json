@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-02-28T07:35:17.262686Z",
+  "tier": 1,
+  "total_tests": 2,
+  "scheduling_strategy": "bin_packing_by_duration",
+  "parallelism": 4,
+  "timings": {
+    "total_ms": 135,
+    "avg_ms": 67,
+    "wall_clock_ms": 85,
+    "speedup": 1.59,
+    "cpu_utilization_percent": 39.7
+  },
+  "worker_allocations": [
+    {
+      "worker": 0,
+      "allocated_ms": 85,
+      "test_count": 1,
+      "tests": [
+        "org.yawlfoundation.yawl.engine.YWorkItemTest.testCreate"
+      ]
+    },
+    {
+      "worker": 1,
+      "allocated_ms": 50,
+      "test_count": 1,
+      "tests": [
+        "org.yawlfoundation.yawl.engine.YNetRunnerTest.testSimpleWorkflow"
+      ]
+    },
+    {
+      "worker": 2,
+      "allocated_ms": 0,
+      "test_count": 0,
+      "tests": []
+    },
+    {
+      "worker": 3,
+      "allocated_ms": 0,
+      "test_count": 0,
+      "tests": []
+    }
+  ],
+  "sequential_order": [
+    "org.yawlfoundation.yawl.engine.YWorkItemTest.testCreate",
+    "org.yawlfoundation.yawl.engine.YNetRunnerTest.testSimpleWorkflow"
+  ],
+  "confidence": {
+    "estimated_wall_clock_lower_ms": 68,
+    "estimated_wall_clock_upper_ms": 102
+  }
+}

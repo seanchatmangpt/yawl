@@ -1,0 +1,19 @@
+{
+  "machine_type": "ci-cd",
+  "timestamp": "2026-02-28T07:34:20Z",
+  "hardware": {
+    "cpu_cores": 16,
+    "total_ram_mb": 21504,
+    "disk_space_gb": 29
+  },
+  "default_parameters": {
+    "maven_threads": 3,
+    "junit_factor": 4.0,
+    "cache_ttl_hours": 8,
+    "cache_size_limit_gb": 5,
+    "semantic_cache_ttl_hours": 12,
+    "tip_retrain_frequency_builds": 10,
+    "warm_cache_ttl_hours": 4,
+    "cds_size_mb": 150
+  }
+}
