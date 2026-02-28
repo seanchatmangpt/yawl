@@ -109,7 +109,7 @@ public final class RoutingSlip {
             newHistory.add(actorName + "#" + visited.id());
 
             return new Envelope(caseId, payload,
-                Collections.unmodifiableDeque(newSlip),
+                new ImmutableDeque<>(newSlip),
                 Collections.unmodifiableList(newHistory)
             );
         }
@@ -133,7 +133,7 @@ public final class RoutingSlip {
      * Create an empty routing slip (for testing).
      */
     public static Deque<ActorRef> empty() {
-        return Collections.unmodifiableDeque(new LinkedList<>());
+        return new ImmutableDeque<>(new LinkedList<>());
     }
 
     /**
@@ -144,7 +144,7 @@ public final class RoutingSlip {
      */
     public static Deque<ActorRef> create(ActorRef... actors) {
         LinkedList<ActorRef> deque = new LinkedList<>(Arrays.asList(actors));
-        return Collections.unmodifiableDeque(deque);
+        return new ImmutableDeque<>(deque);
     }
 
     /**
@@ -155,7 +155,7 @@ public final class RoutingSlip {
      */
     public static Deque<ActorRef> create(Collection<ActorRef> actors) {
         LinkedList<ActorRef> deque = new LinkedList<>(actors);
-        return Collections.unmodifiableDeque(deque);
+        return new ImmutableDeque<>(deque);
     }
 
     /**
@@ -209,7 +209,7 @@ public final class RoutingSlip {
         return new Envelope(
             envelope.caseId(),
             envelope.payload(),
-            Collections.unmodifiableDeque(newSlip),
+            new ImmutableDeque<>(newSlip),
             envelope.history()
         );
     }
@@ -231,7 +231,7 @@ public final class RoutingSlip {
         return new Envelope(
             envelope.caseId(),
             envelope.payload(),
-            Collections.unmodifiableDeque(newSlip),
+            new ImmutableDeque<>(newSlip),
             envelope.history()
         );
     }
@@ -249,6 +249,44 @@ public final class RoutingSlip {
             empty(),
             envelope.history()
         );
+    }
+
+    /**
+     * Immutable deque wrapper (prevents mutation).
+     */
+    private static final class ImmutableDeque<E> extends AbstractCollection<E> implements Deque<E> {
+        private final Deque<E> delegate;
+
+        ImmutableDeque(Deque<E> delegate) {
+            this.delegate = new LinkedList<>(delegate);
+        }
+
+        @Override public Iterator<E> iterator() { return Collections.unmodifiableCollection(delegate).iterator(); }
+        @Override public int size() { return delegate.size(); }
+        @Override public void addFirst(E e) { throw new UnsupportedOperationException(); }
+        @Override public void addLast(E e) { throw new UnsupportedOperationException(); }
+        @Override public boolean offerFirst(E e) { return false; }
+        @Override public boolean offerLast(E e) { return false; }
+        @Override public E removeFirst() { throw new UnsupportedOperationException(); }
+        @Override public E removeLast() { throw new UnsupportedOperationException(); }
+        @Override public E pollFirst() { return null; }
+        @Override public E pollLast() { return null; }
+        @Override public E getFirst() { return delegate.getFirst(); }
+        @Override public E getLast() { return delegate.getLast(); }
+        @Override public E peekFirst() { return delegate.peekFirst(); }
+        @Override public E peekLast() { return delegate.peekLast(); }
+        @Override public boolean removeFirstOccurrence(Object o) { return false; }
+        @Override public boolean removeLastOccurrence(Object o) { return false; }
+        @Override public boolean add(E e) { return false; }
+        @Override public boolean offer(E e) { return false; }
+        @Override public E remove() { throw new UnsupportedOperationException(); }
+        @Override public E poll() { return null; }
+        @Override public E element() { return delegate.element(); }
+        @Override public E peek() { return delegate.peek(); }
+        @Override public void push(E e) { throw new UnsupportedOperationException(); }
+        @Override public E pop() { throw new UnsupportedOperationException(); }
+        @Override public boolean contains(Object o) { return delegate.contains(o); }
+        @Override public Iterator<E> descendingIterator() { return delegate.descendingIterator(); }
     }
 
     /**
