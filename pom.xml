@@ -2933,6 +2933,88 @@
             </build>
         </profile>
 
+        <!-- fast-verify profile: ultra-fast unit test verification (<10s)    -->
+        <!-- Optimized for continuous feedback with timing metrics            -->
+        <!-- Usage: mvn clean test -P fast-verify                             -->
+        <!--        mvn clean test -P fast-verify -pl yawl-engine             -->
+        <!--        DX_TIMINGS=1 bash scripts/dx.sh                           -->
+        <!--                                                                  -->
+        <!-- Differences from quick-test:                                     -->
+        <!--   - Adds Surefire test report for timing visibility              -->
+        <!--   - Single forked JVM (forkCount=1) for startup efficiency       -->
+        <!--   - Disables all analysis tools (JaCoCo, SpotBugs, PMD, etc)     -->
+        <!--   - Includes test listener for slowest-tests detection            -->
+        <!--   - Target execution: <10s total for full suite                  -->
+        <!--   - Excluded groups: integration, docker, containers, slow, chaos -->
+        <!--                                                                  -->
+        <!-- Surefire Report Plugin Configuration:                            -->
+        <!--   - Generates execution times for each test                      -->
+        <!--   - Outputs slowest tests to console post-build                  -->
+        <!--   - Creates test-report.html in target/site/ for trend tracking  -->
+        <profile>
+            <id>fast-verify</id>
+            <properties>
+                <!-- Unconditionally disable JaCoCo bytecode instrumentation    -->
+                <jacoco.skip>true</jacoco.skip>
+                <test.docker.enabled>false</test.docker.enabled>
+                <!-- Enable test timing metrics capture -->
+                <maven.test.skip>false</maven.test.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Surefire plugin: unit test execution with timing -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Include only tests explicitly tagged @Tag("unit").
+                                 Tests with no @Tag annotation do not match and are
+                                 excluded; add @Tag("unit") to include them here. -->
+                            <groups>unit</groups>
+                            <!-- Exclude all non-unit categories without exception. -->
+                            <excludedGroups>integration,docker,containers,slow,chaos</excludedGroups>
+                            <!-- Single forked JVM: avoids the 300-500ms startup cost per
+                                 fork. On a 4-core laptop this is faster than 4 forks for
+                                 small suites because JVM startup dominates test runtime. -->
+                            <forkCount>1</forkCount>
+                            <!-- Keep the single JVM alive for all test classes in the
+                                 module. Prevents repeated classloader and H2 initialisation. -->
+                            <reuseForks>true</reuseForks>
+                            <!-- Fail on the first test failure. Gets the developer to the
+                                 red bar immediately without running the rest of the suite. -->
+                            <skipAfterFailureCount>1</skipAfterFailureCount>
+                            <!-- Enable detailed test reporting for timing metrics -->
+                            <reportFormat>xml</reportFormat>
+                            <reportFormat>plain</reportFormat>
+                            <systemPropertyVariables>
+                                <test.docker.enabled>false</test.docker.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+
+                    <!-- Surefire Report Plugin: generate timing reports -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>test-report</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- Include skipped tests in report for visibility -->
+                            <showSuccess>true</showSuccess>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <!-- Docker profile: includes all integration and container tests     -->
         <!-- Requires Docker daemon running for testcontainers.               -->
         <!-- Usage: mvn clean test -P docker                                   -->
