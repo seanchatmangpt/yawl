@@ -1,0 +1,290 @@
+[
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 10000,
+    "p50_ms": 31.45,
+    "p95_ms": 104.84,
+    "p99_ms": 157.26,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 10000,
+    "p50_ms": 17.91,
+    "p95_ms": 59.69,
+    "p99_ms": 89.53,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 10000,
+    "p50_ms": 31.46,
+    "p95_ms": 104.86,
+    "p99_ms": 157.29,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 10000,
+    "p50_ms": 11.65,
+    "p95_ms": 38.85,
+    "p99_ms": 58.27,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 20000,
+    "p50_ms": 29.09,
+    "p95_ms": 96.96,
+    "p99_ms": 145.44,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 20000,
+    "p50_ms": 18.65,
+    "p95_ms": 62.18,
+    "p99_ms": 93.27,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 20000,
+    "p50_ms": 31.33,
+    "p95_ms": 104.42,
+    "p99_ms": 156.63,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 20000,
+    "p50_ms": 11.73,
+    "p95_ms": 39.1,
+    "p99_ms": 58.65,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 50000,
+    "p50_ms": 28.94,
+    "p95_ms": 96.46,
+    "p99_ms": 144.69,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 50000,
+    "p50_ms": 18.46,
+    "p95_ms": 61.54,
+    "p99_ms": 92.31,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 50000,
+    "p50_ms": 30.38,
+    "p95_ms": 101.27,
+    "p99_ms": 151.9,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 50000,
+    "p50_ms": 12.1,
+    "p95_ms": 40.35,
+    "p99_ms": 60.52,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 100000,
+    "p50_ms": 29.95,
+    "p95_ms": 99.83,
+    "p99_ms": 149.74,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 100000,
+    "p50_ms": 17.55,
+    "p95_ms": 58.49,
+    "p99_ms": 87.74,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 100000,
+    "p50_ms": 31.43,
+    "p95_ms": 104.77,
+    "p99_ms": 157.16,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 100000,
+    "p50_ms": 12.09,
+    "p95_ms": 40.31,
+    "p99_ms": 60.46,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 200000,
+    "p50_ms": 33.45,
+    "p95_ms": 111.5,
+    "p99_ms": 167.26,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 200000,
+    "p50_ms": 20.43,
+    "p95_ms": 68.11,
+    "p99_ms": 102.17,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 200000,
+    "p50_ms": 32.67,
+    "p95_ms": 108.89,
+    "p99_ms": 163.34,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 200000,
+    "p50_ms": 13.15,
+    "p95_ms": 43.85,
+    "p99_ms": 65.77,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 500000,
+    "p50_ms": 39.21,
+    "p95_ms": 130.71,
+    "p99_ms": 196.06,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 500000,
+    "p50_ms": 22.42,
+    "p95_ms": 74.74,
+    "p99_ms": 112.11,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 500000,
+    "p50_ms": 39.04,
+    "p95_ms": 130.14,
+    "p99_ms": 195.2,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 500000,
+    "p50_ms": 14.94,
+    "p95_ms": 49.78,
+    "p99_ms": 74.68,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 750000,
+    "p50_ms": 50.97,
+    "p95_ms": 169.89,
+    "p99_ms": 254.83,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 750000,
+    "p50_ms": 31.32,
+    "p95_ms": 104.4,
+    "p99_ms": 156.6,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 750000,
+    "p50_ms": 49.51,
+    "p95_ms": 165.05,
+    "p99_ms": 247.57,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 750000,
+    "p50_ms": 18.82,
+    "p95_ms": 62.72,
+    "p99_ms": 94.08,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "case_count": 1000000,
+    "p50_ms": 88.69,
+    "p95_ms": 295.62,
+    "p99_ms": 443.43,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "case_count": 1000000,
+    "p50_ms": 60.55,
+    "p95_ms": 201.85,
+    "p99_ms": 302.77,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "case_count": 1000000,
+    "p50_ms": 88.49,
+    "p95_ms": 294.96,
+    "p99_ms": 442.44,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "case_count": 1000000,
+    "p50_ms": 33.05,
+    "p95_ms": 110.15,
+    "p99_ms": 165.23,
+    "timestamp": "2026-02-28T09:05:40.378723",
+    "scenario": "AGGRESSIVE_LOAD"
+  }
+]

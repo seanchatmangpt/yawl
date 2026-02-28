@@ -221,15 +221,16 @@ public class GCProfilingTest {
         assertTrue(casesProcessed.get() > 0, "Should process at least one case");
 
         // GC pause targets
-        assertThat(result.avgPauseMs).as("Average GC pause").isLessThan(5.0);
-        assertThat(result.p99PauseMs).as("p99 GC pause").isLessThan(50.0);
-        assertThat(result.maxPauseMs).as("Max GC pause").isLessThan(100.0);
+        assertTrue(result.avgPauseMs < 5.0, "Average GC pause " + result.avgPauseMs + " should be < 5.0ms");
+        assertTrue(result.p99PauseMs < 50.0, "p99 GC pause " + result.p99PauseMs + " should be < 50.0ms");
+        assertTrue(result.maxPauseMs < 100.0, "Max GC pause " + result.maxPauseMs + " should be < 100.0ms");
 
         // Memory stability
-        assertThat(result.heapGrowthMBPerHour).as("Heap growth per hour").isLessThan(1024.0);
+        assertTrue(result.heapGrowthMBPerHour < 1024.0,
+                "Heap growth " + result.heapGrowthMBPerHour + " MB/hour should be < 1024.0");
 
         // Full GC events (should be minimal)
-        assertTrue(result.fullGCCount < 10, "Full GC events should be < 10");
+        assertTrue(result.fullGCCount < 10, "Full GC events " + result.fullGCCount + " should be < 10");
 
         // Memory recovery check (heap should decrease after GC)
         assertTrue(result.heapRecoveryDetected, "Heap should recover after GC cycles");
@@ -252,7 +253,7 @@ public class GCProfilingTest {
             }
         }
 
-        assertTrue(collector != null, "GC notification collection should be available");
+        assertNotNull(collector, "GC notification collection should be available");
         return collector;
     }
 
@@ -441,28 +442,5 @@ public class GCProfilingTest {
             sb.append("========================================\n");
             return sb.toString();
         }
-    }
-
-    /**
-     * Helper to assert conditions (simple replacement for assertThat).
-     */
-    private static class AssertHelper {
-        private String description;
-
-        AssertHelper(String desc) {
-            this.description = desc;
-        }
-
-        void isLessThan(double value) {
-            // Placeholder for assertion logic
-        }
-    }
-
-    private static AssertHelper assertThat(double value) {
-        return new AssertHelper("");
-    }
-
-    private static AssertHelper assertThat(long value) {
-        return new AssertHelper("");
     }
 }
