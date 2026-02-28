@@ -29,6 +29,21 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-graalpy</artifactId>
+            <version>6.0.0-GA</version>
+        </dependency>
+
+        <!-- yawl-engine: YAWLTelemetry, YNetRunner, observability -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-engine</artifactId>
+            <version>6.0.0-GA</version>
+        </dependency>
+
+        <!-- yawl-monitoring: AnomalyDetector, BottleneckDetector, StructuredLogger -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-monitoring</artifactId>
+            <version>6.0.0-GA</version>
         </dependency>
 
         <!-- GraalVM Polyglot API -->
@@ -53,6 +68,20 @@
         <dependency>
             <groupId>org.jspecify</groupId>
             <artifactId>jspecify</artifactId>
+        </dependency>
+
+        <!-- Spring Boot for @Component, @EventListener -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>3.5.11</version>
+        </dependency>
+
+        <!-- Micrometer for MeterRegistry -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>1.15.9</version>
         </dependency>
 
         <!-- Apache Commons Lang for utility methods -->
