@@ -8,30 +8,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
- * Minimal agent runtime — AtomicInteger IDs + ConcurrentHashMap registry
+ * Minimal actor runtime — AtomicInteger IDs + ConcurrentHashMap registry
  * + one virtual thread executor per task.
  *
  * Note on boxing at 10M scale:
- *   ConcurrentHashMap&lt;Integer, Agent&gt; boxes int keys -&gt; Integer (16 bytes each).
- *   At 10M agents: 160MB of Integer objects. Measure first; switch to
+ *   ConcurrentHashMap&lt;Integer, Actor&gt; boxes int keys -&gt; Integer (16 bytes each).
+ *   At 10M actors: 160MB of Integer objects. Measure first; switch to
  *   Eclipse Collections IntObjectHashMap if GC overhead exceeds 5%.
  */
 final class Runtime implements Closeable {
 
     /** ScopedValue — zero-cost identity propagation into virtual threads. */
-    static final ScopedValue<Agent> CURRENT = ScopedValue.newInstance();
+    static final ScopedValue<Actor> CURRENT = ScopedValue.newInstance();
 
     private static final AtomicInteger SEQ = new AtomicInteger(0);
 
-    private final ConcurrentHashMap<Integer, Agent> registry = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Actor> registry = new ConcurrentHashMap<>();
     private final ExecutorService vt = Executors.newVirtualThreadPerTaskExecutor();
 
     /**
-     * Spawn an agent. The behavior Consumer runs on a virtual thread.
-     * Behavior lives in the closure — not in the Agent object.
+     * Spawn an actor. The behavior Consumer runs on a virtual thread.
+     * Behavior lives in the closure — not in the Actor object.
      */
-    Agent spawn(Consumer<Object> behavior) {
-        Agent a = new Agent(SEQ.getAndIncrement());
+    Actor spawn(Consumer<Object> behavior) {
+        Actor a = new Actor(SEQ.getAndIncrement());
         registry.put(a.id, a);
         vt.submit(() ->
             ScopedValue.where(CURRENT, a).run(() -> {
@@ -52,13 +52,13 @@ final class Runtime implements Closeable {
         return a;
     }
 
-    /** Send a message to agent by id. No-op if id not found. */
+    /** Send a message to actor by id. No-op if id not found. */
     void send(int targetId, Object msg) {
-        Agent a = registry.get(targetId);
+        Actor a = registry.get(targetId);
         if (a != null) a.send(msg);
     }
 
-    /** Current number of live agents. */
+    /** Current number of live actors. */
     int size() {
         return registry.size();
     }
