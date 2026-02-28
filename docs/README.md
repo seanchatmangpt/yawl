@@ -8,7 +8,9 @@ Documentation is organized by the [Diataxis](https://diataxis.fr/) framework int
 
 ### 🎯 Choose Your Path
 - **New to YAWL?** → [Getting Started Paths](GETTING_STARTED_PATHS.md) — Choose by role (business, developer, devops, data scientist, security)
+- **Want a learning roadmap?** → [Learning Roadmap](LEARNING_ROADMAP.md) — Structured paths by level (beginner to expert) and specialization
 - **Want the big picture?** → [Module Dependency Map](MODULE_DEPENDENCY_MAP.md) — Understand how 22 modules fit together
+- **Common questions?** → [FAQ & Common Issues](FAQ_AND_COMMON_ISSUES.md) — Quick answers to 40+ common questions
 - **Browse everything?** → [Diataxis Master Index](diataxis/INDEX.md) — Complete index of 350+ docs
 
 ### Quick Links
