@@ -1,379 +1,381 @@
 # YAWL v6.0.0 Production Deployment Checklist
 
-**Date:** 2026-02-28  
-**Environment:** Production  
-**Go/No-Go Decision Point:** Final sign-off required before proceeding
+**Date**: __________  
+**Deployment Engineer**: __________  
+**Approval**: __________  
+**Go/No-Go Decision**: __________
 
 ---
 
-## Pre-Deployment (24 hours before)
+## Pre-Deployment Phase (48 hours before)
 
-### Code Readiness
-- [ ] **Code Review Complete**
-  - All pull requests merged to main
-  - No TODOs or FIXMEs in src/
-  - Test: `grep -r "TODO\|FIXME" src/ | wc -l` should be 0
+### System Requirements Verification
 
-- [ ] **Tests Passing**
-  - All unit tests pass
-  - All integration tests pass
-  - Test Coverage >80% for critical paths
-  - Command: `mvn clean verify -P prod`
-  - Expected: `BUILD SUCCESS, Tests run: XXX, Failures: 0`
+- [ ] **Java 25 Installation**
+  - Version check: `java -version`
+  - Required: 25.0.0 or later
+  - Command: `java -version 2>&1 | grep "25"`
+  - Expected output: `openjdk version "25" ...`
 
-- [ ] **Build Successful**
-  - Clean build with no errors
-  - WAR files generated: yawl.war, resourceService.war, workletService.war
-  - Command: `mvn clean package -DskipTests -P prod`
+- [ ] **Disk Space**
+  - Minimum: 10GB free space
+  - Recommended: 50GB for data growth
+  - Check: `df -h / | awk 'NR==2 {print $4}'`
+  - Result: __________GB available
 
-- [ ] **Static Analysis Passed**
-  - No critical code quality issues
-  - No security vulnerabilities (OWASP Top 10)
-  - Command: `mvn clean verify -P analysis`
-
-### System Requirements
-- [ ] **Java Version Correct**
-  - Version: Java 17+ (optimized for 25)
-  - Command: `java -version`
-  - Expected output: `openjdk version "25"` or compatible
-
-- [ ] **Memory Available**
-  - Minimum: 8 GB free RAM
-  - Recommended: 16 GB for production
-  - Command: `free -h | grep Mem`
-  - Expected: `Mem ... Avail 8G+`
-
-- [ ] **Disk Space Available**
-  - Minimum: 20 GB free
-  - For full deployment: 50+ GB recommended
-  - Command: `df -h / | tail -1`
+- [ ] **Memory (RAM)**
+  - Minimum: 8GB total
+  - Recommended: 16GB+ for production
+  - JVM allocation: 4GB heap minimum
+  - Check: `free -h | awk 'NR==2'`
+  - Result: __________GB available
 
 - [ ] **Network Connectivity**
-  - Can reach database server
-  - Can reach monitoring endpoints
-  - Command: `ping $DB_HOST && ping $MONITORING_HOST`
+  - Database host reachable: `nc -zv db.example.com 5432`
+  - Registry accessible: `curl -I registry.example.com`
+  - NTP synchronized: `timedatectl`
+  - Time offset: __________ms
 
-- [ ] **Time Synchronization**
-  - NTP configured and synced
-  - Command: `timedatectl` or `ntpq -p`
-  - Time skew <1 second
+- [ ] **Container Runtime (if Docker)**
+  - Docker installed: `docker --version`
+  - Version: __________
+  - Docker daemon running: `systemctl status docker`
+  - Docker socket writable: `ls -l /var/run/docker.sock`
 
-### Infrastructure Preparation
-- [ ] **Database Ready**
-  - PostgreSQL 13+ running
-  - Database created: yawl
-  - User configured with appropriate permissions
-  - Command: `psql -h $DB_HOST -U $DB_USER -d yawl -c "\dt"`
-  - Expected: Tables listed successfully
+- [ ] **Kubernetes Cluster (if K8s)**
+  - Cluster accessible: `kubectl cluster-info`
+  - Nodes healthy: `kubectl get nodes`
+  - Storage classes available: `kubectl get storageclass`
+  - Node count: __________
+  - Available capacity: __________CPU, __________GB RAM
 
-- [ ] **Database Backup Created**
-  - Full backup completed
-  - Backup verified (can restore)
-  - Location documented: `/backup/yawl-$(date +%Y%m%d)/`
-  - Size: >100MB
-  - Command: `ls -lh /backup/yawl-*/`
+### Database Validation
 
-- [ ] **Redis Ready (if used)**
-  - Redis 6.0+ running
-  - Test command: `redis-cli -h $REDIS_HOST ping`
-  - Expected: PONG
+- [ ] **PostgreSQL Installation**
+  - Version: 12+
+  - Check: `psql --version`
+  - Result: __________
 
-- [ ] **Load Balancer Configured**
-  - Health check endpoint: `/actuator/health/ready`
-  - Timeout: 10 seconds
-  - Healthy threshold: 2 consecutive checks
-  - Unhealthy threshold: 3 consecutive checks
+- [ ] **Database Created**
+  - Database name: yawl_prod
+  - Owner: yawl_user
+  - Check: `psql -U postgres -lqt | grep yawl_prod`
+  - Result: ✓ Exists / ✗ Missing
 
-- [ ] **SSL Certificates Valid**
-  - Certificate installed
-  - Not expired: `openssl x509 -in cert.pem -noout -dates`
-  - Domain matches: `openssl x509 -in cert.pem -noout -subject`
+- [ ] **User Permissions**
+  - User created: `yawl_user`
+  - Password set (not blank)
+  - Password entropy: __________bits (minimum 128)
+  - Test connection: `psql -U yawl_user -d yawl_prod -c "SELECT 1"`
+  - Result: ✓ Connected / ✗ Failed
 
-- [ ] **Monitoring Stack Ready**
-  - Prometheus: Running and accepting metrics
-  - Grafana: Dashboards created and validated
-  - AlertManager: Configured for notification channels
-  - Test: `curl -s http://prometheus:9090/api/v1/targets | jq '.data.activeTargets | length'`
+- [ ] **Extensions Installed**
+  - pgcrypto: `SELECT * FROM pg_extension WHERE extname='pgcrypto'`
+  - uuid-ossp: `SELECT * FROM pg_extension WHERE extname='uuid-ossp'`
+  - Both present: ✓ Yes / ✗ No
 
-- [ ] **Log Aggregation Ready**
-  - Log forwarding configured (ELK, Splunk, CloudWatch)
-  - Test: `curl -H "Content-Type: application/json" -X POST http://logstash:5000/test`
+- [ ] **SSL Configuration (if required)**
+  - SSL enabled: `grep "ssl = on" /etc/postgresql/*/main/postgresql.conf`
+  - Certificate path: __________
+  - Key path: __________
+  - Certificate valid until: __________
 
-- [ ] **Backup Solution Tested**
-  - Full backup + restore cycle completed
-  - Restore time measured: <15 minutes expected
-  - Backup retention policy documented
+- [ ] **Backup System Tested**
+  - Backup directory created: /var/backups/yawl
+  - Cron job scheduled: `crontab -l | grep backup-yawl`
+  - Test backup successful: ✓ Yes / ✗ No
+  - Restore tested: ✓ Yes / ✗ No
 
----
+### JVM Configuration Validation
 
-## Configuration Validation (4 hours before)
+- [ ] **JAVA_HOME Set**
+  - Command: `echo $JAVA_HOME`
+  - Result: __________
+  - Path exists: `ls -d $JAVA_HOME`
 
-### Environment Variables
-- [ ] **Database Configuration**
-  - `DB_TYPE`: postgres
-  - `DB_HOST`: prod-db.example.com (resolvable)
-  - `DB_PORT`: 5432
-  - `DB_NAME`: yawl
-  - `DB_USER`: set from secrets manager
-  - `DB_PASSWORD`: set from secrets manager (not hardcoded)
+- [ ] **JVM Flags Prepared**
+  - Config file location: __________
+  - Initial heap (-Xms): __________
+  - Maximum heap (-Xmx): __________
+  - GC algorithm: Shenandoah / ZGC / Other: __________
+  - Flags reviewed: ✓ Yes / ✗ No
 
-- [ ] **Java Configuration**
-  - `JAVA_HOME`: /usr/lib/jvm/java-25-openjdk
-  - `JAVA_OPTS`: Heap sizes appropriate for server
-  - `-Xms4g -Xmx8g` (minimum)
-  - `-XX:+UseZGC` or similar modern GC
+- [ ] **GC Logging Enabled**
+  - GC log directory: /app/logs
+  - Permissions (writable by app user): ✓ Yes / ✗ No
+  - Log rotation configured: ✓ Yes / ✗ No
 
-- [ ] **Application Configuration**
-  - `SPRING_PROFILES_ACTIVE`: production
-  - `SPRING_APPLICATION_NAME`: yawl-engine
-  - `LOGGING_LEVEL_ROOT`: INFO
-  - `LOGGING_LEVEL_ORG_YAWLFOUNDATION`: DEBUG
+- [ ] **Memory Calculation**
+  - Total system RAM: __________GB
+  - JVM heap allocation: __________GB
+  - Ratio (heap/total): __________% (max 75%)
+  - OS buffer cache reserved: __________GB
 
-- [ ] **Monitoring Configuration**
-  - `OTEL_SERVICE_NAME`: yawl-engine
-  - `OTEL_EXPORTER_OTLP_ENDPOINT`: configured
-  - `PROMETHEUS_ENDPOINT`: accessible
+### Networking & Security
 
-- [ ] **Timezone Configuration**
-  - `TZ`: UTC (or consistent timezone)
-  - Verified: `date` command shows correct time
+- [ ] **Port Availability**
+  - Port 8080 (HTTP): `netstat -tuln | grep 8080` → ✗ In use / ✓ Available
+  - Port 8081 (MCP): `netstat -tuln | grep 8081` → ✗ In use / ✓ Available
+  - Port 9090 (Metrics): `netstat -tuln | grep 9090` → ✗ In use / ✓ Available
+  - Port 5432 (PostgreSQL): `netstat -tuln | grep 5432` → ✗ In use / ✓ Available
 
-### Database Configuration
-- [ ] **Connection Pool Configured**
-  - Min connections: 5
-  - Max connections: 20
-  - Idle timeout: 300 seconds
-  - Connection timeout: 30 seconds
+- [ ] **Firewall Rules**
+  - Firewall enabled: `ufw status` → Active / Inactive
+  - Rules loaded: `ufw show added`
+  - Rules reviewed: ✓ Yes / ✗ No
+  - Allow list complete: ✓ Yes / ✗ No
 
-- [ ] **Indexes Created**
-  - Specification ID index: `CREATE INDEX idx_spec_id ON yspecification(id);`
-  - Case status index: `CREATE INDEX idx_case_status ON ynetinstance(status);`
-  - Work item case index: `CREATE INDEX idx_workitem_case ON yworkitem(case_id);`
-  - Test: `psql ... -c "\d+"`
+- [ ] **SSL/TLS Certificate**
+  - Certificate location: __________
+  - Keystore location: __________
+  - Keystore password set (secure): ✓ Yes / ✗ No
+  - Certificate valid from: __________
+  - Certificate valid until: __________ (minimum 30 days)
+  - Chain complete: ✓ Yes / ✗ No
 
-- [ ] **Database Statistics Updated**
-  - VACUUM ANALYZE completed
-  - Command: `psql ... -c "VACUUM ANALYZE;"`
-
-- [ ] **Replication Configured (if HA)**
-  - Read replicas: minimum 1
-  - Replication lag <1 second
-  - Test: `SELECT replication_lag FROM pg_stat_replication;`
-
-### JVM Configuration
-- [ ] **Heap Size Appropriate**
-  - For 8GB server: `-Xms4g -Xmx8g`
-  - For 16GB server: `-Xms8g -Xmx16g`
-  - Validation: Application starts without OOM
-
-- [ ] **GC Configuration Optimized**
-  - GC algorithm: ZGC or Shenandoah
-  - Max GC pause: 20-50ms
-  - Full GCs expected: <10/hour
-
-- [ ] **Virtual Threads Enabled (Java 21+)**
-  - `-Djdk.virtualThreadScheduler.parallelism=200`
-  - `-Djdk.virtualThreadScheduler.maxPoolSize=256`
-
-- [ ] **Heap Dump Configuration**
-  - `-XX:+HeapDumpOnOutOfMemoryError`
-  - `-XX:HeapDumpPath=/app/logs/heap-dump.hprof`
-
-### Security Configuration
-- [ ] **TLS 1.3 Enabled**
-  - Weak protocols disabled
-  - Test: `openssl s_client -tls1_3 -connect localhost:8443`
-
-- [ ] **No Hardcoded Secrets**
-  - Source code audit for credentials
-  - Command: `grep -r "password\|secret\|key" src/ | grep -v "//\|#" | wc -l`
-  - Expected: 0 (or only environment references)
-
-- [ ] **Secrets Manager Integration**
-  - Database password from: AWS Secrets Manager / Vault
-  - API keys from: Secrets Manager
-  - JWT secret from: Secrets Manager
-
-- [ ] **Database Encryption**
-  - Database: Encrypted at rest
-  - Backups: Encrypted at rest
-  - Network: TLS 1.3 for connections
+- [ ] **Secrets Management**
+  - DB password: Stored in secrets manager / Environment variable / Kubernetes secret
+  - JWT secret: Generated (minimum 32 bytes)
+  - API keys: ✓ All rotated / ✗ Some missing
+  - Secrets encrypted at rest: ✓ Yes / ✗ No
 
 ---
 
-## System Readiness (2 hours before)
+## Deployment Phase (Day of deployment)
 
-### Capacity Planning Validation
-- [ ] **CPU Capacity**
-  - Available CPU cores: ≥4
-  - Expected utilization: <70% at peak
-  - Headroom: >2 cores unused
+### Image/Artifact Preparation
 
-- [ ] **Memory Capacity**
-  - Available RAM: ≥8GB
-  - Expected utilization: <75% at peak
-  - Headroom: >2GB unused
+- [ ] **Docker Image Built** (if using Docker)
+  - Image name: yawl-engine:6.0.0
+  - Build command executed: `docker build ...`
+  - Build successful: ✓ Yes / ✗ No
+  - Build time: __________seconds
+  - Image size: __________MB
 
-- [ ] **Disk I/O Capacity**
-  - Database I/O: <70% utilization
-  - Write throughput: >100 MB/s available
-  - Read throughput: >200 MB/s available
+- [ ] **Image Verification**
+  - Image exists: `docker image ls | grep yawl-engine`
+  - Layers inspected: `docker image inspect yawl-engine:6.0.0`
+  - Health check present: ✓ Yes / ✗ No
+  - Non-root user (dev): ✓ Yes / ✗ No
 
-- [ ] **Network Capacity**
-  - Database connection latency: <5ms
-  - Expected throughput: >100 Mbps available
-  - Bandwidth headroom: >50%
+- [ ] **JAR/WAR Artifacts**
+  - Build completed: `mvn clean package`
+  - Build status: ✓ Successful / ✗ Failed
+  - Artifacts location: __________
+  - Checksum verified: ✓ Yes / ✗ No
 
-### Monitoring Stack Validation
-- [ ] **Prometheus Metrics Collecting**
-  - JVM metrics: jvm_memory_*, jvm_gc_*
-  - Application metrics: yawl_cases_*, yawl_workitems_*
-  - Database metrics: hikaricp_*, pg_*
-  - Test: `curl -s http://prometheus:9090/api/v1/query?query=up | jq '.data.result | length'`
-  - Expected: >5 targets
+- [ ] **Registry Push** (if applicable)
+  - Image pushed: `docker push registry/yawl-engine:6.0.0`
+  - Push successful: ✓ Yes / ✗ No
+  - Image accessible: `docker pull registry/yawl-engine:6.0.0`
 
-- [ ] **Grafana Dashboards Ready**
-  - YAWL Engine dashboard created
-  - JVM dashboard created
-  - Database dashboard created
-  - Custom alerts configured
+### Deployment Execution
 
-- [ ] **Log Aggregation Working**
-  - Logs flowing to central system
-  - Can search for application logs
-  - Test: Search for timestamp from last 5 minutes
+- [ ] **Configuration Applied**
+  - Environment file: /etc/yawl/prod.env
+  - ConfigMap created (K8s): ✓ Yes / ✗ No
+  - Secrets created: ✓ Yes / ✗ No
+  - Config validation passed: ✓ Yes / ✗ No
 
-- [ ] **Alert Channels Configured**
-  - Slack integration tested
-  - PagerDuty/OpsGenie integration tested
-  - Email alerts tested
-  - Test: `Send test alert → Verify channel receives it`
+- [ ] **Container/Service Start**
+  - Service started: `systemctl start yawl` OR `docker run ...` OR `kubectl apply ...`
+  - Start successful: ✓ Yes / ✗ No
+  - Startup time: __________seconds
+  - Error logs: __________
 
-### Deployment Readiness
-- [ ] **Deployment Artifacts Built**
-  - Docker image built: `docker images | grep yawl-engine`
-  - Image size reasonable: <1.5GB
-  - Image scanned for vulnerabilities
+- [ ] **Initial Health Verification**
+  - HTTP endpoint responds: `curl http://localhost:8080`
+  - Status code: __________
+  - Liveness probe passes: ✓ Yes / ✗ No
+  - Readiness probe passes: ✓ Yes / ✗ No
 
-- [ ] **Kubernetes Manifests Validated (if applicable)**
-  - Syntax checked: `kubectl apply -f k8s/ --dry-run=client`
-  - Resource requests/limits set appropriately
-  - Health checks configured
+### Post-Deployment Validation
 
-- [ ] **Deployment Plan Documented**
-  - Step-by-step procedure written
-  - Rollback procedure documented
-  - Estimated duration: 45-60 minutes
-  - Expected downtime: 10-15 minutes
+- [ ] **Connectivity Tests**
+  - Database reachable: ✓ Yes / ✗ No
+  - Query succeeds: `SELECT 1 FROM yawl.cases LIMIT 1`
+  - Connection pool healthy: ✓ Yes / ✗ No
+  - Connection count: __________ (should be <30)
 
-- [ ] **Team Availability Confirmed**
-  - Operations team ready
-  - On-call engineer standing by
-  - Communication channel open (#deployments)
+- [ ] **API Functionality**
+  - Health endpoint: `curl https://localhost:8080/actuator/health`
+  - Response status: ✓ 200 UP / ✗ Other
+  - Create case: `curl -X POST https://localhost:8080/api/v1/cases`
+  - Case creation latency: __________ms (target: <500ms)
 
----
+- [ ] **Metrics Collection**
+  - Prometheus scrape endpoint: `curl https://localhost:9090/actuator/prometheus`
+  - Response status: ✓ 200 / ✗ Other
+  - Metrics present: ✓ Yes / ✗ No
+  - Sample metrics:
+    - jvm_memory_used_bytes: ✓ Present / ✗ Missing
+    - http_requests_total: ✓ Present / ✗ Missing
+    - jvm_gc_pause: ✓ Present / ✗ Missing
 
-## Pre-Deployment Window (30 minutes before)
+- [ ] **Observability**
+  - Log aggregation working: ✓ Yes / ✗ No
+  - Logs visible: `tail -f /app/logs/yawl.log`
+  - Error count: __________
+  - Warning count: __________
+  - Latest errors: __________
 
-### Final Validation
-- [ ] **Health Check Script Runs Successfully**
-  - Command: `bash healthcheck.sh`
-  - Expected: All checks PASS
+- [ ] **Security Checks**
+  - TLS 1.3+ enforced: `openssl s_client -connect localhost:8080 -tls1_3`
+  - Certificate valid: ✓ Yes / ✗ No
+  - Cipher strength: __________bits minimum
+  - Non-root user running: `ps aux | grep yawl`
+  - Result: ✓ Running as 'dev' / ✗ Other
 
-- [ ] **Current System Stable**
-  - No active incidents
-  - Metrics baseline within expected range
-  - No unusual error patterns in logs
+- [ ] **Resource Consumption**
+  - CPU usage: __________% (should be <30% idle)
+  - Memory usage: __________MB / __________MB max
+  - Disk I/O: __________IOPS
+  - Network latency to DB: __________ms
 
-- [ ] **Database Accessible**
-  - Test connection: `psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "SELECT 1;"`
-  - Response time: <100ms
+### Performance Baseline
 
-- [ ] **Previous Version Working**
-  - Current production is healthy
-  - No performance degradation
-  - Active case processing normal
+- [ ] **Throughput Measurement**
+  - Command: `ab -n 1000 -c 10 https://localhost:8080/api/v1/cases`
+  - Requests/second: __________
+  - Average response time: __________ms
+  - 95th percentile: __________ms
+  - Target: >100 req/s
 
-### Communication Ready
-- [ ] **Stakeholders Notified**
-  - Engineering team: deployment starting
-  - Operations team: ready for deployment
-  - Support team: maintenance window announced
-  - Message: Posted in deployment channel with timeline
+- [ ] **GC Pause Analysis**
+  - Command: `curl https://localhost:9090/actuator/metrics/jvm.gc.pause | jq`
+  - Average GC pause: __________ms
+  - Max GC pause: __________ms
+  - Pause frequency: __________pauses/minute
+  - Target: <50ms average
 
-- [ ] **Maintenance Window Announced**
-  - Users notified of expected downtime
-  - Duration: 10-15 minutes
-  - Time window: off-peak hours
-  - Impact: Workflow processing paused, new cases blocked
+- [ ] **Case Creation Performance**
+  - Target: <500ms per case
+  - Measured: __________ms
+  - Consistency check (10 samples):
+    - Min: __________ms
+    - Max: __________ms
+    - Variance: __________ms
 
-- [ ] **Escalation Contacts Identified**
-  - On-call engineer: [Name, Phone, Slack]
-  - Platform lead: [Name, Phone, Slack]
-  - CTO/VP: [Name, Phone, Slack] for critical decisions
-
----
-
-## GO/NO-GO DECISION
-
-**Complete this section 10 minutes before deployment:**
-
-### Technical Readiness
-- [ ] All pre-deployment checklists: **PASS**
-- [ ] Monitoring systems: **READY**
-- [ ] Database: **HEALTHY**
-- [ ] Backup: **VERIFIED**
-- [ ] Health checks: **ALL PASS**
-
-### Team Readiness
-- [ ] Operations team: **READY**
-- [ ] On-call engineer: **STANDING BY**
-- [ ] Communication channel: **OPEN**
-- [ ] Rollback plan: **REVIEWED AND ACCEPTED**
-
-### Business Readiness
-- [ ] Stakeholders notified: **YES**
-- [ ] Maintenance window acceptable: **YES**
-- [ ] Executive approval obtained: **YES**
+- [ ] **Query Performance**
+  - Sample query: `SELECT * FROM yawl.cases WHERE status='ACTIVE' LIMIT 100`
+  - Execution time: __________ms
+  - Rows returned: __________
+  - Index usage: ✓ Yes / ✗ No
 
 ---
 
-## FINAL GO/NO-GO VOTE
+## Sign-Off Phase
 
-**Deployment Lead:** _________________ **Date/Time:** _____________
+### Technical Approval
 
-**Vote:**
-- [ ] **GO** - Proceed with deployment (all criteria met)
-- [ ] **NO-GO** - Hold deployment (issues identified)
+- [ ] **Operations Team**
+  - Reviewed deployment procedures: ✓ Yes / ✗ No
+  - Confirmed system meets requirements: ✓ Yes / ✗ No
+  - Monitoring configured: ✓ Yes / ✗ No
+  - Backup procedures tested: ✓ Yes / ✗ No
+  - Approved by: ______________ Date: __________
 
-**If NO-GO, reason:**
-```
-_________________________________________________________________
+- [ ] **Security Review**
+  - SSL/TLS verified: ✓ Yes / ✗ No
+  - Secrets manager configured: ✓ Yes / ✗ No
+  - Firewall rules reviewed: ✓ Yes / ✗ No
+  - Non-root user enforced: ✓ Yes / ✗ No
+  - Approved by: ______________ Date: __________
 
-_________________________________________________________________
+- [ ] **Performance Review**
+  - Baseline performance acceptable: ✓ Yes / ✗ No
+  - GC pauses <50ms: ✓ Yes / ✗ No
+  - Throughput >100 req/s: ✓ Yes / ✗ No
+  - Database latency <100ms: ✓ Yes / ✗ No
+  - Approved by: ______________ Date: __________
 
-_________________________________________________________________
-```
+### Stakeholder Sign-Off
 
-**Approval signatures:**
-- Technical Lead: _________________________ Date: _______
-- Operations Manager: _________________________ Date: _______
-- Platform Team Lead: _________________________ Date: _______
+- [ ] **Deployment Manager**
+  - All checks passed: ✓ Yes / ✗ No
+  - Risk assessment: ✓ Low / ⚠ Medium / ✗ High
+  - Rollback plan confirmed: ✓ Yes / ✗ No
+  - Approved: ______________ Date: __________
+  - Go/No-Go: **GO** / **NO-GO**
+
+### Production Cutover
+
+- [ ] **Load Balancer Configuration** (if applicable)
+  - Traffic routed to new deployment: ✓ Yes / ✗ No
+  - Old deployment still available: ✓ Yes / ✗ No
+  - Cutover time: __________
+  - Success criteria met: ✓ Yes / ✗ No
+
+- [ ] **Canary Deployment** (if applicable)
+  - 10% traffic routed to new version: ✓ Yes / ✗ No
+  - Monitoring for 1 hour: ✓ Yes / ✗ No
+  - Error rate <0.1%: ✓ Yes / ✗ No
+  - Latency increase <5%: ✓ Yes / ✗ No
+  - Proceed to 100%: ✓ Yes / ✗ No
+
+- [ ] **Production Monitoring** (48 hours post-deployment)
+  - Error rate: __________% (target: <0.01%)
+  - P99 latency: __________ms (target: <1000ms)
+  - GC pause incidents: __________  (target: 0)
+  - Database connection errors: __________ (target: 0)
+  - Memory leaks detected: ✓ Yes / ✗ No
 
 ---
 
-## Post-Deployment Verification (to be completed after deployment)
+## Post-Deployment Checklist (24 hours after)
 
-- [ ] All services started successfully
-- [ ] Health checks all PASS
-- [ ] Database migrations completed
-- [ ] Monitoring data flowing
-- [ ] No error spikes in logs
-- [ ] Performance within baseline
-- [ ] Users can create/execute workflows
-- [ ] Stakeholders notified of success
+- [ ] **System Stability**
+  - Uptime: __________hours (target: 100%)
+  - Restarts: __________ (target: 0)
+  - Errors in logs: __________
+  - Critical issues: ✓ None / ⚠ Some
 
-**Deployment Duration:** _______ minutes (target: 45-60)
-**Downtime:** _______ minutes (target: <15)
-**Status:** ✓ SUCCESS / ✗ ROLLBACK
+- [ ] **Performance Verification**
+  - Throughput stable: ✓ Yes / ✗ No
+  - Latency stable: ✓ Yes / ✗ No
+  - Resource usage stable: ✓ Yes / ✗ No
+  - GC behavior expected: ✓ Yes / ✗ No
+
+- [ ] **Backup Verification**
+  - Backup executed: ✓ Yes / ✗ No
+  - Backup size: __________MB
+  - Restore tested: ✓ Yes / ✗ No
+  - Restore time: __________seconds
+
+- [ ] **Issue Resolution**
+  - Issues found: __________ (count)
+  - Issues resolved: __________ (count)
+  - Remaining issues: __________
+  - Next review date: __________
+
+---
+
+## Go/No-Go Decision
+
+### Summary
+
+| Area | Status | Notes |
+|------|--------|-------|
+| System Requirements | ✓ / ✗ | __________ |
+| Database | ✓ / ✗ | __________ |
+| Security | ✓ / ✗ | __________ |
+| Performance | ✓ / ✗ | __________ |
+| Monitoring | ✓ / ✗ | __________ |
+| Backups | ✓ / ✗ | __________ |
+
+### Final Decision
+
+- **GO** - All checks passed, deployment successful
+- **NO-GO** - Issues found, see notes below
+
+**Issues requiring resolution**:
+1. __________
+2. __________
+3. __________
+
+**Mitigation plan**: __________
+
+**Approved by**: ______________ Date: __________ Time: __________
+
+---
 
