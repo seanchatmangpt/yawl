@@ -164,7 +164,6 @@ extract_type_annotations() {
     # Match lines starting with @ (annotations) and capture name
     grep -E '^\s*@[A-Za-z]' "$java_file" 2>/dev/null | \
         sed 's/^[[:space:]]*@//' | \
-        sed 's/\(.*\)$/\1/' | \
         LC_ALL=C sort -u | \
         jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]'
 }
