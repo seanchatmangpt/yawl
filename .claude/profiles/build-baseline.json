@@ -1,0 +1,221 @@
+{
+  "metadata": {
+    "timestamp": "2026-02-28T03:02:57Z",
+    "profiler_version": "1.0.0",
+    "project": "YAWL v6.0.0-GA",
+    "purpose": "Establish baseline performance metrics for build optimization team"
+  },
+  "environment": {
+    "java_version": "25.0.2 (Temurin LTS)",
+    "maven_version": "4.0.0",
+    "maven_compiler_plugin": "3.14.0",
+    "maven_surefire_plugin": "3.5.4",
+    "jvm_args": "-XX:+UseCompactObjectHeaders -XX:+UseZGC -Xms2g -Xmx4g"
+  },
+  "codebase_metrics": {
+    "total_modules": 22,
+    "total_source_files": 360,
+    "total_test_files": 94,
+    "test_to_source_ratio": 0.26,
+    "modules_by_layer": {
+      "layer_0_foundation": [
+        "yawl-utilities",
+        "yawl-security",
+        "yawl-graalpy",
+        "yawl-benchmark",
+        "yawl-graaljs"
+      ],
+      "layer_1_consumers": [
+        "yawl-elements",
+        "yawl-ggen",
+        "yawl-graalwasm",
+        "yawl-dmn",
+        "yawl-data-modelling"
+      ],
+      "layer_2_core_engine": [
+        "yawl-engine"
+      ],
+      "layer_3_engine_extension": [
+        "yawl-stateless"
+      ],
+      "layer_4_services": [
+        "yawl-authentication",
+        "yawl-scheduling",
+        "yawl-monitoring",
+        "yawl-worklet",
+        "yawl-control-panel",
+        "yawl-integration",
+        "yawl-webapps"
+      ],
+      "layer_5_advanced": [
+        "yawl-pi",
+        "yawl-resourcing"
+      ],
+      "layer_6_application": [
+        "yawl-mcp-a2a-app"
+      ]
+    },
+    "largest_modules_by_source": [
+      {
+        "module": "yawl-mcp-a2a-app",
+        "source_files": 198,
+        "test_files": 29
+      },
+      {
+        "module": "yawl-ggen",
+        "source_files": 69,
+        "test_files": 15
+      },
+      {
+        "module": "yawl-pi",
+        "source_files": 63,
+        "test_files": 16
+      },
+      {
+        "module": "yawl-dspy",
+        "source_files": 23,
+        "test_files": 11
+      },
+      {
+        "module": "yawl-benchmark",
+        "source_files": 7,
+        "test_files": 3
+      }
+    ],
+    "largest_modules_by_tests": [
+      {
+        "module": "yawl-mcp-a2a-app",
+        "test_files": 29,
+        "source_files": 198
+      },
+      {
+        "module": "yawl-pi",
+        "test_files": 16,
+        "source_files": 63
+      },
+      {
+        "module": "yawl-ggen",
+        "test_files": 15,
+        "source_files": 69
+      },
+      {
+        "module": "yawl-utilities",
+        "test_files": 12,
+        "source_files": 0
+      },
+      {
+        "module": "yawl-dspy",
+        "test_files": 11,
+        "source_files": 23
+      }
+    ]
+  },
+  "build_configuration": {
+    "parallelism": {
+      "maven_threads": "2C (2x CPU cores)",
+      "surefire_fork_count": "1.5C (dynamic)",
+      "surefire_thread_count": "4 (per-core)",
+      "junit_platform_parallel_enabled": true,
+      "junit_platform_parallel_mode": "concurrent",
+      "junit_platform_config_strategy": "dynamic",
+      "junit_platform_dynamic_factor": 1.5
+    },
+    "compiler_settings": {
+      "target_java_version": 25,
+      "incremental_compilation": true,
+      "fork_mode": true,
+      "compiler_memory_initial": "512m",
+      "compiler_memory_max": "2048m",
+      "lint_checks": "all",
+      "parameter_annotations": true
+    },
+    "test_settings": {
+      "forked_jvm_reuse": true,
+      "forked_jvm_timeout_seconds": 300,
+      "forked_jvm_shutdown": "kill",
+      "skip_after_failure_count": 5,
+      "test_database": "h2",
+      "hibernate_dialect": "H2Dialect",
+      "test_includes": [
+        "**/*Test.java",
+        "**/*Tests.java",
+        "**/*TestSuite.java"
+      ]
+    }
+  },
+  "dx_sh_optimization": {
+    "description": "Custom build script that optimizes developer experience",
+    "features": [
+      "Detects uncommitted changes (git diff) to identify changed modules",
+      "Builds only changed modules plus dependencies (incremental)",
+      "Skips JaCoCo, javadoc, static analysis (SpotBugs, PMD) for speed",
+      "Runs only tests for changed modules",
+      "Supports profiles: compile, test, compile-test, all",
+      "Offline mode detection: uses local M2 repo if available"
+    ],
+    "performance_expectations": {
+      "unchanged_modules_build_time": "<2s (detection phase only)",
+      "single_module_compile": "5-15s (depends on module size)",
+      "single_module_test": "3-20s (depends on test count)",
+      "full_clean_build_estimate": "120-180s (all 22 modules, all tests)"
+    }
+  },
+  "potential_bottlenecks": {
+    "compiler_memory": "Current max: 2GB; may need increase for yawl-mcp-a2a-app (198 files)",
+    "forked_jvm_startup": "~300-500ms per JVM fork; 1.5C parallelism mitigates cost",
+    "largest_test_module": "yawl-mcp-a2a-app with 29 test files; likely slowest contributor",
+    "static_analysis": "Skipped by dx.sh (intentional); SpotBugs/PMD/JaCoCo run only in full build",
+    "integration_tests": "Not measured in baseline; may add 30-60s if enabled"
+  },
+  "optimization_opportunities": [
+    {
+      "priority": "HIGH",
+      "item": "Profile test execution times",
+      "rationale": "yawl-mcp-a2a-app (29 tests) and yawl-pi (16 tests) likely have slow tests >1s each",
+      "estimated_impact": "Identify and optimize slowest 10 tests could save 10-30s per build",
+      "effort": "MEDIUM (requires test analysis + profiling)"
+    },
+    {
+      "priority": "HIGH",
+      "item": "Verify JUnit Platform parallel execution is active",
+      "rationale": "junit-platform.properties configured for dynamic parallel mode but untested at scale",
+      "estimated_impact": "2-4x speedup for CPU-bound tests if virtual threads are utilized",
+      "effort": "LOW (enable monitoring in Surefire, capture thread names)"
+    },
+    {
+      "priority": "MEDIUM",
+      "item": "Evaluate compiler memory for yawl-mcp-a2a-app",
+      "rationale": "198 source files may exceed 2GB memory limit; inspect compiler logs for GC",
+      "estimated_impact": "5-10s if GC pressure is high",
+      "effort": "LOW (add logging, measure GC time during compile)"
+    },
+    {
+      "priority": "MEDIUM",
+      "item": "Measure JVM forking overhead",
+      "rationale": "1.5C parallelism = ~2-3 forked JVMs; each pays ~300ms startup cost",
+      "estimated_impact": "0.6-0.9s per build if startup can be optimized",
+      "effort": "MEDIUM (profile Surefire fork timings)"
+    },
+    {
+      "priority": "LOW",
+      "item": "Cache dependencies aggressively",
+      "rationale": "Maven 4.0.0 supports incremental builds; verify cache is warm",
+      "estimated_impact": "0-5s savings if first build misses cache",
+      "effort": "LOW (document cache location, verify in CI)"
+    }
+  ],
+  "next_steps": [
+    "Run Maven Surefire report generation: mvn surefire-report:report to extract per-test timings",
+    "Enable JVM argument logging: -XX:+PrintGCDetails to measure GC overhead during compile",
+    "Capture thread utilization: jps + jstack during parallel test execution",
+    "Create performance dashboard: script to track dx.sh all timing over commits",
+    "Establish regression gates: fail CI if any single profile degrades >10% vs baseline"
+  ],
+  "target_metrics": {
+    "full_build_regression_threshold_percent": 10,
+    "compile_target_seconds": "< 60s (all modules)",
+    "test_target_seconds": "< 120s (all modules)",
+    "dx_compile_regression_threshold_percent": 10,
+    "dx_test_regression_threshold_percent": 10
+  }
+}

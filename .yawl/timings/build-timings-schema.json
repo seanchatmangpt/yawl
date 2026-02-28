@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "YAWL Build Timings Schema",
+  "description": "Append-only JSON Lines format for build timing metrics and trend analysis",
+  "type": "object",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when build completed"
+    },
+    "elapsed_sec": {
+      "type": "number",
+      "description": "Total build + test execution time in seconds"
+    },
+    "test_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of unit tests run (not including skipped)"
+    },
+    "test_failed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of failed tests in this build"
+    },
+    "modules_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of modules built/tested"
+    },
+    "success": {
+      "type": "boolean",
+      "description": "Overall build success status (true = no failures)"
+    }
+  },
+  "required": [
+    "timestamp",
+    "elapsed_sec",
+    "test_count",
+    "test_failed",
+    "modules_count",
+    "success"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "timestamp": "2026-02-28T03:05:12Z",
+      "elapsed_sec": 8.45,
+      "test_count": 127,
+      "test_failed": 0,
+      "modules_count": 12,
+      "success": true
+    },
+    {
+      "timestamp": "2026-02-28T03:10:22Z",
+      "elapsed_sec": 9.12,
+      "test_count": 127,
+      "test_failed": 2,
+      "modules_count": 12,
+      "success": false
+    }
+  ]
+}

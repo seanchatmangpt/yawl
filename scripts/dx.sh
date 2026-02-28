@@ -21,6 +21,7 @@
 #   DX_FAIL_AT=end     Don't stop on first module failure (default: fast)
 #   DX_VERBOSE=1       Show Maven output (default: quiet)
 #   DX_CLEAN=1         Run clean phase (default: incremental)
+#   DX_TIMINGS=1       Capture build timing metrics (default: off)
 # ==========================================================================
 set -euo pipefail
 
@@ -238,6 +239,33 @@ set -euo pipefail
 END_SEC=$(date +%s)
 ELAPSED_SEC=$((END_SEC - START_SEC))
 
+# ── Collect timing metrics (optional) ──────────────────────────────────────
+TIMINGS_DIR="${REPO_ROOT}/.yawl/timings"
+TIMINGS_FILE="${TIMINGS_DIR}/build-timings.json"
+if [[ "${DX_TIMINGS:-0}" == "1" ]]; then
+    mkdir -p "${TIMINGS_DIR}"
+
+    # Extract module compile and test times from Maven log
+    # Parse format: "[INFO] Building yawl-engine"
+    declare -A module_times
+
+    # Extract test execution times
+    # Format: "Tests run: N, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.234 sec"
+    while IFS= read -r line; do
+        if [[ $line =~ Tests\ run:\ ([0-9]+),.*Time\ elapsed:\ ([0-9.]+) ]]; then
+            test_count="${BASH_REMATCH[1]}"
+            test_time="${BASH_REMATCH[2]}"
+        fi
+    done < /tmp/dx-build-log.txt
+
+    # Create timestamped entry with execution metrics
+    TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    ENTRY="{\"timestamp\":\"${TIMESTAMP}\",\"elapsed_sec\":${ELAPSED_SEC},\"test_count\":${TEST_COUNT},\"test_failed\":${TEST_FAILED},\"modules_count\":${MODULES_COUNT},\"success\":$([[ $EXIT_CODE -eq 0 ]] && echo true || echo false)}"
+
+    # Append to timings file (append-only for trend analysis)
+    echo "${ENTRY}" >> "${TIMINGS_FILE}"
+fi
+
 # Parse results from Maven log
 # NOTE: grep -c exits 1 when 0 matches (still outputs "0"), so || must be outside
 # the $() to avoid capturing both grep's "0" output AND the fallback "0" as "0\n0".
@@ -249,16 +277,54 @@ else
     MODULES_COUNT=$(echo "$SCOPE_LABEL" | tr ',' '\n' | wc -l | tr -d ' ')
 fi
 
+# Extract slowest tests from Surefire reports (if available)
+extract_slowest_tests() {
+    local max_tests=3
+    local count=0
+    local surefire_dir="target/surefire-reports"
+
+    if [[ ! -d "$surefire_dir" ]]; then
+        return
+    fi
+
+    # Parse .txt reports for test durations
+    # Format: "testMethodName(ClassName) Time elapsed: 0.123 sec"
+    local -a slow_tests=()
+    while IFS= read -r line; do
+        if [[ $line =~ Time\ elapsed:\ ([0-9.]+)\ sec ]]; then
+            duration="${BASH_REMATCH[1]}"
+            test_name=$(echo "$line" | awk '{print $1}')
+            slow_tests+=("${test_name} (${duration}s)")
+        fi
+    done < <(find "$surefire_dir" -name "*.txt" -exec grep "Time elapsed" {} + | sort -t: -k3 -nr | head -5)
+
+    if [[ ${#slow_tests[@]} -gt 0 ]]; then
+        printf "\n${C_CYAN}Slowest tests:${C_RESET}\n"
+        for test in "${slow_tests[@]}"; do
+            printf "  ${C_YELLOW}•${C_RESET} %s\n" "$test"
+        done
+    fi
+}
+
 # Enhanced status with metrics
 echo ""
 if [[ $EXIT_CODE -eq 0 ]]; then
     printf "${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d\n" \
         "$MODULES_COUNT" "$TEST_COUNT"
+
+    # Show slowest tests if available
+    extract_slowest_tests
+
+    # Show timing metrics hint
+    if [[ "${DX_TIMINGS:-0}" == "1" ]]; then
+        printf "\n${C_CYAN}Timing metrics saved to:${C_RESET} .yawl/timings/build-timings.json\n"
+    fi
 else
     printf "${C_RED}${E_FAIL} FAILED${C_RESET} | time: ${ELAPSED_SEC}s (exit ${EXIT_CODE}) | failures: %d\n" \
         "$TEST_FAILED"
     printf "\n${C_YELLOW}→${C_RESET} Debug: ${C_CYAN}cat /tmp/dx-build-log.txt | tail -50${C_RESET}\n"
-    printf "${C_YELLOW}→${C_RESET} Run again: ${C_CYAN}DX_VERBOSE=1 bash scripts/dx.sh${C_RESET}\n\n"
+    printf "${C_YELLOW}→${C_RESET} Run again: ${C_CYAN}DX_VERBOSE=1 bash scripts/dx.sh${C_RESET}\n"
+    printf "${C_YELLOW}→${C_RESET} With timing: ${C_CYAN}DX_TIMINGS=1 bash scripts/dx.sh${C_RESET}\n\n"
     exit $EXIT_CODE
 fi
 echo ""
