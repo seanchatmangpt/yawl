@@ -103,12 +103,13 @@ public final class RoutingSlip {
                 return this;  // Already at end
             }
 
-            ActorRef visited = slip.removeFirst();  // Remove from slip
+            LinkedList<ActorRef> newSlip = new LinkedList<>(slip);
+            ActorRef visited = newSlip.removeFirst();  // Remove from copy
             List<String> newHistory = new ArrayList<>(history);
             newHistory.add(actorName + "#" + visited.id());
 
             return new Envelope(caseId, payload,
-                Collections.unmodifiableDeque(new LinkedList<>(slip)),
+                Collections.unmodifiableDeque(newSlip),
                 Collections.unmodifiableList(newHistory)
             );
         }
