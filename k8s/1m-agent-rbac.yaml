@@ -1,0 +1,134 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: 1m-agent
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: yawl
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: 1m-agent
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: yawl
+rules:
+  # Read ConfigMaps for configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["1m-agent-config", "yawl-engine-config"]
+
+  # Read Secrets for credentials
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+    resourceNames: ["yawl-credentials"]
+
+  # Read own pod metadata
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+    namespaceSelector:
+      matchLabels:
+        name: yawl
+
+  # List endpoints for service discovery
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+    namespaceSelector:
+      matchLabels:
+        name: yawl
+
+  # Read services for agent discovery
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch"]
+    namespaceSelector:
+      matchLabels:
+        name: yawl
+
+  # Create events for lifecycle logging
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+    namespaceSelector:
+      matchLabels:
+        name: yawl
+
+  # Metrics/monitoring (OpenTelemetry, Prometheus)
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+
+  # Read lease for distributed locking (optional)
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update"]
+    resourceNames: ["1m-agent-lease"]
+    namespaceSelector:
+      matchLabels:
+        name: yawl
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: 1m-agent
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 1m-agent
+subjects:
+  - kind: ServiceAccount
+    name: 1m-agent
+    namespace: yawl
+---
+# Optional: Role for namespace-scoped operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: 1m-agent
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: yawl
+rules:
+  # Update own pod annotations for status tracking
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["patch"]
+    resourceNames: ["pod-status-update"]
+
+  # Create/update ConfigMaps for agent coordination
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+    resourceNames: ["1m-agent-status"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: 1m-agent
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/part-of: yawl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 1m-agent
+subjects:
+  - kind: ServiceAccount
+    name: 1m-agent
+    namespace: yawl

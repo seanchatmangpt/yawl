@@ -1,0 +1,15 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: 1m-agent-pdb
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: disruption-budget
+    app.kubernetes.io/part-of: yawl
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 1m-agent
+  unhealthyPodEvictionPolicy: IfHealthyBudget
