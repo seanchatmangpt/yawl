@@ -24,6 +24,7 @@ import java.util.EnumMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 
 /**
@@ -34,9 +35,10 @@ import java.util.function.Consumer;
  * subscribers via a {@code newVirtualThreadPerTaskExecutor()} — no fixed thread pool
  * that could exhaust under load.</p>
  *
- * <p>Back-pressure: if a subscriber's buffer ({@link Flow#defaultBufferSize()} = 256 items)
- * fills up, {@link SubmissionPublisher#submit} blocks the publisher. At 1M cases this
- * should not occur; if it does, configure a larger buffer or use a Kafka adapter.</p>
+ * <p>Back-pressure: events use non-blocking {@link SubmissionPublisher#offer} with a drop
+ * policy. Ring buffer capacity is 32768 items per event type (128× headroom vs default 256).
+ * Dropped events are tracked per type and exposed via {@link #getDropCount(YEventType)} and
+ * {@link #getTotalDropCount()}. Publisher never blocks the caller.</p>
  *
  * <p>This implementation requires no external infrastructure. It ships with the engine
  * and is registered as the default provider in
@@ -48,28 +50,33 @@ import java.util.function.Consumer;
  */
 public final class FlowWorkflowEventBus implements WorkflowEventBus {
 
+    private static final int RING_BUFFER_CAPACITY = 32768;
+
     private final EnumMap<YEventType, SubmissionPublisher<WorkflowEvent>> _publishers;
+    private final EnumMap<YEventType, LongAdder> _dropCounters;
 
     /**
      * Creates a new {@code FlowWorkflowEventBus} with one publisher per event type.
      */
     public FlowWorkflowEventBus() {
         _publishers = new EnumMap<>(YEventType.class);
+        _dropCounters = new EnumMap<>(YEventType.class);
         for (YEventType type : YEventType.values()) {
             // Virtual-thread-per-task: never exhausts; lightweight for bursty workloads
             _publishers.put(type, new SubmissionPublisher<>(
                     Executors.newVirtualThreadPerTaskExecutor(),
-                    Flow.defaultBufferSize()
+                    RING_BUFFER_CAPACITY
             ));
+            _dropCounters.put(type, new LongAdder());
         }
     }
 
     /**
      * Publishes an event to all subscribers registered for its type.
      *
-     * <p>Uses {@link SubmissionPublisher#submit}, which blocks the caller if a
-     * subscriber's buffer is full (bounded back-pressure). For truly fire-and-forget
-     * semantics, replace with {@link SubmissionPublisher#offer} with a drop policy.</p>
+     * <p>Uses non-blocking {@link SubmissionPublisher#offer} with a drop policy: if the
+     * ring buffer is full, the event is dropped and the drop counter for this event type
+     * is incremented. The publisher never blocks the caller.</p>
      *
      * @param event the event; must not be {@code null}
      * @throws NullPointerException if event is null
@@ -79,7 +86,10 @@ public final class FlowWorkflowEventBus implements WorkflowEventBus {
         if (event == null) throw new NullPointerException("event must not be null");
         SubmissionPublisher<WorkflowEvent> publisher = _publishers.get(event.type());
         if (publisher != null) {
-            publisher.submit(event);
+            publisher.offer(event, (subscriber, dropped) -> {
+                _dropCounters.get(dropped.type()).increment();
+                return false;  // drop, never retry
+            });
         }
     }
 
@@ -103,6 +113,26 @@ public final class FlowWorkflowEventBus implements WorkflowEventBus {
         if (publisher != null) {
             publisher.subscribe(new WorkflowEventSubscriber(handler));
         }
+    }
+
+    /**
+     * Returns the number of events dropped for the specified type due to buffer overflow.
+     *
+     * @param type the event type
+     * @return the count of dropped events, or 0 if type is unknown
+     */
+    public long getDropCount(YEventType type) {
+        LongAdder counter = _dropCounters.get(type);
+        return counter != null ? counter.sum() : 0L;
+    }
+
+    /**
+     * Returns the total number of events dropped across all types.
+     *
+     * @return the aggregate drop count
+     */
+    public long getTotalDropCount() {
+        return _dropCounters.values().stream().mapToLong(LongAdder::sum).sum();
     }
 
     /**

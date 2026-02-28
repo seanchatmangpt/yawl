@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * This class is used by clients and servers to execute GET and POST requests
@@ -71,8 +72,21 @@ public class Interface_Client {
     private static final HttpConnectionPoolMetrics POOL_METRICS =
             HttpConnectionPoolMetrics.getInstance();
 
+    /**
+     * Hard ceiling on read timeout to prevent carrier threads from blocking
+     * indefinitely on slow upstream services. Set to 30 seconds to balance
+     * responsiveness with reasonable network conditions.
+     */
+    private static final Duration MAX_READ_TIMEOUT = Duration.ofSeconds(30);
+
     // allows the prevention of socket reads from blocking indefinitely
-    private static Duration READ_TIMEOUT = Duration.ofMillis(120000);  // default: 2 minutes
+    private static Duration READ_TIMEOUT = MAX_READ_TIMEOUT;
+
+    /**
+     * Counter for monitoring how often callers attempt to exceed the timeout ceiling.
+     * Used for observability and tuning the ceiling value in production.
+     */
+    private static final LongAdder _timeoutCeilingEnforcements = new LongAdder();
 
 
     /**
@@ -228,15 +242,26 @@ public class Interface_Client {
 
 
     /**
-     * Set the read timeout value for future connections
+     * Set the read timeout value for future connections. The timeout is capped
+     * at 30 seconds to prevent carrier threads from blocking indefinitely on
+     * slow upstream services.
+     *
      * @param timeout the timeout value in milliseconds. A value of 0 or less
-     *                means a read will wait indefinitely (up to default limit).
+     *                means a read will use the hard ceiling (30 seconds).
+     *                Values exceeding the ceiling are clamped to the ceiling
+     *                and a monitoring counter is incremented.
      */
     protected void setReadTimeout(int timeout) {
         if (timeout > 0) {
-            READ_TIMEOUT = Duration.ofMillis(timeout);
+            long maxMillis = MAX_READ_TIMEOUT.toMillis();
+            if (timeout > maxMillis) {
+                _timeoutCeilingEnforcements.increment();
+                READ_TIMEOUT = MAX_READ_TIMEOUT;
+            } else {
+                READ_TIMEOUT = Duration.ofMillis(timeout);
+            }
         } else {
-            READ_TIMEOUT = Duration.ofMillis(120000);  // 2 minute default
+            READ_TIMEOUT = MAX_READ_TIMEOUT;
         }
     }
 
@@ -281,6 +306,17 @@ public class Interface_Client {
      */
     public static HttpConnectionPoolMetrics getPoolMetrics() {
         return POOL_METRICS;
+    }
+
+    /**
+     * Returns the count of times callers have attempted to set a read timeout
+     * exceeding the 30-second hard ceiling. Used for observability to detect
+     * misconfiguration or upstream service degradation patterns.
+     *
+     * @return count of ceiling enforcement events
+     */
+    public static long getTimeoutCeilingEnforcements() {
+        return _timeoutCeilingEnforcements.sum();
     }
 
     // PRIVATE METHODS //

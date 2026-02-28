@@ -6,11 +6,13 @@ import org.yawlfoundation.yawl.exceptions.YAWLException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * A2A Case Monitor - Real implementation for case monitoring with A2A events.
@@ -40,6 +42,9 @@ public class A2ACaseMonitor {
     private final ReentrantLock _monitoringLock = new ReentrantLock();
 
     private ScheduledExecutorService scheduler;
+
+    // Timeout counter for monitoring cycles that exceed 4-second deadline
+    private final LongAdder _caseCheckTimeouts = new LongAdder();
 
     public A2ACaseMonitor(Object yawlEngine) {
         if (yawlEngine == null) {
@@ -211,47 +216,40 @@ public class A2ACaseMonitor {
     }
 
     /**
-     * Checks all cases in parallel using CompletableFuture.
+     * Checks all cases in parallel using StructuredTaskScope.
      * This improves performance when monitoring many cases.
+     * Uses a 4-second deadline to prevent indefinite blocking.
      */
     private void checkAllCasesInParallel(long now) {
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-        try {
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
+        try (var scope = StructuredTaskScope.open(
+                StructuredTaskScope.Joiner.awaitAll(),
+                config -> config.withTimeout(Duration.ofSeconds(4)))) {
 
             // Fork case monitoring for each active case
             for (Map.Entry<String, CaseState> entry : activeCases.entrySet()) {
                 String caseId = entry.getKey();
                 CaseState caseState = entry.getValue();
 
-                CompletableFuture<Void> future = CompletableFuture.runAsync(
-                    () -> checkSingleCase(caseId, caseState, now),
-                    executor
-                );
-                futures.add(future);
+                scope.fork(() -> {
+                    checkSingleCase(caseId, caseState, now);
+                    return null;
+                });
             }
 
-            // Wait for all case checks to complete
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(
-                futures.toArray(new CompletableFuture[0])
-            );
-            allFutures.get(); // This will throw if any task failed
+            // Wait for all case checks to complete (max 4 seconds)
+            scope.join();
 
-        } catch (ExecutionException e) {
-            _logger.error("Error in parallel case monitoring: {}", e.getMessage(), e);
+            // Check if timeout occurred
+            if (scope.isCancelled()) {
+                _caseCheckTimeouts.increment();
+                _logger.warn("Case monitoring cycle exceeded 4-second deadline");
+            }
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             _logger.warn("Case monitoring interrupted");
-        } finally {
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
+        } catch (Exception e) {
+            _logger.error("Error in parallel case monitoring: {}", e.getMessage(), e);
         }
     }
 
@@ -326,6 +324,16 @@ public class A2ACaseMonitor {
             _logger.warn("Unknown case event type: {}", eventType);
             return A2AEventPublisher.CaseEventType.CASE_ERROR;
         }
+    }
+
+    /**
+     * Get the count of case monitoring cycles that exceeded the 4-second deadline.
+     * Used for observability and alerting on monitoring performance.
+     *
+     * @return the number of timeout occurrences since monitor creation
+     */
+    public long getCaseCheckTimeouts() {
+        return _caseCheckTimeouts.sum();
     }
 
     /**

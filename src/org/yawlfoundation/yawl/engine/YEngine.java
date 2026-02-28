@@ -332,7 +332,7 @@ public class YEngine implements InterfaceADesign,
      * @param tasks the tasks to execute in parallel
      * @return results of all tasks in input order
      */
-    public static String[] executeParallel(TenantContext ctx, Callable<?>[] tasks) {
+    public static <T> T[] executeParallel(TenantContext ctx, Callable<T>[] tasks) {
         return ScopedTenantContext.runParallel(ctx, tasks);
     }
 

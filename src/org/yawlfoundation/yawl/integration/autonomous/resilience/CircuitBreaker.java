@@ -13,8 +13,10 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.resilience;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.Callable;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Circuit breaker pattern implementation for resilient service calls in the
@@ -30,8 +32,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * </ul>
  * </p>
  *
- * <p>Thread safety is ensured via {@link ReentrantLock} to support virtual threads
- * without pinning.</p>
+ * <p>Thread safety is ensured via {@link AtomicReference} with compare-and-swap (CAS)
+ * to eliminate carrier-thread blocking and support virtual threads efficiently.</p>
  *
  * <p>Typical usage:
  * <pre>
@@ -76,15 +78,37 @@ public class CircuitBreaker {
         }
     }
 
+    /**
+     * Internal sealed state hierarchy for atomic state transitions via CAS.
+     */
+    private sealed interface CircuitState permits Closed, Open, HalfOpen {}
+
+    /**
+     * CLOSED state: normal operation with failure counter.
+     *
+     * @param failures current consecutive failure count
+     */
+    private record Closed(int failures) implements CircuitState {}
+
+    /**
+     * OPEN state: rejecting calls, tracking when opened.
+     *
+     * @param openedAt instant when circuit transitioned to OPEN
+     * @param failures failure count that triggered the open
+     */
+    private record Open(Instant openedAt, int failures) implements CircuitState {}
+
+    /**
+     * HALF_OPEN state: testing if service recovered.
+     */
+    private record HalfOpen() implements CircuitState {}
+
     private final String name;
     private final int failureThreshold;
     private final long openDurationMs;
 
-    private final ReentrantLock lock = new ReentrantLock();
-
-    private State state = State.CLOSED;
-    private int consecutiveFailures = 0;
-    private long lastFailureTimeMs = 0;
+    private final AtomicReference<CircuitState> _state =
+            new AtomicReference<>(new Closed(0));
 
     /**
      * Constructs a circuit breaker with default settings.
@@ -152,63 +176,71 @@ public class CircuitBreaker {
             throw new IllegalArgumentException("operation must not be null");
         }
 
-        lock.lock();
-        try {
-            // Check if OPEN -> HALF_OPEN transition should occur
-            if (state == State.OPEN && System.currentTimeMillis() - lastFailureTimeMs >= openDurationMs) {
-                state = State.HALF_OPEN;
+        // Spin-loop: check state and transition OPEN -> HALF_OPEN if timeout elapsed
+        while (true) {
+            CircuitState current = _state.get();
+            switch (current) {
+                case Closed c -> {
+                    // CLOSED: proceed to execution
+                    break;
+                }
+                case HalfOpen h -> {
+                    // HALF_OPEN: proceed as probe
+                    break;
+                }
+                case Open o -> {
+                    // OPEN: check if recovery timeout has elapsed
+                    long elapsedMs = Duration.between(o.openedAt(), Instant.now()).toMillis();
+                    if (elapsedMs < openDurationMs) {
+                        // Timeout not elapsed, fast-fail
+                        throw new CircuitBreakerOpenException(name);
+                    }
+                    // Timeout elapsed, try transition OPEN -> HALF_OPEN
+                    if (_state.compareAndSet(current, new HalfOpen())) {
+                        break; // Transition succeeded, proceed as probe
+                    }
+                    // CAS failed (someone else transitioned), retry loop
+                    continue;
+                }
             }
-
-            // In OPEN state (and timeout not elapsed), reject the call
-            if (state == State.OPEN) {
-                throw new CircuitBreakerOpenException(name);
-            }
-
-            // Release lock during actual operation execution
-        } finally {
-            lock.unlock();
+            break; // Exit spin-loop, ready to execute
         }
 
-        // Execute the callable outside the lock to avoid pinning virtual threads
+        // Execute the callable outside the state machine to avoid pinning virtual threads
         try {
             T result = operation.call();
 
-            // On success, handle state transitions
-            lock.lock();
-            try {
-                if (state == State.HALF_OPEN) {
-                    // Recovery successful
-                    state = State.CLOSED;
-                    consecutiveFailures = 0;
-                    lastFailureTimeMs = 0;
-                } else if (state == State.CLOSED) {
-                    // Maintain success in CLOSED state
-                    consecutiveFailures = 0;
+            // On success, handle state transitions via CAS
+            while (true) {
+                CircuitState s = _state.get();
+                CircuitState next = switch (s) {
+                    case HalfOpen h -> new Closed(0);   // Recovery successful
+                    case Closed c -> new Closed(0);      // Success in CLOSED, reset failures
+                    case Open o -> s;                    // Should not happen after pre-check
+                };
+                if (s == next || _state.compareAndSet(s, next)) {
+                    break;
                 }
-            } finally {
-                lock.unlock();
             }
-
             return result;
         } catch (Exception e) {
-            // On failure, handle state transitions
-            lock.lock();
-            try {
-                lastFailureTimeMs = System.currentTimeMillis();
-
-                if (state == State.HALF_OPEN) {
-                    // Recovery failed, reopen
-                    state = State.OPEN;
-                } else if (state == State.CLOSED) {
-                    consecutiveFailures++;
-                    if (consecutiveFailures >= failureThreshold) {
-                        state = State.OPEN;
+            // On failure, handle state transitions via CAS
+            while (true) {
+                CircuitState s = _state.get();
+                CircuitState next = switch (s) {
+                    case HalfOpen h -> new Open(Instant.now(), failureThreshold);
+                    case Closed c -> {
+                        int newFailures = c.failures() + 1;
+                        yield newFailures >= failureThreshold
+                                ? new Open(Instant.now(), newFailures)
+                                : new Closed(newFailures);
                     }
+                    case Open o -> o;  // Already open, no state change on failure
+                };
+                if (s == next || _state.compareAndSet(s, next)) {
+                    break;
                 }
-            } finally {
-                lock.unlock();
             }
-
             throw e;
         }
     }
@@ -219,35 +251,33 @@ public class CircuitBreaker {
      * <p>Use this to restore the circuit without waiting for the recovery timeout.</p>
      */
     public void reset() {
-        lock.lock();
-        try {
-            state = State.CLOSED;
-            consecutiveFailures = 0;
-            lastFailureTimeMs = 0;
-        } finally {
-            lock.unlock();
-        }
+        _state.set(new Closed(0));
     }
 
     /**
      * Returns the current state of the circuit breaker.
      *
      * <p>If the circuit is OPEN and the recovery timeout has elapsed, this method
-     * will transition to HALF_OPEN.</p>
+     * will transition to HALF_OPEN via CAS.</p>
      *
      * @return the current {@link State}
      */
     public State getState() {
-        lock.lock();
-        try {
-            // Check and apply OPEN -> HALF_OPEN transition if applicable
-            if (state == State.OPEN && System.currentTimeMillis() - lastFailureTimeMs >= openDurationMs) {
-                state = State.HALF_OPEN;
+        CircuitState internal = _state.get();
+        return switch (internal) {
+            case Closed c -> State.CLOSED;
+            case HalfOpen h -> State.HALF_OPEN;
+            case Open o -> {
+                // Check if recovery timeout has elapsed
+                long elapsedMs = Duration.between(o.openedAt(), Instant.now()).toMillis();
+                if (elapsedMs >= openDurationMs) {
+                    // Attempt transition OPEN -> HALF_OPEN
+                    _state.compareAndSet(internal, new HalfOpen());
+                    yield State.HALF_OPEN;
+                }
+                yield State.OPEN;
             }
-            return state;
-        } finally {
-            lock.unlock();
-        }
+        };
     }
 
     /**
@@ -283,11 +313,10 @@ public class CircuitBreaker {
      * @return the consecutive failure count
      */
     public int getConsecutiveFailures() {
-        lock.lock();
-        try {
-            return consecutiveFailures;
-        } finally {
-            lock.unlock();
-        }
+        return switch (_state.get()) {
+            case Closed c -> c.failures();
+            case Open o -> o.failures();
+            case HalfOpen h -> 0;
+        };
     }
 }

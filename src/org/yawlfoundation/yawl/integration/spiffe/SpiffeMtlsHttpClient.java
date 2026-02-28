@@ -11,8 +11,10 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.*;
+import org.yawlfoundation.yawl.integration.ExternalCallGuard;
 
 /**
  * SPIFFE mTLS HTTP Client for YAWL
@@ -58,6 +60,12 @@ public class SpiffeMtlsHttpClient {
     private HttpClient httpClient;
 
     /**
+     * Lazily initialized SSL context, guarded with timeout.
+     * Null until first successful SPIFFE contact.
+     */
+    private final AtomicReference<SSLContext> _sslContext = new AtomicReference<>();
+
+    /**
      * Create mTLS client with automatic SPIFFE detection
      */
     public SpiffeMtlsHttpClient() {
@@ -88,27 +96,24 @@ public class SpiffeMtlsHttpClient {
     }
 
     /**
-     * Create HTTP client with optional mTLS configuration
+     * Create HTTP client with optional mTLS configuration.
+     * SSL context creation is deferred to first use via lazy initialization.
      */
     private HttpClient createHttpClient() {
         HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(connectTimeout)
                 .executor(Executors.newVirtualThreadPerTaskExecutor());
 
-        if (spiffeAvailable && spiffeClient != null) {
-            try {
-                SSLContext sslContext = createSpiffeSslContext();
-                builder.sslContext(sslContext);
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to create SSL context with SPIFFE", e);
-            }
-        }
+        // Note: SSL context is NOT set here. It will be lazily initialized
+        // on first request via getOrCreateSslContext() to avoid blocking
+        // the constructor if SPIRE Agent is unavailable at startup.
 
         return builder.build();
     }
 
     /**
-     * Create SSL context configured with SPIFFE X.509 SVID
+     * Create SSL context configured with SPIFFE X.509 SVID.
+     * This is called only on first request (lazy initialization), guarded by timeout.
      */
     private SSLContext createSpiffeSslContext() throws Exception {
         SpiffeWorkloadIdentity identity = spiffeClient.getValidIdentity();
@@ -140,7 +145,43 @@ public class SpiffeMtlsHttpClient {
     }
 
     /**
-     * Perform HTTP POST with mTLS
+     * Get or lazily initialize the SSL context with timeout protection.
+     * Uses ExternalCallGuard to protect against SPIRE Agent unavailability.
+     *
+     * @return SSLContext configured with SPIFFE SVID, or null if SPIFFE unavailable
+     * @throws IOException if SPIRE contact times out and no fallback available
+     */
+    private SSLContext getOrCreateSslContext() throws IOException {
+        SSLContext existing = _sslContext.get();
+        if (existing != null) {
+            return existing;
+        }
+
+        if (!spiffeAvailable || spiffeClient == null) {
+            return null;
+        }
+
+        try {
+            SSLContext fresh = ExternalCallGuard.<SSLContext>withTimeout(Duration.ofSeconds(10))
+                .build()
+                .execute(this::createSpiffeSslContext);
+
+            _sslContext.compareAndSet(null, fresh);
+            return _sslContext.get();
+        } catch (Exception e) {
+            if (e instanceof IOException ioe) {
+                throw ioe;
+            }
+            throw new IOException(
+                "Failed to initialize SPIFFE SSL context within 10 seconds. " +
+                "Ensure SPIRE Agent is running and accessible.",
+                e);
+        }
+    }
+
+    /**
+     * Perform HTTP POST with optional mTLS.
+     * SSL context is lazily initialized on first request.
      *
      * @param url Target URL
      * @param body Request body
@@ -149,6 +190,20 @@ public class SpiffeMtlsHttpClient {
      * @throws IOException if request fails
      */
     public String post(String url, String body, String contentType) throws IOException {
+        // Ensure SSL context is initialized if SPIFFE is available
+        if (spiffeAvailable) {
+            SSLContext sslContext = getOrCreateSslContext();
+            if (sslContext != null && _sslContext.get() == null) {
+                _sslContext.set(sslContext);
+                // Rebuild HTTP client with SSL context on first successful SPIFFE contact
+                this.httpClient = HttpClient.newBuilder()
+                        .connectTimeout(connectTimeout)
+                        .sslContext(sslContext)
+                        .executor(Executors.newVirtualThreadPerTaskExecutor())
+                        .build();
+            }
+        }
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(readTimeout)
@@ -167,13 +222,28 @@ public class SpiffeMtlsHttpClient {
     }
 
     /**
-     * Perform HTTP GET with mTLS
+     * Perform HTTP GET with optional mTLS.
+     * SSL context is lazily initialized on first request.
      *
      * @param url Target URL
      * @return Response body
      * @throws IOException if request fails
      */
     public String get(String url) throws IOException {
+        // Ensure SSL context is initialized if SPIFFE is available
+        if (spiffeAvailable) {
+            SSLContext sslContext = getOrCreateSslContext();
+            if (sslContext != null && _sslContext.get() == null) {
+                _sslContext.set(sslContext);
+                // Rebuild HTTP client with SSL context on first successful SPIFFE contact
+                this.httpClient = HttpClient.newBuilder()
+                        .connectTimeout(connectTimeout)
+                        .sslContext(sslContext)
+                        .executor(Executors.newVirtualThreadPerTaskExecutor())
+                        .build();
+            }
+        }
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(readTimeout)
@@ -240,6 +310,16 @@ public class SpiffeMtlsHttpClient {
      */
     public boolean isSpiffeAvailable() {
         return spiffeAvailable;
+    }
+
+    /**
+     * Check if SPIFFE SSL context has been successfully initialized.
+     * Returns false if SPIFFE is not available or not yet initialized.
+     *
+     * @return true if SSL context is ready for use
+     */
+    public boolean isSpiffeReady() {
+        return _sslContext.get() != null;
     }
 
     /**

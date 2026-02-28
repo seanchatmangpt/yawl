@@ -138,6 +138,8 @@
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
+                        <!-- Test files under src/test/ require JUnit which is test-scope only -->
+                        <exclude>**/test/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
