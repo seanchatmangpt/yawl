@@ -135,7 +135,7 @@ public class AnomalyForensicsEngine {
                 structuredLog.error("anomaly_forensics_error", Map.of(
                         "error", e.getMessage(),
                         "metric", anomalyEvent.metricName()
-                ));
+                ), e);
             }
         });
     }

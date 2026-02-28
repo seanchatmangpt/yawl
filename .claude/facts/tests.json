@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-tests-facts.sh",
+  "data": {
+    "test_files_count": 28,
+    "test_classes_count": 35,
+    "test_methods_count": 156,
+    "coverage_percentage": 87.5,
+    "test_framework": "JUnit 5",
+    "integration_tests": 12,
+    "unit_tests": 16
+  }
+}

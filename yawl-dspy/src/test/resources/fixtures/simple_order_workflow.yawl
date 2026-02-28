@@ -1,0 +1,116 @@
+<yawl:YAWL xmlns:yawl="http://www.yawlfoundation.org/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.yawlfoundation.org/yawl http://www.yawlfoundation.org/yawl/yawl.xsd">
+    <specification id="simple_order_workflow" name="Simple Order Processing" version="1.0">
+        <process id="simple_order_process" name="Simple Order Process" net="simple_order_net"/>
+        <nets>
+            <net id="simple_order_net" name="Simple Order Net">
+                <places>
+                    <place id="start" name="Start" in="true"/>
+                    <place id="validated" name="Order Validated"/>
+                    <place id="invalid" name="Order Invalid"/>
+                    <place id="processed" name="Order Processed"/>
+                    <place id="cancelled" name="Order Cancelled"/>
+                    <place id="end" name="End" out="true"/>
+                </places>
+
+                <transitions>
+                    <transition id="validate_order" name="Validate Order">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="process_order" name="Process Order">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="cancel_order" name="Cancel Order">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+                </transitions>
+
+                <flows>
+                    <flow id="flow1" from="start" to="validate_order" type="normal"/>
+                    <flow id="flow2" from="validate_order" to="validated" type="normal"/>
+                    <flow id="flow3" from="validate_order" to="invalid" type="normal"/>
+                    <flow id="flow4" from="validated" to="process_order" type="normal"/>
+                    <flow id="flow5" from="invalid" to="cancel_order" type="normal"/>
+                    <flow id="flow6" from="process_order" to="processed" type="normal"/>
+                    <flow id="flow7" from="processed" to="end" type="normal"/>
+                    <flow id="flow8" from="cancel_order" to="cancelled" type="normal"/>
+                    <flow id="flow9" from="cancelled" to="end" type="normal"/>
+                </flows>
+
+                <inputs>
+                    <join id="j_validate" type="and">
+                        <input-flow id="ij1" from="start" to="j_validate"/>
+                        <output-flow id="oj1" from="j_validate" to="validate_order"/>
+                    </join>
+                </inputs>
+
+                <outputs>
+                    <split id="s_validate" type="xor">
+                        <input-flow id="is1" from="validate_order" to="s_validate"/>
+                        <output-flow id="os1" from="s_validate" to="validated"/>
+                        <output-flow id="os2" from="s_validate" to="invalid"/>
+                    </split>
+
+                    <split id="s_process" type="xor">
+                        <input-flow id="is2" from="process_order" to="s_process"/>
+                        <output-flow id="os3" from="s_process" to="processed"/>
+                    </split>
+
+                    <split id="s_cancel" type="xor">
+                        <input-flow id="is3" from="cancel_order" to="s_cancel"/>
+                        <output-flow id="os4" from="s_cancel" to="cancelled"/>
+                    </split>
+                </outputs>
+
+                <decomposition>
+                    <net xsi:nil="true"/>
+                </decomposition>
+
+                <hidding>
+                    <from xsi:nil="true"/>
+                    <to xsi:nil="true"/>
+                </hidding>
+
+                <exportcondition></exportcondition>
+                <importcondition></importcondition>
+                <exporttype>none</exporttype>
+                <importtype>none</importtype>
+            </net>
+        </nets>
+
+        <datatypes>
+            <type id="string" name="string" kind="atomic"/>
+            <type id="integer" name="integer" kind="atomic"/>
+            <type id="boolean" name="boolean" kind="atomic"/>
+        </datatypes>
+    </specification>
+</yawl:YAWL>

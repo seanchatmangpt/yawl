@@ -1,0 +1,319 @@
+{
+  "workflow": {
+    "id": "order_processing_generated",
+    "name": "Order Processing Workflow (Generated)",
+    "version": "1.0.0",
+    "namespace": "org.yawlfoundation.yawl.dspy.orders",
+    "author": "Generated Implementation",
+    "description": "Generated order processing workflow for footprint agreement testing with DSPy optimization"
+  },
+  "net": {
+    "places": [
+      {
+        "id": "start",
+        "name": "Start",
+        "type": "input",
+        "capacity": 1
+      },
+      {
+        "id": "validate_order",
+        "name": "Validate Order",
+        "type": "task",
+        "capacity": 1
+      },
+      {
+        "id": "check_inventory",
+        "name": "Check Inventory",
+        "type": "task",
+        "capacity": 1
+      },
+      {
+        "id": "inventory_available",
+        "name": "Inventory Available",
+        "type": "condition",
+        "capacity": 1
+      },
+      {
+        "id": "inventory_unavailable",
+        "name": "Inventory Unavailable",
+        "type": "condition",
+        "capacity": 1
+      },
+      {
+        "id": "process_payment",
+        "name": "Process Payment",
+        "type": "task",
+        "capacity": 1
+      },
+      {
+        "id": "payment_successful",
+        "name": "Payment Successful",
+        "type": "condition",
+        "capacity": 1
+      },
+      {
+        "id": "payment_failed",
+        "name": "Payment Failed",
+        "type": "condition",
+        "capacity": 1
+      },
+      {
+        "id": "ship_order",
+        "name": "Ship Order",
+        "type": "task",
+        "capacity": 1
+      },
+      {
+        "id": "send_notification",
+        "name": "Send Notification",
+        "type": "task",
+        "capacity": 1
+      },
+      {
+        "id": "cancel_order",
+        "name": "Cancel Order",
+        "type": "task",
+        "capacity": 1
+      },
+      {
+        "id": "end_success",
+        "name": "End Success",
+        "type": "output",
+        "capacity": 1
+      },
+      {
+        "id": "end_failure",
+        "name": "End Failure",
+        "type": "output",
+        "capacity": 1
+      }
+    ],
+    "transitions": [
+      {
+        "id": "t_validate",
+        "name": "Validate Order",
+        "type": "atomic",
+        "join_mode": "and",
+        "split_mode": "xor"
+      },
+      {
+        "id": "t_check_inventory",
+        "name": "Check Inventory",
+        "type": "atomic",
+        "join_mode": "and",
+        "split_mode": "xor"
+      },
+      {
+        "id": "t_process_payment",
+        "name": "Process Payment",
+        "type": "atomic",
+        "join_mode": "and",
+        "split_mode": "xor"
+      },
+      {
+        "id": "t_ship_order",
+        "name": "Ship Order",
+        "type": "atomic",
+        "join_mode": "and",
+        "split_mode": "xor"
+      },
+      {
+        "id": "t_send_notification",
+        "name": "Send Notification",
+        "type": "atomic",
+        "join_mode": "and",
+        "split_mode": "and"
+      },
+      {
+        "id": "t_cancel_order",
+        "name": "Cancel Order",
+        "type": "atomic",
+        "join_mode": "and",
+        "split_mode": "xor"
+      }
+    ],
+    "flows": [
+      {
+        "source": "start",
+        "target": "t_validate"
+      },
+      {
+        "source": "t_validate",
+        "target": "validate_order"
+      },
+      {
+        "source": "validate_order",
+        "target": "t_check_inventory"
+      },
+      {
+        "source": "t_check_inventory",
+        "target": "check_inventory"
+      },
+      {
+        "source": "check_inventory",
+        "target": "inventory_available"
+      },
+      {
+        "source": "check_inventory",
+        "target": "inventory_unavailable"
+      },
+      {
+        "source": "inventory_available",
+        "target": "t_process_payment"
+      },
+      {
+        "source": "inventory_unavailable",
+        "target": "t_cancel_order"
+      },
+      {
+        "source": "t_process_payment",
+        "target": "process_payment"
+      },
+      {
+        "source": "process_payment",
+        "target": "payment_successful"
+      },
+      {
+        "source": "process_payment",
+        "target": "payment_failed"
+      },
+      {
+        "source": "payment_successful",
+        "target": "t_ship_order"
+      },
+      {
+        "source": "payment_failed",
+        "target": "t_cancel_order"
+      },
+      {
+        "source": "t_ship_order",
+        "target": "ship_order"
+      },
+      {
+        "source": "ship_order",
+        "target": "t_send_notification"
+      },
+      {
+        "source": "t_send_notification",
+        "target": "send_notification"
+      },
+      {
+        "source": "send_notification",
+        "target": "end_success"
+      },
+      {
+        "source": "t_cancel_order",
+        "target": "cancel_order"
+      },
+      {
+        "source": "cancel_order",
+        "target": "t_send_notification"
+      }
+    ]
+  },
+  "performance_metrics": {
+    "total_transitions": 6,
+    "total_places": 13,
+    "cyclomatic_complexity": 8,
+    "coupling_coefficient": 0.67,
+    "cohesion_measure": 0.85,
+    "response_time_ms": {
+      "validate_order": 120,
+      "check_inventory": 350,
+      "process_payment": 800,
+      "ship_order": 2000,
+      "send_notification": 150,
+      "cancel_order": 300
+    },
+    "resource_utilization": {
+      "cpu_percent": 45,
+      "memory_mb": 128,
+      "concurrent_threads": 4
+    },
+    "error_rates": {
+      "validation_errors": 0.02,
+      "payment_failures": 0.1,
+      "shipping_failures": 0.05,
+      "notification_failures": 0.01
+    },
+    "throughput": {
+      "orders_per_hour": 120,
+      "success_rate": 0.88,
+      "avg_processing_time_minutes": 4.2
+    }
+  },
+  "behavioral_footprint": {
+    "reachable_states": 15,
+    "live_transitions": 6,
+    "soundness": {
+      "is_sound": true,
+      "has_deadlocks": false,
+      "has_livelocks": false
+    },
+    "liveness": {
+      "progress_measure": 8,
+      "coverability_tree_depth": 5
+    },
+    "invariants": [
+      {
+        "type": "place_invariant",
+        "expression": "M(start) + M(end_success) + M(end_failure) = 1",
+        "description": "Total tokens in output places equals 1"
+      }
+    ]
+  },
+  "dspy_optimizations": {
+    "workflow_patterns": [
+      "Multiple Choice",
+      "S-Sequence",
+      "S-Parallel",
+      "X-OR"
+    ],
+    "routing_strategy": "probability_based",
+    "optimization_metrics": {
+      "reduced_states": 0,
+      "optimization_score": 0.95,
+      "execution_efficiency": 0.92
+    }
+  },
+  "test_scenarios": [
+    {
+      "name": "Normal Order Processing",
+      "initial_state": ["start"],
+      "expected_path": [
+        "validate_order",
+        "check_inventory",
+        "process_payment",
+        "ship_order",
+        "send_notification",
+        "end_success"
+      ],
+      "success_probability": 0.88
+    },
+    {
+      "name": "Inventory Unavailable",
+      "initial_state": ["start"],
+      "expected_path": [
+        "validate_order",
+        "check_inventory",
+        "cancel_order",
+        "send_notification",
+        "end_failure"
+      ],
+      "success_probability": 0.12
+    },
+    {
+      "name": "Payment Failed",
+      "initial_state": ["start"],
+      "expected_path": [
+        "validate_order",
+        "check_inventory",
+        "process_payment",
+        "cancel_order",
+        "send_notification",
+        "end_failure"
+      ],
+      "success_probability": 0.06
+    }
+  ]
+}

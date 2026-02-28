@@ -76,7 +76,7 @@
        3. S3 miss → Full build (60-90s)
     ───────────────────────────────────────────────────────────────────────────→
   -->
-  <remote enabled="false" id="yawl-s3-cache">
+  <remote enabled="true" id="yawl-s3-cache">
 
     <!-- S3 endpoint (AWS or MinIO) -->
     <url>${YAWL_S3_ENDPOINT:-s3.amazonaws.com}</url>
@@ -88,6 +88,8 @@
     <region>${YAWL_S3_REGION:-us-east-1}</region>
 
     <!-- HTTP transport configuration -->
+    <!-- NOTE: <transport>http</transport> removed - not valid in Maven build cache XML schema -->
+    <!-- Transport is determined automatically from the URL scheme -->
 
     <!-- Request timeout (30 seconds) -->
     <timeout>30000</timeout>

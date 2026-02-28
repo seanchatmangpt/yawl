@@ -39,12 +39,49 @@
             <version>6.0.0-GA</version>
         </dependency>
 
+        <!-- yawl-elements: YNet, YDecomposition, domain model -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-elements</artifactId>
+            <version>6.0.0-GA</version>
+        </dependency>
+
         <!-- yawl-monitoring: AnomalyDetector, BottleneckDetector, StructuredLogger -->
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-monitoring</artifactId>
             <version>6.0.0-GA</version>
         </dependency>
+
+        <!-- yawl-integration: MCP and A2A integration -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-integration</artifactId>
+            <version>6.0.0-GA</version>
+        </dependency>
+
+        <!-- yawl-resourcing: Resource allocation -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-resourcing</artifactId>
+            <version>6.0.0-GA</version>
+        </dependency>
+
+        <!-- yawl-worklet: RdrSet, RdrEvaluator -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-worklet</artifactId>
+            <version>6.0.0-GA</version>
+        </dependency>
+
+        <!-- MCP SDK for Model Context Protocol (from yawl-integration) - temporarily commented out -->
+        <!--
+        <dependency>
+            <groupId>io.modelcontextprotocol</groupId>
+            <artifactId>mcp</artifactId>
+            <version>0.4.0</version>
+        </dependency>
+        -->
 
         <!-- GraalVM Polyglot API -->
         <dependency>
@@ -150,9 +187,7 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>../src</sourceDirectory>
-        <testSourceDirectory>../test</testSourceDirectory>
-
+        <!-- Standard Maven layout: src/main/java and src/test/java -->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -161,12 +196,6 @@
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                     </compilerArgs>
-                    <includes>
-                        <include>**/org/yawlfoundation/yawl/dspy/**</include>
-                    </includes>
-                    <testIncludes>
-                        <testInclude>**/org/yawlfoundation/yawl/dspy/**</testInclude>
-                    </testIncludes>
                 </configuration>
             </plugin>
 

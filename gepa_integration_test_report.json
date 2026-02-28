@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-02-28T09:11:52.362299Z",
+  "dspy_available": false,
+  "test_results": {
+    "gepa_optimizer": true,
+    "dspy_gepa_generator": false,
+    "dspy_integration": false,
+    "graalpy_compatibility": true
+  },
+  "passed": 2,
+  "total": 4,
+  "status": "PARTIAL"
+}

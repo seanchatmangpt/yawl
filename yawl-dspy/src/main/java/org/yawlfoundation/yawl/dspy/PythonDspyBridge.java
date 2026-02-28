@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.dspy.adaptation.AdaptationAction;
 import org.yawlfoundation.yawl.dspy.adaptation.WorkflowAdaptationContext;
+import org.yawlfoundation.yawl.dspy.adaptation.*;
 import org.yawlfoundation.yawl.dspy.forensics.AnomalyContext;
 import org.yawlfoundation.yawl.dspy.forensics.ForensicsReport;
 import org.yawlfoundation.yawl.dspy.resources.ResourcePrediction;
@@ -31,6 +32,7 @@ import org.yawlfoundation.yawl.dspy.resources.ResourcePredictionContext;
 import org.yawlfoundation.yawl.dspy.worklets.WorkletSelection;
 import org.yawlfoundation.yawl.dspy.worklets.WorkletSelectionContext;
 import org.yawlfoundation.yawl.graalpy.PythonException;
+import org.yawlfoundation.yawl.graalpy.PythonException.ErrorKind;
 import org.yawlfoundation.yawl.graalpy.PythonExecutionEngine;
 import org.yawlfoundation.yawl.graalpy.TypeMarshaller;
 
@@ -208,7 +210,7 @@ public final class PythonDspyBridge {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error executing DSPy program '{}': {}", program.name(), e.getMessage(), e);
-            throw new PythonException("DSPy execution failed: " + e.getMessage(), e);
+            throw new PythonException("DSPy execution failed: " + e.getMessage(), ErrorKind.RUNTIME_ERROR, e);
         }
     }
 
@@ -241,7 +243,7 @@ public final class PythonDspyBridge {
         // (Heuristic: look for "class ClassName(dspy.Module):" pattern)
         String className = extractMainClassName(program.source());
         if (className == null) {
-            throw new PythonException("Could not find dspy.Module class in program source");
+            throw new PythonException("Could not find dspy.Module class in program source", ErrorKind.SYNTAX_ERROR);
         }
 
         // Step 3: Instantiate the DSPy module
@@ -298,7 +300,7 @@ public final class PythonDspyBridge {
         // Retrieve and convert the result
         @Nullable Object result = engine.eval("__dspy_result");
         if (result == null) {
-            throw new PythonException("DSPy forward() returned null");
+            throw new PythonException("DSPy forward() returned null", ErrorKind.RUNTIME_ERROR);
         }
 
         if (result instanceof Map<?, ?> resultMap) {
@@ -483,7 +485,7 @@ public final class PythonDspyBridge {
 
             // Validate result
             if (selectedWorkletId.isBlank()) {
-                throw new PythonException("DSPy returned empty worklet_id");
+                throw new PythonException("DSPy returned empty worklet_id", ErrorKind.RUNTIME_ERROR);
             }
 
             WorkletSelection selection = new WorkletSelection(
@@ -503,7 +505,7 @@ public final class PythonDspyBridge {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error in worklet selection: {}", e.getMessage(), e);
-            throw new PythonException("Worklet selection failed: " + e.getMessage(), e);
+            throw new PythonException("Worklet selection failed: " + e.getMessage(), ErrorKind.RUNTIME_ERROR, e);
         }
     }
 
@@ -577,7 +579,7 @@ public final class PythonDspyBridge {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error in forensics analysis: {}", e.getMessage(), e);
-            throw new PythonException("Forensics analysis failed: " + e.getMessage(), e);
+            throw new PythonException("Forensics analysis failed: " + e.getMessage(), ErrorKind.RUNTIME_ERROR, e);
         }
     }
 
@@ -637,26 +639,26 @@ public final class PythonDspyBridge {
             String defaultTask = context.enabledTasks().isEmpty() ? "unknown" : context.enabledTasks().get(0);
 
             AdaptationAction action = switch (actionType.toUpperCase()) {
-                case "SKIP_TASK" -> new AdaptationAction.SkipTask(
+                case "SKIP_TASK" -> new SkipTask(
                         extractString(result, "task_id", defaultTask),
                         reasoning
                 );
-                case "ADD_RESOURCE" -> new AdaptationAction.AddResource(
+                case "ADD_RESOURCE" -> new AddResource(
                         extractString(result, "agent_id", "agent-default"),
                         extractString(result, "task_id", defaultTask),
                         reasoning
                 );
-                case "REROUTE" -> new AdaptationAction.ReRoute(
+                case "REROUTE" -> new ReRoute(
                         extractString(result, "task_id", defaultTask),
                         extractString(result, "alternate_route", "default-path"),
                         reasoning
                 );
-                case "ESCALATE" -> new AdaptationAction.EscalateCase(
+                case "ESCALATE" -> new EscalateCase(
                         context.caseId(),
                         extractString(result, "escalation_level", "manager"),
                         reasoning
                 );
-                default -> new AdaptationAction.EscalateCase(
+                default -> new EscalateCase(
                         context.caseId(),
                         "manager",
                         "Unknown action type: " + actionType
@@ -672,7 +674,7 @@ public final class PythonDspyBridge {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error in ReAct agent: {}", e.getMessage(), e);
-            throw new PythonException("ReAct agent failed: " + e.getMessage(), e);
+            throw new PythonException("ReAct agent failed: " + e.getMessage(), ErrorKind.RUNTIME_ERROR, e);
         }
     }
 
@@ -788,7 +790,7 @@ public final class PythonDspyBridge {
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
             log.error("Unexpected error during bootstrap after {}ms: {}", duration, e.getMessage(), e);
-            throw new PythonException("Bootstrap compilation failed: " + e.getMessage(), e);
+            throw new PythonException("Bootstrap compilation failed: " + e.getMessage(), ErrorKind.RUNTIME_ERROR, e);
         }
     }
 
@@ -864,7 +866,7 @@ public final class PythonDspyBridge {
 
             // Validate result
             if (predictedAgentId.isBlank()) {
-                throw new PythonException("DSPy returned empty best_agent_id");
+                throw new PythonException("DSPy returned empty best_agent_id", ErrorKind.RUNTIME_ERROR);
             }
 
             ResourcePrediction prediction = new ResourcePrediction(
@@ -884,7 +886,7 @@ public final class PythonDspyBridge {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error in resource routing prediction: {}", e.getMessage(), e);
-            throw new PythonException("Resource routing prediction failed: " + e.getMessage(), e);
+            throw new PythonException("Resource routing prediction failed: " + e.getMessage(), ErrorKind.RUNTIME_ERROR, e);
         }
     }
 

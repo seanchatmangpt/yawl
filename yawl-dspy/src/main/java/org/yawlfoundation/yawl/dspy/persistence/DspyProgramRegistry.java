@@ -221,7 +221,7 @@ public final class DspyProgramRegistry {
             } else if (result != null) {
                 output = Map.of("result", result);
             } else {
-                throw new PythonException("DSPy program returned null result");
+                throw new PythonException("DSPy program returned null result", org.yawlfoundation.yawl.graalpy.PythonException.ErrorKind.RUNTIME_ERROR);
             }
 
             // Build metrics
@@ -246,7 +246,7 @@ public final class DspyProgramRegistry {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error executing DSPy program '{}': {}", program.name(), e.getMessage(), e);
-            throw new PythonException("DSPy execution failed: " + e.getMessage(), e);
+            throw new PythonException("DSPy execution failed: " + e.getMessage(), PythonException.ErrorKind.RUNTIME_ERROR);
         }
     }
 

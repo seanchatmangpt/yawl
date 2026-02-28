@@ -192,34 +192,44 @@ public final class RuntimeAdaptationAgent {
      * @param context the workflow context (for logging/audit)
      */
     private void applyAdaptation(AdaptationAction action, WorkflowAdaptationContext context) {
-        try {
-            switch (action) {
-                case AdaptationAction.SkipTask skip -> {
-                    log.info("Applying SkipTask action: taskId={}, reason={}", skip.taskId(), skip.reason());
-                    netRunner.skipTask(skip.taskId());
-                }
-
-                case AdaptationAction.AddResource add -> {
-                    log.info("Applying AddResource action: agentId={}, taskId={}, reason={}",
-                            add.agentId(), add.taskId(), add.reason());
-                    netRunner.addResourceToTask(add.agentId(), add.taskId());
-                }
-
-                case AdaptationAction.ReRoute route -> {
-                    log.info("Applying ReRoute action: taskId={}, alternateRoute={}, reason={}",
-                            route.taskId(), route.alternateRoute(), route.reason());
-                    netRunner.reroute(route.taskId(), route.alternateRoute());
-                }
-
-                case AdaptationAction.EscalateCase escalate -> {
-                    log.info("Applying EscalateCase action: caseId={}, escalationLevel={}, reason={}",
-                            escalate.caseId(), escalate.escalationLevel(), escalate.reason());
-                    netRunner.escalateCase(escalate.caseId(), escalate.escalationLevel());
-                }
+        // Per Q invariants: real_impl ∨ throw UnsupportedOperationException
+        // These adaptation methods require integration with YAWL's worklet service
+        // and resource management systems. See IMPLEMENTATION_GUIDE.md for details.
+        switch (action) {
+            case SkipTask skip -> {
+                log.info("SkipTask action recommended: taskId={}, reason={}", skip.taskId(), skip.reason());
+                throw new UnsupportedOperationException(
+                    "SkipTask adaptation requires worklet service integration. " +
+                    "Task: " + skip.taskId() + ", Reason: " + skip.reason() + ". " +
+                    "See YawlWorkletServiceAdapter for implementation guidance.");
             }
-        } catch (Exception e) {
-            log.error("Error applying adaptation action {} to case {}: {}",
-                    action.getClass().getSimpleName(), context.caseId(), e.getMessage(), e);
+
+            case AddResource add -> {
+                log.info("AddResource action recommended: agentId={}, taskId={}, reason={}",
+                        add.agentId(), add.taskId(), add.reason());
+                throw new UnsupportedOperationException(
+                    "AddResource adaptation requires resource service integration. " +
+                    "Agent: " + add.agentId() + ", Task: " + add.taskId() + ". " +
+                    "See ResourceManager integration for implementation guidance.");
+            }
+
+            case ReRoute route -> {
+                log.info("ReRoute action recommended: taskId={}, alternateRoute={}, reason={}",
+                        route.taskId(), route.alternateRoute(), route.reason());
+                throw new UnsupportedOperationException(
+                    "ReRoute adaptation requires workflow path manipulation. " +
+                    "Task: " + route.taskId() + ", Alternate: " + route.alternateRoute() + ". " +
+                    "See YNetRunner extension for implementation guidance.");
+            }
+
+            case EscalateCase escalate -> {
+                log.info("EscalateCase action recommended: caseId={}, escalationLevel={}, reason={}",
+                        escalate.caseId(), escalate.escalationLevel(), escalate.reason());
+                throw new UnsupportedOperationException(
+                    "EscalateCase adaptation requires escalation queue integration. " +
+                    "Case: " + escalate.caseId() + ", Level: " + escalate.escalationLevel() + ". " +
+                    "See EscalationService integration for implementation guidance.");
+            }
         }
     }
 

@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-duplicates-facts.sh",
+  "data": {
+    "total_java_files": 142,
+    "duplicate_code_groups": 0,
+    "similar_class_names": [],
+    "duplicate_percentage": 0
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-02-28T11:52:30Z",
+  "generator": "generate-integration-facts.sh",
+  "data": {
+    "total_integration_files": 0,
+    "endpoints": [],
+    "integration_patterns": [],
+    "supported_protocols": [],
+    "endpoint_classes_count": 0
+  }
+}

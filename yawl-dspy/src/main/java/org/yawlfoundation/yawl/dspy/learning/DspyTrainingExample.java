@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.dspy.learning;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
@@ -31,8 +32,10 @@ import java.util.Objects;
  * used to train DSPy programs via bootstrap compilation. Each example maps
  * a natural language workflow description to a compiled POWL JSON output.</p>
  *
- * @param input    Natural language workflow description (from YWorkItem metadata)
- * @param output   Compiled POWL JSON representation (expected or achieved output)
+ * @param input      Natural language workflow description (from YWorkItem metadata)
+ * @param output     Compiled POWL JSON representation (expected or achieved output)
+ * @param metadata   Additional metadata about the training example source
+ * @param qualityScore Quality score between 0.0 and 1.0 for GEPA optimization
  *
  * @author YAWL Foundation
  * @version 6.0.0
@@ -42,10 +45,52 @@ public record DspyTrainingExample(
         String input,
 
         @JsonProperty("output")
-        Map<String, Object> output
+        Map<String, Object> output,
+
+        @JsonProperty("metadata")
+        Map<String, Object> metadata,
+
+        @JsonProperty("qualityScore")
+        double qualityScore
 ) implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Legacy alias for the input field.
+     *
+     * @return The workflow description/id
+     */
+    public String id() {
+        return input;
+    }
+
+    /**
+     * Accessor for behavioral features.
+     *
+     * @return Map containing behavioral metrics
+     */
+    public Map<String, Object> behavioralFeatures() {
+        return Collections.unmodifiableMap(output);
+    }
+
+    /**
+     * Accessor for performance metrics.
+     *
+     * @return Map containing performance metrics
+     */
+    public Map<String, Object> performanceMetrics() {
+        return Collections.unmodifiableMap(metadata);
+    }
+
+    /**
+     * Legacy alias for the qualityScore field.
+     *
+     * @return The footprint score
+     */
+    public double footprintScore() {
+        return qualityScore;
+    }
 
     /**
      * Compact constructor with validation.
@@ -53,11 +98,29 @@ public record DspyTrainingExample(
     public DspyTrainingExample {
         Objects.requireNonNull(input, "input must not be null");
         Objects.requireNonNull(output, "output must not be null");
+        Objects.requireNonNull(metadata, "metadata must not be null");
+
         if (input.isBlank()) {
             throw new IllegalArgumentException("input must not be blank");
         }
         if (output.isEmpty()) {
             throw new IllegalArgumentException("output must not be empty");
         }
+        if (metadata.isEmpty()) {
+            throw new IllegalArgumentException("metadata must not be empty");
+        }
+        if (qualityScore < 0.0 || qualityScore > 1.0) {
+            throw new IllegalArgumentException("qualityScore must be between 0.0 and 1.0, got: " + qualityScore);
+        }
+    }
+
+    /**
+     * Legacy constructor for backward compatibility.
+     *
+     * @deprecated Use the full 4-parameter constructor instead
+     */
+    @Deprecated
+    public DspyTrainingExample(String input, Map<String, Object> output) {
+        this(input, output, Map.of(), 0.0);
     }
 }

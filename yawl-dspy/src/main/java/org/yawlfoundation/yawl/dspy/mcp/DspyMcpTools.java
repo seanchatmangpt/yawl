@@ -103,28 +103,23 @@ public final class DspyMcpTools {
      * Creates the dspy_execute_program tool.
      */
     private static McpServerFeatures.SyncToolSpecification createExecuteTool(DspyProgramRegistry registry) {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "dspy_execute_program",
-                "Execute a saved DSPy program with inputs. Programs are GEPA-optimized " +
-                "ML modules for workflow decisions. Available programs: worklet_selector, " +
-                "resource_router, anomaly_forensics, runtime_adaptation.",
-                """
-                {
-                  "type": "object",
-                  "required": ["program", "inputs"],
-                  "properties": {
-                    "program": {
-                      "type": "string",
-                      "description": "Program name: worklet_selector, resource_router, anomaly_forensics, or runtime_adaptation"
-                    },
-                    "inputs": {
-                      "type": "object",
-                      "description": "Program-specific inputs matching the DSPy signature"
-                    }
-                  }
-                }
-                """
-        );
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("program", Map.of(
+            "type", "string",
+            "description", "Program name: worklet_selector, resource_router, anomaly_forensics, or runtime_adaptation"));
+        props.put("inputs", Map.of(
+            "type", "object",
+            "description", "Program-specific inputs matching the DSPy signature"));
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+            "object", props, List.of("program", "inputs"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("dspy_execute_program")
+                .description("Execute a saved DSPy program with inputs. Programs are GEPA-optimized " +
+                        "ML modules for workflow decisions. Available programs: worklet_selector, " +
+                        "resource_router, anomaly_forensics, runtime_adaptation.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
@@ -158,7 +153,7 @@ public final class DspyMcpTools {
                 String json = MAPPER.writeValueAsString(responseData);
                 return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(json)),
-                        false
+                        false, null, null
                 );
 
             } catch (DspyProgramNotFoundException e) {
@@ -176,17 +171,14 @@ public final class DspyMcpTools {
      * Creates the dspy_list_programs tool.
      */
     private static McpServerFeatures.SyncToolSpecification createListTool(DspyProgramRegistry registry) {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "dspy_list_programs",
-                "List all available DSPy programs with their metadata. " +
-                "Returns program names, versions, predictor counts, and optimization info.",
-                """
-                {
-                  "type": "object",
-                  "properties": {}
-                }
-                """
-        );
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", Map.of(), List.of(), false, null, Map.of());
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("dspy_list_programs")
+                .description("List all available DSPy programs with their metadata. " +
+                        "Returns program names, versions, predictor counts, and optimization info.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             log.debug("Listing DSPy programs via MCP");
@@ -214,7 +206,7 @@ public final class DspyMcpTools {
                 String json = MAPPER.writeValueAsString(responseData);
                 return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(json)),
-                        false
+                        false, null, null
                 );
             } catch (Exception e) {
                 log.error("Failed to serialize program list: {}", e.getMessage());
@@ -227,23 +219,20 @@ public final class DspyMcpTools {
      * Creates the dspy_get_program_info tool.
      */
     private static McpServerFeatures.SyncToolSpecification createInfoTool(DspyProgramRegistry registry) {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "dspy_get_program_info",
-                "Get detailed information about a specific DSPy program, including " +
-                "signature definitions, predictor configurations, and optimization metadata.",
-                """
-                {
-                  "type": "object",
-                  "required": ["program"],
-                  "properties": {
-                    "program": {
-                      "type": "string",
-                      "description": "Program name to get info for"
-                    }
-                  }
-                }
-                """
-        );
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", Map.of(
+                        "program", Map.of(
+                                "type", "string",
+                                "description", "Program name to get info for"
+                        )
+                ), List.of("program"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("dspy_get_program_info")
+                .description("Get detailed information about a specific DSPy program, including " +
+                        "signature definitions, predictor configurations, and optimization metadata.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
@@ -283,7 +272,7 @@ public final class DspyMcpTools {
                             String json = MAPPER.writeValueAsString(responseData);
                             return new McpSchema.CallToolResult(
                                     List.of(new McpSchema.TextContent(json)),
-                                    false
+                                    false, null, null
                             );
                         } catch (Exception e) {
                             log.error("Failed to serialize program info: {}", e.getMessage());
@@ -298,23 +287,20 @@ public final class DspyMcpTools {
      * Creates the dspy_reload_program tool.
      */
     private static McpServerFeatures.SyncToolSpecification createReloadTool(DspyProgramRegistry registry) {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "dspy_reload_program",
-                "Hot-reload a DSPy program from disk after external optimization. " +
-                "Use this after running GEPA training to pick up new program state.",
-                """
-                {
-                  "type": "object",
-                  "required": ["program"],
-                  "properties": {
-                    "program": {
-                      "type": "string",
-                      "description": "Program name to reload"
-                    }
-                  }
-                }
-                """
-        );
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", Map.of(
+                        "program", Map.of(
+                                "type", "string",
+                                "description", "Program name to reload"
+                        )
+                ), List.of("program"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("dspy_reload_program")
+                .description("Hot-reload a DSPy program from disk after external optimization. " +
+                        "Use this after running GEPA training to pick up new program state.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
@@ -340,7 +326,7 @@ public final class DspyMcpTools {
                 String json = MAPPER.writeValueAsString(responseData);
                 return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(json)),
-                        false
+                        false, null, null
                 );
 
             } catch (DspyProgramNotFoundException e) {
@@ -365,14 +351,14 @@ public final class DspyMcpTools {
             String json = MAPPER.writeValueAsString(errorData);
             return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent(json)),
-                    true  // isError = true
+                    true, null, null  // isError = true
             );
         } catch (Exception e) {
             // Fallback to plain text if JSON serialization fails
             return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent("{\"error\": true, \"message\": \"" +
                             errorMessage.replace("\"", "\\\"") + "\"}")),
-                    true
+                    true, null, null
             );
         }
     }

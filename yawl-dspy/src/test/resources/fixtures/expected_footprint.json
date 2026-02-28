@@ -1,0 +1,199 @@
+{
+  "footprint_agreement": {
+    "test_id": "order_workflow_footprint_test",
+    "version": "1.0.0",
+    "test_timestamp": "2026-02-28T14:30:00Z",
+    "reference_workflow": "reference_order_workflow.json",
+    "generated_workflow": "generated_order_workflow.json",
+    "agreement_threshold": {
+      "structure": 0.95,
+      "behavior": 0.90,
+      "performance": 0.85
+    }
+  },
+  "structural_comparisons": {
+    "net_structure": {
+      "places_match": true,
+      "total_places": 13,
+      "places_mismatch": [],
+      "transitions_match": true,
+      "total_transitions": 6,
+      "transitions_mismatch": [],
+      "flows_match": true,
+      "total_flows": 19,
+      "flows_mismatch": [],
+      "structure_similarity_score": 1.0
+    },
+    "workflow_patterns": {
+      "reference_patterns": [
+        "Multiple Choice",
+        "S-Sequence",
+        "S-Parallel",
+        "X-OR"
+      ],
+      "generated_patterns": [
+        "Multiple Choice",
+        "S-Sequence",
+        "S-Parallel",
+        "X-OR"
+      ],
+      "patterns_match": true,
+      "pattern_similarity": 1.0
+    }
+  },
+  "behavioral_comparisons": {
+    "state_space_analysis": {
+      "reference_states": 15,
+      "generated_states": 15,
+      "states_match": true,
+      "missing_states": [],
+      "extra_states": [],
+      "state_similarity": 1.0
+    },
+    "transition_matrix": {
+      "transitions_reference": {
+        "total": 6,
+        "enabled_in_initial": ["t_validate"],
+        "executable_paths": [
+          ["validate_order", "check_inventory", "process_payment", "ship_order", "send_notification", "end_success"],
+          ["validate_order", "check_inventory", "cancel_order", "send_notification", "end_failure"],
+          ["validate_order", "check_inventory", "process_payment", "cancel_order", "send_notification", "end_failure"]
+        ]
+      },
+      "transitions_generated": {
+        "total": 6,
+        "enabled_in_initial": ["t_validate"],
+        "executable_paths": [
+          ["validate_order", "check_inventory", "process_payment", "ship_order", "send_notification", "end_success"],
+          ["validate_order", "check_inventory", "cancel_order", "send_notification", "end_failure"],
+          ["validate_order", "check_inventory", "process_payment", "cancel_order", "send_notification", "end_failure"]
+        ]
+      },
+      "paths_match": true,
+      "path_similarity": 1.0
+    },
+    "soundness_properties": {
+      "reference_soundness": {
+        "is_sound": true,
+        "has_deadlocks": false,
+        "has_livelocks": false
+      },
+      "generated_soundness": {
+        "is_sound": true,
+        "has_deadlocks": false,
+        "has_livelocks": false
+      },
+      "soundness_match": true,
+      "soundness_similarity": 1.0
+    },
+    "liveness_properties": {
+      "reference_liveness": {
+        "progress_measure": 8,
+        "coverability_tree_depth": 5
+      },
+      "generated_liveness": {
+        "progress_measure": 8,
+        "coverability_tree_depth": 5
+      },
+      "liveness_match": true,
+      "liveness_similarity": 1.0
+    },
+    "behavioral_similarity_score": 1.0
+  },
+  "performance_comparisons": {
+    "execution_metrics": {
+      "response_times": {
+        "reference": {
+          "validate_order": 120,
+          "check_inventory": 350,
+          "process_payment": 800,
+          "ship_order": 2000,
+          "send_notification": 150,
+          "cancel_order": 300
+        },
+        "generated": {
+          "validate_order": 115,
+          "check_inventory": 340,
+          "process_payment": 780,
+          "ship_order": 1950,
+          "send_notification": 145,
+          "cancel_order": 295
+        },
+        "avg_difference_percent": 2.5,
+        "max_difference_percent": 3.1,
+        "performance_similarity": 0.975
+      },
+      "throughput": {
+        "reference": {
+          "orders_per_hour": 120,
+          "success_rate": 1.0,
+          "avg_processing_time_minutes": 4.2
+        },
+        "generated": {
+          "orders_per_hour": 132,
+          "success_rate": 0.88,
+          "avg_processing_time_minutes": 4.0
+        },
+        "throughput_similarity": 0.91
+      }
+    },
+    "resource_utilization": {
+      "reference": {
+        "cpu_percent": 45,
+        "memory_mb": 128,
+        "concurrent_threads": 4
+      },
+      "generated": {
+        "cpu_percent": 42,
+        "memory_mb": 125,
+        "concurrent_threads": 4
+      },
+      "utilization_similarity": 0.98
+    },
+    "performance_similarity_score": 0.955
+  },
+  "overall_agreement": {
+    "structure_score": 1.0,
+    "behavior_score": 1.0,
+    "performance_score": 0.955,
+    "weighted_average": 0.985,
+    "agreement_result": "PASS",
+    "meets_thresholds": {
+      "structure": true,
+      "behavior": true,
+      "performance": true,
+      "overall": true
+    }
+  },
+  "discrepancies": {
+    "significant": [],
+    "minor": [
+      {
+        "type": "performance",
+        "category": "success_rate",
+        "reference_value": 1.0,
+        "generated_value": 0.88,
+        "difference": 0.12,
+        "impact": "low"
+      },
+      {
+        "type": "performance",
+        "category": "throughput",
+        "reference_value": 120,
+        "generated_value": 132,
+        "difference": 12,
+        "impact": "low"
+      }
+    ]
+  },
+  "recommendations": {
+    "optimization Opportunities": [
+      "Consider adding retry logic for payment processing to improve success rate",
+      "Implement inventory pre-checking to reduce invalid order processing"
+    ],
+    "validation_checks": [
+      "Verify error handling paths are properly implemented",
+      "Ensure all test scenarios pass with the generated workflow"
+    ]
+  }
+}

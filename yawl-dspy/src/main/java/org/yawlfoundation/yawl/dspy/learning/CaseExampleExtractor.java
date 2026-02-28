@@ -100,7 +100,7 @@ public final class CaseExampleExtractor {
      * @return the natural language input description
      */
     private String extractInput() {
-        var taskName = workItem.getTaskName();
+        var taskName = workItem.getTask().getName();
         var caseID = workItem.getWorkItemID().getCaseID().toString();
         var documentation = extractCaseDocumentation();
 
@@ -117,9 +117,9 @@ public final class CaseExampleExtractor {
      * @return the case documentation string
      */
     private String extractCaseDocumentation() {
-        var spec = workItem.getSpecification();
-        if (spec != null && spec.getDocumentation() != null) {
-            return spec.getDocumentation();
+        var task = workItem.getTask();
+        if (task != null) {
+            return task.getDocumentation();
         }
         return "Case workflow task";
     }
@@ -135,7 +135,7 @@ public final class CaseExampleExtractor {
     private Map<String, Object> extractOutput() {
         Map<String, Object> powl = new HashMap<>();
 
-        var taskName = workItem.getTaskName();
+        var taskName = workItem.getTask().getName();
         var taskID = workItem.getWorkItemID().getTaskID();
 
         // Build basic POWL task definition
@@ -143,31 +143,36 @@ public final class CaseExampleExtractor {
         powl.put("name", taskName);
         powl.put("id", taskID);
 
-        // Extract input/output parameters if available
-        var specification = workItem.getSpecification();
-        if (specification != null) {
-            var inputParams = specification.getInvocationParameters();
-            var outputParams = specification.getCompletionParameters();
+        // Extract input/output parameters from task decomposition
+        var task = workItem.getTask();
+        if (task != null) {
+            var decomposition = task.getDecompositionPrototype();
+            if (decomposition != null) {
+                var inputParams = decomposition.getInputParameters().values();
+                var outputParams = decomposition.getOutputParameters().values();
 
-            if (inputParams != null && !inputParams.isEmpty()) {
-                powl.put("input_params", inputParams.stream()
-                        .map(p -> Map.of("name", p.getName(), "type", p.getType()))
-                        .toList());
-            }
+                if (!inputParams.isEmpty()) {
+                    powl.put("input_params", inputParams.stream()
+                            .map(p -> Map.of("name", p.getName(), "type", p.getDataTypeNameUnprefixed()))
+                            .toList());
+                }
 
-            if (outputParams != null && !outputParams.isEmpty()) {
-                powl.put("output_params", outputParams.stream()
-                        .map(p -> Map.of("name", p.getName(), "type", p.getType()))
-                        .toList());
+                if (!outputParams.isEmpty()) {
+                    powl.put("output_params", outputParams.stream()
+                            .map(p -> Map.of("name", p.getName(), "type", p.getDataTypeNameUnprefixed()))
+                            .toList());
+                }
             }
         }
 
         // Add task metadata
-        var timesStarted = workItem.getTimesStarted();
+        // Note: getTimesStarted() doesn't exist in YAWL 6.0.0 API
+        // This might need to be implemented separately or use different approach
+        powl.put("times_started", 1); // Default to 1, as we're processing this work item
+
         var timerExpiry = workItem.getTimerExpiry();
-        powl.put("times_started", timesStarted);
-        if (timerExpiry != null) {
-            powl.put("timer_expiry", timerExpiry.toString());
+        if (timerExpiry != 0) { // Check for non-zero expiry
+            powl.put("timer_expiry", String.valueOf(timerExpiry));
         }
 
         return powl;
