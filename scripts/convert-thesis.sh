@@ -92,9 +92,10 @@ verify_dependencies() {
 convert_to_pdf() {
     log_info "Converting to PDF..."
 
+    # Use xelatex for better Unicode support
     pandoc \
         "$SOURCE_MD" \
-        --pdf-engine=pdflatex \
+        --pdf-engine=xelatex \
         --from=markdown \
         --to=pdf \
         --output="$PDF_OUTPUT" \
@@ -104,7 +105,7 @@ convert_to_pdf() {
         --variable=sansfont:"Liberation Sans" \
         --variable=monofont:"Liberation Mono" \
         2>&1 | tee -a "$VALIDATION_LOG" || {
-            log_warning "PDF generation fell back to alternative method"
+            log_warning "PDF generation with xelatex failed, trying pdflatex"
             pandoc \
                 "$SOURCE_MD" \
                 --pdf-engine=pdflatex \
