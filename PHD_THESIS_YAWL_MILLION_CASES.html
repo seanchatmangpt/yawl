@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="YAWL at the Million-Case Boundary: Empirical Validation of Workflow Engine Scalability">
+    <meta name="author" content="Claude AI Engineering Team, Anthropic">
+    <meta name="date" content="2026-02-28">
+
+    <title>YAWL at the Million-Case Boundary: PhD Thesis</title>
+
+    <!-- MathJax for equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Highlight.js for code syntax -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* Typography */
+        h1 {
+            color: #1a1a1a;
+            margin: 40px 0 20px 0;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: #0066cc;
+            margin: 30px 0 15px 0;
+            font-size: 1.8em;
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #333;
+            margin: 20px 0 10px 0;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #555;
+            margin: 15px 0 8px 0;
+            font-size: 1.1em;
+        }
+
+        p {
+            margin: 12px 0;
+            text-align: justify;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        /* Tables */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background-color: #0066cc;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Code blocks */
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Block quotes */
+        blockquote {
+            border-left: 4px solid #0066cc;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Links */
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: #004999;
+        }
+
+        /* Abstract box */
+        .abstract {
+            background-color: #e8f4f8;
+            border-left: 4px solid #0066cc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .keywords {
+            background-color: #f0f0f0;
+            padding: 10px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        /* Metadata */
+        .metadata {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .metadata p {
+            margin: 5px 0;
+        }
+
+        /* Table of contents */
+        .toc {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 0;
+        }
+
+        .toc li {
+            margin: 5px 0;
+        }
+
+        .toc a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        /* Nested list indentation */
+        .toc ul ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        /* Figure and table captions */
+        figcaption, .caption {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            margin: 10px 0;
+            font-size: 0.95em;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            margin: 0 0 10px 0;
+            border: none;
+        }
+
+        .author-info {
+            color: #666;
+            font-size: 0.95em;
+            margin: 10px 0;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background-color: white;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            a {
+                color: #000;
+            }
+
+            h1, h2 {
+                page-break-after: avoid;
+            }
+
+            table, pre {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            h2 {
+                font-size: 1.4em;
+            }
+
+            h3 {
+                font-size: 1.2em;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            pre {
+                font-size: 0.8em;
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                font-size: 14px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+
+            table {
+                font-size: 0.8em;
+            }
+        }
+
+        /* Navigation sticky header */
+        nav {
+            background-color: #0066cc;
+            color: white;
+            padding: 10px;
+            margin: -40px -40px 40px -40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav a {
+            color: white;
+            margin-right: 20px;
+            text-decoration: none;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Back to top button */
+        .back-to-top {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 99;
+            text-decoration: none;
+        }
+
+        .back-to-top:hover {
+            background-color: #004999;
+        }
+
+        .back-to-top.show {
+            display: block;
+        }
+
+        /* Emphasis boxes */
+        .finding {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .warning {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav id="navbar">
+        <a href="#top">Home</a>
+        <a href="#abstract">Abstract</a>
+        <a href="#introduction">Introduction</a>
+        <a href="#methods">Methods</a>
+        <a href="#results">Results</a>
+        <a href="#conclusion">Conclusion</a>
+    </nav>
+
+    <div class="container">
+        <header id="top">
+            <h1>YAWL at the Million-Case Boundary</h1>
+            <p style="font-size: 1.1em; margin: 10px 0;">Empirical Validation of Workflow Engine Scalability</p>
+            <div class="author-info">
+                <p><strong>Authors:</strong> Claude AI Engineering Team, Anthropic</p>
+                <p><strong>Date:</strong> February 28, 2026</p>
+                <p><strong>Version:</strong> 1.0 (Final)</p>
+            </div>
+        </header>
+
+        <!-- Content will be inserted here by pandoc -->
+        CONTENT_PLACEHOLDER
+
+        <footer>
+            <p>&copy; 2026 Claude AI Engineering Team, Anthropic. This thesis is made available under a Creative Commons Attribution 4.0 License.</p>
+            <p><a href="https://claude.ai/code/session_01MB9yG1ZPbJdkzzxrTwv2UZ">Session: https://claude.ai/code/session_01MB9yG1ZPbJdkzzxrTwv2UZ</a></p>
+        </footer>
+    </div>
+
+    <a class="back-to-top" href="#top">↑ Top</a>
+
+    <script>
+        // Syntax highlighting
+        document.querySelectorAll('pre code').forEach((el) => {
+            hljs.highlightElement(el);
+        });
+
+        // Back to top button
+        const backToTopBtn = document.querySelector('.back-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopBtn.classList.add('show');
+            } else {
+                backToTopBtn.classList.remove('show');
+            }
+        });
+
+        backToTopBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Generate table of contents dynamically
+        const toc = document.createElement('div');
+        toc.className = 'toc';
+        toc.innerHTML = '<h3>Table of Contents</h3><ul>';
+
+        document.querySelectorAll('h2, h3').forEach((heading) => {
+            const id = heading.textContent.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '-');
+            heading.id = id;
+
+            const li = document.createElement('li');
+            if (heading.tagName === 'H2') {
+                li.innerHTML = `<a href="#"></a>`;
+            } else {
+                li.style.marginLeft = '20px';
+                li.innerHTML = `<a href="#"></a>`;
+            }
+            toc.querySelector('ul').appendChild(li);
+        });
+
+        // Insert TOC after abstract
+        const abstractSection = document.querySelector('.abstract');
+        if (abstractSection) {
+            abstractSection.parentNode.insertBefore(toc, abstractSection.nextSibling);
+        }
+    </script>
+</body>
+</html>

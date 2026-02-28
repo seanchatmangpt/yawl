@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="MultiMilestoneProcess">
+    <name>Multi-Milestone Process</name>
+    <documentation>Process with OR milestone guard</documentation>
+    <metaData/>
+    <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
+      <name>Approval Net</name>
+      <processControlElements>
+        <inputCondition id="input">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="ManagerApproval"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="ManagerApproval">
+          <name>Manager Approval</name>
+          <flowsInto>
+            <nextElementRef id="ManagerMilestone"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <milestone id="ManagerMilestone">
+          <name>Manager Approval Milestone</name>
+          <flowsInto>
+            <nextElementRef id="FinanceApproval"/>
+          </flowsInto>
+          <expression>/approval/manager = 'YES'</expression>
+          <expiryType>DATA_BASED</expiryType>
+          <expiryTimeout>0</expiryTimeout>
+        </milestone>
+        <task id="FinanceApproval">
+          <name>Finance Approval</name>
+          <flowsInto>
+            <nextElementRef id="FinanceMilestone"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <milestone id="FinanceMilestone">
+          <name>Finance Approval Milestone</name>
+          <flowsInto>
+            <nextElementRef id="ProcessPayment"/>
+          </flowsInto>
+          <expression>/approval/finance = 'YES'</expression>
+          <expiryType>NEVER</expiryType>
+          <expiryTimeout>0</expiryTimeout>
+        </milestone>
+        <task id="ProcessPayment">
+          <name>Process Payment</name>
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="xor"/>
+          <milestoneGuards operator="OR">
+            <guard>
+              <milestoneRef id="ManagerMilestone"/>
+            </guard>
+            <guard>
+              <milestoneRef id="FinanceMilestone"/>
+            </guard>
+          </milestoneGuards>
+        </task>
+        <outputCondition id="output">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

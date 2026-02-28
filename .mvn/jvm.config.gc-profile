@@ -1,0 +1,65 @@
+# ZGC Configuration for GC Profiling Tests
+# Used for measuring GC pause times and memory behavior at scale
+
+# Heap sizing for 1M case profiling
+-Xms8g
+-Xmx8g
+
+# ZGC Garbage Collector (low-latency, scalable)
+-XX:+UseZGC
+
+# Compact Object Headers (save 4 bytes per object header)
+# Effective for reducing memory footprint and improving GC performance
+-XX:+UseCompactObjectHeaders
+
+# Concurrent GC Threads (how many threads for concurrent marking)
+# Default is 25% of processing threads. For 24-core systems, 6-8 is typical.
+-XX:ConcGCThreads=8
+
+# Initiating Heap Occupancy Percent
+# When heap reaches this %, ZGC starts concurrent GC
+# Lower = more frequent GC, lower pause times, higher overhead
+# Higher = fewer GC cycles, lower overhead, higher pause times
+# 35% is a good balance for YAWL workloads
+-XX:InitiatingHeapOccupancyPercent=35
+
+# Soft Max Heap Size (trigger GC before hard limit)
+# Reserve 1GB from max for safety
+-XX:SoftMaxHeapSize=7g
+
+# Pre-touch memory at startup (ensures pages are committed)
+# Reduces pause time variance, uses startup time instead
+-XX:+AlwaysPreTouch
+
+# Use large pages (2MB pages instead of 4KB)
+# Reduces TLB misses, improves performance
+-XX:+UseLargePages
+-XX:LargePageSizeInBytes=2m
+
+# Disable biased locking (incompatible with virtual threads)
+-XX:-UseBiasedLocking
+
+# GC Statistics Interval (print stats every 60 seconds)
+-XX:ZStatisticsInterval=60
+
+# Disable explicit GC (don't respect System.gc())
+-XX:+DisableExplicitGC
+
+# GC Logging (enable for analysis)
+-XX:+PrintGCDetails
+-XX:+PrintGCDateStamps
+-XX:+PrintGCTimeStamps
+-XX:+PrintGCApplicationStoppedTime
+-XX:+PrintStringDeduplicationStatistics
+-XX:+PrintTenuringDistribution
+
+# String deduplication enabled (on by default with ZGC)
+# Helps with duplicate string literals in workflow specs
+-XX:+UseStringDeduplication
+-XX:StringDeduplicationAgeThreshold=3
+
+# Parallel compression threads (for compressed oops)
+-XX:ParallelGCThreads=8
+
+# Output file for GC logs (will be overridden by script)
+# -Xloggc:gc-profile.log
