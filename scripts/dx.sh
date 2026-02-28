@@ -16,6 +16,8 @@
 #   bash scripts/dx.sh -pl mod1,mod2    # explicit module list
 #   bash scripts/dx.sh --warm-cache     # enable warm cache for yawl-engine, yawl-elements
 #   bash scripts/dx.sh --impact-graph   # use test impact graph to run affected tests only
+#   bash scripts/dx.sh --feedback       # run feedback tier tests (1-2 per module, <5s total)
+#   bash scripts/dx.sh --stateless      # enable stateless test execution (H2 snapshots)
 #   bash scripts/dx.sh test --fail-fast-tier 1  # test with Tier 1 fail-fast (fast unit tests only)
 #   bash scripts/dx.sh test --fail-fast-tier 2  # test Tiers 1-2, stop at first failure
 #
@@ -29,6 +31,8 @@
 #   DX_IMPACT=1        Use test impact graph for source-driven test selection
 #   DX_SEMANTIC_FILTER=1  Skip formatting-only changes (detect via semantic hash, default: off)
 #   DX_WARM_CACHE=1    Enable warm bytecode cache for hot modules (default: off)
+#   DX_FEEDBACK=1      Run feedback tier tests (fast smoke tests, <5s)
+#   DX_STATELESS=1     Enable stateless test execution with H2 snapshots
 #   TEP_FAIL_FAST_TIER=N  Run tests up to tier N with fail-fast (default: disabled)
 #   TEP_CONTINUE_ON_FAILURE=1  Continue running remaining tiers after failures (default: 0)
 # ==========================================================================
@@ -58,6 +62,8 @@ EXPLICIT_MODULES=""
 USE_IMPACT_GRAPH="${DX_IMPACT:-0}"
 TEP_FAIL_FAST_TIER="${TEP_FAIL_FAST_TIER:-0}"
 WARM_CACHE_ENABLED="${DX_WARM_CACHE:-0}"
+FEEDBACK_ENABLED="${DX_FEEDBACK:-0}"
+STATELESS_ENABLED="${DX_STATELESS:-0}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -68,6 +74,8 @@ while [[ $# -gt 0 ]]; do
         --impact-graph)       USE_IMPACT_GRAPH=1; shift ;;
         --fail-fast-tier)     TEP_FAIL_FAST_TIER="$2"; shift 2 ;;
         --warm-cache)         WARM_CACHE_ENABLED=1; shift ;;
+        --feedback)           FEEDBACK_ENABLED=1; shift ;;
+        --stateless)          STATELESS_ENABLED=1; shift ;;
         -h|--help)
             sed -n '2,/^# =====/p' "$0" | grep '^#' | sed 's/^# \?//'
             exit 0 ;;

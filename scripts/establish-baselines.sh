@@ -298,18 +298,24 @@ run_scenario() {
     local start_ns=$(date +%s%N)
     local start_sec=$(date +%s)
 
-    # Record background process for memory monitoring
-    local monitor_pid=""
-
     # Execute the command with time measurement
     local time_output
     local exit_code=0
+    local memory_peak_mb=0
 
     # Use /usr/bin/time for detailed metrics (if available)
     if command -v /usr/bin/time &> /dev/null; then
         time_output=$( (/usr/bin/time -v bash -c "${cmd}" 2>&1) || exit_code=$? )
+        # Extract memory from /usr/bin/time output
+        if echo "${time_output}" | grep -q "Maximum resident set size"; then
+            memory_peak_mb=$(echo "${time_output}" | grep "Maximum resident set size" | awk '{print int($6/1024)}')
+        fi
     else
         time_output=$(bash -c "${cmd}" 2>&1) || exit_code=$?
+        # Fallback: check /proc for peak memory
+        if [[ -f "/proc/self/status" ]]; then
+            memory_peak_mb=$(awk '/^VmPeak:/ {print int($2/1024)}' "/proc/self/status")
+        fi
     fi
 
     local end_ns=$(date +%s%N)
@@ -317,12 +323,6 @@ run_scenario() {
 
     local total_time_ms=$(( (end_ns - start_ns) / 1000000 ))
     local duration_sec=$((end_sec - start_sec))
-
-    # Extract memory from /usr/bin/time output if available
-    local memory_peak_mb=0
-    if echo "${time_output}" | grep -q "Maximum resident set size"; then
-        memory_peak_mb=$(echo "${time_output}" | grep "Maximum resident set size" | awk '{print int($6/1024)}')
-    fi
 
     log_debug "Total time: ${total_time_ms}ms, Memory: ${memory_peak_mb}MB, Duration: ${duration_sec}s"
 
