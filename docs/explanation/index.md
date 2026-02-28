@@ -41,6 +41,9 @@ Understanding-oriented content that illuminates the context, concepts, and reaso
 
 | Explanation | What it addresses |
 |-------------|-------------------|
+| [godspeed-methodology.md](godspeed-methodology.md) | The five-phase quality circuit (Ψ→Λ→H→Q→Ω) and loss localization |
+| [chatman-equation.md](chatman-equation.md) | Agent quality model: A = μ(O) and why observation drives artifact quality |
+| [h-guards-philosophy.md](h-guards-philosophy.md) | Why H-Guards block 7 deception patterns at write time |
 | [cicd-architecture.md](cicd-architecture.md) | CI/CD pipeline architecture |
 | [maven-first-architecture.md](maven-first-architecture.md) | Maven-first transition rationale |
 | [performance-overview.md](performance-overview.md) | Performance characteristics and design |

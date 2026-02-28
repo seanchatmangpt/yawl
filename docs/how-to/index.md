@@ -92,6 +92,12 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 |-------|------|
 | [performance-testing.md](performance-testing.md) | Run performance benchmarks |
 
+## GODSPEED
+
+| Guide | Task |
+|-------|------|
+| [godspeed/run-the-full-circuit.md](godspeed/run-the-full-circuit.md) | Run complete GODSPEED validation circuit (Ψ→Λ→H→Q→Ω) |
+
 ## Development
 
 | Guide | Task |
