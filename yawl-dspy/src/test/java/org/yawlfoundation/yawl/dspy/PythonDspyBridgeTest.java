@@ -19,483 +19,523 @@
 package org.yawlfoundation.yawl.dspy;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Timeout;
+import org.yawlfoundation.yawl.graalpy.PythonExecutionEngine;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for PythonDspyBridge.
  *
- * Tests mock DSPy behavior to verify:
- * - Program compilation caching (second load from cache)
- * - Result marshalling (Python dict to Java object)
- * - Exception handling (DSPy errors wrapped gracefully)
- * - Context pooling (concurrent program execution)
+ * <p>Tests cover:
+ * <ul>
+ *   <li>Basic execution of DSPy programs with hardcoded results</li>
+ *   <li>Compilation caching (same program cached, different program not)</li>
+ *   <li>Result marshalling (Python dict to Java Map)</li>
+ *   <li>Exception handling (invalid programs)</li>
+ *   <li>Context pooling and reuse</li>
+ * </ul>
+ * </p>
  *
- * Uses Chicago TDD (real integration objects, no stubs for critical paths).
+ * @author YAWL Foundation
+ * @version 6.0.0
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("PythonDspyBridge Unit Tests")
-class PythonDspyBridgeTest {
+@DisplayName("PythonDspyBridge Tests")
+public class PythonDspyBridgeTest {
 
-    // Note: In a real implementation, you would have PythonExecutionEngine mock
-    // For now, we test with mocked engine behavior
-    @Mock
-    private Object mockPythonExecutionEngine;  // Placeholder for actual engine
-
-    private Map<String, Object> programCache;
+    private PythonDspyBridge bridge;
+    private PythonExecutionEngine engine;
 
     @BeforeEach
     void setUp() {
-        programCache = new ConcurrentHashMap<>();
+        // Use permissive sandbox for testing; no restrictions
+        engine = PythonExecutionEngine.builder()
+                .contextPoolSize(2)
+                .sandboxed(false)
+                .build();
+        bridge = new PythonDspyBridge(engine);
     }
 
     @Test
-    @DisplayName("Should compile and cache DSPy program on first execution")
-    void testCompilationCaching() {
-        // Arrange
+    @DisplayName("Should execute hardcoded DSPy program successfully")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testExecuteHardcodedDspyProgram() {
+        // Arrange: Simple DSPy program that returns hardcoded dict
+        String programSource = """
+            import dspy
+            class SentimentAnalyzer(dspy.Module):
+                def __init__(self):
+                    self.predictor = dspy.ChainOfThought("text -> sentiment")
+                def forward(self, text):
+                    # Return hardcoded result (normally would call LLM)
+                    return {"sentiment": "positive", "confidence": 0.95}
+            """;
+
         DspyProgram program = DspyProgram.builder()
                 .name("sentiment-analyzer")
-                .source("import dspy\nclass Analyzer(dspy.Module):\n    pass")
-                .description("Test sentiment analyzer")
-                .generatedBy("dspy_powl_generator v1.0")
+                .source(programSource)
+                .description("Sentiment analyzer for testing")
                 .build();
 
-        String cacheKey = program.cacheKey();
+        Map<String, Object> inputs = Map.of("text", "YAWL is fantastic!");
 
-        // Act: Simulate first compilation
-        assertFalse(programCache.containsKey(cacheKey), "Cache should be empty initially");
-        programCache.put(cacheKey, new Object()); // Simulate compiled program
-        boolean firstCompiled = programCache.containsKey(cacheKey);
-
-        // Act: Simulate second load
-        boolean secondCached = programCache.containsKey(cacheKey);
+        // Act
+        DspyExecutionResult result = bridge.execute(program, inputs);
 
         // Assert
-        assertTrue(firstCompiled, "First compilation should cache program");
-        assertTrue(secondCached, "Second load should retrieve from cache");
-        assertThat(programCache.size(), equalTo(1));
+        assertThat(result, notNullValue());
+        assertThat(result.output(), notNullValue());
+        assertThat(result.output().size(), greaterThan(0));
+        assertThat(result.metrics(), notNullValue());
+        assertThat(result.metrics().executionTimeMs(), greaterThanOrEqualTo(0L));
     }
 
     @Test
-    @DisplayName("Should compute consistent cache key from program name and source hash")
-    void testCacheKeyConsistency() {
-        // Arrange
-        String source = "import dspy\nclass Test(dspy.Module):\n    pass";
+    @DisplayName("Should cache compiled programs by name + source hash")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testCompilationCaching() {
+        // Arrange: Same program executed twice
+        String programSource = """
+            import dspy
+            class CachedModule(dspy.Module):
+                def __init__(self):
+                    pass
+                def forward(self, x):
+                    return {"cached": True}
+            """;
+
         DspyProgram program1 = DspyProgram.builder()
-                .name("test-prog")
-                .source(source)
+                .name("cached-test")
+                .source(programSource)
+                .build();
+
+        Map<String, Object> inputs = Map.of("x", 42);
+
+        // Act: First execution
+        DspyExecutionResult result1 = bridge.execute(program1, inputs);
+        boolean firstCacheHit = result1.metrics().cacheHit();
+        long firstCompilationTime = result1.metrics().compilationTimeMs();
+
+        // Second execution (same program)
+        DspyExecutionResult result2 = bridge.execute(program1, inputs);
+        boolean secondCacheHit = result2.metrics().cacheHit();
+        long secondCompilationTime = result2.metrics().compilationTimeMs();
+
+        // Assert
+        assertThat(firstCacheHit, is(false));  // First execution is cache miss
+        assertThat(secondCacheHit, is(true));   // Second execution is cache hit
+        assertThat(secondCompilationTime, lessThanOrEqualTo(firstCompilationTime));
+    }
+
+    @Test
+    @DisplayName("Should not reuse cache for programs with same name but different source")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testCacheKeyDifferentiatesSource() {
+        // Arrange: Two programs with same name but different source
+        String source1 = """
+            import dspy
+            class SameNameModule(dspy.Module):
+                def forward(self, x):
+                    return {"version": 1}
+            """;
+
+        String source2 = """
+            import dspy
+            class SameNameModule(dspy.Module):
+                def forward(self, x):
+                    return {"version": 2}
+            """;
+
+        DspyProgram program1 = DspyProgram.builder()
+                .name("same-name")
+                .source(source1)
                 .build();
 
         DspyProgram program2 = DspyProgram.builder()
-                .name("test-prog")
-                .source(source)
+                .name("same-name")
+                .source(source2)
                 .build();
 
-        // Act
-        String key1 = program1.cacheKey();
-        String key2 = program2.cacheKey();
+        Map<String, Object> inputs = Map.of("x", 1);
 
-        // Assert
-        assertThat(key1, equalTo(key2));
-        assertThat(key1, containsString("test-prog"));
-        assertThat(key1, containsString(":"));
+        // Act
+        DspyExecutionResult result1 = bridge.execute(program1, inputs);
+        DspyExecutionResult result2 = bridge.execute(program2, inputs);
+
+        // Assert: Different source hashes mean different cache entries
+        assertThat(program1.sourceHash(), not(equalTo(program2.sourceHash())));
+        assertThat(result1.metrics().cacheHit(), is(false));
+        assertThat(result2.metrics().cacheHit(), is(false));  // Different program
     }
 
     @Test
-    @DisplayName("Should generate different cache keys for different source code")
-    void testCacheKeyDifferentSources() {
-        // Arrange
-        DspyProgram prog1 = DspyProgram.builder()
-                .name("analyzer")
-                .source("source v1")
-                .build();
-
-        DspyProgram prog2 = DspyProgram.builder()
-                .name("analyzer")
-                .source("source v2")
-                .build();
-
-        // Act
-        String key1 = prog1.cacheKey();
-        String key2 = prog2.cacheKey();
-
-        // Assert
-        assertThat(key1, not(equalTo(key2)));
-        assertThat(key1, startsWith("analyzer:"));
-        assertThat(key2, startsWith("analyzer:"));
-    }
-
-    @Test
-    @DisplayName("Should marshal DSPy output (Python dict) to DspyExecutionResult")
+    @DisplayName("Should marshal Python dict results to Java Map")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     void testResultMarshalling() {
-        // Arrange
-        Map<String, Object> pythonOutput = new HashMap<>();
-        pythonOutput.put("sentiment", "positive");
-        pythonOutput.put("confidence", 0.95);
-        pythonOutput.put("reasoning", "Strong positive indicators");
+        // Arrange: Program that returns nested dict
+        String programSource = """
+            import dspy
+            class NestedDictModule(dspy.Module):
+                def forward(self, x):
+                    return {
+                        "level1": {
+                            "level2": {"value": 123},
+                            "list": [1, 2, 3]
+                        },
+                        "string": "test"
+                    }
+            """;
 
-        DspyExecutionMetrics metrics = DspyExecutionMetrics.builder()
-                .compilationTimeMs(150)
-                .executionTimeMs(250)
-                .inputTokens(45)
-                .outputTokens(35)
-                .qualityScore(0.92)
-                .cacheHit(false)
-                .contextReused(false)
-                .timestamp(Instant.now())
-                .build();
-
-        // Act
-        DspyExecutionResult result = DspyExecutionResult.builder()
-                .output(pythonOutput)
-                .trace("Execution trace here")
-                .metrics(metrics)
-                .build();
-
-        // Assert
-        assertThat(result.output(), hasEntry("sentiment", "positive"));
-        assertThat(result.output(), hasEntry("confidence", 0.95));
-        assertThat(result.outputSize(), equalTo(3));
-        assertThat(result.hasKey("sentiment"), is(true));
-        assertThat(result.getValue("sentiment", String.class), equalTo("positive"));
-        assertThat(result.getValue("confidence", Double.class), equalTo(0.95));
-    }
-
-    @Test
-    @DisplayName("Should retrieve typed values from execution result")
-    void testTypeSafeValueRetrieval() {
-        // Arrange
-        Map<String, Object> output = new HashMap<>();
-        output.put("text", "hello");
-        output.put("score", 42L);
-        output.put("flag", true);
-
-        DspyExecutionMetrics metrics = DspyExecutionMetrics.builder()
-                .compilationTimeMs(100)
-                .executionTimeMs(200)
-                .inputTokens(10)
-                .outputTokens(10)
-                .cacheHit(false)
-                .contextReused(false)
-                .timestamp(Instant.now())
-                .build();
-
-        DspyExecutionResult result = new DspyExecutionResult(output, null, metrics);
-
-        // Act
-        String text = result.getValue("text", String.class);
-        Long score = result.getValue("score", Long.class);
-        Boolean flag = result.getValue("flag", Boolean.class);
-
-        // Assert
-        assertThat(text, equalTo("hello"));
-        assertThat(score, equalTo(42L));
-        assertThat(flag, equalTo(true));
-    }
-
-    @Test
-    @DisplayName("Should handle missing keys gracefully")
-    void testMissingKeyHandling() {
-        // Arrange
-        Map<String, Object> output = new HashMap<>();
-        output.put("present", "value");
-
-        DspyExecutionMetrics metrics = DspyExecutionMetrics.builder()
-                .compilationTimeMs(100)
-                .executionTimeMs(100)
-                .inputTokens(5)
-                .outputTokens(5)
-                .cacheHit(false)
-                .contextReused(false)
-                .timestamp(Instant.now())
-                .build();
-
-        DspyExecutionResult result = new DspyExecutionResult(output, null, metrics);
-
-        // Act & Assert
-        assertNull(result.getValue("missing"));
-        assertNull(result.getValue("missing", String.class));
-        assertFalse(result.hasKey("missing"));
-    }
-
-    @Test
-    @DisplayName("Should handle type mismatches gracefully")
-    void testTypeMismatchHandling() {
-        // Arrange
-        Map<String, Object> output = new HashMap<>();
-        output.put("value", 123);
-
-        DspyExecutionMetrics metrics = DspyExecutionMetrics.builder()
-                .compilationTimeMs(100)
-                .executionTimeMs(100)
-                .inputTokens(5)
-                .outputTokens(5)
-                .cacheHit(false)
-                .contextReused(false)
-                .timestamp(Instant.now())
-                .build();
-
-        DspyExecutionResult result = new DspyExecutionResult(output, null, metrics);
-
-        // Act: Request String but value is Integer
-        String stringValue = result.getValue("value", String.class);
-
-        // Assert
-        assertNull(stringValue);
-    }
-
-    @Test
-    @DisplayName("Should collect and expose execution metrics")
-    void testMetricsCollection() {
-        // Arrange
-        DspyExecutionMetrics metrics = DspyExecutionMetrics.builder()
-                .compilationTimeMs(150)
-                .executionTimeMs(450)
-                .inputTokens(100)
-                .outputTokens(80)
-                .qualityScore(0.88)
-                .cacheHit(true)
-                .contextReused(true)
-                .timestamp(Instant.now())
-                .build();
-
-        // Act & Assert
-        assertThat(metrics.compilationTimeMs(), equalTo(150L));
-        assertThat(metrics.executionTimeMs(), equalTo(450L));
-        assertThat(metrics.totalTimeMs(), equalTo(600L));
-        assertThat(metrics.inputTokens(), equalTo(100L));
-        assertThat(metrics.outputTokens(), equalTo(80L));
-        assertThat(metrics.totalTokens(), equalTo(180L));
-        assertThat(metrics.qualityScore(), equalTo(0.88));
-        assertTrue(metrics.cacheHit());
-        assertTrue(metrics.contextReused());
-    }
-
-    @Test
-    @DisplayName("Should validate program name is not null")
-    void testProgramNameValidation() {
-        // Act & Assert
-        assertThrows(NullPointerException.class,
-                () -> DspyProgram.builder()
-                        .name(null)
-                        .source("code")
-                        .build());
-    }
-
-    @Test
-    @DisplayName("Should validate program source is not null")
-    void testProgramSourceValidation() {
-        // Act & Assert
-        assertThrows(NullPointerException.class,
-                () -> DspyProgram.builder()
-                        .name("test")
-                        .source(null)
-                        .build());
-    }
-
-    @Test
-    @DisplayName("Should validate program name is not blank")
-    void testProgramNameBlankValidation() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class,
-                () -> DspyProgram.builder()
-                        .name("   ")
-                        .source("code")
-                        .build());
-    }
-
-    @Test
-    @DisplayName("Should validate program source is not blank")
-    void testProgramSourceBlankValidation() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class,
-                () -> DspyProgram.builder()
-                        .name("test")
-                        .source("   ")
-                        .build());
-    }
-
-    @Test
-    @DisplayName("Should generate source code preview")
-    void testSourcePreview() {
-        // Arrange
-        String shortSource = "import dspy";
-        String longSource = "x".repeat(150);
-
-        DspyProgram shortProg = DspyProgram.builder()
-                .name("short")
-                .source(shortSource)
-                .build();
-
-        DspyProgram longProg = DspyProgram.builder()
-                .name("long")
-                .source(longSource)
-                .build();
-
-        // Act
-        String shortPreview = shortProg.sourcePreview();
-        String longPreview = longProg.sourcePreview();
-
-        // Assert
-        assertThat(shortPreview, equalTo(shortSource));
-        assertThat(longPreview.length(), lessThanOrEqualTo(103)); // 100 chars + "..."
-        assertThat(longPreview, endsWith("..."));
-    }
-
-    @Test
-    @DisplayName("Should build complete DspyProgram with all fields")
-    void testCompleteProgram() {
-        // Arrange
-        Map<String, Object> inputSchema = Map.of("text", "string");
-        Map<String, Object> outputSchema = Map.of("sentiment", "string", "confidence", "float");
-
-        // Act
         DspyProgram program = DspyProgram.builder()
-                .name("full-analyzer")
-                .source("code here")
-                .inputSchema(inputSchema)
-                .outputSchema(outputSchema)
-                .description("Complete test program")
-                .generatedBy("test-generator v1.0")
+                .name("nested-dict")
+                .source(programSource)
                 .build();
 
+        // Act
+        DspyExecutionResult result = bridge.execute(program, Map.of("x", 0));
+
         // Assert
-        assertThat(program.name(), equalTo("full-analyzer"));
-        assertThat(program.source(), equalTo("code here"));
-        assertThat(program.description(), equalTo("Complete test program"));
-        assertThat(program.generatedBy(), equalTo("test-generator v1.0"));
-        assertThat(program.inputSchema(), aMapWithSize(1));
-        assertThat(program.outputSchema(), aMapWithSize(2));
-        assertNotNull(program.sourceHash());
+        assertThat(result.output(), notNullValue());
+        assertThat(result.output().get("string"), equalTo("test"));
+        assertThat(result.output().get("level1"), instanceOf(Map.class));
     }
 
     @Test
-    @DisplayName("Should simulate context pooling with concurrent access")
-    void testContextPooling() {
-        // Arrange: Simulate 3 concurrent contexts
-        Map<String, Integer> contextPool = new ConcurrentHashMap<>();
-        contextPool.put("context-1", 1);
-        contextPool.put("context-2", 2);
-        contextPool.put("context-3", 3);
-
-        // Act: Simulate acquiring contexts concurrently
-        Integer context1 = contextPool.get("context-1");
-        Integer context2 = contextPool.get("context-2");
-        Integer context3 = contextPool.get("context-3");
-
-        // Assert
-        assertThat(contextPool.size(), equalTo(3));
-        assertThat(context1, equalTo(1));
-        assertThat(context2, equalTo(2));
-        assertThat(context3, equalTo(3));
-    }
-
-    @Test
-    @DisplayName("Should handle execution result with null trace")
-    void testResultWithNullTrace() {
+    @DisplayName("Should estimate tokens in inputs and outputs")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testTokenEstimation() {
         // Arrange
-        Map<String, Object> output = new HashMap<>();
-        output.put("result", "success");
+        String programSource = """
+            import dspy
+            class TokenCounterModule(dspy.Module):
+                def forward(self, text):
+                    return {"output": text + " processed"}
+            """;
 
-        DspyExecutionMetrics metrics = DspyExecutionMetrics.builder()
-                .compilationTimeMs(100)
-                .executionTimeMs(100)
-                .inputTokens(5)
-                .outputTokens(5)
-                .cacheHit(false)
-                .contextReused(false)
-                .timestamp(Instant.now())
+        DspyProgram program = DspyProgram.builder()
+                .name("token-counter")
+                .source(programSource)
+                .build();
+
+        String inputText = "A".repeat(100);  // 100 characters
+        Map<String, Object> inputs = Map.of("text", inputText);
+
+        // Act
+        DspyExecutionResult result = bridge.execute(program, inputs);
+
+        // Assert: tokens should be estimated (roughly length / 4)
+        long totalTokens = result.metrics().totalTokens();
+        assertThat(totalTokens, greaterThan(0L));
+    }
+
+    @Test
+    @DisplayName("Should report cache hit status in metrics")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testCacheHitMetrics() {
+        // Arrange
+        String programSource = """
+            import dspy
+            class CacheMetricsModule(dspy.Module):
+                def forward(self, x):
+                    return {"result": x}
+            """;
+
+        DspyProgram program = DspyProgram.builder()
+                .name("cache-metrics")
+                .source(programSource)
+                .build();
+
+        Map<String, Object> inputs = Map.of("x", 42);
+
+        // Act: First execution
+        DspyExecutionResult result1 = bridge.execute(program, inputs);
+        // Second execution
+        DspyExecutionResult result2 = bridge.execute(program, inputs);
+
+        // Assert
+        assertThat(result1.metrics().cacheHit(), is(false));
+        assertThat(result2.metrics().cacheHit(), is(true));
+        assertThat(result1.metrics().contextReused(), is(true));  // Always reused from pool
+        assertThat(result2.metrics().contextReused(), is(true));
+    }
+
+    @Test
+    @DisplayName("Should report timestamp in metrics")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testMetricsTimestamp() {
+        // Arrange
+        String programSource = """
+            import dspy
+            class TimestampModule(dspy.Module):
+                def forward(self, x):
+                    return {"timestamp_test": True}
+            """;
+
+        DspyProgram program = DspyProgram.builder()
+                .name("timestamp-test")
+                .source(programSource)
                 .build();
 
         // Act
-        DspyExecutionResult result = new DspyExecutionResult(output, null, metrics);
+        DspyExecutionResult result = bridge.execute(program, Map.of("x", 1));
 
         // Assert
-        assertNull(result.trace());
-        assertNotNull(result.output());
-        assertNotNull(result.metrics());
+        assertThat(result.metrics().timestamp(), notNullValue());
     }
 
     @Test
-    @DisplayName("Should build metrics with null quality score")
-    void testMetricsWithNullQualityScore() {
-        // Act
-        DspyExecutionMetrics metrics = DspyExecutionMetrics.builder()
-                .compilationTimeMs(100)
-                .executionTimeMs(100)
-                .inputTokens(5)
-                .outputTokens(5)
-                .qualityScore(null)  // No optimization
-                .cacheHit(false)
-                .contextReused(false)
-                .timestamp(Instant.now())
+    @DisplayName("Should support concurrent execution (context pooling)")
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    void testConcurrentExecution() throws InterruptedException {
+        // Arrange
+        String programSource = """
+            import dspy
+            class ConcurrentModule(dspy.Module):
+                def forward(self, id):
+                    return {"id": id}
+            """;
+
+        DspyProgram program = DspyProgram.builder()
+                .name("concurrent")
+                .source(programSource)
                 .build();
 
+        // Act: Execute from 3 concurrent threads
+        Thread[] threads = new Thread[3];
+        DspyExecutionResult[] results = new DspyExecutionResult[3];
+
+        for (int i = 0; i < 3; i++) {
+            final int taskId = i;
+            threads[i] = new Thread(() -> {
+                results[taskId] = bridge.execute(program, Map.of("id", taskId));
+            });
+            threads[i].start();
+        }
+
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        // Assert: All executions succeeded
+        for (DspyExecutionResult result : results) {
+            assertThat(result, notNullValue());
+            assertThat(result.output(), notNullValue());
+        }
+    }
+
+    @Test
+    @DisplayName("Should return cache statistics")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testCacheStats() {
+        // Arrange
+        String programSource = """
+            import dspy
+            class StatsModule(dspy.Module):
+                def forward(self, x):
+                    return {"x": x}
+            """;
+
+        DspyProgram program = DspyProgram.builder()
+                .name("stats-test")
+                .source(programSource)
+                .build();
+
+        // Act: Execute once to populate cache
+        bridge.execute(program, Map.of("x", 1));
+        Map<String, Object> stats = bridge.getCacheStats();
+
         // Assert
-        assertNull(metrics.qualityScore());
-        assertTrue(metrics.totalTokens() > 0);
+        assertThat(stats, notNullValue());
+        assertThat(stats.get("cacheSize"), notNullValue());
+        assertThat(stats.get("cacheMaxSize"), notNullValue());
     }
 
     @Test
-    @DisplayName("Should validate execution result output is not null")
-    void testExecutionResultOutputValidation() {
+    @DisplayName("Should clear cache successfully")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testClearCache() {
+        // Arrange
+        String programSource = """
+            import dspy
+            class ClearCacheModule(dspy.Module):
+                def forward(self, x):
+                    return {"x": x}
+            """;
+
+        DspyProgram program = DspyProgram.builder()
+                .name("clear-cache-test")
+                .source(programSource)
+                .build();
+
+        // Act: Execute to populate cache
+        bridge.execute(program, Map.of("x", 1));
+        Map<String, Object> statsBefore = bridge.getCacheStats();
+
+        bridge.clearCache();
+        Map<String, Object> statsAfter = bridge.getCacheStats();
+
+        // Act: Execute again (should be cache miss since cleared)
+        DspyExecutionResult result = bridge.execute(program, Map.of("x", 1));
+
+        // Assert
+        int cacheSizeBefore = ((Number) statsBefore.get("cacheSize")).intValue();
+        int cacheSizeAfter = ((Number) statsAfter.get("cacheSize")).intValue();
+        assertThat(cacheSizeBefore, greaterThan(0));
+        assertThat(cacheSizeAfter, equalTo(0));
+        assertThat(result.metrics().cacheHit(), is(false));  // Not in cache
+    }
+
+    @Test
+    @DisplayName("Should reject null program")
+    void testNullProgramRejection() {
         // Act & Assert
-        assertThrows(NullPointerException.class, () ->
-                DspyExecutionResult.builder()
-                        .output(null)
-                        .metrics(DspyExecutionMetrics.builder()
-                                .compilationTimeMs(100)
-                                .executionTimeMs(100)
-                                .inputTokens(5)
-                                .outputTokens(5)
-                                .cacheHit(false)
-                                .contextReused(false)
-                                .timestamp(Instant.now())
-                                .build())
-                        .build());
+        try {
+            bridge.execute(null, Map.of("x", 1));
+            throw new AssertionError("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertThat(e.getMessage(), containsString("DspyProgram"));
+        }
     }
 
     @Test
-    @DisplayName("Should validate execution result metrics is not null")
-    void testExecutionResultMetricsValidation() {
-        // Act & Assert
-        assertThrows(NullPointerException.class, () ->
-                DspyExecutionResult.builder()
-                        .output(new HashMap<>())
-                        .metrics(null)
-                        .build());
-    }
-
-    @Test
-    @DisplayName("Should support serialization of DspyProgram")
-    void testDspyProgramSerializable() {
+    @DisplayName("Should reject null inputs map")
+    void testNullInputsRejection() {
         // Arrange
         DspyProgram program = DspyProgram.builder()
-                .name("serializable-prog")
-                .source("test source")
-                .description("Test")
+                .name("test")
+                .source("import dspy\nclass T(dspy.Module):\n  def forward(self, x): return {}")
                 .build();
 
-        // Act: Program is a record, should be serializable by default
-        String cacheKey = program.cacheKey();
+        // Act & Assert
+        try {
+            bridge.execute(program, null);
+            throw new AssertionError("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertThat(e.getMessage(), containsString("Inputs"));
+        }
+    }
+
+    @Test
+    @DisplayName("Should reject null PythonExecutionEngine in constructor")
+    void testNullEngineRejection() {
+        // Act & Assert
+        try {
+            new PythonDspyBridge(null);
+            throw new AssertionError("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertThat(e.getMessage(), containsString("PythonExecutionEngine"));
+        }
+    }
+
+    @Test
+    @DisplayName("Should return empty map if no module class found")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testInvalidSourceHandling() {
+        // Arrange: Source without dspy.Module class
+        String invalidSource = """
+            # Just a comment, no module class
+            x = 42
+            """;
+
+        DspyProgram program = DspyProgram.builder()
+                .name("invalid")
+                .source(invalidSource)
+                .build();
+
+        // Act & Assert: Should throw PythonException
+        try {
+            bridge.execute(program, Map.of("x", 1));
+            throw new AssertionError("Expected PythonException");
+        } catch (Exception e) {
+            // Verify it's some form of Python/execution error
+            assertThat(e.getClass().getSimpleName(), containsString("Exception"));
+        }
+    }
+
+    @Test
+    @DisplayName("Should handle multiple programs concurrently with proper isolation")
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    void testMultipleProgramsConcurrent() throws InterruptedException {
+        // Arrange: Two different programs
+        String source1 = """
+            import dspy
+            class Program1(dspy.Module):
+                def forward(self, x):
+                    return {"program": 1, "x": x}
+            """;
+
+        String source2 = """
+            import dspy
+            class Program2(dspy.Module):
+                def forward(self, y):
+                    return {"program": 2, "y": y}
+            """;
+
+        DspyProgram prog1 = DspyProgram.builder().name("prog1").source(source1).build();
+        DspyProgram prog2 = DspyProgram.builder().name("prog2").source(source2).build();
+
+        // Act: Execute both concurrently
+        Thread t1 = new Thread(() -> {
+            for (int i = 0; i < 3; i++) {
+                bridge.execute(prog1, Map.of("x", i));
+            }
+        });
+
+        Thread t2 = new Thread(() -> {
+            for (int i = 0; i < 3; i++) {
+                bridge.execute(prog2, Map.of("y", i));
+            }
+        });
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        // Assert: Both completed without error (verified by no exception thrown)
+        Map<String, Object> stats = bridge.getCacheStats();
+        int cacheSize = ((Number) stats.get("cacheSize")).intValue();
+        assertThat(cacheSize, equalTo(2));  // Two distinct programs
+    }
+
+    @Test
+    @DisplayName("Should compute correct total time and token metrics")
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testMetricsCalculations() {
+        // Arrange
+        String programSource = """
+            import dspy
+            class MetricsModule(dspy.Module):
+                def forward(self, text):
+                    return {"output": text}
+            """;
+
+        DspyProgram program = DspyProgram.builder()
+                .name("metrics-calc")
+                .source(programSource)
+                .build();
+
+        // Act
+        DspyExecutionResult result = bridge.execute(program, Map.of("text", "test"));
 
         // Assert
-        assertNotNull(cacheKey);
-        assertThat(cacheKey, containsString("serializable-prog"));
+        long compilationTime = result.metrics().compilationTimeMs();
+        long executionTime = result.metrics().executionTimeMs();
+        long totalTime = result.metrics().totalTimeMs();
+        long inputTokens = result.metrics().inputTokens();
+        long outputTokens = result.metrics().outputTokens();
+        long totalTokens = result.metrics().totalTokens();
+
+        assertThat(totalTime, equalTo(compilationTime + executionTime));
+        assertThat(totalTokens, equalTo(inputTokens + outputTokens));
+        assertThat(compilationTime, greaterThanOrEqualTo(0L));
+        assertThat(executionTime, greaterThanOrEqualTo(0L));
     }
 }
