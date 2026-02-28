@@ -104,7 +104,7 @@ public class SAFeAgentSimulationTest {
 
         // Arrange: Create 5 SAFe agents for PI planning
         SAFeCeremonyData.PIPlanning piPlanData = createPIPlanningData();
-        List<AgentParticipant> agents = createPIPlanningAgents();
+        List<SAFeCeremonyExecutor.AgentParticipant> agents = createPIPlanningAgents();
 
         // Act: Execute PI planning ceremony workflow
         SAFeCeremonyData.PIPlanning executedPlan = ceremonyExecutor.executePIPlanningCeremony(
@@ -702,7 +702,7 @@ public class SAFeAgentSimulationTest {
         );
     }
 
-    private List<AgentParticipant> createPIPlanningAgents() {
+    private List<SAFeCeremonyExecutor.AgentParticipant> createPIPlanningAgents() {
         return List.of(
             createReleaseTrainEngineerAgent(),
             createSystemArchitectAgent(),
@@ -712,30 +712,30 @@ public class SAFeAgentSimulationTest {
         );
     }
 
-    private List<AgentParticipant> createDeveloperTeam(int count) {
+    private List<SAFeCeremonyExecutor.AgentParticipant> createDeveloperTeam(int count) {
         return IntStream.range(0, count)
             .mapToObj(i -> createDeveloperAgent("dev-team-" + i))
             .toList();
     }
 
-    private AgentParticipant createReleaseTrainEngineerAgent() {
-        return new AgentParticipant("rte-1", "Release Train Engineer", "RTE");
+    private SAFeCeremonyExecutor.AgentParticipant createReleaseTrainEngineerAgent() {
+        return new SAFeCeremonyExecutor.AgentParticipant("rte-1", "Release Train Engineer", "RTE");
     }
 
-    private AgentParticipant createSystemArchitectAgent() {
-        return new AgentParticipant("arch-1", "System Architect", "ARCHITECT");
+    private SAFeCeremonyExecutor.AgentParticipant createSystemArchitectAgent() {
+        return new SAFeCeremonyExecutor.AgentParticipant("arch-1", "System Architect", "ARCHITECT");
     }
 
-    private AgentParticipant createProductOwnerAgent() {
-        return new AgentParticipant("po-1", "Product Owner", "PO");
+    private SAFeCeremonyExecutor.AgentParticipant createProductOwnerAgent() {
+        return new SAFeCeremonyExecutor.AgentParticipant("po-1", "Product Owner", "PO");
     }
 
-    private AgentParticipant createScrumMasterAgent() {
-        return new AgentParticipant("sm-1", "Scrum Master", "SM");
+    private SAFeCeremonyExecutor.AgentParticipant createScrumMasterAgent() {
+        return new SAFeCeremonyExecutor.AgentParticipant("sm-1", "Scrum Master", "SM");
     }
 
-    private AgentParticipant createDeveloperAgent(String id) {
-        return new AgentParticipant(id, "Developer " + id, "DEV");
+    private SAFeCeremonyExecutor.AgentParticipant createDeveloperAgent(String id) {
+        return new SAFeCeremonyExecutor.AgentParticipant(id, "Developer " + id, "DEV");
     }
 
     private List<String> validateDependencies(List<UserStory> stories,
