@@ -1,0 +1,42 @@
+[
+  {
+    "operation": "WORK_ITEM_CHECKOUT",
+    "baseline_case_count": 10000,
+    "baseline_p95_ms": 59.69,
+    "peak_case_count": 1000000,
+    "peak_p95_ms": 159.64,
+    "degradation_factor": 2.67,
+    "is_significant": true,
+    "data_points": 16
+  },
+  {
+    "operation": "CASE_LAUNCH",
+    "baseline_case_count": 10000,
+    "baseline_p95_ms": 104.84,
+    "peak_case_count": 1000000,
+    "peak_p95_ms": 239.76,
+    "degradation_factor": 2.29,
+    "is_significant": true,
+    "data_points": 16
+  },
+  {
+    "operation": "WORK_ITEM_COMPLETE",
+    "baseline_case_count": 10000,
+    "baseline_p95_ms": 104.86,
+    "peak_case_count": 1000000,
+    "peak_p95_ms": 237.72,
+    "degradation_factor": 2.27,
+    "is_significant": true,
+    "data_points": 16
+  },
+  {
+    "operation": "TASK_EXECUTION",
+    "baseline_case_count": 10000,
+    "baseline_p95_ms": 38.85,
+    "peak_case_count": 1000000,
+    "peak_p95_ms": 81.43,
+    "degradation_factor": 2.1,
+    "is_significant": true,
+    "data_points": 16
+  }
+]

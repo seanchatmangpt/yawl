@@ -1,0 +1,144 @@
+# Claude Code Autorun Self-Update Configuration
+# Enables autonomous self-update cycles with gated validation
+
+[autorun]
+# Master enable/disable for autorun self-update
+enabled = true
+version = "1.0.0"
+# Release channel: "latest" (immediate) or "stable" (1-week delay)
+release_channel = "stable"
+
+[autorun.update_detection]
+# Check for updates on SessionStart
+on_session_start = true
+# Check periodically (minutes, 0 = disabled)
+periodic_interval_minutes = 60
+# Check on specific git events (push, pull, merge)
+on_git_events = true
+
+[autorun.gating]
+# Enforce strict build gates (MANDATORY)
+enforce_compile = true
+enforce_test = true
+enforce_validate = true
+enforce_deploy = true
+# Run full dx.sh all before commit
+dx_all_required = true
+# Run hyper-validate.sh for H-guards (no TODO, mock, stub, fake, empty returns, silent fallbacks, lies)
+hypervalidate_required = true
+# Verify Q invariants (real_impl ∨ throw UnsupportedOperationException)
+q_invariants_required = true
+
+[autorun.approval]
+# Risk levels: LOW=auto, MEDIUM=auto, HIGH=requires approval, CRITICAL=blocked
+auto_approve_low_risk = true
+auto_approve_medium_risk = true
+# Require user approval for HIGH/CRITICAL risk changes
+require_approval_for_high = true
+require_approval_for_critical = true
+# Approval timeout (minutes)
+approval_timeout_minutes = 60
+
+[autorun.permissions]
+# Use "bypassPermissions" mode (only in isolated/CI environments)
+# Options: "default", "acceptEdits", "plan", "bypassPermissions"
+permission_mode = "acceptEdits"
+# Allowed tools (specific to autorun)
+allowed_tools = [
+  "Bash(mvn *)",
+  "Bash(git *)",
+  "Bash(bash scripts/dx.sh *)",
+  "Read",
+  "Write",
+  "Edit",
+  "Glob",
+  "Grep",
+]
+# Deny list (overrides allow list)
+denied_tools = [
+  "Bash(* rm -rf *)",
+  "Bash(git push --force *)",
+  "Bash(git reset --hard *)",
+]
+
+[autorun.execution]
+# Maximum execution time (minutes)
+max_execution_minutes = 120
+# Number of retry attempts on transient failures
+max_retries = 3
+# Backoff strategy: "linear", "exponential"
+retry_backoff = "exponential"
+# Checkpoint state every N minutes
+checkpoint_interval_minutes = 15
+# Auto-rollback on fatal errors
+auto_rollback_on_error = true
+
+[autorun.notification]
+# Notify on update completion
+notify_on_complete = true
+# Notify on error
+notify_on_error = true
+# Notification channels: "log", "email", "slack", "webhook"
+channels = ["log"]
+# Log location
+log_file = ".claude/logs/autorun.log"
+
+[autorun.dry_run]
+# Enable dry-run mode (analyze without executing)
+enabled = false
+# Report only without committing
+report_only = false
+
+[autorun.safety]
+# Never auto-update these modules (comma-separated)
+protected_modules = [
+  "yawl-engine",
+  "yawl-authentication",
+  "yawl-security",
+]
+# Block updates to these file patterns
+protected_files = [
+  "CLAUDE.md",
+  ".claude/HYPER_STANDARDS.md",
+  "pom.xml",
+  "*.properties",
+]
+# Maximum changes per update cycle
+max_files_per_update = 50
+max_lines_per_update = 5000
+
+[autorun.observatory]
+# Use Observatory facts for context compression (100x compression)
+use_observatory_facts = true
+# Run observatory.sh to refresh facts before update
+refresh_observatory = true
+# Require facts to be <1 hour old
+facts_max_age_minutes = 60
+
+[autorun.memory]
+# Track upgrade history in UpgradeMemoryStore
+track_history = true
+# Location of upgrade history
+history_file = ".claude/memory/upgrade_history.json"
+# Learn from patterns in history
+learn_from_history = true
+
+[autorun.git]
+# Atomic single commit per logical change
+atomic_commits = true
+# Sign commits (requires GPG setup)
+sign_commits = false
+# Commit message template
+commit_message_template = "autorun: {action} {module} - {description}\n\nAutomatic self-update via Claude Code autorun.\nPhase: {phase} | Risk: {risk} | Version: {version}\nhttps://claude.ai/code/session_{session_id}"
+# Branch protection (never force push to main/master)
+protect_main_branch = true
+
+[autorun.metrics]
+# Collect metrics on update success/failure rates
+collect_metrics = true
+# Metrics location
+metrics_file = ".claude/metrics/autorun-metrics.json"
+# Success rate threshold (%)
+success_rate_threshold = 95
+# Alert on degradation
+alert_on_degradation = true

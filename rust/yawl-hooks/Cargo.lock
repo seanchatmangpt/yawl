@@ -873,28 +873,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "yawl-jira"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "delta",
- "differ",
- "jira",
- "serde_json",
-]
-
-[[package]]
-name = "yawl-scout"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "blake3",
- "scout",
- "serde_json",
- "toml",
-]
-
-[[package]]
 name = "zeroize"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

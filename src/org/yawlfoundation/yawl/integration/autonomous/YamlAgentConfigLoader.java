@@ -35,7 +35,7 @@ import org.yawlfoundation.yawl.integration.autonomous.strategies.StaticMappingEl
 import org.yawlfoundation.yawl.integration.autonomous.strategies.TemplateDecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.ZaiEligibilityReasonerStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.ZaiDecisionReasonerStrategy;
-import org.yawlfoundation.yawl.integration.orderfulfillment.AgentCapability;
+import org.yawlfoundation.yawl.integration.autonomous.AgentCapability;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
 import org.yaml.snakeyaml.Yaml;
 

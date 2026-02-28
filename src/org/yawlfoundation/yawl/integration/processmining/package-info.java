@@ -30,12 +30,12 @@
  *
  * <h3>Integration Flow</h3>
  * <pre>
- *   YAWL Engine                  Java Integration             Rust4PM Bridge
- *   (YEngine)                    (processmining)              (HTTP REST)
+ *   YAWL Engine                  Java Integration             WASM Process Mining
+ *   (YEngine)                    (processmining)              (GraalWASM Bridge)
  *       |                               |                           |
  *       | YWorkItem events              |                           |
  *       | (completed, failed, etc.)     |                           |
- *       +------&gt; EventLogExporter ------&gt; XES/OCEL2 -----&gt; Rust4PmClient
+ *       +------&gt; EventLogExporter ------&gt; XES/OCEL2 -----&gt; Rust4pmWasmProcessMiningService
  *                                        |                       |
  *                                        | &lt;--- JSON Results ---+
  *                                        |
@@ -99,24 +99,26 @@
  *   <li><strong>Immutable</strong>: Java 25 record with natural equality/serialization</li>
  * </ul>
  *
- * <h3>Rust4PM REST Bridge (Rust4PmClient)</h3>
- * HTTP-based adapter to Rust4PM process mining service.
+ * <h3>Rust4PM WASM Bridge (Rust4pmWasmProcessMiningService)</h3>
+ * Embedded, in-process WASM-based process mining service. No external service required.
  * <ul>
- *   <li><strong>Protocol</strong>: HTTP/1.1 or HTTP/2 REST</li>
- *   <li><strong>Endpoints</strong>:
+ *   <li><strong>Transport</strong>: GraalVM polyglot JS+WASM (embedded in YAWL JAR)</li>
+ *   <li><strong>Operations</strong>:
  *     <ul>
- *       <li>{@code POST /discover} - Run process discovery (Alpha, Heuristic, DFG)</li>
- *       <li>{@code POST /analyze} - Conformance + performance analysis</li>
- *       <li>{@code POST /export-ocel2} - Convert XES to OCEL2 (object-centric)</li>
- *       <li>{@code GET /status} - Health check</li>
+ *       <li>{@code discoverDfg(xesXml)} - Extract directly-follows graph from event log</li>
+ *       <li>{@code discoverAlphaPpp(xesXml)} - Run Alpha algorithm for process discovery</li>
+ *       <li>{@code tokenReplay(pnmlXml, xesXml)} - Conformance checking via token replay</li>
+ *       <li>{@code performanceAnalysis(xesXml)} - Extract performance metrics</li>
+ *       <li>{@code xesToOcel(xesXml)} - Convert XES to OCEL2 (object-centric)</li>
+ *       <li>{@code isHealthy()} - Health check (always true if initialized)</li>
  *     </ul>
  *   </li>
  *   <li><strong>Input Format</strong>: XES XML or OCEL2 JSON</li>
  *   <li><strong>Output Format</strong>: JSON (ProcessDiscoveryResult, analysis metrics)</li>
- *   <li><strong>Error Handling</strong>: Throws checked exceptions for network/parsing
- *       errors; caller responsible for retry logic</li>
- *   <li><strong>Timeout</strong>: Configurable per request (default 60s for discovery,
- *       10s for status)</li>
+ *   <li><strong>Error Handling</strong>: Throws {@code IOException} for analysis failures;
+ *       caller responsible for error recovery</li>
+ *   <li><strong>Latency</strong>: Microseconds to milliseconds per operation (WASM is fast)</li>
+ *   <li><strong>Thread Safety</strong>: Thread-safe via GraalVM context pool</li>
  * </ul>
  *
  * <h3>OCEL2 Export (Ocel2Exporter)</h3>
@@ -128,8 +130,8 @@
  *   <li><strong>Events</strong>: Activity executions with object references</li>
  *   <li><strong>Use Case</strong>: Analyzing object flows, inter-case dependencies,
  *       resource allocation patterns</li>
- *   <li><strong>Integration</strong>: Rust4PmClient converts XES to OCEL2 via
- *       {@code POST /export-ocel2}</li>
+ *   <li><strong>Integration</strong>: Rust4pmWasmProcessMiningService converts XES to OCEL2 via
+ *       WASM bridge method {@code xesToOcel(xesXml)}</li>
  * </ul>
  *
  * <h3>ProcessMiningSession (Durable)</h3>
@@ -201,26 +203,28 @@
  * <h2>Usage Example</h2>
  *
  * <pre>{@code
- * // 1. Initialize exporter (connects to YAWL engine)
- * EventLogExporter exporter = new EventLogExporter("http://localhost:8080", "admin", "pass");
+ * // 1. Initialize WASM-based process mining service
+ * try (Rust4pmWasmProcessMiningService service = new Rust4pmWasmProcessMiningService()) {
  *
- * // 2. Export XES log for specification
- * YSpecificationID specId = new YSpecificationID("MyWorkflow", "1.0", "root");
- * String xesLog = exporter.exportSpecificationToXes(specId, true);
+ *     // 2. Export XES log for specification
+ *     EventLogExporter exporter = new EventLogExporter("http://localhost:8080", "admin", "pass");
+ *     YSpecificationID specId = new YSpecificationID("MyWorkflow", "1.0", "root");
+ *     String xesLog = exporter.exportSpecificationToXes(specId, true);
  *
- * // 3. Send to Rust4PM for discovery
- * Rust4PmClient client = new Rust4PmClient("http://rust4pm:8000");
- * ProcessDiscoveryResult discovery = client.discover(xesLog, "HEURISTIC");
+ *     // 3. Run process discovery via WASM bridge
+ *     String pnmlXml = service.discoverAlphaPpp(xesLog);
  *
- * // 4. Cache result to session
- * ProcessMiningSession session = new ProcessMiningSession(specId);
- * session.cacheResult(discovery);
+ *     // 4. Run conformance checking
+ *     String conformanceJson = service.tokenReplay(pnmlXml, xesLog);
  *
- * // 5. Query results for MCP tools
- * ProcessDiscoveryResult latest = session.getLatestResult();
- * System.out.println("Discovered model: " + latest.processModelJson());
- * System.out.println("Fitness: " + latest.fitness());
- * System.out.println("Precision: " + latest.precision());
+ *     // 5. Extract performance metrics
+ *     String performanceJson = service.performanceAnalysis(xesLog);
+ *
+ *     // 6. Query results for MCP tools
+ *     System.out.println("Discovered model (PNML): " + pnmlXml);
+ *     System.out.println("Conformance metrics: " + conformanceJson);
+ *     System.out.println("Performance metrics: " + performanceJson);
+ * }
  * }</pre>
  *
  * <h2>Thread Safety &amp; Concurrency</h2>
@@ -228,8 +232,8 @@
  * <ul>
  *   <li><strong>EventLogExporter</strong>: Single-threaded session management
  *       (thread-safe per session, reuse exporter across threads)</li>
- *   <li><strong>Rust4PmClient</strong>: Thread-safe HTTP client; concurrent
- *       requests to different endpoints allowed</li>
+ *   <li><strong>Rust4pmWasmProcessMiningService</strong>: Thread-safe WASM bridge via
+ *       GraalVM context pool; concurrent requests to different operations allowed</li>
  *   <li><strong>ProcessMiningSession</strong>: Virtual threads safe; results cache
  *       is immutable (ProcessDiscoveryResult is Java 25 record)</li>
  *   <li><strong>Analyzers</strong>: Stateless; safe for concurrent analysis</li>
@@ -240,8 +244,8 @@
  * <ul>
  *   <li><strong>EventLogExporter</strong>: Throws {@code IOException} on connection
  *       or export failure; caller retries with exponential backoff</li>
- *   <li><strong>Rust4PmClient</strong>: Throws {@code IOException} for HTTP errors
- *       or timeouts; throws {@code ParseException} for malformed JSON responses</li>
+ *   <li><strong>Rust4pmWasmProcessMiningService</strong>: Throws {@code IOException} for
+ *       WASM analysis failures or bridge initialization errors</li>
  *   <li><strong>Analyzers</strong>: Log warnings on parse failure; return empty
  *       results rather than throwing (graceful degradation)</li>
  *   <li><strong>ProcessMiningSession</strong>: Validates immutable result invariants

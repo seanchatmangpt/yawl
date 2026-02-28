@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="ExclusiveMilestoneProcess">
+    <name>Exclusive Milestone Process</name>
+    <documentation>Process with XOR milestone guard</documentation>
+    <metaData/>
+    <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
+      <name>Choice Net</name>
+      <processControlElements>
+        <inputCondition id="input">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="ExpressApproval"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="ExpressApproval">
+          <name>Express Approval</name>
+          <flowsInto>
+            <nextElementRef id="ExpressMilestone"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <milestone id="ExpressMilestone">
+          <name>Express Approval Milestone</name>
+          <flowsInto>
+            <nextElementRef id="StandardApproval"/>
+          </flowsInto>
+          <expression>/approval/method = 'EXPRESS'</expression>
+          <expiryType>TIME_BASED</expiryType>
+          <expiryTimeout>1800000</expiryTimeout>
+        </milestone>
+        <task id="StandardApproval">
+          <name>Standard Approval</name>
+          <flowsInto>
+            <nextElementRef id="StandardMilestone"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+        <milestone id="StandardMilestone">
+          <name>Standard Approval Milestone</name>
+          <flowsInto>
+            <nextElementRef id="Execute"/>
+          </flowsInto>
+          <expression>/approval/method = 'STANDARD'</expression>
+          <expiryType>TIME_BASED</expiryType>
+          <expiryTimeout>5400000</expiryTimeout>
+        </milestone>
+        <task id="Execute">
+          <name>Execute</name>
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="xor"/>
+          <milestoneGuards operator="XOR">
+            <guard>
+              <milestoneRef id="ExpressMilestone"/>
+            </guard>
+            <guard>
+              <milestoneRef id="StandardMilestone"/>
+            </guard>
+          </milestoneGuards>
+        </task>
+        <outputCondition id="output">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

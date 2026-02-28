@@ -163,6 +163,27 @@
 			<xs:minLength value="1"/>
 		</xs:restriction>
 	</xs:simpleType>
+
+	<xs:simpleType name="MilestoneExpiryTypeCodeType">
+		<xs:annotation>
+			<xs:documentation>Type of milestone expiry: TIME_BASED, DATA_BASED, or NEVER</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="TIME_BASED"/>
+			<xs:enumeration value="DATA_BASED"/>
+			<xs:enumeration value="NEVER"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="MilestoneGuardOperatorCodeType">
+		<xs:annotation>
+			<xs:documentation>Operator for milestone guard evaluation: AND, OR, or XOR</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="AND"/>
+			<xs:enumeration value="OR"/>
+			<xs:enumeration value="XOR"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<!--
 	################################################################################################
 	COMPLEX TYPES FROM ENTITY TYPES
@@ -410,6 +431,7 @@
 						</xs:key>
 					</xs:element>
 					<xs:element name="timer" type="yawl:TimerType" minOccurs="0"/>
+					<xs:element name="milestoneGuards" type="yawl:MilestoneGuardsType" minOccurs="0"/>
 					<xs:element name="resourcing" type="yawl:ResourcingFactsType" minOccurs="0"/>
                     <xs:element name="customForm" type="xs:anyURI" minOccurs="0"/>
                     <xs:element name="decomposesTo" type="yawl:DecompositionType" minOccurs="0"/>
@@ -465,6 +487,7 @@
 								<xs:choice maxOccurs="unbounded">
 									<xs:element name="task" type="yawl:ExternalTaskFactsType" minOccurs="0" maxOccurs="unbounded"/>
 									<xs:element name="condition" type="yawl:ExternalConditionFactsType" minOccurs="0" maxOccurs="unbounded"/>
+									<xs:element name="milestone" type="yawl:MilestoneConditionFactsType" minOccurs="0" maxOccurs="unbounded"/>
 								</xs:choice>
 								<xs:element name="outputCondition" type="yawl:OutputConditionFactsType"/>
 							</xs:sequence>
@@ -1230,4 +1253,37 @@
    <xs:attribute name="h" type="xs:integer" use="required"/>
  </xs:complexType>
     
+
+	<!--
+	#### TYPE #### MilestoneConditionFactsType
+	-->
+	<xs:complexType name="MilestoneConditionFactsType">
+		<xs:complexContent>
+			<xs:extension base="yawl:ExternalConditionFactsType">
+				<xs:sequence>
+					<xs:element name="expression" type="yawl:XQueryType"/>
+					<xs:element name="expiryType" type="yawl:MilestoneExpiryTypeCodeType" minOccurs="0"/>
+					<xs:element name="expiryTimeout" type="xs:long" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!--
+	#### TYPE #### MilestoneGuardType
+	-->
+	<xs:complexType name="MilestoneGuardType">
+		<xs:sequence>
+			<xs:element name="milestoneRef" type="yawl:ExternalNetElementType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!--
+	#### TYPE #### MilestoneGuardsType
+	-->
+	<xs:complexType name="MilestoneGuardsType">
+		<xs:sequence>
+			<xs:element name="guard" type="yawl:MilestoneGuardType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="operator" type="yawl:MilestoneGuardOperatorCodeType" use="required"/>
+	</xs:complexType>
+
 </xs:schema>
