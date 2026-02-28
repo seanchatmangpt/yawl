@@ -1,7 +1,7 @@
 package org.yawlfoundation.yawl.integration.selfplay;
 
+import org.yawlfoundation.yawl.integration.coordination.events.AgentDecisionEvent;
 import org.yawlfoundation.yawl.integration.selfplay.model.DesignChallenge;
-import org.yawlfoundation.yawl.integration.selfplay.model.DesignProposal;
 import org.yawlfoundation.yawl.integration.selfplay.model.FitnessScore;
 import org.yawlfoundation.yawl.integration.selfplay.model.V7Gap;
 
@@ -14,18 +14,19 @@ import java.util.stream.Collectors;
  *
  * <p>Four weighted axes:
  * <ol>
- *   <li><b>completeness</b> (35%): fraction of the 7 known v7 gaps that have at least
- *       one accepted proposal.</li>
+ *   <li><b>completeness</b> (35%): fraction of the known v7 gaps that have at least
+ *       one accepted proposal (AgentDecisionEvent).</li>
  *   <li><b>consistency</b> (25%): 1.0 if no inter-proposal contradictions exist.
  *       Proposals for orthogonal gaps are always consistent. Contradiction = two accepted
- *       proposals for the same gap that disagree on backward-compat direction.</li>
- *   <li><b>compatibility</b> (25%): mean backward-compat score of accepted proposals.
- *       If no proposals are accepted, returns 0.0.</li>
- *   <li><b>performance</b> (15%): mean estimated performance gain of accepted proposals.
- *       If no proposals are accepted, returns 0.0.</li>
+ *       proposals for the same gap that have v6_interface_impact scores that differ by >0.3.</li>
+ *   <li><b>compatibility</b> (25%): mean v6_interface_impact score of accepted proposals.
+ *       Extracted from event.metadata("v6_interface_impact"). Returns 0.0 if no proposals.</li>
+ *   <li><b>performance</b> (15%): mean estimated_gain of accepted proposals.
+ *       Extracted from event.metadata("estimated_gain"). Returns 0.0 if no proposals.</li>
  * </ol>
  *
  * <p>All methods are stateless and thread-safe.
+ * Uses AgentDecisionEvent (enterprise-standard) instead of custom DesignProposal.
  */
 public final class V7FitnessEvaluator {
 
@@ -38,12 +39,12 @@ public final class V7FitnessEvaluator {
     /**
      * Evaluate the fitness of the current cumulative set of accepted proposals.
      *
-     * @param acceptedProposals all proposals accepted across all self-play rounds
+     * @param acceptedProposals all proposals accepted across all self-play rounds (AgentDecisionEvent)
      * @param allChallenges all challenges issued across all self-play rounds
      * @return computed fitness score
      */
     public static FitnessScore evaluate(
-        List<DesignProposal> acceptedProposals,
+        List<AgentDecisionEvent> acceptedProposals,
         List<DesignChallenge> allChallenges
     ) {
         double completeness = computeCompleteness(acceptedProposals);
@@ -55,14 +56,15 @@ public final class V7FitnessEvaluator {
     }
 
     /**
-     * Completeness: fraction of 7 known v7 gaps that have at least one accepted proposal.
+     * Completeness: fraction of known v7 gaps that have at least one accepted proposal.
      */
-    static double computeCompleteness(List<DesignProposal> accepted) {
+    static double computeCompleteness(List<AgentDecisionEvent> accepted) {
         if (accepted.isEmpty()) {
             return 0.0;
         }
         Set<V7Gap> addressedGaps = accepted.stream()
-            .map(DesignProposal::gap)
+            .map(event -> extractGapFromEvent(event))
+            .filter(gap -> gap != null)
             .collect(Collectors.toSet());
         return (double) addressedGaps.size() / TOTAL_GAPS;
     }
@@ -70,9 +72,9 @@ public final class V7FitnessEvaluator {
     /**
      * Consistency: 1.0 if no contradictions between accepted proposals.
      * A contradiction occurs when two accepted proposals for the same gap have
-     * backward-compat scores that differ by more than 0.3 (conflicting design directions).
+     * v6_interface_impact scores that differ by more than 0.3 (conflicting design directions).
      */
-    static double computeConsistency(List<DesignProposal> accepted) {
+    static double computeConsistency(List<AgentDecisionEvent> accepted) {
         if (accepted.size() <= 1) {
             return 1.0;
         }
@@ -80,12 +82,16 @@ public final class V7FitnessEvaluator {
         int contradictions = 0;
         // Group by gap, detect conflicting compat directions within the same gap
         for (V7Gap gap : V7Gap.values()) {
-            List<DesignProposal> forGap = accepted.stream()
-                .filter(p -> p.gap() == gap)
+            List<AgentDecisionEvent> forGap = accepted.stream()
+                .filter(event -> extractGapFromEvent(event) == gap)
                 .toList();
             if (forGap.size() < 2) continue;
-            double minCompat = forGap.stream().mapToDouble(DesignProposal::backwardCompatScore).min().orElse(0);
-            double maxCompat = forGap.stream().mapToDouble(DesignProposal::backwardCompatScore).max().orElse(0);
+            double minCompat = forGap.stream()
+                .mapToDouble(V7FitnessEvaluator::extractCompatibilityScore)
+                .min().orElse(0);
+            double maxCompat = forGap.stream()
+                .mapToDouble(V7FitnessEvaluator::extractCompatibilityScore)
+                .max().orElse(0);
             if (maxCompat - minCompat > 0.3) {
                 contradictions++;
             }
@@ -96,30 +102,76 @@ public final class V7FitnessEvaluator {
     }
 
     /**
-     * Compatibility: mean backward-compat score of accepted proposals.
+     * Compatibility: mean v6_interface_impact score of accepted proposals.
      * Returns 0.0 if no proposals accepted.
+     * Extracted from event.metadata("v6_interface_impact").
      */
-    static double computeCompatibility(List<DesignProposal> accepted) {
+    static double computeCompatibility(List<AgentDecisionEvent> accepted) {
         if (accepted.isEmpty()) {
             return 0.0;
         }
         return accepted.stream()
-            .mapToDouble(DesignProposal::backwardCompatScore)
+            .mapToDouble(V7FitnessEvaluator::extractCompatibilityScore)
             .average()
             .orElse(0.0);
     }
 
     /**
-     * Performance: mean estimated performance gain of accepted proposals.
+     * Performance: mean estimated_gain of accepted proposals.
      * Returns 0.0 if no proposals accepted.
+     * Extracted from event.metadata("estimated_gain").
      */
-    static double computePerformance(List<DesignProposal> accepted) {
+    static double computePerformance(List<AgentDecisionEvent> accepted) {
         if (accepted.isEmpty()) {
             return 0.0;
         }
         return accepted.stream()
-            .mapToDouble(DesignProposal::performanceGain)
+            .mapToDouble(V7FitnessEvaluator::extractPerformanceGain)
             .average()
             .orElse(0.0);
+    }
+
+    /**
+     * Extract V7Gap from AgentDecisionEvent metadata.
+     * Gap is stored under "gap" key as String name.
+     */
+    static V7Gap extractGapFromEvent(AgentDecisionEvent event) {
+        Object gapObj = event.getMetadata().get("gap");
+        if (gapObj instanceof String gapStr) {
+            try {
+                return V7Gap.valueOf(gapStr);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extract backward compatibility score from AgentDecisionEvent metadata.
+     * Score is stored under "v6_interface_impact" key as Double (0.0–1.0).
+     * Default to 0.5 if not present (neutral).
+     */
+    static double extractCompatibilityScore(AgentDecisionEvent event) {
+        Object compatObj = event.getMetadata().get("v6_interface_impact");
+        if (compatObj instanceof Number num) {
+            double score = num.doubleValue();
+            return Math.max(0.0, Math.min(1.0, score)); // Clamp to [0.0, 1.0]
+        }
+        return 0.5; // Default neutral score if not specified
+    }
+
+    /**
+     * Extract performance gain from AgentDecisionEvent metadata.
+     * Gain is stored under "estimated_gain" key as Double (0.0–1.0).
+     * Default to 0.0 if not present (no gain).
+     */
+    static double extractPerformanceGain(AgentDecisionEvent event) {
+        Object gainObj = event.getMetadata().get("estimated_gain");
+        if (gainObj instanceof Number num) {
+            double gain = num.doubleValue();
+            return Math.max(0.0, Math.min(1.0, gain)); // Clamp to [0.0, 1.0]
+        }
+        return 0.0; // Default no gain if not specified
     }
 }
