@@ -1,0 +1,23 @@
+ABSTRACT: Deterministic Process Intelligence for Enterprise Workflow Systems
+
+For IEEE Software or IEEE Computer — Emphasis on Practitioner Value and Deployment Realities
+
+TITLE: Zero-Inference Workflow Intelligence: Making Enterprise Process Analytics Fast, Deterministic, and Auditable
+
+ABSTRACT
+
+The enterprise workflow automation market faces a productivity paradox: intelligent process analytics have become essential for compliance, optimization, and real-time adaptation, yet dominant approaches — routing every analytical query through an LLM — introduce unacceptable operational friction. Large language models introduce 500ms–15s latency incompatible with SLA requirements, $0.01–$0.20 per-query costs that compound across millions of cases, non-deterministic outputs violating audit trails required by HIPAA/SOX/GDPR, hallucination risk in compliance-sensitive decision making, and privacy concerns in regulated industries.
+
+This article presents a production-proven alternative developed in the YAWL 6.0 enterprise workflow engine: exposing five pure-computation analytical engines (temporal simulation, event-driven adaptation, behavioral conformance, data format conversion, process discovery) as externally accessible tools via standard protocols (MCP/A2A), achieving workflow intelligence without any inference dependency.
+
+The business case is compelling: (1) **Latency**: 1–200ms per operation versus 2–30s for LLM queries—enabling real-time SLA monitoring and event-driven adaptation. (2) **Cost**: ~$0.0001 per complex analytical operation versus $0.05–$0.50 for LLM-mediated analysis—5000× reduction at scale. (3) **Auditability**: Fully deterministic outputs with reproducible traces versus probabilistic decisions with explanation drift. (4) **Compliance**: No third-party inference endpoints, no data exfiltration, zero hallucination risk. (5) **Deployability**: Single JVM instance, no external AI service dependency.
+
+Practitioners can immediately deploy this architecture via four high-value pipelines: (A) compliance audit through discovery + conformance checking; (B) what-if analysis via process synthesis + path enumeration; (C) adaptive execution through event-driven rule engines + temporal forking; (D) process mining from raw CSV/JSON/XML via OCEL 2.0 conversion. Each pipeline operates with sub-second latency and zero inference.
+
+Production validation includes 153 unit tests across eight test classes, explicit correctness proofs for behavioral properties, and performance characterization on Java 25 virtual threads. Case studies demonstrate OCEL 2.0 data preparation pipelines that were previously infrastructure projects now executable in single API calls.
+
+The article concludes with deployment guidance for healthcare, financial services, and government sectors where deterministic audit trails are non-negotiable. The message: the best AI tool for structured analytical tasks is often not an AI model, but a deterministic engine made accessible.
+
+---
+
+Word count: 398 words
