@@ -178,9 +178,9 @@ public class SAFeAgentSimulationTest {
         // Arrange: Create sprint planning data with team capacity constraints
         SAFeCeremonyData.SprintPlanning planData = createSprintPlanningData();
         int teamCapacity = 40; // 40 points per 2-week sprint
-        AgentParticipant po = createProductOwnerAgent();
-        AgentParticipant sm = createScrumMasterAgent();
-        List<AgentParticipant> developers = createDeveloperTeam(5);
+        SAFeCeremonyExecutor.AgentParticipant po = createProductOwnerAgent();
+        SAFeCeremonyExecutor.AgentParticipant sm = createScrumMasterAgent();
+        List<SAFeCeremonyExecutor.AgentParticipant> developers = createDeveloperTeam(5);
 
         // Act: Execute sprint planning ceremony
         SAFeCeremonyData.SprintPlanning executedPlan =
@@ -259,11 +259,11 @@ public class SAFeAgentSimulationTest {
         LOGGER.info("=== Starting Daily Standup ===");
 
         // Arrange: Create 3 developers with different statuses
-        AgentParticipant sm = createScrumMasterAgent();
-        AgentParticipant dev1 = createDeveloperAgent("dev-1");
-        AgentParticipant dev2 = createDeveloperAgent("dev-2");
-        AgentParticipant dev3 = createDeveloperAgent("dev-3");
-        AgentParticipant architect = createSystemArchitectAgent();
+        SAFeCeremonyExecutor.AgentParticipant sm = createScrumMasterAgent();
+        SAFeCeremonyExecutor.AgentParticipant dev1 = createDeveloperAgent("dev-1");
+        SAFeCeremonyExecutor.AgentParticipant dev2 = createDeveloperAgent("dev-2");
+        SAFeCeremonyExecutor.AgentParticipant dev3 = createDeveloperAgent("dev-3");
+        SAFeCeremonyExecutor.AgentParticipant architect = createSystemArchitectAgent();
 
         SAFeCeremonyData.DailyStandup standupData =
             new SAFeCeremonyData.DailyStandup(
@@ -383,9 +383,9 @@ public class SAFeAgentSimulationTest {
             null
         );
 
-        AgentParticipant developer = createDeveloperAgent("dev-1");
-        AgentParticipant architect = createSystemArchitectAgent();
-        AgentParticipant po = createProductOwnerAgent();
+        SAFeCeremonyExecutor.AgentParticipant developer = createDeveloperAgent("dev-1");
+        SAFeCeremonyExecutor.AgentParticipant architect = createSystemArchitectAgent();
+        SAFeCeremonyExecutor.AgentParticipant po = createProductOwnerAgent();
 
         SAFeCeremonyData.StoryCompletionData storyData =
             new SAFeCeremonyData.StoryCompletionData(
@@ -463,8 +463,8 @@ public class SAFeAgentSimulationTest {
 
         // Arrange: Create PI data with sprint results
         SAFeCeremonyData.PIRetroData retroData = createPIRetroData();
-        AgentParticipant sm = createScrumMasterAgent();
-        List<AgentParticipant> teamMembers = createDeveloperTeam(5);
+        SAFeCeremonyExecutor.AgentParticipant sm = createScrumMasterAgent();
+        List<SAFeCeremonyExecutor.AgentParticipant> teamMembers = createDeveloperTeam(5);
 
         // Act: Execute PI retrospective
         SAFeCeremonyData.PIRetroResult retroResult =
