@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,6 +83,13 @@ public final class GenericPartyAgent {
     private Thread discoveryThread;
     private String sessionHandle;
 
+    // Exponential backoff tracking for discovery cycles
+    private int emptyResultsCount;
+    private long backoffMs;
+    private final long baseIntervalMs;
+    private final long maxBackoffMs = 60_000; // 60 seconds cap
+    private final Random jitterRandom = new Random();
+
     /**
      * Create a generic autonomous agent from the given configuration.
      *
@@ -104,6 +112,11 @@ public final class GenericPartyAgent {
             : engineUrl + "/ib";
 
         this.ibClient = new InterfaceB_EnvironmentBasedClient(interfaceBUrl);
+
+        // Initialize backoff tracking
+        this.baseIntervalMs = config.pollIntervalMs();
+        this.backoffMs = this.baseIntervalMs;
+        this.emptyResultsCount = 0;
 
         // Attempt connection to engine
         String session = ibClient.connect(config.getUsername(), config.getPassword());
@@ -267,30 +280,61 @@ public final class GenericPartyAgent {
             .start(() -> {
                 while (running.get()) {
                     try {
-                        runDiscoveryCycle();
+                        boolean hasItems = runDiscoveryCycle();
+
+                        // Update backoff based on whether items were found
+                        if (hasItems) {
+                            // Reset to base interval when items found
+                            emptyResultsCount = 0;
+                            backoffMs = baseIntervalMs;
+                        } else {
+                            // Exponential backoff: base × 2^N, capped at 60s
+                            emptyResultsCount++;
+                            backoffMs = Math.min(
+                                baseIntervalMs * (1L << Math.min(emptyResultsCount - 1, 6)),
+                                maxBackoffMs
+                            );
+                        }
+
+                        // Calculate sleep time with ±10% jitter to prevent re-synchronization
+                        long jitterRange = backoffMs / 10;
+                        long jitter = jitterRandom.nextLong(-jitterRange, jitterRange + 1);
+                        long sleepMs = Math.max(0, backoffMs + jitter);
+
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(
+                                "[{}] Discovery cycle completed. Items found: {}, " +
+                                "Empty count: {}, Backoff: {}ms, Sleep: {}ms",
+                                config.getAgentName(), hasItems, emptyResultsCount,
+                                backoffMs, sleepMs
+                            );
+                        }
+
+                        TimeUnit.MILLISECONDS.sleep(sleepMs);
                     } catch (Exception e) {
                         logger.error("Discovery cycle error for agent [{}]: {}",
                             config.getAgentName(), e.getMessage(), e);
-                    }
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(config.pollIntervalMs());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
                     }
                 }
             });
     }
 
-    private void runDiscoveryCycle() throws IOException {
+    /**
+     * Run a single discovery cycle and return whether items were found.
+     *
+     * @return true if items were discovered and processed, false if no items found
+     * @throws IOException if the discovery strategy fails
+     */
+    private boolean runDiscoveryCycle() throws IOException {
         // Discover available work items using configured strategy
         List<WorkItemRecord> items = config.discoveryStrategy()
             .discoverWorkItems(ibClient, sessionHandle);
 
         if (items == null || items.isEmpty()) {
-            return;
+            return false;
         }
 
+        boolean processedAny = false;
         for (WorkItemRecord workItem : items) {
             if (!running.get()) {
                 break;
@@ -307,7 +351,10 @@ public final class GenericPartyAgent {
             }
 
             processWorkItem(workItem);
+            processedAny = true;
         }
+
+        return processedAny;
     }
 
     /**

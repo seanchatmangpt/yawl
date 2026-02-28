@@ -1,0 +1,64 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: 1m-agent-hpa
+  namespace: yawl
+  labels:
+    app.kubernetes.io/name: 1m-agent
+    app.kubernetes.io/component: autoscaler
+    app.kubernetes.io/part-of: yawl
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: 1m-agent
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    # Primary: CPU-based scaling (70% threshold)
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    # Secondary: Memory-based scaling (75% threshold)
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+
+    # Tertiary: Custom metric - Agent queue depth
+    - type: Pods
+      pods:
+        metric:
+          name: agent_task_queue_depth
+        target:
+          type: AverageValue
+          averageValue: "1000"    # scale-out at 1K tasks/pod
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30        # add up to 2 pods every 30s
+        - type: Percent
+          value: 50
+          periodSeconds: 30        # or 50% increase (whichever is larger)
+      selectPolicy: Max            # pick the larger of the two policies
+
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120       # remove max 1 pod per 2 min
+        - type: Percent
+          value: 25
+          periodSeconds: 120       # or 25% reduction (whichever is larger)
+      selectPolicy: Min            # pick the smaller of the two policies
