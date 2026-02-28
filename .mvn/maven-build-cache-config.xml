@@ -8,7 +8,16 @@
     <enabled>true</enabled>
     <hashAlgorithm>SHA-256</hashAlgorithm>
     <validateXml>true</validateXml>
-    <remote enabled="false"/>
+    <remote enabled="true" id="yawl-local-cache">
+      <url>file://${user.home}/.m2/build-cache/yawl</url>
+      <transport>file</transport>
+    </remote>
+    <local>
+      <maxBuildsCached>50</maxBuildsCached>
+      <retentionPeriod>P30D</retentionPeriod>
+      <maxSize>10GB</maxSize>
+    </local>
+    <adaptToJVM>true</adaptToJVM>
   </configuration>
 
   <input>
@@ -29,6 +38,9 @@
         </goalsList>
       </goalLists>
     </runAlways>
+    <reconcile>
+      <logs enabled="true" compression="gzip"/>
+    </reconcile>
   </executionControl>
 
   <projectVersioning adjustMetaInf="true"/>

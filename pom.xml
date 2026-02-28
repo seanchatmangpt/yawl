@@ -3235,61 +3235,6 @@
             </build>
         </profile>
 
-        <!-- Fast profile for local development (skip tests, minimal validation) -->
-        <!-- Usage: mvn -P fast clean compile -->
-        <profile>
-            <id>fast</id>
-            <properties>
-                <skipTests>true</skipTests>
-                <maven.javadoc.skip>true</maven.javadoc.skip>
-                <checkstyle.skip>true</checkstyle.skip>
-                <spotbugs.skip>true</spotbugs.skip>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <useIncrementalCompilation>true</useIncrementalCompilation>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!-- CI profile with caching and parallel execution -->
-        <!-- Usage: mvn -P ci clean verify -->
-        <profile>
-            <id>ci</id>
-            <properties>
-                <maven.build.cache.enabled>true</maven.build.cache.enabled>
-                <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
-            </properties>
-        </profile>
-
-        <!-- Prod profile with full validation and parallel execution -->
-        <!-- Usage: mvn -P clean verify -->
-        <profile>
-            <id>prod</id>
-            <properties>
-                <maven.build.cache.enabled>false</maven.build.cache.enabled>
-                <skipTests>false</skipTests>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <parallel>all</parallel>
-                            <useSystemClassLoader>false</useSystemClassLoader>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
         <!-- Parallel build profile: optimized for parallel execution -->
         <!-- Usage: mvn -P parallel clean verify -->
         <profile>
@@ -3323,6 +3268,121 @@
                             <useSystemClassLoader>false</useSystemClassLoader>
                             <forkCount>2C</forkCount>
                             <reuseForks>true</reuseForks>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Integration test profiles - Part 3 parallelization -->
+        <!-- Usage: mvn -P integration-h2 verify -->
+        <profile>
+            <id>integration-h2</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <skipUnitTests>true</skipUnitTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>integration-h2</groups>
+                            <excludedGroups>integration-postgres,integration-mysql,stress,breaking-point</excludedGroups>
+                            <parallel>classes</parallel>
+                            <forkCount>2C</forkCount>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>integration-postgres</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <skipUnitTests>true</skipUnitTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>integration-postgres</groups>
+                            <excludedGroups>integration-h2,integration-mysql,stress,breaking-point</excludedGroups>
+                            <parallel>classes</parallel>
+                            <forkCount>2C</forkCount>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>integration-mysql</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <skipUnitTests>true</skipUnitTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>integration-mysql</groups>
+                            <excludedGroups>integration-h2,integration-postgres,stress,breaking-point</excludedGroups>
+                            <parallel>classes</parallel>
+                            <forkCount>2C</forkCount>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Combined integration profile -->
+        <profile>
+            <id>integration</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <skipUnitTests>true</skipUnitTests>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>integration</groups>
+                            <excludedGroups>stress,breaking-point</excludedGroups>
+                            <parallel>classes</parallel>
+                            <forkCount>2C</forkCount>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Balanced profile for 8-shard CI execution -->
+        <profile>
+            <id>balanced</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <surefire.forkCount>1.5C</surefire.forkCount>
+                <surefire.threadCount>8</surefire.threadCount>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <parallel>classesAndMethods</parallel>
+                            <forkCount>${surefire.forkCount}</forkCount>
+                            <reuseForks>true</reuseForks>
+                            <excludedGroups>stress,breaking-point</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>

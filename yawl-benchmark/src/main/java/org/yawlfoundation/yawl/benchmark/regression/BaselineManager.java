@@ -98,7 +98,10 @@ public final class BaselineManager {
         String jmhVersion,
         Map<String, BenchmarkEntry> benchmarks,
         Thresholds thresholds
-    ) {}
+    ) {
+        public Map<String, BenchmarkEntry> getBenchmarks() { return benchmarks; }
+        public Thresholds getThresholds() { return thresholds; }
+    }
 
     public record BenchmarkEntry(
         String metric,
@@ -107,7 +110,9 @@ public final class BaselineManager {
         double errorMargin,
         int samples,
         Instant lastUpdated
-    ) {}
+    ) {
+        public double getBaseline() { return baseline; }
+    }
 
     public record Thresholds(
         DefaultThreshold defaultThreshold,
@@ -117,9 +122,14 @@ public final class BaselineManager {
         public Map<String, ThresholdOverride> getOverrides() { return overrides; }
     }
 
-    public record DefaultThreshold(double regression, double improvement) {}
+    public record DefaultThreshold(double regression, double improvement) {
+        public double getRegression() { return regression; }
+        public double getImprovement() { return improvement; }
+    }
 
-    public record ThresholdOverride(double regression) {}
+    public record ThresholdOverride(double regression) {
+        public double getRegression() { return regression; }
+    }
 
     public record Regression(String benchmark, double percentChange, double threshold) {}
 
