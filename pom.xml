@@ -3505,6 +3505,141 @@
             </build>
         </profile>
 
+        <!-- Quick Test Profile: Unit tests only with aggressive timeout optimization
+             Usage: mvn -P quick-test test
+
+             This profile is optimized for:
+             - Fast feedback loops during development
+             - Unit tests that don't require TestContainers or external services
+             - Shorter timeout values appropriate for in-memory tests
+
+             Benefits:
+             - Timeout: 30s (from default 90s) - matches observed test duration
+             - Less resource allocation (minimal JVM spinning)
+             - Suitable for CI/CD pre-commit checks
+
+             Test execution time target: 10-15 seconds total
+        -->
+        <profile>
+            <id>quick-test</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <surefire.forkCount>1</surefire.forkCount>
+                <surefire.threadCount>4</surefire.threadCount>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <parallel>classesAndMethods</parallel>
+                            <forkCount>${surefire.forkCount}</forkCount>
+                            <reuseForks>true</reuseForks>
+                            <!-- Exclude expensive integration tests -->
+                            <excludedGroups>integration,integration-h2,integration-mysql,integration-postgres,stress,breaking-point</excludedGroups>
+                            <!-- Pass timeout overrides to JUnit Platform -->
+                            <systemPropertyVariables>
+                                <junit.jupiter.execution.timeout.default>30 s</junit.jupiter.execution.timeout.default>
+                                <junit.jupiter.execution.timeout.testable.method.default>60 s</junit.jupiter.execution.timeout.testable.method.default>
+                                <junit.jupiter.execution.timeout.lifecycle.method.default>60 s</junit.jupiter.execution.timeout.lifecycle.method.default>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Integration Test Profile: Full integration tests with database and services
+             Usage: mvn -P integration-test test
+
+             This profile is optimized for:
+             - Integration tests requiring TestContainers (PostgreSQL, MySQL)
+             - Tests with external service dependencies
+             - Longer setup/teardown overhead (database initialization)
+
+             Benefits:
+             - Timeout: 180s (default from junit-platform.properties) - accommodates TestContainers startup (30-60s)
+             - Full resource allocation (multiple JVM forks for parallelism)
+             - Comprehensive testing before deployment
+
+             Test execution time target: 60-120 seconds total
+        -->
+        <profile>
+            <id>integration-test</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <surefire.forkCount>2C</surefire.forkCount>
+                <surefire.threadCount>8</surefire.threadCount>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <parallel>classesAndMethods</parallel>
+                            <forkCount>${surefire.forkCount}</forkCount>
+                            <reuseForks>true</reuseForks>
+                            <!-- Include all tests except stress/breaking-point -->
+                            <excludedGroups>stress,breaking-point</excludedGroups>
+                            <!-- Generous timeouts for integration tests with TestContainers -->
+                            <systemPropertyVariables>
+                                <junit.jupiter.execution.timeout.default>180 s</junit.jupiter.execution.timeout.default>
+                                <junit.jupiter.execution.timeout.testable.method.default>300 s</junit.jupiter.execution.timeout.testable.method.default>
+                                <junit.jupiter.execution.timeout.lifecycle.method.default>300 s</junit.jupiter.execution.timeout.lifecycle.method.default>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Stress Test Profile: Full suite including breaking-point tests
+             Usage: mvn -P stress-test test
+
+             This profile is optimized for:
+             - Performance and scalability testing
+             - Stress tests with many concurrent operations
+             - Deadlock/livelock detection tests
+
+             Benefits:
+             - Timeout: 600s (10 minutes) - allows for extended data load/setup
+             - Minimal parallelism (prevents resource contention masking issues)
+             - Comprehensive validation before production deployment
+
+             Test execution time target: 300-600 seconds total
+        -->
+        <profile>
+            <id>stress-test</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <surefire.forkCount>1</surefire.forkCount>
+                <surefire.threadCount>4</surefire.threadCount>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <parallel>classesAndMethods</parallel>
+                            <forkCount>${surefire.forkCount}</forkCount>
+                            <reuseForks>true</reuseForks>
+                            <!-- Include all tests -->
+                            <excludedGroups></excludedGroups>
+                            <!-- Extended timeouts for stress tests -->
+                            <systemPropertyVariables>
+                                <junit.jupiter.execution.timeout.default>600 s</junit.jupiter.execution.timeout.default>
+                                <junit.jupiter.execution.timeout.testable.method.default>600 s</junit.jupiter.execution.timeout.testable.method.default>
+                                <junit.jupiter.execution.timeout.lifecycle.method.default>600 s</junit.jupiter.execution.timeout.lifecycle.method.default>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>
