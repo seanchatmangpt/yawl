@@ -26,6 +26,9 @@ import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionContext;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionEngine;
 import org.yawlfoundation.yawl.graaljs.JavaScriptSandboxConfig;
+import org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper;
+import org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter;
+import org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -1196,6 +1199,196 @@ public final class DataModellingBridge implements AutoCloseable {
                     "Cannot create temp directory for WASM resources: " + e.getMessage(),
                     DataModellingException.ErrorKind.MODULE_LOAD_ERROR, e);
         }
+    }
+
+    // ── Phase 5: Advanced Filtering & Querying ───────────────────────────────
+
+    /**
+     * Create a fluent query builder for the given workspace JSON.
+     *
+     * <p>This method parses the workspace JSON and returns a DataModellingQueryBuilder
+     * instance for performing advanced filtering, relationship analysis, and lineage queries.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @return a query builder for the workspace; never null
+     * @throws DataModellingException  if workspace JSON cannot be parsed
+     * @see org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
+     */
+    public org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
+            queryBuilder(String workspaceJson) {
+        org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter converter =
+                new org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter();
+        org.yawlfoundation.yawl.datamodelling.models.DataModellingWorkspace workspace =
+                converter.fromJson(workspaceJson);
+        return org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
+                .forWorkspace(workspace);
+    }
+
+    /**
+     * Filter tables by owner from workspace JSON.
+     *
+     * <p>Returns JSON array of tables matching the specified owner.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param owner          owner name/email; must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByOwner(String workspaceJson, String owner) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByOwner(owner).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Filter tables by tag from workspace JSON.
+     *
+     * <p>Returns JSON array of tables that have the specified tag.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tag            tag value; must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByTag(String workspaceJson, String tag) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByTag(tag).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Filter tables by infrastructure type from workspace JSON.
+     *
+     * <p>Returns JSON array of tables using the specified infrastructure.</p>
+     *
+     * @param workspaceJson       workspace JSON string; must not be null
+     * @param infrastructureType  infrastructure type (e.g. "postgresql", "warehouse"); must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByInfrastructure(String workspaceJson, String infrastructureType) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByInfrastructureType(infrastructureType).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Filter tables by medallion layer from workspace JSON.
+     *
+     * <p>Returns JSON array of tables in the specified medallion layer.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param layer          medallion layer (e.g. "bronze", "silver", "gold"); must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByMedallionLayer(String workspaceJson, String layer) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByMedallionLayer(layer).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Get relationships for a specific table from workspace JSON.
+     *
+     * <p>Returns JSON array of relationships involving the specified table.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tableId        table ID; must not be null
+     * @param relationshipType  filter by relationship type (e.g. "dataFlow", "dependency");
+     *                          if null, returns all relationships
+     * @return JSON array of relationships; never null (empty array if no relationships)
+     */
+    public String queryTableRelationships(String workspaceJson, String tableId,
+                                          @Nullable String relationshipType) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingRelationship> rels =
+                builder.getRelationshipsForTable(tableId);
+
+        // Filter by type if specified
+        if (relationshipType != null) {
+            rels = rels.stream()
+                    .filter(r -> relationshipType.equals(r.getRelationshipType()))
+                    .toList();
+        }
+
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(rels);
+    }
+
+    /**
+     * Get impact analysis for a table from workspace JSON.
+     *
+     * <p>Returns JSON array of tables that would be impacted if the specified table changes.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tableId        table ID; must not be null
+     * @return JSON array of impacted tables; never null (empty array if no impacts)
+     */
+    public String getImpactAnalysis(String workspaceJson, String tableId) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> impacted =
+                builder.getImpactAnalysis(tableId);
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(impacted);
+    }
+
+    /**
+     * Get data lineage report for a table from workspace JSON.
+     *
+     * <p>Returns a JSON object containing upstream dependencies and downstream dependents.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tableId        table ID; must not be null
+     * @return JSON object with lineage information; never null
+     */
+    public String getDataLineageReport(String workspaceJson, String tableId) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.Map<String, Object> lineage = builder.getDataLineageReport(tableId);
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(lineage);
+    }
+
+    /**
+     * Check if workspace has circular dependencies.
+     *
+     * <p>Returns "true" or "false" JSON value.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @return "true" if cycles detected, "false" otherwise
+     */
+    public String hasCyclicDependencies(String workspaceJson) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        boolean hasCycles = builder.hasCyclicDependencies();
+        return String.valueOf(hasCycles);
+    }
+
+    /**
+     * Detect cycle path in workspace if one exists.
+     *
+     * <p>Returns JSON array of table IDs forming the cycle, or empty array if no cycle.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @return JSON array of table IDs in cycle path; never null (empty if no cycle)
+     */
+    public String detectCyclePath(String workspaceJson) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<String> cycle = builder.detectCyclePath();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(cycle);
     }
 
     /**
