@@ -38,6 +38,14 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | DM-03 | [YAWL Control Panel Getting Started](../tutorials/yawl-control-panel-getting-started.md) | Run Swing admin UI; manage specifications; monitor cases |
 | DM-04 | [YAWL MCP/A2A Getting Started](../tutorials/yawl-mcp-a2a-getting-started.md) | Connect AI agents via MCP; enable A2A communication |
 
+### Service Modules
+| # | Tutorial | What you learn |
+|---|----------|----------------|
+| SM-01 | [Authentication Getting Started](../tutorials/yawl-authentication-getting-started.md) | Set up JWT authentication, client credentials, CSRF protection |
+| SM-02 | [Scheduling Getting Started](../tutorials/yawl-scheduling-getting-started.md) | Schedule cases, create recurring schedules, calendar-aware execution |
+| SM-03 | [Monitoring Getting Started](../tutorials/yawl-monitoring-getting-started.md) | Enable OpenTelemetry tracing, metrics collection, structured logging |
+| SM-04 | [Worklet Service Getting Started](../tutorials/yawl-worklet-getting-started.md) | Create Ripple Down Rules, select worklets at runtime, handle exceptions |
+
 ### Advanced Topics
 | # | Tutorial | What you learn |
 |---|----------|----------------|
@@ -98,6 +106,14 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Setup Org Model](../how-to/setup-org-model.md) | Define organizational hierarchy |
 | [Configure ZGC & Compact Headers](../how-to/configure-zgc-compact-headers.md) | Enable low-latency GC on engine pods |
 | [SPIFFE Configuration](../how-to/spiffe.md) | Enable SPIFFE/SVID zero-trust identity |
+
+### Service Modules (Authentication, Scheduling, Monitoring, Worklets)
+| Guide | Task |
+|-------|------|
+| [Set Up JWT Authentication](../how-to/yawl-authentication-setup.md) | Configure JWT tokens, session storage, rate limiting, CSRF protection |
+| [Configure Business Calendars](../how-to/yawl-scheduling-calendars.md) | Define working hours, holidays, multi-timezone schedules |
+| [Set Up Distributed Tracing](../how-to/yawl-monitoring-tracing.md) | Configure OpenTelemetry, Jaeger, OTLP export, trace sampling |
+| [Implement Worklet Service (Advanced)](../how-to/implement-worklet-service-advanced.md) | Production worklet setup, RDR storage, versioning, monitoring |
 
 ### Workflow Patterns & Adaptation
 | Guide | Task |
