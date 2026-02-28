@@ -49,16 +49,10 @@ class V7SelfPlayLoopTest {
     void setUp() {
         // Initialize Z.AI orchestrator for agent recruitment
         // The actual ZAIOrchestrator manages agent lifecycle and A2A communication
-        // For testing, we pass it through to proposal services (which can operate independently)
-        try {
-            zaiOrchestrator = createZAIOrchestrator();
-        } catch (Exception e) {
-            // If Z.AI infrastructure not available in test environment,
-            // the proposal services still function with their built-in logic
-            zaiOrchestrator = null;
-        }
+        // Chicago TDD: real implementation (not null/mock), or explicit failure
+        zaiOrchestrator = createZAIOrchestrator();
 
-        // Create the 5 agent proposal services with the ZAIOrchestrator
+        // Create the 5 agent proposal services with the real ZAIOrchestrator
         proposalServices = new ArrayList<>();
         proposalServices.add(new GenAIOptimizationV7Proposals(zaiOrchestrator));
         proposalServices.add(new ComplianceGovernanceV7Proposals(zaiOrchestrator));
@@ -68,7 +62,7 @@ class V7SelfPlayLoopTest {
 
         // Create the orchestrator with Z.AI integration
         orchestrator = new V7SelfPlayOrchestrator(
-            zaiOrchestrator != null ? zaiOrchestrator : createZAIOrchestrator(),
+            zaiOrchestrator,
             proposalServices,
             0.85,
             5
@@ -77,12 +71,31 @@ class V7SelfPlayLoopTest {
 
     /**
      * Create a real ZAIOrchestrator instance for test execution.
-     * This represents the actual Z.AI framework that would be used in production.
+     * Chicago TDD requirement: This test exercises the full loop with real agents via Z.AI framework.
+     * If Z.AI infrastructure is not available, the test fails explicitly with a clear message,
+     * rather than silently degrading to mock behavior.
+     *
+     * @return A fully initialized ZAIOrchestrator with real agent communication channels
+     * @throws UnsupportedOperationException if Z.AI infrastructure is not available
      */
     private static ZAIOrchestrator createZAIOrchestrator() {
-        // Real orchestrator initialization - requires actual Z.AI infrastructure
-        // For this test to run with real agents, Z.AI services must be available
-        return new ZAIOrchestrator(null, null, null);
+        // Check if Z.AI infrastructure is actually available in this test environment
+        // This would involve checking for:
+        // - Z.AI agent service endpoints accessible
+        // - A2A message passing channels initialized
+        // - Real agent configurations loaded
+
+        // For now, throw explicitly if not available, rather than creating a fake
+        // Once Z.AI infrastructure is available in test environment, instantiate with real parameters
+        throw new UnsupportedOperationException(
+            "Z.AI orchestrator infrastructure not available in this test environment. " +
+            "Chicago TDD requires real agent implementations, not mocks. " +
+            "To run V7SelfPlayLoopTest: " +
+            "1. Ensure Z.AI services are running (check .claude/zai-bootstrap.sh) " +
+            "2. Configure agent endpoints in application.properties " +
+            "3. Re-run test. " +
+            "See .claude/rules/chicago-tdd.md for details."
+        );
     }
 
     /**
