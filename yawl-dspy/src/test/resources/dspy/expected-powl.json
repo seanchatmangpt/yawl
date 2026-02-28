@@ -1,0 +1,54 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "generated_by": "dspy_powl_generator",
+    "timestamp": "2026-02-28T00:00:00Z",
+    "source_workflow": "sentiment-analyzer"
+  },
+  "net": {
+    "id": "N1",
+    "name": "SentimentAnalysis",
+    "places": [
+      {
+        "id": "p1",
+        "name": "Input",
+        "type": "input_place"
+      },
+      {
+        "id": "p2",
+        "name": "Processing",
+        "type": "task_place"
+      },
+      {
+        "id": "p3",
+        "name": "Output",
+        "type": "output_place"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "t1",
+        "name": "AnalyzeSentiment",
+        "type": "task",
+        "splits": "and",
+        "joins": "and"
+      }
+    ],
+    "flows": [
+      {
+        "source": "p1",
+        "target": "t1"
+      },
+      {
+        "source": "t1",
+        "target": "p3"
+      }
+    ]
+  },
+  "dspy_config": {
+    "optimization_metric": "accuracy",
+    "max_tokens": 256,
+    "temperature": 0.7,
+    "cache_enabled": true
+  }
+}

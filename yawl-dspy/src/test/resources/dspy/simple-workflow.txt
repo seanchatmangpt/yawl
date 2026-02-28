@@ -1,0 +1,11 @@
+Analyze customer feedback sentiment
+
+Input: customer_text
+- Process the customer's written feedback
+- Determine if the sentiment is positive, negative, or neutral
+- Assign confidence score (0.0-1.0)
+
+Output:
+- sentiment: positive|negative|neutral
+- confidence: float value
+- reasoning: brief explanation
