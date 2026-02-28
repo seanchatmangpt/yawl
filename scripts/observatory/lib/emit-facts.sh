@@ -117,8 +117,8 @@ tree = ET.parse(root_pom)
 root = tree.getroot()
 ns = {'pom': 'http://maven.apache.org/POM/4.0.0'}
 
-# Build reactor order (modules in order they appear in POM)
-reactor_order = ['yawl-parent']
+# Map module dirs to artifact IDs first
+module_artifacts = {}
 module_dirs = root.findall('.//pom:module', ns)
 for module_elem in module_dirs:
     module_name = module_elem.text.strip()
@@ -126,26 +126,29 @@ for module_elem in module_dirs:
     if os.path.exists(module_pom):
         mod_tree = ET.parse(module_pom)
         mod_root = mod_tree.getroot()
-        art_id = mod_root.find('.//pom:artifactId', ns)
-        if art_id is not None:
-            reactor_order.append(art_id.text)
+
+        # Get artifactId from direct project children
+        art_id = None
+        for child in mod_root:
+            if child.tag.endswith('artifactId'):
+                art_id = child
+                break
+
+        artifact_id = art_id.text if art_id is not None and art_id.text else module_name
+        module_artifacts[module_name] = artifact_id
+
+# Build reactor order
+reactor_order = ['yawl-parent']
+for module_name in module_artifacts.keys():
+    reactor_order.append(module_artifacts[module_name])
 
 # Extract dependencies
 module_deps = []
-for module_elem in module_dirs:
-    module_name = module_elem.text.strip()
+for module_name, from_name in module_artifacts.items():
     module_pom = os.path.join(root_dir, module_name, 'pom.xml')
-
     if os.path.exists(module_pom):
         mod_tree = ET.parse(module_pom)
         mod_root = mod_tree.getroot()
-
-        # Get module's own artifactId
-        from_id = mod_root.find('.//pom:artifactId', ns)
-        if from_id is None:
-            continue
-
-        from_name = from_id.text
 
         # Find internal dependencies
         for dep in mod_root.findall('.//pom:dependency', ns):
