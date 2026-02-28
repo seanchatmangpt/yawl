@@ -43,6 +43,9 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
 import org.yawlfoundation.yawl.integration.mcp.spec.McpToolRegistry;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlAdaptationToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlConformanceToolSpecifications;
+import org.yawlfoundation.yawl.integration.mcp.spec.SelfCareToolSpecifications;
+import org.yawlfoundation.yawl.integration.selfcare.AutonomicSelfCareEngine;
+import org.yawlfoundation.yawl.integration.selfcare.GregverseSearchClient;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlGraalPyWorkflowToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlPatternSynthesisToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlProcessMiningToolSpecifications;
@@ -308,6 +311,19 @@ public class YawlMcpServer {
         var conformanceTools = new YawlConformanceToolSpecifications();
         var conformanceList = conformanceTools.createAll();
         allTools.addAll(conformanceList);
+
+        // Self-care tools: Gregverse OT workflow search + behavioral activation planner
+        // Graceful degradation: built-in starter actions used when Gregverse is offline
+        try {
+            String gregverseUrl = System.getenv().getOrDefault(
+                "GREGVERSE_SPARQL_URL", "https://registry.gregverse.io/sparql");
+            var selfCareSearch = new GregverseSearchClient(gregverseUrl);
+            var selfCareEngine = new AutonomicSelfCareEngine(selfCareSearch);
+            var selfCareTools = new SelfCareToolSpecifications(selfCareSearch, selfCareEngine);
+            allTools.addAll(selfCareTools.createAll());
+        } catch (Exception e) {
+            System.err.println("WARN [YawlMcpServer] Self-care tools not loaded: " + e.getMessage());
+        }
 
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)

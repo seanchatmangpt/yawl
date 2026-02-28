@@ -413,6 +413,8 @@
                         <testInclude>**/org/yawlfoundation/yawl/integration/synthesis/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/verification/**</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/integration/reactor/**</testInclude>
+                        <!-- Autonomic self-care OT workflow tests -->
+                        <testInclude>**/org/yawlfoundation/yawl/integration/selfcare/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <!-- ProcessMiningSkill not yet implemented (pre-existing) -->

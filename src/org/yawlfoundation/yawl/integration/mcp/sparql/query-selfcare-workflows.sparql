@@ -1,0 +1,55 @@
+PREFIX yawl:    <http://yawlfoundation.org/yawl#>
+PREFIX greg:    <http://gregverse.io/registry#>
+PREFIX dc:      <http://purl.org/dc/elements/1.1/>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+
+# ============================================================================
+# SELECT: Self-Care Workflow Discovery in Gregverse Registry
+# ============================================================================
+#
+# Discovers YAWL workflow specifications in the Gregverse federated registry
+# that belong to a given Occupational Therapy (OT) performance area.
+#
+# This query underpins the yawl_selfcare_search MCP tool. It is executed
+# against the Gregverse SPARQL endpoint (HTTP POST, application/sparql-query)
+# and supports parameter substitution for ?domainFilter.
+#
+# OT Domain values (bind to ?domainFilter):
+#   "self-care"    → Activities of Daily Living (ADLs and IADLs)
+#   "productivity" → Work, education, caregiving, household management
+#   "leisure"      → Rest, play, social participation, recreation
+#
+# Response columns:
+#   specId        — Gregverse spec identifier (URI fragment)
+#   specName      — Human-readable specification name
+#   provider      — Organisation or individual who published the spec
+#   domain        — OT performance area (matches ?domainFilter)
+#   description   — One-sentence description of the workflow
+#   downloadCount — Number of times this spec has been instantiated (popularity)
+#
+# Execution path:
+#   1. GregverseSearchClient builds this query with ?domainFilter substituted
+#   2. HTTP POST to Gregverse SPARQL endpoint
+#   3. application/sparql-results+json response parsed to WorkflowSpecSummary list
+#   4. Results ordered by popularity (downloadCount DESC) — most-proven first
+# ============================================================================
+
+SELECT ?specId ?specName ?provider ?domain ?description ?downloadCount
+WHERE {
+    ?spec a yawl:WorkflowSpecification ;
+          yawl:specId       ?specId ;
+          yawl:specName     ?specName ;
+          yawl:domain       ?domain ;
+          greg:provider     ?provider ;
+          greg:downloadCount ?downloadCount .
+
+    OPTIONAL { ?spec dc:description ?description }
+
+    # Domain filter — substituted at query time by GregverseSearchClient
+    FILTER(LCASE(STR(?domain)) = ?domainFilter)
+
+    # Only published (not draft) specifications
+    FILTER NOT EXISTS { ?spec greg:status "draft" }
+}
+ORDER BY DESC(?downloadCount)
+LIMIT 50
