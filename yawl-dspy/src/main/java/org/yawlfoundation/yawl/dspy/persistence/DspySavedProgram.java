@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.dspy.persistence;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -156,8 +157,7 @@ public record DspySavedProgram(
         Map<String, Object> metadata = new LinkedHashMap<>();
         JsonNode metadataNode = node.get("metadata");
         if (metadataNode != null && metadataNode.isObject()) {
-            metadata = MAPPER.readValue(metadataNode.traverse(),
-                    new TypeReference<Map<String, Object>>() {});
+            metadata = MAPPER.treeToValue(metadataNode, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
         }
 
         log.info("Loaded DSPy program '{}' with {} predictors from {}",
@@ -200,11 +200,11 @@ public record DspySavedProgram(
         java.util.List<Map<String, Object>> fewShotExamples = new java.util.ArrayList<>();
         JsonNode fewShotNode = node.get("demos");
         if (fewShotNode != null && fewShotNode.isArray()) {
-            for (JsonNode example : fewShotNode) {
-                Map<String, Object> exampleMap = MAPPER.convertValue(example,
-                        new TypeReference<Map<String, Object>>() {});
+            fewShotNode.forEach(example -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> exampleMap = MAPPER.treeToValue(example, Map.class);
                 fewShotExamples.add(exampleMap);
-            }
+            });
         }
 
         @Nullable String learnedInstructions = optionalString(node, "learned_instructions");
@@ -218,17 +218,13 @@ public record DspySavedProgram(
         java.util.List<DspyFieldConfig> inputFields = new java.util.ArrayList<>();
         JsonNode inputNode = node.get("input_fields");
         if (inputNode != null && inputNode.isArray()) {
-            for (JsonNode field : inputNode) {
-                inputFields.add(parseFieldConfig(field));
-            }
+            inputNode.forEach(field -> inputFields.add(parseFieldConfig(field)));
         }
 
         java.util.List<DspyFieldConfig> outputFields = new java.util.ArrayList<>();
         JsonNode outputNode = node.get("output_fields");
         if (outputNode != null && outputNode.isArray()) {
-            for (JsonNode field : outputNode) {
-                outputFields.add(parseFieldConfig(field));
-            }
+            outputNode.forEach(field -> outputFields.add(parseFieldConfig(field)));
         }
 
         return new DspySignatureConfig(instructions, inputFields, outputFields);
@@ -322,54 +318,5 @@ public record DspySavedProgram(
     public String summary() {
         return String.format("DspySavedProgram[name=%s, predictors=%d, optimizer=%s, valScore=%.2f]",
                 name, predictors.size(), optimizerType(), validationScore());
-    }
-
-    // Inner class to avoid direct Jackson dependency in signature
-    private static final class JsonNode {
-        private final com.fasterxml.jackson.databind.JsonNode node;
-
-        JsonNode(com.fasterxml.jackson.databind.JsonNode node) {
-            this.node = node;
-        }
-
-        JsonNode get(String field) {
-            com.fasterxml.jackson.databind.JsonNode child = node.get(field);
-            return child != null ? new JsonNode(child) : null;
-        }
-
-        boolean isObject() { return node.isObject(); }
-        boolean isArray() { return node.isArray(); }
-        boolean isTextual() { return node.isTextual(); }
-        String asText() { return node.asText(); }
-        boolean has(String field) { return node.has(field); }
-
-        java.util.Iterator<java.util.Map.Entry<String, JsonNode>> fields() {
-            return new java.util.Iterator<>() {
-                private final java.util.Iterator<java.util.Map.Entry<String, com.fasterxml.jackson.databind.JsonNode>>
-                        iter = node.fields();
-
-                @Override
-                public boolean hasNext() { return iter.hasNext(); }
-
-                @Override
-                public java.util.Map.Entry<String, JsonNode> next() {
-                    java.util.Map.Entry<String, com.fasterxml.jackson.databind.JsonNode> entry = iter.next();
-                    return java.util.Map.entry(entry.getKey(), new JsonNode(entry.getValue()));
-                }
-            };
-        }
-
-        java.util.Iterator<JsonNode> arrayElements() {
-            return new java.util.Iterator<>() {
-                private final java.util.Iterator<com.fasterxml.jackson.databind.JsonNode> iter = node.elements();
-
-                @Override
-                public boolean hasNext() { return iter.hasNext(); }
-                @Override
-                public JsonNode next() { return new JsonNode(iter.next()); }
-            };
-        }
-
-        com.fasterxml.jackson.databind.JsonNode rawNode() { return node; }
     }
 }

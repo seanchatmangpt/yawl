@@ -1,0 +1,115 @@
+# GEPA (Gradient Estimation for Prompt Architecture) Configuration
+# This file configures the GEPA optimizer for DSPy program optimization
+# 
+# Three optimization targets available:
+# - behavioral: Focus on perfect behavioral footprint agreement (100% accuracy)
+# - performance: Focus on execution time and resource utilization  
+# - balanced: Combine behavioral accuracy with performance considerations
+
+[optimization]
+# Primary optimization target
+target = "balanced"
+
+# Auto-optimization mode
+# light: Few iterations, fast convergence
+# medium: Moderate iterations and optimization
+# heavy: Many iterations, thorough optimization
+# custom: Use custom configuration below
+auto_mode = "medium"
+
+# Maximum optimization iterations
+max_iterations = 100
+
+# Convergence threshold - stop when improvement < threshold
+convergence_threshold = 0.001
+
+# Early stopping patience
+patience = 15
+
+[behavioral]
+# Whether to validate behavioral footprint
+footprint_validation = true
+
+# Require perfect behavioral agreement
+perfect_agreement_required = true
+
+# Weight for behavioral objectives in multi-objective optimization
+behavioral_weight = 0.7
+
+[performance]
+# Weight for execution time optimization
+execution_time_weight = 0.4
+
+# Weight for resource utilization optimization  
+resource_utilization_weight = 0.3
+
+# Weight for throughput optimization
+throughput_weight = 0.3
+
+# Maximum execution time budget (ms)
+max_execution_time_ms = 5000
+
+# Target resource utilization percentage
+target_resource_utilization = 80.0
+
+[adaptive]
+# Learning rate for gradient estimation
+learning_rate = 0.01
+
+# Momentum for gradient updates
+momentum = 0.9
+
+# Adam optimizer beta1 parameter
+beta1 = 0.9
+
+# Adam optimizer beta2 parameter  
+beta2 = 0.999
+
+# Epsilon for numerical stability
+epsilon = 1e-8
+
+[caching]
+# Enable program caching
+enable_caching = true
+
+# Maximum cache size
+cache_size = 100
+
+# Cache expiration time (seconds)
+cache_ttl_seconds = 3600
+
+[logging]
+# Optimization log level
+log_level = "INFO"
+
+# Log optimization progress
+log_progress = true
+
+# Save optimization history
+save_history = true
+
+# History file path
+history_file = "optimization_history.json"
+
+[validation]
+# Enable validation after optimization
+enable_validation = true
+
+# Validation timeout (ms)
+validation_timeout_ms = 10000
+
+# Number of validation runs
+validation_runs = 10
+
+[experimental]
+# Enable experimental features
+experimental_features = false
+
+# Enable multi-objective optimization
+multi_objective = true
+
+# Enable neural architecture search
+neural_search = false
+
+# Enable prompt engineering optimization
+prompt_engineering = true

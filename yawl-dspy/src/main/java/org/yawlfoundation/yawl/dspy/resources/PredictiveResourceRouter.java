@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.dspy.PythonDspyBridge;
 import org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplace;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.AgentMarketplaceListing;
+import org.yawlfoundation.yawl.integration.autonomous.registry.AgentInfo;
 import org.yawlfoundation.yawl.resourcing.CapabilityMatcher;
 import org.yawlfoundation.yawl.resourcing.RoutingDecision;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
@@ -136,10 +138,11 @@ public final class PredictiveResourceRouter {
                         java.time.Duration.ofMinutes(5));
 
                 if (predictedAgent.isPresent()) {
+                    AgentMarketplaceListing listing = predictedAgent.get();
                     String rationale = String.format(
                             "DSPy prediction (confidence=%.2f): %s",
                             prediction.confidence(), prediction.reasoning());
-                    return new RoutingDecision.AgentRoute(predictedAgent.get(), rationale);
+                    return new RoutingDecision.AgentRoute(listing, rationale);
                 } else {
                     log.warn("Predicted agent {} not found in marketplace; falling through to delegate",
                             prediction.predictedAgentId());

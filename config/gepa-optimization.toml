@@ -1,0 +1,206 @@
+# GEPA Optimization Configuration
+# YAWL Foundation - Version 6.0.0
+#
+# This configuration controls GEPA (Gradient Estimation for Prompt Architecture)
+# optimization for DSPy programs in YAWL workflow generation.
+
+[optimization]
+# Default optimization target: "behavioral", "performance", or "balanced"
+default_target = "balanced"
+
+# Auto-optimization mode: "light", "medium", "heavy", or "custom"
+# - light: Fast optimization, minimal prompt modifications
+# - medium: Balanced optimization with moderate changes
+# - heavy: Aggressive optimization with extensive prompt tuning
+default_auto_mode = "medium"
+
+# Maximum optimization rounds
+max_rounds = 3
+
+# Maximum bootstrapped demonstrations per predictor
+max_bootstrapped_demos = 4
+
+# Maximum labeled demonstrations in training set
+max_labeled_demos = 16
+
+# Number of candidate programs to evaluate
+num_candidate_programs = 10
+
+# Number of parallel threads for optimization
+num_threads = 4
+
+# ============================================================================
+# OPTIMIZATION TARGETS
+# ============================================================================
+
+[targets.behavioral]
+name = "Perfect Behavioral Footprint"
+description = "Optimize for 100% behavioral accuracy with perfect footprint agreement"
+weight = 1.0
+metrics = ["footprint_agreement", "pattern_accuracy", "xor_consistency", "parallel_correctness"]
+target_value = 1.0
+
+# Behavioral target requires perfect footprint agreement
+footprint_agreement_threshold = 1.0
+allow_approximate = false
+
+[targets.performance]
+name = "Optimized Performance"
+description = "Optimize for execution speed and resource utilization"
+weight = 1.0
+metrics = ["execution_time", "resource_utilization", "throughput", "memory_efficiency"]
+target_value = "minimize"
+
+# Performance thresholds
+max_execution_time_ms = 500
+target_resource_utilization = 0.85
+min_throughput_tasks_per_sec = 10.0
+
+[targets.balanced]
+name = "Balanced Optimization"
+description = "Combine behavioral accuracy with performance considerations"
+weight_behavioral = 0.7
+weight_performance = 0.3
+metrics = ["footprint_agreement", "execution_time", "pattern_accuracy"]
+
+# Balanced thresholds
+footprint_agreement_threshold = 0.95
+max_execution_time_ms = 750
+
+# ============================================================================
+# BEHAVIORAL FOOTPRINT SETTINGS
+# ============================================================================
+
+[footprint]
+# Relation types to consider in footprint scoring
+enabled_relations = ["direct_succession", "concurrency", "exclusivity"]
+
+# Weights for each relation type in scoring
+direct_succession_weight = 0.4
+concurrency_weight = 0.3
+exclusivity_weight = 0.3
+
+# Minimum confidence for relation extraction
+extraction_confidence_threshold = 0.8
+
+# Whether to use strict matching (exact) or fuzzy matching
+strict_matching = true
+
+# ============================================================================
+# PERFORMANCE METRICS SETTINGS
+# ============================================================================
+
+[performance]
+# Execution time buckets for scoring (milliseconds)
+time_buckets = [100, 250, 500, 1000, 2000]
+
+# Resource utilization targets
+target_cpu_utilization = 0.75
+target_memory_utilization = 0.80
+
+# Throughput targets
+min_tasks_per_second = 5.0
+target_tasks_per_second = 20.0
+
+# Latency percentiles to track
+latency_percentiles = [50, 90, 95, 99]
+
+# ============================================================================
+# TRAINING PIPELINE SETTINGS
+# ============================================================================
+
+[training]
+# Minimum examples required for optimization
+min_examples = 5
+
+# Maximum examples to use in optimization
+max_examples = 100
+
+# Validation split ratio
+validation_split = 0.2
+
+# Whether to use historical workflows
+use_historical_workflows = true
+
+# Historical workflow freshness threshold (days)
+historical_freshness_days = 30
+
+# Whether to include perfect examples only
+perfect_examples_only = true
+
+# ============================================================================
+# VALIDATION SETTINGS
+# ============================================================================
+
+[validation]
+# Enable LLM judge for semantic validation
+use_llm_judge = true
+
+# LLM judge model
+llm_judge_model = "gpt-4"
+
+# Semantic accuracy threshold
+semantic_accuracy_threshold = 0.95
+
+# Whether to validate against reference workflows
+validate_against_reference = true
+
+# Maximum validation failures before abort
+max_validation_failures = 3
+
+# ============================================================================
+# PERSISTENCE SETTINGS
+# ============================================================================
+
+[persistence]
+# Directory for saved optimized programs
+programs_dir = "/var/lib/yawl/dspy/programs"
+
+# Directory for optimization receipts
+receipts_dir = "/var/lib/yawl/dspy/receipts"
+
+# Whether to save optimization history
+save_history = true
+
+# History retention days
+history_retention_days = 90
+
+# ============================================================================
+# LOGGING AND MONITORING
+# ============================================================================
+
+[logging]
+# Log level: "DEBUG", "INFO", "WARN", "ERROR"
+level = "INFO"
+
+# Whether to log optimization metrics
+log_metrics = true
+
+# Whether to log footprint comparisons
+log_footprint_comparisons = true
+
+# Metrics export format: "json", "prometheus", "both"
+metrics_format = "json"
+
+# ============================================================================
+# ADVANCED SETTINGS
+# ============================================================================
+
+[advanced]
+# Enable experimental features
+enable_experimental = false
+
+# Use semantic caching for prompts
+semantic_cache_enabled = true
+
+# Semantic cache TTL (seconds)
+semantic_cache_ttl = 3600
+
+# Maximum prompt length in characters
+max_prompt_length = 8192
+
+# Temperature for optimization
+optimization_temperature = 0.7
+
+# Seed for reproducibility (null for random)
+optimization_seed = 42

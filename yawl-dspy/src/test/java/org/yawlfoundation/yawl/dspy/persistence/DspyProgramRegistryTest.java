@@ -22,7 +22,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.yawlfoundation.yawl.graalpy.PythonExecutionEngine;
+import org.yawlfoundation.yawl.graalpy.PythonException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,8 +34,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for DspyProgramRegistry.
@@ -41,31 +48,30 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Foundation
  * @version 6.0.0
  */
-final class DspyProgramRegistryTest {
+@ExtendWith(MockitoExtension.class)
+@DisplayName("DSPy Program Registry Tests")
+class DspyProgramRegistryTest {
 
     @TempDir
     Path tempDir;
 
+    @Mock
+    private PythonExecutionEngine mockEngine;
+
     private Path programsDir;
-    private PythonExecutionEngine pythonEngine;
     private DspyProgramRegistry registry;
 
     @BeforeEach
     void setUp() throws IOException {
         programsDir = tempDir.resolve("programs");
         Files.createDirectories(programsDir);
-
-        // Create Python execution engine (GraalPy)
-        pythonEngine = PythonExecutionEngine.builder()
-                .contextPoolSize(1)
-                .build();
     }
 
     @Test
     @DisplayName("Should initialize with empty directory")
     void shouldInitializeWithEmptyDirectory() {
         // Act
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Assert
         assertEquals(0, registry.programCount());
@@ -80,7 +86,7 @@ final class DspyProgramRegistryTest {
         createTestProgram("resource_router");
 
         // Act
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Assert
         assertEquals(2, registry.programCount());
@@ -97,7 +103,7 @@ final class DspyProgramRegistryTest {
         Files.writeString(programsDir.resolve("not_json.txt"), "plain text");
 
         // Act
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Assert: Only valid program loaded
         assertEquals(1, registry.programCount());
@@ -122,7 +128,7 @@ final class DspyProgramRegistryTest {
     void shouldLoadProgramByName() throws IOException {
         // Arrange
         createTestProgram("test_program");
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act
         Optional<DspySavedProgram> program = registry.load("test_program");
@@ -136,7 +142,7 @@ final class DspyProgramRegistryTest {
     @DisplayName("Should return empty for unknown program")
     void shouldReturnEmptyForUnknownProgram() throws IOException {
         // Arrange
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act
         Optional<DspySavedProgram> program = registry.load("unknown");
@@ -149,7 +155,7 @@ final class DspyProgramRegistryTest {
     @DisplayName("Should throw on null program name")
     void shouldThrowOnNullProgramName() throws IOException {
         // Arrange
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act & Assert
         assertThrows(NullPointerException.class, () -> registry.load(null));
@@ -159,7 +165,7 @@ final class DspyProgramRegistryTest {
     @DisplayName("Should throw DspyProgramNotFoundException when executing unknown program")
     void shouldThrowWhenExecutingUnknownProgram() throws IOException {
         // Arrange
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act & Assert
         assertThrows(DspyProgramNotFoundException.class, () ->
@@ -171,7 +177,7 @@ final class DspyProgramRegistryTest {
     void shouldThrowOnNullInputsForExecution() throws IOException {
         // Arrange
         createTestProgram("test_program");
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act & Assert
         assertThrows(NullPointerException.class, () ->
@@ -185,7 +191,7 @@ final class DspyProgramRegistryTest {
         createTestProgram("alpha");
         createTestProgram("beta");
         createTestProgram("gamma");
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act
         List<String> names = registry.listProgramNames();
@@ -202,7 +208,7 @@ final class DspyProgramRegistryTest {
     void shouldReloadProgramFromDisk() throws IOException {
         // Arrange
         createTestProgram("reloadable");
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Modify the file
         String updatedJson = createProgramJson("reloadable", "updated_hash_123");
@@ -219,7 +225,7 @@ final class DspyProgramRegistryTest {
     @DisplayName("Should throw when reloading non-existent program")
     void shouldThrowWhenReloadingNonExistentProgram() throws IOException {
         // Arrange
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act & Assert
         assertThrows(DspyProgramNotFoundException.class, () ->
@@ -232,7 +238,7 @@ final class DspyProgramRegistryTest {
         // Arrange
         createTestProgram("program1");
         createTestProgram("program2");
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Add a new program file after initialization
         createTestProgram("program3");
@@ -250,7 +256,7 @@ final class DspyProgramRegistryTest {
     void shouldReturnRegistryStats() throws IOException {
         // Arrange
         createTestProgram("stats_program");
-        registry = new DspyProgramRegistry(programsDir, pythonEngine);
+        registry = new DspyProgramRegistry(programsDir, mockEngine);
 
         // Act
         Map<String, Object> stats = registry.getStats();
@@ -266,7 +272,7 @@ final class DspyProgramRegistryTest {
     void shouldThrowOnNullRegistryParameters() {
         // Act & Assert
         assertThrows(NullPointerException.class, () ->
-                new DspyProgramRegistry(null, pythonEngine));
+                new DspyProgramRegistry(null, mockEngine));
 
         assertThrows(NullPointerException.class, () ->
                 new DspyProgramRegistry(programsDir, null));

@@ -1,0 +1,126 @@
+{
+  "test_metadata": {
+    "id": "footprint_validation_test",
+    "name": "GEPA Footprint Agreement Validation",
+    "version": "1.0.0",
+    "description": "Validation test for GEPA optimization footprint agreement"
+  },
+  "validation_criteria": {
+    "structure_agreement": {
+      "threshold": 0.95,
+      "required": true,
+      "description": "Structural similarity between original and optimized workflows"
+    },
+    "behavior_agreement": {
+      "threshold": 0.90,
+      "required": true,
+      "description": "Behavioral similarity including state transitions"
+    },
+    "performance_agreement": {
+      "threshold": 0.85,
+      "required": false,
+      "description": "Performance metrics consistency"
+    },
+    "soundness_preservation": {
+      "required": true,
+      "description": "Optimized workflow must remain sound"
+    },
+    "liveness_preservation": {
+      "required": true,
+      "description": "Optimized workflow must remain live"
+    }
+  },
+  "test_cases": [
+    {
+      "id": "simple_workflow_validation",
+      "name": "Simple Order Processing Workflow",
+      "reference_specification": "simple_order_workflow.yawl",
+      "expected_footprint": {
+        "task_count": 6,
+        "place_count": 7,
+        "flow_count": 9,
+        "work_patterns": ["Multiple Choice", "S-Sequence", "X-OR"],
+        "executable_paths": 3
+      },
+      "optimization_targets": ["behavioral", "performance", "balanced"],
+      "expected_improvements": {
+        "behavioral": {
+          "footprint_agreement": "> 0.95",
+          "structural_improvement": "optimization while preserving structure"
+        },
+        "performance": {
+          "execution_time_improvement": "> 20%",
+          "throughput_improvement": "> 15%"
+        },
+        "balanced": {
+          "footprint_agreement": "> 0.90",
+          "performance_improvement": "> 10%"
+        }
+      }
+    },
+    {
+      "id": "complex_workflow_validation",
+      "name": "Complex Document Processing Workflow",
+      "reference_specification": "complex_document_processing.yawl",
+      "expected_footprint": {
+        "task_count": 10,
+        "place_count": 15,
+        "flow_count": 17,
+        "work_patterns": ["Multiple Choice", "S-Sequence", "S-Parallel", "X-OR", "AND"],
+        "executable_paths": 5,
+        "error_handling_paths": 3
+      },
+      "optimization_targets": ["behavioral", "performance", "balanced"],
+      "expected_improvements": {
+        "behavioral": {
+          "footprint_agreement": "> 0.90",
+          "error_handling_preservation": "100%"
+        },
+        "performance": {
+          "execution_time_improvement": "> 30%",
+          "concurrency_improvement": "> 25%"
+        },
+        "balanced": {
+          "footprint_agreement": "> 0.85",
+          "performance_improvement": "> 20%",
+          "structural_fidelity": "> 0.90"
+        }
+      }
+    }
+  ],
+  "validation_metrics": {
+    "structural_metrics": {
+      "task_count_match": "exact",
+      "place_count_match": "exact",
+      "flow_count_match": "exact",
+      "pattern_match": "required",
+      "connectivity_preservation": "> 0.95"
+    },
+    "behavioral_metrics": {
+      "state_space_similarity": "> 0.90",
+      "transition_matrix_similarity": "> 0.85",
+      "deadlock_free": true,
+      "livelock_free": true,
+      "termination_guaranteed": true
+    },
+    "performance_metrics": {
+      "execution_time_consistency": "< 10% variance",
+      "memory_usage_consistency": "< 15% variance",
+      "throughput_improvement": "> 10%",
+      "resource_utilization_optimization": "> 5%"
+    }
+  },
+  "reporting_format": {
+    "summary": {
+      "overall_status": "required",
+      "validation_results": "detailed",
+      "recommendations": "provided"
+    },
+    "detailed": {
+      "comparison_tables": true,
+      "metric_visualizations": true,
+      "optimization_trace": true,
+      "deviation_analysis": true
+    }
+  }
+}

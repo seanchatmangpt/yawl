@@ -1,0 +1,221 @@
+<yawl:YAWL xmlns:yawl="http://www.yawlfoundation.org/yawl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.yawlfoundation.org/yawl http://www.yawlfoundation.org/yawl/yawl.xsd">
+    <specification id="complex_document_processing" name="Complex Document Processing Pipeline" version="1.0">
+        <process id="document_processing_process" name="Document Processing Pipeline" net="document_processing_net"/>
+        <nets>
+            <net id="document_processing_net" name="Document Processing Net">
+                <places>
+                    <place id="start" name="Start" in="true"/>
+                    <place id="received" name="Document Received"/>
+                    <place id="validating" name="Document Validating"/>
+                    <place id="validated" name="Document Validated"/>
+                    <place id="validation_failed" name="Validation Failed"/>
+                    <place id="processing" name="Document Processing"/>
+                    <place id="processed" name="Document Processed"/>
+                    <place id="storing" name="Document Storing"/>
+                    <place id="stored" name="Document Stored"/>
+                    <place id="notification" name="Sending Notification"/>
+                    <place id="completed" name="Workflow Completed" out="true"/>
+                    <place id="cancelled" name="Document Cancelled"/>
+                    <place id="end" name="End" out="true"/>
+                    <place id="retries" name="Retries Available"/>
+                </places>
+
+                <transitions>
+                    <transition id="receive_document" name="Receive Document">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="validate_document" name="Validate Document">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="process_document" name="Process Document">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="store_document" name="Store Document">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="send_notification" name="Send Notification">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="cancel_document" name="Cancel Document">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+
+                    <transition id="retry_validation" name="Retry Validation">
+                        <precondition></precondition>
+                        <postcondition></postcondition>
+                        <condition xsi:nil="true"/>
+                        <deadline></deadline>
+                        <deadline-action></deadline-action>
+                        <inputcondition></inputcondition>
+                        <outputcondition></outputcondition>
+                        <cancelcondition></cancelcondition>
+                        <protocol xsi:nil="true"/>
+                        <offering xsi:nil="true"/>
+                    </transition>
+                </transitions>
+
+                <flows>
+                    <!-- Main flow -->
+                    <flow id="main1" from="start" to="receive_document" type="normal"/>
+                    <flow id="main2" from="receive_document" to="received" type="normal"/>
+                    <flow id="main3" from="received" to="validating" type="normal"/>
+                    <flow id="main4" from="validating" to="validate_document" type="normal"/>
+
+                    <!-- Validation paths -->
+                    <flow id="valid1" from="validate_document" to="validated" type="normal"/>
+                    <flow id="valid2" from="validate_document" to="validation_failed" type="normal"/>
+                    <flow id="valid3" from="validation_failed" to="retries" type="normal"/>
+                    <flow id="valid4" from="retries" to="retry_validation" type="normal"/>
+                    <flow id="valid5" from="retry_validation" to="validate_document" type="normal"/>
+
+                    <!-- Processing paths -->
+                    <flow id="proc1" from="validated" to="processing" type="normal"/>
+                    <flow id="proc2" from="processing" to="process_document" type="normal"/>
+                    <flow id="proc3" from="process_document" to="processed" type="normal"/>
+
+                    <!-- Storage paths -->
+                    <flow id="store1" from="processed" to="storing" type="normal"/>
+                    <flow id="store2" from="storing" to="store_document" type="normal"/>
+                    <flow id="store3" from="store_document" to="stored" type="normal"/>
+
+                    <!-- Notification path -->
+                    <flow id="notif1" from="stored" to="notification" type="normal"/>
+                    <flow id="notif2" from="notification" to="completed" type="normal"/>
+
+                    <!-- Cancellation path -->
+                    <flow id="cancel1" from="validation_failed" to="cancel_document" type="normal"/>
+                    <flow id="cancel2" from="cancel_document" to="cancelled" type="normal"/>
+                    <flow id="cancel3" from="cancelled" to="end" type="normal"/>
+                </flows>
+
+                <inputs>
+                    <join id="j_receive" type="and">
+                        <input-flow id="ij1" from="start" to="j_receive"/>
+                        <output-flow id="oj1" from="j_receive" to="receive_document"/>
+                    </join>
+
+                    <join id="j_validate" type="and">
+                        <input-flow id="ij2" from="validating" to="j_validate"/>
+                        <output-flow id="oj2" from="j_validate" to="validate_document"/>
+                    </join>
+                </inputs>
+
+                <outputs>
+                    <split id="s_validate" type="xor">
+                        <input-flow id="is1" from="validate_document" to="s_validate"/>
+                        <output-flow id="os1" from="s_validate" to="validated"/>
+                        <output-flow id="os2" from="s_validate" to="validation_failed"/>
+                    </split>
+
+                    <split id="s_retry" type="xor">
+                        <input-flow id="is2" from="retries" to="s_retry"/>
+                        <output-flow id="os3" from="s_retry" to="retry_validation"/>
+                        <output-flow id="os4" from="s_retry" to="cancel_document"/>
+                    </split>
+
+                    <split id="s_process" type="and">
+                        <input-flow id="is3" from="processing" to="s_process"/>
+                        <output-flow id="os5" from="s_process" to="process_document"/>
+                    </split>
+
+                    <split id="s_store" type="xor">
+                        <input-flow id="is4" from="storing" to="s_store"/>
+                        <output-flow id="os6" from="s_store" to="store_document"/>
+                    </split>
+
+                    <split id="s_complete" type="and">
+                        <input-flow id="is5" from="notification" to="s_complete"/>
+                        <output-flow id="os7" from="s_complete" to="completed"/>
+                    </split>
+
+                    <split id="s_cancel" type="xor">
+                        <input-flow id="is6" from="cancelled" to="s_cancel"/>
+                        <output-flow id="os8" from="s_cancel" to="end"/>
+                    </split>
+                </outputs>
+
+                <decomposition>
+                    <net xsi:nil="true"/>
+                </decomposition>
+
+                <hidding>
+                    <from xsi:nil="true"/>
+                    <to xsi:nil="true"/>
+                </hidding>
+
+                <exportcondition></exportcondition>
+                <importcondition></importcondition>
+                <exporttype>none</exporttype>
+                <importtype>none</importtype>
+            </net>
+        </nets>
+
+        <datatypes>
+            <type id="string" name="string" kind="atomic"/>
+            <type id="integer" name="integer" kind="atomic"/>
+            <type id="boolean" name="boolean" kind="atomic"/>
+            <type id="document_type" name="document_type" kind="atomic"/>
+            <type id="priority" name="priority" kind="atomic"/>
+        </datatypes>
+    </specification>
+</yawl:YAWL>

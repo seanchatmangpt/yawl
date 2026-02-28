@@ -1,0 +1,29 @@
+{
+  "dspy_available": false,
+  "summary": {
+    "total_modules": 2,
+    "passed_checks": 14,
+    "violations": 0,
+    "overall_status": "PASSED"
+  },
+  "passed_checks": [
+    "\u2713 gepa_optimizer.py handles DSPy gracefully",
+    "\u2713 gepa_optimizer.py imports",
+    "\u2713 gepa_optimizer.py DSPy patterns",
+    "\u2713 gepa_optimizer.py error handling",
+    "\u2713 gepa_optimizer.py GraalPy compatibility",
+    "\u2713 gepa_optimizer.py type hints (309.5%)",
+    "\u2713 gepa_optimizer.py H-Guards compliance",
+    "\u2713 dspy_gepa_powl_generator.py handles DSPy gracefully",
+    "\u2713 dspy_gepa_powl_generator.py imports",
+    "\u2713 dspy_gepa_powl_generator.py DSPy patterns",
+    "\u2713 dspy_gepa_powl_generator.py error handling",
+    "\u2713 dspy_gepa_powl_generator.py GraalPy compatibility",
+    "\u2713 dspy_gepa_powl_generator.py type hints (436.4%)",
+    "\u2713 dspy_gepa_powl_generator.py H-Guards compliance"
+  ],
+  "violations": [],
+  "recommendations": [
+    "Install DSPy for full functionality: pip install dspy"
+  ]
+}

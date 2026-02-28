@@ -28,7 +28,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.dspy.persistence.DspyProgramRegistry;
+import org.yawlfoundation.yawl.dspy.program.ProgramRegistry;
 import org.yawlfoundation.yawl.integration.a2a.skills.A2ASkill;
 import org.yawlfoundation.yawl.integration.a2a.skills.SkillRequest;
 import org.yawlfoundation.yawl.integration.a2a.skills.SkillResult;
@@ -75,7 +75,7 @@ public final class DspyA2ASkill implements A2ASkill {
     private final String name;
     private final String description;
     private final String programName;
-    private final DspyProgramRegistry registry;
+    private final ProgramRegistry registry;
 
     /**
      * Creates a new DSPy A2A skill.
@@ -90,7 +90,7 @@ public final class DspyA2ASkill implements A2ASkill {
             String programName,
             String displayName,
             String description,
-            DspyProgramRegistry registry
+            ProgramRegistry registry
     ) {
         this.programName = Objects.requireNonNull(programName, "Program name must not be null");
         this.id = "dspy_" + programName;
@@ -183,7 +183,7 @@ public final class DspyA2ASkill implements A2ASkill {
      * @return list of A2A skills
      * @throws NullPointerException if registry is null
      */
-    public static List<A2ASkill> createAll(DspyProgramRegistry registry) {
+    public static List<A2ASkill> createAll(ProgramRegistry registry) {
         Objects.requireNonNull(registry, "Registry must not be null");
 
         List<A2ASkill> skills = new ArrayList<>();

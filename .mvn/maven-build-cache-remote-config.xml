@@ -88,7 +88,8 @@
     <region>${YAWL_S3_REGION:-us-east-1}</region>
 
     <!-- HTTP transport configuration -->
-    <transport>http</transport>
+    <!-- NOTE: <transport>http</transport> removed - not valid in Maven build cache XML schema -->
+    <!-- Transport is determined automatically from the URL scheme -->
 
     <!-- Request timeout (30 seconds) -->
     <timeout>30000</timeout>
