@@ -193,7 +193,6 @@
 
         <profile>
             <id>soak-tests</id>
-            <description>1M Case Stress Test with 24-hour duration and ZGC optimization</description>
             <build>
                 <plugins>
                     <plugin>

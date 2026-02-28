@@ -65,6 +65,7 @@
         <module>yawl-graalpy</module>
         <module>yawl-benchmark</module>
         <module>yawl-graaljs</module>
+        <module>yawl-rust4pm</module>
 
         <!-- Layer 1: First consumers (build in parallel) -->
         <module>yawl-elements</module>
