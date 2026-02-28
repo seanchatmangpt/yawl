@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TEMPLATE: Exception Handling Workflow with Worklet Service
+  PURPOSE: Demonstrate error handling, retries, and worklet service integration
+  CUSTOMIZATION: Add specific exception types, remediation tasks
+  LINK: docs/WORKFLOW-PATTERNS.md#exception-handling
+-->
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="ExceptionHandlingWorkflow">
+    <name>Exception Handling Workflow with Worklet Service</name>
+    <documentation>
+      Copy-paste template for workflows with sophisticated exception handling.
+      Features:
+      - Exception detection and classification
+      - Automatic retry logic with exponential backoff
+      - Worklet service integration for dynamic exception handling
+      - Manual intervention escalation
+      - Compensation for failed tasks
+      - Audit trail of all exceptions
+
+      Customize:
+      - Add your specific exception types (OutOfStock, PaymentFailed, etc.)
+      - Implement worklet specifications for each exception type
+      - Adjust retry counts and backoff durations
+      - Add compensation logic for failed tasks
+    </documentation>
+    <metaData/>
+
+    <!-- Data variables -->
+    <data id="transactionId">
+      <name>transactionId</name>
+      <type>string</type>
+      <initialValue>TRX-${timestamp}</initialValue>
+    </data>
+    <data id="orderData">
+      <name>orderData</name>
+      <type>string</type>
+      <documentation>Order information (JSON)</documentation>
+    </data>
+    <data id="exceptionType">
+      <name>exceptionType</name>
+      <type>string</type>
+      <initialValue>none</initialValue>
+      <documentation>none|timeout|outofstock|paymentfailed|networkfailure|validation</documentation>
+    </data>
+    <data id="exceptionMessage">
+      <name>exceptionMessage</name>
+      <type>string</type>
+      <initialValue></initialValue>
+    </data>
+    <data id="retryCount">
+      <name>retryCount</name>
+      <type>integer</type>
+      <initialValue>0</initialValue>
+    </data>
+    <data id="maxRetries">
+      <name>maxRetries</name>
+      <type>integer</type>
+      <initialValue>3</initialValue>
+    </data>
+    <data id="backoffDelay">
+      <name>backoffDelay</name>
+      <type>string</type>
+      <initialValue>PT5S</initialValue>
+      <documentation>ISO 8601 duration: PT5S (5 seconds)</documentation>
+    </data>
+    <data id="workletSpec">
+      <name>workletSpec</name>
+      <type>string</type>
+      <initialValue></initialValue>
+      <documentation>URI of worklet specification for handling exception</documentation>
+    </data>
+    <data id="compensationRequired">
+      <name>compensationRequired</name>
+      <type>boolean</type>
+      <initialValue>false</initialValue>
+    </data>
+    <data id="escalationRequired">
+      <name>escalationRequired</name>
+      <type>boolean</type>
+      <initialValue>false</initialValue>
+    </data>
+    <data id="processStatus">
+      <name>processStatus</name>
+      <type>string</type>
+      <initialValue>active</initialValue>
+    </data>
+
+    <!-- Main exception handling process -->
+    <decomposition id="ExceptionHandlingNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>Exception Handling Workflow</name>
+      <processControlElements>
+
+        <inputCondition id="start">
+          <name>Start Process</name>
+          <flowsInto>
+            <nextElementRef id="processOrder"/>
+          </flowsInto>
+        </inputCondition>
+
+        <!-- Main processing task (can throw exceptions) -->
+        <task id="processOrder">
+          <name>Process Order</name>
+          <documentation>Main order processing (payment, inventory, shipping)</documentation>
+          <flowsInto>
+            <nextElementRef id="checkException"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ProcessOrderSubnet</decomposesTo>
+        </task>
+
+        <!-- Check if exception occurred -->
+        <condition id="checkException">
+          <name>Exception Occurred?</name>
+          <flowsInto>
+            <nextElementRef id="handleException">
+              <predicate ordering="0">exceptionType != 'none'</predicate>
+            </nextElementRef>
+            <nextElementRef id="processComplete">
+              <predicate ordering="1">exceptionType == 'none'</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Exception handling entry point -->
+        <task id="handleException">
+          <name>Classify and Handle Exception</name>
+          <documentation>Determine exception type and select recovery strategy</documentation>
+          <flowsInto>
+            <nextElementRef id="exceptionGateway"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ClassifyExceptionSubnet</decomposesTo>
+        </task>
+
+        <!-- Exception type gateway -->
+        <condition id="exceptionGateway">
+          <name>Exception Type</name>
+          <flowsInto>
+            <nextElementRef id="handleRetryable">
+              <predicate ordering="0">exceptionType in ('timeout', 'networkfailure')</predicate>
+            </nextElementRef>
+            <nextElementRef id="handleWorklet">
+              <predicate ordering="1">exceptionType in ('outofstock', 'paymentfailed')</predicate>
+            </nextElementRef>
+            <nextElementRef id="handleValidation">
+              <predicate ordering="2">exceptionType == 'validation'</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Path 1: Retryable exceptions (timeout, network) -->
+        <task id="handleRetryable">
+          <name>Retry with Exponential Backoff</name>
+          <documentation>Wait and retry (timeout, transient network failures)</documentation>
+          <flowsInto>
+            <nextElementRef id="checkRetries"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>RetryExceptionSubnet</decomposesTo>
+        </task>
+
+        <!-- Check if retries exceeded -->
+        <condition id="checkRetries">
+          <name>Retries Exceeded?</name>
+          <flowsInto>
+            <nextElementRef id="processOrder">
+              <predicate ordering="0">retryCount &lt; maxRetries</predicate>
+            </nextElementRef>
+            <nextElementRef id="handleManual">
+              <predicate ordering="1">retryCount &gt;= maxRetries</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Path 2: Worklet service for complex exceptions -->
+        <task id="handleWorklet">
+          <name>Execute Worklet for Exception Handling</name>
+          <documentation>
+            Invoke worklet service to handle business exception.
+            Worklet determines recovery: retry, substitute product, refund, etc.
+          </documentation>
+          <flowsInto>
+            <nextElementRef id="evaluateWorkletResult"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>WorkletExceptionSubnet</decomposesTo>
+        </task>
+
+        <!-- Evaluate worklet result -->
+        <condition id="evaluateWorkletResult">
+          <name>Worklet Resolution</name>
+          <flowsInto>
+            <nextElementRef id="compensateTransaction">
+              <predicate ordering="0">compensationRequired == true</predicate>
+            </nextElementRef>
+            <nextElementRef id="processOrder">
+              <predicate ordering="1">compensationRequired == false</predicate>
+            </nextElementRef>
+            <nextElementRef id="handleManual">
+              <predicate ordering="2">escalationRequired == true</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Path 3: Validation exceptions (form errors, data issues) -->
+        <task id="handleValidation">
+          <name>Request Data Correction</name>
+          <documentation>Ask user to correct validation errors</documentation>
+          <flowsInto>
+            <nextElementRef id="processOrder"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ValidationExceptionSubnet</decomposesTo>
+        </task>
+
+        <!-- Compensation for failed payments/inventory -->
+        <task id="compensateTransaction">
+          <name>Compensate Transaction</name>
+          <documentation>Reverse charges, restore inventory, cancel orders</documentation>
+          <flowsInto>
+            <nextElementRef id="processOrder"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>CompensationSubnet</decomposesTo>
+        </task>
+
+        <!-- Manual intervention (escalation) -->
+        <task id="handleManual">
+          <name>Manual Intervention Required</name>
+          <documentation>Escalate to support team for manual handling</documentation>
+          <flowsInto>
+            <nextElementRef id="awaitManualResolution"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <resourcing>
+            <offer initiator="system">
+              <allocate/>
+              <start/>
+              <complete/>
+            </offer>
+          </resourcing>
+        </task>
+
+        <!-- Wait for manual resolution -->
+        <task id="awaitManualResolution">
+          <name>Await Manual Resolution</name>
+          <flowsInto>
+            <nextElementRef id="processComplete"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- Process complete -->
+        <task id="processComplete">
+          <name>Process Complete</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <outputCondition id="end">
+          <name>End</name>
+        </outputCondition>
+
+      </processControlElements>
+    </decomposition>
+
+    <!-- Process Order Subnet -->
+    <decomposition id="ProcessOrderSubnet" xsi:type="NetFactsType">
+      <name>Process Order</name>
+      <processControlElements>
+        <inputCondition id="po_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="po_validate"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="po_validate">
+          <name>Validate Order</name>
+          <flowsInto>
+            <nextElementRef id="po_checkInventory"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>po_validateTask</decomposesTo>
+        </task>
+
+        <task id="po_checkInventory">
+          <name>Check Inventory</name>
+          <flowsInto>
+            <nextElementRef id="po_processPayment"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>po_inventoryTask</decomposesTo>
+        </task>
+
+        <task id="po_processPayment">
+          <name>Process Payment</name>
+          <flowsInto>
+            <nextElementRef id="po_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>po_paymentTask</decomposesTo>
+        </task>
+
+        <outputCondition id="po_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Classify Exception Subnet -->
+    <decomposition id="ClassifyExceptionSubnet" xsi:type="NetFactsType">
+      <name>Classify Exception</name>
+      <processControlElements>
+        <inputCondition id="ce_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="ce_identify"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="ce_identify">
+          <name>Identify Exception Type</name>
+          <flowsInto>
+            <nextElementRef id="ce_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ce_identifyTask</decomposesTo>
+        </task>
+
+        <outputCondition id="ce_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Retry Exception Subnet -->
+    <decomposition id="RetryExceptionSubnet" xsi:type="NetFactsType">
+      <name>Retry with Backoff</name>
+      <processControlElements>
+        <inputCondition id="re_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="re_delay"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="re_delay">
+          <name>Wait with Exponential Backoff</name>
+          <documentation>Wait PT5S, PT10S, PT20S, etc. before retry</documentation>
+          <flowsInto>
+            <nextElementRef id="re_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>re_delayTask</decomposesTo>
+        </task>
+
+        <outputCondition id="re_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Worklet Exception Subnet -->
+    <decomposition id="WorkletExceptionSubnet" xsi:type="NetFactsType">
+      <name>Worklet Exception Handling</name>
+      <processControlElements>
+        <inputCondition id="we_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="we_invoke"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="we_invoke">
+          <name>Invoke Worklet Service</name>
+          <documentation>Call worklet service with exception details</documentation>
+          <flowsInto>
+            <nextElementRef id="we_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>we_invokeTask</decomposesTo>
+        </task>
+
+        <outputCondition id="we_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Validation Exception Subnet -->
+    <decomposition id="ValidationExceptionSubnet" xsi:type="NetFactsType">
+      <name>Request Data Correction</name>
+      <processControlElements>
+        <inputCondition id="ve_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="ve_notify"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="ve_notify">
+          <name>Notify User of Errors</name>
+          <flowsInto>
+            <nextElementRef id="ve_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ve_notifyTask</decomposesTo>
+        </task>
+
+        <outputCondition id="ve_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Compensation Subnet -->
+    <decomposition id="CompensationSubnet" xsi:type="NetFactsType">
+      <name>Compensate Transaction</name>
+      <processControlElements>
+        <inputCondition id="comp_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="comp_reverseCharges"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="comp_reverseCharges">
+          <name>Reverse Payment Charges</name>
+          <flowsInto>
+            <nextElementRef id="comp_restoreInventory"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>comp_reverseTask</decomposesTo>
+        </task>
+
+        <task id="comp_restoreInventory">
+          <name>Restore Inventory</name>
+          <flowsInto>
+            <nextElementRef id="comp_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>comp_restoreTask</decomposesTo>
+        </task>
+
+        <outputCondition id="comp_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Leaf task decompositions -->
+    <decomposition id="po_validateTask" xsi:type="WebServiceFactsType">
+      <name>Validate Order - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="po_inventoryTask" xsi:type="WebServiceFactsType">
+      <name>Check Inventory - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="po_paymentTask" xsi:type="WebServiceFactsType">
+      <name>Process Payment - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="ce_identifyTask" xsi:type="WebServiceFactsType">
+      <name>Identify Exception - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="re_delayTask" xsi:type="WebServiceFactsType">
+      <name>Delay - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="we_invokeTask" xsi:type="WebServiceFactsType">
+      <name>Invoke Worklet - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="ve_notifyTask" xsi:type="WebServiceFactsType">
+      <name>Notify User - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="comp_reverseTask" xsi:type="WebServiceFactsType">
+      <name>Reverse Payment - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="comp_restoreTask" xsi:type="WebServiceFactsType">
+      <name>Restore Inventory - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+  </specification>
+</specificationSet>

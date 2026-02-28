@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TEMPLATE: Multi-Step Data Validation Workflow
+  PURPOSE: Sequential validation stages with error handling
+  CUSTOMIZATION: Add validation steps, error handlers, retry logic
+  LINK: docs/WORKFLOW-PATTERNS.md#validation-pipeline
+-->
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="MultiStepValidationWorkflow">
+    <name>Multi-Step Data Validation Workflow</name>
+    <documentation>
+      Copy-paste template for multi-stage validation workflows.
+      Features:
+      - Sequential validation stages
+      - Error detection and handling
+      - Retry capability for failed stages
+      - Audit trail via data variables
+
+      Customize:
+      - Add your validation rules (stage2Rule, stage3Rule)
+      - Connect to your validation services
+      - Update error handling logic
+    </documentation>
+    <metaData/>
+
+    <!-- Data variables -->
+    <data id="dataId">
+      <name>dataId</name>
+      <type>string</type>
+      <initialValue>DATA-${timestamp}</initialValue>
+    </data>
+    <data id="inputData">
+      <name>inputData</name>
+      <type>string</type>
+      <documentation>Raw input data (JSON/XML)</documentation>
+    </data>
+    <data id="stage1Status">
+      <name>stage1Status</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="stage2Status">
+      <name>stage2Status</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="stage3Status">
+      <name>stage3Status</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="validationErrors">
+      <name>validationErrors</name>
+      <type>string</type>
+      <initialValue>[]</initialValue>
+    </data>
+    <data id="retryCount">
+      <name>retryCount</name>
+      <type>integer</type>
+      <initialValue>0</initialValue>
+    </data>
+    <data id="maxRetries">
+      <name>maxRetries</name>
+      <type>integer</type>
+      <initialValue>3</initialValue>
+    </data>
+    <data id="finalStatus">
+      <name>finalStatus</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+
+    <!-- Main validation pipeline -->
+    <decomposition id="ValidationPipelineNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>Multi-Step Validation Pipeline</name>
+      <processControlElements>
+
+        <inputCondition id="start">
+          <name>Start Validation</name>
+          <flowsInto>
+            <nextElementRef id="stage1"/>
+          </flowsInto>
+        </inputCondition>
+
+        <!-- Stage 1: Format Validation (XSD/JSON Schema) -->
+        <task id="stage1">
+          <name>Stage 1: Format Validation</name>
+          <documentation>Validate input against schema (XML/JSON)</documentation>
+          <flowsInto>
+            <nextElementRef id="stage1Check"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>Stage1Subnet</decomposesTo>
+        </task>
+
+        <!-- Stage 1 result check -->
+        <condition id="stage1Check">
+          <name>Stage 1 Success?</name>
+          <flowsInto>
+            <nextElementRef id="stage2">
+              <predicate ordering="0">stage1Status == 'passed'</predicate>
+            </nextElementRef>
+            <nextElementRef id="stage1Retry">
+              <predicate ordering="1">stage1Status == 'failed'</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Stage 1 Retry logic -->
+        <condition id="stage1Retry">
+          <name>Retry Stage 1?</name>
+          <flowsInto>
+            <nextElementRef id="stage1">
+              <predicate ordering="0">retryCount &lt; maxRetries</predicate>
+            </nextElementRef>
+            <nextElementRef id="validationFailed">
+              <predicate ordering="1">retryCount &gt;= maxRetries</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Stage 2: Business Rule Validation -->
+        <task id="stage2">
+          <name>Stage 2: Business Rule Validation</name>
+          <documentation>Validate data against business rules</documentation>
+          <flowsInto>
+            <nextElementRef id="stage2Check"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>Stage2Subnet</decomposesTo>
+        </task>
+
+        <!-- Stage 2 result check -->
+        <condition id="stage2Check">
+          <name>Stage 2 Success?</name>
+          <flowsInto>
+            <nextElementRef id="stage3">
+              <predicate ordering="0">stage2Status == 'passed'</predicate>
+            </nextElementRef>
+            <nextElementRef id="validationFailed">
+              <predicate ordering="1">stage2Status == 'failed'</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Stage 3: External Service Validation -->
+        <task id="stage3">
+          <name>Stage 3: External Service Validation</name>
+          <documentation>Validate via external APIs/services (fraud check, database lookup)</documentation>
+          <flowsInto>
+            <nextElementRef id="stage3Check"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>Stage3Subnet</decomposesTo>
+        </task>
+
+        <!-- Stage 3 result check -->
+        <condition id="stage3Check">
+          <name>Stage 3 Success?</name>
+          <flowsInto>
+            <nextElementRef id="validationPassed">
+              <predicate ordering="0">stage3Status == 'passed'</predicate>
+            </nextElementRef>
+            <nextElementRef id="validationFailed">
+              <predicate ordering="1">stage3Status == 'failed'</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Validation passed -->
+        <task id="validationPassed">
+          <name>Validation Passed</name>
+          <documentation>All validation stages passed. Proceed with processing.</documentation>
+          <flowsInto>
+            <nextElementRef id="recordSuccess"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- Record success -->
+        <task id="recordSuccess">
+          <name>Record Success and Notify</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- Validation failed -->
+        <task id="validationFailed">
+          <name>Validation Failed</name>
+          <documentation>Data validation failed. Review errors and retry or reject.</documentation>
+          <flowsInto>
+            <nextElementRef id="recordFailure"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- Record failure -->
+        <task id="recordFailure">
+          <name>Record Failure and Notify</name>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <outputCondition id="end">
+          <name>Validation Complete</name>
+        </outputCondition>
+
+      </processControlElements>
+    </decomposition>
+
+    <!-- Stage 1: Format Validation Subnet -->
+    <decomposition id="Stage1Subnet" xsi:type="NetFactsType">
+      <name>Format Validation Stage</name>
+      <processControlElements>
+        <inputCondition id="s1_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="s1_validate"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="s1_validate">
+          <name>Validate Against Schema</name>
+          <documentation>Check XML/JSON format, required fields, data types</documentation>
+          <flowsInto>
+            <nextElementRef id="s1_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>s1_schemaValidation</decomposesTo>
+        </task>
+
+        <outputCondition id="s1_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Stage 2: Business Rule Validation Subnet -->
+    <decomposition id="Stage2Subnet" xsi:type="NetFactsType">
+      <name>Business Rule Validation Stage</name>
+      <processControlElements>
+        <inputCondition id="s2_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="s2_validate"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="s2_validate">
+          <name>Apply Business Rules</name>
+          <documentation>Cross-field validation, constraint checks, business logic</documentation>
+          <flowsInto>
+            <nextElementRef id="s2_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>s2_businessRules</decomposesTo>
+        </task>
+
+        <outputCondition id="s2_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Stage 3: External Service Validation Subnet -->
+    <decomposition id="Stage3Subnet" xsi:type="NetFactsType">
+      <name>External Service Validation Stage</name>
+      <processControlElements>
+        <inputCondition id="s3_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="s3_validate"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="s3_validate">
+          <name>Call External Services</name>
+          <documentation>Fraud detection, database checks, third-party API validation</documentation>
+          <flowsInto>
+            <nextElementRef id="s3_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>s3_externalServices</decomposesTo>
+        </task>
+
+        <outputCondition id="s3_end">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Leaf task decompositions -->
+    <decomposition id="s1_schemaValidation" xsi:type="WebServiceFactsType">
+      <name>Schema Validation - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="s2_businessRules" xsi:type="WebServiceFactsType">
+      <name>Business Rules - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="s3_externalServices" xsi:type="WebServiceFactsType">
+      <name>External Services - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+  </specification>
+</specificationSet>

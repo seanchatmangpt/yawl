@@ -18,6 +18,26 @@ Documentation is organized into four Diataxis quadrants. For the full cross-quad
 
 ---
 
+## Discovery Tools (New — Find Docs Faster!)
+
+Having trouble finding what you need? Use these new indexing tools:
+
+| Tool | Purpose | Best For |
+|------|---------|----------|
+| **[SEARCH_INDEX.md](SEARCH_INDEX.md)** | Keyword-searchable index of all 750+ docs | Finding docs by topic (use Ctrl+F in browser) |
+| **[TOPIC_INDEX.md](TOPIC_INDEX.md)** | 35+ topics A-Z, each with related docs | Browsing all docs on a subject (authentication, deployment, etc.) |
+| **[USE_CASE_INDEX.md](USE_CASE_INDEX.md)** | 20 learning paths for common goals | Step-by-step guidance (e.g., "Deploy on Kubernetes") |
+| **[MODULE_HEALTH_DASHBOARD.md](MODULE_HEALTH_DASHBOARD.md)** | Module maturity, stability, test coverage at a glance | Assessing module readiness before adoption |
+| **[DOCUMENTATION_COMPLETENESS.md](DOCUMENTATION_COMPLETENESS.md)** | 4-quadrant coverage checklist per module | Finding doc gaps, planning improvements |
+| **[SEARCH_INDEX.json](SEARCH_INDEX.json)** | Machine-readable doc index (JSON format) | Integration with search engines, portals, tools |
+
+**Quick Start**: Don't know where to begin? Pick any of these entry points:
+- 🔍 **Search**: [SEARCH_INDEX.md](SEARCH_INDEX.md) — Find docs by topic
+- 🎯 **Goal-Driven**: [USE_CASE_INDEX.md](USE_CASE_INDEX.md) — Follow a learning path
+- 📊 **Module Status**: [MODULE_HEALTH_DASHBOARD.md](MODULE_HEALTH_DASHBOARD.md) — Check module maturity
+
+---
+
 ## Documentation Quadrants
 
 ### Tutorials — [tutorials/index.md](tutorials/index.md)
