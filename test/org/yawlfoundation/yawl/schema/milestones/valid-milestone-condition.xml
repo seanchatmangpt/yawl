@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="OrderProcessing">
+    <name>Order Processing with Milestones</name>
+    <documentation>Test specification for milestone conditions</documentation>
+    <metaData/>
+    <decomposition id="root" xsi:type="NetFactsType" isRootNet="true">
+      <name>Order Net</name>
+      <processControlElements>
+        <inputCondition id="input">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="PaymentApproved"/>
+          </flowsInto>
+        </inputCondition>
+        <task id="PaymentApproved">
+          <name>Payment Approved</name>
+          <flowsInto>
+            <nextElementRef id="PaymentMilestone"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="xor"/>
+        </task>
+        <milestone id="PaymentMilestone">
+          <name>Payment Milestone</name>
+          <documentation>Tracks when payment has been approved</documentation>
+          <flowsInto>
+            <nextElementRef id="ShipOrder"/>
+          </flowsInto>
+          <expression>//orderStatus = 'APPROVED'</expression>
+          <expiryType>TIME_BASED</expiryType>
+          <expiryTimeout>3600000</expiryTimeout>
+        </milestone>
+        <task id="ShipOrder">
+          <name>Ship Order</name>
+          <flowsInto>
+            <nextElementRef id="output"/>
+          </flowsInto>
+          <join code="and"/>
+          <split code="xor"/>
+          <milestoneGuards operator="AND">
+            <guard>
+              <milestoneRef id="PaymentMilestone"/>
+            </guard>
+          </milestoneGuards>
+        </task>
+        <outputCondition id="output">
+          <name>End</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+  </specification>
+</specificationSet>

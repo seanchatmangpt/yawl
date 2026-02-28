@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-02-28T09:07:16.722526",
+  "benchmark": "WorkItemCheckoutScaleBenchmark.checkoutWorkItem",
+  "mode": "AverageTime",
+  "timeUnit": "NANOSECONDS",
+  "fork_count": 3,
+  "warmup_iterations": 10,
+  "measurement_iterations": 50,
+  "jvm_args": [
+    "-Xms8g",
+    "-Xmx8g",
+    "-XX:+UseZGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-XX:+DisableExplicitGC",
+    "-XX:+AlwaysPreTouch"
+  ],
+  "results": [
+    {
+      "case_count": 100000,
+      "mean": 6877.652264909667,
+      "median": 6869.707996157628,
+      "p95": 8153.321369324216,
+      "p99": 8787.383594519579,
+      "min": 5180.295199516645,
+      "max": 8787.383594519579
+    },
+    {
+      "case_count": 500000,
+      "mean": 8800.402342684405,
+      "median": 8843.199520330643,
+      "p95": 10418.399967561832,
+      "p99": 10879.799426179668,
+      "min": 6546.016045763773,
+      "max": 10879.799426179668
+    },
+    {
+      "case_count": 1000000,
+      "mean": 11420.540633149278,
+      "median": 11674.522388346822,
+      "p95": 13071.52010229956,
+      "p99": 13295.043097052923,
+      "min": 7905.045228554108,
+      "max": 13295.043097052923
+    }
+  ]
+}

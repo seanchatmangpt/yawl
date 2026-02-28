@@ -9,10 +9,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Complete catalog of van der Aalst's 20 workflow patterns.
+ * Complete catalog of van der Aalst's 43 workflow patterns.
  *
  * <p>Provides lookup, filtering, and pattern comparison capabilities.
  * Supports querying patterns by code, category, or suitability.
+ *
+ * <p>Includes:
+ * <ul>
+ *   <li>WP-1 to WP-20: Original 20 fundamental patterns</li>
+ *   <li>WCP-21 to WCP-43: Extended patterns from 2006 definitive guide</li>
+ * </ul>
  *
  * <p>This is a stateless, immutable utility class for pattern discovery
  * and selection. All returned collections are immutable.
@@ -38,7 +44,7 @@ public final class WorkflowPatternCatalog {
     }
 
     /**
-     * Gets all 20 workflow patterns.
+     * Gets all 43 workflow patterns.
      *
      * @return immutable list of all patterns
      */
@@ -49,7 +55,7 @@ public final class WorkflowPatternCatalog {
     /**
      * Gets the total count of patterns in the catalog.
      *
-     * @return the number of patterns (always 20)
+     * @return the number of patterns (always 43)
      */
     public static int size() {
         return ALL_PATTERNS.size();
