@@ -1,0 +1,7 @@
+value,run1_ms,run2_ms,run3_ms,avg_ms,cache_hit_rate,memory_peak_mb,optimal
+1,,,,0,,,false
+1.5,,,,0,,,false
+2,,,,0,,,false
+2.5,,,,0,,,false
+3,,,,0,,,false
+4,,,,0,,,false
