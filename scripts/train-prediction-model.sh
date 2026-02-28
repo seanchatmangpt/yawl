@@ -287,12 +287,10 @@ PYTHON_EOF
 bootstrap_with_synthetic_data() {
     printf "  Bootstrapping with synthetic historical data...\n"
 
-    python3 << 'PYTHON_EOF'
+    python3 << 'BOOTSTRAP_PYTHON'
 import json
 from datetime import datetime
 
-# Create synthetic training data based on typical YAWL module characteristics
-# This helps initialize the model when no historical data exists
 synthetic_samples = [
     {"module": "engine", "loc": 5000, "test_count": 10, "exec_time_ms": 3200},
     {"module": "engine", "loc": 4500, "test_count": 9, "exec_time_ms": 2800},
@@ -306,13 +304,12 @@ synthetic_samples = [
     {"module": "utilities", "loc": 1500, "test_count": 3, "exec_time_ms": 150},
 ]
 
-# Add timestamps
 for sample in synthetic_samples:
     sample["timestamp"] = datetime.utcnow().isoformat() + "Z"
     sample["sample_count"] = 1
 
 print(json.dumps(synthetic_samples))
-PYTHON_EOF
+BOOTSTRAP_PYTHON
 }
 
 # ── Main flow ──────────────────────────────────────────────────────────────
