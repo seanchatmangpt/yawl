@@ -170,9 +170,17 @@ public class LongRunningStressTest {
         Path metricsOutput = Paths.get("metrics-" + System.currentTimeMillis() + ".jsonl");
         BenchmarkMetricsCollector metricsCollector =
                 new BenchmarkMetricsCollector(metricsOutput, config.metricsIntervalMinutes * 60);
-        LatencyDegradationAnalyzer latencyAnalyzer = new LatencyDegradationAnalyzer();
+        Path latencyOutput = Paths.get("latency-percentiles-" + System.currentTimeMillis() + ".jsonl");
+        LatencyDegradationAnalyzer latencyAnalyzer = new LatencyDegradationAnalyzer(latencyOutput, 10_000);
+        Path breakingPointOutput = Paths.get("breaking-point-analysis-" + System.currentTimeMillis() + ".jsonl");
+        CapacityBreakingPointAnalyzer.ThresholdConfig bpConfig = new CapacityBreakingPointAnalyzer.ThresholdConfig(
+                config.throughputCliffPercent,
+                config.gcPauseWarningMs,
+                config.heapWarningThresholdMB,
+                1000,  // latencyP99MaxMs
+                5);    // sustainedDurationMinutes
         CapacityBreakingPointAnalyzer breakingPointAnalyzer =
-                new CapacityBreakingPointAnalyzer(config.throughputCliffPercent);
+                new CapacityBreakingPointAnalyzer(breakingPointOutput, bpConfig);
         MixedWorkloadSimulator workloadSimulator = new MixedWorkloadSimulator(
                 config.caseCreationRatePerSec,
                 100);  // 100ms baseline task time
@@ -403,16 +411,20 @@ public class LongRunningStressTest {
                                 BenchmarkMetricsCollector.MetricSnapshot snapshot =
                                         metricsCollector.captureSnapshot();
 
-                                if (analyzer.detectBreakingPoint(snapshot)) {
-                                    System.err.println("[CRITICAL] Breaking point detected!");
-                                    String analysis = analyzer.getAnalysisReport();
-                                    System.err.println(analysis);
+                                // Evaluate metrics with the analyzer
+                                analyzer.evaluateMetrics(
+                                        snapshot.casesProcessed(),
+                                        snapshot.throughputCasesPerSec(),
+                                        100,  // gcPauseP99Ms (placeholder)
+                                        (snapshot.heapUsedMB() * 60) / Math.max(1, (now - lastCheck) / 3600_000),
+                                        0);   // latencyP99Ms (placeholder)
 
-                                    // Save analysis to file
-                                    Path analysisFile = Paths.get(
-                                            "breaking-point-analysis-"
-                                                    + System.currentTimeMillis() + ".json");
-                                    Files.writeString(analysisFile, analysis);
+                                if (analyzer.isBreakingPointDetected()) {
+                                    System.err.println("[CRITICAL] Breaking point detected!");
+                                    var recent = analyzer.getMostRecentBreakingPoint();
+                                    if (recent.isPresent()) {
+                                        System.err.println(recent.get().toJson());
+                                    }
                                 }
                                 lastCheck = now;
                             }
@@ -443,15 +455,9 @@ public class LongRunningStressTest {
                         while (System.currentTimeMillis() < endTime && !Thread.currentThread().isInterrupted()) {
                             int completed = casesCompleted.get();
                             if (completed >= lastCheckpoint + 10_000) {
-                                analyzer.recordSample(completed, Instant.now());
+                                analyzer.samplePercentiles(completed);
                                 System.out.println("[LATENCY] Sampled at " + completed + " cases");
                                 lastCheckpoint = completed;
-
-                                // Save percentiles
-                                String percentiles = analyzer.getPercentileReport();
-                                Path outputFile = Paths.get(
-                                        "latency-percentiles-" + System.currentTimeMillis() + ".json");
-                                Files.writeString(outputFile, percentiles);
                             }
                             Thread.sleep(1000);
                         }
@@ -495,7 +501,7 @@ public class LongRunningStressTest {
                 actualDurationMs,
                 heapGrowthMBPerHour,
                 Thread.activeCount(),
-                breakingPointAnalyzer.hasDetectedBreakingPoint(),
+                breakingPointAnalyzer.isBreakingPointDetected(),
                 casesPerSecond,
                 false);  // heapExhaustion
     }

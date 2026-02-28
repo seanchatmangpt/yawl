@@ -1,0 +1,13 @@
+{
+  "status": "baseline_pending",
+  "version": "6.0.0",
+  "date": "2026-02-28",
+  "smoke_test_passed": false,
+  "metrics": {
+    "cases_created": 0,
+    "cases_completed": 0,
+    "throughput_cases_per_sec": 0.0,
+    "heap_growth_mb_per_hour": 0.0
+  },
+  "notes": "Baseline will be updated after first smoke test run"
+}
