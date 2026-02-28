@@ -10,7 +10,13 @@ package org.yawlfoundation.yawl.ggen.validation.model;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,20 +81,36 @@ public class GuardReceipt {
     }
 
     /**
-     * Serialize this receipt to JSON string.
+     * Create a shared GsonBuilder with Instant serialization support.
+     * Must be used by both toJson() and fromJson() for round-trip safety.
+     */
+    private static GsonBuilder createGsonBuilder() {
+        return new GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeAdapter(Instant.class,
+                (JsonSerializer<Instant>) (src, typeOfSrc, context) ->
+                    new JsonPrimitive(src.toString())
+            )
+            .registerTypeAdapter(Instant.class,
+                (JsonDeserializer<Instant>) (json, typeOfT, context) ->
+                    Instant.parse(json.getAsString())
+            );
+    }
+
+    /**
+     * Serialize this receipt to JSON string with ISO-8601 Instant format.
      */
     public String toJson() {
-        Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
-            .create();
+        Gson gson = createGsonBuilder().create();
         return gson.toJson(this);
     }
 
     /**
      * Deserialize a GuardReceipt from JSON string.
+     * Uses same GsonBuilder configuration as toJson() for round-trip safety.
      */
     public static GuardReceipt fromJson(String json) {
-        Gson gson = new Gson();
+        Gson gson = createGsonBuilder().create();
         return gson.fromJson(json, GuardReceipt.class);
     }
 

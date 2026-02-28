@@ -125,78 +125,26 @@ public class HyperStandardsValidator {
 
     /**
      * Load a SPARQL query from classpath resources.
-     * Falls back to a basic query if file not found (graceful degradation).
+     * Throws exception if resource not found.
      *
      * @param filename the filename in src/main/resources/sparql/
-     * @return the SPARQL query string, or a safe default
+     * @return the SPARQL query string
+     * @throws IllegalStateException if resource not found
      */
     private String loadSparqlQuery(String filename) {
-        try {
-            Path resourcePath = Path.of("src/main/resources/sparql", filename);
-            if (Files.exists(resourcePath)) {
-                return Files.readString(resourcePath);
+        try (InputStream is = getClass().getResourceAsStream("/sparql/" + filename)) {
+            if (is == null) {
+                throw new IllegalStateException(
+                    "Required SPARQL query resource not found: " + filename +
+                    " — verify src/main/resources/sparql/ contains all query files"
+                );
             }
-            LOGGER.warn("SPARQL query file not found: {}, using fallback", filename);
-            return getDefaultSparqlQuery(filename);
+            return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOGGER.warn("Failed to load SPARQL query {}: {}", filename, e.getMessage());
-            return getDefaultSparqlQuery(filename);
+            throw new IllegalStateException(
+                "Failed to load SPARQL query " + filename + ": " + e.getMessage(), e
+            );
         }
-    }
-
-    /**
-     * Get a default/fallback SPARQL query for each pattern.
-     * These are basic queries that can detect violations even without external files.
-     *
-     * @param filename the query filename
-     * @return a fallback SPARQL query
-     */
-    private String getDefaultSparqlQuery(String filename) {
-        return switch (filename) {
-            case "guards-h-stub.sparql" ->
-                """
-                PREFIX code: <http://yawlfoundation.org/ggen/code#>
-                SELECT ?line ?content
-                WHERE {
-                    ?method code:returnStatement ?ret .
-                    ?method code:lineNumber ?line .
-                    FILTER(REGEX(?ret, "^(null|\\\"\\\"|\\'\\''|0|Collections\\.empty|new\\s+(HashMap|ArrayList)\\(\\))$"))
-                }
-                """;
-            case "guards-h-empty.sparql" ->
-                """
-                PREFIX code: <http://yawlfoundation.org/ggen/code#>
-                SELECT ?line
-                WHERE {
-                    ?method code:methodBody ?body .
-                    ?method code:lineNumber ?line .
-                    FILTER(REGEX(?body, "^\\s*$"))
-                }
-                """;
-            case "guards-h-fallback.sparql" ->
-                """
-                PREFIX code: <http://yawlfoundation.org/ggen/code#>
-                SELECT ?line ?content
-                WHERE {
-                    ?catch code:catchContent ?content .
-                    FILTER(REGEX(?content, "return.*fake|return.*empty"))
-                }
-                """;
-            case "guards-h-lie.sparql" ->
-                """
-                PREFIX code: <http://yawlfoundation.org/ggen/code#>
-                SELECT ?line
-                WHERE {
-                    ?method code:lineNumber ?line .
-                    FILTER(false)
-                }
-                """;
-            default ->
-                """
-                PREFIX code: <http://yawlfoundation.org/ggen/code#>
-                SELECT ?line WHERE { }
-                """;
-        };
     }
 
     /**
