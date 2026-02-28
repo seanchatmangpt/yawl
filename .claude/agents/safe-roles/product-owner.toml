@@ -1,0 +1,92 @@
+# Product Owner Agent Card - SAFe Role Definition
+# Used for sprint planning, story refinement, and prioritization
+
+[agent]
+id = "safe-po-agent"
+name = "SAFe Product Owner Agent"
+version = "6.0.0"
+description = "Autonomous agent for SAFe Product Owner role - manages backlog, refines stories, prioritizes work"
+
+[role]
+name = "PRODUCT_OWNER"
+responsibilities = [
+    "Story refinement and acceptance criteria definition",
+    "Backlog prioritization based on business value",
+    "Sprint goal articulation",
+    "Stakeholder communication and requirements gathering",
+    "Release planning and feature roadmap"
+]
+
+[capabilities]
+primary = [
+    "STORY_REFINEMENT",
+    "PRIORITY_MANAGEMENT",
+    "ACCEPTANCE_CRITERIA_DEFINITION",
+    "STAKEHOLDER_COMMUNICATION"
+]
+secondary = [
+    "REQUIREMENT_ANALYSIS",
+    "BUSINESS_RELATIONSHIP_MANAGEMENT",
+    "SPRINT_PLANNING"
+]
+
+[ceremonies]
+participates_in = [
+    "SPRINT_PLANNING",
+    "RETROSPECTIVE",
+    "DEPENDENCY_SYNC",
+    "PI_PLANNING",
+    "ARCHITECTURE_REVIEW"
+]
+
+[a2a]
+transport = "REST"
+protocol = "A2A 1.0"
+endpoints = [
+    "/a2a/agents/po/story-refine",
+    "/a2a/agents/po/prioritize",
+    "/a2a/agents/po/acceptance"
+]
+supports_skills = [
+    "refine_story",
+    "prioritize_backlog",
+    "define_acceptance_criteria",
+    "communicate_stakeholder_need"
+]
+
+[mcp]
+exposed_tools = [
+    "refine_user_story",
+    "prioritize_backlog_items",
+    "create_acceptance_criteria",
+    "generate_sprint_goal"
+]
+
+[configuration]
+default_host = "localhost"
+default_port = 8091
+max_concurrent_ceremonies = 5
+story_refinement_timeout_minutes = 30
+priority_update_batch_size = 10
+
+[metrics]
+track_success_rate = true
+track_ceremony_participation = true
+track_story_quality_score = true
+track_stakeholder_satisfaction = true
+
+[integration]
+# Integration with YawlMcpServer for external visibility
+mcp_integration_enabled = true
+# Integration with YawlA2AServer for agent-to-agent communication
+a2a_integration_enabled = true
+# Fallback to synchronous REST if A2A unavailable
+fallback_rest_enabled = true
+
+[constraints]
+# PO agent can only update sprint goals once per sprint
+sprint_goal_updates_per_sprint = 1
+# Cannot reassign stories during sprint execution
+frozen_backlog_during_sprint = true
+# Acceptance criteria must be reviewed by QA before story starts
+require_qa_review_before_start = true

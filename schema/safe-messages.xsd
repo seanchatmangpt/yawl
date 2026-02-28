@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:safe="http://www.yawlfoundation.org/yawl/safe/messages"
+           targetNamespace="http://www.yawlfoundation.org/yawl/safe/messages"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:annotation>
+        <xs:documentation>
+            SAFe (Scaled Agile Framework) Message Definitions for YAWL v6.0
+
+            This schema defines message types for agent-to-agent (A2A) communication
+            in SAFe agile ceremonies including sprint planning, standups, retrospectives,
+            and PI planning events.
+
+            All messages inherit common properties: messageId, ceremonyId, fromAgentId,
+            createdAt, targetRoles, priority, and correlationId.
+        </xs:documentation>
+    </xs:annotation>
+
+    <!-- Common Types -->
+
+    <xs:simpleType name="MessageType">
+        <xs:annotation>
+            <xs:documentation>Types of SAFe ceremony messages</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="STORY_CEREMONY"/>
+            <xs:enumeration value="DEPENDENCY_NOTIFICATION"/>
+            <xs:enumeration value="BLOCKER_NOTIFICATION"/>
+            <xs:enumeration value="ACCEPTANCE_DECISION"/>
+            <xs:enumeration value="PI_PLANNING_EVENT"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="SAFeRole">
+        <xs:annotation>
+            <xs:documentation>SAFe roles for agent assignment</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="PRODUCT_OWNER"/>
+            <xs:enumeration value="SCRUM_MASTER"/>
+            <xs:enumeration value="TEAM_MEMBER"/>
+            <xs:enumeration value="RELEASE_TRAIN_ENGINEER"/>
+            <xs:enumeration value="ARCHITECT"/>
+            <xs:enumeration value="AGILE_COACH"/>
+            <xs:enumeration value="BUSINESS_ANALYST"/>
+            <xs:enumeration value="QA_TESTER"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PriorityLevel">
+        <xs:annotation>
+            <xs:documentation>Message priority levels</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="LOW"/>
+            <xs:enumeration value="NORMAL"/>
+            <xs:enumeration value="HIGH"/>
+            <xs:enumeration value="CRITICAL"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="TargetRoles">
+        <xs:annotation>
+            <xs:documentation>Specifies target roles for message routing</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="role" type="safe:SAFeRole" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CeremonyMessageBase">
+        <xs:annotation>
+            <xs:documentation>Base properties for all ceremony messages</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="messageId" type="xs:string"/>
+            <xs:element name="ceremonyId" type="xs:string"/>
+            <xs:element name="fromAgentId" type="xs:string"/>
+            <xs:element name="createdAt" type="xs:dateTime"/>
+            <xs:element name="messageType" type="safe:MessageType"/>
+            <xs:element name="targetRoles" type="safe:TargetRoles" minOccurs="0"/>
+            <xs:element name="correlationId" type="xs:string" minOccurs="0"/>
+            <xs:element name="priority" type="safe:PriorityLevel" default="NORMAL"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Story Ceremony Message -->
+
+    <xs:complexType name="TaskBreakdown">
+        <xs:annotation>
+            <xs:documentation>Task breakdown within a user story</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="taskId" type="xs:string"/>
+            <xs:element name="title" type="xs:string"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="assigneeRole" type="safe:SAFeRole" minOccurs="0"/>
+            <xs:element name="estimatedHours" type="xs:integer" minOccurs="0"/>
+            <xs:element name="dependencies" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="taskId" type="xs:string" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="StoryCeremonyMessage">
+        <xs:annotation>
+            <xs:documentation>Message for sprint planning with story refinement</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="safe:CeremonyMessageBase">
+                <xs:sequence>
+                    <xs:element name="storyId" type="xs:string"/>
+                    <xs:element name="storyTitle" type="xs:string"/>
+                    <xs:element name="storyDescription" type="xs:string" minOccurs="0"/>
+                    <xs:element name="acceptanceCriteria">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="criterion" type="xs:string" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="estimatedPoints" type="xs:integer" minOccurs="0"/>
+                    <xs:element name="priority" type="safe:PriorityLevel" default="NORMAL"/>
+                    <xs:element name="tasks" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="task" type="safe:TaskBreakdown" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Dependency Notification -->
+
+    <xs:simpleType name="DependencyType">
+        <xs:annotation>
+            <xs:documentation>Types of cross-team dependencies</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="FEATURE"/>
+            <xs:enumeration value="SERVICE"/>
+            <xs:enumeration value="DATA"/>
+            <xs:enumeration value="INFRASTRUCTURE"/>
+            <xs:enumeration value="API_CONTRACT"/>
+            <xs:enumeration value="DEPLOYMENT"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="DependencyStatus">
+        <xs:annotation>
+            <xs:documentation>Dependency status tracking</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="OPEN"/>
+            <xs:enumeration value="IN_PROGRESS"/>
+            <xs:enumeration value="RESOLVED"/>
+            <xs:enumeration value="BLOCKED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="RiskLevel">
+        <xs:annotation>
+            <xs:documentation>Risk severity levels</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="LOW"/>
+            <xs:enumeration value="MEDIUM"/>
+            <xs:enumeration value="HIGH"/>
+            <xs:enumeration value="CRITICAL"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="DependencyNotification">
+        <xs:annotation>
+            <xs:documentation>Cross-team dependency notification for architecture reviews</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="safe:CeremonyMessageBase">
+                <xs:sequence>
+                    <xs:element name="dependencyId" type="xs:string"/>
+                    <xs:element name="dependencyType" type="safe:DependencyType"/>
+                    <xs:element name="sourceTeamId" type="xs:string"/>
+                    <xs:element name="targetTeamId" type="xs:string"/>
+                    <xs:element name="description" type="xs:string"/>
+                    <xs:element name="status" type="safe:DependencyStatus"/>
+                    <xs:element name="targetCompletionDate" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="riskLevel" type="safe:RiskLevel"/>
+                    <xs:element name="mitigation" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Blocker Notification -->
+
+    <xs:simpleType name="BlockerStatus">
+        <xs:annotation>
+            <xs:documentation>Blocker status in standup</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="OPEN"/>
+            <xs:enumeration value="IN_PROGRESS"/>
+            <xs:enumeration value="RESOLVED"/>
+            <xs:enumeration value="ESCALATED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="BlockerNotification">
+        <xs:annotation>
+            <xs:documentation>Impediment and blocker notifications for daily standups</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="safe:CeremonyMessageBase">
+                <xs:sequence>
+                    <xs:element name="blockerId" type="xs:string"/>
+                    <xs:element name="title" type="xs:string"/>
+                    <xs:element name="description" type="xs:string"/>
+                    <xs:element name="severity" type="safe:RiskLevel"/>
+                    <xs:element name="status" type="safe:BlockerStatus"/>
+                    <xs:element name="impactedWorkItemId" type="xs:string" minOccurs="0"/>
+                    <xs:element name="requesterRole" type="safe:SAFeRole" minOccurs="0"/>
+                    <xs:element name="reportedAt" type="xs:dateTime"/>
+                    <xs:element name="proposedSolution" type="xs:string" minOccurs="0"/>
+                    <xs:element name="assignedToRole" type="safe:SAFeRole" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Acceptance Decision -->
+
+    <xs:simpleType name="AcceptanceStatus">
+        <xs:annotation>
+            <xs:documentation>Work item acceptance status</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ACCEPTED"/>
+            <xs:enumeration value="REJECTED"/>
+            <xs:enumeration value="CONDITIONALLY_ACCEPTED"/>
+            <xs:enumeration value="PENDING"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="AcceptanceDecision">
+        <xs:annotation>
+            <xs:documentation>Acceptance decision on completed work items</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="safe:CeremonyMessageBase">
+                <xs:sequence>
+                    <xs:element name="workItemId" type="xs:string"/>
+                    <xs:element name="storyId" type="xs:string"/>
+                    <xs:element name="decisionStatus" type="safe:AcceptanceStatus"/>
+                    <xs:element name="decisionReason" type="xs:string" minOccurs="0"/>
+                    <xs:element name="acceptanceCriteriaMet">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="criterion" type="xs:string" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="acceptanceCriteriaFailed" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="criterion" type="xs:string" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="qualityScore" type="xs:double" minOccurs="0"/>
+                    <xs:element name="defectsFound" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="defect" type="xs:string" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="feedbackSummary" type="xs:string" minOccurs="0"/>
+                    <xs:element name="decisionTime" type="xs:dateTime"/>
+                    <xs:element name="reviewerRole" type="safe:SAFeRole" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- PI Planning Event -->
+
+    <xs:simpleType name="PIPlanningStatus">
+        <xs:annotation>
+            <xs:documentation>PI planning status</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="DRAFT"/>
+            <xs:enumeration value="FINAL"/>
+            <xs:enumeration value="APPROVED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="TeamPlanning">
+        <xs:annotation>
+            <xs:documentation>Team planning information for PI</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="teamId" type="xs:string"/>
+            <xs:element name="teamName" type="xs:string"/>
+            <xs:element name="plannedCapacity" type="xs:integer" minOccurs="0"/>
+            <xs:element name="committedObjectives">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="objective" type="xs:string" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="dependencies" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="dependency" type="xs:string" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="confidenceLevel" type="xs:double" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PiPlanningEvent">
+        <xs:annotation>
+            <xs:documentation>Program Increment (PI) planning events for quarterly planning</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="safe:CeremonyMessageBase">
+                <xs:sequence>
+                    <xs:element name="piId" type="xs:string"/>
+                    <xs:element name="piName" type="xs:string"/>
+                    <xs:element name="piStartDate" type="xs:dateTime"/>
+                    <xs:element name="piEndDate" type="xs:dateTime"/>
+                    <xs:element name="piObjectives">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="objective" type="xs:string" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="releaseTrain" type="xs:string"/>
+                    <xs:element name="teamCommitments">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="team" type="safe:TeamPlanning" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="identifiedRisks" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="risk" type="xs:string" maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="planningStatus" type="safe:PIPlanningStatus"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Root Elements -->
+
+    <xs:element name="storyCeremonyMessage" type="safe:StoryCeremonyMessage">
+        <xs:annotation>
+            <xs:documentation>Sprint planning message with story refinement</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="dependencyNotification" type="safe:DependencyNotification">
+        <xs:annotation>
+            <xs:documentation>Cross-team dependency notification</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="blockerNotification" type="safe:BlockerNotification">
+        <xs:annotation>
+            <xs:documentation>Blocker/impediment notification</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="acceptanceDecision" type="safe:AcceptanceDecision">
+        <xs:annotation>
+            <xs:documentation>Work item acceptance decision</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="piPlanningEvent" type="safe:PiPlanningEvent">
+        <xs:annotation>
+            <xs:documentation>Program Increment planning event</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+</xs:schema>
