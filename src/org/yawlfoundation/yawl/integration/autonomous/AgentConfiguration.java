@@ -26,7 +26,6 @@ import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasone
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
 import org.yawlfoundation.yawl.integration.conflict.ConflictResolver;
-import org.yawlfoundation.yawl.integration.orderfulfillment.AgentCapability;
 
 /**
  * Configuration for a generic autonomous agent — Java 25 record edition.
@@ -98,7 +97,7 @@ public record AgentConfiguration(
      * @return the agent name
      */
     public String getAgentName() {
-        return capability.getDomainName();
+        return capability.domainName();
     }
 
     /**
