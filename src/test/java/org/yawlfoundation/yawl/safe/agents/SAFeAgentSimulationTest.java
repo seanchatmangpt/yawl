@@ -535,7 +535,7 @@ public class SAFeAgentSimulationTest {
 
         // Arrange
         SAFeCeremonyData.PIPlanning piData = createPIPlanningData();
-        List<AgentParticipant> allAgents = new ArrayList<>();
+        List<SAFeCeremonyExecutor.AgentParticipant> allAgents = new ArrayList<>();
         allAgents.addAll(List.of(
             createReleaseTrainEngineerAgent(),
             createSystemArchitectAgent(),
@@ -561,7 +561,7 @@ public class SAFeAgentSimulationTest {
             "Each team should make commitments");
 
         long successfulParticipations = allAgents.stream()
-            .filter(AgentParticipant::participatedInCeremony)
+            .filter(SAFeCeremonyExecutor.AgentParticipant::participatedInCeremony)
             .count();
         assertTrue(successfulParticipations >= allAgents.size() - 2,
             "Most agents should participate successfully");
@@ -597,13 +597,13 @@ public class SAFeAgentSimulationTest {
             ))
             .toList();
 
-        AgentParticipant architect = createSystemArchitectAgent();
-        AgentParticipant po = createProductOwnerAgent();
+        SAFeCeremonyExecutor.AgentParticipant architect = createSystemArchitectAgent();
+        SAFeCeremonyExecutor.AgentParticipant po = createProductOwnerAgent();
 
         // Act: Complete all stories concurrently
         List<SAFeCeremonyData.StoryCompletionResult> results = stories.parallelStream()
             .map(story -> {
-                AgentParticipant dev = createDeveloperAgent(story.assigneeId());
+                SAFeCeremonyExecutor.AgentParticipant dev = createDeveloperAgent(story.assigneeId());
                 SAFeCeremonyData.StoryCompletionData data =
                     new SAFeCeremonyData.StoryCompletionData(
                         story,
@@ -796,29 +796,4 @@ public class SAFeAgentSimulationTest {
         return sequence;
     }
 
-    /**
-     * Data holder for PI Planning ceremony
-     */
-    public record AgentParticipant(String id, String name, String role) {
-        private static final java.util.Map<String, Long> PARTICIPATION_TRACKER =
-            new java.util.concurrent.ConcurrentHashMap<>();
-        private static final java.util.Map<String, String> MESSAGE_TYPE_TRACKER =
-            new java.util.concurrent.ConcurrentHashMap<>();
-
-        public boolean participatedInCeremony() {
-            return PARTICIPATION_TRACKER.containsKey(id);
-        }
-
-        public void recordParticipation() {
-            PARTICIPATION_TRACKER.put(id, System.currentTimeMillis());
-        }
-
-        public String lastMessageType() {
-            return MESSAGE_TYPE_TRACKER.get(id);
-        }
-
-        public void recordMessageType(String type) {
-            MESSAGE_TYPE_TRACKER.put(id, type);
-        }
-    }
 }
