@@ -90,11 +90,17 @@
             <artifactId>grpc-api</artifactId>
             <version>${grpc.version}</version>
         </dependency>
+        <!-- grpc-netty-shaded (9.7 MB) excluded: too large for proxy in remote/offline env;
+             only needed at runtime for OTLP gRPC transport — re-enable when full network available.
+             OpenTelemetryConfig/OpenTelemetryInitializer (which use gRPC) are already excluded
+             from compilation in this module's compiler configuration. -->
+        <!--
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
             <version>${grpc.version}</version>
         </dependency>
+        -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>

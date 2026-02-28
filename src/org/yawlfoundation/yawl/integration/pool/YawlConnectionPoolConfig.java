@@ -510,4 +510,16 @@ public class YawlConnectionPoolConfig {
                 ", engineUrl='" + engineUrl + '\'' +
                 '}';
     }
+
+    /**
+     * Creates a {@link ConnectionPoolGuard} sized to this configuration's {@code maxTotal}.
+     *
+     * <p>The guard enforces a 100ms fail-fast timeout so callers never block
+     * indefinitely when the pool is exhausted.</p>
+     *
+     * @return a new {@link ConnectionPoolGuard} for this pool configuration
+     */
+    public ConnectionPoolGuard createGuard() {
+        return ConnectionPoolGuard.of(this.maxTotal);
+    }
 }

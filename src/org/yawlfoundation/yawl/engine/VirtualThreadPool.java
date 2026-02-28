@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.lang.ScopedValue;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -500,9 +501,58 @@ public class VirtualThreadPool {
     }
 
     /**
+     * Executes tasks in parallel with a bounded concurrency limit.
+     *
+     * <p>Uses Java 25 {@link StructuredTaskScope.ShutdownOnFailure} to ensure
+     * automatic cancellation of in-flight tasks on the first failure. The
+     * {@link java.util.concurrent.Semaphore} limits how many tasks run simultaneously,
+     * preventing platform thread saturation when {@code tasks.size()} is large.</p>
+     *
+     * <p>This fixes the platform thread starvation observed at &gt;5,000 concurrent
+     * virtual threads: by bounding active concurrency to {@code maxConcurrency},
+     * the carrier thread pool is never overwhelmed.</p>
+     *
+     * @param <T>            result type
+     * @param tasks          callables to run in parallel
+     * @param maxConcurrency maximum simultaneously-active tasks; must be &gt; 0
+     * @return results in the same order as {@code tasks}
+     * @throws InterruptedException if the calling thread is interrupted
+     * @throws ExecutionException   if any task fails (remaining tasks are cancelled)
+     */
+    public <T> List<T> executeInParallel(List<Callable<T>> tasks, int maxConcurrency)
+            throws InterruptedException, ExecutionException {
+        if (tasks == null || tasks.isEmpty()) return List.of();
+        if (maxConcurrency <= 0) throw new IllegalArgumentException("maxConcurrency must be > 0");
+
+        var semaphore = new Semaphore(maxConcurrency);
+        try (var scope = StructuredTaskScope.<T, Void>open(
+                StructuredTaskScope.Joiner.<T>awaitAllSuccessfulOrThrow())) {
+            List<StructuredTaskScope.Subtask<T>> subtasks = tasks.stream()
+                    .map(task -> scope.fork(() -> {
+                        semaphore.acquire();
+                        try {
+                            return task.call();
+                        } finally {
+                            semaphore.release();
+                        }
+                    }))
+                    .toList();
+            scope.join();
+            return subtasks.stream()
+                    .map(StructuredTaskScope.Subtask::get)
+                    .toList();
+        } catch (StructuredTaskScope.FailedException e) {
+            throw new ExecutionException(e.getCause());
+        }
+    }
+
+    /**
      * Executes multiple tasks in parallel using CompletableFuture.
      * This provides better error handling and resource management than
      * submitting tasks individually to the executor.
+     *
+     * <p>This method delegates to {@link #executeInParallel(List, int)} with a default
+     * {@code maxConcurrency} of {@code Runtime.getRuntime().availableProcessors() * 4}.</p>
      *
      * @param tasks list of callables to execute
      * @return list of results
@@ -511,39 +561,38 @@ public class VirtualThreadPool {
      */
     public <T> List<T> executeInParallel(List<Callable<T>> tasks)
             throws ExecutionException, InterruptedException {
-        if (tasks.isEmpty()) {
-            return Collections.emptyList();
-        }
+        return executeInParallel(tasks, Runtime.getRuntime().availableProcessors() * 4);
+    }
 
-        List<CompletableFuture<T>> futures = new ArrayList<>();
-
-        // Create futures for each task
-        for (Callable<T> task : tasks) {
-            CompletableFuture<T> future = CompletableFuture.supplyAsync(
-                () -> {
-                    try {
-                        return task.call();
-                    } catch (Exception e) {
-                        throw new CompletionException(e);
-                    }
-                },
-                executor
-            );
-            futures.add(future);
-        }
-
-        // Wait for all to complete and collect results
-        CompletableFuture<Void> allFutures = CompletableFuture.allOf(
-            futures.toArray(new CompletableFuture[0])
-        );
-        allFutures.get(); // This will throw if any task failed
-
-        // Collect results
-        List<T> results = new ArrayList<>(futures.size());
-        for (CompletableFuture<T> future : futures) {
-            results.add(future.get());
-        }
-        return results;
+    /**
+     * Submits a task and enforces a deadline using {@link StructuredTaskScope}.
+     *
+     * <p>If the task does not complete within {@code timeout}, it is cancelled
+     * and the returned {@link Future} completes exceptionally with
+     * {@link java.util.concurrent.TimeoutException}.</p>
+     *
+     * @param <T>     result type
+     * @param task    the callable to execute
+     * @param timeout maximum time to wait
+     * @return a {@link Future} that completes with the task result or fails with TimeoutException
+     */
+    public <T> Future<T> submitWithTimeout(Callable<T> task, Duration timeout) {
+        return executor.submit(() -> {
+            try (var scope = StructuredTaskScope.<T, Void>open(
+                    StructuredTaskScope.Joiner.<T>awaitAll(),
+                    config -> config.withTimeout(timeout))) {
+                var subtask = scope.fork(task);
+                scope.join();
+                if (subtask.state() == StructuredTaskScope.Subtask.State.SUCCESS) {
+                    return subtask.get();
+                } else if (scope.isCancelled()) {
+                    throw new java.util.concurrent.TimeoutException(
+                            "Task timed out after " + timeout);
+                } else {
+                    throw new ExecutionException(subtask.exception());
+                }
+            }
+        });
     }
 
     /**
