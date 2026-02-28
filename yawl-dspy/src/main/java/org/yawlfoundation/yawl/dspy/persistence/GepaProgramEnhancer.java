@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.dspy.DspyExecutionMetrics;
 import org.yawlfoundation.yawl.dspy.DspyExecutionResult;
 import org.yawlfoundation.yawl.graalpy.PythonException;
+import org.yawlfoundation.yawl.graalpy.PythonException.ErrorKind;
 import org.yawlfoundation.yawl.graalpy.PythonExecutionEngine;
 
 import java.io.IOException;

@@ -161,42 +161,40 @@ public final class GepaMcpTools {
      * Creates the gepa_optimize_workflow tool.
      */
     private static McpServerFeatures.SyncToolSpecification createOptimizeWorkflowTool() {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "gepa_optimize_workflow",
-                "Generate a perfectly optimized workflow using GEPA (Graph-Extended Pattern Analysis) " +
-                "optimization. GEPA extends standard DSPy with graph-based analysis and " +
-                "behavioral footprint validation to create optimal workflow structures.",
-                """
-                {
-                  "type": "object",
-                  "required": ["workflow_spec", "optimization_target"],
-                  "properties": {
-                    "workflow_spec": {
-                      "type": "object",
-                      "description": "Workflow specification in YAWL format including net, input/output params, etc."
-                    },
-                    "optimization_target": {
-                      "type": "string",
-                      "enum": ["performance", "maintainability", "compliance", "resource_efficiency", "throughput"],
-                      "description": "Primary optimization objective"
-                    },
-                    "constraints": {
-                      "type": "object",
-                      "description": "Optional constraints including time limits, resource limits, etc."
-                    },
-                    "reference_patterns": {
-                      "type": "array",
-                      "items": {"type": "string"},
-                      "description": "Reference patterns to align optimization with: sequential, parallel, choice, loop"
-                    },
-                    "gepa_params": {
-                      "type": "object",
-                      "description": "GEPA-specific parameters including graph_depth, pattern_weights, etc."
-                    }
-                  }
-                }
-                """
-        );
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("workflow_spec", Map.of(
+                "type", "object",
+                "description", "Workflow specification in YAWL format including net, input/output params, etc."
+        ));
+        properties.put("optimization_target", Map.of(
+                "type", "string",
+                "enum", List.of("performance", "maintainability", "compliance", "resource_efficiency", "throughput"),
+                "description", "Primary optimization objective"
+        ));
+        properties.put("constraints", Map.of(
+                "type", "object",
+                "description", "Optional constraints including time limits, resource limits, etc."
+        ));
+        properties.put("reference_patterns", Map.of(
+                "type", "array",
+                "items", Map.of("type", "string"),
+                "description", "Reference patterns to align optimization with: sequential, parallel, choice, loop"
+        ));
+        properties.put("gepa_params", Map.of(
+                "type", "object",
+                "description", "GEPA-specific parameters including graph_depth, pattern_weights, etc."
+        ));
+
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", properties, List.of("workflow_spec", "optimization_target"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("gepa_optimize_workflow")
+                .description("Generate a perfectly optimized workflow using GEPA (Graph-Extended Pattern Analysis) " +
+                        "optimization. GEPA extends standard DSPy with graph-based analysis and " +
+                        "behavioral footprint validation to create optimal workflow structures.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
@@ -250,7 +248,7 @@ public final class GepaMcpTools {
                 String json = MAPPER.writeValueAsString(responseData);
                 return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(json)),
-                        false
+                        false, null, null
                 );
 
             } catch (Exception e) {
@@ -264,38 +262,36 @@ public final class GepaMcpTools {
      * Creates the gepa_validate_footprint tool.
      */
     private static McpServerFeatures.SyncToolSpecification createValidateFootprintTool() {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "gepa_validate_footprint",
-                "Validate behavioral footprint agreement between original and optimized workflows. " +
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("original_workflow", Map.of(
+                "type", "object",
+                "description", "Original workflow specification for comparison"
+        ));
+        properties.put("optimized_workflow", Map.of(
+                "type", "object",
+                "description", "Optimized workflow to validate against original"
+        ));
+        properties.put("validation_mode", Map.of(
+                "type", "string",
+                "enum", List.of("strict", "balanced", "lenient"),
+                "description", "Validation strictness level"
+        ));
+        properties.put("focus_areas", Map.of(
+                "type", "array",
+                "items", Map.of("type", "string"),
+                "description", "Specific validation focus areas: state_preservation, resource_usage, timing, etc."
+        ));
+
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", properties, List.of("original_workflow", "optimized_workflow"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("gepa_validate_footprint")
+                .description("Validate behavioral footprint agreement between original and optimized workflows. " +
                 "Ensures the optimized workflow preserves all critical behavioral properties " +
-                "while achieving optimization benefits.",
-                """
-                {
-                  "type": "object",
-                  "required": ["original_workflow", "optimized_workflow"],
-                  "properties": {
-                    "original_workflow": {
-                      "type": "object",
-                      "description": "Original workflow specification for comparison"
-                    },
-                    "optimized_workflow": {
-                      "type": "object",
-                      "description": "Optimized workflow to validate against original"
-                    },
-                    "validation_mode": {
-                      "type": "string",
-                      "enum": ["strict", "balanced", "lenient"],
-                      "description": "Validation strictness level"
-                    },
-                    "focus_areas": {
-                      "type": "array",
-                      "items": {"type": "string"},
-                      "description": "Specific validation focus areas: state_preservation, resource_usage, timing, etc."
-                    }
-                  }
-                }
-                """
-        );
+                "while achieving optimization benefits.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
@@ -333,7 +329,7 @@ public final class GepaMcpTools {
                 String json = MAPPER.writeValueAsString(responseData);
                 return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(json)),
-                        false
+                        false, null, null
                 );
 
             } catch (Exception e) {
@@ -347,42 +343,52 @@ public final class GepaMcpTools {
      * Creates the gepa_score_workflow tool.
      */
     private static McpServerFeatures.SyncToolSpecification createScoreWorkflowTool() {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "gepa_score_workflow",
-                "Score a workflow against reference patterns using GEPA's comprehensive scoring " +
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("workflow", Map.of(
+                "type", "object",
+                "description", "Workflow specification to score"
+        ));
+        properties.put("reference_patterns", Map.of(
+                "type", "array",
+                "items", Map.of("type", "string"),
+                "description", "Reference pattern names: industry_best, compliance_standard, local_optimal"
+        ));
+        Map<String, Object> scoringWeightsProps = new LinkedHashMap<>();
+        scoringWeightsProps.put("performance", Map.of(
+                "type", "number",
+                "minimum", 0,
+                "maximum", 1
+        ));
+        scoringWeightsProps.put("maintainability", Map.of(
+                "type", "number",
+                "minimum", 0,
+                "maximum", 1
+        ));
+        scoringWeightsProps.put("compliance", Map.of(
+                "type", "number",
+                "minimum", 0,
+                "maximum", 1
+        ));
+        properties.put("scoring_weights", Map.of(
+                "type", "object",
+                "properties", scoringWeightsProps,
+                "description", "Weights for scoring dimensions (sum to 1.0)"
+        ));
+        properties.put("include_detailed_analysis", Map.of(
+                "type", "boolean",
+                "description", "Include detailed analysis in response"
+        ));
+
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", properties, List.of("workflow", "reference_patterns"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("gepa_score_workflow")
+                .description("Score a workflow against reference patterns using GEPA's comprehensive scoring " +
                 "system. Evaluates multiple dimensions including performance, maintainability, " +
-                "and compliance against various reference patterns.",
-                """
-                {
-                  "type": "object",
-                  "required": ["workflow", "reference_patterns"],
-                  "properties": {
-                    "workflow": {
-                      "type": "object",
-                      "description": "Workflow specification to score"
-                    },
-                    "reference_patterns": {
-                      "type": "array",
-                      "items": {"type": "string"},
-                      "description": "Reference pattern names: industry_best, compliance_standard, local_optimal"
-                    },
-                    "scoring_weights": {
-                      "type": "object",
-                      "properties": {
-                        "performance": {"type": "number", "minimum": 0, "maximum": 1},
-                        "maintainability": {"type": "number", "minimum": 0, "maximum": 1},
-                        "compliance": {"type": "number", "minimum": 0, "maximum": 1}
-                      },
-                      "description": "Weights for scoring dimensions (sum to 1.0)"
-                    },
-                    "include_detailed_analysis": {
-                      "type": "boolean",
-                      "description": "Include detailed analysis in response"
-                    }
-                  }
-                }
-                """
-        );
+                "and compliance against various reference patterns.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
@@ -423,7 +429,7 @@ public final class GepaMcpTools {
                 String json = MAPPER.writeValueAsString(responseData);
                 return new McpSchema.CallToolResult(
                         List.of(new McpSchema.TextContent(json)),
-                        false
+                        false, null, null
                 );
 
             } catch (Exception e) {
@@ -654,14 +660,14 @@ public final class GepaMcpTools {
             String json = MAPPER.writeValueAsString(errorData);
             return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent(json)),
-                    true  // isError = true
+                    true, null, null  // isError = true
             );
         } catch (Exception e) {
             // Fallback to plain text if JSON serialization fails
             return new McpSchema.CallToolResult(
                     List.of(new McpSchema.TextContent("{\"error\": true, \"message\": \"" +
                             errorMessage.replace("\"", "\\\"") + "\"}")),
-                    true
+                    true, null, null
             );
         }
     }

@@ -27,6 +27,7 @@ import org.yawlfoundation.yawl.engine.YWorkItemRepository;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -174,7 +175,7 @@ public final class CaseLearningBootstrapper {
      * @return list of completed YWorkItems
      */
     private List<YWorkItem> queryCompletedItems() {
-        return repository.getWorkItems(YWorkItemStatus.COMPLETED);
+        return new ArrayList<>(repository.getWorkItems(YWorkItemStatus.statusComplete));
     }
 
     /**

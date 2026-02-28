@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.dspy.adaptation.AdaptationAction;
 import org.yawlfoundation.yawl.dspy.adaptation.WorkflowAdaptationContext;
+import org.yawlfoundation.yawl.dspy.adaptation.*;
 import org.yawlfoundation.yawl.dspy.forensics.AnomalyContext;
 import org.yawlfoundation.yawl.dspy.forensics.ForensicsReport;
 import org.yawlfoundation.yawl.dspy.resources.ResourcePrediction;
@@ -638,26 +639,26 @@ public final class PythonDspyBridge {
             String defaultTask = context.enabledTasks().isEmpty() ? "unknown" : context.enabledTasks().get(0);
 
             AdaptationAction action = switch (actionType.toUpperCase()) {
-                case "SKIP_TASK" -> new AdaptationAction.SkipTask(
+                case "SKIP_TASK" -> new SkipTask(
                         extractString(result, "task_id", defaultTask),
                         reasoning
                 );
-                case "ADD_RESOURCE" -> new AdaptationAction.AddResource(
+                case "ADD_RESOURCE" -> new AddResource(
                         extractString(result, "agent_id", "agent-default"),
                         extractString(result, "task_id", defaultTask),
                         reasoning
                 );
-                case "REROUTE" -> new AdaptationAction.ReRoute(
+                case "REROUTE" -> new ReRoute(
                         extractString(result, "task_id", defaultTask),
                         extractString(result, "alternate_route", "default-path"),
                         reasoning
                 );
-                case "ESCALATE" -> new AdaptationAction.EscalateCase(
+                case "ESCALATE" -> new EscalateCase(
                         context.caseId(),
                         extractString(result, "escalation_level", "manager"),
                         reasoning
                 );
-                default -> new AdaptationAction.EscalateCase(
+                default -> new EscalateCase(
                         context.caseId(),
                         "manager",
                         "Unknown action type: " + actionType

@@ -200,11 +200,15 @@ public record DspySavedProgram(
         java.util.List<Map<String, Object>> fewShotExamples = new java.util.ArrayList<>();
         JsonNode fewShotNode = node.get("demos");
         if (fewShotNode != null && fewShotNode.isArray()) {
-            fewShotNode.forEach(example -> {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> exampleMap = MAPPER.treeToValue(example, Map.class);
-                fewShotExamples.add(exampleMap);
-            });
+            for (JsonNode example : fewShotNode) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> exampleMap = MAPPER.treeToValue(example, Map.class);
+                    fewShotExamples.add(exampleMap);
+                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                    // Skip malformed example
+                }
+            }
         }
 
         @Nullable String learnedInstructions = optionalString(node, "learned_instructions");

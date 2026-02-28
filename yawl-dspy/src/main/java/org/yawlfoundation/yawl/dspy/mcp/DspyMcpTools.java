@@ -219,23 +219,20 @@ public final class DspyMcpTools {
      * Creates the dspy_get_program_info tool.
      */
     private static McpServerFeatures.SyncToolSpecification createInfoTool(DspyProgramRegistry registry) {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "dspy_get_program_info",
-                "Get detailed information about a specific DSPy program, including " +
-                "signature definitions, predictor configurations, and optimization metadata.",
-                """
-                {
-                  "type": "object",
-                  "required": ["program"],
-                  "properties": {
-                    "program": {
-                      "type": "string",
-                      "description": "Program name to get info for"
-                    }
-                  }
-                }
-                """
-        );
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", Map.of(
+                        "program", Map.of(
+                                "type", "string",
+                                "description", "Program name to get info for"
+                        )
+                ), List.of("program"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("dspy_get_program_info")
+                .description("Get detailed information about a specific DSPy program, including " +
+                        "signature definitions, predictor configurations, and optimization metadata.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
@@ -275,7 +272,7 @@ public final class DspyMcpTools {
                             String json = MAPPER.writeValueAsString(responseData);
                             return new McpSchema.CallToolResult(
                                     List.of(new McpSchema.TextContent(json)),
-                                    false
+                                    false, null, null
                             );
                         } catch (Exception e) {
                             log.error("Failed to serialize program info: {}", e.getMessage());
@@ -290,23 +287,20 @@ public final class DspyMcpTools {
      * Creates the dspy_reload_program tool.
      */
     private static McpServerFeatures.SyncToolSpecification createReloadTool(DspyProgramRegistry registry) {
-        McpSchema.Tool tool = new McpSchema.Tool(
-                "dspy_reload_program",
-                "Hot-reload a DSPy program from disk after external optimization. " +
-                "Use this after running GEPA training to pick up new program state.",
-                """
-                {
-                  "type": "object",
-                  "required": ["program"],
-                  "properties": {
-                    "program": {
-                      "type": "string",
-                      "description": "Program name to reload"
-                    }
-                  }
-                }
-                """
-        );
+        McpSchema.JsonSchema schema = new McpSchema.JsonSchema(
+                "object", Map.of(
+                        "program", Map.of(
+                                "type", "string",
+                                "description", "Program name to reload"
+                        )
+                ), List.of("program"), false, null, Map.of());
+
+        McpSchema.Tool tool = McpSchema.Tool.builder()
+                .name("dspy_reload_program")
+                .description("Hot-reload a DSPy program from disk after external optimization. " +
+                        "Use this after running GEPA training to pick up new program state.")
+                .inputSchema(schema)
+                .build();
 
         return new McpServerFeatures.SyncToolSpecification(tool, (exchange, request) -> {
             Map<String, Object> args = request.arguments();
