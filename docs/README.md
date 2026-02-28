@@ -6,11 +6,20 @@ Documentation is organized by the [Diataxis](https://diataxis.fr/) framework int
 
 ## Quick Navigation
 
+### 🎯 Choose Your Path
+- **New to YAWL?** → [Getting Started Paths](GETTING_STARTED_PATHS.md) — Choose by role (business, developer, devops, data scientist, security)
+- **Want the big picture?** → [Module Dependency Map](MODULE_DEPENDENCY_MAP.md) — Understand how 22 modules fit together
+- **Browse everything?** → [Diataxis Master Index](diataxis/INDEX.md) — Complete index of 350+ docs
+
+### Quick Links
+
 | Goal | Start Here |
 |------|------------|
+| I'm brand new to YAWL | [Getting Started Paths](GETTING_STARTED_PATHS.md) (choose your role) |
 | First time — set up dev environment | [tutorials/01-build-yawl.md](tutorials/01-build-yawl.md) |
 | Run a workflow end-to-end | [tutorials/03-run-your-first-workflow.md](tutorials/03-run-your-first-workflow.md) |
 | Connect an AI agent via MCP | [tutorials/08-mcp-agent-integration.md](tutorials/08-mcp-agent-integration.md) |
+| Understand module relationships | [Module Dependency Map](MODULE_DEPENDENCY_MAP.md) |
 | Contribute code | [how-to/contributing.md](how-to/contributing.md) |
 | Deploy to production | [how-to/deployment/production.md](how-to/deployment/production.md) |
 | Scale to 1M cases | [diataxis/INDEX.md#1m-cases-support-v600](diataxis/INDEX.md#1m-cases-support-v600) |
