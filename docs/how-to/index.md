@@ -50,6 +50,7 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 
 | Guide | Task |
 |-------|------|
+| [migration/agents-and-teams.md](migration/agents-and-teams.md) | Adopt agents and teams for parallel multi-domain development |
 | [migration/v5-to-v6.md](migration/v5-to-v6.md) | Upgrade from YAWL 5.x to 6.x |
 | [migration/v6-guide.md](migration/v6-guide.md) | v6 migration guide |
 | [migration/v6-upgrade.md](migration/v6-upgrade.md) | v6 upgrade process |
