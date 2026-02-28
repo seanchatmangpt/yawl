@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TEMPLATE: Basic Request/Approval Workflow
+  PURPOSE: Simple 2-step workflow for request submission and approval
+  CUSTOMIZATION: Replace requestType, approverRole with your values
+  LINK: docs/WORKFLOW-PATTERNS.md#request-approval
+-->
+<specificationSet version="4.0" xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema4.0.xsd">
+  <specification uri="RequestApprovalWorkflow">
+    <name>Request/Approval Workflow</name>
+    <documentation>
+      Copy-paste template for simple request/approval workflows.
+      Customize:
+      - Task names and documentation
+      - Resource roles (approverRole attribute)
+      - Data variable names and types
+    </documentation>
+    <metaData/>
+
+    <!-- Data types used in workflow -->
+    <data id="requestId">
+      <name>requestId</name>
+      <type>string</type>
+      <initialValue>REQ-${timestamp}</initialValue>
+    </data>
+    <data id="requestType">
+      <name>requestType</name>
+      <type>string</type>
+      <initialValue>leave|equipment|budget</initialValue>
+    </data>
+    <data id="requestData">
+      <name>requestData</name>
+      <type>string</type>
+      <documentation>JSON payload with request details</documentation>
+    </data>
+    <data id="approvalStatus">
+      <name>approvalStatus</name>
+      <type>string</type>
+      <initialValue>pending</initialValue>
+    </data>
+    <data id="approvalReason">
+      <name>approvalReason</name>
+      <type>string</type>
+      <initialValue>null</initialValue>
+    </data>
+
+    <!-- Main process net -->
+    <decomposition id="RequestApprovalNet" xsi:type="NetFactsType" isRootNet="true">
+      <name>Request Approval Process</name>
+      <processControlElements>
+
+        <!-- Start -->
+        <inputCondition id="start">
+          <name>Start Process</name>
+          <flowsInto>
+            <nextElementRef id="submitRequest"/>
+          </flowsInto>
+        </inputCondition>
+
+        <!-- Submit Request (Requester) -->
+        <task id="submitRequest">
+          <name>Submit Request</name>
+          <documentation>User submits request with details and attachments</documentation>
+          <flowsInto>
+            <nextElementRef id="approveRequest"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>SubmitRequestSubnet</decomposesTo>
+          <!-- Assign to requestor role -->
+          <resourcing>
+            <offer initiator="system">
+              <allocate/>
+              <start/>
+              <complete/>
+            </offer>
+          </resourcing>
+        </task>
+
+        <!-- Approve Request (Manager/Approver) -->
+        <task id="approveRequest">
+          <name>Review and Approve Request</name>
+          <documentation>Manager reviews request and makes approval decision</documentation>
+          <flowsInto>
+            <nextElementRef id="approvalDecision"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="or"/>
+          <decomposesTo>ApproveRequestSubnet</decomposesTo>
+          <!-- Assign to approver role -->
+          <resourcing>
+            <offer initiator="system">
+              <allocate/>
+              <start/>
+              <complete/>
+            </offer>
+          </resourcing>
+        </task>
+
+        <!-- Gateway: Approval decision -->
+        <condition id="approvalDecision">
+          <name>Approval Decision</name>
+          <flowsInto>
+            <nextElementRef id="approved">
+              <predicate ordering="0">approvalStatus == 'approved'</predicate>
+            </nextElementRef>
+            <nextElementRef id="rejected">
+              <predicate ordering="1">approvalStatus == 'rejected'</predicate>
+            </nextElementRef>
+          </flowsInto>
+        </condition>
+
+        <!-- Approved path -->
+        <task id="approved">
+          <name>Process Approved Request</name>
+          <documentation>Request approved. Execute next steps.</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- Rejected path -->
+        <task id="rejected">
+          <name>Notify Rejection</name>
+          <documentation>Notify requester of rejection with reason</documentation>
+          <flowsInto>
+            <nextElementRef id="end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+        </task>
+
+        <!-- End -->
+        <outputCondition id="end">
+          <name>Process Complete</name>
+        </outputCondition>
+
+      </processControlElements>
+    </decomposition>
+
+    <!-- Submit Request Subnet -->
+    <decomposition id="SubmitRequestSubnet" xsi:type="NetFactsType">
+      <name>Submit Request</name>
+      <processControlElements>
+        <inputCondition id="sr_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="sr_fillForm"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="sr_fillForm">
+          <name>Fill Request Form</name>
+          <flowsInto>
+            <nextElementRef id="sr_validate"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>sr_fillFormTask</decomposesTo>
+        </task>
+
+        <task id="sr_validate">
+          <name>Validate Request Data</name>
+          <flowsInto>
+            <nextElementRef id="sr_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>sr_validateTask</decomposesTo>
+        </task>
+
+        <outputCondition id="sr_end">
+          <name>Submit Complete</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Approve Request Subnet -->
+    <decomposition id="ApproveRequestSubnet" xsi:type="NetFactsType">
+      <name>Approve Request</name>
+      <processControlElements>
+        <inputCondition id="ar_start">
+          <name>Start</name>
+          <flowsInto>
+            <nextElementRef id="ar_review"/>
+          </flowsInto>
+        </inputCondition>
+
+        <task id="ar_review">
+          <name>Review Request</name>
+          <flowsInto>
+            <nextElementRef id="ar_makeDecision"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ar_reviewTask</decomposesTo>
+        </task>
+
+        <task id="ar_makeDecision">
+          <name>Make Approval Decision</name>
+          <flowsInto>
+            <nextElementRef id="ar_end"/>
+          </flowsInto>
+          <join code="xor"/>
+          <split code="and"/>
+          <decomposesTo>ar_decisionTask</decomposesTo>
+        </task>
+
+        <outputCondition id="ar_end">
+          <name>Approval Complete</name>
+        </outputCondition>
+      </processControlElements>
+    </decomposition>
+
+    <!-- Leaf task definitions (WebService/Manual) -->
+    <decomposition id="sr_fillFormTask" xsi:type="WebServiceFactsType">
+      <name>Fill Request Form - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="sr_validateTask" xsi:type="WebServiceFactsType">
+      <name>Validate Request Data - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="ar_reviewTask" xsi:type="WebServiceFactsType">
+      <name>Review Request - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+    <decomposition id="ar_decisionTask" xsi:type="WebServiceFactsType">
+      <name>Make Decision - WebService</name>
+      <yawlService uri="http://localhost:8080/yawl/submission"/>
+    </decomposition>
+
+  </specification>
+</specificationSet>

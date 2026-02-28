@@ -18,6 +18,40 @@ Documentation is organized into four Diataxis quadrants. For the full cross-quad
 
 ---
 
+## 🚀 Interactive Decision Guides (Start Here!)
+
+**Personalized recommendations in 10 minutes. No long reading required.**
+
+| Guide | Time | What It Answers | Best For |
+|-------|------|-----------------|----------|
+| **[INTERACTIVE_DECISION_GUIDES.md](./INTERACTIVE_DECISION_GUIDES.md)** | 2 min | Master index of all decision guides | Overview of all interactive guides |
+| **[MODULE_SELECTOR.md](./MODULE_SELECTOR.md)** | 8-10 min | Which YAWL modules do I need? | New users figuring out what to download |
+| **[DEPLOYMENT_CALCULATOR.md](./DEPLOYMENT_CALCULATOR.md)** | 10 min | What deployment architecture? | Choosing cloud, on-premise, or hybrid |
+| **[ARCHITECTURE_PATTERNS_ADVISOR.md](./ARCHITECTURE_PATTERNS_ADVISOR.md)** | 10-12 min | Which architecture pattern fits me? | Understanding 6 proven patterns with trade-offs |
+| **[PERFORMANCE_TRADEOFFS_EXPLORER.md](./PERFORMANCE_TRADEOFFS_EXPLORER.md)** | 10-12 min | How do I balance latency/throughput/cost? | Optimizing for your constraints |
+
+**Quick Start**: Don't know where to begin?
+- 👶 **Brand new to YAWL?** → [INTERACTIVE_DECISION_GUIDES.md](./INTERACTIVE_DECISION_GUIDES.md) → [Module Selector](./MODULE_SELECTOR.md) → [Deployment Calculator](./DEPLOYMENT_CALCULATOR.md)
+- 🔧 **Optimizing existing system?** → [Performance Explorer](./PERFORMANCE_TRADEOFFS_EXPLORER.md)
+- 🏗️ **Architecting from scratch?** → [Deployment Calculator](./DEPLOYMENT_CALCULATOR.md) → [Patterns Advisor](./ARCHITECTURE_PATTERNS_ADVISOR.md)
+
+---
+
+## Discovery Tools (Find Docs Faster!)
+
+Having trouble finding what you need? Use these indexing tools:
+
+| Tool | Purpose | Best For |
+|------|---------|----------|
+| **[SEARCH_INDEX.md](SEARCH_INDEX.md)** | Keyword-searchable index of all 750+ docs | Finding docs by topic (use Ctrl+F in browser) |
+| **[TOPIC_INDEX.md](TOPIC_INDEX.md)** | 35+ topics A-Z, each with related docs | Browsing all docs on a subject (authentication, deployment, etc.) |
+| **[USE_CASE_INDEX.md](USE_CASE_INDEX.md)** | 20 learning paths for common goals | Step-by-step guidance (e.g., "Deploy on Kubernetes") |
+| **[MODULE_HEALTH_DASHBOARD.md](MODULE_HEALTH_DASHBOARD.md)** | Module maturity, stability, test coverage at a glance | Assessing module readiness before adoption |
+| **[DOCUMENTATION_COMPLETENESS.md](DOCUMENTATION_COMPLETENESS.md)** | 4-quadrant coverage checklist per module | Finding doc gaps, planning improvements |
+| **[SEARCH_INDEX.json](SEARCH_INDEX.json)** | Machine-readable doc index (JSON format) | Integration with search engines, portals, tools |
+
+---
+
 ## Documentation Quadrants
 
 ### Tutorials — [tutorials/index.md](tutorials/index.md)

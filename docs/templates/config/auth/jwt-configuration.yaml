@@ -1,0 +1,262 @@
+# TEMPLATE: JWT Authentication Configuration for YAWL
+# PURPOSE: Secure REST API access with JWT tokens
+# CUSTOMIZATION: Update secret key, algorithm, expiration times
+# LINK: docs/SECURITY-GUIDE.md#jwt-auth
+
+# Application name (used in token issuer claim)
+app:
+  name: YAWL Workflow Engine
+  version: 6.0.0
+
+# JWT Configuration
+jwt:
+  # Secret key for signing tokens (MUST be changed in production!)
+  # Generate: openssl rand -base64 32
+  secret: "your-super-secret-key-change-me-in-production-12345678901234567890"
+
+  # Algorithm for signing (HS256, RS256, etc.)
+  algorithm: HS256
+
+  # Token expiration time (seconds)
+  expiration: 86400  # 24 hours
+
+  # Refresh token expiration (seconds)
+  refresh-expiration: 604800  # 7 days
+
+  # Token issuer (in 'iss' claim)
+  issuer: "https://yawl-engine.example.com"
+
+  # Token audience (in 'aud' claim)
+  audience: "yawl-api-clients"
+
+  # Claim customization
+  claims:
+    # Include user roles in token
+    include-roles: true
+    # Include user permissions in token
+    include-permissions: true
+    # Include case IDs user has access to
+    include-accessible-cases: false
+
+# OAuth 2.0 / OpenID Connect (optional, for external identity providers)
+oauth2:
+  enabled: false
+
+  providers:
+    # Azure AD example
+    azure:
+      enabled: false
+      tenant-id: "your-tenant-id"
+      client-id: "your-client-id"
+      client-secret: "your-client-secret"
+      discovery-url: "https://login.microsoftonline.com/{tenant-id}/v2.0/.well-known/openid-configuration"
+
+    # Okta example
+    okta:
+      enabled: false
+      domain: "your-domain.okta.com"
+      client-id: "your-client-id"
+      client-secret: "your-client-secret"
+      authorization-url: "https://your-domain.okta.com/oauth2/v1/authorize"
+      token-url: "https://your-domain.okta.com/oauth2/v1/token"
+
+    # Google example
+    google:
+      enabled: false
+      client-id: "your-client-id.apps.googleusercontent.com"
+      client-secret: "your-client-secret"
+      authorization-url: "https://accounts.google.com/o/oauth2/v2/auth"
+      token-url: "https://oauth2.googleapis.com/token"
+
+# API Key Authentication (for service-to-service calls)
+apikey:
+  enabled: true
+  # Header name to check for API key
+  header: "X-API-Key"
+  # List of valid API keys with permissions
+  keys:
+    - key: "api-key-service-1-change-me"
+      name: "Service 1"
+      roles: ["api-client"]
+      permissions: ["read:cases", "write:workitems"]
+    - key: "api-key-service-2-change-me"
+      name: "Service 2"
+      roles: ["api-client"]
+      permissions: ["read:cases"]
+
+# CORS (Cross-Origin Resource Sharing)
+cors:
+  enabled: true
+  # Allowed origins
+  allowed-origins:
+    - "http://localhost:3000"
+    - "https://app.example.com"
+    - "https://admin.example.com"
+  # Allowed HTTP methods
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  # Allowed headers
+  allowed-headers:
+    - "Content-Type"
+    - "Authorization"
+    - "X-API-Key"
+    - "X-Requested-With"
+  # Exposed headers
+  exposed-headers:
+    - "X-Total-Count"
+    - "X-Page-Number"
+  # Allow credentials (cookies, auth headers)
+  allow-credentials: true
+  # Max age for preflight requests (seconds)
+  max-age: 3600
+
+# CSRF (Cross-Site Request Forgery) Protection
+csrf:
+  enabled: true
+  # Token header name
+  header: "X-CSRF-Token"
+  # Token parameter name (for form submissions)
+  parameter: "_csrf"
+  # Exclude paths from CSRF protection (regex patterns)
+  excluded-paths:
+    - "^/health"
+    - "^/swagger-ui.*"
+    - "^/api/public.*"
+
+# Rate Limiting (prevent abuse)
+rate-limit:
+  enabled: true
+  # Default rate limit: 100 requests per minute per IP
+  default-limit: 100
+  default-window-seconds: 60
+
+  # Per-endpoint limits
+  endpoints:
+    # API endpoints: 50 req/min
+    "^/api/.*":
+      limit: 50
+      window-seconds: 60
+    # Authentication endpoints: 10 req/min (brute force protection)
+    "^/auth/login":
+      limit: 10
+      window-seconds: 60
+    # Health checks: unlimited
+    "^/health":
+      limit: 1000
+      window-seconds: 60
+
+# Password Policy
+password:
+  # Minimum length
+  min-length: 12
+  # Require uppercase
+  require-uppercase: true
+  # Require lowercase
+  require-lowercase: true
+  # Require digits
+  require-digits: true
+  # Require special characters
+  require-special: true
+  # Password expiration (days, 0 = no expiration)
+  expiration-days: 90
+  # Number of previous passwords to check (prevent reuse)
+  history-count: 5
+
+# TLS/SSL Configuration
+tls:
+  enabled: true
+  # Certificate path
+  certificate-path: "/etc/yawl/certs/server.crt"
+  # Private key path
+  private-key-path: "/etc/yawl/certs/server.key"
+  # Minimum TLS version (TLSv1.2, TLSv1.3)
+  min-version: "TLSv1.2"
+  # Enabled ciphers (recommended)
+  enabled-ciphers:
+    - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+    - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+
+# Security Headers
+security-headers:
+  # Strict Transport Security
+  hsts-enabled: true
+  hsts-max-age: 31536000  # 1 year
+  hsts-include-subdomains: true
+  hsts-preload: true
+
+  # X-Frame-Options (clickjacking protection)
+  x-frame-options: "DENY"
+
+  # X-Content-Type-Options (MIME sniffing protection)
+  x-content-type-options: "nosniff"
+
+  # X-XSS-Protection (XSS protection)
+  x-xss-protection: "1; mode=block"
+
+  # Content-Security-Policy
+  csp-enabled: true
+  csp-policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+
+# Audit Logging
+audit:
+  enabled: true
+  # Log authentication events
+  log-auth: true
+  # Log authorization failures
+  log-auth-failures: true
+  # Log API calls
+  log-api-calls: true
+  # Log sensitive data access
+  log-sensitive-data: true
+  # Retention period (days)
+  retention-days: 365
+
+# Multi-Factor Authentication (MFA)
+mfa:
+  enabled: false
+  # Methods: totp, sms, email
+  methods:
+    - totp
+  # Required for roles
+  required-for-roles:
+    - admin
+    - approver
+  # TOTP Configuration
+  totp:
+    issuer: "YAWL"
+    window-size: 1  # Number of 30-second windows to check
+
+# Session Management
+session:
+  # Session timeout (seconds)
+  timeout: 3600  # 1 hour
+  # Idle timeout (seconds)
+  idle-timeout: 900  # 15 minutes
+  # Secure session cookies (HTTPS only)
+  secure-cookie: true
+  # HttpOnly flag (prevent JavaScript access)
+  http-only: true
+  # SameSite attribute (prevent CSRF)
+  same-site: "Strict"
+  # Max concurrent sessions per user
+  max-concurrent: 5
+
+# IP Whitelist/Blacklist
+ip-security:
+  enabled: false
+  # Whitelist: only allow these IPs
+  whitelist:
+    enabled: false
+    ips:
+      - "192.168.1.0/24"
+      - "10.0.0.0/8"
+  # Blacklist: block these IPs
+  blacklist:
+    enabled: true
+    ips:
+      - "192.168.100.0/24"

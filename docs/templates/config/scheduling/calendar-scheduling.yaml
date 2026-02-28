@@ -1,0 +1,360 @@
+# TEMPLATE: YAWL Calendar and Scheduling Configuration
+# PURPOSE: Define working hours, holidays, and SLA deadlines
+# CUSTOMIZATION: Update business hours, holidays, time zones, SLA rules
+# LINK: docs/SCHEDULING-GUIDE.md
+
+calendars:
+  # Default business calendar
+  default:
+    name: "Standard Business Hours"
+    description: "Monday-Friday 9 AM to 5 PM in business timezone"
+    timezone: "America/New_York"
+
+    # Weekly working hours (day of week: day_index 0=Monday, 6=Sunday)
+    working_hours:
+      monday:
+        - start: "09:00"
+          end: "17:00"
+      tuesday:
+        - start: "09:00"
+          end: "17:00"
+      wednesday:
+        - start: "09:00"
+          end: "17:00"
+      thursday:
+        - start: "09:00"
+          end: "17:00"
+      friday:
+        - start: "09:00"
+          end: "17:00"
+      saturday:  # Weekend - no working hours
+        []
+      sunday:    # Weekend - no working hours
+        []
+
+    # Public holidays (no working hours)
+    holidays:
+      # New Year's Day
+      - date: "2026-01-01"
+        name: "New Year's Day"
+      # Independence Day
+      - date: "2026-07-04"
+        name: "Independence Day"
+      # Thanksgiving
+      - date: "2026-11-26"
+        name: "Thanksgiving"
+      # Christmas
+      - date: "2026-12-25"
+        name: "Christmas"
+      # Custom company holidays
+      - date: "2026-03-17"
+        name: "Company Founders Day"
+
+  # 24/7 calendar (for operations team)
+  operations:
+    name: "24/7 Operations"
+    description: "Round-the-clock availability for production issues"
+    timezone: "UTC"
+
+    working_hours:
+      monday:
+        - start: "00:00"
+          end: "23:59"
+      tuesday:
+        - start: "00:00"
+          end: "23:59"
+      wednesday:
+        - start: "00:00"
+          end: "23:59"
+      thursday:
+        - start: "00:00"
+          end: "23:59"
+      friday:
+        - start: "00:00"
+          end: "23:59"
+      saturday:
+        - start: "00:00"
+          end: "23:59"
+      sunday:
+        - start: "00:00"
+          end: "23:59"
+
+    holidays: []  # No holidays for 24/7 operations
+
+  # Shift-based calendar (for support team)
+  support_team:
+    name: "Support Team Shifts"
+    description: "Three 8-hour shifts covering business hours"
+    timezone: "America/New_York"
+
+    working_hours:
+      # Split into multiple shift windows
+      monday:
+        - start: "06:00"
+          end: "14:00"  # Morning shift
+        - start: "14:00"
+          end: "22:00"  # Afternoon shift
+        - start: "22:00"
+          end: "06:00"  # Night shift (next day)
+      tuesday:
+        - start: "06:00"
+          end: "14:00"
+        - start: "14:00"
+          end: "22:00"
+        - start: "22:00"
+          end: "06:00"
+      wednesday:
+        - start: "06:00"
+          end: "14:00"
+        - start: "14:00"
+          end: "22:00"
+        - start: "22:00"
+          end: "06:00"
+      thursday:
+        - start: "06:00"
+          end: "14:00"
+        - start: "14:00"
+          end: "22:00"
+        - start: "22:00"
+          end: "06:00"
+      friday:
+        - start: "06:00"
+          end: "14:00"
+        - start: "14:00"
+          end: "22:00"
+        - start: "22:00"
+          end: "06:00"
+      saturday:
+        - start: "06:00"
+          end: "14:00"
+        - start: "14:00"
+          end: "22:00"
+      sunday:
+        - start: "06:00"
+          end: "14:00"
+
+    holidays:
+      - date: "2026-01-01"
+        name: "New Year's Day"
+      - date: "2026-12-25"
+        name: "Christmas"
+
+# Service Level Agreements (SLAs)
+slas:
+  # Default SLA for all tasks
+  default:
+    name: "Standard SLA"
+    description: "Standard response and resolution times"
+
+    # Response time (must acknowledge/start task within this time)
+    response_time:
+      enabled: true
+      hours: 4  # 4 business hours to acknowledge task
+      calendar: "default"
+      severity: "warning"  # Warning at 80%, Error at 100%
+
+    # Resolution time (must complete task within this time)
+    resolution_time:
+      enabled: true
+      hours: 24  # 24 business hours to resolve
+      calendar: "default"
+      severity: "critical"
+
+  # Priority-specific SLAs
+  high_priority:
+    name: "High Priority SLA"
+    description: "Urgent cases requiring faster resolution"
+
+    response_time:
+      enabled: true
+      hours: 1
+      calendar: "operations"  # 24/7 calendar
+      severity: "critical"
+
+    resolution_time:
+      enabled: true
+      hours: 4
+      calendar: "operations"
+      severity: "critical"
+
+  low_priority:
+    name: "Low Priority SLA"
+    description: "Non-urgent cases with relaxed deadlines"
+
+    response_time:
+      enabled: true
+      hours: 24
+      calendar: "default"
+      severity: "warning"
+
+    resolution_time:
+      enabled: true
+      hours: 72
+      calendar: "default"
+      severity: "warning"
+
+# Task-specific scheduling rules
+task_scheduling:
+  # Auto-escalation for overdue tasks
+  escalation:
+    enabled: true
+    rules:
+      # Escalate if response SLA breached
+      - trigger: "response_sla_breached"
+        action: "escalate"
+        target_role: "supervisor"
+      # Escalate if resolution SLA breached by 50%
+      - trigger: "resolution_sla_50_percent"
+        action: "escalate"
+        target_role: "manager"
+      # Alert if resolution SLA breached by 90%
+      - trigger: "resolution_sla_90_percent"
+        action: "alert"
+        channels: ["email", "slack"]
+
+  # Auto-assignment based on availability
+  auto_assignment:
+    enabled: true
+    strategy: "round_robin"  # or "load_balanced", "first_available"
+    calendar: "default"  # Only assign during working hours
+
+    # Exclude unavailable resources
+    exclude_unavailable: true
+    exclude_on_vacation: true
+    max_tasks_per_resource: 10
+
+  # Auto-reminder for idle tasks
+  idle_reminders:
+    enabled: true
+    check_interval_minutes: 60
+    idle_threshold_minutes: 120  # 2 hours
+    rules:
+      - idle_minutes: 120
+        action: "notify"
+        channels: ["email"]
+      - idle_minutes: 240  # 4 hours
+        action: "escalate"
+        target_role: "supervisor"
+      - idle_minutes: 480  # 8 hours
+        action: "reassign"
+        strategy: "round_robin"
+
+  # Batch task execution (run multiple tasks together)
+  batching:
+    enabled: false
+    task_groups:
+      - name: "daily_reports"
+        tasks:
+          - "GenerateDailyReport"
+          - "SendReportNotification"
+        schedule: "0 9 * * *"  # 9 AM daily
+        calendar: "default"
+
+# Recurring workflow triggers (cron-based)
+recurring_workflows:
+  # Daily workflow
+  - name: "DailyMaintenanceWorkflow"
+    specification: "SystemMaintenance"
+    schedule: "0 2 * * *"  # 2 AM daily
+    calendar: "operations"
+    timezone: "America/New_York"
+    priority: "high"
+    description: "Daily system maintenance and cleanup"
+
+  # Weekly workflow
+  - name: "WeeklyReviewWorkflow"
+    specification: "CaseReview"
+    schedule: "0 9 ? * MON"  # 9 AM every Monday
+    calendar: "default"
+    timezone: "America/New_York"
+    priority: "normal"
+    description: "Weekly case review and statistics"
+
+  # Monthly workflow
+  - name: "MonthlyBillingWorkflow"
+    specification: "Billing"
+    schedule: "0 0 1 * *"  # First day of month at midnight
+    calendar: "operations"
+    timezone: "America/New_York"
+    priority: "high"
+    description: "Monthly billing cycle"
+
+  # Business day (skip weekends and holidays)
+  - name: "DataSyncWorkflow"
+    specification: "DataSync"
+    schedule: "0 */4 ? * MON-FRI"  # Every 4 hours on business days
+    calendar: "default"
+    timezone: "America/New_York"
+    priority: "normal"
+    description: "Sync data with external systems"
+
+# Deadline tracking and notifications
+deadline_tracking:
+  enabled: true
+
+  # Email notifications before deadline
+  email_notifications:
+    - days_before: 1
+      subject: "Task deadline approaching in 1 day"
+    - hours_before: 4
+      subject: "Task deadline approaching in 4 hours"
+    - hours_before: 1
+      subject: "Urgent: Task deadline in 1 hour"
+
+  # Slack notifications
+  slack_notifications:
+    enabled: true
+    - hours_before: 2
+      channel: "#workflow-alerts"
+      message: "@assignee: Your task deadline is in 2 hours"
+
+  # Escalation thresholds
+  escalation_thresholds:
+    - sla_percent: 50
+      action: "send_reminder"
+    - sla_percent: 80
+      action: "escalate_to_manager"
+    - sla_percent: 100
+      action: "escalate_to_director"
+
+# Capacity planning
+capacity:
+  # Maximum tasks per resource
+  max_tasks_per_resource: 15
+
+  # Task weight (complex tasks count as 2x)
+  task_weights:
+    complex_task: 2
+    normal_task: 1
+    simple_task: 0.5
+
+  # Working hours adjustment (reduce capacity during holidays)
+  holiday_capacity_percent: 50
+
+# Performance metrics
+metrics:
+  enabled: true
+
+  # Track SLA compliance
+  track_sla_compliance: true
+
+  # Track task duration
+  track_task_duration: true
+
+  # Track resource utilization
+  track_resource_utilization: true
+
+  # Reporting
+  reports:
+    - name: "Daily SLA Report"
+      frequency: "daily"
+      time: "09:00"
+      recipients:
+        - "manager@example.com"
+        - "team@example.com"
+    - name: "Weekly Performance Report"
+      frequency: "weekly"
+      day: "monday"
+      time: "09:00"
+      recipients:
+        - "director@example.com"

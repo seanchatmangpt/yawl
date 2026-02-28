@@ -1,0 +1,465 @@
+# TEMPLATE: Kubernetes Deployment for YAWL Stateless Engine
+# PURPOSE: Production-grade K8s deployment with auto-scaling and high availability
+# CUSTOMIZATION: Update image versions, namespace, resource limits, replicas
+# LINK: docs/DEPLOYMENT-GUIDE.md#kubernetes
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yawl-production
+  labels:
+    environment: production
+
+---
+# ConfigMap for YAWL Engine Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yawl-engine-config
+  namespace: yawl-production
+data:
+  yawl-engine.properties: |
+    yawl.engine.mode=stateless
+    yawl.worklet.service.enabled=true
+    yawl.mcp.a2a.enabled=true
+
+    # Database
+    db.driver=org.postgresql.Driver
+    db.pool.size=20
+    db.connection.timeout=30000
+
+    # Monitoring
+    prometheus.metrics.enabled=true
+    opentelemetry.enabled=true
+
+    # Logging
+    logging.level=INFO
+    logging.format=json
+
+  prometheus-config.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    scrape_configs:
+      - job_name: 'yawl-engine'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - yawl-production
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: yawl-engine
+
+---
+# Secret for database credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: yawl-db-secret
+  namespace: yawl-production
+type: Opaque
+stringData:
+  db-user: yawl_user
+  db-password: changeme  # IMPORTANT: Change in production!
+  jwt-secret: your-secret-key-change-me
+  redis-password: changeme
+
+---
+# PersistentVolumeClaim for logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yawl-logs-pvc
+  namespace: yawl-production
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# PersistentVolumeClaim for workflow specs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yawl-specs-pvc
+  namespace: yawl-production
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+# Service for YAWL Engine
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-engine-service
+  namespace: yawl-production
+  labels:
+    app: yawl-engine
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: https
+      port: 8443
+      targetPort: 8443
+      protocol: TCP
+  selector:
+    app: yawl-engine
+
+---
+# Service for database (PostgreSQL)
+apiVersion: v1
+kind: Service
+metadata:
+  name: yawl-postgres-service
+  namespace: yawl-production
+spec:
+  clusterIP: None  # Headless service
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: yawl-postgres
+
+---
+# StatefulSet for PostgreSQL (primary persistence)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: yawl-postgres
+  namespace: yawl-production
+spec:
+  serviceName: yawl-postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yawl-postgres
+  template:
+    metadata:
+      labels:
+        app: yawl-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: yawl_db
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secret
+                  key: db-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secret
+                  key: db-password
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U yawl_user
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U yawl_user
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 50Gi
+
+---
+# Deployment for YAWL Engine (Stateless)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yawl-engine
+  namespace: yawl-production
+  labels:
+    app: yawl-engine
+spec:
+  replicas: 3  # High availability
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: yawl-engine
+  template:
+    metadata:
+      labels:
+        app: yawl-engine
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - yawl-engine
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: yawl-engine
+          image: yawl/yawl-engine:v6.0.0-jdk25
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+            - name: metrics
+              containerPort: 9090
+
+          env:
+            # Core Configuration
+            - name: YAWL_ENGINE_MODE
+              value: "stateless"
+            - name: YAWL_WORKLET_SERVICE_ENABLED
+              value: "true"
+            - name: YAWL_MCP_A2A_ENABLED
+              value: "true"
+
+            # Database Configuration
+            - name: DB_DRIVER
+              value: "org.postgresql.Driver"
+            - name: DB_URL
+              value: "jdbc:postgresql://yawl-postgres-service:5432/yawl_db"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secret
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secret
+                  key: db-password
+
+            # Security
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secret
+                  key: jwt-secret
+            - name: JWT_EXPIRATION
+              value: "86400"
+
+            # Redis (Cache)
+            - name: REDIS_HOST
+              value: "yawl-redis-service"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yawl-db-secret
+                  key: redis-password
+
+            # Observability
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://jaeger-collector:4317"
+            - name: PROMETHEUS_METRICS_ENABLED
+              value: "true"
+            - name: LOG_LEVEL
+              value: "INFO"
+
+            # JVM Tuning
+            - name: JVM_HEAP_SIZE
+              value: "2048m"
+
+          volumeMounts:
+            - name: logs
+              mountPath: /opt/yawl/logs
+            - name: specs
+              mountPath: /opt/yawl/specs
+            - name: config
+              mountPath: /opt/yawl/config
+              readOnly: true
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 2
+
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2Gi
+            limits:
+              cpu: 2000m
+              memory: 3Gi
+
+      volumes:
+        - name: logs
+          persistentVolumeClaim:
+            claimName: yawl-logs-pvc
+        - name: specs
+          persistentVolumeClaim:
+            claimName: yawl-specs-pvc
+        - name: config
+          configMap:
+            name: yawl-engine-config
+
+---
+# HorizontalPodAutoscaler for YAWL Engine
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yawl-engine-hpa
+  namespace: yawl-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: yawl-engine
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yawl-engine-ingress
+  namespace: yawl-production
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - yawl-api.example.com
+      secretName: yawl-tls-cert
+  rules:
+    - host: yawl-api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yawl-engine-service
+                port:
+                  number: 8080
+
+---
+# NetworkPolicy to restrict traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yawl-engine-network-policy
+  namespace: yawl-production
+spec:
+  podSelector:
+    matchLabels:
+      app: yawl-engine
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: yawl-api-client
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: yawl-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: yawl-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53  # DNS
+        - protocol: UDP
+          port: 53
