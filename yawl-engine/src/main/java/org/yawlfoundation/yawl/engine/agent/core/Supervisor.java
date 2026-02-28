@@ -74,14 +74,19 @@ public final class Supervisor {
      * @return ActorRef to the spawned actor
      */
     public ActorRef spawn(String name, java.util.function.Consumer<ActorRef> behavior) {
-        // Wrap behavior to restart on failure
-        return runtime.spawn(ref -> {
+        behaviors.put(name, behavior);
+        restartHistory.put(name, new ConcurrentLinkedDeque<>());
+
+        ActorRef ref = runtime.spawn(ref1 -> {
             try {
-                behavior.accept(ref);
+                behavior.accept(ref1);
             } catch (Throwable t) {
-                handleActorFailure(name, ref, t);
+                handleActorFailure(name, ref1, t);
             }
         });
+
+        children.put(name, ref);
+        return ref;
     }
 
     /**
