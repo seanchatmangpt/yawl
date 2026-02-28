@@ -18,6 +18,11 @@ import java.util.UUID;
  *
  * Thread-safety: All operations delegate to WorkItemQueue which uses ConcurrentLinkedQueue.
  * No additional synchronization needed.
+ *
+ * Note: WorkItem is immutable, so assignments and status transitions return new instances.
+ * The queue must be updated with the new instance.
+ *
+ * @since Java 21
  */
 public class WorkDiscoveryService {
 
@@ -57,36 +62,49 @@ public class WorkDiscoveryService {
 
     /**
      * Assigns a work item to an agent and transitions its status to ASSIGNED.
-     * Idempotent: if already assigned to the same agent, no-op.
+     * Since WorkItem is immutable, this returns a new assigned instance.
+     * The caller must enqueue the returned item or update the queue.
      *
      * @param item The work item to assign
      * @param agentId The UUID of the agent to assign to
+     * @return the assigned work item (new instance)
      * @throws NullPointerException if item or agentId is null
      * @throws IllegalStateException if item is already assigned to a different agent
      *                                or in a terminal state
      */
-    public void assignWork(WorkItem item, UUID agentId) {
+    public WorkItem assignWork(WorkItem item, UUID agentId) {
         Objects.requireNonNull(item, "Work item cannot be null");
         Objects.requireNonNull(agentId, "Agent ID cannot be null");
 
-        // Idempotent: if already assigned to the same agent, no-op
-        if (item.getAssignedAgent() != null && item.getAssignedAgent().equals(agentId)) {
-            return;
+        if (item.isTerminal()) {
+            throw new IllegalStateException(
+                "Cannot assign work item with status: " + item.status());
         }
 
-        // Transition to ASSIGNED state
-        item.assignTo(agentId);
+        // If already assigned to the same agent, return as-is (idempotent)
+        if (agentId.equals(item.assignedAgent())) {
+            return item;
+        }
+
+        // If assigned to different agent, reject
+        if (item.assignedAgent() != null) {
+            throw new IllegalStateException(
+                "Cannot reassign work item already assigned to: " + item.assignedAgent());
+        }
+
+        // Transition to ASSIGNED state (returns new immutable instance)
+        return item.assign(agentId);
     }
 
     /**
      * Checks out a work item by its ID, transitioning it to ASSIGNED state.
-     * This is a convenience method for one-shot checkout operations.
+     * Updates the queue with the assigned instance.
      *
      * @param itemId The unique ID of the work item to check out
      * @param agentId The UUID of the agent checking out the item
      * @return an Optional containing the checked-out work item, or empty if not found
      * @throws NullPointerException if itemId or agentId is null
-     * @throws IllegalStateException if the item is already in a terminal state
+     * @throws IllegalStateException if the item is already assigned or in a terminal state
      */
     public Optional<WorkItem> checkoutItem(UUID itemId, UUID agentId) {
         Objects.requireNonNull(itemId, "Item ID cannot be null");
@@ -97,52 +115,52 @@ public class WorkDiscoveryService {
             return Optional.empty();
         }
 
-        assignWork(item, agentId);
-        return Optional.of(item);
+        WorkItem assigned = assignWork(item, agentId);
+
+        // Update queue with the assigned version
+        queue.removeById(itemId);
+        queue.enqueue(assigned);
+
+        return Optional.of(assigned);
     }
 
     /**
      * Checks in a work item, transitioning it to a terminal state (COMPLETED or FAILED).
-     * This method handles the final state transition of a work item.
+     * Updates the queue with the final instance.
      *
      * @param itemId The unique ID of the work item to check in
-     * @param status The terminal status (COMPLETED or FAILED)
-     * @param reason Optional failure reason (required if status is FAILED)
+     * @param isSuccess true for COMPLETED, false for FAILED
+     * @param failureReason failure reason (required if isSuccess is false)
      * @return an Optional containing the checked-in work item, or empty if not found
-     * @throws NullPointerException if itemId or status is null
-     * @throws IllegalArgumentException if status is not a terminal status
+     * @throws NullPointerException if itemId or failureReason (when needed) is null
      * @throws IllegalStateException if item is not in ASSIGNED state
      */
-    public Optional<WorkItem> checkinItem(UUID itemId,
-                                           WorkItemStatus status,
-                                           Optional<String> reason) {
+    public Optional<WorkItem> checkinItem(UUID itemId, boolean isSuccess, Optional<String> failureReason) {
         Objects.requireNonNull(itemId, "Item ID cannot be null");
-        Objects.requireNonNull(status, "Status cannot be null");
 
         WorkItem item = queue.findById(itemId);
         if (item == null) {
             return Optional.empty();
         }
 
-        // Handle completion
-        if (status instanceof WorkItemStatus.Completed) {
-            item.complete();
-            return Optional.of(item);
+        if (!item.isAssigned()) {
+            throw new IllegalStateException(
+                "Cannot check in work item that is not assigned: status=" + item.status());
         }
 
-        // Handle failure
-        if (status instanceof WorkItemStatus.Failed failed) {
-            String failureReason = reason
-                .orElseThrow(() ->
-                    new IllegalArgumentException(
-                        "Failure reason is required for FAILED status"));
-            item.fail(failureReason);
-            return Optional.of(item);
+        WorkItem completed;
+        if (isSuccess) {
+            completed = item.complete();
+        } else {
+            String reason = failureReason.orElse("Unknown failure");
+            completed = item.fail(reason);
         }
 
-        // Invalid status for check-in
-        throw new IllegalArgumentException(
-            "Check-in requires terminal status (COMPLETED or FAILED), got: " + status);
+        // Update queue with the final version
+        queue.removeById(itemId);
+        queue.enqueue(completed);
+
+        return Optional.of(completed);
     }
 
     /**

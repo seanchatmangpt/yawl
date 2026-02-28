@@ -56,7 +56,7 @@ public class WorkItemPartitioner {
      */
     public int getPartition(WorkItem item) {
         Objects.requireNonNull(item, "Work item cannot be null");
-        return getPartitionForTask(item.getTaskName());
+        return getPartitionForTask(item.taskName());
     }
 
     /**

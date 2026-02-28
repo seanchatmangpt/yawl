@@ -46,6 +46,96 @@ public final class HeartbeatManager {
     }
 
     /**
+     * Starts periodic heartbeat renewal for the given agent.
+     * The heartbeat will be renewed every {@link HeartbeatConfig#HEARTBEAT_INTERVAL_SECONDS} seconds
+     * until {@link #stopHeartbeat(UUID)} is called.
+     *
+     * <p>If a heartbeat task is already scheduled for this agent, it will be replaced.
+     *
+     * @param agentId The unique identifier of the agent
+     * @throws NullPointerException if agentId is null
+     */
+    public void startHeartbeat(UUID agentId) {
+        Objects.requireNonNull(agentId, "Agent ID cannot be null");
+
+        // Cancel any existing task for this agent
+        ScheduledFuture<?> existingTask = heartbeatTasks.get(agentId);
+        if (existingTask != null && !existingTask.isDone()) {
+            existingTask.cancel(false);
+        }
+
+        // Get the scheduler from registry's executor
+        ScheduledExecutorService executor = registry.getScheduledExecutor();
+        if (executor == null) {
+            LOGGER.log(Level.WARNING, "Cannot start heartbeat: no executor available");
+            return;
+        }
+
+        // Schedule new periodic renewal task
+        ScheduledFuture<?> task = executor.scheduleAtFixedRate(
+            () -> doRenewHeartbeat(agentId),
+            HeartbeatConfig.HEARTBEAT_INTERVAL_SECONDS,
+            HeartbeatConfig.HEARTBEAT_INTERVAL_SECONDS,
+            TimeUnit.SECONDS
+        );
+
+        heartbeatTasks.put(agentId, task);
+        LOGGER.log(Level.FINE, () -> "Started heartbeat renewal for agent: " + agentId);
+    }
+
+    /**
+     * Stops periodic heartbeat renewal for the given agent.
+     * The scheduled task is cancelled, but the agent remains registered.
+     * To fully remove an agent, use {@link AgentRegistry#unregister(UUID)}.
+     *
+     * <p>If no heartbeat task is scheduled for this agent, this method does nothing.
+     *
+     * @param agentId The unique identifier of the agent
+     * @throws NullPointerException if agentId is null
+     */
+    public void stopHeartbeat(UUID agentId) {
+        Objects.requireNonNull(agentId, "Agent ID cannot be null");
+
+        ScheduledFuture<?> task = heartbeatTasks.remove(agentId);
+        if (task != null && !task.isDone()) {
+            task.cancel(false);
+            LOGGER.log(Level.FINE, () -> "Stopped heartbeat renewal for agent: " + agentId);
+        }
+    }
+
+    /**
+     * Renews the heartbeat for the given agent by scheduling periodic renewal tasks.
+     * This is the internal method called by the scheduler.
+     *
+     * <p>If the agent is not registered in the registry, this method logs a warning
+     * and returns silently (fire-and-forget behavior).
+     * This ensures a failed renewal does not crash the heartbeat scheduler.
+     *
+     * @param agentId The unique identifier of the agent
+     * @throws NullPointerException if agentId is null
+     */
+    private void doRenewHeartbeat(UUID agentId) {
+        Objects.requireNonNull(agentId, "Agent ID cannot be null");
+
+        var agentOpt = registry.getAgent(agentId);
+        if (agentOpt.isPresent()) {
+            try {
+                AgentState agent = agentOpt.get();
+                AgentState renewed = agent.renewHeartbeat(HeartbeatConfig.HEARTBEAT_TTL_SECONDS);
+                registry.updateAgent(agentId, renewed);
+                LOGGER.log(Level.FINEST, () -> "Renewed heartbeat for agent: " + agentId);
+            } catch (Exception e) {
+                // Log warning but do not propagate - heartbeat renewals are fire-and-forget
+                LOGGER.log(Level.WARNING,
+                    "Failed to renew heartbeat for agent " + agentId + ": " + e.getMessage(), e);
+            }
+        } else {
+            // Agent may have been unregistered; log warning but continue
+            LOGGER.log(Level.WARNING, "Heartbeat renewal failed: agent not found in registry: " + agentId);
+        }
+    }
+
+    /**
      * Starts the heartbeat monitoring thread.
      * This thread periodically checks all agents' heartbeat status.
      */
@@ -138,8 +228,8 @@ public final class HeartbeatManager {
     public boolean isAgentHealthy(UUID agentId) {
         Objects.requireNonNull(agentId, "Agent ID cannot be null");
 
-        AgentState agent = registry.getAgent(agentId);
-        return agent != null && agent.isHealthy();
+        var agentOpt = registry.getAgent(agentId);
+        return agentOpt.isPresent() && agentOpt.get().isHealthy();
     }
 
     /**
@@ -169,40 +259,37 @@ public final class HeartbeatManager {
     }
 
     /**
-     * Starts heartbeat renewal for a specific agent.
-     * Placeholder for future scheduled renewal implementation.
+     * Gets the number of agents with active heartbeat renewal scheduled.
      *
-     * @param agentId The agent UUID
-     */
-    public void startHeartbeat(UUID agentId) {
-        // Placeholder: In future, schedule periodic heartbeat renewal
-        // For now, heartbeats are renewed manually via renewHeartbeat()
-    }
-
-    /**
-     * Stops heartbeat renewal for a specific agent.
-     * Placeholder for future scheduled renewal cancellation.
-     *
-     * @param agentId The agent UUID
-     */
-    public void stopHeartbeat(UUID agentId) {
-        // Placeholder: In future, cancel scheduled heartbeat renewal
-    }
-
-    /**
-     * Gets the count of active heartbeat renewal tasks.
-     *
-     * @return Number of agents with active heartbeat renewals
+     * @return The count of scheduled heartbeat tasks
      */
     public int getActiveHeartbeatCount() {
-        // Return count of all agents (approximation)
-        return registry.size();
+        return heartbeatTasks.size();
     }
 
     /**
-     * Shuts down the heartbeat manager.
+     * Shuts down the heartbeat manager and cancels all pending renewals.
+     * This should be called during system shutdown.
      */
     public void shutdown() {
-        stop();
+        running.set(false);
+
+        heartbeatTasks.values().forEach(task -> {
+            if (!task.isDone()) {
+                task.cancel(false);
+            }
+        });
+        heartbeatTasks.clear();
+
+        if (heartbeatThread != null && heartbeatThread.isAlive()) {
+            try {
+                heartbeatThread.join(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        LOGGER.log(Level.INFO, "HeartbeatManager shutdown complete. Cancelled all pending renewals.");
     }
+
 }

@@ -77,6 +77,19 @@ public final class AgentRegistry {
     }
 
     /**
+     * Updates an agent's state in the registry.
+     * Used internally for heartbeat renewal.
+     *
+     * @param agentId Agent UUID
+     * @param newState The new AgentState
+     */
+    void updateAgent(UUID agentId, AgentState newState) {
+        Objects.requireNonNull(agentId, "Agent ID cannot be null");
+        Objects.requireNonNull(newState, "Agent state cannot be null");
+        agents.put(agentId, newState);
+    }
+
+    /**
      * Registers a new agent in the registry and starts its heartbeat renewal.
      * If an agent with the same ID is already registered, it will be replaced.
      *
