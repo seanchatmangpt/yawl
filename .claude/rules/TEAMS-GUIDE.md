@@ -415,9 +415,11 @@ claude ... --probe-team τ-engine+schema+test-iDs6b
 - **Lead timeout (5-30 min)**: ZOMBIE mode, auto-checkpoint
 - **Lead offline (>30 min)**: Fail resume, recommend new team
 
-### Implementation Checklist
+### Feature Implementation Checklist
 
-**Core**:
+For teams framework developer/architect implementing resumption and state persistence.
+
+**Core Infrastructure**:
 - [ ] `.team-state/` schema + validation
 - [ ] `resume-team-validation.sh` hook
 - [ ] `checkpoint-team.sh` hook
