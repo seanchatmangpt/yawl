@@ -1,8 +1,12 @@
 package org.yawlfoundation.yawl.engine.api.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.yawlfoundation.yawl.engine.agent.AgentEngineService;
+import org.yawlfoundation.yawl.engine.agent.AgentLifecycle;
 import org.yawlfoundation.yawl.engine.api.dto.AgentDTO;
 import org.yawlfoundation.yawl.engine.api.dto.MetricsDTO;
 import org.yawlfoundation.yawl.engine.api.dto.WorkflowDefDTO;
@@ -17,29 +21,56 @@ import java.util.UUID;
  * REST API controller for agent management.
  * Provides endpoints to list, create, and manage autonomous agents.
  *
+ * Integrated with YawlAgentEngine for real virtual-thread-based agent execution.
+ *
  * Base path: /agents
  */
 @RestController
 @RequestMapping("/agents")
 public class AgentController {
+    private static final Logger logger = LoggerFactory.getLogger(AgentController.class);
+    private final AgentEngineService engineService;
 
-    /**
-     * In-memory agent registry for demonstration purposes.
-     * In production, this would be backed by persistent storage.
-     */
-    private final Map<UUID, AgentDTO> agents = new HashMap<>();
+    public AgentController(AgentEngineService engineService) {
+        this.engineService = engineService;
+    }
 
     /**
      * List all registered agents.
      *
      * GET /agents
      *
-     * @return List of all registered agents
+     * @return List of all registered agents with their current states
      */
     @GetMapping
     public ResponseEntity<List<AgentDTO>> listAgents() {
-        List<AgentDTO> agentList = new ArrayList<>(agents.values());
-        return ResponseEntity.ok(agentList);
+        if (!engineService.isReady()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ArrayList<>());
+        }
+
+        try {
+            var registry = engineService.getRegistry();
+            Map<String, AgentLifecycle> agentStates = registry.getAllAgentStates();
+
+            List<AgentDTO> agentList = agentStates.entrySet()
+                .stream()
+                .map(entry -> AgentDTO.create(
+                    UUID.fromString(entry.getKey()),
+                    convertLifecycleToStatus(entry.getValue()),
+                    null,  // workflowId would be tracked separately
+                    0L,    // workCount
+                    60000L, // default TTL
+                    0L,    // uptime
+                    java.time.Instant.now(),
+                    java.time.Instant.now()
+                ))
+                .toList();
+
+            return ResponseEntity.ok(agentList);
+        } catch (Exception e) {
+            logger.error("Error listing agents", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
+        }
     }
 
     /**
@@ -52,11 +83,34 @@ public class AgentController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<AgentDTO> getAgent(@PathVariable UUID id) {
-        AgentDTO agent = agents.get(id);
-        if (agent == null) {
-            return ResponseEntity.notFound().build();
+        if (!engineService.isReady()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         }
-        return ResponseEntity.ok(agent);
+
+        try {
+            var registry = engineService.getRegistry();
+            AgentLifecycle lifecycle = registry.getLifecycle(id);
+
+            if (lifecycle == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            AgentDTO agent = AgentDTO.create(
+                id,
+                convertLifecycleToStatus(lifecycle),
+                null,
+                0L,
+                60000L,
+                0L,
+                java.time.Instant.now(),
+                java.time.Instant.now()
+            );
+
+            return ResponseEntity.ok(agent);
+        } catch (Exception e) {
+            logger.error("Error getting agent " + id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
@@ -69,24 +123,50 @@ public class AgentController {
      */
     @PostMapping
     public ResponseEntity<AgentDTO> createAgent(@RequestBody WorkflowDefDTO workflowDef) {
+        if (!engineService.isReady()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
+
         if (!workflowDef.isValid()) {
             return ResponseEntity.badRequest().build();
         }
 
-        UUID agentId = UUID.randomUUID();
-        AgentDTO newAgent = AgentDTO.create(
+        try {
+            UUID agentId = UUID.randomUUID();
+
+            // Convert DTO to domain model
+            var workflowDomain = new org.yawlfoundation.yawl.engine.agent.WorkflowDef(
+                workflowDef.workflowId(),
+                workflowDef.name(),
+                workflowDef.description(),
+                workflowDef.version()
+            );
+
+            // Start the agent on a virtual thread
+            var engine = engineService.getEngine();
+            boolean started = engine.startAgent(agentId, workflowDomain);
+
+            if (!started) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+            }
+
+            AgentDTO newAgent = AgentDTO.create(
                 agentId,
-                org.yawlfoundation.yawl.engine.agent.AgentStatus.idle(),
+                org.yawlfoundation.yawl.engine.agent.AgentStatus.running(),
                 workflowDef.workflowId(),
                 0L,
                 60000L,  // 60 second TTL
                 0L,      // uptime
                 java.time.Instant.now(),
                 java.time.Instant.now()
-        );
+            );
 
-        agents.put(agentId, newAgent);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newAgent);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newAgent);
+        } catch (Exception e) {
+            logger.error("Error creating agent", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
@@ -99,11 +179,27 @@ public class AgentController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> stopAgent(@PathVariable UUID id) {
-        AgentDTO removed = agents.remove(id);
-        if (removed == null) {
-            return ResponseEntity.notFound().build();
+        if (!engineService.isReady()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
         }
-        return ResponseEntity.noContent().build();
+
+        try {
+            var engine = engineService.getEngine();
+            var registry = engineService.getRegistry();
+
+            if (registry.getLifecycle(id) == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            if (engine.isRunning(id)) {
+                engine.stopAgent(id);
+            }
+
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.error("Error stopping agent " + id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
@@ -115,11 +211,32 @@ public class AgentController {
      */
     @GetMapping("/healthy")
     public ResponseEntity<List<AgentDTO>> listHealthyAgents() {
-        List<AgentDTO> healthyAgents = agents.values()
+        if (!engineService.isReady()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ArrayList<>());
+        }
+
+        try {
+            var registry = engineService.getRegistry();
+            List<AgentDTO> healthyAgents = registry.getRunningAgents()
                 .stream()
+                .map(id -> AgentDTO.create(
+                    id,
+                    convertLifecycleToStatus(registry.getLifecycle(id)),
+                    null,
+                    0L,
+                    60000L,
+                    0L,
+                    java.time.Instant.now(),
+                    java.time.Instant.now()
+                ))
                 .filter(AgentDTO::isHealthy)
                 .toList();
-        return ResponseEntity.ok(healthyAgents);
+
+            return ResponseEntity.ok(healthyAgents);
+        } catch (Exception e) {
+            logger.error("Error listing healthy agents", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
+        }
     }
 
     /**
@@ -131,29 +248,41 @@ public class AgentController {
      */
     @GetMapping("/metrics")
     public ResponseEntity<MetricsDTO> getAgentMetrics() {
-        int agentCount = agents.size();
-        int healthyCount = (int) agents.values()
-                .stream()
-                .filter(AgentDTO::isHealthy)
-                .count();
+        if (!engineService.isReady()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
 
-        long totalWorkCount = agents.values()
-                .stream()
-                .mapToLong(AgentDTO::workCount)
-                .sum();
+        try {
+            var registry = engineService.getRegistry();
+            int agentCount = registry.getTotalAgents();
+            int healthyCount = registry.getRunningAgents().size();
+            int failedCount = registry.getFailedAgents().size();
 
-        double throughput = agentCount > 0
-                ? (totalWorkCount * 60.0) / (agents.values()
-                    .stream()
-                    .mapToLong(AgentDTO::uptime)
-                    .average()
-                    .orElse(1000))
-                : 0.0;
+            double throughput = agentCount > 0 ? 1000.0 / agentCount : 0.0;
+            long avgLatency = 50;  // Placeholder for real metric collection
+            long oldestItemAge = 0;
 
-        long avgLatency = agentCount > 0 ? 100 : 0;  // Placeholder
-        long oldestItemAge = 0;  // Would be tracked in real implementation
+            MetricsDTO metrics = MetricsDTO.create(agentCount, healthyCount, failedCount, throughput, avgLatency, oldestItemAge);
+            return ResponseEntity.ok(metrics);
+        } catch (Exception e) {
+            logger.error("Error getting agent metrics", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
-        MetricsDTO metrics = MetricsDTO.create(agentCount, healthyCount, 0, throughput, avgLatency, oldestItemAge);
-        return ResponseEntity.ok(metrics);
+    /**
+     * Helper method to convert AgentLifecycle enum to AgentStatus for DTO.
+     *
+     * @param lifecycle The lifecycle state
+     * @return Converted agent status
+     */
+    private org.yawlfoundation.yawl.engine.agent.AgentStatus convertLifecycleToStatus(AgentLifecycle lifecycle) {
+        return switch (lifecycle) {
+            case RUNNING -> org.yawlfoundation.yawl.engine.agent.AgentStatus.running();
+            case IDLE -> org.yawlfoundation.yawl.engine.agent.AgentStatus.idle();
+            case FAILED -> org.yawlfoundation.yawl.engine.agent.AgentStatus.failed("Lifecycle: " + lifecycle);
+            case STOPPED -> org.yawlfoundation.yawl.engine.agent.AgentStatus.stopped();
+            default -> org.yawlfoundation.yawl.engine.agent.AgentStatus.idle();
+        };
     }
 }
