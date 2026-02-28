@@ -86,17 +86,24 @@ compute_multi_hash() {
 # Usage: src_hash=$(compute_source_hash "yawl-engine")
 compute_source_hash() {
     local module="$1"
-    local src_dir="${module}/src/main/java"
+    local src_dir
 
-    if [[ ! -d "$src_dir" ]]; then
-        echo "ERROR: source directory not found: $src_dir" >&2
+    # Try src/main/java first, fall back to src/java (for test modules)
+    if [[ -d "${module}/src/main/java" ]]; then
+        src_dir="${module}/src/main/java"
+    elif [[ -d "${module}/src/java" ]]; then
+        src_dir="${module}/src/java"
+    elif [[ -d "${module}/src" ]]; then
+        src_dir="${module}/src"
+    else
+        echo "ERROR: source directory not found for module: $module" >&2
         return 1
     fi
 
     # Hash all Java files in source directory
-    find "$src_dir" -name "*.java" -type f -print0 | \
+    find "$src_dir" -name "*.java" -type f -print0 2>/dev/null | \
         sort -z | \
-        xargs -0 cat | \
+        xargs -0 cat 2>/dev/null | \
         {
             if command -v b3sum >/dev/null 2>&1; then
                 b3sum | awk '{print $1}'

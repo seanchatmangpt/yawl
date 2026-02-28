@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-02-28T07:28:18.912305Z",
+  "model_timestamp": "2026-02-28T07:27:27.113184Z",
+  "model_r_squared": 0.0,
+  "total_tests": 6,
+  "total_predicted_ms": 48835,
+  "tests": [
+    {
+      "test_name": "org.yawlfoundation.yawl.engine.YNetRunnerTest.testSimpleWorkflow",
+      "module": "YNetRunnerTest",
+      "predicted_ms": 50,
+      "actual_ms": 50,
+      "confidence_std_ms": 100,
+      "confidence_interval": {
+        "lower_ms": 50,
+        "upper_ms": 150
+      }
+    },
+    {
+      "test_name": "org.yawlfoundation.yawl.engine.YNetRunnerTest.testParallelTasks",
+      "module": "YNetRunnerTest",
+      "predicted_ms": 3200,
+      "actual_ms": 3200,
+      "confidence_std_ms": 100,
+      "confidence_interval": {
+        "lower_ms": 3100,
+        "upper_ms": 3300
+      }
+    },
+    {
+      "test_name": "org.yawlfoundation.yawl.engine.YWorkItemTest.testCreate",
+      "module": "YWorkItemTest",
+      "predicted_ms": 85,
+      "actual_ms": 85,
+      "confidence_std_ms": 100,
+      "confidence_interval": {
+        "lower_ms": 50,
+        "upper_ms": 185
+      }
+    },
+    {
+      "test_name": "org.yawlfoundation.yawl.resourcing.ResourceQueueTest.testAllocate",
+      "module": "ResourceQueueTest",
+      "predicted_ms": 5500,
+      "actual_ms": 5500,
+      "confidence_std_ms": 100,
+      "confidence_interval": {
+        "lower_ms": 5400,
+        "upper_ms": 5600
+      }
+    },
+    {
+      "test_name": "org.yawlfoundation.yawl.integration.ServiceIntegrationTest.testMCP",
+      "module": "ServiceIntegrationTest",
+      "predicted_ms": 15000,
+      "actual_ms": 15000,
+      "confidence_std_ms": 100,
+      "confidence_interval": {
+        "lower_ms": 14900,
+        "upper_ms": 15100
+      }
+    },
+    {
+      "test_name": "org.yawlfoundation.yawl.integration.ServiceIntegrationTest.testA2A",
+      "module": "ServiceIntegrationTest",
+      "predicted_ms": 25000,
+      "actual_ms": 25000,
+      "confidence_std_ms": 100,
+      "confidence_interval": {
+        "lower_ms": 24900,
+        "upper_ms": 25100
+      }
+    }
+  ]
+}

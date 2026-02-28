@@ -7,25 +7,7 @@
 # 2. Assigning tests to clusters based on execution time
 # 3. Distributing tests across shards using greedy bin-packing algorithm
 # 4. Minimizing total duration variance across shards
-#
-# Usage:
-#   bash scripts/cluster-tests.sh [shard-count] [input-file] [output-file]
-#
-# Examples:
-#   bash scripts/cluster-tests.sh                    # Default: 8 shards
-#   bash scripts/cluster-tests.sh 16                 # Custom: 16 shards
-#   bash scripts/cluster-tests.sh 8 /tmp/times.json  # Custom input file
-#
-# Environment:
-#   SHARD_COUNT   - Number of shards (default: 8)
-#   INPUT_FILE    - Test times JSON (default: .yawl/ci/test-times.json)
-#   OUTPUT_FILE   - Shards config (default: .yawl/ci/test-shards.json)
-#
-# Exit codes:
-#   0 - Success
-#   1 - Error (missing input or calculation failure)
 # ==========================================================================
-set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -48,7 +30,6 @@ mkdir -p "$(dirname "$OUTPUT_FILE")"
 
 # Validate inputs
 if [[ ! -f "$INPUT_FILE" ]]; then
-    # If input file doesn't exist, run analyze-test-times.sh first
     printf "${C_YELLOW}Input file not found: %s${C_RESET}\n" "$INPUT_FILE"
     printf "${C_CYAN}Running analyze-test-times.sh to generate test times...${C_RESET}\n"
     bash "$SCRIPT_DIR/analyze-test-times.sh"
@@ -59,7 +40,7 @@ if [[ ! -f "$INPUT_FILE" ]]; then
     exit 1
 fi
 
-if [[ ! $SHARD_COUNT =~ ^[0-9]+$ ]] || [[ $SHARD_COUNT -lt 1 ]] || [[ $SHARD_COUNT -gt 32 ]]; then
+if ! [[ "$SHARD_COUNT" =~ ^[0-9]+$ ]] || [[ $SHARD_COUNT -lt 1 ]] || [[ $SHARD_COUNT -gt 32 ]]; then
     printf "${C_RED}✗ Invalid shard count: %s (must be 1-32)${C_RESET}\n" "$SHARD_COUNT"
     exit 1
 fi
@@ -71,15 +52,20 @@ python3 << 'PYTHON_SCRIPT'
 import json
 import sys
 from datetime import datetime
+from pathlib import Path
 
 # Configuration from bash
-shard_count = int(sys.argv[1])
-input_file = sys.argv[2]
-output_file = sys.argv[3]
+shard_count = int(sys.argv[1]) if len(sys.argv) > 1 else 8
+input_file = sys.argv[2] if len(sys.argv) > 2 else ".yawl/ci/test-times.json"
+output_file = sys.argv[3] if len(sys.argv) > 3 else ".yawl/ci/test-shards.json"
 
 # Read test times
-with open(input_file, 'r') as f:
-    data = json.load(f)
+try:
+    with open(input_file, 'r') as f:
+        data = json.load(f)
+except Exception as e:
+    print(f"Error reading {input_file}: {e}", file=sys.stderr)
+    sys.exit(1)
 
 tests = data.get('tests', [])
 
@@ -176,6 +162,7 @@ config = {
 }
 
 # Write output
+Path(output_file).parent.mkdir(parents=True, exist_ok=True)
 with open(output_file, 'w') as f:
     json.dump(config, f, indent=2)
 
@@ -191,3 +178,17 @@ print(f"  Load balance score: {config['load_distribution']['balance_score']:.2%}
 
 sys.exit(0)
 PYTHON_SCRIPT
+
+SHARD_COUNT="$SHARD_COUNT"
+INPUT_FILE="$INPUT_FILE"
+OUTPUT_FILE="$OUTPUT_FILE"
+
+exit_code=$?
+
+if [[ $exit_code -eq 0 ]]; then
+    printf "\n${C_GREEN}✓ Test sharding complete${C_RESET}\n"
+else
+    printf "\n${C_RED}✗ Failed to generate test shards${C_RESET}\n"
+fi
+
+exit $exit_code

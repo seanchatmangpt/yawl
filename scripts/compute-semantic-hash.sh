@@ -69,60 +69,121 @@ extract_semantic_structure() {
     local package_name
     package_name=$(grep -E '^package ' "$java_file" 2>/dev/null | head -1 | sed 's/^package //;s/;$//' || echo "")
 
-    # Extract import statements (sorted)
+    # Extract import statements (sorted, order-independent)
+    # Include both regular and static imports, deduplicate
     local imports
-    imports=$(grep -E '^import ' "$java_file" 2>/dev/null | sed 's/^import //;s/;$//' | LC_ALL=C sort | jq -R -s -c 'split("\n")[:-1]' || echo '[]')
+    imports=$(grep -E '^import (static )?' "$java_file" 2>/dev/null | \
+        sed 's/^import //' | sed 's/;$//' | \
+        LC_ALL=C sort -u | \
+        jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]')
 
-    # Extract class/interface/enum/record declarations with modifiers
+    # Extract module declaration (if Java 9+)
+    local module_decl
+    module_decl=$(grep -E '^module\s+' "$java_file" 2>/dev/null | head -1 | sed 's/;$//' || echo "")
+
+    # Extract class/interface/enum/record declarations with full signatures
+    # Includes: modifiers, name, parent class, interfaces, type parameters, sealed list
     local class_decls
-    class_decls=$(grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(sealed\s+)?(class|interface|enum|record)\s+' "$java_file" 2>/dev/null | \
-        sed 's/^[[:space:]]*//;s/{$//' | \
-        LC_ALL=C sort | \
-        jq -R -s -c 'split("\n")[:-1]' || echo '[]')
+    class_decls=$(extract_class_declarations "$java_file")
 
-    # Extract method signatures (public/protected methods only, skip formatting)
-    # Pattern: visibility returnType methodName(params) {throws ...}
+    # Extract method signatures (all visibility levels, skip body, include throws)
+    # Pattern: visibility returnType methodName(params) throws ...
     local method_sigs
-    method_sigs=$(grep -E '^\s+(public|protected)\s+' "$java_file" 2>/dev/null | \
-        grep -E '(void|[A-Z][a-zA-Z0-9<>.*\[\]]*)\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(' | \
-        sed 's/^[[:space:]]*//;s/{.*$//' | \
-        sed 's/\s\+/ /g' | \
-        LC_ALL=C sort | \
-        jq -R -s -c 'split("\n")[:-1]' || echo '[]')
+    method_sigs=$(extract_method_signatures "$java_file")
 
-    # Extract field declarations (public/protected only)
+    # Extract field declarations (all visibility + modifiers)
+    # Include: visibility, static, final, type, name (not initializers)
     local field_decls
-    field_decls=$(grep -E '^\s+(public|protected|private\s+static\s+final)\s+' "$java_file" 2>/dev/null | \
-        grep -vE '\s+\{' | \
-        sed 's/^[[:space:]]*//;s/;$//' | \
-        sed 's/\s\+/ /g' | \
-        LC_ALL=C sort | \
-        jq -R -s -c 'split("\n")[:-1]' || echo '[]')
+    field_decls=$(extract_field_declarations "$java_file")
 
-    # Extract annotations (top-level only, not method-level)
+    # Extract type annotations and class-level annotations (before class declaration)
     local annotations
-    annotations=$(grep -E '^@[A-Za-z]' "$java_file" 2>/dev/null | \
-        sed 's/^@//' | \
-        LC_ALL=C sort | \
-        jq -R -s -c 'split("\n")[:-1]' || echo '[]')
+    annotations=$(extract_type_annotations "$java_file")
 
-    # Construct canonical JSON (deterministic key order)
+    # Extract record components (for record declarations)
+    local record_components
+    record_components=$(extract_record_components "$java_file")
+
+    # Construct canonical JSON (deterministic key order, sorted)
     local semantic_json
     semantic_json=$(cat <<EOF
 {
-  "package": "$package_name",
-  "imports": $imports,
-  "classes": $class_decls,
-  "methods": $method_sigs,
-  "fields": $field_decls,
   "annotations": $annotations,
-  "file": "$(basename "$java_file")"
+  "classes": $class_decls,
+  "fields": $field_decls,
+  "file": "$(basename "$java_file")",
+  "imports": $imports,
+  "methods": $method_sigs,
+  "module": "$module_decl",
+  "package": "$package_name",
+  "records": $record_components
 }
 EOF
 )
 
-    # Return canonical JSON (no extra whitespace)
-    echo "$semantic_json" | jq -c '.'
+    # Return canonical JSON (no extra whitespace, sorted keys)
+    echo "$semantic_json" | jq -S -c '.'
+}
+
+# Extract class/interface/enum/record declarations with full signatures
+extract_class_declarations() {
+    local java_file="$1"
+
+    grep -E '^\s*(public\s+)?(abstract\s+)?(final\s+)?(sealed\s+)?(class|interface|enum|record)\s+' "$java_file" 2>/dev/null | \
+        sed 's/^[[:space:]]*//;s/\s*[{].*$//;s/\s\+/ /g' | \
+        LC_ALL=C sort | \
+        jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]'
+}
+
+# Extract method signatures including modifiers and exceptions
+extract_method_signatures() {
+    local java_file="$1"
+
+    # Capture: visibility + optional (synchronized|static|default|native) + returnType + name + params + optional throws
+    grep -E '^\s+(public|protected|private|static|final|synchronized|default|native|abstract)\s+' "$java_file" 2>/dev/null | \
+        grep -E '(void|[A-Z][a-zA-Z0-9<>.*\[\]?]*|boolean|int|long|double|float|char|byte|short)\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(' | \
+        sed 's/^[[:space:]]*//;s/\s*[{;].*$//' | \
+        sed 's/\s\+/ /g' | \
+        LC_ALL=C sort | \
+        jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]'
+}
+
+# Extract field declarations with visibility and modifiers
+extract_field_declarations() {
+    local java_file="$1"
+
+    # Capture: visibility/modifiers + type + name (but not initializers)
+    grep -E '^\s+(public|protected|private|static|final|transient|volatile)\s+' "$java_file" 2>/dev/null | \
+        grep -vE '\s+\{' | \
+        sed 's/^[[:space:]]*//;s/\s*[=;].*$//;s/\s\+/ /g' | \
+        LC_ALL=C sort | \
+        jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]'
+}
+
+# Extract type annotations and class-level annotations
+extract_type_annotations() {
+    local java_file="$1"
+
+    # Match lines starting with @ (annotations) and capture name
+    grep -E '^\s*@[A-Za-z]' "$java_file" 2>/dev/null | \
+        sed 's/^[[:space:]]*@//' | \
+        sed 's/\(.*\)$/\1/' | \
+        LC_ALL=C sort -u | \
+        jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]'
+}
+
+# Extract record component declarations (Java 16+)
+extract_record_components() {
+    local java_file="$1"
+
+    # Record components are between 'record ClassName(' and ')'
+    # Pattern: type name, type name, ...
+    grep -E 'record\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\(' "$java_file" 2>/dev/null | \
+        sed 's/^.*\(//;s/).*//' | \
+        sed 's/,/\n/g' | \
+        sed 's/^\s*//;s/\s*$//' | \
+        LC_ALL=C sort | \
+        jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]'
 }
 
 # Compute hash of semantic structure
@@ -131,8 +192,15 @@ EOF
 compute_hash() {
     local semantic_json="$1"
 
-    # Use sha256 as universal fallback (blake3 not in standard coreutils)
-    echo -n "$semantic_json" | sha256sum | awk '{print $1}'
+    # Try blake3 first (faster, better for caching)
+    if command -v b3sum >/dev/null 2>&1; then
+        echo -n "$semantic_json" | b3sum | awk '{print $1}'
+    elif command -v blake3sum >/dev/null 2>&1; then
+        echo -n "$semantic_json" | blake3sum | awk '{print $1}'
+    else
+        # Fallback to sha256 (universal, slower)
+        echo -n "$semantic_json" | sha256sum | awk '{print $1}'
+    fi
 }
 
 # Collect all Java files from module source directories
@@ -162,13 +230,12 @@ compute_module_semantic_hash() {
 
     local file_count=0
     local file_hashes="[]"
-    local all_semantics=""
+    # Collect all file semantics and hashes in order for deterministic module hash
+    local -a semantic_lines=()
 
-    # Process each file and collect hashes
+    # Process each file and collect hashes (in sorted order for determinism)
     while IFS= read -r java_file; do
         [[ -z "$java_file" ]] && continue
-
-        ((file_count++))
 
         local semantic
         semantic=$(extract_semantic_structure "$java_file" 2>/dev/null) || continue
@@ -179,8 +246,9 @@ compute_module_semantic_hash() {
         local relative_path
         relative_path=$(echo "$java_file" | sed "s|^${REPO_ROOT}/||")
 
-        # Accumulate semantics for module-level hash
-        all_semantics+="${semantic}${file_hash}"
+        # Collect semantics for module-level hash (deterministic order via sorted java_files)
+        semantic_lines+=("${file_hash}")
+        ((file_count++))
 
         # Track file hash
         file_hashes=$(echo "$file_hashes" | jq \
@@ -192,30 +260,39 @@ compute_module_semantic_hash() {
 
     done <<< "$java_files"
 
-    # Compute module-level hash (hash of all file hashes in order)
+    # Compute module-level hash: hash of concatenated file hashes (deterministic)
     local module_hash
     if [[ $file_count -gt 0 ]]; then
-        module_hash=$(compute_hash "${all_semantics}")
+        # Join all file hashes with newlines for canonical representation
+        local combined
+        combined=$(printf '%s\n' "${semantic_lines[@]}")
+        module_hash=$(compute_hash "$combined")
     else
         module_hash=$(compute_hash "")
+    fi
+
+    # Detect hash algorithm used
+    local algo_used="sha256"
+    if command -v b3sum >/dev/null 2>&1 || command -v blake3sum >/dev/null 2>&1; then
+        algo_used="blake3"
     fi
 
     # Construct result JSON
     local result
     result=$(cat <<EOF
 {
-  "module": "$module",
-  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "algorithm": "$SEMANTIC_HASH_ALGO",
-  "hash": "$module_hash",
+  "algorithm": "$algo_used",
   "file_count": $file_count,
   "files": $file_hashes,
-  "status": "computed"
+  "hash": "$module_hash",
+  "module": "$module",
+  "status": "computed",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
 )
 
-    echo "$result" | jq -c '.'
+    echo "$result" | jq -S -c '.'
 }
 
 # Load cached semantic hash for module

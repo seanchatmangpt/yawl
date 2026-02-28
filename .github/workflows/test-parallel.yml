@@ -1,0 +1,217 @@
+name: Parallel Test Execution
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  MAVEN_OPTS: >-
+    -Xmx2g
+    -Xms512m
+    -XX:+UseZGC
+    -Djava.awt.headless=true
+
+jobs:
+  # Generate test shards configuration
+  generate-shards:
+    name: Generate Test Shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      shard-count: ${{ steps.shards.outputs.shard-count }}
+      shards-json: ${{ steps.shards.outputs.shards-json }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Generate Test Shards Configuration
+        id: shards
+        run: |
+          bash scripts/analyze-test-times.sh
+          bash scripts/cluster-tests.sh 8
+          SHARD_COUNT=$(python3 -c "import json; print(json.load(open('.yawl/ci/test-shards.json'))['shard_count'])")
+          echo "shard-count=$SHARD_COUNT" >> "$GITHUB_OUTPUT"
+          echo "shards-json=$(cat .yawl/ci/test-shards.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Shards Configuration
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-shards-config
+          path: .yawl/ci/test-shards.json
+          retention-days: 1
+
+  # Run tests in parallel shards
+  test-parallel:
+    name: Test Shard ${{ matrix.shard }}
+    needs: generate-shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 8
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: temurin
+          cache: maven
+          check-latest: true
+
+      - name: Download Shards Configuration
+        uses: actions/download-artifact@v4
+        with:
+          name: test-shards-config
+          path: .yawl/ci
+
+      - name: Run Tests for Shard ${{ matrix.shard }}
+        id: test-shard
+        run: |
+          # Run the shard
+          bash scripts/run-shard.sh ${{ matrix.shard }}
+        continue-on-error: true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-shard-${{ matrix.shard }}
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+          retention-days: 7
+
+      - name: Publish Test Report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Test Results - Shard ${{ matrix.shard }}
+          path: target/*-reports/*.xml
+          reporter: java-junit
+          fail-on-error: false
+
+  # Aggregate results
+  test-results:
+    name: Aggregate Test Results
+    needs: test-parallel
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download All Test Results
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results-all
+
+      - name: Aggregate Surefire Results
+        run: |
+          mkdir -p target/surefire-reports target/failsafe-reports
+
+          # Merge all surefire reports
+          find test-results-all -name "TEST-*.xml" -path "*/surefire-reports/*" -exec cp {} target/surefire-reports/ \;
+          find test-results-all -name "TEST-*.xml" -path "*/failsafe-reports/*" -exec cp {} target/failsafe-reports/ \;
+
+          echo "Aggregated test reports from all shards"
+          echo "Surefire reports: $(ls target/surefire-reports/TEST-*.xml 2>/dev/null | wc -l)"
+          echo "Failsafe reports: $(ls target/failsafe-reports/TEST-*.xml 2>/dev/null | wc -l)"
+
+      - name: Generate Test Summary
+        run: |
+          python3 << 'PYTHON'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          import json
+
+          total_tests = 0
+          total_failures = 0
+          total_errors = 0
+          total_skipped = 0
+          total_time = 0.0
+
+          # Process surefire reports
+          for xml_file in Path('target/surefire-reports').glob('TEST-*.xml'):
+              try:
+                  tree = ET.parse(xml_file)
+                  root = tree.getroot()
+                  total_tests += int(root.get('tests', 0))
+                  total_failures += int(root.get('failures', 0))
+                  total_errors += int(root.get('errors', 0))
+                  total_skipped += int(root.get('skipped', 0))
+                  total_time += float(root.get('time', 0))
+              except:
+                  pass
+
+          # Process failsafe reports
+          for xml_file in Path('target/failsafe-reports').glob('TEST-*.xml'):
+              try:
+                  tree = ET.parse(xml_file)
+                  root = tree.getroot()
+                  total_tests += int(root.get('tests', 0))
+                  total_failures += int(root.get('failures', 0))
+                  total_errors += int(root.get('errors', 0))
+                  total_skipped += int(root.get('skipped', 0))
+                  total_time += float(root.get('time', 0))
+              except:
+                  pass
+
+          # Print summary
+          print(f"\n{'='*70}")
+          print(f"PARALLEL TEST EXECUTION SUMMARY")
+          print(f"{'='*70}")
+          print(f"Total Tests:      {total_tests:6d}")
+          print(f"Passed:           {total_tests - total_failures - total_errors - total_skipped:6d}")
+          print(f"Failures:         {total_failures:6d}")
+          print(f"Errors:           {total_errors:6d}")
+          print(f"Skipped:          {total_skipped:6d}")
+          print(f"Total Time:       {total_time:6.1f}s ({total_time / 60:.1f}m)")
+          print(f"{'='*70}\n")
+
+          # Exit with failure if there were failures or errors
+          exit(1 if (total_failures + total_errors) > 0 else 0)
+          PYTHON
+
+      - name: Comment PR with Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const xml = require('fs').readdirSync('target/surefire-reports').filter(f => f.startsWith('TEST-'));
+            const comment = `## Parallel Test Results
+
+            - **Configuration**: 8 parallel shards
+            - **Reports Found**: ${xml.length} test suites
+
+            See "Aggregate Test Results" step for detailed summary.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail if tests failed
+        if: failure()
+        run: exit 1

@@ -1,0 +1,119 @@
+{
+  "timestamp": "2026-02-28T07:23:25.408594Z",
+  "shard_count": 8,
+  "total_tests": 6,
+  "total_estimated_duration_ms": 48835,
+  "shards": [
+    {
+      "shard_id": 0,
+      "tests": [
+        "org.yawlfoundation.yawl.integration.ServiceIntegrationTest.testA2A"
+      ],
+      "test_count": 1,
+      "estimated_duration_ms": 25000,
+      "cluster": 3,
+      "clusters": [
+        3
+      ],
+      "cluster_description": "C3: Slow (5s-30s)"
+    },
+    {
+      "shard_id": 1,
+      "tests": [
+        "org.yawlfoundation.yawl.integration.ServiceIntegrationTest.testMCP"
+      ],
+      "test_count": 1,
+      "estimated_duration_ms": 15000,
+      "cluster": 3,
+      "clusters": [
+        3
+      ],
+      "cluster_description": "C3: Slow (5s-30s)"
+    },
+    {
+      "shard_id": 2,
+      "tests": [
+        "org.yawlfoundation.yawl.resourcing.ResourceQueueTest.testAllocate"
+      ],
+      "test_count": 1,
+      "estimated_duration_ms": 5500,
+      "cluster": 3,
+      "clusters": [
+        3
+      ],
+      "cluster_description": "C3: Slow (5s-30s)"
+    },
+    {
+      "shard_id": 3,
+      "tests": [
+        "org.yawlfoundation.yawl.engine.YNetRunnerTest.testParallelTasks"
+      ],
+      "test_count": 1,
+      "estimated_duration_ms": 3200,
+      "cluster": 2,
+      "clusters": [
+        2
+      ],
+      "cluster_description": "C2: Medium (100ms-5s)"
+    },
+    {
+      "shard_id": 4,
+      "tests": [
+        "org.yawlfoundation.yawl.engine.YWorkItemTest.testCreate"
+      ],
+      "test_count": 1,
+      "estimated_duration_ms": 85,
+      "cluster": 1,
+      "clusters": [
+        1
+      ],
+      "cluster_description": "C1: Fast (<100ms)"
+    },
+    {
+      "shard_id": 5,
+      "tests": [
+        "org.yawlfoundation.yawl.engine.YNetRunnerTest.testSimpleWorkflow"
+      ],
+      "test_count": 1,
+      "estimated_duration_ms": 50,
+      "cluster": 1,
+      "clusters": [
+        1
+      ],
+      "cluster_description": "C1: Fast (<100ms)"
+    },
+    {
+      "shard_id": 6,
+      "tests": [],
+      "test_count": 0,
+      "estimated_duration_ms": 0,
+      "cluster": 0,
+      "clusters": [],
+      "cluster_description": ""
+    },
+    {
+      "shard_id": 7,
+      "tests": [],
+      "test_count": 0,
+      "estimated_duration_ms": 0,
+      "cluster": 0,
+      "clusters": [],
+      "cluster_description": ""
+    }
+  ],
+  "cluster_definitions": {
+    "1": "Fast (<100ms)",
+    "2": "Medium (100ms-5s)",
+    "3": "Slow (5s-30s)",
+    "4": "Heavy (>30s)"
+  },
+  "load_distribution": {
+    "min_duration_ms": 0,
+    "max_duration_ms": 25000,
+    "avg_duration_ms": 6104,
+    "duration_range_ms": 25000,
+    "std_deviation_ms": 8605,
+    "variance": 74049071.484375,
+    "balance_score": 0.0
+  }
+}

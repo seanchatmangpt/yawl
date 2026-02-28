@@ -1,81 +1,66 @@
 #!/usr/bin/env bash
 # ==========================================================================
-# run-all-shards.sh - Execute all test shards in parallel
+# run-all-shards.sh - Run all test shards sequentially (for local testing)
 #
-# Usage:
-#   bash scripts/run-all-shards.sh [shard-count] [parallel-jobs]
-#
-# Examples:
-#   bash scripts/run-all-shards.sh           # Run 8 shards with 4 parallel jobs
-#   bash scripts/run-all-shards.sh 4 2       # Run 4 shards with 2 parallel jobs
-#
-# Environment:
-#   SHARD_COUNT    - Total shards (default: 8)
-#   PARALLEL_JOBS  - Parallel shard executions (default: 4)
+# This script runs all shards one by one, useful for testing the sharding
+# logic locally before pushing to CI.
 # ==========================================================================
-set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
-# Configuration
-SHARD_COUNT="${1:-${SHARD_COUNT:-8}}"
-PARALLEL_JOBS="${2:-${PARALLEL_JOBS:-4}}"
-
 # Colors
 readonly C_CYAN='\033[96m'
 readonly C_GREEN='\033[92m'
+readonly C_YELLOW='\033[93m'
 readonly C_RED='\033[91m'
 readonly C_RESET='\033[0m'
 
-echo ""
-printf "${C_CYAN}Running ${SHARD_COUNT} shards with ${PARALLEL_JOBS} parallel jobs${C_RESET}\n"
+# Configuration
+CONFIG_FILE="${1:-.yawl/ci/test-shards.json}"
+SHARD_COUNT=8
 
-# Create temp directory for shard logs
-LOG_DIR=$(mktemp -d)
-trap "rm -rf $LOG_DIR" EXIT
-
-# Run shards in parallel using GNU parallel or xargs
-START_TIME=$(date +%s)
-
-if command -v parallel >/dev/null 2>&1; then
-    # Use GNU parallel if available
-    seq 0 $((SHARD_COUNT - 1)) | \
-        parallel -j "$PARALLEL_JOBS" --lb --eta \
-            "bash scripts/run-shard.sh {} $SHARD_COUNT > $LOG_DIR/shard-{}.log 2>&1; echo \$? > $LOG_DIR/shard-{}.exit"
-else
-    # Fallback to xargs
-    seq 0 $((SHARD_COUNT - 1)) | \
-        xargs -P "$PARALLEL_JOBS" -I {} \
-            bash -c "bash scripts/run-shard.sh {} $SHARD_COUNT > $LOG_DIR/shard-{}.log 2>&1; echo \$? > $LOG_DIR/shard-{}.exit"
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    printf "${C_YELLOW}Config file not found. Generating...${C_RESET}\n"
+    bash "$SCRIPT_DIR/cluster-tests.sh"
 fi
 
-END_TIME=$(date +%s)
-ELAPSED=$((END_TIME - START_TIME))
+# Extract shard count from config
+SHARD_COUNT=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE')).get('shard_count', 8))")
 
-# Check results
-FAILED=0
-PASSED=0
-for i in $(seq 0 $((SHARD_COUNT - 1))); do
-    EXIT_CODE=$(cat "$LOG_DIR/shard-$i.exit" 2>/dev/null || echo "1")
-    if [[ "$EXIT_CODE" -eq 0 ]]; then
-        PASSED=$((PASSED + 1))
+printf "${C_CYAN}Running %d test shards sequentially${C_RESET}\n\n" "$SHARD_COUNT"
+
+failed_shards=()
+total_time=0
+
+# Run each shard
+for ((shard=0; shard<SHARD_COUNT; shard++)); do
+    printf "${C_CYAN}========== Shard %d/%d ==========${C_RESET}\n" "$((shard+1))" "$SHARD_COUNT"
+    
+    start_time=$(date +%s)
+    
+    if bash "$SCRIPT_DIR/run-shard.sh" "$shard" "$CONFIG_FILE"; then
+        printf "${C_GREEN}✓ Shard %d passed${C_RESET}\n\n" "$shard"
     else
-        FAILED=$((FAILED + 1))
-        echo ""
-        printf "${C_RED}Shard $i failed:${C_RESET}\n"
-        tail -20 "$LOG_DIR/shard-$i.log" 2>/dev/null || true
+        printf "${C_RED}✗ Shard %d failed${C_RESET}\n\n" "$shard"
+        failed_shards+=("$shard")
     fi
+    
+    end_time=$(date +%s)
+    elapsed=$((end_time - start_time))
+    total_time=$((total_time + elapsed))
 done
 
 # Summary
-echo ""
-printf "${C_CYAN}========================================${C_RESET}\n"
-if [[ $FAILED -eq 0 ]]; then
-    printf "${C_GREEN}✓ ALL SHARDS PASSED${C_RESET} | ${PASSED}/${SHARD_COUNT} | ${ELAPSED}s\n"
+printf "\n${C_CYAN}========== SUMMARY ==========${C_RESET}\n"
+printf "Total time: %d seconds\n" "$total_time"
+printf "Shards run: %d\n" "$SHARD_COUNT"
+
+if [[ ${#failed_shards[@]} -eq 0 ]]; then
+    printf "${C_GREEN}✓ All shards passed${C_RESET}\n"
     exit 0
 else
-    printf "${C_RED}✗ SHARDS FAILED${C_RESET} | ${PASSED} passed, ${FAILED} failed | ${ELAPSED}s\n"
+    printf "${C_RED}✗ Failed shards: ${failed_shards[*]}${C_RESET}\n"
     exit 1
 fi

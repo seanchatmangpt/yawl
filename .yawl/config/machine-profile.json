@@ -1,0 +1,81 @@
+{
+  "machine_type": "desktop",
+  "timestamp": "2026-02-28T15:30:00Z",
+  "hardware": {
+    "cpu_cores": 4,
+    "total_ram_mb": 8192,
+    "disk_space_gb": 100
+  },
+  "default_parameters": {
+    "maven_threads": 2,
+    "junit_factor": 4.0,
+    "cache_ttl_hours": 24,
+    "cache_size_limit_gb": 5,
+    "semantic_cache_ttl_hours": 24,
+    "tip_retrain_frequency_builds": 10,
+    "warm_cache_ttl_hours": 8,
+    "cds_size_mb": 200
+  },
+  "profiles": {
+    "desktop": {
+      "description": "Standard development machine (4-8 cores, 8-16GB RAM)",
+      "cpu_range": "4-8 cores",
+      "ram_range": "8-16GB",
+      "parameters": {
+        "maven_threads": 2,
+        "junit_factor": 4.0,
+        "cache_ttl_hours": 24,
+        "cache_size_limit_gb": 5,
+        "semantic_cache_ttl_hours": 24,
+        "tip_retrain_frequency_builds": 10,
+        "warm_cache_ttl_hours": 8,
+        "cds_size_mb": 200
+      }
+    },
+    "laptop": {
+      "description": "Lightweight development machine (2-4 cores, <8GB RAM)",
+      "cpu_range": "2-4 cores",
+      "ram_range": "<8GB",
+      "parameters": {
+        "maven_threads": 1.5,
+        "junit_factor": 2.0,
+        "cache_ttl_hours": 12,
+        "cache_size_limit_gb": 2,
+        "semantic_cache_ttl_hours": 12,
+        "tip_retrain_frequency_builds": 5,
+        "warm_cache_ttl_hours": 4,
+        "cds_size_mb": 100
+      }
+    },
+    "workstation": {
+      "description": "High-performance workstation (16+ cores, 64GB+ RAM)",
+      "cpu_range": "16+ cores",
+      "ram_range": "64GB+",
+      "parameters": {
+        "maven_threads": 4,
+        "junit_factor": 6.0,
+        "cache_ttl_hours": 48,
+        "cache_size_limit_gb": 10,
+        "semantic_cache_ttl_hours": 48,
+        "tip_retrain_frequency_builds": 20,
+        "warm_cache_ttl_hours": 12,
+        "cds_size_mb": 300
+      }
+    },
+    "ci-cd": {
+      "description": "CI/CD environment (3-8 cores, 8-32GB RAM, SSD)",
+      "cpu_range": "3-8 cores",
+      "ram_range": "8-32GB",
+      "parameters": {
+        "maven_threads": 3,
+        "junit_factor": 4.0,
+        "cache_ttl_hours": 8,
+        "cache_size_limit_gb": 5,
+        "semantic_cache_ttl_hours": 12,
+        "tip_retrain_frequency_builds": 10,
+        "warm_cache_ttl_hours": 4,
+        "cds_size_mb": 150
+      }
+    }
+  }
+}

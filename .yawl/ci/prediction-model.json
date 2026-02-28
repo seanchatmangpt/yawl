@@ -1,0 +1,1 @@
+{"timestamp": "2026-02-28T07:27:27.113184Z", "samples_count": 0, "coefficients": {"loc_coeff": 0.001, "test_count_coeff": 100, "intercept": 500}, "r_squared": 0.0, "status": "no_data", "reason": "No training data provided"}

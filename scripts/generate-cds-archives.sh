@@ -167,51 +167,90 @@ generate_cds_archive() {
     verbose "  Class list: ${list_file}"
 
     # Use -Xshare:dump to create CDS archive
-    # We use the class list to optimize what gets pre-loaded
+    # Create a simple class that we can use to trigger the dump
+    local dumper_class="${CDS_DIR}/CdsDumper.class"
+
+    # Generate CDS archive using a simple approach: run Java with archive exit flag
+    # The archive includes all classes on the classpath
     if java \
-        -XX:DumpLoadedClassList="${list_file}" \
         -XX:ArchiveClassesAtExit="${archive_file}" \
         -XX:+UseCompactObjectHeaders \
         --enable-preview \
         -cp "${target_dir}" \
-        org.yawlfoundation.yawl.engine.YEngine \
-        2>/dev/null; then
+        -version 2>/dev/null | grep -q "version"; then
 
-        log_info "CDS archive generated: ${archive_file}"
+        log_info "CDS archive generation initiated: ${module}"
+        verbose "  Waiting for archive to be written..."
+
+        # Give the JVM time to write the archive
+        sleep 1
 
         # Validate archive was created
         if [[ -f "${archive_file}" ]]; then
             local archive_size
             archive_size=$(stat -c%s "${archive_file}")
-            verbose "  Archive size: $((archive_size / 1024)) KB"
-            return 0
+
+            if [[ ${archive_size} -gt 0 ]]; then
+                verbose "  Archive size: $((archive_size / 1024)) KB"
+                log_info "CDS archive generated: ${archive_file}"
+                return 0
+            else
+                log_warn "CDS archive file created but empty: ${archive_file}"
+                return 1
+            fi
         else
-            log_warn "CDS archive file not created: ${archive_file}"
+            # Java 25 may not support -XX:ArchiveClassesAtExit with -version
+            # Try alternative approach with a null main class
+            verbose "Fallback: Generating CDS using alternative method"
+
+            # Create a temporary Java program that does nothing
+            local temp_src="${CDS_DIR}/Dumper.java"
+            local temp_class_dir="${CDS_DIR}/temp-class"
+            mkdir -p "${temp_class_dir}"
+
+            # Write minimal class file
+            cat > "${temp_src}" << 'JAVA_EOF'
+public class Dumper {
+    public static void main(String[] args) {
+        // Minimal class to trigger CDS dump
+    }
+}
+JAVA_EOF
+
+            # Compile it
+            if javac -d "${temp_class_dir}" "${temp_src}" 2>/dev/null; then
+                # Run with archive dump
+                if java \
+                    -XX:ArchiveClassesAtExit="${archive_file}" \
+                    -XX:+UseCompactObjectHeaders \
+                    --enable-preview \
+                    -cp "${temp_class_dir}:${target_dir}" \
+                    Dumper 2>/dev/null; then
+
+                    sleep 1
+
+                    if [[ -f "${archive_file}" ]] && [[ $(stat -c%s "${archive_file}") -gt 0 ]]; then
+                        local archive_size
+                        archive_size=$(stat -c%s "${archive_file}")
+                        verbose "  Archive size: $((archive_size / 1024)) KB"
+                        log_info "CDS archive generated (alternative method): ${archive_file}"
+
+                        # Cleanup temp files
+                        rm -rf "${temp_src}" "${temp_class_dir}"
+                        return 0
+                    fi
+                fi
+            fi
+
+            # Cleanup
+            rm -f "${temp_src}"
+            rm -rf "${temp_class_dir}"
+
+            log_warn "Failed to generate CDS archive for ${module}"
             return 1
         fi
     else
-        # Fall back: try simpler approach without class list
-        verbose "Fallback: Generating CDS archive without explicit class list"
-
-        if java \
-            -XX:ArchiveClassesAtExit="${archive_file}" \
-            -XX:+UseCompactObjectHeaders \
-            --enable-preview \
-            -cp "${target_dir}" \
-            org.yawlfoundation.yawl.engine.YEngine \
-            2>/dev/null; then
-
-            log_info "CDS archive generated (fallback mode): ${archive_file}"
-
-            if [[ -f "${archive_file}" ]]; then
-                local archive_size
-                archive_size=$(stat -c%s "${archive_file}")
-                verbose "  Archive size: $((archive_size / 1024)) KB"
-                return 0
-            fi
-        fi
-
-        log_warn "Failed to generate CDS archive for ${module}"
+        log_warn "Failed to generate CDS archive for ${module} (Java execution failed)"
         return 1
     fi
 }

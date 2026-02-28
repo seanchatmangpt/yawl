@@ -169,8 +169,12 @@ main() {
         auto-generate)
             auto_generate_cds "${2:-0}"
             ;;
+        generate)
+            # Alias for auto-generate (called by dx.sh)
+            auto_generate_cds "${2:-0}"
+            ;;
         *)
-            echo "Usage: $0 {flags|should-use|validate|status|auto-generate}"
+            echo "Usage: $0 {flags|should-use|validate|status|auto-generate|generate}"
             echo ""
             echo "Commands:"
             echo "  flags              Print CDS JVM flags for Maven"
@@ -178,6 +182,7 @@ main() {
             echo "  validate           Validate all CDS archives"
             echo "  status             Report CDS status"
             echo "  auto-generate [1]  Regenerate CDS if modules changed (1=force)"
+            echo "  generate [1]       Regenerate CDS if modules changed (1=force)"
             exit 1
             ;;
     esac

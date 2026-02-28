@@ -1,0 +1,57 @@
+{
+  "tier_definitions": {
+    "tier_1": {
+      "name": "Fast Unit Tests",
+      "description": "Unit tests with execution time <100ms",
+      "timeout_seconds": 20,
+      "parallelism": 8,
+      "cluster_ids": [1],
+      "cluster_names": ["C1: Fast (<100ms)"],
+      "tags": ["unit"],
+      "continue_on_failure": false
+    },
+    "tier_2": {
+      "name": "Medium Integration Tests",
+      "description": "Integration tests with execution time 100ms-5s",
+      "timeout_seconds": 60,
+      "parallelism": 6,
+      "cluster_ids": [2],
+      "cluster_names": ["C2: Medium (100ms-5s)"],
+      "tags": ["integration"],
+      "continue_on_failure": false
+    },
+    "tier_3": {
+      "name": "Slow Acceptance Tests",
+      "description": "Slow tests with execution time 5s-30s",
+      "timeout_seconds": 180,
+      "parallelism": 2,
+      "cluster_ids": [3],
+      "cluster_names": ["C3: Slow (5s-30s)"],
+      "tags": ["slow", "acceptance"],
+      "continue_on_failure": false
+    },
+    "tier_4": {
+      "name": "Heavy Resource Tests",
+      "description": "Resource-intensive tests with execution time >30s",
+      "timeout_seconds": 300,
+      "parallelism": 1,
+      "cluster_ids": [4],
+      "cluster_names": ["C4: Heavy (>30s)"],
+      "tags": ["heavy", "stress"],
+      "continue_on_failure": false
+    }
+  },
+  "execution_strategy": {
+    "fail_fast_default": true,
+    "default_fail_fast_tier": 1,
+    "resume_on_failure": true,
+    "report_per_tier": true
+  },
+  "tier_mapping": {
+    "comment": "Maps test cluster IDs to execution tiers",
+    "1": "tier_1",
+    "2": "tier_2",
+    "3": "tier_3",
+    "4": "tier_4"
+  }
+}
