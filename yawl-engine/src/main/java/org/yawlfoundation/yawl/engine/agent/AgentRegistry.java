@@ -76,18 +76,6 @@ public final class AgentRegistry {
         return executor;
     }
 
-    /**
-     * Updates an agent's state in the registry.
-     * Used internally for heartbeat renewal.
-     *
-     * @param agentId Agent UUID
-     * @param newState The new AgentState
-     */
-    void updateAgent(UUID agentId, AgentState newState) {
-        Objects.requireNonNull(agentId, "Agent ID cannot be null");
-        Objects.requireNonNull(newState, "Agent state cannot be null");
-        agents.put(agentId, newState);
-    }
 
     /**
      * Registers a new agent in the registry and starts its heartbeat renewal.
@@ -142,13 +130,14 @@ public final class AgentRegistry {
     public boolean unregister(UUID agentId) {
         Objects.requireNonNull(agentId, "Agent ID cannot be null");
 
+        // Stop heartbeat renewal FIRST to prevent race condition
+        heartbeatManager.stopHeartbeat(agentId);
+
         boolean removed = agents.remove(agentId) != null;
         lifecycles.remove(agentId);
         threads.remove(agentId);
 
         if (removed) {
-            // Stop heartbeat renewal for this agent
-            heartbeatManager.stopHeartbeat(agentId);
             LOGGER.log(Level.INFO, () -> "Agent unregistered: " + agentId);
         }
 

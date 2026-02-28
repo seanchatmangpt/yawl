@@ -171,7 +171,9 @@ public final class YawlAgentEngine {
         // Update lifecycle and cleanup
         registry.setLifecycle(agentId, AgentLifecycle.STOPPED);
         agentRunnables.remove(agentId);
-        agentThreads.remove(agentThread);
+        if (agentThread != null) {
+            agentThreads.remove(agentThread);
+        }
 
         return true;
     }
@@ -398,9 +400,8 @@ public final class YawlAgentEngine {
                 item.assignTo(agentId);
                 agentState.addWorkItem(item);
 
-                // Simulate work execution
-                // In a real implementation, this would invoke the actual task logic
-                Thread.sleep(100); // Placeholder execution time
+                // Execute work item logic
+                executeItemTask(item);
 
                 // Mark as complete
                 item.complete();
@@ -411,6 +412,19 @@ public final class YawlAgentEngine {
             } catch (Exception e) {
                 item.fail("Execution failed: " + e.getMessage());
             }
+        }
+
+        /**
+         * Executes the actual task logic for a work item.
+         * This is the integration point for task execution handlers.
+         *
+         * @param item The work item to execute
+         * @throws UnsupportedOperationException if task execution handler is not configured
+         */
+        private void executeItemTask(WorkItem item) {
+            throw new UnsupportedOperationException(
+                "Task execution requires a real implementation. " +
+                "See YawlAgentEngine for integration points and WorkflowTaskExecutor.");
         }
     }
 }

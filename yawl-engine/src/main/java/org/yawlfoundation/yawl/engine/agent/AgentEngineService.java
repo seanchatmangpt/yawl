@@ -102,10 +102,10 @@ public class AgentEngineService {
 
         if (engine != null) {
             AgentRegistry registry = engine.getRegistry();
-            result.put("total_agents", registry.getTotalAgents());
-            result.put("running_agents", registry.getRunningAgents().size());
-            result.put("failed_agents", registry.getFailedAgents().size());
-            result.put("agent_states", registry.getAllAgentStates());
+            result.put("total_agents", registry.getAgentCount());
+            result.put("running_agents", registry.getActiveAgents().size());
+            result.put("healthy_agents", registry.getHealthyAgents().size());
+            result.put("all_agents", registry.getAllAgents());
         }
 
         return result;
