@@ -90,6 +90,15 @@ public record AgentState(
     }
 
     /**
+     * Get the agent ID (accessor for record component).
+     *
+     * @return UUID of this agent
+     */
+    public UUID getAgentId() {
+        return agentId;
+    }
+
+    /**
      * Get the remaining TTL duration in milliseconds.
      *
      * @return Milliseconds until expiration, or 0 if expired
