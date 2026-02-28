@@ -1,0 +1,372 @@
+# YAWL v6 — Continuous Validation Gates (dx.sh Integration)
+#
+# Comprehensive validation pipeline that enforces code quality gates
+# via dx.sh (compile + test + guards + invariants phases).
+#
+# Triggers: Every push to main/develop and all PRs
+# Gates: HYPER_STANDARDS → Compile → Test → Guards → Invariants
+#
+# Features:
+#   - Fast-fail: First violation stops remaining gates
+#   - CI environment: Sets CLAUDE_CODE_REMOTE=true for proxy support
+#   - Receipt parsing: Structured JSON reports for each phase
+#   - GitHub integration: Job summary + annotations + artifacts
+#   - Caching: Maven + test results for faster iterations
+#
+# Matrix: Only Java 25 (YAWL v6 requirement)
+#
+# Exit Strategy:
+#   - Phase GREEN: Continue to next phase
+#   - Phase RED: Fail job, post detailed error comment
+#   - Missing receipt: Exit 1 (transient), retry eligible
+#   - Invalid receipt JSON: Exit 1 (transient), retry eligible
+
+name: Validation Gates (dx.sh Integration)
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'src/**'
+      - 'yawl-*/src/**'
+      - 'pom.xml'
+      - 'yawl-*/pom.xml'
+      - 'scripts/dx.sh'
+      - '.github/workflows/validate-gates.yml'
+  pull_request:
+    branches: [main, master, develop]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  actions: write
+
+env:
+  JAVA_VERSION: 25
+  JAVA_DISTRIBUTION: temurin
+  MAVEN_OPTS: >-
+    -Xmx4g
+    -Xms1g
+    -XX:+UseZGC
+    -XX:+ZGenerational
+    -Djava.awt.headless=true
+    -Dmaven.artifact.threads=10
+  MAVEN_BATCH_FLAGS: --batch-mode --no-transfer-progress -q
+  CI_ENVIRONMENT: true
+  CLAUDE_CODE_REMOTE: true
+
+jobs:
+  # =========================================================================
+  # Phase 1: HYPER_STANDARDS (Forbidden patterns scan)
+  #
+  # Fastest gate: Detects TODO, FIXME, mock, stub, fake, empty returns,
+  # silent fallbacks before compilation. Blocks all downstream gates.
+  # =========================================================================
+  hyper-standards:
+    name: HYPER_STANDARDS (Forbidden Patterns)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for forbidden patterns
+        id: scan
+        run: |
+          echo "Scanning for HYPER_STANDARDS violations..."
+          VIOLATIONS=0
+
+          # Pattern 1: Deferred work markers (TODO, FIXME, XXX, etc.)
+          if grep -rn --include="*.java" \
+              -E '//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|placeholder|not\s+implemented\s+yet|coming\s+soon)' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::DEFERRED WORK MARKERS found in production code"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 2: Mock/stub method names in production code
+          if grep -rn --include="*.java" \
+              -E '(mock|stub|fake|demo)[A-Z][a-zA-Z]*\s*[=(]' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::MOCK/STUB METHOD NAMES found in production code"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 3: Mock class names in production code
+          if grep -rn --include="*.java" \
+              -E '(class|interface)\s+(Mock|Stub|Fake|Demo)[A-Za-z]*\s+(implements|extends|\{)' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::MOCK CLASS NAMES found in production code"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 4: Empty no-op method bodies
+          if grep -rn --include="*.java" \
+              -E 'public\s+void\s+\w+\([^)]*\)\s*\{\s*\}' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::EMPTY NO-OP METHOD BODIES found"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          # Pattern 5: Mock framework imports in production code
+          if grep -rn --include="*.java" \
+              -E 'import\s+(org\.mockito|org\.easymock|org\.jmock|org\.powermock)' \
+              src/ yawl-*/src/ 2>/dev/null | grep -v '/test/'; then
+            echo "::error::MOCK FRAMEWORK IMPORTS in production src/"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          echo "violations=$VIOLATIONS" >> "$GITHUB_OUTPUT"
+
+          if [ "$VIOLATIONS" -gt 0 ]; then
+            echo "## HYPER_STANDARDS Violations: $VIOLATIONS" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The following HYPER_STANDARDS violations must be fixed:" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Remove all TODO/FIXME/XXX/HACK comments" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Remove all mock/stub/fake code from production sources" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Implement real behavior or throw UnsupportedOperationException" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Reference: \`.claude/HYPER_STANDARDS.md\`" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          else
+            echo "## HYPER_STANDARDS: PASSED" >> "$GITHUB_STEP_SUMMARY"
+            echo "No forbidden patterns detected in production code." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # =========================================================================
+  # Phase 2: dx.sh all (Compile + Test + Guards + Invariants)
+  #
+  # Runs dx.sh all which executes:
+  # - Compile: Full build of all modules
+  # - Test: Unit tests with full coverage
+  # - Guards: Detects remaining issues (H phase)
+  # - Invariants: Q phase validation
+  #
+  # Depends on: hyper-standards passing
+  # =========================================================================
+  dx-validation:
+    name: dx.sh Validation (Compile + Test + Validate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    needs: hyper-standards
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Cache test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            target/surefire-reports
+            yawl-*/target/surefire-reports
+            .yawl/test-cache
+          key: ${{ runner.os }}-test-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-test-
+
+      - name: Run dx.sh all (Full Validation)
+        id: dx-validation
+        run: |
+          echo "Running dx.sh all in CI environment..."
+          export CLAUDE_CODE_REMOTE=true
+          export DX_VERBOSE=0
+          export DX_CLEAN=0
+          export DX_TIMINGS=1
+
+          # Run dx.sh all and capture exit code
+          if bash scripts/dx.sh all 2>&1 | tee /tmp/dx-output.log; then
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+            echo "## dx.sh Validation: PASSED" >> "$GITHUB_STEP_SUMMARY"
+          else
+            exit_code=$?
+            echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+            echo "## dx.sh Validation: FAILED (exit $exit_code)" >> "$GITHUB_STEP_SUMMARY"
+            exit $exit_code
+          fi
+
+      - name: Collect receipts
+        if: always()
+        id: receipts
+        run: |
+          echo "Collecting validation receipts..."
+          RECEIPT_DIR=".claude/receipts"
+          RECEIPTS_FOUND=0
+
+          if [[ -d "$RECEIPT_DIR" ]]; then
+            for receipt in "$RECEIPT_DIR"/*-receipt.json; do
+              if [[ -f "$receipt" ]]; then
+                echo "Found receipt: $(basename $receipt)"
+                RECEIPTS_FOUND=$((RECEIPTS_FOUND + 1))
+              fi
+            done
+          fi
+
+          echo "receipts_found=$RECEIPTS_FOUND" >> "$GITHUB_OUTPUT"
+          echo "Found $RECEIPTS_FOUND receipt(s)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Parse and validate receipts
+        if: always() && steps.receipts.outputs.receipts_found > 0
+        run: |
+          echo "Parsing dx.sh receipt files..."
+          RECEIPT_DIR=".claude/receipts"
+          EXIT_CODE=0
+
+          # Check each receipt file
+          for receipt in "$RECEIPT_DIR"/*-receipt.json; do
+            if [[ ! -f "$receipt" ]]; then
+              continue
+            fi
+
+            echo ""
+            echo "=== $(basename $receipt) ==="
+
+            # Validate JSON
+            if ! jq empty "$receipt" 2>/dev/null; then
+              echo "ERROR: Invalid JSON in $(basename $receipt)"
+              EXIT_CODE=1
+              continue
+            fi
+
+            # Extract status
+            local phase
+            local status
+            local violations_count
+
+            phase=$(jq -r '.phase // "unknown"' "$receipt")
+            status=$(jq -r '.status // "UNKNOWN"' "$receipt")
+            violations_count=$(jq '.violations_found // (.violations | length) // 0' "$receipt")
+
+            echo "Phase: $phase"
+            echo "Status: $status"
+            echo "Violations: $violations_count"
+
+            # Format for GitHub
+            {
+              echo "## Validation: $phase"
+              echo ""
+              echo "| Metric | Value |"
+              echo "|--------|-------|"
+              echo "| Phase | $phase |"
+              echo "| Status | $status |"
+              echo "| Violations | $violations_count |"
+              echo ""
+
+              # Show violations if any
+              if [[ "$violations_count" -gt 0 ]]; then
+                echo "### Issues Found"
+                echo ""
+                jq -r '.violations[]? | select(. != null) | "- \(.pattern // .invariant): \(.file // "unknown"):\(.line // "?") \(.content // .issue // "")"' "$receipt" 2>/dev/null | head -10
+                echo ""
+              fi
+
+              # Check status
+              if [[ "$status" != "GREEN" ]]; then
+                echo "**Action Required**: Fix violations and re-run validation"
+                echo ""
+                EXIT_CODE=2
+              fi
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          exit $EXIT_CODE
+
+      - name: Upload receipt files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-receipts
+          path: .claude/receipts/*-receipt.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dx-build-logs
+          path: /tmp/dx-output.log
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: |
+            target/surefire-reports/
+            yawl-*/target/surefire-reports/
+          retention-days: 7
+          if-no-files-found: warn
+
+  # =========================================================================
+  # Phase 3: Summary and Final Status
+  #
+  # Aggregate results from all validation phases.
+  # Fail job if any required gate failed.
+  # =========================================================================
+  validation-summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [hyper-standards, dx-validation]
+    if: always()
+
+    steps:
+      - name: Build summary
+        run: |
+          echo "# Validation Gate Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Gate | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| HYPER_STANDARDS | ${{ needs.hyper-standards.result == 'success' && '✓ PASSED' || '✗ FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| dx.sh Validation | ${{ needs.dx-validation.result == 'success' && '✓ PASSED' || '✗ FAILED' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Commit**: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Branch**: ${{ github.head_ref || github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Author**: @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if validation gates failed
+        run: |
+          FAILED=false
+
+          if [ "${{ needs.hyper-standards.result }}" != "success" ]; then
+            echo "::error::HYPER_STANDARDS validation failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.dx-validation.result }}" != "success" ]; then
+            echo "::error::dx.sh validation failed"
+            FAILED=true
+          fi
+
+          if [ "$FAILED" = "true" ]; then
+            echo ""
+            echo "::group::Remediation Steps"
+            echo "1. Review validation gate failures above"
+            echo "2. Fix violations in your code"
+            echo "3. Commit changes and push to trigger re-validation"
+            echo ""
+            echo "For detailed logs, download the validation-receipts artifact."
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          echo "All validation gates PASSED."

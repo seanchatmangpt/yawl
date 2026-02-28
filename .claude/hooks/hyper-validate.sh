@@ -6,12 +6,241 @@
 # Modes:
 #   Hook mode (no args):   reads JSON from stdin (Claude Code hooks framework)
 #   Batch mode (dirs...):  scans provided directories; PY-6 completeness check
+#   Emit mode (--emit-dir): validates compiled output from generator
+#
+# Parameters:
+#   --emit-dir <dir>       Validate compiled output directory
+#   --receipt-file <path>  Custom receipt output path (default: .claude/receipts/guard-receipt.json)
+#   --json-only            Output only JSON (no colors, for CI)
 
 set -euo pipefail
 
+# ─── HELPER: Generate fix guidance ──────────────────────────────────────
+get_fix_guidance() {
+    local pattern="$1"
+    case "$pattern" in
+        H_TODO)
+            echo "Either implement real logic or throw UnsupportedOperationException with a clear message"
+            ;;
+        H_MOCK)
+            echo "Delete mock/stub/fake class or implement real service with actual dependencies"
+            ;;
+        H_MOCK_CLASS)
+            echo "Rename class to real name or delete from production code"
+            ;;
+        H_SILENT)
+            echo "Throw exception instead of logging, or propagate the error to caller"
+            ;;
+        *)
+            echo "Fix guard violation to match FORTUNE 5 standards"
+            ;;
+    esac
+}
+
+# ─── HELPER: Escape JSON strings ────────────────────────────────────────
+escape_json_string() {
+    local s="$1"
+    # Escape backslashes first, then quotes, then control characters
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    echo "$s"
+}
+
+# ─── HELPER: Generate summary counts ────────────────────────────────────
+generate_summary() {
+    local violations_json="$1"
+    local h_todo_count=0
+    local h_mock_count=0
+    local h_mock_class_count=0
+    local h_silent_count=0
+
+    h_todo_count=$(echo "$violations_json" | grep -o '"pattern":"H_TODO"' | wc -l)
+    h_mock_count=$(echo "$violations_json" | grep -o '"pattern":"H_MOCK"' | wc -l)
+    h_mock_class_count=$(echo "$violations_json" | grep -o '"pattern":"H_MOCK_CLASS"' | wc -l)
+    h_silent_count=$(echo "$violations_json" | grep -o '"pattern":"H_SILENT"' | wc -l)
+
+    cat <<EOF
+    "h_todo_count": $h_todo_count,
+    "h_mock_count": $h_mock_count,
+    "h_mock_class_count": $h_mock_class_count,
+    "h_silent_count": $h_silent_count,
+    "total_violations": $((h_todo_count + h_mock_count + h_mock_class_count + h_silent_count))
+EOF
+}
+
+# ─── PARAMETER PARSING ─────────────────────────────────────────────────────
+EMIT_DIR=""
+RECEIPT_FILE=".claude/receipts/guard-receipt.json"
+JSON_ONLY=0
+VALIDATE_EMIT_MODE=0
+REMAINING_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --emit-dir)
+            EMIT_DIR="$2"
+            VALIDATE_EMIT_MODE=1
+            shift 2
+            ;;
+        --receipt-file)
+            RECEIPT_FILE="$2"
+            shift 2
+            ;;
+        --json-only)
+            JSON_ONLY=1
+            shift
+            ;;
+        --validate-emit)
+            # Internal mode for recursive call
+            EMIT_DIR="$2"
+            RECEIPT_FILE="$3"
+            JSON_ONLY="${4:-0}"
+            VALIDATE_EMIT_MODE=1
+            shift 4
+            ;;
+        *)
+            REMAINING_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# If --emit-dir provided, validate that directory
+if [ "$VALIDATE_EMIT_MODE" -eq 1 ] && [ -n "$EMIT_DIR" ]; then
+
+    # Validate emit directory
+    if [ ! -d "$EMIT_DIR" ]; then
+        mkdir -p "$(dirname "$RECEIPT_FILE")"
+        ERROR_MSG="Emit directory not found: $EMIT_DIR"
+        ERROR_MSG_ESC=$(escape_json_string "$ERROR_MSG")
+        cat > "$RECEIPT_FILE" <<EOF
+{
+  "phase": "guards",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "emit_directory": "$EMIT_DIR",
+  "files_scanned": 0,
+  "violations": [],
+  "summary": {
+    "h_todo_count": 0,
+    "h_mock_count": 0,
+    "h_mock_class_count": 0,
+    "h_silent_count": 0,
+    "total_violations": 0
+  },
+  "status": "RED",
+  "error_message": "$ERROR_MSG_ESC"
+}
+EOF
+        if [ "$JSON_ONLY" -eq 0 ]; then
+            echo "[hyper-validate.sh] ERROR: $ERROR_MSG" >&2
+        fi
+        exit 2
+    fi
+
+    # Scan Java files in emit directory
+    FILES_SCANNED=0
+    VIOLATION_COUNT=0
+    VIOLATIONS_ARRAY=""
+    VIOLATIONS_JSON_BLOCK=""
+
+    # Collect all Java files first
+    java_files=()
+    while IFS= read -r java_file; do
+        java_files+=("$java_file")
+    done < <(find "$EMIT_DIR" -name "*.java" -type f 2>/dev/null)
+
+    # Define patterns once (outside the loop to avoid declare -A issues in subshells)
+    declare -A patterns=(
+        [H_TODO]='//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|NOTE:.*implement|REVIEW:.*implement|TEMPORARY|@incomplete|@unimplemented|@stub|@mock|@fake|not\s+implemented\s+yet|coming\s+soon|placeholder|for\s+demo|simplified\s+version|basic\s+implementation)'
+        [H_MOCK]='(mock|stub|fake|demo)[A-Z][a-zA-Z]*\s*[=(]'
+        [H_MOCK_CLASS]='(class|interface)\s+(Mock|Stub|Fake|Demo)[A-Za-z]*\s+(implements|extends|\{)'
+        [H_SILENT]='log\.(warn|error)\([^)]*"[^"]*not\s+implemented[^"]*"'
+    )
+
+    # Process each Java file
+    for java_file in "${java_files[@]}"; do
+        FILES_SCANNED=$((FILES_SCANNED + 1))
+
+        for pattern_name in "${!patterns[@]}"; do
+            pattern_regex="${patterns[$pattern_name]}"
+
+            if matches=$(grep -n -E "$pattern_regex" "$java_file" 2>/dev/null || true); then
+                if [ -n "$matches" ]; then
+                    while IFS=':' read -r line_num line_content; do
+                        VIOLATION_COUNT=$((VIOLATION_COUNT + 1))
+
+                        # Escape content for JSON
+                        content_esc=$(escape_json_string "$line_content")
+                        guidance=$(get_fix_guidance "$pattern_name")
+                        guidance_esc=$(escape_json_string "$guidance")
+
+                        # Add violation to array
+                        violation="{\"pattern\":\"$pattern_name\",\"severity\":\"FAIL\",\"file\":\"$java_file\",\"line\":$line_num,\"content\":\"$content_esc\",\"fix_guidance\":\"$guidance_esc\"}"
+
+                        if [ -z "$VIOLATIONS_ARRAY" ]; then
+                            VIOLATIONS_ARRAY="$violation"
+                        else
+                            VIOLATIONS_ARRAY="$VIOLATIONS_ARRAY,$violation"
+                        fi
+                    done <<< "$matches"
+                fi
+            fi
+        done
+    done
+
+    # Determine status
+    STATUS="GREEN"
+    if [ "$VIOLATION_COUNT" -gt 0 ]; then
+        STATUS="RED"
+    fi
+
+    # Create receipt directory
+    mkdir -p "$(dirname "$RECEIPT_FILE")"
+
+    # Generate receipt JSON with proper structure
+    TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    VIOLATIONS_JSON_BLOCK=""
+    if [ -n "$VIOLATIONS_ARRAY" ]; then
+        VIOLATIONS_JSON_BLOCK="[$VIOLATIONS_ARRAY]"
+    else
+        VIOLATIONS_JSON_BLOCK="[]"
+    fi
+
+    cat > "$RECEIPT_FILE" <<RECEIPT_EOF
+{
+  "phase": "guards",
+  "timestamp": "$TIMESTAMP",
+  "emit_directory": "$EMIT_DIR",
+  "files_scanned": $FILES_SCANNED,
+  "violations": $VIOLATIONS_JSON_BLOCK,
+  "summary": {
+$(generate_summary "$VIOLATIONS_ARRAY")
+  },
+  "status": "$STATUS"
+}
+RECEIPT_EOF
+
+    # Output based on JSON_ONLY flag
+    if [ "$JSON_ONLY" -eq 0 ]; then
+        if [ "$STATUS" = "GREEN" ]; then
+            echo "[hyper-validate.sh] ✅ PASS: No violations found in $FILES_SCANNED files"
+        else
+            echo "[hyper-validate.sh] ❌ FAIL: Found $VIOLATION_COUNT violations in $FILES_SCANNED files"
+        fi
+        echo ""
+        echo "Receipt written to: $RECEIPT_FILE"
+    fi
+
+    [ "$STATUS" = "GREEN" ] && exit 0 || exit 2
+fi
+
 # ─── PY-6: Batch mode — scan directories and assert completeness (FM14, FM16) ─
 # Usage: bash .claude/hooks/hyper-validate.sh src/ test/ yawl/
-if [ "$#" -gt 0 ]; then
+if [ "${#REMAINING_ARGS[@]}" -gt 0 ]; then
+    set -- "${REMAINING_ARGS[@]}"
     REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
     RED='\033[0;31m'
     GREEN='\033[0;32m'
@@ -48,15 +277,19 @@ if [ "$#" -gt 0 ]; then
     while IFS= read -r java_file; do
         result=$(FILE="$java_file" TOOL="batch" bash "${BASH_SOURCE[0]}" --file-only "$java_file" 2>&1) || {
             echo "$result" >&2
-            BATCH_FAILURES=$(( BATCH_FAILURES + 1 ))
+            BATCH_FAILURES=$((BATCH_FAILURES + 1))
         }
     done < <(find "$@" -name "*.java" 2>/dev/null)
 
     if [ "$BATCH_FAILURES" -gt 0 ]; then
-        echo -e "${RED}[FAIL] Batch scan: $BATCH_FAILURES file(s) with violations${NC}" >&2
+        if [ "$JSON_ONLY" -eq 0 ]; then
+            echo -e "${RED}[FAIL] Batch scan: $BATCH_FAILURES file(s) with violations${NC}" >&2
+        fi
         exit 2
     else
-        echo -e "${GREEN}[PASS] Batch scan: no violations in $SCANNED files${NC}"
+        if [ "$JSON_ONLY" -eq 0 ]; then
+            echo -e "${GREEN}[PASS] Batch scan: no violations in $SCANNED files${NC}"
+        fi
         exit 0
     fi
 fi
@@ -89,6 +322,11 @@ fi
 
 # Only validate Java source files in src/
 if [[ ! "$FILE" =~ \.java$ ]] || [[ ! "$FILE" =~ ^/.*/(src|test)/ ]]; then
+    exit 0
+fi
+
+# Skip validation for test fixtures (intentional violation fixtures for testing)
+if [[ "$FILE" =~ /test/fixtures/(h-guards|q-invariants)/ ]]; then
     exit 0
 fi
 
