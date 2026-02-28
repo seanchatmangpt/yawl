@@ -133,7 +133,7 @@ public class GenericPartyAgent {
 
         logger.info("GenericPartyAgent [{}] v{} started on port {}",
             config.getAgentName(), config.version(), config.port());
-        logger.info("  Capability: {}", config.getCapability().getDescription());
+        logger.info("  Capability: {}", config.getCapability().description());
         logger.info("  Agent card: http://localhost:{}/.well-known/agent.json", config.port());
     }
 
@@ -224,7 +224,7 @@ public class GenericPartyAgent {
             }
             String json = """
                 {"domain":"%s","available":true,"capacity":"normal"}""".formatted(
-                config.getCapability().getDomainName());
+                config.getCapability().domainName());
             byte[] body = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
@@ -251,10 +251,10 @@ public class GenericPartyAgent {
                 }
               ]
             }""".formatted(
-                config.getCapability().getDomainName(),
-                config.getCapability().getDescription(),
+                config.getCapability().domainName(),
+                config.getCapability().description(),
                 config.version(),
-                config.getCapability().getDomainName());
+                config.getCapability().domainName());
     }
 
     // =========================================================================
@@ -326,7 +326,7 @@ public class GenericPartyAgent {
         try {
             // Query agent registry for capable substitute agents
             List<AgentInfo> capableAgents = config.registryClient().findAgentsByCapability(
-                config.getCapability().getDomainName());
+                config.getCapability().domainName());
 
             // Filter out this agent
             String currentAgentId = config.getAgentName();
@@ -336,7 +336,7 @@ public class GenericPartyAgent {
 
             if (substituteAgents.isEmpty()) {
                 logger.info("[{}] No substitute agents available for capability: {}",
-                    currentAgentId, config.getCapability().getDomainName());
+                    currentAgentId, config.getCapability().domainName());
                 throw new HandoffException("No substitute agents available for work item: " + workItemId);
             }
 

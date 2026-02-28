@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.integration.safe.agent;
 
 import org.yawlfoundation.yawl.integration.autonomous.GenericPartyAgent;
 import org.yawlfoundation.yawl.integration.autonomous.AgentConfiguration;
+import org.yawlfoundation.yawl.integration.safe.event.SAFeEventBus;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.stateless.listener.event.YEvent;
 
@@ -49,7 +50,7 @@ import java.util.concurrent.CompletableFuture;
  * @version 6.0
  * @since YAWL 6.0
  */
-public sealed abstract class SAFeAgent {
+public abstract class SAFeAgent {
 
     protected final GenericPartyAgent baseAgent;
     protected final SAFeAgentRole role;

@@ -252,7 +252,9 @@ public class SAFeAgentRegistry {
             return Collections.emptyList();
         }
 
-        Set<String> requiredSet = new HashSet<>(requiredCapabilities);
+        Set<String> requiredSet = requiredCapabilities.stream()
+            .map(AgentCapability::name)
+            .collect(java.util.stream.Collectors.toSet());
         return agentById.values().stream()
             .filter(card -> card.capabilities().containsAll(requiredSet))
             .collect(Collectors.toUnmodifiableList());

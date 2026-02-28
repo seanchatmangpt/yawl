@@ -97,7 +97,7 @@ public record AgentConfiguration(
      * @return the agent name
      */
     public String getAgentName() {
-        return capability.getDomainName();
+        return capability.domainName();
     }
 
     /**

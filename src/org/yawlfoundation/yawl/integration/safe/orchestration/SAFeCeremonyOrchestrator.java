@@ -314,16 +314,35 @@ public class SAFeCeremonyOrchestrator {
     /**
      * Represents a ceremony session with participants and status.
      */
-    public record CeremonySession(
-        String ceremonyId,
-        String ceremonyType,
-        List<SAFeAgentCard> participants,
-        Instant startTime,
-        Map<String, Object> metadata
-    ) {
+    public static class CeremonySession {
+        private final String ceremonyId;
+        private final String ceremonyType;
+        private final List<SAFeAgentCard> participants;
+        private final Instant startTime;
+        private final Map<String, Object> metadata;
         private final Map<String, ParticipantStatus> participantStates = new ConcurrentHashMap<>();
         private Instant completedTime;
         private CeremonyOutcome outcome;
+
+        public CeremonySession(
+            String ceremonyId,
+            String ceremonyType,
+            List<SAFeAgentCard> participants,
+            Instant startTime,
+            Map<String, Object> metadata
+        ) {
+            this.ceremonyId = ceremonyId;
+            this.ceremonyType = ceremonyType;
+            this.participants = participants;
+            this.startTime = startTime;
+            this.metadata = metadata;
+        }
+
+        public String ceremonyId() { return ceremonyId; }
+        public String ceremonyType() { return ceremonyType; }
+        public List<SAFeAgentCard> participants() { return participants; }
+        public Instant startTime() { return startTime; }
+        public Map<String, Object> metadata() { return metadata; }
 
         /**
          * Records participant status update.

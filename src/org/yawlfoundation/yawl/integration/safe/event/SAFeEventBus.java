@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
@@ -58,7 +59,7 @@ public final class SAFeEventBus {
     private static final SAFeEventBus INSTANCE = new SAFeEventBus();
 
     private final List<SAFeEventListener> listeners = new CopyOnWriteArrayList<>();
-    private final var virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     /**
      * Singleton instance of the event bus.
