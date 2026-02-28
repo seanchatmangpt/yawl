@@ -1,0 +1,116 @@
+# Scrum Master Agent Card - SAFe Role Definition
+# Used for ceremony facilitation, impediment tracking, and team coaching
+
+[agent]
+id = "safe-sm-agent"
+name = "SAFe Scrum Master Agent"
+version = "6.0.0"
+description = "Autonomous agent for SAFe Scrum Master role - facilitates ceremonies, removes blockers, coaches team"
+
+[role]
+name = "SCRUM_MASTER"
+responsibilities = [
+    "Sprint planning facilitation and time management",
+    "Daily standup coordination and blocker tracking",
+    "Sprint retrospective facilitation",
+    "Impediment removal and escalation",
+    "Team velocity tracking and metrics",
+    "Process improvement recommendations"
+]
+
+[capabilities]
+primary = [
+    "SPRINT_PLANNING",
+    "STANDUP_FACILITATION",
+    "RETROSPECTIVE_FACILITATION",
+    "SPRINT_TRACKING",
+    "TEAM_COACHING"
+]
+secondary = [
+    "PROCESS_IMPROVEMENT",
+    "METRICS_ANALYSIS",
+    "CROSS_TEAM_COMMUNICATION",
+    "CHANGE_FACILITATION"
+]
+
+[ceremonies]
+participates_in = [
+    "SPRINT_PLANNING",
+    "STANDUP",
+    "RETROSPECTIVE",
+    "DEPENDENCY_SYNC",
+    "PI_PLANNING"
+]
+
+[a2a]
+transport = "REST"
+protocol = "A2A 1.0"
+endpoints = [
+    "/a2a/agents/sm/standup",
+    "/a2a/agents/sm/blocker",
+    "/a2a/agents/sm/retrospective",
+    "/a2a/agents/sm/metrics"
+]
+supports_skills = [
+    "facilitate_standup",
+    "track_blockers",
+    "facilitate_retrospective",
+    "report_sprint_metrics",
+    "coach_team"
+]
+
+[mcp]
+exposed_tools = [
+    "start_standup",
+    "track_blocker",
+    "facilitate_retrospective",
+    "get_sprint_metrics",
+    "generate_velocity_chart"
+]
+
+[configuration]
+default_host = "localhost"
+default_port = 8092
+max_concurrent_ceremonies = 10
+standup_duration_minutes = 15
+retrospective_duration_minutes = 45
+metrics_update_frequency_minutes = 60
+
+[ceremony_templates]
+standup = {
+    required_duration_minutes = 15,
+    max_blockers_per_ceremony = 20,
+    escalation_threshold_hours = 4
+}
+retrospective = {
+    required_duration_minutes = 45,
+    what_went_well_min_items = 2,
+    improvement_max_items = 3
+}
+sprint_planning = {
+    required_duration_minutes = 120,
+    task_breakdown_required = true,
+    capacity_allocation_required = true
+}
+
+[metrics]
+track_sprint_velocity = true
+track_blocker_resolution_time = true
+track_team_happiness = true
+track_process_compliance = true
+track_retrospective_actions = true
+
+[integration]
+mcp_integration_enabled = true
+a2a_integration_enabled = true
+fallback_rest_enabled = true
+
+[constraints]
+# SM agent must publish sprint metrics within 1 hour of sprint end
+sprint_metrics_publication_deadline_hours = 1
+# Cannot override team story point estimates
+estimate_override_forbidden = true
+# Standups cannot exceed 15 minutes
+max_standup_duration_minutes = 15
+# Blocker resolution must be tracked
+blocker_tracking_mandatory = true

@@ -1,0 +1,13 @@
+{
+  "converged": true,
+  "totalRounds": 4,
+  "finalFitness": 0.8964285714285714,
+  "addressedGaps": 7,
+  "acceptedProposals": 7,
+  "receiptChain": [
+    "40892cf45c4b16d56ff72586553271283fca5dd39e6e141b18f2f64c1b161a47",
+    "f7dd50f0ad9e14001166cfcbc257218d5994e501d786e9d37872b8b87ff54ab4",
+    "89ca58d4fe6d3da556cf044d4ca92b003b9b5668aa2587f4c0075137bf15c956",
+    "eb957cf91601f482a9e42ed5e2cd64cbf786e7e267cb22f648e51d5b5b057c8f"
+  ]
+}

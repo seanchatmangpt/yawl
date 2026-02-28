@@ -94,9 +94,6 @@
 
         <!-- Layer 6: Top-level application -->
         <module>yawl-mcp-a2a-app</module>
-
-        <!-- Layer 7: DSPy integration (optional, requires Python/GraalPy) -->
-        <module>yawl-dspy</module>
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.
