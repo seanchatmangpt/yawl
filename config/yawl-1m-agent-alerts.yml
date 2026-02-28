@@ -1,0 +1,578 @@
+# ============================================================================
+# YAWL v6.0.0 - Alert Rules for 1M Autonomous Agents
+# ============================================================================
+# Version: 1.0
+# Date: 2026-02-28
+# Status: Production Ready
+# Integration: Prometheus AlertManager routing
+#
+# Usage:
+#   Add to prometheus.yml under rule_files:
+#   - '/etc/prometheus/yawl-1m-agent-alerts.yml'
+#
+# Alert severity levels:
+#   - critical: Page on-call immediately (SLA: 5 min)
+#   - warning: Email ops team (SLA: 30 min)
+# ============================================================================
+
+groups:
+  # ==========================================================================
+  # SECTION 1: HEARTBEAT EXECUTOR METRICS (1M agent heartbeat renewal)
+  # ==========================================================================
+  - name: yawl_1m_heartbeat_alerts
+    interval: 30s
+    rules:
+      # ALERT 1: Heartbeat Latency Exceeded SLO
+      - alert: HeartbeatExecutorLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yawl_heartbeat_latency_ms_bucket[5m])) by (le)
+          ) > 100
+        for: 5m
+        labels:
+          severity: critical
+          component: heartbeat-executor
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "Heartbeat executor latency p95 > 100ms ({{ $value | humanize }}ms)"
+          description: |
+            Agent heartbeat latency has exceeded SLO threshold.
+            At 1M agents with 60s TTL, 16,667 heartbeats/sec must complete in <100ms p95.
+            If latency continues to grow, agents will fail renewal and disconnect.
+          dashboard: "http://grafana:3000/d/yawl-heartbeat"
+          runbook: "https://wiki.company.com/yawl/heartbeat-latency-high"
+          remediation: |
+            1. Check etcd cluster member count: kubectl exec etcd-0 -- etcdctl member list
+            2. If healthy, scale up etcd (add 2-3 members)
+            3. Monitor heartbeat latency p95; should drop to <50ms within 5 min of scaling
+            4. If issue persists, check engine CPU/memory (may need to scale engine)
+
+      # ALERT 2: Heartbeat Success Rate Degraded
+      - alert: HeartbeatSuccessRateLow
+        expr: |
+          (sum(rate(yawl_heartbeat_renewal_success{outcome="success"}[5m])) /
+           sum(rate(yawl_heartbeat_renewal_success[5m]))) < 0.995
+        for: 5m
+        labels:
+          severity: critical
+          component: heartbeat-executor
+          slo_type: availability
+          scale: 1m-agents
+        annotations:
+          summary: "Heartbeat success rate < 99.5% ({{ $value | humanizePercentage }})"
+          description: |
+            Agents are failing to renew heartbeats.
+            Failed agents will be marked DEAD after 2-minute grace period.
+            Expect cascading agent disconnections if not resolved quickly.
+          dashboard: "http://grafana:3000/d/yawl-heartbeat"
+          runbook: "https://wiki.company.com/yawl/heartbeat-failures"
+          remediation: |
+            1. Immediately check etcd quorum: kubectl exec etcd-0 -- etcdctl member list
+            2. If any members down, investigate node status: kubectl describe node <node-name>
+            3. Check engine logs: kubectl logs yawl-engine-0 | grep -i heartbeat | tail -50
+            4. If network partition detected, contact cloud provider
+            5. If etcd healthy, try engine restart: kubectl rollout restart deployment/yawl-engine
+
+      # ALERT 3: Heartbeat Queue Buildup (rarely occurs with unbounded executor)
+      - alert: HeartbeatExecutorQueueDeep
+        expr: yawl_heartbeat_executor_queue_depth > 1000
+        for: 2m
+        labels:
+          severity: warning
+          component: heartbeat-executor
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "Heartbeat executor queue depth > 1000 ({{ $value | humanize }})"
+          description: |
+            Unbounded virtual thread executor has >1000 queued heartbeat tasks.
+            This indicates saturation on the executor's carrier threads.
+          dashboard: "http://grafana:3000/d/yawl-heartbeat"
+          remediation: |
+            1. Check etcd health and network: kubectl get nodes -o wide
+            2. May indicate GC pauses on engine pods
+            3. Scale engine horizontally if CPU utilization > 70%
+
+  # ==========================================================================
+  # SECTION 2: AGENT MARKETPLACE & DISCOVERY METRICS
+  # ==========================================================================
+  - name: yawl_1m_marketplace_alerts
+    interval: 30s
+    rules:
+      # ALERT 4: Marketplace Query Latency High
+      - alert: MarketplaceQueryLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yawl_marketplace_query_latency_ms_bucket[5m])) by (le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: marketplace
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "Marketplace query latency p95 > 10ms ({{ $value | humanize }}ms)"
+          description: |
+            Agent discovery queries taking longer than expected.
+            O(K) optimized liveness filtering should be 1-5ms typical.
+            May indicate GC pauses, contention on liveness index, or high agent count.
+          dashboard: "http://grafana:3000/d/yawl-marketplace"
+          runbook: "https://wiki.company.com/yawl/marketplace-latency-high"
+          remediation: |
+            1. Check liveness index sync time: query yawl_marketplace_index_sync_time_ms p95
+            2. If high, GC pauses likely → check JVM alerts
+            3. If index sync time normal, may indicate live agent count unexpected
+            4. Check: yawl_marketplace_live_agents_count (should be ~100K-500K, not millions)
+
+      # ALERT 5: Live Agent Count Sudden Drop
+      - alert: LiveAgentCountDropped
+        expr: |
+          (yawl_marketplace_live_agents_count /
+           (yawl_marketplace_live_agents_count offset 10m)) < 0.95
+        for: 10m
+        labels:
+          severity: critical
+          component: marketplace
+          slo_type: availability
+          scale: 1m-agents
+        annotations:
+          summary: "Live agent count dropped > 5% in 10 min ({{ $value | humanizePercentage }})"
+          description: |
+            Significant number of agents have disconnected or failed to renew heartbeats.
+            May indicate heartbeat executor saturation, etcd registry failure, or network partition.
+          dashboard: "http://grafana:3000/d/yawl-marketplace"
+          runbook: "https://wiki.company.com/yawl/agent-disconnection"
+          remediation: |
+            1. Check heartbeat success rate: query rate(yawl_heartbeat_renewal_success{outcome="success"}[5m])
+            2. If <99.5%, follow HeartbeatSuccessRateLow runbook
+            3. Check etcd cluster health: kubectl exec etcd-0 -- etcdctl endpoint health
+            4. Check engine pod status: kubectl get pods -l app=yawl-engine
+            5. Monitor for cascading reconnects (if too many agents reconnect simultaneously, will cause load surge)
+
+      # ALERT 6: Agent Marketplace Index Stale
+      - alert: MarketplaceIndexSyncSlow
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yawl_marketplace_index_sync_time_ms_bucket[5m])) by (le)
+          ) > 50
+        for: 5m
+        labels:
+          severity: warning
+          component: marketplace
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "Marketplace index sync time p95 > 50ms ({{ $value | humanize }}ms)"
+          description: |
+            ConcurrentHashSet liveness index update taking longer than baseline.
+            Indicates contention on the index during agent publish/unpublish/heartbeat.
+          remediation: |
+            Check GC pause time (p95): likely culprit
+            Investigate heap utilization trends
+
+  # ==========================================================================
+  # SECTION 3: AGENT LIFECYCLE METRICS
+  # ==========================================================================
+  - name: yawl_1m_agent_lifecycle_alerts
+    interval: 30s
+    rules:
+      # ALERT 7: Agent Reconnect Storm Detected
+      - alert: AgentReconnectStormDetected
+        expr: |
+          rate(yawl_agent_reconnect_count[5m]) > (1000000 / 300)
+        for: 2m
+        labels:
+          severity: critical
+          component: agent-lifecycle
+          slo_type: stability
+          scale: 1m-agents
+        annotations:
+          summary: "Agent reconnect rate > 1% ({{ $value | humanize }}/sec)"
+          description: |
+            Cascading agent disconnections and reconnections detected.
+            Pattern indicates network partition, etcd failure, or engine availability issue.
+            May trigger exponential backoff and load reduction if sustained.
+          dashboard: "http://grafana:3000/d/yawl-agent-lifecycle"
+          runbook: "https://wiki.company.com/yawl/reconnect-storm"
+          remediation: |
+            1. IMMEDIATELY check etcd cluster consensus: kubectl exec etcd-0 -- etcdctl member list
+            2. Check engine pod status: kubectl get pods -l app=yawl-engine -o wide
+            3. Verify network connectivity: kubectl exec yawl-engine-0 -- ping -c 5 etcd-0
+            4. If etcd has quorum issues, page SRE for emergency recovery
+            5. If engine pods down, Kubernetes should auto-restart; monitor for stability
+            6. Once stabilized, monitor agent count recovery (should take 5-10 min to re-establish)
+
+      # ALERT 8: Agent Discovery Backoff Sustained
+      - alert: DiscoveryBackoffSustained
+        expr: yawl_discovery_backoff_cycles > 5
+        for: 30m
+        labels:
+          severity: critical
+          component: discovery-backoff
+          slo_type: availability
+          scale: 1m-agents
+        annotations:
+          summary: "Discovery backoff stuck at level {{ $value | humanize }} for >30 min"
+          description: |
+            Agents unable to find work for extended period.
+            Exponential backoff has capped at level 5 (sleep time = 1600ms minimum between polls).
+            Indicates either: (1) work is not being generated, or (2) engine is overloaded/unavailable.
+          dashboard: "http://grafana:3000/d/yawl-agent-lifecycle"
+          runbook: "https://wiki.company.com/yawl/discovery-backoff-stuck"
+          remediation: |
+            1. Check if work is actually available: query your workflow start rate
+            2. If work available: engine is likely overloaded
+               - Check GC pause time p95, heap utilization
+               - Check engine CPU/memory: kubectl top pod yawl-engine-0
+               - If >80% CPU, scale engine up (more pods or bigger resource limits)
+            3. If no work available: expected behavior
+               - Backoff will reset when work re-appears (automatic)
+               - Can manually reset if needed (post-incident review)
+
+      # ALERT 9: Agent State Duration Anomaly (DISCOVERING taking too long)
+      - alert: AgentDiscoveringStateLong
+        expr: |
+          histogram_quantile(0.95,
+            yawl_agent_state_duration_ms{state="DISCOVERING"}
+          ) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: agent-lifecycle
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "Agent DISCOVERING state p95 > 1000ms ({{ $value | humanize }}ms)"
+          description: |
+            Agents spending too long in DISCOVERING state.
+            Baseline with O(K) index should be <500ms p95.
+            May indicate marketplace latency issue or work availability problem.
+          remediation: |
+            Check MarketplaceQueryLatencyHigh alert
+            If marketplace latency normal, check if work available for agents
+
+  # ==========================================================================
+  # SECTION 4: ETCD REGISTRY METRICS
+  # ==========================================================================
+  - name: yawl_1m_etcd_alerts
+    interval: 30s
+    rules:
+      # ALERT 10: etcd Query Latency High
+      - alert: EtcdQueryLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(yawl_etcd_query_latency_ms_bucket[5m])) by (le)
+          ) > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: etcd
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "etcd query latency p95 > 100ms ({{ $value | humanize }}ms)"
+          description: |
+            Registry queries (heartbeat, discovery, publish) taking longer than expected.
+            May impact agent responsiveness and heartbeat renewal latency.
+          dashboard: "http://grafana:3000/d/yawl-etcd"
+          runbook: "https://wiki.company.com/yawl/etcd-latency-high"
+          remediation: |
+            1. Check etcd cluster member CPU/disk utilization: kubectl top pod etcd-*
+            2. Check for disk I/O saturation: kubectl logs etcd-0 | grep -i "slow"
+            3. If members overloaded, scale etcd (add members)
+            4. If disk I/O issue, may need to increase storage IOPS
+
+      # ALERT 11: etcd Replication Lag High
+      - alert: EtcdReplicationLagHigh
+        expr: yawl_etcd_replication_lag_ms{member_role="follower"} > 500
+        for: 5m
+        labels:
+          severity: critical
+          component: etcd
+          slo_type: consistency
+          scale: 1m-agents
+        annotations:
+          summary: "etcd replication lag > 500ms on {{ $labels.member_id }} ({{ $value | humanize }}ms)"
+          description: |
+            Follower significantly behind leader.
+            Risk of inconsistent reads if client connects to stale follower.
+          dashboard: "http://grafana:3000/d/yawl-etcd"
+          runbook: "https://wiki.company.com/yawl/etcd-replication-lag"
+          remediation: |
+            1. Check network partition: kubectl get nodes -o wide
+            2. Check follower pod logs: kubectl logs etcd-<follower> | tail -50
+            3. May need to restart follower: kubectl delete pod etcd-<follower>
+            4. If issue persists, cluster may have quorum problem (follow etcd-no-leader runbook)
+
+      # ALERT 12: etcd Cluster No Leader
+      - alert: EtcdNoLeader
+        expr: etcd_server_has_leader == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: etcd
+          slo_type: availability
+          scale: 1m-agents
+        annotations:
+          summary: "etcd cluster has no leader"
+          description: |
+            Cluster consensus lost. Agent registry completely unavailable.
+            Agents cannot renew heartbeats or discover work until resolved.
+            This is a CRITICAL incident requiring immediate response.
+          dashboard: "http://grafana:3000/d/yawl-etcd"
+          runbook: "https://wiki.company.com/yawl/etcd-no-leader"
+          remediation: |
+            CRITICAL INCIDENT RESPONSE (5-minute SLA)
+            1. SSH to etcd-0 pod: kubectl exec -it etcd-0 -- bash
+            2. Check etcd members: etcdctl member list
+            3. Look for network partition symptoms
+            4. If >2 members healthy: restart healthy members one at a time
+            5. If <2 members healthy: cluster is unrecoverable, need backup restore
+            6. Page SRE for emergency etcd cluster rebuild
+
+  # ==========================================================================
+  # SECTION 5: JVM & GARBAGE COLLECTION METRICS
+  # ==========================================================================
+  - name: yawl_1m_jvm_alerts
+    interval: 30s
+    rules:
+      # ALERT 13: GC Pause Time Exceeds Target
+      - alert: JVMGCPauseTimeHigh
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(jvm_gc_pause_seconds_bucket{gc="ZGC"}[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: jvm
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "GC pause time p99 > 500ms ({{ $value | humanizeDuration }})"
+          description: |
+            Garbage collection pauses impacting latency SLOs.
+            May indicate heap pressure or allocation rate spike.
+            Expected baseline with ZGC + -XX:MaxGCPauseMillis=100: p99 < 50ms.
+          dashboard: "http://grafana:3000/d/yawl-jvm"
+          runbook: "https://wiki.company.com/yawl/gc-pause-high"
+          remediation: |
+            1. Check heap utilization: query (jvm_memory_used_bytes / jvm_memory_max_bytes) * 100
+            2. If heap > 85%: Scale out (add pods, reduce agents per pod)
+            3. If heap < 80% but GC high: May indicate allocation spike
+               - Check work item throughput (may be processing surge)
+               - Check for memory leak in application code
+            4. Verify ZGC tuning parameters: -XX:MaxGCPauseMillis=100 -XX:ConcGCThreads=4
+
+      # ALERT 14: JVM Heap Pressure
+      - alert: JVMHeapPressure
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} /
+           jvm_memory_max_bytes{area="heap"}) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: jvm
+          slo_type: stability
+          scale: 1m-agents
+        annotations:
+          summary: "JVM heap > 90% ({{ $value | humanizePercentage }})"
+          description: |
+            Heap utilization critically high. Risk of OOMKilled by kubelet.
+            At 1M agents, each pod has ~36GB memory footprint.
+            Heap limit is typically 16GB (75% of 20GB pod limit).
+          dashboard: "http://grafana:3000/d/yawl-jvm"
+          runbook: "https://wiki.company.com/yawl/heap-pressure"
+          remediation: |
+            IMMEDIATE ACTION (prevent OOMKill):
+            1. Check agent count per pod: yawl_marketplace_live_agents_count / count(up{job="yawl-engine"})
+            2. If > 333K agents/pod (for 1M across 3 pods): Scale out immediately
+            3. Scale out: kubectl scale deployment yawl-engine --replicas=6
+            4. Monitor heap drop as agents redistribute
+            5. Once stabilized, adjust resource requests/limits and redeploy
+
+      # ALERT 15: Process CPU Usage High
+      - alert: ProcessCPUUsageHigh
+        expr: |
+          rate(process_cpu_seconds_total{job="yawl-engine"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: jvm
+          slo_type: capacity
+          scale: 1m-agents
+        annotations:
+          summary: "YAWL engine CPU > 80% ({{ $value | humanize }}%)"
+          description: |
+            CPU utilization high. Expected baseline: 20-40% per pod under normal load.
+            May indicate processing surge or inefficient algorithm.
+          dashboard: "http://grafana:3000/d/yawl-jvm"
+          remediation: |
+            1. Check work item throughput: rate(yawl_agent_work_item_checkout_count[5m])
+            2. If throughput normal, check CPU profile (may be algorithm inefficiency)
+            3. If throughput high, scale out engine pods
+            4. Check if specific task type is causing spike
+
+  # ==========================================================================
+  # SECTION 6: KUBERNETES INFRASTRUCTURE METRICS
+  # ==========================================================================
+  - name: yawl_1m_kubernetes_alerts
+    interval: 30s
+    rules:
+      # ALERT 16: Pod Restart Rate High
+      - alert: YawlPodRestartRateHigh
+        expr: |
+          rate(kube_pod_container_status_restarts_total{pod=~"yawl-engine.*"}[15m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: kubernetes
+          slo_type: stability
+          scale: 1m-agents
+        annotations:
+          summary: "YAWL pod restart rate high ({{ $value | humanize }}/min)"
+          description: |
+            Pods restarting more than once per ~100 minutes.
+            Indicates instability (crashes, OOMKills, liveness probe failures).
+          dashboard: "http://grafana:3000/d/yawl-infrastructure"
+          remediation: |
+            1. Check pod events: kubectl describe pod yawl-engine-X
+            2. Look for OOMKilled (heap issue) or CrashLoopBackOff (app crash)
+            3. Check logs: kubectl logs yawl-engine-X --previous (if crashed)
+            4. Follow appropriate runbook based on root cause
+
+      # ALERT 17: Pod OOMKilled
+      - alert: YawlPodOOMKilled
+        expr: |
+          increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",pod=~"yawl-engine.*"}[1h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: kubernetes
+          slo_type: stability
+          scale: 1m-agents
+        annotations:
+          summary: "YAWL pod OOMKilled in last hour"
+          description: |
+            Pod was terminated by kubelet due to out-of-memory condition.
+            Indicates heap is undersized for agent density or memory leak.
+          remediation: |
+            1. Immediately scale out: kubectl scale deployment yawl-engine --replicas=6
+            2. Investigate: Check heap utilization trend leading up to OOMKill
+            3. Increase memory limit: Update deployment resources and redeploy
+            4. Monitor for recurrence
+
+      # ALERT 18: Pod CrashLoopBackOff
+      - alert: YawlPodCrashLoop
+        expr: |
+          kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff",pod=~"yawl-engine.*"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          component: kubernetes
+          slo_type: stability
+          scale: 1m-agents
+        annotations:
+          summary: "YAWL pod in CrashLoopBackOff"
+          description: |
+            Pod is crashing repeatedly. Check logs for application error.
+          dashboard: "http://grafana:3000/d/yawl-infrastructure"
+          remediation: |
+            1. Get logs: kubectl logs yawl-engine-X --previous
+            2. Look for exceptions, startup errors, or config issues
+            3. Common causes: Bad config (env var typo), DNS resolution issue, schema mismatch
+            4. Fix root cause and roll out patched deployment
+
+      # ALERT 19: Node Memory Pressure
+      - alert: YawlNodeMemoryPressure
+        expr: |
+          kube_node_status_condition{condition="MemoryPressure",status="true",node=~"yawl-.*"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          component: kubernetes
+          slo_type: capacity
+          scale: 1m-agents
+        annotations:
+          summary: "Node memory pressure detected on {{ $labels.node }}"
+          description: |
+            Node has reported MemoryPressure condition.
+            May cause pod evictions if not resolved.
+          remediation: |
+            1. Check node memory: kubectl describe node <node-name> | grep -A 10 "Allocated resources"
+            2. If multiple pods can be moved: kubectl drain <node> --ignore-daemonsets
+            3. Contact cloud provider to add more nodes or upgrade node type
+
+      # ALERT 20: Persistent Volume Almost Full
+      - alert: YawlPersistentVolumeAlmostFull
+        expr: |
+          (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~"yawl-.*"} /
+           kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"yawl-.*"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: kubernetes
+          slo_type: capacity
+          scale: 1m-agents
+        annotations:
+          summary: "Persistent volume {{ $labels.persistentvolumeclaim }} > 85% full"
+          description: |
+            Storage capacity critical. Risk of pod eviction if volume fills completely.
+          remediation: |
+            1. Check what's using storage: kubectl exec yawl-engine-0 -- du -sh /var/lib/yawl/*
+            2. If agent state cache full: Clean up old state or increase volume size
+            3. Resize PVC: kubectl patch pvc <pvc-name> --patch '{"spec":{"resources":{"requests":{"storage":"50Gi"}}}}'
+            4. Monitor for full recovery
+
+  # ==========================================================================
+  # SECTION 7: NETWORK & HTTP CLIENT METRICS
+  # ==========================================================================
+  - name: yawl_1m_network_alerts
+    interval: 30s
+    rules:
+      # ALERT 21: Network Bandwidth High
+      - alert: NetworkBandwidthHigh
+        expr: |
+          (rate(node_network_transmit_bytes_total[5m]) +
+           rate(node_network_receive_bytes_total[5m])) / 1000000000 > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: network
+          slo_type: capacity
+          scale: 1m-agents
+        annotations:
+          summary: "Network bandwidth > 800 Mbps ({{ $value | humanize }} Gbps on 1Gbps link)"
+          description: |
+            Network utilization high. Expected @ 1M: ~25 MB/sec = 200 Mbps (good headroom).
+            Sustained high bandwidth may indicate data leak or network misconfiguration.
+          dashboard: "http://grafana:3000/d/yawl-infrastructure"
+          remediation: |
+            1. Investigate source: Check packet source/dest (TCPdump)
+            2. If expected (large data transfer): May need faster network link
+            3. If unexpected: Check for data exfiltration or misconfigured polling
+
+      # ALERT 22: HTTP Client Queue Building
+      - alert: HTTPClientQueueBuilding
+        expr: yawl_http_client_connections_pending > 500
+        for: 5m
+        labels:
+          severity: warning
+          component: http-client
+          slo_type: latency
+          scale: 1m-agents
+        annotations:
+          summary: "HTTP client queue depth > 500 ({{ $value | humanize }})"
+          description: |
+            HTTP requests queuing up. May indicate remote service slowness or saturation.
+          remediation: |
+            1. Check remote service health (e.g., engine readiness probe)
+            2. Monitor: yawl_http_client_request_latency_ms p95 (should be <500ms)
+            3. If remote service slow: Scale it up or optimize queries
+            4. If network slow: Check bandwidth and link health
+
+# ============================================================================
+# END OF ALERT RULES
+# ============================================================================
