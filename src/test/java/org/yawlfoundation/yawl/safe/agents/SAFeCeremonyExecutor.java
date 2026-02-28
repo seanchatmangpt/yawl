@@ -181,22 +181,23 @@ public class SAFeCeremonyExecutor {
             .toList();
 
         // Developers estimate (assign to developers in round-robin)
-        List<UserStory> estimatedStories = presentedStories.stream()
-            .map((story, index) -> {
-                int assignee = index % developers.size();
-                return new UserStory(
-                    story.id(),
-                    story.title(),
-                    story.description(),
-                    story.acceptanceCriteria(),
-                    estimateStoryPoints(story),  // Real estimation
-                    story.priority(),
-                    "estimated",
-                    story.dependsOn(),
-                    developers.get(assignee).id()
-                );
-            })
-            .toList();
+        List<UserStory> estimatedStories = new ArrayList<>();
+        int index = 0;
+        for (UserStory story : presentedStories) {
+            int assignee = index % developers.size();
+            estimatedStories.add(new UserStory(
+                story.id(),
+                story.title(),
+                story.description(),
+                story.acceptanceCriteria(),
+                estimateStoryPoints(story),  // Real estimation
+                story.priority(),
+                "estimated",
+                story.dependsOn(),
+                developers.get(assignee).id()
+            ));
+            index++;
+        }
 
         // Commit stories respecting capacity
         List<UserStory> committedStories = new ArrayList<>();
