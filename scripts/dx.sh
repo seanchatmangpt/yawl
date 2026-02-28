@@ -153,6 +153,20 @@ fi
 # Profile
 MVN_ARGS+=("-P" "agent-dx")
 
+# Maven 4: Detect version and enable concurrent builder
+# Maven 4 introduces tree-based lifecycle where modules start as soon as
+# dependencies reach 'ready' phase, enabling graph-optimal parallelization.
+BUILDER_FLAG=""
+MVN_VERSION=$($MVN_CMD --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+if [[ "${MVN_VERSION%%.*}" -ge 4 ]]; then
+    BUILDER_FLAG="-b concurrent"
+    # Maven 4 resume support: continue from failed module
+    if [[ "${DX_RESUME:-0}" == "1" ]]; then
+        MVN_ARGS+=("-r")
+    fi
+fi
+[[ -n "$BUILDER_FLAG" ]] && MVN_ARGS+=("$BUILDER_FLAG")
+
 # Offline
 [[ -n "$OFFLINE_FLAG" ]] && MVN_ARGS+=("$OFFLINE_FLAG")
 
@@ -207,8 +221,8 @@ if [[ "$SCOPE" == "explicit" ]]; then
     SCOPE_LABEL="${EXPLICIT_MODULES}"
 fi
 
-# Use Python for cross-platform millisecond precision
-START_MS=$(date +%s%3N)
+# Use seconds for cross-platform compatibility
+START_SEC=$(date +%s)
 
 # Pretty header
 echo ""
@@ -221,9 +235,8 @@ $MVN_CMD "${GOALS[@]}" "${MVN_ARGS[@]}" 2>&1 | tee /tmp/dx-build-log.txt
 EXIT_CODE=$?
 set -euo pipefail
 
-END_MS=$(date +%s%3N)
-ELAPSED_MS=$((END_MS - START_MS))
-ELAPSED_S=$(awk "BEGIN {printf \"%.1f\", $ELAPSED_MS/1000}")
+END_SEC=$(date +%s)
+ELAPSED_SEC=$((END_SEC - START_SEC))
 
 # Parse results from Maven log
 # NOTE: grep -c exits 1 when 0 matches (still outputs "0"), so || must be outside
@@ -239,10 +252,10 @@ fi
 # Enhanced status with metrics
 echo ""
 if [[ $EXIT_CODE -eq 0 ]]; then
-    printf "${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_S}s | modules: %d | tests: %d\n" \
+    printf "${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d\n" \
         "$MODULES_COUNT" "$TEST_COUNT"
 else
-    printf "${C_RED}${E_FAIL} FAILED${C_RESET} | time: ${ELAPSED_S}s (exit ${EXIT_CODE}) | failures: %d\n" \
+    printf "${C_RED}${E_FAIL} FAILED${C_RESET} | time: ${ELAPSED_SEC}s (exit ${EXIT_CODE}) | failures: %d\n" \
         "$TEST_FAILED"
     printf "\n${C_YELLOW}→${C_RESET} Debug: ${C_CYAN}cat /tmp/dx-build-log.txt | tail -50${C_RESET}\n"
     printf "${C_YELLOW}→${C_RESET} Run again: ${C_CYAN}DX_VERBOSE=1 bash scripts/dx.sh${C_RESET}\n\n"

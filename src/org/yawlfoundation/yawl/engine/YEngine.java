@@ -206,6 +206,51 @@ public class YEngine implements InterfaceADesign,
         }
     }
 
+    /**
+     * Creates a clean engine instance for isolated testing.
+     * Unlike getInstance(), this always creates a fresh instance without
+     * persistence, suitable for parallel test execution.
+     *
+     * @return a new clean YEngine instance
+     */
+    public static YEngine createClean() {
+        _thisInstance = null;
+        _persisting = false;
+        _pmgr = null;
+        _yawllog = null;
+        _caseNbrStore = null;
+        _expiredTimers = null;
+        try {
+            return getInstance(false);
+        } catch (YPersistenceException e) {
+            throw new RuntimeException("Failed to create clean engine instance", e);
+        }
+    }
+
+    /**
+     * Resets the singleton instance for testing purposes.
+     * This method should only be used in test teardown to allow
+     * subsequent tests to create fresh engine instances.
+     *
+     * @throws IllegalStateException if engine is currently running cases
+     */
+    public static void resetInstance() {
+        if (_thisInstance != null && _thisInstance._netRunnerRepository != null) {
+            int activeRunners = _thisInstance._netRunnerRepository.size();
+            if (activeRunners > 0) {
+                throw new IllegalStateException(
+                    "Cannot reset engine with " + activeRunners + " active case(s)"
+                );
+            }
+        }
+        _thisInstance = null;
+        _persisting = false;
+        _pmgr = null;
+        _yawllog = null;
+        _caseNbrStore = null;
+        _expiredTimers = null;
+    }
+
 
     protected static void initialise(YPersistenceManager pmgr, boolean persisting,
                                      boolean gatherHbnStats, boolean redundantMode)

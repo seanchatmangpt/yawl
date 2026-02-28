@@ -1,0 +1,61 @@
+{
+  "$schema": "https://yawl.org/schemas/benchmark-baseline-v1.json",
+  "version": "1.0.0",
+  "generated": "2026-02-28T00:00:00Z",
+  "git_sha": "initial-baseline",
+  "java_version": "25",
+  "jmh_version": "1.37",
+  "benchmarks": {
+    "org.yawlfoundation.yawl.benchmark.YAWLEngineBenchmarks.sequentialCaseLaunch": {
+      "metric": "avgt",
+      "unit": "us/op",
+      "baseline": 250.0,
+      "error_margin": 15.0,
+      "samples": 50,
+      "last_updated": "2026-02-28T00:00:00Z"
+    },
+    "org.yawlfoundation.yawl.benchmark.YAWLEngineBenchmarks.specUnmarshalLatency": {
+      "metric": "avgt",
+      "unit": "us/op",
+      "baseline": 500.0,
+      "error_margin": 25.0,
+      "samples": 50,
+      "last_updated": "2026-02-28T00:00:00Z"
+    },
+    "org.yawlfoundation.yawl.benchmark.YAWLEngineBenchmarks.caseLaunchThroughput": {
+      "metric": "thrpt",
+      "unit": "ops/s",
+      "baseline": 4000.0,
+      "error_margin": 200.0,
+      "samples": 50,
+      "last_updated": "2026-02-28T00:00:00Z"
+    },
+    "org.yawlfoundation.yawl.benchmark.ConcurrencyBenchmarks.parallelBatchLarge": {
+      "metric": "avgt",
+      "unit": "ms/op",
+      "baseline": 20.0,
+      "error_margin": 2.0,
+      "samples": 50,
+      "last_updated": "2026-02-28T00:00:00Z"
+    },
+    "org.yawlfoundation.yawl.benchmark.MemoryBenchmarks.benchmarkMemoryUsage": {
+      "metric": "avgt",
+      "unit": "bytes",
+      "baseline": 1048576.0,
+      "error_margin": 52428.0,
+      "samples": 50,
+      "last_updated": "2026-02-28T00:00:00Z"
+    }
+  },
+  "thresholds": {
+    "default": {
+      "regression": 0.20,
+      "improvement": 0.10
+    },
+    "overrides": {
+      "org.yawlfoundation.yawl.benchmark.YAWLEngineBenchmarks.caseLaunchThroughput": {
+        "regression": 0.15
+      }
+    }
+  }
+}

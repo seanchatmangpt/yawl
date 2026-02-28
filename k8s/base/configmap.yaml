@@ -1,54 +1,55 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: yawl-config
-  namespace: yawl
+  name: yawl-engine-config
   labels:
-    app.kubernetes.io/name: yawl
-    app.kubernetes.io/component: config
+    app: yawl-engine
+    version: "6.0.0"
 data:
-  # Database configuration
-  DATABASE_TYPE: "postgres"
-  DATABASE_PATH: "yawl"
+  # Java 25 JVM Configuration
+  JAVA_OPTS: |-
+    -Xms4g
+    -Xmx8g
+    -XX:+UseShenandoahGC
+    -XX:ShenandoahGCHeuristics=compact
+    -XX:+UseCompactObjectHeaders
+    -XX:+UseStringDeduplication
+    -XX:SharedArchiveFile=/opt/yawl/classes.jsa
+    -XX:AOTCache=/opt/yawl/aot.cache
+    --enable-preview
+    -XX:+ExitOnOutOfMemoryError
+    -XX:MaxGCPauseMillis=50
+    -Djava.util.concurrent.ForkJoinPool.common.parallelism=8
+    -Dlogback.configurationFile=/opt/yawl/config/logback.xml
 
-  # Logging levels
-  YAWL_LOGGING_LEVEL: "WARN"
-  WORKLET_LOGGING_LEVEL: "INFO"
-  RESOURCE_LOGGING_LEVEL: "INFO"
-  SCHEDULING_LOGGING_LEVEL: "DEBUG"
-  PROCLET_LOGGING_LEVEL: "INFO"
-  HIBERNATE_LOGGING_LEVEL: "ERROR"
-  ROOT_LOGGING_LEVEL: "ERROR"
-  MAIL_LOGGING_LEVEL: "INFO"
+  # YAWL Engine Configuration
+  YAWL_ENGINE_MODE: "production"
+  YAWL_CASE_LIMIT: "10000"
+  YAWL_THREAD_POOL_SIZE: "200"
 
-  # JVM options
-  JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+  # Observability
+  OTEL_SERVICE_NAME: "yawl-engine"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "otlp"
 
-  # Service URLs (internal cluster addresses)
-  ENGINE_URL: "http://yawl-engine:8080/engine"
-  RESOURCE_SERVICE_URL: "http://yawl-resource-service:8080/resourceService"
-  WORKLET_SERVICE_URL: "http://yawl-worklet-service:8080/workletService"
-  MONITOR_SERVICE_URL: "http://yawl-monitor-service:8080/monitorService"
-  COST_SERVICE_URL: "http://yawl-cost-service:8080/costService"
-  SCHEDULING_SERVICE_URL: "http://yawl-scheduling-service:8080/schedulingService"
-
-  # Tomcat settings
-  CATALINA_OPTS: "-Djava.security.egd=file:/dev/./urandom"
+  # Health Check
+  HEALTH_CHECK_PATH: "/health"
+  HEALTH_CHECK_INTERVAL: "30s"
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: yawl-hibernate-config
-  namespace: yawl
+  name: yawl-cds-config
   labels:
-    app.kubernetes.io/name: yawl
-    app.kubernetes.io/component: hibernate-config
+    app: yawl-engine
+    component: cds
 data:
-  hibernate.dialect: "org.hibernate.dialect.PostgreSQLDialect"
-  hibernate.show_sql: "false"
-  hibernate.hbm2ddl.auto: "update"
-  hibernate.cache.use_second_level_cache: "true"
-  hibernate.cache.use_query_cache: "true"
-  hibernate.jdbc.batch_size: "20"
-  hibernate.order_inserts: "true"
-  hibernate.order_updates: "true"
+  # CDS Archive Configuration
+  CDS_ARCHIVE_PATH: "/opt/yawl/classes.jsa"
+  CDS_GENERATE_ON_STARTUP: "false"
+  CDS_UPDATE_INTERVAL: "24h"
+
+  # AOT Cache Configuration
+  AOT_CACHE_PATH: "/opt/yawl/aot.cache"
+  AOT_ENABLED: "true"
