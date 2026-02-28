@@ -111,6 +111,7 @@ while [[ $# -gt 0 ]]; do
         --resume-from)        RESUME_FROM="$2"; shift 2 ;;
         --impact-graph)       USE_IMPACT_GRAPH=1; shift ;;
         --fail-fast-tier)     TEP_FAIL_FAST_TIER="$2"; shift 2 ;;
+        --fail-at-end)        export DX_FAIL_AT="end"; shift ;;
         --warm-cache)         WARM_CACHE_ENABLED=1; shift ;;
         --feedback)           FEEDBACK_ENABLED=1; shift ;;
         --stateless)          STATELESS_ENABLED=1; shift ;;

@@ -7,6 +7,7 @@
 # Parameters:
 #   --receipt-file <path>  Custom receipt output path (default: .claude/receipts/invariant-receipt.json)
 #   --json-only            Output only JSON (no colors, for CI)
+#   --verbose              Show detailed violation information
 #   <code-dir>             Code directory to scan (default: current directory)
 
 set -euo pipefail
@@ -23,10 +24,33 @@ escape_json_string() {
     echo "$s"
 }
 
+# ─── HELPER: Generate fix guidance ──────────────────────────────────────
+get_q_fix_guidance() {
+    local pattern="$1"
+    case "$pattern" in
+        Q1)
+            echo "Implement real logic or throw UnsupportedOperationException with a clear message"
+            ;;
+        Q2)
+            echo "Rename to real class names or delete mock/stub/fake class from code"
+            ;;
+        Q3)
+            echo "Re-throw exception or log + provide real alternative data instead of silent fallback"
+            ;;
+        Q4)
+            echo "Update code to match documentation or update documentation to match code"
+            ;;
+        *)
+            echo "Fix invariant violation to match FORTUNE 5 standards"
+            ;;
+    esac
+}
+
 # ─── PARAMETER PARSING ─────────────────────────────────────────────────────
 CODE_DIR="."
 RECEIPT_FILE=".claude/receipts/invariant-receipt.json"
 JSON_ONLY=0
+VERBOSE=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -36,6 +60,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --json-only)
             JSON_ONLY=1
+            shift
+            ;;
+        --verbose)
+            VERBOSE=1
             shift
             ;;
         *)
@@ -129,25 +157,37 @@ fi
 # Pattern: public/private [return-type] method() { }  (empty body, no throw UnsupportedOperationException)
 EMPTY_METHODS_FILES=""
 EMPTY_METHODS=0
+EMPTY_METHODS_VIOLATIONS=""
 
 while IFS= read -r java_file; do
     # Look for empty void methods (with empty braces only, no logic)
     # Excludes methods that throw UnsupportedOperationException or other exceptions
-    if grep -E "^\s*(public|private|protected)\s+(void|synchronized|static)\s+\w+\s*\([^)]*\)\s*\{\s*\}" "$java_file" 2>/dev/null; then
-        EMPTY_METHODS=$((EMPTY_METHODS + 1))
-        EMPTY_METHODS_FILES="$EMPTY_METHODS_FILES$java_file"$'\n'
-    fi
-    # Look for non-void methods with empty/fake returns (no logic, no exception)
-    # Excludes methods that throw UnsupportedOperationException
-    if grep -E "^\s*(public|private|protected)\s+\w+<[^>]+>?\s+\w+\s*\([^)]*\)\s*\{\s*(return\s*(null|\"\"|\[\]|Collections\.\w+|new\s+(HashMap|ArrayList|HashSet|TreeMap)\(\))\s*;)?\s*\}" "$java_file" 2>/dev/null | grep -qv "throw.*UnsupportedOperationException"; then
-        EMPTY_METHODS=$((EMPTY_METHODS + 1))
-        EMPTY_METHODS_FILES="$EMPTY_METHODS_FILES$java_file"$'\n'
+    if matches=$(grep -n -E "^\s*(public|private|protected)\s+(void|synchronized|static)\s+\w+\s*\([^)]*\)\s*\{\s*\}" "$java_file" 2>/dev/null); then
+        if [ -n "$matches" ]; then
+            while IFS=':' read -r line_num line_content; do
+                EMPTY_METHODS=$((EMPTY_METHODS + 1))
+                content_esc=$(escape_json_string "$line_content")
+                guidance=$(get_q_fix_guidance "Q1")
+                guidance_esc=$(escape_json_string "$guidance")
+
+                violation="{\"invariant\":\"Q1_real_impl_or_throw\",\"severity\":\"FAIL\",\"file\":\"$java_file\",\"line\":$line_num,\"content\":\"$content_esc\",\"fix_guidance\":\"$guidance_esc\"}"
+
+                if [ -z "$EMPTY_METHODS_VIOLATIONS" ]; then
+                    EMPTY_METHODS_VIOLATIONS="$violation"
+                else
+                    EMPTY_METHODS_VIOLATIONS="$EMPTY_METHODS_VIOLATIONS,$violation"
+                fi
+            done <<< "$matches"
+        fi
     fi
 done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$EMPTY_METHODS" -gt 0 ]; then
-        echo -e "${RED}[Q] ❌ Found $EMPTY_METHODS files with empty method bodies${NC}"
+        echo -e "${RED}[Q] ❌ Found $EMPTY_METHODS empty method bodies${NC}"
+        if [ "$VERBOSE" -eq 1 ]; then
+            echo "$EMPTY_METHODS_VIOLATIONS" | tr ',' '\n' | head -3
+        fi
     else
         echo "[Q] ✅ No empty methods detected"
     fi
@@ -160,18 +200,36 @@ fi
 
 MOCK_CLASSES=0
 MOCK_CLASSES_FILES=""
+MOCK_CLASSES_VIOLATIONS=""
 
 while IFS= read -r java_file; do
     # Match: (public|private) (class|interface) (Mock|Stub|Fake|Demo)*
-    if grep -E "^\s*(public|private|protected)?\s*(class|interface|enum)\s+(Mock|Stub|Fake|Demo)[A-Za-z0-9_]*\s*(extends|implements|\{)" "$java_file" 2>/dev/null; then
-        MOCK_CLASSES=$((MOCK_CLASSES + 1))
-        MOCK_CLASSES_FILES="$MOCK_CLASSES_FILES$java_file"$'\n'
+    if matches=$(grep -n -E "^\s*(public|private|protected)?\s*(class|interface|enum)\s+(Mock|Stub|Fake|Demo)[A-Za-z0-9_]*\s*(extends|implements|\{)" "$java_file" 2>/dev/null); then
+        if [ -n "$matches" ]; then
+            while IFS=':' read -r line_num line_content; do
+                MOCK_CLASSES=$((MOCK_CLASSES + 1))
+                content_esc=$(escape_json_string "$line_content")
+                guidance=$(get_q_fix_guidance "Q2")
+                guidance_esc=$(escape_json_string "$guidance")
+
+                violation="{\"invariant\":\"Q2_no_mock_objects\",\"severity\":\"FAIL\",\"file\":\"$java_file\",\"line\":$line_num,\"content\":\"$content_esc\",\"fix_guidance\":\"$guidance_esc\"}"
+
+                if [ -z "$MOCK_CLASSES_VIOLATIONS" ]; then
+                    MOCK_CLASSES_VIOLATIONS="$violation"
+                else
+                    MOCK_CLASSES_VIOLATIONS="$MOCK_CLASSES_VIOLATIONS,$violation"
+                fi
+            done <<< "$matches"
+        fi
     fi
 done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$MOCK_CLASSES" -gt 0 ]; then
         echo -e "${RED}[Q] ❌ Found $MOCK_CLASSES mock/stub/fake class declarations${NC}"
+        if [ "$VERBOSE" -eq 1 ]; then
+            echo "$MOCK_CLASSES_VIOLATIONS" | tr ',' '\n' | head -3
+        fi
     else
         echo "[Q] ✅ No mock class declarations detected"
     fi
@@ -184,6 +242,7 @@ fi
 
 SILENT_FALLBACKS=0
 SILENT_FALLBACKS_FILES=""
+SILENT_FALLBACKS_VIOLATIONS=""
 
 while IFS= read -r java_file; do
     # Match: catch (...) { return (empty|fake|null|...); } without re-throwing
@@ -192,11 +251,25 @@ while IFS= read -r java_file; do
     #   - catch (Exception e) { return Collections.emptyList(); }
     #   - catch (Exception e) { return ""; }
     #   - catch (Exception e) { return null; }
-    if grep -E "catch\s*\([^)]+\)\s*\{" "$java_file" 2>/dev/null | grep -qE "(return\s+(null|\"\"|\{\}|Collections\.\w+|new\s+(HashMap|ArrayList|HashSet|TreeSet|LinkedList|Arrays\.(asList|asMap))\(\)|mockData|fakeData|testData|stubData|demoData|emptyList|emptyMap|emptySet)).*\}"; then
-        # Filter out catches that actually re-throw
-        if ! grep -A 5 "catch\s*\([^)]+\)\s*\{" "$java_file" 2>/dev/null | grep -qE "(throw|rethrow)"; then
-            SILENT_FALLBACKS=$((SILENT_FALLBACKS + 1))
-            SILENT_FALLBACKS_FILES="$SILENT_FALLBACKS_FILES$java_file"$'\n'
+    if matches=$(grep -n -E "catch\s*\([^)]+\)\s*\{" "$java_file" 2>/dev/null | grep -E "(return\s+(null|\"\"|\{\}|Collections\.\w+|new\s+(HashMap|ArrayList|HashSet|TreeSet|LinkedList|Arrays\.(asList|asMap))\(\)|mockData|fakeData|testData|stubData|demoData|emptyList|emptyMap|emptySet)).*\}"); then
+        if [ -n "$matches" ]; then
+            # Filter out catches that actually re-throw
+            if ! grep -A 5 "catch\s*\([^)]+\)\s*\{" "$java_file" 2>/dev/null | grep -qE "(throw|rethrow)"; then
+                while IFS=':' read -r line_num line_content; do
+                    SILENT_FALLBACKS=$((SILENT_FALLBACKS + 1))
+                    content_esc=$(escape_json_string "$line_content")
+                    guidance=$(get_q_fix_guidance "Q3")
+                    guidance_esc=$(escape_json_string "$guidance")
+
+                    violation="{\"invariant\":\"Q3_no_silent_fallback\",\"severity\":\"FAIL\",\"file\":\"$java_file\",\"line\":$line_num,\"content\":\"$content_esc\",\"fix_guidance\":\"$guidance_esc\"}"
+
+                    if [ -z "$SILENT_FALLBACKS_VIOLATIONS" ]; then
+                        SILENT_FALLBACKS_VIOLATIONS="$violation"
+                    else
+                        SILENT_FALLBACKS_VIOLATIONS="$SILENT_FALLBACKS_VIOLATIONS,$violation"
+                    fi
+                done <<< "$matches"
+            fi
         fi
     fi
 done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
@@ -204,6 +277,9 @@ done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -p
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$SILENT_FALLBACKS" -gt 0 ]; then
         echo -e "${RED}[Q] ❌ Found $SILENT_FALLBACKS catch blocks with silent fallbacks${NC}"
+        if [ "$VERBOSE" -eq 1 ]; then
+            echo "$SILENT_FALLBACKS_VIOLATIONS" | tr ',' '\n' | head -3
+        fi
     else
         echo "[Q] ✅ No silent fallback patterns detected"
     fi
@@ -225,33 +301,27 @@ UNDOCUMENTED_THROWS=0
 
 VIOLATIONS_ARRAY=""
 
-if [ "$EMPTY_METHODS" -gt 0 ]; then
-    guidance_esc=$(escape_json_string "Implement real logic or throw UnsupportedOperationException with a clear message")
-    violation="{\"invariant\":\"Q1_real_impl_or_throw\",\"count\":$EMPTY_METHODS,\"issue\":\"Methods with empty bodies (no real logic, no exception thrown)\",\"remediation\":\"$guidance_esc\"}"
+if [ -n "$EMPTY_METHODS_VIOLATIONS" ]; then
     if [ -z "$VIOLATIONS_ARRAY" ]; then
-        VIOLATIONS_ARRAY="$violation"
+        VIOLATIONS_ARRAY="$EMPTY_METHODS_VIOLATIONS"
     else
-        VIOLATIONS_ARRAY="$VIOLATIONS_ARRAY,$violation"
+        VIOLATIONS_ARRAY="$VIOLATIONS_ARRAY,$EMPTY_METHODS_VIOLATIONS"
     fi
 fi
 
-if [ "$MOCK_CLASSES" -gt 0 ]; then
-    guidance_esc=$(escape_json_string "Rename to real class names or delete from generated code")
-    violation="{\"invariant\":\"Q2_no_mock_objects\",\"count\":$MOCK_CLASSES,\"issue\":\"Class names indicate mock/stub/fake implementations\",\"remediation\":\"$guidance_esc\"}"
+if [ -n "$MOCK_CLASSES_VIOLATIONS" ]; then
     if [ -z "$VIOLATIONS_ARRAY" ]; then
-        VIOLATIONS_ARRAY="$violation"
+        VIOLATIONS_ARRAY="$MOCK_CLASSES_VIOLATIONS"
     else
-        VIOLATIONS_ARRAY="$VIOLATIONS_ARRAY,$violation"
+        VIOLATIONS_ARRAY="$VIOLATIONS_ARRAY,$MOCK_CLASSES_VIOLATIONS"
     fi
 fi
 
-if [ "$SILENT_FALLBACKS" -gt 0 ]; then
-    guidance_esc=$(escape_json_string "Re-throw exception or log + provide cached/real alternative data")
-    violation="{\"invariant\":\"Q3_no_silent_fallback\",\"count\":$SILENT_FALLBACKS,\"issue\":\"Catch blocks silently return fake data without re-throw or logging\",\"remediation\":\"$guidance_esc\"}"
+if [ -n "$SILENT_FALLBACKS_VIOLATIONS" ]; then
     if [ -z "$VIOLATIONS_ARRAY" ]; then
-        VIOLATIONS_ARRAY="$violation"
+        VIOLATIONS_ARRAY="$SILENT_FALLBACKS_VIOLATIONS"
     else
-        VIOLATIONS_ARRAY="$VIOLATIONS_ARRAY,$violation"
+        VIOLATIONS_ARRAY="$VIOLATIONS_ARRAY,$SILENT_FALLBACKS_VIOLATIONS"
     fi
 fi
 

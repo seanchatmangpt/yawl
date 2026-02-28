@@ -12,6 +12,7 @@
 #   --emit-dir <dir>       Validate compiled output directory
 #   --receipt-file <path>  Custom receipt output path (default: .claude/receipts/guard-receipt.json)
 #   --json-only            Output only JSON (no colors, for CI)
+#   --verbose              Show detailed violation information
 
 set -euo pipefail
 
@@ -75,6 +76,7 @@ EOF
 EMIT_DIR=""
 RECEIPT_FILE=".claude/receipts/guard-receipt.json"
 JSON_ONLY=0
+VERBOSE=0
 VALIDATE_EMIT_MODE=0
 REMAINING_ARGS=()
 
@@ -93,13 +95,18 @@ while [[ $# -gt 0 ]]; do
             JSON_ONLY=1
             shift
             ;;
+        --verbose)
+            VERBOSE=1
+            shift
+            ;;
         --validate-emit)
             # Internal mode for recursive call
             EMIT_DIR="$2"
             RECEIPT_FILE="$3"
             JSON_ONLY="${4:-0}"
+            VERBOSE="${5:-0}"
             VALIDATE_EMIT_MODE=1
-            shift 4
+            shift 5
             ;;
         *)
             REMAINING_ARGS+=("$1")
@@ -229,6 +236,13 @@ RECEIPT_EOF
             echo "[hyper-validate.sh] ✅ PASS: No violations found in $FILES_SCANNED files"
         else
             echo "[hyper-validate.sh] ❌ FAIL: Found $VIOLATION_COUNT violations in $FILES_SCANNED files"
+            if [ "$VERBOSE" -eq 1 ]; then
+                echo ""
+                echo "Top violations:"
+                if [ -n "$VIOLATIONS_ARRAY" ]; then
+                    echo "$VIOLATIONS_ARRAY" | tr ',' '\n' | head -3
+                fi
+            fi
         fi
         echo ""
         echo "Receipt written to: $RECEIPT_FILE"
