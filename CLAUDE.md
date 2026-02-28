@@ -26,6 +26,9 @@ Stale or >3 files explored → bash scripts/observatory/observatory.sh. Verify v
 dx.sh compile (fast) → dx.sh -pl <module> (one module) → dx.sh all (pre-commit gate, mandatory).
 mvn clean verify -P analysis for SpotBugs/PMD static analysis. No commit until dx.sh all green.
 Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE_CODE_REMOTE=true.
+yawl-engine source root = ../src (not src/main/java) | test root = ../test — read pom.xml <sourceDirectory> before placing any file.
+.mvn/jvm.config has no comment support — Maven passes every line literally to JVM; # lines crash with "cannot find main class #".
+VirtualThread idle loop must use queue.take() (parks carrier) not poll()+onSpinWait() (saturates carrier) — wrong pattern causes starvation at >100 agents.
 
 ## H GUARDS
 
