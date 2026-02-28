@@ -30,6 +30,7 @@ Understanding-oriented content that illuminates the context, concepts, and reaso
 | Explanation | What it addresses |
 |-------------|-------------------|
 | [autonomous-agents.md](autonomous-agents.md) | How autonomous agents integrate with YAWL |
+| [autonomous-agents-marketplace.md](autonomous-agents-marketplace.md) | Agent architecture, skill framework, and marketplace patterns |
 | [agent-coordination.md](agent-coordination.md) | Multi-agent coordination patterns |
 | [data-marketplace.md](data-marketplace.md) | Data marketplace architecture |
 | [mcp-llm-design.md](mcp-llm-design.md) | MCP server design for LLM tool-calling |
@@ -43,6 +44,7 @@ Understanding-oriented content that illuminates the context, concepts, and reaso
 |-------------|-------------------|
 | [godspeed-methodology.md](godspeed-methodology.md) | The five-phase quality circuit (Ψ→Λ→H→Q→Ω) and loss localization |
 | [chatman-equation.md](chatman-equation.md) | Agent quality model: A = μ(O) and why observation drives artifact quality |
+| [intelligence-layer.md](intelligence-layer.md) | Typed deltas, receipt chains, and watermark protocol for semantic change tracking |
 | [h-guards-philosophy.md](h-guards-philosophy.md) | Why H-Guards block 7 deception patterns at write time |
 | [cicd-architecture.md](cicd-architecture.md) | CI/CD pipeline architecture |
 | [maven-first-architecture.md](maven-first-architecture.md) | Maven-first transition rationale |

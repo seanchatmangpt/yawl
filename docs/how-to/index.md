@@ -17,6 +17,7 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 | [configure-autonomous-agents.md](configure-autonomous-agents.md) | Configure autonomous agent integration |
 | [java25-setup.md](java25-setup.md) | Set up Java 25 development environment |
 | [validate-spec.md](validate-spec.md) | Validate a YAWL specification against the schema |
+| [stateless-engine/migrate-to-stateless.md](stateless-engine/migrate-to-stateless.md) | Migrate from YEngine to YStatelessEngine for high-throughput workflows |
 
 ## Deployment
 
@@ -91,6 +92,12 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 | Guide | Task |
 |-------|------|
 | [performance-testing.md](performance-testing.md) | Run performance benchmarks |
+
+## Observability
+
+| Guide | Task |
+|-------|------|
+| [observability/debug-with-observatory.md](observability/debug-with-observatory.md) | Debug YAWL using the Observatory system and fact analysis |
 
 ## GODSPEED
 
