@@ -235,6 +235,14 @@ fi
 # Profile
 MVN_ARGS+=("-P" "agent-dx")
 
+# Add feedback/stateless profiles if requested
+if [[ "$FEEDBACK_ENABLED" == "1" ]]; then
+    MVN_ARGS+=("-P" "feedback")
+fi
+if [[ "$STATELESS_ENABLED" == "1" ]]; then
+    MVN_ARGS+=("-P" "stateless")
+fi
+
 # Maven 4: Detect version and enable concurrent builder
 # Maven 4 introduces tree-based lifecycle where modules start as soon as
 # dependencies reach 'ready' phase, enabling graph-optimal parallelization.

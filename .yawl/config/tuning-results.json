@@ -1,0 +1,165 @@
+{
+  "phase": "parameter-tuning",
+  "timestamp": "2026-02-28T15:45:00Z",
+  "status": "ready-for-tuning",
+  "parameter_sweeps": [
+    {
+      "parameter": "maven_threads",
+      "tested_values": [1, 1.5, 2, 2.5, 3, 4],
+      "results": [],
+      "recommended_value": 2,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Parallel build threads - balance parallelism vs context switching"
+    },
+    {
+      "parameter": "junit_factor",
+      "tested_values": [1.0, 2.0, 3.0, 4.0, 6.0, 8.0],
+      "results": [],
+      "recommended_value": 4.0,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Virtual thread parallelism factor - virtual threads = factor * CPU cores"
+    },
+    {
+      "parameter": "cache_ttl_hours",
+      "tested_values": [4, 8, 12, 24, 48],
+      "results": [],
+      "recommended_value": 24,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Test result cache TTL - balance freshness vs reuse"
+    },
+    {
+      "parameter": "cache_size_gb",
+      "tested_values": [2, 5, 10, 20],
+      "results": [],
+      "recommended_value": 5,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Test result cache size limit - space vs hit rate"
+    },
+    {
+      "parameter": "semantic_cache_ttl",
+      "tested_values": [4, 8, 12, 24, 48],
+      "results": [],
+      "recommended_value": 24,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Semantic analysis cache freshness - for code impact detection"
+    },
+    {
+      "parameter": "tip_retrain_freq",
+      "tested_values": [5, 10, 20, 50],
+      "results": [],
+      "recommended_value": 10,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Test Impact Prediction model retraining frequency (builds)"
+    },
+    {
+      "parameter": "warm_cache_ttl",
+      "tested_values": [2, 4, 8, 12, 24],
+      "results": [],
+      "recommended_value": 8,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Warm bytecode cache TTL for hot modules (yawl-engine, yawl-elements)"
+    },
+    {
+      "parameter": "cds_size_mb",
+      "tested_values": [50, 100, 150, 200, 300, 500],
+      "results": [],
+      "recommended_value": 200,
+      "best_time_ms": 0,
+      "improvement_vs_default_pct": 0,
+      "notes": "Class Data Sharing archive size - large = slower CDS generation, fast startup"
+    }
+  ],
+  "sweet_spot_analysis": {
+    "maven_threads": "2-2.5C (balanced build parallelism without context switch overhead)",
+    "junit_factor": "4.0 (aggressive virtual threads for I/O-bound tests)",
+    "cache_ttl_hours": "24 (full day retention for stable builds)",
+    "cache_size_gb": "5 (sweet spot between memory usage and cache hit rate)",
+    "semantic_cache_ttl": "24 (full day freshness for code change detection)",
+    "tip_retrain_freq": "10 (balance between model accuracy and computation cost)",
+    "warm_cache_ttl": "8 (aggressive warm cache for hot modules)",
+    "cds_size_mb": "200 (balanced JVM startup improvement vs archive generation cost)"
+  },
+  "hardware_profiles": {
+    "laptop": {
+      "description": "2-4 cores, <8GB RAM",
+      "parameters": {
+        "maven_threads": 1.5,
+        "junit_factor": 2.0,
+        "cache_ttl_hours": 12,
+        "cache_size_gb": 2,
+        "semantic_cache_ttl": 12,
+        "tip_retrain_freq": 5,
+        "warm_cache_ttl": 4,
+        "cds_size_mb": 100
+      }
+    },
+    "desktop": {
+      "description": "4-8 cores, 8-16GB RAM",
+      "parameters": {
+        "maven_threads": 2,
+        "junit_factor": 4.0,
+        "cache_ttl_hours": 24,
+        "cache_size_gb": 5,
+        "semantic_cache_ttl": 24,
+        "tip_retrain_freq": 10,
+        "warm_cache_ttl": 8,
+        "cds_size_mb": 200
+      }
+    },
+    "workstation": {
+      "description": "16+ cores, 64GB+ RAM",
+      "parameters": {
+        "maven_threads": 4,
+        "junit_factor": 6.0,
+        "cache_ttl_hours": 48,
+        "cache_size_gb": 10,
+        "semantic_cache_ttl": 48,
+        "tip_retrain_freq": 20,
+        "warm_cache_ttl": 12,
+        "cds_size_mb": 300
+      }
+    },
+    "ci-cd": {
+      "description": "3-8 cores, 8-32GB RAM, SSD",
+      "parameters": {
+        "maven_threads": 3,
+        "junit_factor": 4.0,
+        "cache_ttl_hours": 8,
+        "cache_size_gb": 5,
+        "semantic_cache_ttl": 12,
+        "tip_retrain_freq": 10,
+        "warm_cache_ttl": 4,
+        "cds_size_mb": 150
+      }
+    }
+  },
+  "baseline_metrics": {
+    "build_time_default_ms": 45000,
+    "estimated_optimized_ms": 38000,
+    "estimated_improvement_pct": "15-25%",
+    "cache_hit_rate_improvement_pct": "10-15%",
+    "memory_usage_constraint": "< 8GB peak on 4-core machine"
+  },
+  "validation_checklist": {
+    "no_crashes": false,
+    "no_oom_errors": false,
+    "no_hangs": false,
+    "cache_integrity_valid": false,
+    "all_tests_pass": false,
+    "stable_across_runs": false
+  },
+  "recommendations": {
+    "action_1": "Run full sweep: bash scripts/tune-build-parameters.sh",
+    "action_2": "For quick sweep: bash scripts/tune-build-parameters.sh --quick",
+    "action_3": "Tune single param: bash scripts/tune-build-parameters.sh --parameter maven_threads",
+    "action_4": "Analyze results: bash scripts/tune-build-parameters.sh --analyze",
+    "monitor_interval": "Rerun monthly to adapt to codebase changes"
+  }
+}
