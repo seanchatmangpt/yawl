@@ -264,12 +264,20 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
      * Filter noise from DFG and dependencies.
      */
     private void filterNoise(DirectlyFollowsGraph dfg, DependencyMatrix dependencies) {
-        // Remove edges below frequency threshold
-        Set<DFGEdge> edgesToRemove = dfg.getEdges().stream()
-            .filter(edge -> dfg.getEdgeWeight(edge.getFrom(), edge.getTo()) < frequencyThreshold)
-            .collect(Collectors.toSet());
+        // Collect edges to remove (can't modify during iteration)
+        List<String[]> edgesToRemove = new ArrayList<>();
+        for (String from : dfg.getActivities()) {
+            for (String to : dfg.getSuccessors(from)) {
+                if (dfg.getEdgeCount(from, to) < frequencyThreshold) {
+                    edgesToRemove.add(new String[]{from, to});
+                }
+            }
+        }
 
-        edgesToRemove.forEach(dfg::removeEdge);
+        // Remove edges
+        for (String[] edge : edgesToRemove) {
+            dfg.removeEdge(edge[0], edge[1]);
+        }
 
         // Remove dependencies below threshold
         Set<Dependency> depsToRemove = dependencies.getDependencies().stream()
@@ -279,7 +287,7 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
         depsToRemove.forEach(dep -> dependencies.removeDependency(dep.getFrom(), dep.getTo()));
 
         // Remove isolated nodes
-        Set<String> isolatedNodes = dfg.getNodes().stream()
+        Set<String> isolatedNodes = dfg.getActivities().stream()
             .filter(node -> dfg.getPredecessors(node).isEmpty() && dfg.getSuccessors(node).isEmpty())
             .collect(Collectors.toSet());
 
@@ -293,35 +301,37 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
         PetriNetModel petriNet = new PetriNetModel();
 
         // Create places for activities
-        for (String activity : dfg.getNodes()) {
+        for (String activity : dfg.getActivities()) {
             petriNet.addPlace(activity + "_start", activity);
             petriNet.addPlace(activity + "_end", activity);
         }
 
         // Create transitions for activities
-        for (String activity : dfg.getNodes()) {
+        for (String activity : dfg.getActivities()) {
             petriNet.addTransition(activity, activity);
         }
 
         // Create arcs based on DFG
-        for (DFGEdge edge : dfg.getEdges()) {
-            String fromPlace = edge.getFrom() + "_end";
-            String toTransition = edge.getTo();
-            int weight = dfg.getEdgeWeight(edge.getFrom(), edge.getTo());
-            petriNet.addArc(fromPlace, toTransition, weight);
+        for (String from : dfg.getActivities()) {
+            for (String to : dfg.getSuccessors(from)) {
+                String fromPlace = from + "_end";
+                String toTransition = to;
+                long weight = dfg.getEdgeCount(from, to);
+                petriNet.addArc(fromPlace, toTransition, (int) weight);
 
-            String toPlace = edge.getTo() + "_start";
-            petriNet.addArc(toTransition, toPlace, weight);
+                String toPlace = to + "_start";
+                petriNet.addArc(toTransition, toPlace, (int) weight);
+            }
         }
 
         // Add start and end markers
-        String startPlace = dfg.getNodes().stream()
+        String startPlace = dfg.getActivities().stream()
             .filter(node -> dfg.getPredecessors(node).isEmpty())
             .findFirst()
             .map(node -> node + "_start")
             .orElse("start");
 
-        String endPlace = dfg.getNodes().stream()
+        String endPlace = dfg.getActivities().stream()
             .filter(node -> dfg.getSuccessors(node).isEmpty())
             .findFirst()
             .map(node -> node + "_end")
@@ -447,60 +457,6 @@ public class HeuristicMiner implements ProcessDiscoveryAlgorithm {
 
     // Helper classes
 
-    /**
-     * Directly-follows graph representation.
-     */
-    private static class DirectlyFollowsGraph {
-        private final Map<String, Set<String>> adjacencyList = new HashMap<>();
-        private final Map<DFGEdge, Integer> edgeWeights = new HashMap<>();
-
-        public void addNode(String node) {
-            adjacencyList.putIfAbsent(node, new HashSet<>());
-        }
-
-        public void addEdge(String from, String to) {
-            addNode(from);
-            addNode(to);
-            adjacencyList.get(from).add(to);
-
-            DFGEdge edge = new DFGEdge(from, to);
-            edgeWeights.put(edge, edgeWeights.getOrDefault(edge, 0) + 1);
-        }
-
-        public void removeEdge(DFGEdge edge) {
-            adjacencyList.getOrDefault(edge.getFrom(), new HashSet<>()).remove(edge.getTo());
-            edgeWeights.remove(edge);
-        }
-
-        public void removeNode(String node) {
-            adjacencyList.remove(node);
-            edgeWeights.keySet().removeIf(edge ->
-                edge.getFrom().equals(node) || edge.getTo().equals(node));
-        }
-
-        public Set<String> getNodes() {
-            return adjacencyList.keySet();
-        }
-
-        public Set<String> getPredecessors(String node) {
-            return adjacencyList.entrySet().stream()
-                .filter(e -> e.getValue().contains(node))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-        }
-
-        public Set<String> getSuccessors(String node) {
-            return adjacencyList.getOrDefault(node, new HashSet<>());
-        }
-
-        public Set<DFGEdge> getEdges() {
-            return edgeWeights.keySet();
-        }
-
-        public int getEdgeWeight(String from, String to) {
-            return edgeWeights.getOrDefault(new DFGEdge(from, to), 0);
-        }
-    }
 
     /**
      * Dependency matrix representation.

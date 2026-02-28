@@ -29,7 +29,7 @@ Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE
 
 ## H GUARDS
 
-Blocked: {TODO,FIXME,mock,stub,fake,empty_return,silent_fallback,lie} — hyper-validate.sh checks 14 patterns on Write|Edit → exit 2.
+Blocked: {TODO,FIXME,mock,stub,fake,empty_return,silent_fallback,lie} — hyper-validate.sh checks 7 patterns (H_TODO, H_MOCK, H_STUB, H_EMPTY, H_FALLBACK, H_LIE, H_SILENT) on Write|Edit → exit 2.
 Fix violations for real. Never work around hooks. Hard blocks only: harm|deception|illegal|minors.
 
 ## ι INTELLIGENCE
@@ -57,17 +57,18 @@ One logical change per commit. Branch: claude/<desc>-<sessionId>. Channels: emit
 lead + N teammates ∈ {2..5}, separate 200K context windows. Default for N≥2 orthogonal quantums.
 Lifecycle hooks: TeammateIdle → assign/shutdown | TaskCompleted → approve/reject | TeammateShutdown → approve/reject.
 No teammate overlap on same file (verify shared-src.json). Message before task completion. Cost ~3-5×.
-Error recovery: idle>30min → message, await 5min, crash §3.1 | timeout>2h → reassign §6.2.1 | circular → lead breaks tie §2.1 | critical msg timeout → resend [URGENT] §1.3 | Q violation mid-team → fix locally §5.1.
+Error recovery: idle>30min → message, await 5min, crash | timeout>2h → reassign | circular → lead breaks tie | critical msg timeout → resend [URGENT] | Q violation mid-team → fix locally.
 PostTeam: lead runs dx.sh all → H hook combined edits → atomic single commit. Any red = rollback to failing teammate.
+See .claude/rules/TEAMS-GUIDE.md for detailed error recovery protocols.
 
 ## μ AGENTS + Γ ARCHITECTURE
 
-Agents: engineer|validator|architect|integrator|reviewer|tester|prod-val|perf-bench (specs in .claude/agents/)
+Agents: yawl-engineer|yawl-validator|yawl-architect|yawl-integrator|yawl-reviewer|yawl-tester|yawl-prod-validator|yawl-performance-benchmarker (specs in .claude/agents/)
 Subagents: within session, max 5, report-only, no inter-task messaging. Teams if findings interact.
 Entry points: YEngine (stateful)|YStatelessEngine (stateless)|YSpecification (defs)|YawlMcpServer (MCP)|YawlA2AServer (A2A)
-Interfaces: A=design|B=client|E=events|X=extended. Key types: YNetRunner|YWorkItem. 89 packages have package-info.java — read first.
+Interfaces: A=design|B=client|E=events|X=extended. Key types: YNetRunner|YWorkItem. 185 packages have package-info.java — read first.
 
-## R RULES (17 files, auto-activate by path)
+## R RULES (24 files, auto-activate by path)
 
 teams/** → team-decision-framework.md | pom.xml → dx-workflow.md + maven-modules.md
 schema/**|*.xsd → xsd-validation.md | yawl/engine/**|stateless/** → workflow-patterns.md + interfaces.md + worklet-service.md
@@ -99,17 +100,6 @@ tasks/todo.md ← checkable_items; tasks/lessons.md ← corrections; review_sect
 
 simplicity_first: |Δcode| → min; impact(change) ⊆ necessary. ¬lazy: root_cause only; ¬temp_fix; senior_dev_standard.
 minimal_impact: change ∩ unnecessary = ∅; ¬introduce_bugs.
-
-## ι INTELLIGENCE
-
-scout(session) = fetch(specs ∪ deps ∪ changelogs, ttl=watermarks.json) → live-intelligence.md; async at SessionStart.
-inject(prompt) = select(live-intelligence.md ∪ deltas/, keywords(prompt)) → UserPromptSubmit stdout; sync.
-δ(A, B) = typed_delta(A, B) → Vec<Delta>; semantic_unit(artifact) ∈ {declaration, rule, criterion, dependency, behavior, quad}.
-¬line_diff ∧ ¬unified_patch; diff is a typed fact transition, not a text mutation.
-receipt(δ) = blake3(canonical_json(δ)) → receipts/{session}.receipt.json; ∀write w: receipt(δ(w)) committed.
-watermark(fetch) = blake3(response) ∧ timestamp; skip_fetch iff now < fetched_at + ttl ∧ hash_unchanged.
-Binaries: .claude/hooks/yawl-jira (ticket+delta) | .claude/hooks/yawl-scout (live intelligence).
-Source: yawl-hooks/ Cargo workspace | Context: .claude/context/ | Tickets: .claude/jira/tickets/*.toml.
 
 ## SKILLS + REFS
 

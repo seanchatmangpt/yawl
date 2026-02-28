@@ -26,6 +26,9 @@ import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionContext;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionEngine;
 import org.yawlfoundation.yawl.graaljs.JavaScriptSandboxConfig;
+import org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper;
+import org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter;
+import org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * Thin Java facade over the data-modelling-sdk WebAssembly module (v2.3.0).
@@ -839,6 +843,214 @@ public final class DataModellingBridge implements AutoCloseable {
         return call("detect_naming_conflicts", existingTablesJson, newTablesJson);
     }
 
+    // ── Pipeline Integration (Phase 2) ───────────────────────────────────────
+
+    /**
+     * Infers schema from JSON data with automatic type detection and constraint analysis.
+     *
+     * <p>Analyzes JSON data structure to determine column types, primary keys, foreign keys,
+     * and constraints. Returns inferred schema as JSON compatible with Phase 1 models.</p>
+     *
+     * @param jsonData           JSON array or object content; must not be null
+     * @param config             inference configuration; must not be null
+     * @return inferred schema as JSON string; never null
+     * @throws DataModellingException  EXECUTION_ERROR if inference fails
+     * @throws UnsupportedOperationException if WASM SDK does not expose schema inference
+     */
+    public String inferSchemaFromJson(String jsonData, org.yawlfoundation.yawl.datamodelling.pipeline.InferenceConfig config) {
+        throw new UnsupportedOperationException(
+                "Schema inference from JSON requires WASM SDK support. "
+                + "The data-modelling-sdk v2.3.0 includes schema inference module, but it is not yet exposed. "
+                + "Implement via WASM export when SDK adds infer_schema_from_json() function. "
+                + "Expected: JSON with fields array, detected primaryKey, foreignKeys, constraints, and confidence score.");
+    }
+
+    /**
+     * Maps source schema fields to target schema with fuzzy/LLM matching.
+     *
+     * <p>Analyzes field names, types, and semantic meaning to generate field mappings
+     * from source to target schema with confidence scores.</p>
+     *
+     * @param sourceSchema       source schema JSON; must not be null
+     * @param targetSchema       target schema JSON; must not be null
+     * @param config             mapping configuration; must not be null
+     * @return mapping result JSON with fieldMappings array; never null
+     * @throws DataModellingException  EXECUTION_ERROR if mapping fails
+     * @throws UnsupportedOperationException if WASM SDK does not expose schema mapping
+     */
+    public String mapSchemas(String sourceSchema, String targetSchema,
+                            org.yawlfoundation.yawl.datamodelling.pipeline.MappingConfig config) {
+        throw new UnsupportedOperationException(
+                "Schema field mapping requires WASM SDK support. "
+                + "The data-modelling-sdk v2.3.0 includes mapping module, but it is not yet exposed. "
+                + "Implement via WASM export when SDK adds map_schemas() function. "
+                + "Expected: JSON with fieldMappings (sourceField, targetField, confidence), "
+                + "transformationScript (SQL/JQ/Python/PySpark), and mappingCompleteness score.");
+    }
+
+    /**
+     * Generates transformation script from field mappings.
+     *
+     * <p>Synthesizes SQL, JQ, Python, or PySpark transformation code based on field mappings
+     * and type conversions.</p>
+     *
+     * @param mappingResultJson  mapping result JSON from mapSchemas(); must not be null
+     * @param format             output format: "sql", "jq", "python", "pyspark"; must not be null
+     * @return transformation script as string; never null
+     * @throws DataModellingException  EXECUTION_ERROR if generation fails
+     * @throws UnsupportedOperationException if WASM SDK does not expose transformation generation
+     */
+    public String generateTransform(String mappingResultJson, String format) {
+        throw new UnsupportedOperationException(
+                "Transformation script generation requires WASM SDK support. "
+                + "The data-modelling-sdk v2.3.0 includes transformation generation, but it is not yet exposed. "
+                + "Implement via WASM export when SDK adds generate_transform() function. "
+                + "Expected: String with executable " + format + " transformation script.");
+    }
+
+    // ── LLM Integration (Phase 3) ─────────────────────────────────────────────
+
+    /**
+     * Refines a schema using LLM in offline mode (llama.cpp or compatible local inference).
+     *
+     * <p>This method delegates to the data-modelling-sdk's offline LLM refinement logic,
+     * which runs a local LLM without external API calls. Useful for privacy-sensitive
+     * or air-gapped environments.</p>
+     *
+     * @param schema              the schema to refine (JSON or YAML); must not be null
+     * @param samples             sample data records for context; may be empty
+     * @param objectives          refinement objectives; may be empty
+     * @param context             optional documentation context; may be null
+     * @param config              LLM configuration; must not be null
+     * @return refined schema JSON; never null
+     * @throws DataModellingException  EXECUTION_ERROR if offline LLM unavailable or refinement fails
+     */
+    public String refineSchemaWithLlmOffline(String schema, String[] samples,
+                                              String[] objectives, String context,
+                                              org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("refine_schema_with_llm_offline",
+                schema,
+                stringArrayToJson(samples),
+                stringArrayToJson(objectives),
+                context != null ? context : "",
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                String.valueOf(config.getMaxTokens()));
+    }
+
+    /**
+     * Refines a schema using LLM in online mode (Ollama HTTP API).
+     *
+     * <p>This method delegates to the data-modelling-sdk's online LLM refinement logic,
+     * which calls the Ollama API endpoint specified in the configuration.</p>
+     *
+     * @param schema              the schema to refine (JSON or YAML); must not be null
+     * @param samples             sample data records for context; may be empty
+     * @param objectives          refinement objectives; may be empty
+     * @param context             optional documentation context; may be null
+     * @param config              LLM configuration; must not be null
+     * @return refined schema JSON; never null
+     * @throws DataModellingException  EXECUTION_ERROR if online LLM unavailable or refinement fails
+     */
+    public String refineSchemaWithLlmOnline(String schema, String[] samples,
+                                             String[] objectives, String context,
+                                             org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("refine_schema_with_llm_online",
+                schema,
+                stringArrayToJson(samples),
+                stringArrayToJson(objectives),
+                context != null ? context : "",
+                config.getModel(),
+                config.getBaseUrl(),
+                String.valueOf(config.getTemperature()),
+                String.valueOf(config.getMaxTokens()),
+                String.valueOf(config.getTimeoutSeconds()));
+    }
+
+    /**
+     * Matches fields between source and target schemas using LLM analysis.
+     *
+     * <p>Returns a JSON object mapping source fields to target fields with
+     * confidence scores based on semantic understanding.</p>
+     *
+     * @param sourceSchema  the source schema JSON; must not be null
+     * @param targetSchema  the target schema JSON; must not be null
+     * @param config        LLM configuration; must not be null
+     * @return JSON object with field mappings and scores; never null
+     * @throws DataModellingException  EXECUTION_ERROR if LLM unavailable or matching fails
+     */
+    public String matchFieldsWithLlm(String sourceSchema, String targetSchema,
+                                      org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("match_fields_with_llm",
+                sourceSchema,
+                targetSchema,
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                config.getBaseUrl());
+    }
+
+    /**
+     * Enriches schema documentation using LLM analysis.
+     *
+     * <p>Generates meaningful descriptions for tables, columns, and relationships
+     * based on naming patterns and data characteristics.</p>
+     *
+     * @param schema  the schema to enrich; must not be null
+     * @param config  LLM configuration; must not be null
+     * @return enriched schema with documentation; never null
+     * @throws DataModellingException  EXECUTION_ERROR if enrichment fails
+     */
+    public String enrichDocumentationWithLlm(String schema,
+                                              org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("enrich_documentation_with_llm",
+                schema,
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                config.getBaseUrl());
+    }
+
+    /**
+     * Detects semantic patterns in a schema using LLM.
+     *
+     * <p>Identifies patterns such as PII fields, temporal fields, categorical data,
+     * and other domain-specific patterns that may have governance implications.</p>
+     *
+     * @param schema  the schema to analyze; must not be null
+     * @param config  LLM configuration; must not be null
+     * @return JSON object with detected patterns; never null
+     * @throws DataModellingException  EXECUTION_ERROR if pattern detection fails
+     */
+    public String detectPatternsWithLlm(String schema,
+                                         org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        return call("detect_patterns_with_llm",
+                schema,
+                config.getModel(),
+                String.valueOf(config.getTemperature()),
+                config.getBaseUrl());
+    }
+
+    /**
+     * Checks whether the LLM service is available and responsive.
+     *
+     * <p>Performs a health check against either the offline or online LLM endpoint,
+     * depending on configuration.</p>
+     *
+     * @param config  LLM configuration; must not be null
+     * @return {@code "true"} or {@code "false"} as JSON string; never null
+     */
+    public String checkLlmAvailability(org.yawlfoundation.yawl.datamodelling.llm.LlmConfig config) {
+        try {
+            String result = call("check_llm_availability",
+                    config.getMode().getValue(),
+                    config.getBaseUrl(),
+                    String.valueOf(config.getTimeoutSeconds()));
+            return result;
+        } catch (Exception e) {
+            log.warn("LLM availability check failed: {}", e.getMessage());
+            return "false";
+        }
+    }
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /**
@@ -989,6 +1201,196 @@ public final class DataModellingBridge implements AutoCloseable {
         }
     }
 
+    // ── Phase 5: Advanced Filtering & Querying ───────────────────────────────
+
+    /**
+     * Create a fluent query builder for the given workspace JSON.
+     *
+     * <p>This method parses the workspace JSON and returns a DataModellingQueryBuilder
+     * instance for performing advanced filtering, relationship analysis, and lineage queries.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @return a query builder for the workspace; never null
+     * @throws DataModellingException  if workspace JSON cannot be parsed
+     * @see org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
+     */
+    public org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
+            queryBuilder(String workspaceJson) {
+        org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter converter =
+                new org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter();
+        org.yawlfoundation.yawl.datamodelling.models.DataModellingWorkspace workspace =
+                converter.fromJson(workspaceJson);
+        return org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
+                .forWorkspace(workspace);
+    }
+
+    /**
+     * Filter tables by owner from workspace JSON.
+     *
+     * <p>Returns JSON array of tables matching the specified owner.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param owner          owner name/email; must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByOwner(String workspaceJson, String owner) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByOwner(owner).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Filter tables by tag from workspace JSON.
+     *
+     * <p>Returns JSON array of tables that have the specified tag.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tag            tag value; must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByTag(String workspaceJson, String tag) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByTag(tag).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Filter tables by infrastructure type from workspace JSON.
+     *
+     * <p>Returns JSON array of tables using the specified infrastructure.</p>
+     *
+     * @param workspaceJson       workspace JSON string; must not be null
+     * @param infrastructureType  infrastructure type (e.g. "postgresql", "warehouse"); must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByInfrastructure(String workspaceJson, String infrastructureType) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByInfrastructureType(infrastructureType).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Filter tables by medallion layer from workspace JSON.
+     *
+     * <p>Returns JSON array of tables in the specified medallion layer.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param layer          medallion layer (e.g. "bronze", "silver", "gold"); must not be null
+     * @return JSON array of tables; never null (empty array if no matches)
+     */
+    public String filterTablesByMedallionLayer(String workspaceJson, String layer) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> tables =
+                builder.filterTablesByMedallionLayer(layer).getTables();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(tables);
+    }
+
+    /**
+     * Get relationships for a specific table from workspace JSON.
+     *
+     * <p>Returns JSON array of relationships involving the specified table.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tableId        table ID; must not be null
+     * @param relationshipType  filter by relationship type (e.g. "dataFlow", "dependency");
+     *                          if null, returns all relationships
+     * @return JSON array of relationships; never null (empty array if no relationships)
+     */
+    public String queryTableRelationships(String workspaceJson, String tableId,
+                                          @Nullable String relationshipType) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingRelationship> rels =
+                builder.getRelationshipsForTable(tableId);
+
+        // Filter by type if specified
+        if (relationshipType != null) {
+            rels = rels.stream()
+                    .filter(r -> relationshipType.equals(r.getRelationshipType()))
+                    .toList();
+        }
+
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(rels);
+    }
+
+    /**
+     * Get impact analysis for a table from workspace JSON.
+     *
+     * <p>Returns JSON array of tables that would be impacted if the specified table changes.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tableId        table ID; must not be null
+     * @return JSON array of impacted tables; never null (empty array if no impacts)
+     */
+    public String getImpactAnalysis(String workspaceJson, String tableId) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<org.yawlfoundation.yawl.datamodelling.models.DataModellingTable> impacted =
+                builder.getImpactAnalysis(tableId);
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(impacted);
+    }
+
+    /**
+     * Get data lineage report for a table from workspace JSON.
+     *
+     * <p>Returns a JSON object containing upstream dependencies and downstream dependents.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @param tableId        table ID; must not be null
+     * @return JSON object with lineage information; never null
+     */
+    public String getDataLineageReport(String workspaceJson, String tableId) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.Map<String, Object> lineage = builder.getDataLineageReport(tableId);
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(lineage);
+    }
+
+    /**
+     * Check if workspace has circular dependencies.
+     *
+     * <p>Returns "true" or "false" JSON value.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @return "true" if cycles detected, "false" otherwise
+     */
+    public String hasCyclicDependencies(String workspaceJson) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        boolean hasCycles = builder.hasCyclicDependencies();
+        return String.valueOf(hasCycles);
+    }
+
+    /**
+     * Detect cycle path in workspace if one exists.
+     *
+     * <p>Returns JSON array of table IDs forming the cycle, or empty array if no cycle.</p>
+     *
+     * @param workspaceJson  workspace JSON string; must not be null
+     * @return JSON array of table IDs in cycle path; never null (empty if no cycle)
+     */
+    public String detectCyclePath(String workspaceJson) {
+        org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder builder =
+                queryBuilder(workspaceJson);
+        java.util.List<String> cycle = builder.detectCyclePath();
+        return org.yawlfoundation.yawl.datamodelling.converters.JsonObjectMapper
+                .toJson(cycle);
+    }
+
     /**
      * Extracts a single classpath resource to a target file path.
      */
@@ -1022,5 +1424,61 @@ public final class DataModellingBridge implements AutoCloseable {
         } catch (IOException e) {
             log.warn("Cannot clean up WASM temp directory {}: {}", dir, e.getMessage());
         }
+    }
+
+    /**
+     * Converts a string array to JSON array representation.
+     *
+     * <p>Escapes special characters and wraps each element as a JSON string.</p>
+     *
+     * @param array the array to convert; may be null
+     * @return JSON array string; never null (returns "[]" if array is null or empty)
+     */
+    private String stringArrayToJson(String[] array) {
+        if (array == null || array.length == 0) {
+            return "[]";
+        }
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < array.length; i++) {
+            if (i > 0) json.append(",");
+            json.append('"')
+                    .append(escapeJsonString(array[i]))
+                    .append('"');
+        }
+        json.append("]");
+        return json.toString();
+    }
+
+    /**
+     * Escapes a string for use as a JSON string value.
+     *
+     * <p>Handles quotes, backslashes, control characters, etc.</p>
+     *
+     * @param value the string to escape; must not be null
+     * @return escaped string; never null
+     * @throws NullPointerException if value is null
+     */
+    private String escapeJsonString(String value) {
+        Objects.requireNonNull(value, "value must not be null");
+        StringBuilder escaped = new StringBuilder();
+        for (char c : value.toCharArray()) {
+            switch (c) {
+                case '"' -> escaped.append("\\\"");
+                case '\\' -> escaped.append("\\\\");
+                case '\b' -> escaped.append("\\b");
+                case '\f' -> escaped.append("\\f");
+                case '\n' -> escaped.append("\\n");
+                case '\r' -> escaped.append("\\r");
+                case '\t' -> escaped.append("\\t");
+                default -> {
+                    if (c < 32 || c >= 127) {
+                        escaped.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        escaped.append(c);
+                    }
+                }
+            }
+        }
+        return escaped.toString();
     }
 }

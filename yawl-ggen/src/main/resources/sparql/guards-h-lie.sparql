@@ -1,0 +1,18 @@
+PREFIX code: <http://yawlfoundation.org/ggen/code#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?line ?content
+WHERE {
+    ?method a code:Method ;
+            code:lineNumber ?line ;
+            code:methodBody ?body ;
+            code:returnType ?returnType ;
+            code:hasComment ?comment .
+
+    ?comment code:text ?commentText .
+
+    FILTER((REGEX(STR(?returnType), "void") && REGEX(STR(?body), "return\\s+[^;]*")) ||
+           (NOT REGEX(STR(?returnType), "void") && REGEX(STR(?body), "^\\s*$")))
+
+    BIND(CONCAT("Documentation/code mismatch at line ", STR(?line)) AS ?content)
+}
