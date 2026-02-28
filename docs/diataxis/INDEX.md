@@ -38,6 +38,15 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | DM-03 | [YAWL Control Panel Getting Started](../tutorials/yawl-control-panel-getting-started.md) | Run Swing admin UI; manage specifications; monitor cases |
 | DM-04 | [YAWL MCP/A2A Getting Started](../tutorials/yawl-mcp-a2a-getting-started.md) | Connect AI agents via MCP; enable A2A communication |
 
+### Core Foundation Modules (5 Essential Modules)
+| # | Tutorial | What you learn |
+|---|----------|----------------|
+| FM-01 | [YAWL Engine Getting Started](../tutorials/yawl-engine-getting-started.md) | YEngine, YNetRunner, case creation, work item lifecycle, Petri net execution |
+| FM-02 | [YAWL Elements Getting Started](../tutorials/yawl-elements-getting-started.md) | YSpecification, YNet, YTask, YCondition, flows, decompositions, control flow patterns |
+| FM-03 | [YAWL Utilities Getting Started](../tutorials/yawl-utilities-getting-started.md) | Exceptions, schemas, unmarshalling, string/XML utilities, authentication helpers |
+| FM-04 | [YAWL Security Getting Started](../tutorials/yawl-security-getting-started.md) | X.509 certificates, digital signatures, certificate validation, key management |
+| FM-05 | [YAWL Benchmark Getting Started](../tutorials/yawl-benchmark-getting-started.md) | JMH performance testing, interpreting results, regression detection, optimization |
+
 ### Service Modules
 | # | Tutorial | What you learn |
 |---|----------|----------------|
@@ -93,6 +102,15 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Development Setup](../how-to/development.md) | Complete development environment |
 | [Java 25 Setup](../how-to/java25-setup.md) | Install and configure Java 25 |
 | [Contributing](../how-to/contributing.md) | Contribute to YAWL project |
+
+### Core Modules (5 Foundation Modules)
+| Guide | Task |
+|-------|------|
+| [Execute Workflow Cases with YAWL Engine](../how-to/yawl-engine-case-execution.md) | Create cases, manage work items, handle parallel execution, track progress |
+| [Design Workflow Schemas with YAWL Elements](../how-to/yawl-elements-schema-design.md) | Build multi-net specs, create decompositions, implement control flow patterns |
+| [Handle Errors Gracefully with YAWL Utilities](../how-to/yawl-utilities-error-handling.md) | Implement exception handling, validate data, implement retry logic |
+| [Manage Certificates and Digital Signatures](../how-to/yawl-security-certificate-management.md) | Generate certificates, sign specs, validate chains, check revocation |
+| [Optimize YAWL Performance Using Benchmarks](../how-to/yawl-benchmark-performance-optimization.md) | Identify bottlenecks, optimize throughput, tune memory, create custom benchmarks |
 
 ### Configuration
 | Guide | Task |
@@ -296,6 +314,14 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 
 > You are a **practitioner**. You need to look up a specific fact quickly.
 
+### Service Modules (Authentication, Scheduling, Monitoring, Worklets)
+| Reference | Contents |
+|-----------|----------|
+| [Authentication Configuration](../reference/yawl-authentication-config.md) | JWT, session storage, rate limiting, CSRF, audit logging |
+| [Scheduling Configuration](../reference/yawl-scheduling-config.md) | Scheduler, calendars, deadlines, virtual threads |
+| [Monitoring Configuration](../reference/yawl-monitoring-config.md) | OpenTelemetry tracing, metrics, logging, health checks |
+| [Worklet Configuration](../reference/yawl-worklet-config.md) | RDR engine, evaluation, versioning, import/export |
+
 ### Engine & Schema
 | Reference | Contents |
 |-----------|----------|
@@ -417,6 +443,15 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 
 > You are a **learner or practitioner**. You want to understand the why, not the how.
 
+### Core Foundation Modules (5 Essential Concepts)
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [YAWL Engine Architecture](../explanation/yawl-engine-architecture.md) | Petri net execution, YNetRunner token propagation, persistence, concurrency models, recovery |
+| [YAWL Elements Domain Model](../explanation/yawl-elements-domain-model.md) | Why Petri nets, mapping to elements, control flow patterns, decomposition hierarchy |
+| [YAWL Utilities Foundation](../explanation/yawl-utilities-foundation.md) | Exception hierarchy, schema validation, unmarshal architecture, utility philosophy |
+| [YAWL Security Framework](../explanation/yawl-security-framework.md) | PKI design, asymmetric cryptography, certificate management, signature verification |
+| [YAWL Benchmark Philosophy](../explanation/yawl-benchmark-philosophy.md) | Why JMH, statistical rigor, regression detection, performance targets, optimization strategies |
+
 ### Core Concepts
 | Explanation | What it addresses |
 |-------------|-------------------|
@@ -443,6 +478,14 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Stateless Engine Design](../explanation/stateless-engine-design.md) | Design patterns for event-driven execution |
 | [MCP/A2A Architecture](../explanation/mcp-a2a-architecture.md) | AI agent integration architecture |
 | [Control Panel Architecture](../explanation/control-panel-architecture.md) | Swing-based admin UI design |
+
+### Service Modules (Authentication, Scheduling, Monitoring, Worklets)
+| Explanation | What it addresses |
+|-------------|-------------------|
+| [Authentication Architecture](../explanation/yawl-authentication-architecture.md) | JWT tokens, session management, security design |
+| [Scheduling Architecture](../explanation/yawl-scheduling-architecture.md) | Virtual threads, calendar-aware scheduling, deadlines |
+| [Monitoring Architecture](../explanation/yawl-monitoring-architecture.md) | Distributed tracing, metrics collection, structured logging |
+| [Worklet Architecture](../explanation/yawl-worklet-architecture.md) | Ripple Down Rules, adaptive workflows, RDR algorithm |
 
 ### Workflow Execution & Adaptation
 | Explanation | What it addresses |
