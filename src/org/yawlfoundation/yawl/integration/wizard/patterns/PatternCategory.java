@@ -41,10 +41,28 @@ public enum PatternCategory {
     STATE_BASED("State-Based Patterns"),
 
     /**
-     * Cancellation patterns (WP-19 to WP-20).
+     * Cancellation patterns (WP-19 to WP-20, WP-25 to WP-27).
      * Patterns for cancelling tasks or entire case instances.
      */
-    CANCELLATION("Cancellation Patterns");
+    CANCELLATION("Cancellation Patterns"),
+
+    /**
+     * Iteration patterns (WCP-21 to WCP-22).
+     * Patterns for structured loops and recursion.
+     */
+    ITERATION("Iteration Patterns"),
+
+    /**
+     * Trigger patterns (WCP-23 to WCP-24).
+     * Patterns for transient and persistent triggers.
+     */
+    TRIGGER("Trigger Patterns"),
+
+    /**
+     * Synchronisation patterns (WCP-33).
+     * Advanced synchronisation patterns with generalised AND-join semantics.
+     */
+    SYNCHRONISATION("Synchronisation Patterns");
 
     private final String displayName;
 

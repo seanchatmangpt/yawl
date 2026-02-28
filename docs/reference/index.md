@@ -74,6 +74,8 @@ Information-oriented content for practitioners who need to look up a specific te
 | Reference | Contents |
 |-----------|----------|
 | [quality-standards.md](quality-standards.md) | HYPER_STANDARDS quality rules |
+| [hyper-standards.md](hyper-standards.md) | HYPER_STANDARDS pattern reference (14 patterns) |
+| [h-guards-patterns.md](h-guards-patterns.md) | H-Guards violation catalog (7 patterns: TODO, MOCK, STUB, EMPTY, FALLBACK, LIE, SILENT) |
 | [test-strategy.md](test-strategy.md) | Testing strategy and coverage targets |
 | [security-policy.md](security-policy.md) | Security policy and requirements |
 | [security-overview.md](security-overview.md) | Security architecture overview |
