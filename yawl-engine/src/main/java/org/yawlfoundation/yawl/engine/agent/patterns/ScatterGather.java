@@ -87,7 +87,9 @@ public class ScatterGather {
         replies.put(splitId, replyList);
 
         // Register all participants with Phaser
-        phaser.bulkRegister(expectedCount);
+        for (int i = 0; i < expectedCount; i++) {
+            phaser.register();
+        }
 
         // Send work to each target with unique correlation ID
         for (int i = 0; i < targets.length; i++) {
@@ -204,9 +206,11 @@ public class ScatterGather {
                 correlationToSplit.remove(cid);
                 correlationToIndex.remove(cid);
             }
-            // Deregister from Phaser
+            // Deregister from Phaser by arriving for each participant
             try {
-                phaser.bulkArrive(correlationIds.length);
+                for (int i = 0; i < correlationIds.length; i++) {
+                    phaser.arrive();
+                }
             } catch (IllegalStateException e) {
                 // Phaser already terminated
             }
