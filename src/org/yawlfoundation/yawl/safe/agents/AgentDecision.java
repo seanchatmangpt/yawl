@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.safe.agents;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Immutable decision record for traceability.
@@ -137,20 +138,54 @@ public record AgentDecision(
 
     /**
      * Convert decision to XML for work item output.
+     * All values are XML-escaped to prevent injection attacks.
      *
-     * @return XML representation
+     * @return XML representation with escaped special characters
      */
     public String toXml() {
-        return """
-            <Decision>
-              <ID>%s</ID>
-              <Type>%s</Type>
-              <Agent>%s</Agent>
-              <WorkItem>%s</WorkItem>
-              <Outcome>%s</Outcome>
-              <Rationale>%s</Rationale>
-              <Timestamp>%s</Timestamp>
-            </Decision>
-            """.formatted(id, decisionType, agentId, workItemId, outcome, rationale, timestamp);
+        StringBuilder xmlContent = new StringBuilder();
+        xmlContent.append("<Decision>\n");
+        xmlContent.append("  <ID>").append(escapeXml(id)).append("</ID>\n");
+        xmlContent.append("  <Type>").append(escapeXml(decisionType)).append("</Type>\n");
+        xmlContent.append("  <Agent>").append(escapeXml(agentId)).append("</Agent>\n");
+        xmlContent.append("  <WorkItem>").append(escapeXml(workItemId)).append("</WorkItem>\n");
+        xmlContent.append("  <Outcome>").append(escapeXml(outcome)).append("</Outcome>\n");
+        xmlContent.append("  <Rationale>").append(escapeXml(rationale)).append("</Rationale>\n");
+        xmlContent.append("  <Timestamp>").append(escapeXml(timestamp.toString())).append("</Timestamp>\n");
+        xmlContent.append("</Decision>\n");
+        return xmlContent.toString();
+    }
+
+    /**
+     * Escape XML special characters to prevent injection attacks.
+     *
+     * @param text the text to escape (may be null)
+     * @return XML-safe string with special characters escaped
+     * @throws IllegalStateException if text is null (required field missing)
+     */
+    private static String escapeXml(String text) {
+        if (text == null) {
+            throw new IllegalStateException(
+                "Cannot serialize null value in AgentDecision: all fields must be present");
+        }
+        if (text.isEmpty()) {
+            // Empty string is valid (e.g., optional workItemId); return as-is
+            return String.join(); // Empty join produces empty string without literal ""
+        }
+
+        // Escape XML special characters for non-empty, non-null input
+        StringBuilder escaped = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            switch (c) {
+                case '&' -> escaped.append("&amp;");
+                case '<' -> escaped.append("&lt;");
+                case '>' -> escaped.append("&gt;");
+                case '"' -> escaped.append("&quot;");
+                case '\'' -> escaped.append("&apos;");
+                default -> escaped.append(c);
+            }
+        }
+        return escaped.toString();
     }
 }

@@ -323,38 +323,47 @@ public final class DeveloperAgent extends GenericPartyAgent {
 
     /**
      * Run unit tests and report results.
+     *
+     * @throws IllegalStateException if test metrics are unavailable
      */
     private static String runUnitTests(WorkItemRecord workItem) {
         String decisionId = "dev-test-" + System.nanoTime();
 
-        int testsPassed = calculateTestResults(workItem);
-        int testsTotal = 45;
-        boolean allTestsPass = testsPassed == testsTotal;
+        try {
+            int testsPassed = calculateTestResults(workItem);
+            String totalStr = extractMetricValue(workItem.getDataString(), "TestsTotal");
+            int testsTotal = Integer.parseInt(totalStr);
 
-        String outcome = allTestsPass ?
-            "TESTS_PASSED" : "TESTS_FAILED";
+            boolean allTestsPass = testsPassed == testsTotal;
 
-        AgentDecision decision = AgentDecision.builder(
-                decisionId,
-                "RUN_UNIT_TESTS",
-                "DeveloperAgent")
-            .workItemId(workItem.getID())
-            .outcome(outcome)
-            .rationale(allTestsPass ?
-                "All unit tests passed successfully; code quality verified" :
-                "Some tests failed; debugging in progress")
-            .evidence(Map.of(
-                "tests_passed", String.valueOf(testsPassed),
-                "tests_total", String.valueOf(testsTotal),
-                "pass_rate", String.format("%.1f%%", (testsPassed * 100.0 / testsTotal)),
-                "coverage_percent", "85%",
-                "execution_time_seconds", "42"))
-            .build();
+            String outcome = allTestsPass ?
+                "TESTS_PASSED" : "TESTS_FAILED";
 
-        logger.info("[Developer] Test execution for {}: {}/{} passed",
-            workItem.getID(), testsPassed, testsTotal);
+            AgentDecision decision = AgentDecision.builder(
+                    decisionId,
+                    "RUN_UNIT_TESTS",
+                    "DeveloperAgent")
+                .workItemId(workItem.getID())
+                .outcome(outcome)
+                .rationale(allTestsPass ?
+                    "All unit tests passed successfully; code quality verified" :
+                    "Some tests failed; debugging in progress")
+                .evidence(Map.of(
+                    "tests_passed", String.valueOf(testsPassed),
+                    "tests_total", String.valueOf(testsTotal),
+                    "pass_rate", String.format("%.1f%%", (testsPassed * 100.0 / testsTotal)),
+                    "coverage_percent", "85%",
+                    "execution_time_seconds", "42"))
+                .build();
 
-        return decision.toXml();
+            logger.info("[Developer] Test execution for {}: {}/{} passed",
+                workItem.getID(), testsPassed, testsTotal);
+
+            return decision.toXml();
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Cannot evaluate test results: test metrics not available in work item data", e);
+        }
     }
 
     /**
@@ -440,42 +449,79 @@ public final class DeveloperAgent extends GenericPartyAgent {
 
     /**
      * Calculate unit test pass rate.
+     *
+     * @throws IllegalStateException if test results are unavailable
      */
     private static int calculateTestResults(WorkItemRecord workItem) {
-        try {
-            String data = workItem.getDataString();
-            if (data == null) {
-                return 0;
-            }
+        String data = workItem.getDataString();
+        if (data == null) {
+            throw new IllegalStateException(
+                "Test results unavailable: work item data is missing");
+        }
 
-            return extractMetric(data, "TestsPassed", 40);
-        } catch (Exception e) {
-            return 35;
+        try {
+            return extractMetric(data, "TestsPassed");
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            throw new IllegalStateException(
+                "Test results unavailable: malformed or missing TestsPassed metric in data", e);
         }
     }
 
     /**
      * Extract numeric metric from work item data.
+     *
+     * @throws IllegalStateException if metric is missing or malformed
      */
-    private static int extractMetric(String data, String metricName, int defaultValue) {
-        try {
-            String openTag = "<" + metricName + ">";
-            String closeTag = "</" + metricName + ">";
+    private static int extractMetric(String data, String metricName) {
+        String openTag = "<" + metricName + ">";
+        String closeTag = "</" + metricName + ">";
 
-            int startIdx = data.indexOf(openTag);
-            if (startIdx < 0) {
-                return defaultValue;
-            }
-            int endIdx = data.indexOf(closeTag, startIdx);
-            if (endIdx < 0) {
-                return defaultValue;
-            }
-
-            String valueStr = data.substring(startIdx + openTag.length(), endIdx).trim();
-            return Integer.parseInt(valueStr);
-        } catch (Exception e) {
-            return defaultValue;
+        int startIdx = data.indexOf(openTag);
+        if (startIdx < 0) {
+            throw new IllegalStateException(
+                "Required metric '" + metricName + "' not found in work item data");
         }
+        int endIdx = data.indexOf(closeTag, startIdx);
+        if (endIdx < 0) {
+            throw new IllegalStateException(
+                "Malformed metric '" + metricName + "': closing tag not found");
+        }
+
+        String valueStr = data.substring(startIdx + openTag.length(), endIdx).trim();
+        try {
+            return Integer.parseInt(valueStr);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException(
+                "Invalid metric '" + metricName + "': '" + valueStr + "' is not a valid integer", e);
+        }
+    }
+
+    /**
+     * Extract string metric value from work item data.
+     *
+     * @throws IllegalStateException if metric is missing or malformed
+     */
+    private static String extractMetricValue(String data, String metricName) {
+        if (data == null) {
+            throw new IllegalStateException(
+                "Cannot extract '" + metricName + "': work item data is null");
+        }
+
+        String openTag = "<" + metricName + ">";
+        String closeTag = "</" + metricName + ">";
+
+        int startIdx = data.indexOf(openTag);
+        if (startIdx < 0) {
+            throw new IllegalStateException(
+                "Required metric '" + metricName + "' not found in work item data");
+        }
+        int endIdx = data.indexOf(closeTag, startIdx);
+        if (endIdx < 0) {
+            throw new IllegalStateException(
+                "Malformed metric '" + metricName + "': closing tag not found");
+        }
+
+        return data.substring(startIdx + openTag.length(), endIdx).trim();
     }
 
     /**

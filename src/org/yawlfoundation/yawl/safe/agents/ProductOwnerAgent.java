@@ -298,12 +298,15 @@ public final class ProductOwnerAgent extends GenericPartyAgent {
 
     /**
      * Evaluate if all acceptance criteria are met.
+     *
+     * @throws IllegalStateException if work item data is unavailable or malformed
      */
     private static boolean evaluateAcceptanceCriteria(WorkItemRecord workItem) {
         try {
             String data = workItem.getDataString();
             if (data == null) {
-                return false;
+                throw new IllegalStateException(
+                    "Work item data is unavailable for acceptance criteria evaluation");
             }
 
             int passed = 0;
@@ -324,8 +327,8 @@ public final class ProductOwnerAgent extends GenericPartyAgent {
 
             return total > 0 && passed == total;
         } catch (Exception e) {
-            LogManager.getLogger().warn("Error evaluating acceptance criteria: {}", e.getMessage());
-            return false;
+            throw new IllegalStateException(
+                "Failed to evaluate acceptance criteria: " + e.getMessage(), e);
         }
     }
 

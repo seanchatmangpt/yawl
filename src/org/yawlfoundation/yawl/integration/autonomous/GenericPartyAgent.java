@@ -69,7 +69,7 @@ import com.sun.net.httpserver.HttpServer;
  * @version 6.0
  * @since YAWL 6.0
  */
-public final class GenericPartyAgent {
+public class GenericPartyAgent {
 
     private static final Logger logger = LogManager.getLogger(GenericPartyAgent.class);
 
