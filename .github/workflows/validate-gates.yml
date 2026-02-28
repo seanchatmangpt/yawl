@@ -1,0 +1,128 @@
+name: Validate YAWL Build Gates
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate YAWL Build Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run YAWL Build & Validation Gates
+        env:
+          CLAUDE_CODE_REMOTE: 'true'
+        run: |
+          set -e
+          echo "Starting YAWL build and validation..."
+          bash scripts/dx.sh all
+          echo "Build and validation completed successfully"
+
+      - name: Archive Validation Receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-receipts
+          path: .yawl/.dx-state/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Parse & Report Validation Results
+        if: always()
+        id: validate_results
+        run: |
+          set +e
+          RECEIPT_DIR=".yawl/.dx-state"
+          
+          # Check if receipts exist
+          if [[ ! -d "$RECEIPT_DIR" ]]; then
+            echo "No receipts directory found, skipping receipt parsing"
+            exit 0
+          fi
+          
+          # Count receipt files
+          RECEIPT_COUNT=$(find "$RECEIPT_DIR" -name "*-receipt.json" -type f | wc -l)
+          if [[ $RECEIPT_COUNT -eq 0 ]]; then
+            echo "No receipt files found in $RECEIPT_DIR"
+            exit 0
+          fi
+          
+          echo "Found $RECEIPT_COUNT receipt files"
+          
+          # Check all receipts and collect status
+          bash scripts/validate-receipts.sh check-all "$RECEIPT_DIR"
+          RECEIPT_STATUS=$?
+          
+          # Store status for next step
+          echo "receipt_status=$RECEIPT_STATUS" >> $GITHUB_OUTPUT
+          exit 0
+
+      - name: Generate GitHub Job Summary
+        if: always()
+        run: |
+          RECEIPT_DIR=".yawl/.dx-state"
+          
+          # Create summary header
+          cat >> $GITHUB_STEP_SUMMARY << 'SUMMARY_EOF'
+          # YAWL Build & Validation Gates Report
+          
+          SUMMARY_EOF
+          
+          # Check if receipts exist
+          if [[ ! -d "$RECEIPT_DIR" ]]; then
+            echo "✅ No validation receipts found (validation may have been skipped)" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          
+          # Process each receipt file
+          for receipt_file in $(find "$RECEIPT_DIR" -name "*-receipt.json" -type f | sort); do
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Processing: $(basename $receipt_file)" >> $GITHUB_STEP_SUMMARY
+            bash scripts/validate-receipts.sh format-github "$receipt_file" >> $GITHUB_STEP_SUMMARY 2>&1 || true
+            echo "" >> $GITHUB_STEP_SUMMARY
+          done
+          
+          cat >> $GITHUB_STEP_SUMMARY << 'SUMMARY_EOF'
+          
+          ---
+          
+          **Report Generated**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          
+          SUMMARY_EOF
+
+      - name: Fail if validation violations detected
+        if: always() && steps.validate_results.outputs.receipt_status == '2'
+        run: |
+          echo "❌ Validation gates failed: violations detected in receipts"
+          exit 2
+
+      - name: Success Summary
+        if: success()
+        run: |
+          echo "✅ All YAWL validation gates passed"
+          echo "Build is ready for merge"
+
