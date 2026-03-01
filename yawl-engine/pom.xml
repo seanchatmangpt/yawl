@@ -108,6 +108,16 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- Resilience4j for retry / circuit-breaker in InterfaceX_EngineSideClient -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-core</artifactId>
+        </dependency>
+
         <!-- Metrics - Micrometer for workflow metrics -->
         <dependency>
             <groupId>io.micrometer</groupId>
