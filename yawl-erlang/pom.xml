@@ -62,6 +62,8 @@
                     <include>**/*.beam</include>
                     <include>**/*.json</include>
                     <include>**/*.xml</include>
+                    <include>**/*.yaml</include>
+                    <include>**/*.yml</include>
                 </includes>
             </testResource>
         </testResources>

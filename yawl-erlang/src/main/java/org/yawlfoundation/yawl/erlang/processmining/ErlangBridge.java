@@ -18,8 +18,11 @@
 package org.yawlfoundation.yawl.erlang.processmining;
 
 import org.yawlfoundation.yawl.erlang.bridge.ErlangNode;
+import org.yawlfoundation.yawl.erlang.capability.Capability;
+import org.yawlfoundation.yawl.erlang.capability.MapsToCapability;
 import org.yawlfoundation.yawl.erlang.error.ErlangConnectionException;
 import org.yawlfoundation.yawl.erlang.error.ErlangRpcException;
+import org.yawlfoundation.yawl.erlang.resilience.OtpCircuitBreaker;
 import org.yawlfoundation.yawl.erlang.term.*;
 
 import java.io.IOException;
@@ -62,6 +65,11 @@ import java.util.function.Consumer;
  *
  * @see ConformanceResult
  */
+@MapsToCapability(value = Capability.LAUNCH_CASE, layer = "L3")
+@MapsToCapability(value = Capability.CHECK_CONFORMANCE, layer = "L3")
+@MapsToCapability(value = Capability.SUBSCRIBE_TO_EVENTS, layer = "L3")
+@MapsToCapability(value = Capability.RELOAD_MODULE, layer = "L3")
+@MapsToCapability(value = Capability.AS_RPC_CALLABLE, layer = "L3")
 public final class ErlangBridge implements AutoCloseable {
 
     private final ErlangNode node;
@@ -260,6 +268,27 @@ public final class ErlangBridge implements AutoCloseable {
             throw new ErlangRpcException("code", "load_file",
                     "Hot reload failed for '" + moduleName + "': " + t.elements().get(1));
         }
+    }
+
+    /**
+     * Returns the bridge's RPC channel as a callable for use by
+     * {@link org.yawlfoundation.yawl.erlang.hotreload.HotReloadServiceImpl} and other
+     * components that need OTP RPC access without a hard dependency on this class.
+     *
+     * <p>The returned callable delegates to the underlying {@link ErlangNode#rpc}
+     * and is valid as long as the bridge is connected and not closed.</p>
+     *
+     * @return an {@link OtpCircuitBreaker.ErlRpcCallable} backed by this bridge's node
+     * @throws IllegalStateException if the bridge is not connected
+     */
+    @MapsToCapability(value = Capability.AS_RPC_CALLABLE, layer = "L3")
+    public OtpCircuitBreaker.ErlRpcCallable asRpcCallable() {
+        return (module, function, args) -> {
+            if (!node.isConnected()) {
+                throw new ErlangConnectionException("erlang-bridge", "Bridge is not connected");
+            }
+            return node.rpc(module, function, args);
+        };
     }
 
     /**
