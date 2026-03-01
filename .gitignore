@@ -264,6 +264,8 @@ receipts/
 .erlmcp/
 rebar3.crashdump
 */rebar3.crashdump
+erl_crash.dump
+**/erl_crash.dump
 *.beam
 
 # pm-bridge-ggen: generated files (rebuilt from gen-ttl on every compile)
