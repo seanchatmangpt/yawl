@@ -362,6 +362,13 @@ echo "🔍 Running Observatory to generate codebase facts..."
 if bash scripts/observatory/observatory.sh --facts; then
     echo "✅ Observatory facts generated successfully"
 
+    # Write pom-hash sidecar so dx.sh all skips observatory on first run.
+    # observatory.sh --facts does not write the full receipt, so dx.sh
+    # uses this sidecar as the primary freshness signal.
+    mkdir -p .yawl/.dx-state
+    sha256sum pom.xml 2>/dev/null | awk '{print $1}' \
+        > .yawl/.dx-state/observatory-pom-hash.txt || true
+
     # Display summary from INDEX.md
     if [ -f "docs/v6/latest/INDEX.md" ]; then
         FACT_COUNT=$(grep -c "^- " docs/v6/latest/INDEX.md || echo "0")

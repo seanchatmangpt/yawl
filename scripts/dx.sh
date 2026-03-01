@@ -63,6 +63,7 @@
 #   DX_WARM_CACHE=1    Enable warm bytecode cache for hot modules (default: off)
 #   DX_FEEDBACK=1      Run feedback tier tests (fast smoke tests, <5s)
 #   DX_STATELESS=1     Enable stateless test execution with H2 snapshots
+#   DX_SKIP_OBSERVE=1  Skip observatory Ψ phase (CI with pre-generated facts, default: off)
 #   TEP_FAIL_FAST_TIER=N  Run tests up to tier N with fail-fast (default: disabled)
 #   TEP_CONTINUE_ON_FAILURE=1  Continue running remaining tiers after failures (default: 0)
 # ==========================================================================
@@ -133,27 +134,45 @@ elif [[ "${DX_OFFLINE:-auto}" == "auto" ]]; then
     fi
 fi
 
-# ── Detect changed modules ───────────────────────────────────────────────
-# Topological order: every module appears after all its YAWL dependencies.
-# See docs/build-sequences.md and docs/v6/diagrams/facts/reactor.json for
-# the full dependency graph. Order matters for detect_changed_modules().
-ALL_MODULES=(
-    # Layer 0 — Foundation (no YAWL deps, parallel)
-    yawl-utilities yawl-security yawl-graalpy yawl-graaljs
-    # Layer 1 — First consumers (parallel)
-    yawl-elements yawl-ggen yawl-graalwasm yawl-dmn yawl-data-modelling
-    # Layer 2 — Core engine
-    yawl-engine
-    # Layer 3 — Engine extension
-    yawl-stateless
-    # Layer 4 — Services (parallel); authentication now AFTER engine (bug fix)
-    yawl-authentication yawl-scheduling yawl-monitoring
-    yawl-worklet yawl-control-panel yawl-integration yawl-webapps
-    # Layer 5 — Advanced services (parallel)
-    yawl-pi yawl-resourcing
-    # Layer 6 — Top-level application
-    yawl-mcp-a2a-app
-)
+# ── Load module list from observatory facts (dynamic) ────────────────────────
+# Reads topological order from reactor.json; falls back to hardcoded array
+# if facts are missing (e.g., very first run before observatory has ever run).
+# See docs/v6/latest/facts/reactor.json for the authoritative dependency graph.
+REACTOR_FACTS="${REPO_ROOT}/docs/v6/latest/facts/reactor.json"
+
+_load_modules_from_facts() {
+    # Exclude yawl-parent (root pom, not a compile target) and
+    # yawl-benchmark (benchmark harness, not part of the normal build loop)
+    jq -r '.reactor_order[]' "$REACTOR_FACTS" 2>/dev/null | \
+        grep -vxF "yawl-parent" | grep -vxF "yawl-benchmark" || true
+}
+
+ALL_MODULES=()
+if [[ -f "$REACTOR_FACTS" ]] && command -v jq &>/dev/null; then
+    mapfile -t ALL_MODULES < <(_load_modules_from_facts)
+fi
+
+# Fallback: hardcoded topological order used when facts are missing.
+# Keep this in sync with reactor.json (observatory is the source of truth).
+if [[ ${#ALL_MODULES[@]} -eq 0 ]]; then
+    ALL_MODULES=(
+        # Layer 0 — Foundation (no YAWL deps, parallel)
+        yawl-utilities yawl-security yawl-graalpy yawl-graaljs
+        # Layer 1 — First consumers (parallel)
+        yawl-elements yawl-ggen yawl-graalwasm yawl-dmn yawl-data-modelling
+        # Layer 2 — Core engine
+        yawl-engine
+        # Layer 3 — Engine extension
+        yawl-stateless
+        # Layer 4 — Services (parallel); authentication now AFTER engine (bug fix)
+        yawl-authentication yawl-scheduling yawl-monitoring
+        yawl-worklet yawl-control-panel yawl-integration yawl-webapps
+        # Layer 5 — Advanced services (parallel)
+        yawl-pi yawl-resourcing
+        # Layer 6 — Top-level application
+        yawl-mcp-a2a-app
+    )
+fi
 
 # In remote/CI environments, skip modules with heavy ML dependencies (>50MB JARs)
 # that cannot be downloaded through the egress proxy (onnxruntime = 89MB).
@@ -161,6 +180,45 @@ ALL_MODULES=(
 if [[ "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
     ALL_MODULES=($(printf '%s\n' "${ALL_MODULES[@]}" | grep -v '^yawl-pi$' | grep -v '^yawl-mcp-a2a-app$'))
 fi
+
+# ── Observatory staleness check ───────────────────────────────────────────────
+# Returns 0 if facts are fresh (pom.xml unchanged since last observatory run),
+# 1 if stale or missing. Runs in < 10ms — filesystem + jq only.
+#
+# Staleness sources checked in order:
+#   1. Sidecar file (.yawl/.dx-state/observatory-pom-hash.txt) written by
+#      dx_phase_observe() after a --facts refresh. This is authoritative because
+#      observatory.sh --facts does NOT update the full receipt.
+#   2. Observatory receipt (docs/v6/latest/receipts/observatory.json) written by
+#      a full observatory.sh run (includes diagrams + receipt). Fallback.
+_observatory_facts_fresh() {
+    local facts_dir="${REPO_ROOT}/docs/v6/latest/facts"
+    local sidecar="${REPO_ROOT}/.yawl/.dx-state/observatory-pom-hash.txt"
+    local receipt="${REPO_ROOT}/docs/v6/latest/receipts/observatory.json"
+
+    # reactor.json is the minimum viable fact — if missing, always stale
+    [[ -f "${facts_dir}/reactor.json" ]] || return 1
+
+    # Compute current pom.xml hash (used for both checks)
+    local current_hash
+    current_hash=$(sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}')
+
+    # Primary: sidecar written by dx_phase_observe() after --facts refresh
+    if [[ -f "$sidecar" ]]; then
+        local sidecar_hash
+        sidecar_hash=$(cat "$sidecar" 2>/dev/null) || true
+        [[ "$sidecar_hash" == "$current_hash" ]] && return 0
+    fi
+
+    # Secondary: full observatory receipt (written by observatory.sh with receipt phase)
+    if [[ -f "$receipt" ]]; then
+        local stored_hash
+        stored_hash=$(jq -r '.inputs.root_pom_sha256 // empty' "$receipt" 2>/dev/null)
+        [[ -n "$stored_hash" && "$stored_hash" == "$current_hash" ]] && return 0
+    fi
+
+    return 1  # stale
+}
 
 detect_changed_modules() {
     local changed_files
@@ -372,7 +430,7 @@ PHASE_STATE_DIR="${REPO_ROOT}/.yawl/.dx-state"
 mkdir -p "${PHASE_STATE_DIR}"
 
 # Track which phases we're running in this invocation
-declare -a PHASES_IN_ORDER=("compile" "test" "guards" "invariants" "report")
+declare -a PHASES_IN_ORDER=("observe" "compile" "test" "guards" "invariants" "report")
 declare -A PHASE_STATUS  # phase → "pending|running|green|red"
 declare -A PHASE_EXIT_CODE
 
@@ -416,6 +474,81 @@ save_phase_status() {
 }
 
 # ── Phase execution functions ──────────────────────────────────────────────
+
+# Phase: Observe (Ψ-Phase)
+# Ensures observatory facts are current before any build starts.
+# Checks pom.xml SHA256 against sidecar/receipt; refreshes via observatory.sh --facts
+# if stale (~13s). Only runs for 'dx.sh all'. Skipped in offline mode (facts must
+# be pre-generated). DX_SKIP_OBSERVE=1 bypasses entirely (CI with pre-generated facts).
+# Output: exit code (0=GREEN, 2=RED on observatory failure)
+dx_phase_observe() {
+    save_phase_status "observe" "running" 0
+
+    printf "${C_CYAN}dx${C_RESET}: ${C_BLUE}=== PHASE: Observe (Ψ) ===${C_RESET}\n"
+
+    # Allow explicit bypass (CI that pre-generates facts)
+    if [[ "${DX_SKIP_OBSERVE:-0}" == "1" ]]; then
+        printf "${C_CYAN}dx${C_RESET}: ${C_YELLOW}observe skipped (DX_SKIP_OBSERVE=1)${C_RESET}\n"
+        save_phase_status "observe" "green" 0
+        return 0
+    fi
+
+    # Offline mode: skip refresh, warn if facts are missing or stale
+    if [[ -n "$OFFLINE_FLAG" ]]; then
+        if _observatory_facts_fresh; then
+            printf "${C_CYAN}dx${C_RESET}: ${C_GREEN}${E_OK} facts fresh (offline)${C_RESET}\n"
+        else
+            printf "${C_CYAN}dx${C_RESET}: ${C_YELLOW}⚠  facts missing/stale — run observatory while online:${C_RESET}\n"
+            printf "   ${C_CYAN}bash scripts/observatory/observatory.sh --facts${C_RESET}\n"
+        fi
+        save_phase_status "observe" "green" 0
+        return 0
+    fi
+
+    # Online: check staleness (< 10ms)
+    if _observatory_facts_fresh; then
+        printf "${C_CYAN}dx${C_RESET}: ${C_GREEN}${E_OK} facts fresh (pom.xml unchanged)${C_RESET}\n"
+        save_phase_status "observe" "green" 0
+        return 0
+    fi
+
+    # Stale or missing → refresh facts only (~13s; skips diagrams + receipt)
+    printf "${C_CYAN}dx${C_RESET}: ${C_YELLOW}facts stale — refreshing (observatory --facts)...${C_RESET}\n"
+    local obs_start obs_end obs_dur
+    obs_start=$(date +%s)
+
+    set +e
+    bash "${REPO_ROOT}/scripts/observatory/observatory.sh" --facts 2>&1 | \
+        while IFS= read -r line; do printf "   %s\n" "$line"; done
+    local OBS_EXIT=${PIPESTATUS[0]}
+    set -euo pipefail
+
+    obs_end=$(date +%s)
+    obs_dur=$((obs_end - obs_start))
+
+    if [[ $OBS_EXIT -ne 0 ]]; then
+        printf "${C_CYAN}dx${C_RESET}: ${C_RED}${E_FAIL} observatory failed (exit ${OBS_EXIT})${C_RESET}\n"
+        save_phase_status "observe" "red" $OBS_EXIT
+        return $OBS_EXIT
+    fi
+
+    # Write pom-hash sidecar so the next staleness check is instant.
+    # (observatory.sh --facts does not update the full receipt, so we use this sidecar.)
+    sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}' \
+        > "${REPO_ROOT}/.yawl/.dx-state/observatory-pom-hash.txt" 2>/dev/null || true
+
+    # Reload ALL_MODULES from the freshly generated reactor.json
+    if [[ -f "$REACTOR_FACTS" ]] && command -v jq &>/dev/null; then
+        mapfile -t ALL_MODULES < <(_load_modules_from_facts)
+        if [[ "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
+            ALL_MODULES=($(printf '%s\n' "${ALL_MODULES[@]}" | grep -v '^yawl-pi$' | grep -v '^yawl-mcp-a2a-app$'))
+        fi
+    fi
+
+    printf "${C_CYAN}dx${C_RESET}: ${C_GREEN}${E_OK} facts refreshed (${obs_dur}s, ${#ALL_MODULES[@]} modules)${C_RESET}\n"
+    save_phase_status "observe" "green" 0
+    return 0
+}
 
 # Phase: Compile
 # Extracts core compilation logic with all optimizations (warm cache, CDS, semantic filtering)
@@ -832,10 +965,9 @@ if [[ "${DX_CDS_GENERATE:-1}" == "1" && "$PHASE" != "test" ]]; then
         # Get CDS flags if archives exist
         CDS_FLAGS=$(bash "${SCRIPT_DIR}/cds-helper.sh" flags 2>/dev/null || echo "")
         if [[ -n "$CDS_FLAGS" ]]; then
-            # Add each flag as a separate argument
-            for flag in $CDS_FLAGS; do
-                MVN_ARGS+=("$flag")
-            done
+            # CDS flags are JVM args (-XX:...) — must go to MAVEN_OPTS, not MVN_ARGS
+            # Passing them as Maven args causes "No plugin found for prefix 'X'" error
+            export MAVEN_OPTS="${MAVEN_OPTS:-} $CDS_FLAGS"
             printf "${C_CYAN}dx${C_RESET}: ${C_BLUE}CDS${C_RESET} archives available\n" >&2
         fi
     fi
@@ -931,22 +1063,23 @@ determine_phases_to_run() {
         # --validate-only: run only H + Q validation phases
         phases_list="guards,invariants,report"
     elif [[ "$SCOPE" == "all" && "$SKIP_VALIDATE" == "0" ]]; then
-        # dx.sh all: run full pipeline with validation
+        # dx.sh all: full Ψ→Λ→H→Q pipeline
         if [[ "$PHASE" == "compile-test" ]]; then
-            phases_list="compile,test,guards,invariants,report"
+            phases_list="observe,compile,test,guards,invariants,report"
         elif [[ "$PHASE" == "compile" ]]; then
-            phases_list="compile"
+            phases_list="observe,compile"
         elif [[ "$PHASE" == "test" ]]; then
-            phases_list="test"
+            phases_list="observe,test"
         fi
     elif [[ "$SCOPE" == "all" && "$SKIP_VALIDATE" == "1" ]]; then
-        # dx.sh all --skip-validate: full build without validation (backward compat)
+        # dx.sh all --skip-validate: observe + build, no H+Q gates
+        # Observatory is infrastructure — not skippable via --skip-validate
         if [[ "$PHASE" == "compile-test" ]]; then
-            phases_list="compile,test"
+            phases_list="observe,compile,test"
         elif [[ "$PHASE" == "compile" ]]; then
-            phases_list="compile"
+            phases_list="observe,compile"
         elif [[ "$PHASE" == "test" ]]; then
-            phases_list="test"
+            phases_list="observe,test"
         fi
     else
         # Default (dx.sh without all): changed modules, no validation
@@ -1025,6 +1158,10 @@ for phase in "${phase_array[@]}"; do
     fi
 
     case "$phase" in
+        observe)
+            dx_phase_observe
+            EXIT_CODE=$?
+            ;;
         compile)
             dx_phase_compile
             EXIT_CODE=$?
@@ -1141,7 +1278,7 @@ extract_slowest_tests() {
 echo ""
 if [[ $EXIT_CODE -eq 0 ]]; then
     # Build success message with warm cache info if applicable
-    local success_msg="${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d"
+    success_msg="${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d"
     if [[ -n "$WARM_CACHE_MODULES_SKIPPED" ]]; then
         success_msg+=" | warm cache: %d module(s)"
     fi

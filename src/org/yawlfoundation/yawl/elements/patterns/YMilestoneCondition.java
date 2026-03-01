@@ -117,7 +117,7 @@ public class YMilestoneCondition extends YCondition {
         }
         this._isReached = reached;
         if (pmgr != null) {
-            pmgr.updateObjectFromExternal(this);
+            pmgr.updateObjectExternal(this);
         }
     }
 

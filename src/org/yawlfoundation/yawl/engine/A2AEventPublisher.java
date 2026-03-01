@@ -99,7 +99,7 @@ public class A2AEventPublisher {
 
             if (task != null) {
                 event.put("taskName", task.getName());
-                event.put("taskNamespace", task.getNamespace());
+                event.put("taskNamespace", task.getDecompositionPrototype() != null ? task.getDecompositionPrototype().getID() : null);
             }
 
             if (eventData != null) {
@@ -139,8 +139,8 @@ public class A2AEventPublisher {
                 event.put("workflowName", workflowName);
             }
             if (workflowNet != null) {
-                event.put("taskCount", workflowNet.getTasks().size());
-                event.put("netSize", workflowNet.getVertices().size());
+                event.put("taskCount", workflowNet.getNetTasks().size());
+                event.put("netSize", workflowNet.getNetElements().size());
             }
 
             _logger.info("Publishing specification event: {} for spec {}",

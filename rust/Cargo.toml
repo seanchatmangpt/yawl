@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "yawl-native",
+    "rust4pm",
 ]
 
 [workspace.dependencies]
@@ -13,3 +14,6 @@ tower-http        = { version = "0.5", features = ["cors", "trace"] }
 tracing           = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 oxigraph          = "0.4"
+petgraph          = "0.6"
+chrono            = { version = "0.4", features = ["serde"] }
+regex             = "1"

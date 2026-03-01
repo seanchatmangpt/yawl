@@ -90,10 +90,10 @@ public interface DataGuardCondition {
      * Builder for DataGuardCondition instances.
      */
     class Builder {
-        private String name;
-        private String columnName;
-        private Predicate predicate;
-        private String failureMessage;
+        String name;
+        String columnName;
+        Predicate predicate;
+        String failureMessage;
 
         public Builder name(String name) {
             this.name = java.util.Objects.requireNonNull(name, "name required");

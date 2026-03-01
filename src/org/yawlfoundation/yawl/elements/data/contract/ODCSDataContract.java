@@ -164,14 +164,14 @@ public interface ODCSDataContract {
      * Builder for ODCSDataContract instances.
      */
     class Builder {
-        private String workflowId;
-        private String workspaceId;
-        private final java.util.Map<String, List<String>> tableReads = new java.util.HashMap<>();
-        private final java.util.Map<String, List<String>> tableWrites = new java.util.HashMap<>();
-        private final java.util.Map<String, ParameterColumnBinding> parameterBindings = new java.util.HashMap<>();
-        private final java.util.Map<String, VariableColumnBinding> variableBindings = new java.util.HashMap<>();
-        private final java.util.List<DataGuardCondition> dataGuards = new java.util.ArrayList<>();
-        private String odcsWorkspaceJson;
+        String workflowId;
+        String workspaceId;
+        final java.util.Map<String, List<String>> tableReads = new java.util.HashMap<>();
+        final java.util.Map<String, List<String>> tableWrites = new java.util.HashMap<>();
+        final java.util.Map<String, ParameterColumnBinding> parameterBindings = new java.util.HashMap<>();
+        final java.util.Map<String, VariableColumnBinding> variableBindings = new java.util.HashMap<>();
+        final java.util.List<DataGuardCondition> dataGuards = new java.util.ArrayList<>();
+        String odcsWorkspaceJson;
 
         public Builder workflowId(String workflowId) {
             this.workflowId = Objects.requireNonNull(workflowId, "workflowId required");

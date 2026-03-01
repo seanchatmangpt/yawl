@@ -19,24 +19,8 @@
   -->
 
   <configuration>
-    <enabled>true</enabled>
+    <enabled>false</enabled>
     <hashAlgorithm>SHA-256</hashAlgorithm>
-    <validateXml>true</validateXml>
-
-    <!-- Remote cache for team sharing (Part 3) -->
-    <remote enabled="true" id="yawl-local-cache">
-      <url>file://${user.home}/.m2/build-cache/yawl</url>
-      <transport>file</transport>
-    </remote>
-
-    <local>
-      <maxBuildsCached>50</maxBuildsCached>
-      <retentionPeriod>P30D</retentionPeriod>
-      <maxSize>10GB</maxSize>
-    </local>
-
-    <!-- Part 4: Adapt to JVM for optimal performance -->
-    <adaptToJVM>true</adaptToJVM>
   </configuration>
 
   <!-- Part 4: Enhanced input tracking -->
