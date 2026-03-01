@@ -70,7 +70,7 @@ public final class data_modelling_ffi_h {
         return LIBRARY.flatMap(lib -> lib.find(sym))
             .map(addr -> LINKER.downcallHandle(addr,
                 FunctionDescriptor.of(JAVA_LONG),
-                Linker.Option.isTrivial()))
+                Linker.Option.critical(false)))
             .orElse(null);
     }
 
@@ -118,21 +118,21 @@ public final class data_modelling_ffi_h {
         System.arraycopy(argLayouts, 0, args, 0, argLayouts.length);
         FunctionDescriptor fd = FunctionDescriptor.of(DM_RESULT_LAYOUT, args);
         return LIBRARY.flatMap(lib -> lib.find(sym))
-            .map(addr -> LINKER.downcallHandle(addr, fd, Linker.Option.isTrivial()))
+            .map(addr -> LINKER.downcallHandle(addr, fd, Linker.Option.critical(false)))
             .orElse(null);
     }
 
     private static MethodHandle mhVoidResult(String sym, MemoryLayout... argLayouts) {
         FunctionDescriptor fd = FunctionDescriptor.of(DM_VOID_RESULT_LAYOUT, argLayouts);
         return LIBRARY.flatMap(lib -> lib.find(sym))
-            .map(addr -> LINKER.downcallHandle(addr, fd, Linker.Option.isTrivial()))
+            .map(addr -> LINKER.downcallHandle(addr, fd, Linker.Option.critical(false)))
             .orElse(null);
     }
 
     private static MethodHandle mhVoid(String sym, MemoryLayout... argLayouts) {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(argLayouts);
         return LIBRARY.flatMap(lib -> lib.find(sym))
-            .map(addr -> LINKER.downcallHandle(addr, fd, Linker.Option.isTrivial()))
+            .map(addr -> LINKER.downcallHandle(addr, fd, Linker.Option.critical(false)))
             .orElse(null);
     }
 

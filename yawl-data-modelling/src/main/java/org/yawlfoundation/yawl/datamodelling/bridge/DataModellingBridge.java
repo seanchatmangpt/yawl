@@ -70,7 +70,7 @@ public final class DataModellingBridge implements AutoCloseable {
             String msg = errorPtr.reinterpret(Long.MAX_VALUE)
                                  .getString(0, StandardCharsets.UTF_8);
             data_modelling_ffi_h.dm_string_free(errorPtr);
-            throw new DataModellingException(msg, DataModellingException.ErrorKind.EXECUTION_ERROR);
+            throw new DataModellingException(msg);
         }
         MemorySegment dataPtr = DmResult_h.data$get(result);
         try {
