@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.erlang.bridge.ErlangNode;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
@@ -31,8 +32,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -604,5 +609,315 @@ class PmBridgePipelineEteTest {
             }
         }
         return sb.toString();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Tier 6: Bridge call correctness (module name, arity alignment, RPC names)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("ProcessMiningBridge.MODULE constant equals Erlang -module() declaration")
+    void erlangModuleNameMatchesJavaBridgeConstant() throws Exception {
+        Field moduleField = ProcessMiningBridge.class.getDeclaredField("MODULE");
+        moduleField.setAccessible(true);
+        String javaModule = (String) moduleField.get(null);
+        assertNotNull(javaModule, "ProcessMiningBridge.MODULE must not be null");
+
+        String erlModule = Files.lines(goldenErlPath())
+                .filter(l -> l.startsWith("-module("))
+                .map(l -> l.substring(l.indexOf('(') + 1, l.indexOf(')')))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(
+                        "golden/erlang/process_mining_bridge.erl has no -module() declaration"));
+
+        assertEquals(erlModule, javaModule,
+                "ProcessMiningBridge.MODULE (\"" + javaModule + "\") must equal "
+                        + "Erlang -module() (\"" + erlModule + "\"). "
+                        + "Both are generated from the same erlModule property in the ontology.");
+    }
+
+    @Test
+    @DisplayName("Java method parameter count matches Erlang exported arity for all 53 capabilities")
+    void javaMethodArityMatchesErlangExportedArity() throws IOException {
+        Map<String, Integer> exportArities = parseExportedArities(goldenErlPath());
+        List<String> mismatches = new ArrayList<>();
+        for (ProcessMiningCapability cap : ProcessMiningCapability.values()) {
+            Integer erlArity = exportArities.get(cap.erlFunction());
+            assertNotNull(erlArity,
+                    cap.erlFunction() + " not found in -export block of process_mining_bridge.erl");
+            String javaMethodName = toCamelCase(cap.erlFunction());
+            Method javaMethod = Arrays.stream(ProcessMiningBridge.class.getDeclaredMethods())
+                    .filter(m -> m.getName().equals(javaMethodName))
+                    .findFirst()
+                    .orElse(null);
+            assertNotNull(javaMethod,
+                    "ProcessMiningBridge." + javaMethodName + "() not found by reflection");
+            int javaArity = javaMethod.getParameterCount();
+            if (!erlArity.equals(javaArity)) {
+                mismatches.add(cap.erlFunction() + ": Erlang export arity=" + erlArity
+                        + " vs Java params=" + javaArity);
+            }
+        }
+        assertEquals(Collections.emptyList(), mismatches,
+                "Java method param count must equal Erlang export arity for all 53 capabilities. "
+                        + "Mismatches:\n" + String.join("\n", mismatches));
+    }
+
+    @Test
+    @DisplayName("handle_call tuple arg count equals Erlang exported arity for all 53 capabilities")
+    void erlangHandleCallTupleArityMatchesExportedArity() throws IOException {
+        Map<String, Integer> exportArities = parseExportedArities(goldenErlPath());
+        Map<String, Integer> handleCallArities = parseHandleCallArities(goldenErlPath());
+        List<String> mismatches = new ArrayList<>();
+        for (ProcessMiningCapability cap : ProcessMiningCapability.values()) {
+            Integer exportArity = exportArities.get(cap.erlFunction());
+            Integer tupleArity = handleCallArities.get(cap.erlFunction());
+            assertNotNull(exportArity, cap.erlFunction() + " missing from -export");
+            assertNotNull(tupleArity,
+                    cap.erlFunction() + " missing from handle_call clauses. "
+                            + "Every capability must have a handle_call({fn_name, ...}) clause.");
+            if (!exportArity.equals(tupleArity)) {
+                mismatches.add(cap.erlFunction() + ": export arity=" + exportArity
+                        + " vs handle_call tuple args=" + tupleArity);
+            }
+        }
+        assertEquals(Collections.emptyList(), mismatches,
+                "handle_call tuple arg count must equal exported arity for all 53 capabilities. "
+                        + "The tuple {fn, Arg1, ..., ArgN} must have N args matching fn/N. "
+                        + "Mismatches:\n" + String.join("\n", mismatches));
+    }
+
+    @Test
+    @DisplayName("NIF call arg count equals handle_call tuple arity for all 53 capabilities")
+    void erlangNifCallArityMatchesHandleCallTupleArity() throws IOException {
+        Map<String, Integer> handleCallArities = parseHandleCallArities(goldenErlPath());
+        Map<String, Integer> nifArities = parseNifCallArities(goldenErlPath());
+        List<String> mismatches = new ArrayList<>();
+        for (ProcessMiningCapability cap : ProcessMiningCapability.values()) {
+            Integer tupleArity = handleCallArities.get(cap.erlFunction());
+            Integer nifArity = nifArities.get(cap.erlFunction());
+            assertNotNull(tupleArity, cap.erlFunction() + " missing from handle_call clauses");
+            assertNotNull(nifArity,
+                    cap.erlFunction() + " missing from process_mining_nif: calls. "
+                            + "Every capability must delegate to process_mining_nif:fn(...).");
+            if (!tupleArity.equals(nifArity)) {
+                mismatches.add(cap.erlFunction() + ": handle_call tuple args=" + tupleArity
+                        + " vs NIF call args=" + nifArity);
+            }
+        }
+        assertEquals(Collections.emptyList(), mismatches,
+                "NIF call arg count must equal handle_call tuple arity for all 53 capabilities. "
+                        + "process_mining_nif:fn(args) must receive same args as handle_call tuple. "
+                        + "Mismatches:\n" + String.join("\n", mismatches));
+    }
+
+    @Test
+    @DisplayName("ProcessMiningBridge.java calls node.rpc with exact erlFunction name string for every capability")
+    void javaBridgeRpcCallsCorrectErlangFunctionName() throws IOException {
+        Path javaSource = pmBridgeGgenRoot.resolve("golden/java/ProcessMiningBridge.java");
+        assertTrue(Files.exists(javaSource),
+                "golden/java/ProcessMiningBridge.java must exist");
+        String content = Files.readString(javaSource);
+        List<String> missing = Arrays.stream(ProcessMiningCapability.values())
+                .map(ProcessMiningCapability::erlFunction)
+                .filter(fn -> !content.contains("\"" + fn + "\""))
+                .toList();
+        assertEquals(Collections.emptyList(), missing,
+                "ProcessMiningBridge.java must call node.rpc(MODULE, \"fn\", ...) "
+                        + "with the exact erlFunction name as a string literal. "
+                        + "Missing string literals for: " + missing);
+    }
+
+    @Test
+    @DisplayName("maps:take is used exclusively in add_init_exit_events_to_ocel (ConsumeStore, exhaustive)")
+    void mapsTakeIsUsedExclusivelyByConsumeInputCapability() throws IOException {
+        Path erlFile = goldenErlPath();
+        List<String> capabilitiesUsingMapsTake = new ArrayList<>();
+        for (ProcessMiningCapability cap : ProcessMiningCapability.values()) {
+            List<String> clauseLines = extractFullHandleCallClause(erlFile, cap.erlFunction());
+            assertFalse(clauseLines.isEmpty(),
+                    "No handle_call clause found for " + cap.erlFunction());
+            if (clauseLines.stream().anyMatch(l -> l.contains("maps:take"))) {
+                capabilitiesUsingMapsTake.add(cap.erlFunction());
+            }
+        }
+        assertEquals(List.of(CONSUMES_INPUT_ERL_FUNCTION), capabilitiesUsingMapsTake,
+                "maps:take must be used EXCLUSIVELY in '" + CONSUMES_INPUT_ERL_FUNCTION
+                        + "' (sole consumesInput=true capability: consumes old OCEL UUID, "
+                        + "stores new OCEL UUID). No other capability may use maps:take. "
+                        + "Found maps:take in: " + capabilitiesUsingMapsTake);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Tier 7: Handle_call shape invariants (exhaustive classification)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("handle_call shapes: 1 Pure, 1 PureStore, 1 ConsumeStore, 8 ResolveStore, 42 Resolve")
+    void handleCallShapeInvariantsAreConsistent() throws IOException {
+        Path erlFile = goldenErlPath();
+        // Shape classification by maps operation presence in the clause body:
+        //   Pure         = no maps:get, no maps:put, no maps:take → NIF result, no state change
+        //   PureStore    = maps:put only                          → NIF creates resource, stored by new UUID
+        //   Resolve      = maps:get, no maps:put                  → NIF uses UUID resource, no new storage
+        //   ResolveStore = maps:get + maps:put                    → NIF transforms resource, stores under new UUID
+        //   ConsumeStore = maps:take + maps:put                   → consumes old UUID, stores under new UUID
+        List<String> pure = new ArrayList<>();
+        List<String> pureStore = new ArrayList<>();
+        List<String> resolve = new ArrayList<>();
+        List<String> resolveStore = new ArrayList<>();
+        List<String> consumeStore = new ArrayList<>();
+
+        for (ProcessMiningCapability cap : ProcessMiningCapability.values()) {
+            List<String> clauseLines = extractFullHandleCallClause(erlFile, cap.erlFunction());
+            assertFalse(clauseLines.isEmpty(),
+                    "No handle_call clause found for " + cap.erlFunction());
+            boolean usesTake = clauseLines.stream().anyMatch(l -> l.contains("maps:take"));
+            boolean usesGet  = clauseLines.stream().anyMatch(l -> l.contains("maps:get"));
+            boolean usesPut  = clauseLines.stream().anyMatch(l -> l.contains("maps:put"));
+
+            if (usesTake)                  consumeStore.add(cap.erlFunction());
+            else if (usesGet && usesPut)   resolveStore.add(cap.erlFunction());
+            else if (usesGet)              resolve.add(cap.erlFunction());
+            else if (usesPut)              pureStore.add(cap.erlFunction());
+            else                           pure.add(cap.erlFunction());
+        }
+
+        List<String> expectedResolveStore = List.of(
+                "discover_alpha_ppp", "discover_dfg", "discover_dfg_from_ocel",
+                "flatten_ocel_on", "index_link_ocel", "locel_construct_ocel",
+                "log_to_activity_projection", "slim_link_ocel");
+
+        assertAll("Handle_call shape invariants for all 53 capabilities",
+                () -> assertEquals(1, pure.size(),
+                        "Expected exactly 1 Pure shape (no state ops). Found: " + pure),
+                () -> assertEquals(List.of("test_some_inputs"), pure,
+                        "Pure shape must be exactly [test_some_inputs] — "
+                                + "the only capability that uses no registry UUIDs"),
+                () -> assertEquals(1, pureStore.size(),
+                        "Expected exactly 1 PureStore shape (maps:put only, no maps:get). "
+                                + "Found: " + pureStore),
+                () -> assertEquals(List.of("locel_new"), pureStore,
+                        "PureStore shape must be exactly [locel_new] — "
+                                + "creates a new SlimLinkedOCEL with no UUID input"),
+                () -> assertEquals(1, consumeStore.size(),
+                        "Expected exactly 1 ConsumeStore shape (maps:take + maps:put). "
+                                + "Found: " + consumeStore),
+                () -> assertEquals(List.of(CONSUMES_INPUT_ERL_FUNCTION), consumeStore,
+                        "ConsumeStore shape must be exactly [" + CONSUMES_INPUT_ERL_FUNCTION + "] — "
+                                + "consumesInput=true removes the old OCEL UUID from state"),
+                () -> assertEquals(8, resolveStore.size(),
+                        "Expected exactly 8 ResolveStore shapes (maps:get + maps:put → new UUID). "
+                                + "Found " + resolveStore.size() + ": " + resolveStore),
+                () -> assertEquals(expectedResolveStore,
+                        resolveStore.stream().sorted().collect(Collectors.toList()),
+                        "ResolveStore shapes must be exactly the 8 capabilities that transform "
+                                + "an input registry resource into a new stored resource"),
+                () -> assertEquals(42, resolve.size(),
+                        "Expected exactly 42 Resolve shapes (maps:get only, state unchanged). "
+                                + "Found " + resolve.size() + ": " + resolve)
+        );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Additional helpers (Tier 6 + Tier 7 support)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Returns the committed golden .erl path — always present, no mvn generate-sources needed. */
+    private Path goldenErlPath() {
+        Path erlFile = pmBridgeGgenRoot.resolve("golden/erlang/process_mining_bridge.erl");
+        assertTrue(Files.exists(erlFile),
+                "golden/erlang/process_mining_bridge.erl must exist at " + erlFile);
+        return erlFile;
+    }
+
+    /**
+     * Extracts the FULL handle_call clause for the given erlFunction, reading from
+     * the matching "handle_call({fn_name" line until just before the next clause
+     * (or the catch-all comment). Captures maps:take/get/put calls that appear
+     * anywhere in the clause body, unlike extractHandleCallClause() which stops
+     * at the first {reply, line.
+     */
+    private List<String> extractFullHandleCallClause(Path erlFile, String erlFunction)
+            throws IOException {
+        List<String> allLines = Files.readAllLines(erlFile);
+        List<String> clauseLines = new ArrayList<>();
+        boolean inClause = false;
+        for (String line : allLines) {
+            if (!inClause && line.startsWith("handle_call({" + erlFunction)) {
+                inClause = true;
+            } else if (inClause
+                    && (line.startsWith("handle_call({") || line.startsWith("%% Catch-all"))) {
+                break;
+            }
+            if (inClause) {
+                clauseLines.add(line);
+            }
+        }
+        return clauseLines;
+    }
+
+    /**
+     * Parses all fn/N arity declarations from non-comment lines in the .erl file.
+     * Covers all -export([...]) blocks. Capability lookup is unambiguous since
+     * erlFunction names don't collide with gen_server callback names.
+     */
+    private Map<String, Integer> parseExportedArities(Path erlFile) throws IOException {
+        Map<String, Integer> arities = new LinkedHashMap<>();
+        Pattern pat = Pattern.compile("([a-z][a-z0-9_]*)/(\\d+)");
+        for (String line : Files.readAllLines(erlFile)) {
+            if (line.trim().startsWith("%")) continue; // skip comments
+            Matcher m = pat.matcher(line);
+            while (m.find()) {
+                arities.put(m.group(1), Integer.parseInt(m.group(2)));
+            }
+        }
+        return arities;
+    }
+
+    /**
+     * Parses handle_call tuple arg counts from handle_call({...}) lines.
+     * For "handle_call({fn_name, Arg1, ..., ArgN}, _From, State) ->":
+     * extracts tuple content between first { and first }, splits by comma,
+     * returns (parts.length - 1) since the first part is fn_name.
+     */
+    private Map<String, Integer> parseHandleCallArities(Path erlFile) throws IOException {
+        Map<String, Integer> arities = new LinkedHashMap<>();
+        for (String line : Files.readAllLines(erlFile)) {
+            if (!line.startsWith("handle_call({")) continue;
+            if (line.startsWith("handle_call(Unknown")) continue; // catch-all
+            int start = line.indexOf('{');
+            int end = line.indexOf('}');
+            if (start < 0 || end < 0 || end <= start) continue;
+            String tupleContent = line.substring(start + 1, end);
+            String[] parts = tupleContent.split(",");
+            String fnName = parts[0].trim();
+            int argCount = parts.length - 1;
+            arities.put(fnName, argCount);
+        }
+        return arities;
+    }
+
+    /**
+     * Parses NIF call arg counts from "process_mining_nif:fn(args)" lines.
+     * Returns 0 for empty parens (e.g., locel_new()), or args.split(",").length
+     * for non-empty arg lists. Uses putIfAbsent since each fn appears exactly once.
+     */
+    private Map<String, Integer> parseNifCallArities(Path erlFile) throws IOException {
+        Map<String, Integer> arities = new LinkedHashMap<>();
+        String nifPrefix = "process_mining_nif:";
+        for (String line : Files.readAllLines(erlFile)) {
+            int nifIdx = line.indexOf(nifPrefix);
+            if (nifIdx < 0) continue;
+            int nameStart = nifIdx + nifPrefix.length();
+            int parenOpen = line.indexOf('(', nameStart);
+            int parenClose = line.indexOf(')', parenOpen + 1);
+            if (parenOpen < 0 || parenClose < 0) continue;
+            String fnName = line.substring(nameStart, parenOpen).trim();
+            String args = line.substring(parenOpen + 1, parenClose).trim();
+            int argCount = args.isEmpty() ? 0 : args.split(",").length;
+            arities.putIfAbsent(fnName, argCount);
+        }
+        return arities;
     }
 }
