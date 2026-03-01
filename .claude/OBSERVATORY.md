@@ -56,6 +56,28 @@ against `sha256sum docs/v6/latest/INDEX.md`. If different, re-run.
 | `40-ci-gates.mmd` | Gate lifecycle | Before modifying CI |
 | `50-risk-surfaces.mmd` | FMEA risk map | Before high-risk changes |
 
+## Ψ.dx — Build Loop Integration
+
+`dx.sh all` enforces the Ψ phase before Λ (compile). No manual observatory invocation needed in the normal workflow.
+
+```
+dx.sh all  →  observe(Ψ) → compile(Λ) → test → guards(H) → invariants(Q) → report
+              ↑
+              staleness check (<10ms): .yawl/.dx-state/observatory-pom-hash.txt (primary)
+                                       receipts/observatory.json .inputs.root_pom_sha256 (fallback)
+              if stale → observatory.sh --facts (~13s) → write sidecar → reload reactor.json
+```
+
+**Sidecar file**: `.yawl/.dx-state/observatory-pom-hash.txt` — sha256 of `pom.xml` written after every `--facts` run.
+Written by: `session-start.sh` (startup), `dx_phase_observe()` (after auto-refresh).
+Not written by: `observatory.sh --facts` itself (that skips the receipt phase).
+
+**Env vars**:
+- `DX_SKIP_OBSERVE=1` — bypass observe phase (CI that pre-generates facts via session-start.sh)
+- `OFFLINE_FLAG` — offline mode: warns if stale but never fails
+
+**Dynamic module loading**: `ALL_MODULES` sourced from `reactor.json .reactor_order[]`, excluding `yawl-parent` and `yawl-benchmark`. Falls back to hardcoded array when facts are missing.
+
 ## Ψ.receipt — Provenance
 
 `receipts/observatory.json` contains:
