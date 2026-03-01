@@ -91,6 +91,7 @@
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
+                    <excludedGroups>stress,integration</excludedGroups>
                     <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                     <forkCount>1</forkCount>
                     <reuseForks>true</reuseForks>
@@ -117,15 +118,68 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Compile Erlang sources with rebar3 (skipped when OTP absent) -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>rebar3-compile</id>
+                        <phase>generate-resources</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${project.basedir}/../scripts/build-erlang-beams.sh</argument>
+                            </arguments>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
+        <!-- Default profile: run unit + smoke tests only -->
         <profile>
             <id>native-tests</id>
-            <properties>
-                <skipTests>false</skipTests>
-            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skipTests>false</skipTests>
+                            <excludedGroups>stress</excludedGroups>
+                            <argLine>--enable-native-access=ALL-UNNAMED</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Stress tests only -->
+        <profile>
+            <id>stress-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skipTests>false</skipTests>
+                            <groups>stress</groups>
+                            <argLine>--enable-native-access=ALL-UNNAMED</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
