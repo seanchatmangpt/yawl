@@ -1,0 +1,9 @@
+name: PaymentInput
+version: "1.0"
+properties:
+  amount:
+    type: number
+    required: true
+  currency:
+    type: string
+    required: true

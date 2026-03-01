@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.engine.agent.patterns;
 import org.yawlfoundation.yawl.engine.agent.core.ActorRef;
 import org.yawlfoundation.yawl.engine.agent.core.Msg;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,37 +15,44 @@ import java.util.concurrent.ConcurrentHashMap;
  * Each actor can add/remove actors from the routing slip.
  *
  * Design:
- * - Immutable Deque<ActorRef> attached to message envelope
+ * - Immutable Deque<WeakReference<ActorRef>> attached to message envelope (for GC)
  * - Each actor pops next destination and forwards message
  * - Empty deque triggers completion handler
- * - Envelope carries case ID, history, and routing slip
+ * - Envelope carries case ID, history (bounded to MAX_HISTORY_SIZE), and routing slip
+ * - Weak references allow garbage collected actors to be skipped automatically
  *
  * Thread-safe. Immutable routing slips (no mutation after creation).
+ * History is bounded to prevent unbounded growth in long-running cases.
  *
  * Usage:
  *
  *     // Create routing slip
- *     Deque<ActorRef> slip = RoutingSlip.create(validator, processor, aggregator);
+ *     Deque<WeakReference<ActorRef>> slip = RoutingSlip.create(validator, processor, aggregator);
  *     Msg.Command work = new Msg.Command("PROCESS_CASE", caseData);
  *     RoutingSlip.Envelope envelope = RoutingSlip.envelope(caseId, work, slip);
  *
  *     // Send to first actor
- *     slip.peekFirst().tell(envelope);
+ *     ActorRef firstActor = envelope.peekNext();
+ *     if (firstActor != null) firstActor.tell(envelope);
  *
  *     // Inside first actor:
  *     case RoutingSlip.Envelope env -> {
  *         Object result = processCase(env.payload());
- *         RoutingSlip.forward(env.forward(), env.withPayload(result));
+ *         RoutingSlip.forward(env, env.withPayload(result)::advance,
+ *             completionHandler);
  *     }
  *
- *     // Last actor completes
- *     case RoutingSlip.Envelope env -> {
- *         if (env.slip().isEmpty()) {
- *             completionHandler.accept(env);  // Case complete
- *         }
- *     }
+ *     // Forward to next actor or completion
+ *     RoutingSlip.forward(env, completionHandler);
  */
 public final class RoutingSlip {
+
+    /**
+     * Maximum number of entries in the routing history per case.
+     * When capacity is reached, new entries are not recorded.
+     * Routing continues, but history tracking is disabled.
+     */
+    public static final int MAX_HISTORY_SIZE = 1000;
 
     private RoutingSlip() {
         // Utility class
@@ -56,18 +64,18 @@ public final class RoutingSlip {
      * Immutable. Contains:
      * - Case ID (unique identifier)
      * - Payload (work data, evolves as it moves through actors)
-     * - Routing slip (Deque of next ActorRefs)
-     * - History (audit trail of visited actors)
+     * - Routing slip (Deque of next ActorRefs wrapped in WeakReference for GC)
+     * - History (audit trail of visited actors, bounded to MAX_HISTORY_SIZE)
      *
      * @param caseId Unique workflow case identifier
      * @param payload Work data to process
-     * @param slip Immutable deque of remaining actors
+     * @param slip Immutable deque of remaining actors (weak references)
      * @param history List of visited actor IDs (for audit)
      */
     public record Envelope(
         String caseId,
         Object payload,
-        Deque<ActorRef> slip,
+        Deque<WeakReference<ActorRef>> slip,
         List<String> history
     ) {
 
@@ -80,10 +88,12 @@ public final class RoutingSlip {
 
         /**
          * Return next actor in slip without advancing.
-         * Null if slip is empty (routing complete).
+         * Null if slip is empty (routing complete) or if next actor was garbage collected.
          */
         public ActorRef peekNext() {
-            return slip.peekFirst();
+            WeakReference<ActorRef> ref = slip.peekFirst();
+            if (ref == null) return null;
+            return ref.get();
         }
 
         /**
@@ -96,17 +106,25 @@ public final class RoutingSlip {
 
         /**
          * Create new envelope advancing to next actor.
-         * Removes first actor from slip, adds it to history.
+         * Removes first actor from slip, adds it to history (bounded to MAX_HISTORY_SIZE).
          */
         public Envelope advance(String actorName) {
             if (slip.isEmpty()) {
                 return this;  // Already at end
             }
 
-            LinkedList<ActorRef> newSlip = new LinkedList<>(slip);
-            ActorRef visited = newSlip.removeFirst();  // Remove from copy
+            LinkedList<WeakReference<ActorRef>> newSlip = new LinkedList<>(slip);
+            WeakReference<ActorRef> visitedRef = newSlip.removeFirst();
+            ActorRef visited = visitedRef.get();
+
             List<String> newHistory = new ArrayList<>(history);
-            newHistory.add(actorName + "#" + visited.id());
+            // Only add to history if within size limit
+            if (newHistory.size() < MAX_HISTORY_SIZE) {
+                String historyEntry = visited != null
+                    ? actorName + "#" + visited.id()
+                    : actorName + "#<garbage-collected>";
+                newHistory.add(historyEntry);
+            }
 
             return new Envelope(caseId, payload,
                 new ImmutableDeque<>(newSlip),
@@ -132,7 +150,7 @@ public final class RoutingSlip {
     /**
      * Create an empty routing slip (for testing).
      */
-    public static Deque<ActorRef> empty() {
+    public static Deque<WeakReference<ActorRef>> empty() {
         return new ImmutableDeque<>(new LinkedList<>());
     }
 
@@ -140,10 +158,13 @@ public final class RoutingSlip {
      * Create a routing slip from variable number of actors.
      *
      * @param actors Sequence of actors to visit in order
-     * @return Immutable deque (copy made)
+     * @return Immutable deque of weak references
      */
-    public static Deque<ActorRef> create(ActorRef... actors) {
-        LinkedList<ActorRef> deque = new LinkedList<>(Arrays.asList(actors));
+    public static Deque<WeakReference<ActorRef>> create(ActorRef... actors) {
+        LinkedList<WeakReference<ActorRef>> deque = new LinkedList<>();
+        for (ActorRef actor : actors) {
+            deque.add(new WeakReference<>(actor));
+        }
         return new ImmutableDeque<>(deque);
     }
 
@@ -151,10 +172,13 @@ public final class RoutingSlip {
      * Create a routing slip from a collection.
      *
      * @param actors Collection of actors
-     * @return Immutable deque
+     * @return Immutable deque of weak references
      */
-    public static Deque<ActorRef> create(Collection<ActorRef> actors) {
-        LinkedList<ActorRef> deque = new LinkedList<>(actors);
+    public static Deque<WeakReference<ActorRef>> create(Collection<ActorRef> actors) {
+        LinkedList<WeakReference<ActorRef>> deque = new LinkedList<>();
+        for (ActorRef actor : actors) {
+            deque.add(new WeakReference<>(actor));
+        }
         return new ImmutableDeque<>(deque);
     }
 
@@ -163,10 +187,10 @@ public final class RoutingSlip {
      *
      * @param caseId Unique case identifier
      * @param payload Initial work data
-     * @param slip Routing slip (sequence of actors)
+     * @param slip Routing slip (sequence of actors, wrapped in weak references)
      * @return New envelope ready to send
      */
-    public static Envelope envelope(String caseId, Object payload, Deque<ActorRef> slip) {
+    public static Envelope envelope(String caseId, Object payload, Deque<WeakReference<ActorRef>> slip) {
         return new Envelope(caseId, payload, slip, new ArrayList<>());
     }
 
@@ -174,10 +198,11 @@ public final class RoutingSlip {
      * Forward an envelope to the next actor in slip.
      *
      * Pops the next actor from slip and sends envelope.
-     * If slip is empty, calls completion handler instead.
+     * If slip is empty or all remaining actors are garbage collected, calls completion handler.
+     * Skips dead hops (where WeakReference.get() returns null due to GC).
      *
      * @param envelope Envelope to forward
-     * @param completionHandler Called if slip is empty
+     * @param completionHandler Called if slip is empty or all remaining actors are GC'd
      */
     public static void forward(Envelope envelope, java.util.function.Consumer<Envelope> completionHandler) {
         if (envelope.isComplete()) {
@@ -186,10 +211,39 @@ public final class RoutingSlip {
             return;
         }
 
-        ActorRef nextActor = envelope.peekNext();
-        if (nextActor != null) {
-            nextActor.tell(envelope);
+        // Loop until we find a live actor or reach the end
+        Envelope current = envelope;
+        while (!current.isComplete()) {
+            ActorRef nextActor = current.peekNext();
+            if (nextActor != null) {
+                // Found a live actor, send to it
+                nextActor.tell(current);
+                return;
+            }
+            // This actor was GC'd, advance to next without calling behavior
+            current = advance(current, "");
         }
+
+        // All remaining actors are GC'd or slip is empty
+        completionHandler.accept(current);
+    }
+
+    /**
+     * Internal helper to advance envelope without behavior invocation.
+     */
+    private static Envelope advance(Envelope envelope, String actorName) {
+        if (envelope.slip().isEmpty()) {
+            return envelope;
+        }
+        LinkedList<WeakReference<ActorRef>> newSlip = new LinkedList<>(envelope.slip());
+        newSlip.removeFirst();
+        // Don't update history when skipping dead hops
+        return new Envelope(
+            envelope.caseId(),
+            envelope.payload(),
+            new ImmutableDeque<>(newSlip),
+            envelope.history()
+        );
     }
 
     /**
@@ -200,12 +254,12 @@ public final class RoutingSlip {
      *
      * @param envelope Original envelope
      * @param position Index to insert (0 = first)
-     * @param actor Actor to insert
+     * @param actor Actor to insert (wrapped in weak reference)
      * @return New envelope with modified slip
      */
     public static Envelope insertActor(Envelope envelope, int position, ActorRef actor) {
-        LinkedList<ActorRef> newSlip = new LinkedList<>(envelope.slip());
-        newSlip.add(position, actor);
+        LinkedList<WeakReference<ActorRef>> newSlip = new LinkedList<>(envelope.slip());
+        newSlip.add(position, new WeakReference<>(actor));
         return new Envelope(
             envelope.caseId(),
             envelope.payload(),
@@ -224,7 +278,7 @@ public final class RoutingSlip {
      * @return New envelope with first actor skipped
      */
     public static Envelope skip(Envelope envelope) {
-        LinkedList<ActorRef> newSlip = new LinkedList<>(envelope.slip());
+        LinkedList<WeakReference<ActorRef>> newSlip = new LinkedList<>(envelope.slip());
         if (!newSlip.isEmpty()) {
             newSlip.removeFirst();
         }
@@ -298,8 +352,12 @@ public final class RoutingSlip {
 
         /**
          * Register a case as it enters the routing slip.
+         * Logs warning if active caseload exceeds 100K (possible leak).
          */
         public void register(Envelope envelope) {
+            if (active.size() >= 100_000) {
+                System.err.printf("[RoutingSlip.CaseRegistry] WARNING: %d active cases — possible leak%n", active.size());
+            }
             active.put(envelope.caseId(), envelope);
         }
 

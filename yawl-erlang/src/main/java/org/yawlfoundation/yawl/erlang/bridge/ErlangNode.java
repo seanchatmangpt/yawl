@@ -17,6 +17,8 @@
  */
 package org.yawlfoundation.yawl.erlang.bridge;
 
+import org.yawlfoundation.yawl.erlang.capability.Capability;
+import org.yawlfoundation.yawl.erlang.capability.MapsToCapability;
 import org.yawlfoundation.yawl.erlang.error.ErlangConnectionException;
 import org.yawlfoundation.yawl.erlang.error.ErlangReceiveException;
 import org.yawlfoundation.yawl.erlang.error.ErlangRpcException;
@@ -56,6 +58,13 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @see ErlangNodePool for pooling multiple pre-connected nodes
  */
+@MapsToCapability(value = Capability.LAUNCH_CASE, layer = "L2")
+@MapsToCapability(value = Capability.CHECK_CONFORMANCE, layer = "L2")
+@MapsToCapability(value = Capability.SUBSCRIBE_TO_EVENTS, layer = "L2")
+@MapsToCapability(value = Capability.RELOAD_MODULE, layer = "L2")
+@MapsToCapability(value = Capability.LOAD_BINARY_MODULE, layer = "L2")
+@MapsToCapability(value = Capability.ROLLBACK_MODULE, layer = "L2")
+@MapsToCapability(value = Capability.AS_RPC_CALLABLE, layer = "L2")
 public class ErlangNode implements AutoCloseable {
 
     private final String localName;

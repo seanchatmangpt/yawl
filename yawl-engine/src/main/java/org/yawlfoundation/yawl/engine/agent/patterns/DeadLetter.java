@@ -4,7 +4,9 @@ import org.yawlfoundation.yawl.engine.agent.core.ActorRef;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Dead Letter Channel Pattern — Monitoring and debugging failed messages.
@@ -19,7 +21,7 @@ import java.util.concurrent.*;
  * - Singleton DEAD_LETTER ActorRef (shared across runtime)
  * - Dead letter handler receives all undeliverable messages
  * - DeadLetterEntry records: original message, failure reason, timestamp
- * - Thread-safe append-only log (CopyOnWriteArrayList)
+ * - Thread-safe bounded ring-buffer log (max 100K entries)
  *
  * Responsibilities:
  * 1. Undeliverable messages are sent here
@@ -27,7 +29,7 @@ import java.util.concurrent.*;
  * 3. Metrics collection (error rates, patterns)
  * 4. Optionally re-route or escalate
  *
- * Thread-safe. Lock-free reads. Append-only log.
+ * Thread-safe. Lock-free reads. Bounded ring-buffer log (max 100K entries, evicts oldest on overflow).
  *
  * Usage:
  *
@@ -47,6 +49,12 @@ import java.util.concurrent.*;
  *     DeadLetter.clearBefore(Instant.now().minus(Duration.ofDays(7)));
  */
 public final class DeadLetter {
+
+    /**
+     * Maximum number of entries in the dead letter log.
+     * When capacity is reached, oldest entries are dropped.
+     */
+    public static final int MAX_LOG_SIZE = 100_000;
 
     private static final DeadLetterChannel INSTANCE = new DeadLetterChannel();
 
@@ -165,8 +173,9 @@ public final class DeadLetter {
     // ============= DeadLetterChannel Implementation =============
 
     private static final class DeadLetterChannel {
-        private final List<DeadLetterEntry> log = new CopyOnWriteArrayList<>();
-        private final Object lock = new Object();
+        private final Deque<DeadLetterEntry> log = new ConcurrentLinkedDeque<>();
+        // AtomicInteger tracks size in O(1) — avoids O(N) ConcurrentLinkedDeque.size() call
+        private final AtomicInteger count = new AtomicInteger(0);
 
         void record(Object originalMessage, String reason, Throwable cause) {
             String exceptionType = cause != null ? cause.getClass().getSimpleName() : null;
@@ -181,7 +190,13 @@ public final class DeadLetter {
                 exceptionMsg
             );
 
-            log.add(entry);
+            log.addLast(entry);
+            // Enforce bounded log size: evict oldest if we exceeded capacity
+            if (count.incrementAndGet() > MAX_LOG_SIZE) {
+                if (log.pollFirst() != null) {
+                    count.decrementAndGet();
+                }
+            }
         }
 
         List<DeadLetterEntry> getEntries() {
@@ -189,7 +204,7 @@ public final class DeadLetter {
         }
 
         int size() {
-            return log.size();
+            return count.get();
         }
 
         int countByReason(String reason) {
@@ -206,12 +221,20 @@ public final class DeadLetter {
 
         void clear() {
             log.clear();
+            count.set(0);
         }
 
         int clearBefore(Instant before) {
-            int beforeCount = log.size();
-            log.removeIf(e -> e.timestamp().isBefore(before));
-            return beforeCount - log.size();
+            var iterator = log.iterator();
+            int removed = 0;
+            while (iterator.hasNext()) {
+                if (iterator.next().timestamp().isBefore(before)) {
+                    iterator.remove();
+                    removed++;
+                    count.decrementAndGet();
+                }
+            }
+            return removed;
         }
 
         Map<String, Integer> getStats() {
