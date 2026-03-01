@@ -1294,6 +1294,63 @@ template = { file = "templates/yawl-patterns/native-bridge-l3.tera" }
 output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}L3.java"
 mode = "Overwrite"
 
+# --- WCP-NB-05: MapsToCapability Annotation ---
+[[generation.rules]]
+name = "native-bridge-maps-to-capability-annotation"
+description = "Generate @MapsToCapability repeatable annotation for native bridge"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "templates/yawl-patterns/native-bridge-maps-to-capability.tera" }
+output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}MapsToCapability.java"
+mode = "Overwrite"
+
+# --- WCP-NB-06: CapabilityTest Annotation ---
+[[generation.rules]]
+name = "native-bridge-capability-test-annotation"
+description = "Generate @CapabilityTest repeatable annotation for native bridge"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "templates/yawl-patterns/native-bridge-capability-test.tera" }
+output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}CapabilityTest.java"
+mode = "Overwrite"
+
+# --- WCP-NB-07: CapabilityRegistryException ---
+[[generation.rules]]
+name = "native-bridge-registry-exception"
+description = "Generate CapabilityRegistryException thrown by startup validation gate"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "templates/yawl-patterns/native-bridge-registry-exception.tera" }
+output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}CapabilityRegistryException.java"
+mode = "Overwrite"
+
 # =============================================================================
 # VALIDATION GATES (Quality Checks)
 # Pattern from: factory-paas

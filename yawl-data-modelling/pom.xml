@@ -14,52 +14,22 @@
 
     <artifactId>yawl-data-modelling</artifactId>
     <packaging>jar</packaging>
-    <name>YAWL Data Modelling — Thin WASM Facade</name>
+    <name>YAWL Data Modelling — Native FFM Bridge</name>
     <description>
-        Thin Java facade over the data-modelling-sdk WebAssembly module (v2.3.0).
-        Exposes 70+ schema operations — ODCS/ODPS/CADS/OpenAPI/BPMN/DMN import-export,
-        decision records (MADR), knowledge base (KB), sketches, domain organisation,
-        and validation — without reimplementing any logic in Java.
+        Java 25 Panama FFM bridge to libdatamodelling.so — data-modelling-sdk v2.3.0.
+        Three-layer architecture: Layer 1 (generated MethodHandles), Layer 2 (typed
+        FFI transport with callDm() helper for uniform char*→char* pattern), Layer 3
+        (domain API with zero Panama FFM types in public signatures).
 
-        All computation runs inside data_modelling_wasm_bg.wasm via GraalJS+WASM
-        polyglot (same pattern as yawl-graalwasm Rust4pmBridge). The Java layer is
-        a 1:1 mapping of WASM exports to typed Java methods + JSON string returns.
+        All 55 capabilities (import, export, validate, convert, infer, map) are driven
+        by the ggen compilation target in dm-bridge-ggen/. Edit ontology/dm-bridge.ttl
+        and run ggen sync to regenerate all Java artifacts.
 
         SDK source: github.com/OffeneDatenmodellierung/data-modelling-sdk v2.3.0
         License: MIT
     </description>
 
     <dependencies>
-        <!-- yawl-graalwasm: WasmExecutionEngine + WasmModule -->
-        <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-graalwasm</artifactId>
-        </dependency>
-        <!-- yawl-graaljs: JavaScriptExecutionEngine for JS+WASM polyglot context -->
-        <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-graaljs</artifactId>
-        </dependency>
-        <!-- GraalVM Polyglot API (transitive, declared for compilation) -->
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>polyglot</artifactId>
-        </dependency>
-        <!-- GraalVM JavaScript language runtime — needed for js.ECMAScript-version option.
-             POM-type deps are not transitive from yawl-graaljs; declare explicitly. -->
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>js</artifactId>
-            <version>${graalvm.version}</version>
-            <type>pom</type>
-        </dependency>
-        <!-- GraalVM WASM language runtime (for JS+WASM polyglot context) -->
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>wasm</artifactId>
-            <version>${graalvm.version}</version>
-            <type>pom</type>
-        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -92,11 +62,10 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>../src</sourceDirectory>
-        <testSourceDirectory>../test</testSourceDirectory>
+        <sourceDirectory>src/main/java</sourceDirectory>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
 
-        <!-- Module-local resources: WASM binary + JS glue are module-specific,
-             not in the shared ../src tree. -->
+        <!-- WASM binary + JS glue kept as resources (legacy WASM approach) -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -108,17 +77,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <compilerArgs><arg>--enable-preview</arg></compilerArgs>
-                    <includes>
-                        <include>**/org/yawlfoundation/yawl/datamodelling/**</include>
-                    </includes>
-                    <excludes>
-                        <!-- Exclude src/test/java tree from main compilation -->
-                        <exclude>test/java/**</exclude>
-                    </excludes>
-                    <testIncludes>
-                        <testInclude>**/org/yawlfoundation/yawl/datamodelling/**</testInclude>
-                    </testIncludes>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
+                    </compilerArgs>
                 </configuration>
                 <executions>
                     <execution>
@@ -127,9 +88,6 @@
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
                             </compilerArgs>
-                            <testIncludes>
-                                <testInclude>**/org/yawlfoundation/yawl/datamodelling/**</testInclude>
-                            </testIncludes>
                         </configuration>
                     </execution>
                 </executions>
@@ -138,8 +96,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>--enable-preview --enable-native-access=ALL-UNNAMED</argLine>
                     <includes>
-                        <include>**/org/yawlfoundation/yawl/datamodelling/**Test.java</include>
+                        <include>**/*Test.java</include>
                     </includes>
                 </configuration>
             </plugin>
