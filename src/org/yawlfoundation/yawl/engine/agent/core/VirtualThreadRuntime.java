@@ -41,7 +41,18 @@ public final class VirtualThreadRuntime implements ActorRuntime {
         ActorRef ref = new ActorRef(id, this);
 
         executor.submit(() -> {
+            // Two-phase cancellation: write a.thread, then read a.stopped.
+            // stop() writes a.stopped, then reads a.thread.
+            // Volatile memory ordering guarantees at least one of them sees
+            // the other's write, eliminating the "null thread → missed interrupt" race:
+            //   Case A: stop() completes first → a.stopped=true; task checks → exits.
+            //   Case B: task sets a.thread first → stop() reads it → interrupts.
             a.thread = Thread.currentThread();
+            if (a.stopped) {
+                // stop() already ran but saw a.thread==null and couldn't interrupt;
+                // honour the stop now by exiting before any blocking behavior starts.
+                return;
+            }
             try {
                 behavior.run(ref);
             } catch (InterruptedException e) {
@@ -71,12 +82,22 @@ public final class VirtualThreadRuntime implements ActorRuntime {
 
     /**
      * Stop an actor: remove from registry and interrupt its virtual thread.
+     *
+     * Two-phase cancellation protocol (pairs with spawn task):
+     *   1. Remove from registry (prevents new messages; recv() will throw ISE).
+     *   2. Set a.stopped=true (volatile write) — task checks this after setting a.thread.
+     *   3. Read a.thread (volatile read) — may be null if task hasn't started yet.
+     *   4. Interrupt if non-null.
+     * The volatile ordering ensures: if the task starts after step 2 and sees
+     * stopped=true, it exits. If the task set a.thread before step 3, we interrupt it.
      */
     @Override
     public void stop(int actorId) {
         Agent a = registry.remove(actorId);
-        if (a != null && a.thread != null) {
-            a.thread.interrupt();
+        if (a != null) {
+            a.stopped = true;          // volatile write: happens-before task's volatile read
+            Thread t = a.thread;       // volatile read: sees task's volatile write if it ran first
+            if (t != null) t.interrupt();
         }
     }
 
