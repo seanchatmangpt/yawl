@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.qlever;
 
+import java.util.Arrays;
+
 /**
  * Configuration class for stress testing parameters.
  * Centralizes all test configuration to make it easier to adjust.

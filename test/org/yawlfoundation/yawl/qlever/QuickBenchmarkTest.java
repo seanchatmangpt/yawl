@@ -71,7 +71,7 @@ class QuickBenchmarkTest {
 
     @Test
     @EnabledIf("isEngineAvailable")
-    void testBasicQueryPerformance() {
+    void testBasicQueryPerformance() throws Exception {
         List<Long> durations = new ArrayList<>();
 
         for (int i = 0; i < MEASUREMENT_ITERATIONS; i++) {
@@ -106,7 +106,7 @@ class QuickBenchmarkTest {
 
     @Test
     @EnabledIf("isEngineAvailable")
-    void testDifferentQueryComplexities() {
+    void testDifferentQueryComplexities() throws Exception {
         String[] queries = {
             "SELECT ?s WHERE { ?s ?p ?o } LIMIT 10",                                    // Simple
             "SELECT ?s ?p ?o WHERE { ?s ?p ?o }",                                       // Medium

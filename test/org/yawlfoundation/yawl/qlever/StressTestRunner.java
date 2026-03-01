@@ -476,10 +476,12 @@ public class StressTestRunner {
                     latencies.add(latency.toMillis());
                     completedCount.incrementAndGet();
 
-                } catch (TimeoutException e) {
-                    timeoutCount.incrementAndGet();
                 } catch (Exception e) {
-                    errorCount.incrementAndGet();
+                    if (e instanceof InterruptedException) {
+                        timeoutCount.incrementAndGet();
+                    } else {
+                        errorCount.incrementAndGet();
+                    }
                 }
             });
         }

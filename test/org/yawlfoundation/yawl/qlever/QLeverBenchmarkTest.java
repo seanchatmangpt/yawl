@@ -701,7 +701,7 @@ class QLeverBenchmarkTest {
                 .average()
                 .orElse(0);
 
-            long meanSize = results.stream()
+            long meanSize = (long) results.stream()
                 .filter(r -> r.success)
                 .mapToLong(BenchmarkResult::resultCount)
                 .average()

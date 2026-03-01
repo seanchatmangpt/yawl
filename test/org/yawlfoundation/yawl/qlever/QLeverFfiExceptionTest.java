@@ -32,15 +32,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("QLever FFI Exception")
 class QLeverFfiExceptionTest {
 
-/**
- * Unit tests for QLeverFfiException factory methods and constructors.
- *
- * @author YAWL Foundation
- * @since YAWL 6.0
- */
-@DisplayName("QLever FFI Exception")
-class QLeverFfiExceptionTest {
-
     @Test
     @DisplayName("Should create exception with message")
     void shouldCreateWithMessage() {
