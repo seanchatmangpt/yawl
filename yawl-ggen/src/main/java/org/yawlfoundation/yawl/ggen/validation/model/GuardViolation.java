@@ -57,6 +57,10 @@ public class GuardViolation {
                 "Update code to match documentation or vice versa";
             case "H_SILENT" ->
                 "Throw exception instead of logging";
+            case "H_ACTOR_LEAK" ->
+                "Implement proper actor lifecycle management and cleanup";
+            case "H_ACTOR_DEADLOCK" ->
+                "Use async messaging, avoid blocking operations, or implement timeout mechanisms";
             default ->
                 "Fix guard violation according to pattern definition";
         };

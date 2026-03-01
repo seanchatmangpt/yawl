@@ -1,0 +1,83 @@
+PREFIX code: <http://ggen.io/code#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  # Actor deadlock patterns
+  {
+    # Circular waiting patterns
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line .
+    
+    FILTER(
+      REGEX(?body, 'synchronized') &&
+      REGEX(?body, 'wait\\(\\)') &&
+      REGEX(?body, 'notify\\(\\)')
+    )
+    
+    BIND("H_ACTOR_DEADLOCK" AS ?pattern)
+    BIND(CONCAT("Potential deadlock at line ", STR(?line), ": synchronized with wait/notify")
+         AS ?violation)
+  } UNION {
+    # Nested locking patterns
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line .
+    
+    FILTER(
+      REGEX(?body, 'lock\\(\\).*synchronized') ||
+      REGEX(?body, 'synchronized.*synchronized') ||
+      REGEX(?body, 'await\\(\\).*lock')
+    )
+    
+    BIND("H_ACTOR_DEADLOCK" AS ?pattern)
+    BIND(CONCAT("Nested locking deadlock risk at line ", STR(?line))
+         AS ?violation)
+  } UNION {
+    # Actor blocking indefinitely
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line .
+    
+    FILTER(
+      REGEX(?body, 'Thread\\.sleep\\([^)]+\\)') &&
+      REGEX(?body, 'Actor\\.(join|wait)')
+    )
+    
+    BIND("H_ACTOR_DEADLOCK" AS ?pattern)
+    BIND(CONCAT("Potential blocking at line ", STR(?line), ": indefinite sleep with actor operations")
+         AS ?violation)
+  } UNION {
+    # Unbounded blocking on message queues
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line .
+    
+    FILTER(
+      REGEX(?body, 'poll\\(\\)') ||
+      REGEX(?body, 'take\\(\\)') ||
+      REGEX(?body, 'blockingGet\\(\\)')
+    ) &&
+    !REGEX(?body, 'timeout|poll\\(\\d+\\)')
+    
+    BIND("H_ACTOR_DEADLOCK" AS ?pattern)
+    BIND(CONCAT("Unbounded blocking at line ", STR(?line), ": queue operations without timeout")
+         AS ?violation)
+  } UNION {
+    # Resource ordering violations
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line ;
+            code:name ?name .
+    
+    FILTER(
+      REGEX(?name, 'lock.*A.*lock.*B') &&
+      REGEX(?body, 'lock\\(\\).*lock\\(\\)')
+    )
+    
+    BIND("H_ACTOR_DEADLOCK" AS ?pattern)
+    BIND(CONCAT("Resource ordering violation at line ", STR(?line))
+         AS ?violation)
+  }
+}

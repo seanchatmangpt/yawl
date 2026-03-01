@@ -9,6 +9,7 @@
 package org.yawlfoundation.yawl.ggen.validation;
 
 import org.slf4j.Logger;
+import java.io.InputStream;
 import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.ggen.validation.model.GuardReceipt;
 import org.yawlfoundation.yawl.ggen.validation.model.GuardViolation;
@@ -33,6 +34,8 @@ import java.util.Objects;
  * - H_FALLBACK: Silent catch-and-fake error handling
  * - H_LIE: Documentation mismatches (code ≠ javadoc)
  * - H_SILENT: Log instead of throw exception
+ * - H_ACTOR_LEAK: Actor memory leak detection
+ * - H_ACTOR_DEADLOCK: Actor deadlock risk detection
  *
  * Exit codes:
  * - 0 (GREEN): No violations, safe to proceed to next phase
@@ -120,7 +123,23 @@ public class HyperStandardsValidator {
             GuardChecker.Severity.FAIL
         ));
 
-        LOGGER.info("Registered {} guard checkers", checkers.size());
+        // H_ACTOR_LEAK: SPARQL-based detection of actor memory leaks
+        String actorLeakQuery = loadSparqlQuery("guards-h-actor-leak.sparql");
+        checkers.add(new SparqlGuardChecker(
+            "H_ACTOR_LEAK",
+            actorLeakQuery,
+            GuardChecker.Severity.FAIL
+        ));
+
+        // H_ACTOR_DEADLOCK: SPARQL-based detection of actor deadlock risks
+        String actorDeadlockQuery = loadSparqlQuery("guards-h-actor-deadlock.sparql");
+        checkers.add(new SparqlGuardChecker(
+            "H_ACTOR_DEADLOCK",
+            actorDeadlockQuery,
+            GuardChecker.Severity.FAIL
+        ));
+
+        LOGGER.info("Registered {} guard checkers (including 2 actor patterns)", checkers.size());
     }
 
     /**

@@ -1,0 +1,86 @@
+# Extended guard configuration with actor patterns
+# This extends the basic guard-config.toml to include YAWL actor-specific validation
+
+[guards]
+enabled = true
+phase = "guards"
+
+# Extended pattern inventory
+patterns = [
+  # Basic patterns (from guard-config.toml)
+  { name = "H_TODO", severity = "FAIL", description = "Deferred work markers" },
+  { name = "H_MOCK", severity = "FAIL", description = "Mock implementations" },
+  { name = "H_STUB", severity = "FAIL", description = "Empty/placeholder returns" },
+  { name = "H_EMPTY", severity = "FAIL", description = "No-op method bodies" },
+  { name = "H_FALLBACK", severity = "FAIL", description = "Silent catch-and-fake" },
+  { name = "H_LIE", severity = "FAIL", description = "Code ≠ documentation" },
+  { name = "H_SILENT", severity = "FAIL", description = "Log instead of throw" },
+  
+  # Actor-specific patterns (NEW)
+  { name = "H_ACTOR_LEAK", severity = "FAIL", description = "Actor memory leaks" },
+  { name = "H_ACTOR_DEADLOCK", severity = "FAIL", description = "Actor deadlock risks" }
+]
+
+[actor_patterns]
+# Actor-specific configuration
+leak_detection = true
+deadlock_detection = true
+scalability_metrics = true
+
+# Leak detection thresholds
+max_memory_mb = 1000
+max_queue_size = 10000
+max_reference_age_ms = 300000
+
+# Deadlock detection settings
+max_block_time_ms = 5000
+enable_timeout_mechanisms = true
+require_virtthreads_for_blocking = true
+
+# SPARQL query paths (relative to src/main/resources/sparql/)
+sparql_files = [
+  "guards-h-todo.sparql",
+  "guards-h-mock.sparql",
+  "guards-h-stub.sparql",
+  "guards-h-empty.sparql",
+  "guards-h-fallback.sparql",
+  "guards-h-lie.sparql",
+  "guards-h-silent.sparql",
+  "guards-h-actor-leak.sparql",    # NEW
+  "guards-h-actor-deadlock.sparql" # NEW
+]
+
+[receipt]
+enabled = true
+format = "json"
+path = ".claude/receipts/actor-guard-receipt.json"
+include_violations = true
+include_summary = true
+include_actor_metrics = true
+
+# Actor-specific receipt fields
+actor_metrics = {
+  memory_usage_mb = "reported",
+  active_actors = "tracked",
+  message_throughput = "calculated",
+  deadlock_risks = "detected"
+}
+
+# Quality gates for actor patterns
+quality_gates = {
+  actor_leaks_max = 0,
+  actor_deadlocks_max = 0,
+  memory_growth_pct_max = 10
+}
+
+[performance]
+# Performance optimization settings
+parallel_execution = true
+max_file_size_kb = 5000
+cache_ttl_seconds = 300
+query_timeout_ms = 30000
+
+# Actor-specific performance settings
+actor_pattern_cache_size = 100
+concurrent_validation_threads = 4
+enable_incremental_validation = true

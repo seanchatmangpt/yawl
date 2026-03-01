@@ -23,6 +23,8 @@ public class GuardSummary {
     private int h_fallback_count = 0;
     private int h_lie_count = 0;
     private int h_silent_count = 0;
+    private int h_actor_leak_count = 0;
+    private int h_actor_deadlock_count = 0;
 
     /**
      * Increment the count for a given pattern.
@@ -38,6 +40,8 @@ public class GuardSummary {
             case "H_FALLBACK" -> h_fallback_count++;
             case "H_LIE" -> h_lie_count++;
             case "H_SILENT" -> h_silent_count++;
+            case "H_ACTOR_LEAK" -> h_actor_leak_count++;
+            case "H_ACTOR_DEADLOCK" -> h_actor_deadlock_count++;
         }
     }
 
@@ -46,7 +50,8 @@ public class GuardSummary {
      */
     public int getTotalViolations() {
         return h_todo_count + h_mock_count + h_stub_count + h_empty_count +
-               h_fallback_count + h_lie_count + h_silent_count;
+               h_fallback_count + h_lie_count + h_silent_count + h_actor_leak_count +
+               h_actor_deadlock_count;
     }
 
     /**
@@ -61,6 +66,8 @@ public class GuardSummary {
         map.put("h_fallback_count", h_fallback_count);
         map.put("h_lie_count", h_lie_count);
         map.put("h_silent_count", h_silent_count);
+        map.put("h_actor_leak_count", h_actor_leak_count);
+        map.put("h_actor_deadlock_count", h_actor_deadlock_count);
         map.put("total_violations", getTotalViolations());
         return map;
     }
@@ -73,4 +80,6 @@ public class GuardSummary {
     public int getH_fallback_count() { return h_fallback_count; }
     public int getH_lie_count() { return h_lie_count; }
     public int getH_silent_count() { return h_silent_count; }
+    public int getH_actor_leak_count() { return h_actor_leak_count; }
+    public int getH_actor_deadlock_count() { return h_actor_deadlock_count; }
 }

@@ -1,0 +1,52 @@
+PREFIX code: <http://ggen.io/code#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  # Actor memory leak patterns
+  {
+    # Creating but not destroying actors
+    ?method a code:Method ;
+            code:name ?name ;
+            code:body ?body ;
+            code:lineNumber ?line ;
+            code:returnType ?retType .
+    
+    FILTER(REGEX(?name, "(create|spawn|new)[A-Z]")) &&
+    FILTER(REGEX(?body, 'new\\s+(Actor|Message|WorkItem)') &&
+    !REGEX(?body, 'destroy|dispose|close'))
+    
+    BIND("H_ACTOR_LEAK" AS ?pattern)
+    BIND(CONCAT("Potential actor memory leak at line ", STR(?line), ": actor created but not destroyed")
+         AS ?violation)
+  } UNION {
+    # Accumulating state without cleanup
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line .
+    
+    FILTER(
+      REGEX(?body, '(actor|message)\\.(put|add|append)\\(') &&
+      REGEX(?body, '(actor|message)\\.(get|remove)\\(') &&
+      !REGEX(?body, 'clear|reset|dispose')
+    )
+    
+    BIND("H_ACTOR_LEAK" AS ?pattern)
+    BIND(CONCAT("Accumulating state without cleanup at line ", STR(?line))
+         AS ?violation)
+  } UNION {
+    # Holding references to dead actors
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line .
+    
+    FILTER(
+      REGEX(?body, '(Weak|Soft)Reference') &&
+      !REGEX(?body, 'get|clear|cleanup')
+    )
+    
+    BIND("H_ACTOR_LEAK" AS ?pattern)
+    BIND(CONCAT("Potential reference leak at line ", STR(?line), ": weak reference not managed")
+         AS ?violation)
+  }
+}
