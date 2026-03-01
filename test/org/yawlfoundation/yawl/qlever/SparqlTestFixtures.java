@@ -68,7 +68,8 @@ public abstract class SparqlTestFixtures {
             OutputFormatTest.class,
             FilterFunctionTest.class,
             QLeverExtensionTest.class,
-            ErrorHandlingTest.class
+            ErrorHandlingTest.class,
+            ConcurrentCapabilityTest.class
         );
     }
 
