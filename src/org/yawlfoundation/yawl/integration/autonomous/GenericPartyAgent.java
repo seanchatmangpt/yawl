@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,7 +70,7 @@ import com.sun.net.httpserver.HttpServer;
  * @version 6.0
  * @since YAWL 6.0
  */
-public final class GenericPartyAgent {
+public class GenericPartyAgent {
 
     private static final Logger logger = LogManager.getLogger(GenericPartyAgent.class);
 
@@ -81,6 +82,13 @@ public final class GenericPartyAgent {
     private HttpServer httpServer;
     private Thread discoveryThread;
     private String sessionHandle;
+
+    // Exponential backoff tracking for discovery cycles
+    private int emptyResultsCount;
+    private long backoffMs;
+    private final long baseIntervalMs;
+    private final long maxBackoffMs = 60_000; // 60 seconds cap
+    private final Random jitterRandom = new Random();
 
     /**
      * Create a generic autonomous agent from the given configuration.
@@ -104,6 +112,11 @@ public final class GenericPartyAgent {
             : engineUrl + "/ib";
 
         this.ibClient = new InterfaceB_EnvironmentBasedClient(interfaceBUrl);
+
+        // Initialize backoff tracking
+        this.baseIntervalMs = config.pollIntervalMs();
+        this.backoffMs = this.baseIntervalMs;
+        this.emptyResultsCount = 0;
 
         // Attempt connection to engine
         String session = ibClient.connect(config.getUsername(), config.getPassword());
@@ -133,7 +146,7 @@ public final class GenericPartyAgent {
 
         logger.info("GenericPartyAgent [{}] v{} started on port {}",
             config.getAgentName(), config.version(), config.port());
-        logger.info("  Capability: {}", config.getCapability().getDescription());
+        logger.info("  Capability: {}", config.getCapability().description());
         logger.info("  Agent card: http://localhost:{}/.well-known/agent.json", config.port());
     }
 
@@ -224,7 +237,7 @@ public final class GenericPartyAgent {
             }
             String json = """
                 {"domain":"%s","available":true,"capacity":"normal"}""".formatted(
-                config.getCapability().getDomainName());
+                config.getCapability().domainName());
             byte[] body = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
@@ -251,10 +264,10 @@ public final class GenericPartyAgent {
                 }
               ]
             }""".formatted(
-                config.getCapability().getDomainName(),
-                config.getCapability().getDescription(),
+                config.getCapability().domainName(),
+                config.getCapability().description(),
                 config.version(),
-                config.getCapability().getDomainName());
+                config.getCapability().domainName());
     }
 
     // =========================================================================
@@ -267,30 +280,61 @@ public final class GenericPartyAgent {
             .start(() -> {
                 while (running.get()) {
                     try {
-                        runDiscoveryCycle();
+                        boolean hasItems = runDiscoveryCycle();
+
+                        // Update backoff based on whether items were found
+                        if (hasItems) {
+                            // Reset to base interval when items found
+                            emptyResultsCount = 0;
+                            backoffMs = baseIntervalMs;
+                        } else {
+                            // Exponential backoff: base × 2^N, capped at 60s
+                            emptyResultsCount++;
+                            backoffMs = Math.min(
+                                baseIntervalMs * (1L << Math.min(emptyResultsCount - 1, 6)),
+                                maxBackoffMs
+                            );
+                        }
+
+                        // Calculate sleep time with ±10% jitter to prevent re-synchronization
+                        long jitterRange = backoffMs / 10;
+                        long jitter = jitterRandom.nextLong(-jitterRange, jitterRange + 1);
+                        long sleepMs = Math.max(0, backoffMs + jitter);
+
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(
+                                "[{}] Discovery cycle completed. Items found: {}, " +
+                                "Empty count: {}, Backoff: {}ms, Sleep: {}ms",
+                                config.getAgentName(), hasItems, emptyResultsCount,
+                                backoffMs, sleepMs
+                            );
+                        }
+
+                        TimeUnit.MILLISECONDS.sleep(sleepMs);
                     } catch (Exception e) {
                         logger.error("Discovery cycle error for agent [{}]: {}",
                             config.getAgentName(), e.getMessage(), e);
-                    }
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(config.pollIntervalMs());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
                     }
                 }
             });
     }
 
-    private void runDiscoveryCycle() throws IOException {
+    /**
+     * Run a single discovery cycle and return whether items were found.
+     *
+     * @return true if items were discovered and processed, false if no items found
+     * @throws IOException if the discovery strategy fails
+     */
+    private boolean runDiscoveryCycle() throws IOException {
         // Discover available work items using configured strategy
         List<WorkItemRecord> items = config.discoveryStrategy()
             .discoverWorkItems(ibClient, sessionHandle);
 
         if (items == null || items.isEmpty()) {
-            return;
+            return false;
         }
 
+        boolean processedAny = false;
         for (WorkItemRecord workItem : items) {
             if (!running.get()) {
                 break;
@@ -307,7 +351,10 @@ public final class GenericPartyAgent {
             }
 
             processWorkItem(workItem);
+            processedAny = true;
         }
+
+        return processedAny;
     }
 
     /**
@@ -326,7 +373,7 @@ public final class GenericPartyAgent {
         try {
             // Query agent registry for capable substitute agents
             List<AgentInfo> capableAgents = config.registryClient().findAgentsByCapability(
-                config.getCapability().getDomainName());
+                config.getCapability().domainName());
 
             // Filter out this agent
             String currentAgentId = config.getAgentName();
@@ -336,7 +383,7 @@ public final class GenericPartyAgent {
 
             if (substituteAgents.isEmpty()) {
                 logger.info("[{}] No substitute agents available for capability: {}",
-                    currentAgentId, config.getCapability().getDomainName());
+                    currentAgentId, config.getCapability().domainName());
                 throw new HandoffException("No substitute agents available for work item: " + workItemId);
             }
 

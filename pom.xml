@@ -3540,6 +3540,7 @@
             </build>
         </profile>
 
+
         <!-- Stress Test Profile: Full suite including breaking-point tests
              Usage: mvn -P stress-test test
 

@@ -84,6 +84,8 @@ public record PatternStructure(
             case MILESTONE -> milestoneStructure();
             case CANCEL_TASK -> cancelTaskStructure();
             case CANCEL_CASE -> cancelCaseStructure();
+            default -> throw new UnsupportedOperationException(
+                "Pattern structure for " + pattern.getCode() + " (" + pattern.name() + ") not yet implemented");
         };
     }
 

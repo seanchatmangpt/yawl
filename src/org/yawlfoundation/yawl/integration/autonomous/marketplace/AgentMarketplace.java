@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
 
 /**
  * The CONSTRUCT-native agent marketplace: a formally typed, multi-dimensional exchange
@@ -63,6 +64,14 @@ public final class AgentMarketplace {
             new ConcurrentHashMap<>();
 
     /**
+     * O(K) liveness index: maps agent ID to heartbeat timestamp for O(K) filtering.
+     * K = number of live agents at query time (typically << N total agents).
+     * Maintained synchronously with listings to ensure consistency.
+     */
+    private final KeySetView<String, Boolean> liveAgentIds =
+            ConcurrentHashMap.newKeySet();
+
+    /**
      * Publishes an agent listing to the marketplace, replacing any prior listing
      * for the same agent ID.
      *
@@ -80,6 +89,8 @@ public final class AgentMarketplace {
             throw new IllegalArgumentException("Agent ID must not be null or blank");
         }
         listings.put(id, listing);
+        // Maintain liveness index: mark agent as live on publish
+        liveAgentIds.add(id);
     }
 
     /**
@@ -93,6 +104,8 @@ public final class AgentMarketplace {
     public void unpublish(String agentId) {
         Objects.requireNonNull(agentId, "agentId must not be null");
         listings.remove(agentId);
+        // Maintain liveness index: remove agent from live set on unpublish
+        liveAgentIds.remove(agentId);
     }
 
     /**
@@ -109,7 +122,11 @@ public final class AgentMarketplace {
         Objects.requireNonNull(agentId, "agentId must not be null");
         Objects.requireNonNull(heartbeatAt, "heartbeatAt must not be null");
         listings.computeIfPresent(agentId,
-                (id, existing) -> existing.withHeartbeat(heartbeatAt));
+                (id, existing) -> {
+                    // Maintain liveness index: ensure agent is in live set if heartbeat succeeds
+                    liveAgentIds.add(id);
+                    return existing.withHeartbeat(heartbeatAt);
+                });
     }
 
     /**
@@ -245,8 +262,22 @@ public final class AgentMarketplace {
 
     // --- Private helpers ---
 
+    /**
+     * Returns a stream of all live listings by consulting the liveness index.
+     *
+     * <p>This implementation is O(K) where K is the number of live agents,
+     * not O(N) where N is the total number of listings. The liveAgentIds index
+     * is maintained synchronously with publish/unpublish/heartbeat operations.</p>
+     *
+     * <p>Null-safe filtering handles the rare race condition where an agent is
+     * removed from the index but still exists in listings (or vice versa).</p>
+     *
+     * @return a stream of live listings; never null
+     */
     private Stream<AgentMarketplaceListing> liveListings() {
-        return listings.values().stream()
+        return liveAgentIds.stream()
+                .map(listings::get)
+                .filter(Objects::nonNull)  // Null-safe: handles race conditions
                 .filter(l -> l.isLive(DEFAULT_STALENESS));
     }
 

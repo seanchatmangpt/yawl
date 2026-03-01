@@ -22,9 +22,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import org.yawlfoundation.yawl.integration.processmining.Ocel2Exporter.Ocel2EventLog;
 
 import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
+import org.yawlfoundation.yawl.integration.processmining.discovery.AlphaMiner;
+import org.yawlfoundation.yawl.integration.processmining.discovery.InductiveMiner;
+import org.yawlfoundation.yawl.integration.processmining.discovery.ProcessDiscoveryAlgorithm;
+import org.yawlfoundation.yawl.integration.processmining.discovery.DirectlyFollowsGraph;
+import org.yawlfoundation.yawl.integration.processmining.discovery.ProcessTree;
+import org.yawlfoundation.yawl.integration.processmining.ocpm.OcpmDiscovery;
+import org.yawlfoundation.yawl.integration.processmining.ocpm.OcpmInput;
+import org.yawlfoundation.yawl.integration.processmining.responsibleai.FairnessAnalyzer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -366,6 +376,113 @@ public final class ProcessMiningFacade {
     }
 
     /**
+     * Run token-based replay conformance check against an external XES event log.
+     *
+     * @param net    reference YAWL net to replay against
+     * @param xesXml XES event log XML string
+     * @return conformance result with fitness score
+     * @throws IOException if PNML export or token replay fails
+     * @throws NullPointerException if either argument is null
+     */
+    public ConformanceResult tokenReplayConformance(YNet net, String xesXml) throws IOException {
+        Objects.requireNonNull(net, "net is required");
+        Objects.requireNonNull(xesXml, "xesXml is required");
+        String pnmlXml = PnmlExporter.netToPnml(net);
+        String replayJson = service.tokenReplay(pnmlXml, xesXml);
+        return parseConformanceResult(replayJson);
+    }
+
+    /**
+     * Discover a process model using the Alpha Miner algorithm.
+     *
+     * <p>Alpha Miner discovers a Petri net from event logs based on footprint analysis.
+     * The discovered model is guaranteed to have perfect fitness on the input log.</p>
+     *
+     * @param eventLog OCEL event log to mine
+     * @return Discovery result with Petri net and metrics
+     * @throws ProcessDiscoveryAlgorithm.ProcessDiscoveryException if mining fails
+     * @throws NullPointerException if eventLog is null
+     */
+    public ProcessDiscoveryResult discoverAlpha(Ocel2EventLog eventLog)
+            throws ProcessDiscoveryAlgorithm.ProcessDiscoveryException {
+        Objects.requireNonNull(eventLog, "eventLog is required");
+
+        _log.info("Starting Alpha Miner discovery");
+
+        AlphaMiner miner = new AlphaMiner();
+        ProcessDiscoveryAlgorithm.ProcessMiningContext context =
+            new ProcessDiscoveryAlgorithm.ProcessMiningContext.Builder()
+                .eventLog(eventLog)
+                .algorithm(ProcessDiscoveryAlgorithm.AlgorithmType.ALPHA)
+                .build();
+
+        ProcessDiscoveryResult result = miner.discover(context);
+        _log.info("Alpha Miner discovery complete: fitness={}, precision={}",
+                  result.fitness(), result.precision());
+
+        return result;
+    }
+
+    /**
+     * Discover a process tree using the Inductive Miner algorithm.
+     *
+     * <p>Inductive Miner discovers hierarchical process trees by recursively
+     * finding cuts in the directly-follows graph. The discovered tree is
+     * guaranteed to be sound (deadlock-free).</p>
+     *
+     * @param eventLog OCEL event log to mine
+     * @return Process tree representing the discovered model
+     * @throws ProcessDiscoveryAlgorithm.ProcessDiscoveryException if mining fails
+     * @throws NullPointerException if eventLog is null
+     */
+    public ProcessTree discoverInductive(Ocel2EventLog eventLog)
+            throws ProcessDiscoveryAlgorithm.ProcessDiscoveryException {
+        Objects.requireNonNull(eventLog, "eventLog is required");
+
+        _log.info("Starting Inductive Miner discovery");
+
+        InductiveMiner miner = new InductiveMiner();
+        ProcessDiscoveryAlgorithm.ProcessMiningContext context =
+            new ProcessDiscoveryAlgorithm.ProcessMiningContext.Builder()
+                .eventLog(eventLog)
+                .algorithm(ProcessDiscoveryAlgorithm.AlgorithmType.INDUCTIVE)
+                .build();
+
+        ProcessDiscoveryResult result = miner.discover(context);
+        _log.info("Inductive Miner discovery complete: fitness={}, precision={}",
+                  result.fitness(), result.precision());
+
+        // Process tree extraction requires parsing the JSON representation
+        throw new UnsupportedOperationException(
+            "Process tree extraction from discovery result requires full implementation. " +
+            "Use discoverAlpha() for Petri net-based discovery."
+        );
+    }
+
+    /**
+     * Build a directly-follows graph from event traces.
+     *
+     * <p>The DFG represents activity execution patterns: nodes are activities,
+     * edges represent directly-follows relations with occurrence counts.</p>
+     *
+     * @param traces List of activity sequences (one list per case)
+     * @return Directly-follows graph
+     * @throws NullPointerException if traces is null
+     */
+    public DirectlyFollowsGraph buildDfg(List<List<String>> traces) {
+        Objects.requireNonNull(traces, "traces is required");
+
+        _log.debug("Building DFG from {} traces", traces.size());
+
+        DirectlyFollowsGraph dfg = DirectlyFollowsGraph.discover(traces);
+
+        _log.debug("DFG built: {} activities, {} edges",
+                   dfg.getActivities().size(), dfg.toJson());
+
+        return dfg;
+    }
+
+    /**
      * Close connection to YAWL engine and the process mining service (if it implements
      * {@link AutoCloseable}).
      *
@@ -565,5 +682,66 @@ public final class ProcessMiningFacade {
             }
         }
         return null;
+    }
+
+    /**
+     * Discover an Object-Centric Petri Net (OCPN) from OCEL 2.0 log data.
+     *
+     * <p>Analyzes object-centric event logs to discover per-object-type directly-follows graphs
+     * and Petri nets. Particularly useful for processes with multiple object types
+     * (e.g., cases with line items, resources).</p>
+     *
+     * @param input OCEL 2.0 log data (events and objects)
+     * @return OCPN discovery result with object types, transitions, and places
+     * @throws NullPointerException if input is null
+     */
+    public OcpmDiscovery.OcpmResult discoverObjectCentric(OcpmInput input) {
+        Objects.requireNonNull(input, "input is required");
+
+        _log.info("Starting Object-Centric Petri Net discovery");
+
+        OcpmDiscovery discovery = new OcpmDiscovery();
+        OcpmDiscovery.OcpmResult result = discovery.discover(input);
+
+        _log.info("OCPN discovery complete: {} object types, {} shared transitions",
+                  result.objectTypes().size(), result.transitions().size());
+
+        return result;
+    }
+
+    /**
+     * Analyze fairness of process outcomes across demographic groups.
+     *
+     * <p>Implements van der Aalst's "Responsible Process Mining" framework to detect
+     * demographic bias in process decisions using the four-fifths rule (disparate impact).</p>
+     *
+     * @param caseAttributes list of case attribute maps (caseId → attribute value)
+     * @param decisions list of decision outcome maps (caseId → decision)
+     * @param sensitiveAttribute the attribute to check for bias (e.g., "resource", "department")
+     * @param positiveOutcome the value representing a positive decision (e.g., "approved")
+     * @return fairness report with disparate impact and violation details
+     * @throws NullPointerException if any parameter is null
+     * @throws IllegalArgumentException if caseAttributes and decisions have different sizes
+     */
+    public FairnessAnalyzer.FairnessReport analyzeFairness(
+            List<Map<String, String>> caseAttributes,
+            List<Map<String, String>> decisions,
+            String sensitiveAttribute,
+            String positiveOutcome) {
+
+        _log.info("Starting fairness analysis on sensitive attribute '{}'", sensitiveAttribute);
+
+        FairnessAnalyzer.FairnessReport report = FairnessAnalyzer.analyze(
+            caseAttributes, decisions, sensitiveAttribute, positiveOutcome
+        );
+
+        _log.info("Fairness analysis complete: disparateImpact={}, isFair={}",
+                  String.format("%.3f", report.disparateImpact()), report.isFair());
+
+        if (!report.isFair()) {
+            _log.warn("Fairness violation detected: {}", report.violations());
+        }
+
+        return report;
     }
 }

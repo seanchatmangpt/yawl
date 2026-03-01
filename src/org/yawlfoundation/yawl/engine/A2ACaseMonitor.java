@@ -293,7 +293,7 @@ public class A2ACaseMonitor {
         );
 
         _eventPublisher.publishSpecificationEvent(null, "YAWL Engine",
-            A2AEventPublisher.SpecEventType.SPEC_LOADED, healthData, null);
+            A2AEventPublisher.SpecEventType.SPEC_LOADED, null);
     }
 
     /**
