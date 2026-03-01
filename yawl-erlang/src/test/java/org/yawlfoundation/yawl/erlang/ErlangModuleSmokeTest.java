@@ -240,7 +240,7 @@ class ErlangModuleSmokeTest {
     @Test
     @DisplayName("XBUFF_LAYOUT exists and has reasonable size")
     void xbuffLayout_byteSize_reasonable() {
-        MemoryLayout layout = ei_h.XBUFF_LAYOUT;
+        MemoryLayout layout = ei_h.EI_X_BUFF_LAYOUT;
         assertNotNull(layout);
         long byteSize = layout.byteSize();
         assertTrue(byteSize > 0);
