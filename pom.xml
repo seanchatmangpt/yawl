@@ -86,6 +86,7 @@
         <module>yawl-worklet</module>
         <module>yawl-control-panel</module>
         <module>yawl-integration</module>
+        <module>yawl-qlever</module>
         <module>yawl-webapps</module>
 
         <!-- Layer 5: Advanced services (build in parallel) -->

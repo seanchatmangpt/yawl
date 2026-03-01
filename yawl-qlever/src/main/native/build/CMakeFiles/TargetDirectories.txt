@@ -1,0 +1,9 @@
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/qlever_ffi.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/qlever_ffi_test.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/test.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/edit_cache.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/rebuild_cache.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/list_install_components.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/install.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/install/local.dir
+/Users/sac/yawl/yawl-qlever/src/main/native/build/CMakeFiles/install/strip.dir

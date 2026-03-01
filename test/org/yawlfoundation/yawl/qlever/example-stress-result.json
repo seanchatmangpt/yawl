@@ -1,0 +1,39 @@
+{
+  "test_name": "concurrent_test_100",
+  "timestamp": "2024-02-28T14:30:00Z",
+  "thread_count": 100,
+  "duration_seconds": 30,
+  "total_queries": 2984,
+  "success_count": 2950,
+  "failure_count": 34,
+  "error_rate": 0.0114,
+  "throughput": 99.47,
+  "avg_latency": 15.2,
+  "p50_latency": 12.0,
+  "p95_latency": 45.3,
+  "p99_latency": 78.9,
+  "memory_growth_mb": 25.6,
+  "gc_cycles": 3,
+  "max_memory_used_mb": 512.8,
+  "test_scenario": "concurrent_query_throughput",
+  "query_type": "simple_read",
+  "status": "PASSED",
+  "metrics": {
+    "min_latency_ms": 2.1,
+    "max_latency_ms": 156.7,
+    "median_latency_ms": 11.8,
+    "std_deviation_ms": 18.4,
+    "cpu_usage_percent": 45.2,
+    "thread_peak_count": 105,
+    "open_connections_peak": 98
+  },
+  "violations": [
+    {
+      "type": "high_latency",
+      "severity": "WARNING",
+      "message": "P99 latency exceeds threshold",
+      "threshold": 50,
+      "actual": 78.9
+    }
+  ]
+}

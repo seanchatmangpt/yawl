@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/qlever_ffi_test.dir/test/ffi_test.cpp.o CMakeFiles/qlever_ffi_test.dir/test/engine_test.cpp.o CMakeFiles/qlever_ffi_test.dir/test/search_test.cpp.o -o qlever_ffi_test  -Wl,-rpath,/Users/sac/yawl/yawl-qlever/src/main/native/build/lib lib/libqlever_ffi.1.0.0.dylib

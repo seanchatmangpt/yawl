@@ -1,0 +1,96 @@
+@prefix yawl: <http://example.org/yawl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Basic YAWL classes
+yawl:WorkItem a rdfs:Class ;
+    rdfs:label "Work Item" ;
+    rdfs:comment "A unit of work in a YAWL workflow" .
+
+yawl:Case a rdfs:Class ;
+    rdfs:label "Case" ;
+    rdfs:comment "A workflow case instance" .
+
+yawl:User a rdfs:Class ;
+    rdfs:label "User" ;
+    rdfs:comment "A workflow participant" .
+
+# Basic YAWL properties
+yawl:name a rdf:Property ;
+    rdfs:label "name" ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+yawl:status a rdf:Property ;
+    rdfs:label "status" ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+yawl:priority a rdf:Property ;
+    rdfs:label "priority" ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:string .
+
+yawl:created a rdf:Property ;
+    rdfs:label "created" ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range xsd:dateTime .
+
+yawl:assignedTo a rdf:Property ;
+    rdfs:label "assigned to" ;
+    rdfs:domain rdfs:Resource ;
+    rdfs:range yawl:User .
+
+yawl:hasWorkItem a rdf:Property ;
+    rdfs:label "has work item" ;
+    rdfs:domain yawl:Case ;
+    rdfs:range yawl:WorkItem .
+
+yawl:case a rdf:Property ;
+    rdfs:label "case" ;
+    rdfs:domain yawl:WorkItem ;
+    rdfs:range yawl:Case .
+
+# Sample test data
+<http://example.org/cases/case-001> a yawl:Case ;
+    yawl:name "Customer Service Request" ;
+    yawl:status "active" ;
+    yawl:priority "high" ;
+    yawl:created "2024-01-15T09:00:00"^^xsd:dateTime ;
+    yawl:assignedTo <http://example.org/users/manager> .
+
+<http://example.org/cases/case-002> a yawl:Case ;
+    yawl:name "Employee Onboarding" ;
+    yawl:status "completed" ;
+    yawl:priority "medium" ;
+    yawl:created "2024-01-10T10:00:00"^^xsd:dateTime ;
+    yawl:completed "2024-01-14T15:00:00"^^xsd:dateTime ;
+    yawl:assignedTo <http://example.org/users/hr> .
+
+<http://example.org/workitems/wi-001> a yawl:WorkItem ;
+    yawl:name "Review Customer Complaint" ;
+    yawl:status "in_progress" ;
+    yawl:priority "high" ;
+    yawl:created "2024-01-15T10:00:00"^^xsd:dateTime ;
+    yawl:assignedTo <http://example.org/users/agent> ;
+    yawl:case <http://example.org/cases/case-001> .
+
+<http://example.org/workitems/wi-002> a yawl:WorkItem ;
+    yawl:name "Process New Hire Documents" ;
+    yawl:status "pending" ;
+    yawl:priority "medium" ;
+    yawl:created "2024-01-10T11:00:00"^^xsd:dateTime ;
+    yawl:assignedTo <http://example.org/users/hr> ;
+    yawl:case <http://example.org/cases/case-002> .
+
+<http://example.org/users/manager> a yawl:User ;
+    yawl:name "Workflow Manager" ;
+    yawl:status "active" .
+
+<http://example.org/users/hr> a yawl:User ;
+    yawl:name "HR Specialist" ;
+    yawl:status "active" .
+
+<http://example.org/users/agent> a yawl:User ;
+    yawl:name "Customer Service Agent" ;
+    yawl:status "active" .
