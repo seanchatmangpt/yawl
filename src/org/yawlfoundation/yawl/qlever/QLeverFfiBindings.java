@@ -18,6 +18,8 @@
 
 package org.yawlfoundation.yawl.qlever;
 
+import org.yawlfoundation.yawl.qlever.ffi.qlever_ffi_h;
+
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
@@ -54,71 +56,11 @@ public final class QLeverFfiBindings implements AutoCloseable {
         }
     }
 
-    /** Native linker for FFM downcalls */
-    private static final Linker LINKER = Linker.nativeLinker();
-
-    /** Symbol lookup from loaded library */
-    private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
-
     /** Shared arena for long-lived native resources */
     private final Arena arena;
 
     // ========================================================================
-    // Function Descriptors (define C function signatures)
-    // ========================================================================
-
-    private static final FunctionDescriptor DESC_INDEX_CREATE = FunctionDescriptor.of(
-        ValueLayout.ADDRESS,    // returns QLeverIndex*
-        ValueLayout.ADDRESS     // const char* index_path
-    );
-
-    private static final FunctionDescriptor DESC_INDEX_DESTROY = FunctionDescriptor.ofVoid(
-        ValueLayout.ADDRESS     // QLeverIndex* index
-    );
-
-    private static final FunctionDescriptor DESC_INDEX_IS_LOADED = FunctionDescriptor.of(
-        ValueLayout.JAVA_BOOLEAN,  // returns bool
-        ValueLayout.ADDRESS        // const QLeverIndex* index
-    );
-
-    private static final FunctionDescriptor DESC_INDEX_TRIPLE_COUNT = FunctionDescriptor.of(
-        ValueLayout.JAVA_LONG,  // returns size_t
-        ValueLayout.ADDRESS     // const QLeverIndex* index
-    );
-
-    private static final FunctionDescriptor DESC_QUERY_EXEC = FunctionDescriptor.of(
-        ValueLayout.ADDRESS,    // returns QLeverResult*
-        ValueLayout.ADDRESS,    // QLeverIndex* index
-        ValueLayout.ADDRESS,    // const char* sparql_query
-        ValueLayout.ADDRESS     // const char* accept_header
-    );
-
-    private static final FunctionDescriptor DESC_RESULT_HAS_NEXT = FunctionDescriptor.of(
-        ValueLayout.JAVA_BOOLEAN,  // returns bool
-        ValueLayout.ADDRESS        // const QLeverResult* result
-    );
-
-    private static final FunctionDescriptor DESC_RESULT_NEXT = FunctionDescriptor.of(
-        ValueLayout.ADDRESS,   // returns const char*
-        ValueLayout.ADDRESS    // QLeverResult* result
-    );
-
-    private static final FunctionDescriptor DESC_RESULT_DESTROY = FunctionDescriptor.ofVoid(
-        ValueLayout.ADDRESS    // QLeverResult* result
-    );
-
-    private static final FunctionDescriptor DESC_RESULT_ERROR = FunctionDescriptor.of(
-        ValueLayout.ADDRESS,   // returns const char*
-        ValueLayout.ADDRESS    // const QLeverResult* result
-    );
-
-    private static final FunctionDescriptor DESC_RESULT_STATUS = FunctionDescriptor.of(
-        ValueLayout.JAVA_INT,  // returns int (HTTP status code)
-        ValueLayout.ADDRESS    // const QLeverResult* result
-    );
-
-    // ========================================================================
-    // Method Handles (downcall handles for native functions)
+    // Method Handles (obtained via Layer 1: qlever_ffi_h)
     // ========================================================================
 
     private final MethodHandle mhIndexCreate;
@@ -133,7 +75,7 @@ public final class QLeverFfiBindings implements AutoCloseable {
     private final MethodHandle mhResultStatus;
 
     /**
-     * Creates new FFI bindings and resolves all native method handles.
+     * Creates new FFI bindings and resolves all native method handles via Layer 1.
      *
      * @throws QLeverFfiException if any native symbol cannot be resolved
      */
@@ -141,31 +83,23 @@ public final class QLeverFfiBindings implements AutoCloseable {
         this.arena = Arena.ofShared();
 
         try {
-            this.mhIndexCreate = lookupDowncall("qlever_index_create", DESC_INDEX_CREATE);
-            this.mhIndexDestroy = lookupDowncall("qlever_index_destroy", DESC_INDEX_DESTROY);
-            this.mhIndexIsLoaded = lookupDowncall("qlever_index_is_loaded", DESC_INDEX_IS_LOADED);
-            this.mhIndexTripleCount = lookupDowncall("qlever_index_triple_count", DESC_INDEX_TRIPLE_COUNT);
-            this.mhQueryExec = lookupDowncall("qlever_query_exec", DESC_QUERY_EXEC);
-            this.mhResultHasNext = lookupDowncall("qlever_result_has_next", DESC_RESULT_HAS_NEXT);
-            this.mhResultNext = lookupDowncall("qlever_result_next", DESC_RESULT_NEXT);
-            this.mhResultDestroy = lookupDowncall("qlever_result_destroy", DESC_RESULT_DESTROY);
-            this.mhResultError = lookupDowncall("qlever_result_error", DESC_RESULT_ERROR);
-            this.mhResultStatus = lookupDowncall("qlever_result_status", DESC_RESULT_STATUS);
-        } catch (QLeverFfiException e) {
+            // Obtain all MethodHandles via Layer 1 (qlever_ffi_h)
+            this.mhIndexCreate = qlever_ffi_h.qlever_index_create();
+            this.mhIndexDestroy = qlever_ffi_h.qlever_index_destroy();
+            this.mhIndexIsLoaded = qlever_ffi_h.qlever_index_is_loaded();
+            this.mhIndexTripleCount = qlever_ffi_h.qlever_index_triple_count();
+            this.mhQueryExec = qlever_ffi_h.qlever_query_exec();
+            this.mhResultHasNext = qlever_ffi_h.qlever_result_has_next();
+            this.mhResultNext = qlever_ffi_h.qlever_result_next();
+            this.mhResultDestroy = qlever_ffi_h.qlever_result_destroy();
+            this.mhResultError = qlever_ffi_h.qlever_result_error();
+            this.mhResultStatus = qlever_ffi_h.qlever_result_status();
+        } catch (UnsatisfiedLinkError | QLeverFfiException e) {
             close();  // Clean up arena on failure
-            throw e;
+            throw new QLeverFfiException(
+                "Failed to resolve native symbols via Layer 1 bindings", e
+            );
         }
-    }
-
-    /**
-     * Looks up a native symbol and creates a downcall method handle.
-     */
-    private MethodHandle lookupDowncall(String name, FunctionDescriptor descriptor) {
-        return LOOKUP.find(name)
-            .map(addr -> LINKER.downcallHandle(addr, descriptor))
-            .orElseThrow(() -> new QLeverFfiException(
-                "Native symbol '" + name + "' not found in lib" + LIBRARY_NAME
-            ));
     }
 
     // ========================================================================
@@ -268,8 +202,11 @@ public final class QLeverFfiBindings implements AutoCloseable {
 
         try (Arena callArena = Arena.ofConfined()) {
             MemorySegment querySeg = callArena.allocateFrom(sparqlQuery, StandardCharsets.UTF_8);
-            MemorySegment acceptSeg = callArena.allocateFrom(mediaType.headerValue(), StandardCharsets.UTF_8);
-            MemorySegment resultHandle = (MemorySegment) mhQueryExec.invokeExact(index, querySeg, acceptSeg);
+            // Layer 1 expects media_type as an int enum, followed by status pointer
+            MemorySegment statusSeg = callArena.allocate(ValueLayout.ADDRESS);
+            MemorySegment resultHandle = (MemorySegment) mhQueryExec.invokeExact(
+                index, querySeg, mediaType.ordinal(), statusSeg
+            );
 
             return new QLeverStatus(resultHandle);
         } catch (Throwable t) {
