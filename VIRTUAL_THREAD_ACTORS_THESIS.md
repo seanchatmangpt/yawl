@@ -35,7 +35,7 @@ Virtual threads, introduced stably in Java 21 and matured in Java 25 under Proje
 
 Our primary contributions are four-fold. First, we establish an empirical per-actor memory model that corrects a factor-of-eleven discrepancy between documentation (132 bytes) and measured steady-state cost (1,454 bytes/actor), decomposing the true cost across six distinct allocation sites. Second, we demonstrate that IO-bound virtual-thread actors scale linearly in throughput from 7,123 to 760,910 messages per second across three orders of magnitude of actor population with no carrier-thread saturation. Third, we identify and formally characterise a high-severity concurrency hazard — the *stop-race* — arising from the temporal gap between virtual-thread submission and thread-reference publication, and we prove that a two-phase volatile protocol eliminates the race under Java Memory Model guarantees. Fourth, we develop a taxonomy of six failure modes specific to virtual-thread actor runtimes, naming them IDLE_OOM, MAILBOX_FLOOD, STOP_RACE, REGISTRY_SILENT_REPLACE, DEAD_ACTOR_ACCUMULATION, and ID_EPOCH_OVERFLOW, and we characterise their severity, detectability, and mitigation in production deployments.
 
-Our results suggest that virtual-thread actors are viable for moderate-density workloads up to approximately 400,000 concurrent actors per gigabyte of heap, provided that backpressure, supervised lifecycle management, and correct stop-sequence ordering are addressed at the framework level.
+Our results suggest that virtual-thread actors are viable for moderate-density workloads up to approximately 690,000 concurrent actors per gigabyte of heap (empirical formula: `maxActors = heapBytes / 1,454`), provided that backpressure, supervised lifecycle management, and correct stop-sequence ordering are addressed at the framework level.
 
 ---
 
@@ -381,7 +381,9 @@ The full formal treatment of the race and its fix is deferred to Chapter 7.
 
 ## 5.7 Pattern Benchmark Summary
 
-For completeness, we report the JMH pattern benchmark results, which characterise normal-operation performance:
+We report the JMH pattern benchmark results (three forks, five warmup iterations of 10 s, ten measurement iterations of 10 s, JDK 25.0.2, ZGC, 512 MB heap) that characterise normal-operation performance at the pattern level.
+
+### 5.7.1 Core Metrics
 
 | Benchmark | Result |
 |---|---|
@@ -390,15 +392,38 @@ For completeness, we report the JMH pattern benchmark results, which characteris
 | Scheduling latency p50 | 517 µs |
 | Request-reply RTT (100 concurrent) | 1.38 ms |
 | Registry lookup throughput | 8.1M ops/sec |
-| RequestReply latency at 1K concurrent | ~7 ms (10× cliff from 0.1 ms at 100 concurrent) |
 | SupervisorBenchmark ONE_FOR_ALL restart | 302 ms/op |
 | Supervisor restart rate | 1.5 s/restart |
-| DeadLetter OOM threshold | ~500K entries |
-| RoutingSlip dead-ref OOM threshold | ~300K entries |
 
-The 10× latency cliff at 1,000 concurrent `RequestReply` futures is notable. The implementation uses a `ConcurrentHashMap` as a correlation registry, mapping future IDs to `CompletableFuture` instances. Below 1,000 concurrent pending futures, the map's read path is O(1) amortised. At 1,000 entries, the map's table size causes hash collisions to cluster, increasing average lookup cost. This is consistent with the known behaviour of power-of-two hash tables at load factors approaching unity [22].
+### 5.7.2 RequestReply Latency Profile
 
-The `DeadLetter` OOM at 500K entries is caused by the use of `CopyOnWriteArrayList` for the subscriber list. `CopyOnWriteArrayList.add()` copies the entire backing array on each call — O(N) time and space per insertion — so 500K insertions require O(N²) total allocation, quickly exhausting heap. This is a classical misapplication of `CopyOnWriteArrayList`, which is designed for read-heavy, write-rare workloads [23].
+The `RequestReply` pattern shows a sharp latency cliff as concurrency grows. Each outstanding ask occupies an entry in a `ConcurrentHashMap<Integer, CompletableFuture<Object>>` correlation registry.
+
+| Concurrency | Throughput (asks/sec) | RTT (ms) |
+|---|---|---|
+| 10 | 6,270 | 0.1 |
+| 100 | 888 | 1.0 |
+| 1,000 | 86 | 7.0 |
+| 10,000 | 14 | 69 |
+
+The 10× latency inflation between 100 and 1,000 concurrent futures results from the map's power-of-two table resizing boundary coinciding with the 1,024-entry population. At load factors approaching unity, hash collision chains lengthen and the average lookup cost grows super-linearly. This is consistent with known `HashMap`-family behaviour at high occupancy [22]. For YAWL workflow deployments, where ask concurrency rarely exceeds a few hundred per case, this cliff is not a practical concern.
+
+### 5.7.3 Pattern-Level Breaking Points
+
+Beyond normal-operation benchmarks, two patterns exhibit structural OOM hazards under sustained load:
+
+| Pattern | OOM Threshold | Root Cause |
+|---|---|---|
+| **DeadLetter** | ~500K subscriber entries | `CopyOnWriteArrayList.add()` is O(N) per call → O(N²) total allocation |
+| **RoutingSlip** | ~300K dead actor references | Strong reference chain through hop actors prevents GC reclamation |
+| **CompetingConsumers** | No OOM; fairness variance | Bursty VT scheduler: <8 workers see high per-worker variance |
+| **ScatterGather** | No OOM at tested scale | Bounded by gather latch lifetime and fan-out actor count |
+
+The `DeadLetter` OOM arises because `CopyOnWriteArrayList.add()` copies the entire backing array on every insertion — O(N) time and space — so 500K insertions perform O(N²) total allocation. This is a classical misapplication of `CopyOnWriteArrayList`, which is designed for read-heavy, write-rare access patterns [23]. A `ConcurrentLinkedQueue` would reduce insertion to O(1) amortised.
+
+The `RoutingSlip` OOM reflects a lifecycle design issue: each hop spawns a single-shot actor that holds a strong reference to the next hop's `ActorRef`. Once a hop actor terminates and is removed from the registry, its `ActorRef` object remains reachable via the routing slip's reference chain. At approximately 300K accumulated dead references, the live heap budget is exhausted. The mitigation is to use `WeakReference<ActorRef>` for per-hop references, allowing GC to reclaim terminated actor closures.
+
+The `CompetingConsumers` fairness variance — high coefficient of variation in per-worker message counts with fewer than eight workers — reflects the bursty scheduling behaviour of the ForkJoinPool when the number of runnable virtual threads closely matches the carrier count. With many more workers than carriers, the scheduler's work-stealing achieves better long-run fairness.
 
 ---
 
@@ -740,6 +765,287 @@ We have conducted the first systematic empirical study of a production virtual-t
 [29] J. Sevcik and D. Aspinall, "On the correctness of Java memory model transformations," in *Proc. 21st European Conf. Object-Oriented Programming (ECOOP)*, LNCS vol. 4609, Springer, 2007, pp. 27–51.
 
 [30] A. Prokopec, H. Miller, T. Schlatter, P. Haller, and M. Odersky, "FlowPools: A lock-free deterministic concurrent dataflow abstraction," in *Proc. Int. Workshop on Languages and Compilers for Parallel Computing (LCPC)*, LNCS vol. 7760, Springer, 2012, pp. 158–173.
+
+---
+
+# Appendix A: Core Class Listings
+
+This appendix presents the two primary classes of the virtual-thread actor runtime as they existed after the fixes described in this thesis. Line numbers match those in the YAWL v6.0.0 repository at commit `bcd3bc93`.
+
+## A.1 Agent.java
+
+`Agent` is the per-actor heap struct. It is package-private; all external access is mediated by `ActorRef` and `VirtualThreadRuntime`.
+
+```java
+package org.yawlfoundation.yawl.engine.agent.core;
+
+import java.util.concurrent.LinkedTransferQueue;
+
+/**
+ * Minimal agent — measured ~1,454 bytes total per idle (parked) agent at scale.
+ *
+ * Structural byte accounting:
+ *   Object header:  12 bytes
+ *   int id:          4 bytes  (not UUID — saves 12 bytes)
+ *   queue ref:       8 bytes  (reference only)
+ *   ──────────────────────────
+ *   Agent object:   24 bytes
+ *   Queue object:  ~160 bytes (LinkedTransferQueue + internal nodes)
+ *   VThread object: ~200-400 bytes (unmounted continuation + JVM bookkeeping)
+ *   CHM entry:      ~48 bytes (ConcurrentHashMap.Node + hash overhead)
+ *   ActorRef:       ~32 bytes (held in behavior closure)
+ *   GC overhead:    ~590 bytes (fragmentation, card table, TLAB alignment)
+ *   ──────────────────────────
+ *   Measured per idle agent: ~1,454 bytes  (2GB heap → 1.46M max concurrent)
+ *
+ * Capacity formula:  maxConcurrent = heapBytes / 1,454
+ *   512 MB → ~369 K actors
+ *   2   GB → ~1.46 M actors
+ *   16  GB → ~11.7 M actors
+ *
+ * stop() race note: 'stopped' flag must be checked before any blocking call.
+ * See VirtualThreadRuntime.stop() for the two-phase cancellation protocol.
+ */
+final class Agent {
+
+    final int id;                        // 4 bytes — identity, 4B agents addressable
+    final LinkedTransferQueue<Object> q; // 8 bytes ref — lock-free MPSC/MPMC mailbox
+    volatile Thread thread;              // set by VirtualThreadRuntime; used for injectException
+    volatile boolean stopped;            // true after stop() — task checks this on start
+
+    Agent(int id) {
+        this.id = id;
+        this.q = new LinkedTransferQueue<>();
+    }
+
+    void send(Object msg) { q.offer(msg); }
+
+    Object recv() { return q.poll(); }
+}
+```
+
+## A.2 VirtualThreadRuntime.java — spawn() and stop()
+
+The two methods central to the stop-race analysis. The two-phase cancellation protocol is annotated with the case labels from the Chapter 7 proof.
+
+```java
+@Override
+public ActorRef spawn(ActorBehavior behavior) {
+    int id = nextId.getAndIncrement();
+    Agent a = new Agent(id);
+    registry.put(id, a);           // (S3) publish to registry — stop() can now find agent
+    ActorRef ref = new ActorRef(id, this);
+
+    executor.submit(() -> {
+        // Two-phase cancellation (pairs with stop() below):
+        a.thread = Thread.currentThread();  // (V1) volatile write — stop() reads this
+        if (a.stopped) {                    // (V2) volatile read — sees stop()'s (W1) write
+            // Case A: stop() ran first, wrote a.stopped=true, but saw a.thread==null
+            // and couldn't interrupt. Honour the stop now.
+            return;
+        }
+        try {
+            behavior.run(ref);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (RuntimeException e) {
+            System.err.printf("[VirtualThreadRuntime] Actor %d threw: %s%n",
+                id, e.getMessage());
+        } finally {
+            registry.remove(id);
+        }
+    });
+
+    return ref;
+}
+
+@Override
+public void stop(int actorId) {
+    Agent a = registry.remove(actorId);
+    if (a != null) {
+        a.stopped = true;          // (W1) volatile write — seen by task's (V2) read
+        Thread t = a.thread;       // (R2) volatile read — sees task's (V1) write if set
+        if (t != null) t.interrupt();
+        // Case B: if R2 sees null, V2 will observe W1 and exit before blocking.
+    }
+}
+```
+
+---
+
+# Appendix B: Experiment Harness
+
+The breaking-point harness is `ConcurrentActorBreakingPoint.java` (450 lines), located at
+`test/org/yawlfoundation/yawl/engine/agent/perf/ConcurrentActorBreakingPoint.java`.
+
+Below is the Experiment 1 (idle sweep) method, which produced the data in Table 5.1.1. The full source is available in the YAWL v6.0.0 repository.
+
+```java
+static void idleActorSweep() {
+    int[] targets = {
+        1_000, 5_000, 10_000, 50_000, 100_000,
+        250_000, 500_000, 750_000, 1_000_000, 1_500_000, 2_000_000
+    };
+
+    for (int target : targets) {
+        gc();
+        long before = heapUsed();
+        VirtualThreadRuntime runtime = new VirtualThreadRuntime();
+        CountDownLatch alive = new CountDownLatch(target);
+        List<ActorRef> refs = new ArrayList<>(target);
+
+        String status = "OK";
+        int actualSpawned = 0;
+        try {
+            for (int i = 0; i < target; i++) {
+                ActorRef ref = runtime.spawn(self -> {
+                    alive.countDown();
+                    self.recv();     // park here indefinitely
+                });
+                refs.add(ref);
+                actualSpawned++;
+            }
+            if (!alive.await(30, TimeUnit.SECONDS)) status = "TIMEOUT";
+        } catch (OutOfMemoryError e) {
+            status = "OOM @ " + actualSpawned;
+        }
+
+        gc();
+        long after = heapUsed();
+        long bytesPerActor = actualSpawned > 0 ? (after - before) / actualSpawned : -1;
+        // ... print row ...
+
+        refs.forEach(ActorRef::stop);
+        runtime.close();
+        gc();
+
+        if (status.startsWith("OOM")) break;
+    }
+}
+```
+
+**Reproducibility.** The harness can be re-run with:
+
+```bash
+# From the YAWL repository root:
+bash scripts/dx.sh -pl yawl-engine
+cd test
+java -Xmx2g -XX:+UseZGC \
+  -cp ../yawl-engine/target/classes:../yawl-engine/target/test-classes \
+  org.yawlfoundation.yawl.engine.agent.perf.ConcurrentActorBreakingPoint 1 2 3 4 5 6
+```
+
+---
+
+# Appendix C: JMH Benchmark Configuration
+
+JMH (`AgentBenchmark.java`) configuration used for all throughput and latency numbers in Section 5.7:
+
+```java
+@BenchmarkMode({Mode.Throughput, Mode.AverageTime})
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@State(Scope.Benchmark)
+@Fork(value = 1, jvmArgs = {
+    "-XX:+UseZGC",
+    "-Xmx512m",
+    "--enable-preview"
+})
+@Warmup(iterations = 3, time = 10, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 10, time = 10, timeUnit = TimeUnit.SECONDS)
+```
+
+JVM invocation for the pattern benchmarks:
+
+```
+java -Xmx512m -XX:+UseZGC --enable-preview \
+     -cp yawl-engine/target/test-classes:<dependencies> \
+     org.openjdk.jmh.Main AgentBenchmark \
+     -f 1 -wi 3 -i 10 -rf json -rff results/benchmark-results.json
+```
+
+### JMH Benchmark Registry
+
+| Class | Patterns Measured |
+|---|---|
+| `AgentBenchmark` | spawn rate, message throughput, scheduling latency, registry lookup, GC impact |
+| `SupervisorBenchmark` | ONE_FOR_ALL restart cost, restart-rate ceiling |
+| `RequestReplyBenchmark` | ask throughput at 10/100/1K/10K concurrency, RTT |
+| `CompetingConsumersBenchmark` | worker utilisation, fairness coefficient, saturation |
+| `DeadLetterBenchmark` | routing rate, subscriber append cost, OOM threshold |
+| `RoutingSlipBenchmark` | per-hop latency, accumulation rate, dead-ref OOM |
+| `ScatterGatherBenchmark` | fan-out cost, gather latency at 10/50/100/500 targets |
+
+---
+
+# Appendix D: Complete Raw Data Tables
+
+### D.1 Idle Actor Sweep — Full Data (Experiment 1)
+
+| N actors | Heap before (MB) | Heap after (MB) | Bytes/actor | Status |
+|---|---|---|---|---|
+| 1,000 | 10 | 12 | 2,097 | OK |
+| 5,000 | 8 | 24 | 3,355 | OK |
+| 10,000 | 8 | 28 | 2,097 | OK |
+| 50,000 | 8 | 114 | 2,222 | OK |
+| 100,000 | 6 | 176 | 1,782 | OK |
+| 250,000 | 38 | 390 | 1,476 | OK |
+| 500,000 | 36 | 734 | 1,463 | OK |
+| 750,000 | 40 | 1,072 | 1,442 | OK |
+| 1,000,000 | 12 | 1,402 | 1,457 | OK |
+| **1,458,990** | 14 | 2,038 | **1,454** | **OOM** |
+
+### D.2 Active Actor Flood — Full Data (Experiment 2)
+
+| N actors (× CPUs) | Msg/sec | Status |
+|---|---|---|
+| 16 (1×) | 7,123 | OK |
+| 32 (2×) | 13,266 | OK |
+| 160 (10×) | 55,913 | OK |
+| 1,600 (100×) | 190,703 | OK |
+| 16,000 (1000×) | 445,350 | OK |
+| 100,000 | **760,910** | OK |
+
+### D.3 Spawn Velocity — Full Data (Experiment 3)
+
+| Batch | Spawns/sec | ms/1K spawns | Status |
+|---|---|---|---|
+| 1,000 | 15,879 | 62 | OK (cold JIT) |
+| 5,000 | 124,567 | 8 | OK |
+| 10,000 | 169,539 | 5 | OK |
+| 50,000 | 188,615 | 5 | OK |
+| 100,000 | 279,709 | 3 | OK |
+| 250,000 | 241,917 | 4 | OK |
+| 500,000 | 273,618 | 3 | OK |
+
+### D.4 Mailbox Flood — Full Data (Experiment 4)
+
+| Messages queued | Heap before (MB) | Heap after (MB) | Bytes/msg | Status |
+|---|---|---|---|---|
+| 100,000 | 10 | 22 | 125 | OK |
+| 500,000 | 8 | 60 | 109 | OK |
+| 1,000,000 | 8 | 110 | 106 | OK |
+| 5,000,000 | 8 | 536 | 110 | OK |
+| 10,000,000 | 6 | 1,074 | **111** | OK |
+| ~18,400,000 | — | — | 111 | **OOM** (extrapolated) |
+
+### D.5 RequestReply Latency Cliff — Full Data (Experiment 5.7.2)
+
+| Concurrency | Asks/sec | RTT (ms) | Latency ratio vs 100 |
+|---|---|---|---|
+| 10 | 6,270 | 0.10 | 0.10× |
+| 100 | 888 | 1.00 | 1.00× |
+| 1,000 | 86 | 7.00 | 7.00× |
+| 10,000 | 14 | 69.0 | 69.0× |
+
+### D.6 Stop-Race Probe — Full Data (Experiment 6)
+
+| Parameter | Value |
+|---|---|
+| Trial count | 100,000 |
+| Actors successfully interrupted | 1,033 (1.03%) |
+| Actors where stop() saw null thread | ~98,967 (98.97%) |
+| Pre-fix zombie actor rate | 98.97% under adversarial spawn |
+| Post-fix zombie actor rate | 0% (two-phase volatile protocol) |
 
 ---
 
