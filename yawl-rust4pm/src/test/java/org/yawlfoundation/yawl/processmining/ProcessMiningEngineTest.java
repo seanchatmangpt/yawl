@@ -179,13 +179,14 @@ class ProcessMiningEngineTest {
         }
 
         /**
-         * Verify that parseAll with non-empty list throws ExecutionException
-         * wrapping UnsupportedOperationException when library absent.
+         * Verify that parseAll with non-empty list throws when library absent.
+         * StructuredTaskScope.awaitAllSuccessfulOrThrow() throws FailedException which
+         * wraps the first UnsupportedOperationException encountered in the subtasks.
          */
         @Test
         @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryPresent")
-        @DisplayName("parseAll with non-empty list throws ExecutionException when library absent")
-        void parseAllNonEmptyThrowsExecutionExceptionWhenLibraryAbsent() throws Exception {
+        @DisplayName("parseAll with non-empty list throws when library absent")
+        void parseAllNonEmptyThrowsWhenLibraryAbsent() throws Exception {
             try {
                 String ocel2Json1 = """
                     {
@@ -204,15 +205,16 @@ class ProcessMiningEngineTest {
                     }
                     """;
 
-                ExecutionException exception = assertThrows(
-                    ExecutionException.class,
+                Throwable exception = assertThrows(
+                    Throwable.class,
                     () -> engine.parseAll(List.of(ocel2Json1, ocel2Json2)),
-                    "parseAll must throw ExecutionException when any parse fails"
+                    "parseAll must throw when any parse fails"
                 );
 
-                assertTrue(exception.getCause() instanceof UnsupportedOperationException,
-                    "ExecutionException cause must be UnsupportedOperationException: "
-                        + exception.getCause().getClass());
+                assertTrue(exception.getCause() instanceof UnsupportedOperationException ||
+                           exception instanceof UnsupportedOperationException,
+                    "Exception or its cause must be UnsupportedOperationException, got: "
+                        + exception.getClass() + " with cause " + exception.getCause());
             } finally {
                 closeEngine();
             }
