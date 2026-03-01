@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.rust4pm.model;
 import org.yawlfoundation.yawl.rust4pm.generated.rust4pm_h;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 /**
@@ -21,6 +22,10 @@ public record OcelEvent(String eventId, String eventType, Instant timestamp, int
     /**
      * Read one OcelEventC struct from native memory. Zero-copy field reads.
      *
+     * <p>Explicit {@code UTF_8} charset is used because Rust CStrings are always
+     * UTF-8, and {@code getString(0)} without a charset uses the platform default
+     * which may differ on some locales — correct by construction.
+     *
      * @param s a MemorySegment slice over exactly one OcelEventC struct
      * @return materialized OcelEvent record
      */
@@ -31,8 +36,8 @@ public record OcelEvent(String eventId, String eventType, Instant timestamp, int
         long          attrLong = (long)          rust4pm_h.OCEL_EVENT_C_ATTR_COUNT.get(s, 0L);
 
         return new OcelEvent(
-            idPtr.reinterpret(Long.MAX_VALUE).getString(0),
-            typePtr.reinterpret(Long.MAX_VALUE).getString(0),
+            idPtr.reinterpret(Long.MAX_VALUE).getString(0, StandardCharsets.UTF_8),
+            typePtr.reinterpret(Long.MAX_VALUE).getString(0, StandardCharsets.UTF_8),
             Instant.ofEpochMilli(tsMs),
             (int) attrLong
         );

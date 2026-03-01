@@ -16,8 +16,14 @@ import java.nio.charset.StandardCharsets;
  * <pre>{@code
  * try (Rust4pmBridge bridge = new Rust4pmBridge()) {
  *     try (OcelLogHandle log = bridge.parseOcel2Json(json)) {
- *         int count = log.eventCount();
- *         // ...
+ *         int eventCount = log.eventCount();
+ *         int objectCount = log.objectCount();
+ *         try (OcelEventView events = log.events()) {
+ *             events.stream().forEach(e -> System.out.println(e.eventId()));
+ *         }
+ *         try (OcelObjectView objects = log.objects()) {
+ *             objects.stream().forEach(o -> System.out.println(o.objectId()));
+ *         }
  *     }
  * }
  * }</pre>
@@ -27,7 +33,9 @@ import java.nio.charset.StandardCharsets;
  */
 public final class Rust4pmBridge implements AutoCloseable {
 
-    // Shared arena — lives for the bridge's lifetime; thread-safe for concurrent access
+    // Shared arena — lives for the bridge's lifetime; thread-safe for concurrent access.
+    // Used only for string allocations in parseOcel2Json. Each OcelLogHandle
+    // gets its own per-handle Arena for scoping derived segments.
     private final Arena arena = Arena.ofShared();
 
     /**
@@ -43,36 +51,24 @@ public final class Rust4pmBridge implements AutoCloseable {
             byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
             MemorySegment jsonSeg = call.allocateFrom(json, StandardCharsets.UTF_8);
 
-            MemorySegment result = rust4pm_h.rust4pm_parse_ocel2_json(arena, jsonSeg, jsonBytes.length);
+            MemorySegment result = rust4pm_h.rust4pm_parse_ocel2_json(call, jsonSeg, jsonBytes.length);
 
             MemorySegment errorPtr = (MemorySegment) rust4pm_h.PARSE_RESULT_ERROR.get(result, 0L);
             if (!MemorySegment.NULL.equals(errorPtr)) {
-                String msg = errorPtr.reinterpret(Long.MAX_VALUE).getString(0);
+                String msg = errorPtr.reinterpret(Long.MAX_VALUE)
+                                     .getString(0, StandardCharsets.UTF_8);
                 rust4pm_h.rust4pm_error_free(errorPtr);
                 throw new ParseException(msg);
             }
 
             MemorySegment handlePtr = (MemorySegment) rust4pm_h.PARSE_RESULT_HANDLE_PTR.get(result, 0L);
+            // OcelLogHandle creates its own ownedArena for scoping derived segments
             return new OcelLogHandle(handlePtr, this);
         }
     }
 
-    // ── Package-private: called by OcelLogHandle and OcelEventView ──────────
-
-    /** Free a log pointer. Called by OcelLogHandle.close(). */
-    void freeLog(MemorySegment ptr) {
-        rust4pm_h.rust4pm_log_free(ptr);
-    }
-
-    /** Free an events result segment. Called by OcelEventView.close(). */
-    void freeEvents(MemorySegment resultSeg) {
-        rust4pm_h.rust4pm_events_free(resultSeg);
-    }
-
-    /** Bridge's shared arena — used by OcelLogHandle for sub-allocations. */
-    Arena arena() {
-        return arena;
-    }
+    /** Package-private — called by ProcessMiningEngine for DFG and conformance checks. */
+    Arena arena() { return arena; }
 
     @Override
     public void close() {

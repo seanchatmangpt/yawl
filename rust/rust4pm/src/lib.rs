@@ -58,10 +58,15 @@ struct Ocel2Log {
 struct OcelLogInternal {
     log: Ocel2Log,
     #[allow(dead_code)]
-    event_id_strings: Vec<CString>,
+    event_id_strings:   Vec<CString>,
     #[allow(dead_code)]
     event_type_strings: Vec<CString>,
-    event_cs: Vec<OcelEventC>,
+    event_cs:           Vec<OcelEventC>,
+    #[allow(dead_code)]
+    object_id_strings:   Vec<CString>,
+    #[allow(dead_code)]
+    object_type_strings: Vec<CString>,
+    object_cs:           Vec<OcelObjectC>,
 }
 
 impl OcelLogInternal {
@@ -84,7 +89,26 @@ impl OcelLogInternal {
             event_type_strings.push(type_cs);
         }
 
-        OcelLogInternal { log, event_id_strings, event_type_strings, event_cs }
+        let mut object_id_strings   = Vec::with_capacity(log.objects.len());
+        let mut object_type_strings = Vec::with_capacity(log.objects.len());
+        let mut object_cs           = Vec::with_capacity(log.objects.len());
+
+        for obj in &log.objects {
+            let id_cs   = CString::new(obj.id.as_str()).unwrap_or_else(|_| CString::new("").unwrap());
+            let type_cs = CString::new(obj.object_type.as_str()).unwrap_or_else(|_| CString::new("").unwrap());
+            object_cs.push(OcelObjectC {
+                object_id:   id_cs.as_ptr(),
+                object_type: type_cs.as_ptr(),
+            });
+            object_id_strings.push(id_cs);
+            object_type_strings.push(type_cs);
+        }
+
+        OcelLogInternal {
+            log,
+            event_id_strings, event_type_strings, event_cs,
+            object_id_strings, object_type_strings, object_cs,
+        }
     }
 }
 
@@ -122,6 +146,20 @@ pub struct OcelEventsResult {
     events: *const OcelEventC,
     count:  usize,
     error:  *mut c_char,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct OcelObjectC {
+    pub object_id:   *const c_char,
+    pub object_type: *const c_char,
+}
+
+#[repr(C)]
+pub struct OcelObjectsResult {
+    objects: *const OcelObjectC,
+    count:   usize,
+    error:   *mut c_char,
 }
 
 #[repr(C)]
@@ -466,11 +504,36 @@ pub unsafe extern "C" fn rust4pm_log_free(handle: OcelLogHandle) {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn rust4pm_log_object_count(handle: OcelLogHandle) -> usize {
+    if handle.ptr.is_null() { return 0; }
+    (*handle.ptr).log.objects.len()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rust4pm_log_get_objects(handle: OcelLogHandle) -> OcelObjectsResult {
+    if handle.ptr.is_null() {
+        return OcelObjectsResult { objects: ptr::null(), count: 0, error: make_error("null handle") };
+    }
+    let internal = &*handle.ptr;
+    OcelObjectsResult {
+        objects: internal.object_cs.as_ptr(),
+        count:   internal.object_cs.len(),
+        error:   ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn rust4pm_events_free(_result: OcelEventsResult) {
     // Events pointer is BORROWED from OcelLogInternal — do not free it.
     // The OcelEventsResult itself is stack-allocated on the C side.
     // error is null in the success path (set only on failure, but failure path
     // returns early without heap-allocating the events array).
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn rust4pm_objects_free(_result: OcelObjectsResult) {
+    // Objects pointer is BORROWED from OcelLogInternal — do not free it.
+    // Symmetric with rust4pm_events_free.
 }
 
 #[no_mangle]
@@ -484,6 +547,51 @@ pub unsafe extern "C" fn rust4pm_error_free(error: *mut c_char) {
     if !error.is_null() {
         drop(CString::from_raw(error));
     }
+}
+
+// ── Correct-by-construction: sizeof probes ────────────────────────────────────
+// Java Layer 1 calls these at class-init time and asserts that its hand-written
+// StructLayout byte sizes match.  Any layout divergence fails at JVM startup,
+// not silently at runtime.
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_ocel_log_handle() -> usize {
+    std::mem::size_of::<OcelLogHandle>()
+}
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_parse_result() -> usize {
+    std::mem::size_of::<ParseResult>()
+}
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_ocel_event_c() -> usize {
+    std::mem::size_of::<OcelEventC>()
+}
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_ocel_events_result() -> usize {
+    std::mem::size_of::<OcelEventsResult>()
+}
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_ocel_object_c() -> usize {
+    std::mem::size_of::<OcelObjectC>()
+}
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_ocel_objects_result() -> usize {
+    std::mem::size_of::<OcelObjectsResult>()
+}
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_dfg_result_c() -> usize {
+    std::mem::size_of::<DfgResultC>()
+}
+
+#[no_mangle]
+pub extern "C" fn rust4pm_sizeof_conformance_result_c() -> usize {
+    std::mem::size_of::<ConformanceResultC>()
 }
 
 // ── Unit tests ────────────────────────────────────────────────────────────────
@@ -556,5 +664,35 @@ mod tests {
         assert!(events_result.error.is_null());
         assert_eq!(events_result.count, 2);
         unsafe { rust4pm_log_free(parse_result.handle); }
+    }
+
+    #[test]
+    fn get_objects_returns_correct_count_and_data() {
+        let json_bytes = SAMPLE_OCEL2.as_bytes();
+        let parse_result = unsafe {
+            rust4pm_parse_ocel2_json(json_bytes.as_ptr() as *const c_char, json_bytes.len())
+        };
+        assert!(parse_result.error.is_null());
+        assert_eq!(unsafe { rust4pm_log_object_count(parse_result.handle) }, 1);
+        let obj_result = unsafe { rust4pm_log_get_objects(parse_result.handle) };
+        assert!(obj_result.error.is_null());
+        assert_eq!(obj_result.count, 1);
+        let id_str = unsafe { CStr::from_ptr((*obj_result.objects).object_id).to_str().unwrap() };
+        assert_eq!(id_str, "o1");
+        let type_str = unsafe { CStr::from_ptr((*obj_result.objects).object_type).to_str().unwrap() };
+        assert_eq!(type_str, "Order");
+        unsafe { rust4pm_log_free(parse_result.handle); }
+    }
+
+    #[test]
+    fn sizeof_probes_match_compile_time_sizes() {
+        assert_eq!(rust4pm_sizeof_ocel_log_handle(),      std::mem::size_of::<OcelLogHandle>());
+        assert_eq!(rust4pm_sizeof_parse_result(),          std::mem::size_of::<ParseResult>());
+        assert_eq!(rust4pm_sizeof_ocel_event_c(),          std::mem::size_of::<OcelEventC>());
+        assert_eq!(rust4pm_sizeof_ocel_events_result(),    std::mem::size_of::<OcelEventsResult>());
+        assert_eq!(rust4pm_sizeof_ocel_object_c(),         std::mem::size_of::<OcelObjectC>());
+        assert_eq!(rust4pm_sizeof_ocel_objects_result(),   std::mem::size_of::<OcelObjectsResult>());
+        assert_eq!(rust4pm_sizeof_dfg_result_c(),          std::mem::size_of::<DfgResultC>());
+        assert_eq!(rust4pm_sizeof_conformance_result_c(),  std::mem::size_of::<ConformanceResultC>());
     }
 }
