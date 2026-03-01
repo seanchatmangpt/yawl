@@ -76,6 +76,25 @@ public class BenchmarkBase {
     }
 
     /**
+     * Check if heap is growing unbounded (regression test)
+     * Detects if heap growth continues despite GC attempts
+     *
+     * @param thresholdMB Maximum acceptable growth in MB
+     * @return true if growth exceeds threshold
+     */
+    protected boolean isHeapGrowingUnbounded(long thresholdMB) {
+        if (snapshots.isEmpty()) return false;
+
+        MemorySnapshot latest = snapshots.get(snapshots.size() - 1);
+        if (snapshots.size() < 2) return false;
+
+        MemorySnapshot previous = snapshots.get(snapshots.size() - 2);
+        long growthMB = (latest.used - previous.used) / (1024 * 1024);
+
+        return growthMB > thresholdMB;
+    }
+
+    /**
      * Snapshot of memory state at point in time
      */
     public static class MemorySnapshot {
