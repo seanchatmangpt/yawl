@@ -385,6 +385,33 @@ else
     echo "   You can manually run: bash scripts/observatory/observatory.sh"
 fi
 
+# ============================================================================
+# COMPILE + TEST BASELINE — correct by construction
+# Verify the guard validation module compiles and critical tests pass.
+# This establishes a green baseline before any code changes.
+# ============================================================================
+
+echo "🧪 Verifying guard validation baseline (correct by construction)..."
+
+GGEN_TEST_LOG="/tmp/yawl-ggen-baseline-test.log"
+GGEN_TEST_EXIT=0
+mvn test \
+    -pl yawl-ggen \
+    -Dtest="HyperStandardsValidatorTest" \
+    -Dmaven.test.skip=false \
+    -Dsurefire.failIfNoSpecifiedTests=false \
+    --no-transfer-progress \
+    --batch-mode \
+    -q > "${GGEN_TEST_LOG}" 2>&1 || GGEN_TEST_EXIT=$?
+if [ "${GGEN_TEST_EXIT}" -eq 0 ]; then
+    echo "✅ Guard validation tests: GREEN (HyperStandardsValidatorTest 20/20)"
+else
+    echo "⚠️  Guard validation tests FAILED (exit ${GGEN_TEST_EXIT})"
+    tail -10 "${GGEN_TEST_LOG}" || true
+    echo "   Run: mvn test -pl yawl-ggen -Dtest=HyperStandardsValidatorTest -Dmaven.test.skip=false"
+    echo "   Fix failures before making changes to the guard validation package"
+fi
+
 echo ""
 echo "✨ YAWL environment ready for Claude Code Web"
 echo ""

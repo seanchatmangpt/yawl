@@ -75,17 +75,19 @@ public class HyperStandardsValidator {
             GuardChecker.Severity.FAIL
         ));
 
-        // H_MOCK: Regex-based detection of mock class/method names
+        // H_MOCK: Regex-based detection of forbidden class/method name prefixes.
+        // (?i) flag catches both PascalCase (class names) and camelCase (method names).
         checkers.add(new RegexGuardChecker(
             "H_MOCK",
-            "(mock|stub|fake|demo)[A-Z]\\w*",
+            "(?i)(mock|stub|fake|demo)[A-Z]\\w*",
             GuardChecker.Severity.FAIL
         ));
 
-        // H_SILENT: Regex-based detection of logging instead of throwing
+        // H_SILENT: Regex-based detection of logging instead of throwing.
+        // (?i) flag catches phrases regardless of capitalisation ("Not implemented", "not implemented").
         checkers.add(new RegexGuardChecker(
             "H_SILENT",
-            "log\\.(warn|error)\\([^)]*['\"].*not\\s+implemented",
+            "(?i)log\\.(warn|error)\\([^)]*['\"].*not\\s+implemented",
             GuardChecker.Severity.FAIL
         ));
 
