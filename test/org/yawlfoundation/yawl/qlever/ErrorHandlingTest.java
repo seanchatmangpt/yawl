@@ -50,13 +50,11 @@ class ErrorHandlingTest extends SparqlTestFixtures {
     @Test
     @SparqlCapabilityTest(ERR_TIMEOUT)
     void timeoutQuery_handledGracefully() {
-        // A potentially slow cross-product query — expect either result or exception
         assertDoesNotThrow(() -> {
             try {
                 engine().executeSelect(
                     "SELECT * WHERE { ?a ?b ?c . ?d ?e ?f } LIMIT 1", JSON);
             } catch (SparqlEngineException e) {
-                // Timeout or error is acceptable — just not a crash
                 assertThat(e.getMessage()).isNotBlank();
             }
         });

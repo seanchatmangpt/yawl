@@ -58,7 +58,6 @@ class QLeverExtensionTest extends SparqlTestFixtures {
             "QLever text index not built — skipping ql:contains-entity test");
         var result = engine().executeSelect(PFX + """
             SELECT ?p WHERE { ?p :text ?t . ?t ql:contains-entity :alice }""", JSON);
-        // Result may be empty — entity linking depends on index build options
         assertThat(result.rowCount()).isGreaterThanOrEqualTo(0);
         assertThat(result.data()).isNotNull();
     }

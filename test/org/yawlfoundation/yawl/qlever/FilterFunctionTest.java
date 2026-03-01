@@ -104,7 +104,6 @@ class FilterFunctionTest extends SparqlTestFixtures {
     @Test
     @SparqlCapabilityTest(FN_ISBLANK)
     void filterIsBlank_noBlankNodes() throws Exception {
-        // Our dataset has no blank nodes — isBlank should return zero results
         var result = engine().executeSelect(PFX + """
             SELECT ?s WHERE { ?s ?p ?o . FILTER(isBlank(?s)) }""", JSON);
         assertThat(result.rowCount()).isEqualTo(0);
