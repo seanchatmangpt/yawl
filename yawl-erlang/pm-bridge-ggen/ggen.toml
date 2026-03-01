@@ -1,0 +1,43 @@
+# ggen.toml — pm-bridge-ggen project manifest
+# Generated capabilities: 53
+# All artifacts rendered by gen-ttl (Rust); this manifest is documentation.
+
+[project]
+name = "pm-bridge-ggen"
+version = "1.0.0"
+
+[ontology]
+files = ["ontology/bridge-core.ttl", "ontology/pm-bridge.ttl"]
+
+[filters]
+to_camel_case = "filters/to_camel_case.js"
+
+[[rules]]
+name = "capability-enum"
+query = "queries/01-capability-enum.sparql"
+template = "templates/01-ProcessMiningCapability.java.tera"
+output = "lib/java/ProcessMiningCapability.java"
+
+[[rules]]
+name = "erlang-genserver"
+query = "queries/02-erlang-genserver.sparql"
+template = "templates/02-process_mining_bridge.erl.tera"
+output = "lib/erlang/process_mining_bridge.erl"
+
+[[rules]]
+name = "java-bridge"
+query = "queries/03-java-bridge.sparql"
+template = "templates/03-ProcessMiningBridge.java.tera"
+output = "lib/java/ProcessMiningBridge.java"
+
+[[rules]]
+name = "test-skeletons"
+query = "queries/04-test-skeletons.sparql"
+template = "templates/04-ProcessMiningCapabilityTest.java.tera"
+output = "lib/test/ProcessMiningCapabilityTest.java"
+
+[[rules]]
+name = "capability-registry"
+query = "queries/05-capability-registry.sparql"
+template = "templates/05-CapabilityRegistry.java.tera"
+output = "lib/java/CapabilityRegistry.java"

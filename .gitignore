@@ -265,3 +265,11 @@ receipts/
 rebar3.crashdump
 */rebar3.crashdump
 *.beam
+
+# pm-bridge-ggen: generated files (rebuilt from gen-ttl on every compile)
+yawl-erlang/pm-bridge-ggen/ontology/pm-bridge.ttl
+yawl-erlang/pm-bridge-ggen/lib/
+yawl-erlang/pm-bridge-ggen/queries/
+yawl-erlang/pm-bridge-ggen/templates/
+yawl-erlang/pm-bridge-ggen/filters/
+yawl-erlang/pm-bridge-ggen/gen-ttl/target/

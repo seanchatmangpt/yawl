@@ -121,12 +121,83 @@
                 </executions>
             </plugin>
 
+            <!-- build-helper: register generated source dirs from pm-bridge-ggen/lib -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-pm-bridge-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>add-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/pm-bridge-ggen/lib/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-pm-bridge-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals><goal>add-test-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/pm-bridge-ggen/lib/test</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Compile Erlang sources with rebar3 (skipped when OTP absent) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.3.0</version>
                 <executions>
+                    <!-- Stage 1 (generate-sources): run gen-ttl → pm-bridge.ttl + lib/* -->
+                    <execution>
+                        <id>pm-gen-ttl</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>cargo</executable>
+                            <arguments>
+                                <argument>run</argument>
+                                <argument>--bin</argument>
+                                <argument>gen-ttl</argument>
+                                <argument>--</argument>
+                                <argument>--output-dir</argument>
+                                <argument>..</argument>
+                            </arguments>
+                            <workingDirectory>${project.basedir}/pm-bridge-ggen/gen-ttl</workingDirectory>
+                            <environmentVariables>
+                                <HTTPS_PROXY>http://127.0.0.1:3128</HTTPS_PROXY>
+                                <HTTP_PROXY>http://127.0.0.1:3128</HTTP_PROXY>
+                            </environmentVariables>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                        </configuration>
+                    </execution>
+                    <!-- Stage 2 (generate-sources): validate lib/ matches golden/ -->
+                    <execution>
+                        <id>pm-ggen-validate</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>node</executable>
+                            <arguments>
+                                <argument>validate.mjs</argument>
+                            </arguments>
+                            <workingDirectory>${project.basedir}/pm-bridge-ggen</workingDirectory>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                        </configuration>
+                    </execution>
+                    <!-- Stage 3 (generate-resources): compile Erlang sources with rebar3 -->
                     <execution>
                         <id>rebar3-compile</id>
                         <phase>generate-resources</phase>

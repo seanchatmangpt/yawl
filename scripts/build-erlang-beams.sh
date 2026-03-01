@@ -41,6 +41,13 @@ cd "${ERLANG_MODULE_DIR}"
 
 EBIN_SRC="${ERLANG_MODULE_DIR}/_build/default/lib/yawl/ebin"
 
+# Collect all .erl sources: hand-written + generated pm-bridge files
+ERL_SOURCES=(src/main/erlang/*.erl)
+PM_BRIDGE_GEN="${ERLANG_MODULE_DIR}/pm-bridge-ggen/lib/erlang"
+if [ -d "${PM_BRIDGE_GEN}" ] && ls "${PM_BRIDGE_GEN}"/*.erl &>/dev/null 2>&1; then
+    ERL_SOURCES+=("${PM_BRIDGE_GEN}"/*.erl)
+fi
+
 # Try rebar3 first; fall back to erlc if rebar3 is incompatible with this OTP version
 if "${REBAR3_BIN}" compile 2>&1; then
     echo "INFO: rebar3 compilation succeeded"
@@ -50,7 +57,7 @@ else
     "${ERL_BIN%/erl}/erlc" \
         +debug_info \
         -o "${EBIN_SRC}" \
-        src/main/erlang/*.erl
+        "${ERL_SOURCES[@]}"
     echo "INFO: erlc compilation succeeded"
 fi
 

@@ -1,0 +1,163 @@
+@prefix bridge: <https://yawl.io/bridge#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+
+# ───────────────────────────────────────────────────────────
+#  YAWL Process Mining Bridge Ontology  v1.0
+#  Namespace: https://yawl.io/bridge#
+#  Distinct from existing yawl-bridge: http://yawlfoundation.org/yawl/bridge#
+# ───────────────────────────────────────────────────────────
+
+<https://yawl.io/bridge>
+    a owl:Ontology ;
+    rdfs:label "YAWL PM Bridge Vocabulary" ;
+    rdfs:comment "Describes native process_mining capabilities exposed via Erlang gen_server bridge" .
+
+# ── Classes ────────────────────────────────────────────────
+
+bridge:NativeCall
+    a rdfs:Class ;
+    rdfs:label "NativeCall" ;
+    rdfs:comment "A single callable capability in the process_mining Rust crate" .
+
+bridge:Arg
+    a rdfs:Class ;
+    rdfs:label "Arg" ;
+    rdfs:comment "An argument to a NativeCall" .
+
+bridge:ReturnType
+    a rdfs:Class ;
+    rdfs:label "ReturnType" ;
+    rdfs:comment "The return type of a NativeCall" .
+
+bridge:PresenceCheck
+    a rdfs:Class ;
+    rdfs:label "PresenceCheck" ;
+    rdfs:comment "Liveness check for the process_mining bridge" .
+
+# ── NativeCall properties ──────────────────────────────────
+
+bridge:erlModule
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:string ;
+    rdfs:label "erlModule" ;
+    rdfs:comment "Erlang gen_server module name (e.g. process_mining_bridge)" .
+
+bridge:erlFunction
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:string ;
+    rdfs:label "erlFunction" ;
+    rdfs:comment "Erlang atom name (safe_atom applied to Rust binding name)" .
+
+bridge:group
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:string ;
+    rdfs:label "group" ;
+    rdfs:comment "Capability group: discovery|analysis|io|conformance|locel|utility" .
+
+bridge:arity
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:integer ;
+    rdfs:label "arity" ;
+    rdfs:comment "Number of arguments" .
+
+bridge:label
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:string ;
+    rdfs:label "label" ;
+    rdfs:comment "Human-readable label derived from docs or name" .
+
+bridge:featureFlag
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:string ;
+    rdfs:label "featureFlag" ;
+    rdfs:comment "Optional Rust feature gate (e.g. graphviz-export)" .
+
+bridge:consumesInput
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "consumesInput" ;
+    rdfs:comment "If true the primary input UUID is removed from state after the call (maps:take)" .
+
+bridge:hasArg
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range bridge:Arg ;
+    rdfs:label "hasArg" .
+
+bridge:returns
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range bridge:ReturnType ;
+    rdfs:label "returns" .
+
+bridge:hasPresenceCheck
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range bridge:PresenceCheck ;
+    rdfs:label "hasPresenceCheck" .
+
+bridge:fixtureFile
+    a rdf:Property ;
+    rdfs:domain bridge:NativeCall ;
+    rdfs:range xsd:string ;
+    rdfs:label "fixtureFile" ;
+    rdfs:comment "Relative path to JSON fixture file" .
+
+# ── Arg properties ─────────────────────────────────────────
+
+bridge:argName
+    a rdf:Property ;
+    rdfs:domain bridge:Arg ;
+    rdfs:range xsd:string ;
+    rdfs:label "argName" .
+
+bridge:argPosition
+    a rdf:Property ;
+    rdfs:domain bridge:Arg ;
+    rdfs:range xsd:integer ;
+    rdfs:label "argPosition" .
+
+bridge:jvmType
+    a rdf:Property ;
+    rdfs:domain bridge:Arg ;
+    rdfs:range xsd:string ;
+    rdfs:label "jvmType" ;
+    rdfs:comment "JVM type for the argument (String for registry refs, int/String for scalars)" .
+
+bridge:registryKind
+    a rdf:Property ;
+    rdfs:domain bridge:Arg ;
+    rdfs:range xsd:string ;
+    rdfs:label "registryKind" ;
+    rdfs:comment "Registry type if this argument is a UUID reference (e.g. OCEL, PetriNet)" .
+
+bridge:argRequired
+    a rdf:Property ;
+    rdfs:domain bridge:Arg ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "argRequired" .
+
+# ── ReturnType properties ──────────────────────────────────
+
+bridge:returnJvmType
+    a rdf:Property ;
+    rdfs:domain bridge:ReturnType ;
+    rdfs:range xsd:string ;
+    rdfs:label "returnJvmType" .
+
+bridge:returnRegistryKind
+    a rdf:Property ;
+    rdfs:domain bridge:ReturnType ;
+    rdfs:range xsd:string ;
+    rdfs:label "returnRegistryKind" ;
+    rdfs:comment "Registry type if return value is a UUID reference" .
