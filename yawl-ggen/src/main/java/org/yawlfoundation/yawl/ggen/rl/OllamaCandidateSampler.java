@@ -52,10 +52,13 @@ import java.util.stream.IntStream;
  * memory graph can be injected to bias the generation prompt with patterns that
  * yielded high rewards in previous GRPO rounds.
  *
- * <p><strong>Z.AI GLM-4.7-Flash (Phase 5c)</strong>: When the {@code ZAI_API_KEY}
- * environment variable is set, the sampler automatically uses {@link ZaiLlmGateway}
- * (GLM-4.7-Flash via {@code open.bigmodel.cn}) instead of Ollama. If the variable is
- * absent, it falls back to Ollama HTTP at the configured base URL.
+ * <p><strong>Provider selection (Phase 5c)</strong>: The sampler selects the LLM backend
+ * automatically at construction time in priority order:
+ * <ol>
+ *   <li>{@link GroqLlmGateway} — when {@code GROQ_API_KEY} is set (highest priority)</li>
+ *   <li>{@link ZaiLlmGateway} — when {@code ZAI_API_KEY} is set (GLM-4.7-Flash)</li>
+ *   <li>Ollama HTTP — fallback at the configured {@code baseUrl}</li>
+ * </ol>
  *
  * <p><strong>ProMoAI Prompt Suite (Phase 5a)</strong>: Prompts are constructed by
  * {@link ProMoAIPromptBuilder} using all six strategies from Kourani et al. (2024):
@@ -130,6 +133,10 @@ public class OllamaCandidateSampler implements CandidateSampler {
             // Explicit injection (testing or programmatic override)
             this.httpClient = null;
             this.gateway = gateway;
+        } else if (GroqLlmGateway.isAvailable()) {
+            // GROQ_API_KEY is set — auto-select Groq (highest priority cloud provider)
+            this.httpClient = null;
+            this.gateway = GroqLlmGateway.fromEnv(this.timeout);
         } else if (ZaiLlmGateway.isAvailable()) {
             // ZAI_API_KEY is set — auto-select GLM-4.7-Flash (Phase 5c)
             this.httpClient = null;
