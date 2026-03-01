@@ -1,0 +1,142 @@
+[
+  {
+    "Benchmark": "SingleThreadedThroughput",
+    "Throughput": 6925925.989866407,
+    "Memory": 7.454506950948245,
+    "Latency": 1.5550688716850125,
+    "Scalability": 83.64453240454081,
+    "Recovery": 25.299303985556,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "MultiThreadedThroughput",
+    "Throughput": 6483857.481868745,
+    "Memory": 4.0825221208854074,
+    "Latency": 2.3876663359109327,
+    "Scalability": 75.13990396589547,
+    "Recovery": 36.02837312664592,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "BatchThroughput",
+    "Throughput": 3817940.926013727,
+    "Memory": 4.1749832764619565,
+    "Latency": 2.7673629851849646,
+    "Scalability": 80.01239457937268,
+    "Recovery": 93.18446378523645,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "MemoryGrowth",
+    "Throughput": 8397518.341583887,
+    "Memory": 3.936273004627561,
+    "Latency": 1.1152989692330884,
+    "Scalability": 93.21954772382298,
+    "Recovery": 27.70621342503929,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "MemoryLeakDetection",
+    "Throughput": 2094380.4262948176,
+    "Memory": 2.9077780358519756,
+    "Latency": 0.231174972346119,
+    "Scalability": 79.76309042588396,
+    "Recovery": 84.99965687120651,
+    "Status": "\u25b3",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "GCPressure",
+    "Throughput": 5958516.3603319395,
+    "Memory": 2.1837740455184584,
+    "Latency": 0.3765158390240556,
+    "Scalability": 91.2607730013622,
+    "Recovery": 116.25485443217566,
+    "Status": "\u25b3",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "ActorOverhead",
+    "Throughput": 2431951.804950311,
+    "Memory": 3.7721806911395457,
+    "Latency": 0.8402840775763971,
+    "Scalability": 78.81495123495058,
+    "Recovery": 75.36928451373154,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "LinearScaling",
+    "Throughput": 7063288.709193956,
+    "Memory": 5.63047070975973,
+    "Latency": 1.0491803322116158,
+    "Scalability": 73.05180134235778,
+    "Recovery": 37.501040875001735,
+    "Status": "\u25b3",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "ThreadScaling",
+    "Throughput": 3784345.3265023,
+    "Memory": 2.2808093642574505,
+    "Latency": 2.995553615776207,
+    "Scalability": 92.5763339165032,
+    "Recovery": 56.99074363851777,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "LoadBalancing",
+    "Throughput": 6486208.6894150395,
+    "Memory": 6.996620022254909,
+    "Latency": 0.3804242114950226,
+    "Scalability": 71.22539486603722,
+    "Recovery": 48.23824417107857,
+    "Status": "\u25b3",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "MessageLatency",
+    "Throughput": 4194932.686443558,
+    "Memory": 5.263425685823074,
+    "Latency": 0.2398874974748269,
+    "Scalability": 75.15405831631243,
+    "Recovery": 141.4061651486073,
+    "Status": "\u2717",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "EndToEndLatency",
+    "Throughput": 4896898.02458172,
+    "Memory": 4.436386162385526,
+    "Latency": 2.236678072820935,
+    "Scalability": 75.65324579629599,
+    "Recovery": 144.50969427590957,
+    "Status": "\u2717",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "FailureRecovery",
+    "Throughput": 3358013.524192563,
+    "Memory": 6.096007134957484,
+    "Latency": 0.7058378314711571,
+    "Scalability": 75.56655437960839,
+    "Recovery": 142.1367656518588,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  },
+  {
+    "Benchmark": "CrashRecovery",
+    "Throughput": 6441750.91875699,
+    "Memory": 3.628195163878064,
+    "Latency": 1.0540379897925871,
+    "Scalability": 83.04136316405638,
+    "Recovery": 28.092049068830143,
+    "Status": "\u2713",
+    "timestamp": "2026-02-28T22:58:11.928535"
+  }
+]

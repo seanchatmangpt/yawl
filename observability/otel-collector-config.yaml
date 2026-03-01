@@ -1,0 +1,105 @@
+receivers:
+  # Prometheus receiver for actor metrics
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'yawl-actor'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['actor-monitor:8080']
+          metrics_path: /metrics
+
+  # OTLP receiver from actor applications
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Jaeger receiver for distributed tracing
+  jaeger:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:14250
+      thrift_http:
+        endpoint: 0.0.0.0:14268
+
+processors:
+  # Add common attributes
+  attributes:
+    actions:
+      - key: service.name
+        action: upsert
+        value: "yawl-actor"
+      - key: service.namespace
+        action: upsert
+        value: "org.yawlfoundation"
+      - key: telemetry.sdk.name
+        action: upsert
+        value: "opentelemetry"
+      - key: telemetry.sdk.language
+        action: upsert
+        value: "java"
+
+  # Batch processor
+  batch:
+    timeout: 1s
+
+  # Filter for actor-related metrics
+  metricstransform:
+    transforms:
+      - match: 'yawl_actor_*'
+        action: update
+        operations:
+          - action: set_name
+            name: 'actor.${1}'
+          - action: set_description
+            description: "YAWL actor metric"
+          - action: set_unit
+            unit: "by"
+
+exporters:
+  # Prometheus exporter
+  prometheus:
+    endpoint: "0.0.0.0:8888"
+    namespace: "yawl_actor"
+
+  # Jaeger exporter
+  jaeger:
+    endpoint: jaeger:14250
+    tls:
+      insecure: true
+
+  # OTLP exporter for upstream
+  otlp:
+    endpoint: "localhost:4317"
+    tls:
+      insecure: true
+
+  # Logging exporter (for debugging)
+  logging:
+    log_level: debug
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger]
+      processors: [attributes, batch]
+      exporters: [jaeger, logging]
+
+    metrics:
+      receivers: [prometheus, otlp]
+      processors: [attributes, batch, metricstransform]
+      exporters: [prometheus, logging]
+
+    metrics_export:
+      receivers: [prometheus]
+      processors: [batch]
+      exporters: [prometheus]
+
+  extensions: [health_check]

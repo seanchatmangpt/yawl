@@ -1,0 +1,398 @@
+{
+  "dashboard": {
+    "title": "YAWL Actor Monitoring Dashboard",
+    "description": "Real-time monitoring dashboard for YAWL actor systems",
+    "refreshInterval": 5000,
+    "timeRange": "1h",
+    "version": "1.0.0"
+  },
+  "panels": [
+    {
+      "id": "system-health",
+      "title": "System Health",
+      "type": "gauge",
+      "size": {
+        "width": 12,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.system.health.score",
+          "legendFormat": "Health Score"
+        }
+      ],
+      "options": {
+        "min": 0,
+        "max": 100,
+        "thresholds": [
+          {"level": "critical", "value": 30},
+          {"level": "warning", "value": 50},
+          {"level": "ok", "value": 80}
+        ],
+        "orientation": "auto",
+        "type": "gauge"
+      }
+    },
+    {
+      "id": "active-actors",
+      "title": "Active Actors",
+      "type": "stat",
+      "size": {
+        "width": 6,
+        "height": 4
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.count",
+          "legendFormat": "Active Actors"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "id": "unhealthy-actors",
+      "title": "Unhealthy Actors",
+      "type": "stat",
+      "size": {
+        "width": 6,
+        "height": 4
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.unhealthy.count",
+          "legendFormat": "Unhealthy Actors"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "horizontal",
+        "thresholds": [
+          {"level": "warning", "value": 5},
+          {"level": "critical", "value": 10}
+        ]
+      }
+    },
+    {
+      "id": "queue-depth",
+      "title": "Queue Depth",
+      "type": "timeseries",
+      "size": {
+        "width": 12,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.queue.total_depth",
+          "legendFormat": "Total Queue Depth"
+        },
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.queue.max_depth",
+          "legendFormat": "Max Queue Depth"
+        }
+      ],
+      "options": {
+        "legend": {
+          "show": true,
+          "values": true,
+          "min": true,
+          "max": true,
+          "avg": true,
+          "current": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        },
+        "thresholds": [
+          {"level": "critical", "value": 10000},
+          {"level": "warning", "value": 5000}
+        ]
+      }
+    },
+    {
+      "id": "memory-usage",
+      "title": "Memory Usage",
+      "type": "timeseries",
+      "size": {
+        "width": 6,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.memory.total_bytes",
+          "legendFormat": "Total Memory"
+        },
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.memory.max_bytes",
+          "legendFormat": "Max Memory per Actor"
+        }
+      ],
+      "options": {
+        "legend": {
+          "show": true,
+          "values": true,
+          "min": true,
+          "max": true,
+          "avg": true,
+          "current": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": "throughput",
+      "title": "Message Throughput",
+      "type": "timeseries",
+      "size": {
+        "width": 6,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "rate(yawl.actor.message.processed[1m])",
+          "legendFormat": "Processed Messages/s"
+        },
+        {
+          "type": "prometheus",
+          "expr": "rate(yawl.actor.message.sent[1m])",
+          "legendFormat": "Sent Messages/s"
+        },
+        {
+          "type": "prometheus",
+          "expr": "rate(yawl.actor.message.failed[1m])",
+          "legendFormat": "Failed Messages/s"
+        }
+      ],
+      "options": {
+        "legend": {
+          "show": true,
+          "values": true,
+          "min": true,
+          "max": true,
+          "avg": true,
+          "current": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": "message-latency",
+      "title": "Message Processing Latency",
+      "type": "timeseries",
+      "size": {
+        "width": 12,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "histogram_quantile(0.5, rate(yawl.actor.message.processing.duration_bucket[1m]))",
+          "legendFormat": "P50 Latency (ms)"
+        },
+        {
+          "type": "prometheus",
+          "expr": "histogram_quantile(0.9, rate(yawl.actor.message.processing.duration_bucket[1m]))",
+          "legendFormat": "P90 Latency (ms)"
+        },
+        {
+          "type": "prometheus",
+          "expr": "histogram_quantile(0.99, rate(yawl.actor.message.processing.duration_bucket[1m]))",
+          "legendFormat": "P99 Latency (ms)"
+        }
+      ],
+      "options": {
+        "legend": {
+          "show": true,
+          "values": true,
+          "min": true,
+          "max": true,
+          "avg": true,
+          "current": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        },
+        "thresholds": [
+          {"level": "warning", "value": 1000},
+          {"level": "critical", "value": 5000}
+        ]
+      }
+    },
+    {
+      "id": "error-rate",
+      "title": "Error Rate",
+      "type=": "timeseries",
+      "size": {
+        "width": 6,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "rate(yawl.actor.message.failed[1m]) / rate(yawl.actor.message.processed[1m])",
+          "legendFormat": "Error Rate"
+        }
+      ],
+      "options": {
+        "legend": {
+          "show": true,
+          "values": true,
+          "min": true,
+          "max": true,
+          "avg": true,
+          "current": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        },
+        "thresholds": [
+          {"level": "warning", "value": 0.05},
+          {"level": "critical", "value": 0.1}
+        ]
+      }
+    },
+    {
+      "id": "alert-status",
+      "title": "Alert Status",
+      "type": "stat",
+      "size": {
+        "width": 6,
+        "height": 4
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.alert.active.count",
+          "legendFormat": "Active Alerts"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "horizontal",
+        "thresholds": [
+          {"level": "warning", "value": 1},
+          {"level": "critical", "value": 5}
+        ]
+      }
+    },
+    {
+      "id": "recent-alerts",
+      "title": "Recent Alerts",
+      "type": "table",
+      "size": {
+        "width": 12,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.alert.total",
+          "legendFormat": "Total Alerts"
+        }
+      ],
+      "options": {
+        "fields": [
+          {"name": "Time", "type": "time"},
+          {"name": "Severity", "type": "string"},
+          {"name": "Type", "type": "string"},
+          {"name": "Actor", "type": "string"},
+          {"name": "Message", "type": "string"},
+          {"name": "Value", "type": "number"}
+        ],
+        "sortBy": ["Time desc"],
+        "pageSize": 10
+      }
+    },
+    {
+      "id": "actor-types",
+      "title": "Actors by Type",
+      "type": "pie",
+      "size": {
+        "width": 6,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "yawl.actor.created{job=\"yawl-actor\"}",
+          "legendFormat": "Actor Types"
+        }
+      ],
+      "options": {
+        "legend": {
+          "show": true,
+          "values": true
+        }
+      }
+    },
+    {
+      "id": "actor-health-status",
+      "title": "Actor Health Distribution",
+      "type": "pie",
+      "size": {
+        "width": 6,
+        "height": 8
+      },
+      "targets": [
+        {
+          "type": "prometheus",
+          "expr": "sum by (status) (yawl.actor.health.status)",
+          "legendFormat": "Health Status"
+        }
+      ],
+      "options": {
+        "legend": {
+          "show": true,
+          "values": true
+        }
+      }
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "refresh_intervals": [
+    "5s",
+    "10s",
+    "30s",
+    "1m",
+    "5m",
+    "15m",
+    "30m",
+    "1h",
+    "2h",
+    "1d"
+  ]
+}

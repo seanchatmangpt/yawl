@@ -174,7 +174,7 @@ class HyperStandardsValidatorTest {
 
         GuardReceipt receipt = validator.validateEmitDir(tempDir);
 
-        assertGreaterThanOrEqual(receipt.getViolations().size(), 3,
+        assertTrue(receipt.getViolations().size(), 3,
             "Should detect multiple violations in single file");
     }
 

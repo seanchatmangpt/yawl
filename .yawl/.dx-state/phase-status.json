@@ -1,0 +1,1 @@
+{"timestamp":"2026-03-01T06:37:46Z","phases":{"compile":{"status":"red","exit_code":1},"test":{"status":"pending","exit_code":0},"guards":{"status":"pending","exit_code":0},"invariants":{"status":"pending","exit_code":0},"report":{"status":"pending","exit_code":0}}}

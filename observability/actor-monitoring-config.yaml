@@ -1,0 +1,244 @@
+# YAWL Actor Monitoring Configuration
+
+# General Configuration
+actor_monitoring:
+  enabled: true
+  metrics_collection_interval: 10  # seconds
+  health_check_interval: 30       # seconds
+  cleanup_interval: 300           # seconds
+
+# Alert Configuration
+alerts:
+  enabled: true
+  throttle_interval: 300000       # milliseconds (5 minutes)
+  max_active_alerts: 100
+  history_retention: 168          # hours (7 days)
+
+  # Default Thresholds
+  thresholds:
+    actor_memory_high:
+      severity: critical
+      value: 8388608              # 8MB in bytes
+      condition: ">"
+      duration_threshold: 30       # seconds
+      description: "Actor memory usage exceeds 8MB"
+
+    actor_queue_backlog:
+      severity: warning
+      value: 500
+      condition: ">"
+      duration_threshold: 60       # seconds
+      description: "Actor queue backlog exceeds 500 messages"
+
+    actor_processing_slow:
+      severity: warning
+      value: 5000                  # 5 seconds
+      condition: ">"
+      duration_threshold: 120      # seconds
+      description: "Actor message processing takes longer than 5s"
+
+    system_memory_low:
+      severity: warning
+      value: 0.1                   # 10%
+      condition: "<"
+      duration_threshold: 60       # seconds
+      description: "System memory below 10%"
+
+    system_health_critical:
+      severity: critical
+      value: 30                     # 30%
+      condition: "<"
+      duration_threshold: 60       # seconds
+      description: "System health score below 30%"
+
+# Anomaly Detection Configuration
+anomaly_detection:
+  enabled: true
+  z_score_threshold: 3.0
+  min_samples_for_baseline: 10
+  detection_window: 30            # seconds
+  baseline_window: 300           # seconds (5 minutes)
+
+  algorithms:
+    statistical_outlier:
+      enabled: true
+      z_score_threshold: 3.0
+
+    behavioral_deviation:
+      enabled: true
+      deviation_threshold: 5.0
+
+    memory_leak:
+      enabled: true
+      growth_threshold: 1.5        # 50% growth
+
+    time_series_anomaly:
+      enabled: true
+      sigma_threshold: 3.0
+
+    performance_regression:
+      enabled: true
+      degradation_threshold: 0.2   # 20% degradation
+
+# Dashboard Configuration
+dashboard:
+  enabled: true
+  refresh_interval: 5000          # milliseconds
+  time_range: 3600000            # milliseconds (1 hour)
+  max_points: 100
+
+  widgets:
+    - id: system_health
+      title: "System Health"
+      type: "gauge"
+      width: 12
+      height: 4
+
+    - id: actor_count
+      title: "Active Actors"
+      type: "gauge"
+      width: 6
+      height: 4
+
+    - id: queue_depth
+      title: "Queue Depth"
+      type: "lineChart"
+      width: 12
+      height: 6
+
+    - id: memory_usage
+      title: "Memory Usage"
+      type: "areaChart"
+      width: 6
+      height: 6
+
+    - id: throughput
+      title: "Throughput"
+      type: "lineChart"
+      width: 6
+      height: 6
+
+    - id: alerts
+      title: "Recent Alerts"
+      type: "list"
+      width: 12
+      height: 6
+
+# Tracing Configuration
+tracing:
+  enabled: true
+  max_span_duration: 30000        # milliseconds (30 seconds)
+  max_span_depth: 10
+  message_types:
+    - "task"
+    - "event"
+    - "state_change"
+    - "error"
+
+  span_attributes:
+    flow.id:
+      description: "Message flow identifier"
+      type: "string"
+
+    source.actor:
+      description: "Source actor ID"
+      type: "string"
+
+    target.actor:
+      description: "Target actor ID"
+      type: "string"
+
+    message.type:
+      description: "Type of message"
+      type: "string"
+
+    processing.duration:
+      description: "Message processing duration in nanoseconds"
+      type: "duration"
+
+# Integration Configuration
+integration:
+  # YAWL Engine Integration
+  yawl_engine:
+    enabled: true
+    case_metrics: true
+    task_metrics: true
+    queue_metrics: true
+
+  # OpenTelemetry Integration
+  opentelemetry:
+    enabled: true
+    exporter:
+      endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}"
+      timeout: 10000               # milliseconds
+    resource:
+      service.name: "yawl-actor"
+      service.version: "6.0.0"
+
+  # Prometheus Integration
+  prometheus:
+    enabled: true
+    scrape_interval: 15           # seconds
+    path: "/metrics/actor"
+
+  # Grafana Integration
+  grafana:
+    enabled: true
+    dashboard_url: "${GRAFANA_DASHBOARD_URL:http://localhost:3000}"
+    api_key: "${GRAFANA_API_KEY}"
+    datasources:
+      - name: "Prometheus"
+        type: "prometheus"
+        url: "http://localhost:9090"
+
+# Performance Configuration
+performance:
+  # Virtual Thread Configuration
+  virtual_threads:
+    enabled: true
+    per_task_executor: true
+    thread_name_prefix: "yawl-actor-"
+
+  # Memory Configuration
+  memory:
+    max_memory_per_actor: 10485760  # 10MB
+    memory_tracking_enabled: true
+
+  # Concurrency Configuration
+  concurrency:
+    max_concurrent_operations: 10000
+    timeout_operations: 30000        # milliseconds
+    retry_attempts: 3
+
+# Security Configuration
+security:
+  # Metrics Security
+  metrics:
+    enable_auth: false
+    allowed_ips: ["127.0.0.1", "::1"]
+
+  # Tracing Security
+  tracing:
+    sample_rate: 1.0               # 100% sampling
+    baggage_size_limit: 4096       # bytes
+
+  # Dashboard Security
+  dashboard:
+    enabled_auth: false
+    admin_role: "ADMIN"
+
+# Logging Configuration
+logging:
+  level: INFO
+  actor_metrics:
+    enabled: true
+    format: json
+  alerts:
+    enabled: true
+    format: json
+  anomalies:
+    enabled: true
+    format: json
+  traces:
+    enabled: true
+    format: json

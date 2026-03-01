@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains production-grade observability infrastructure for YAWL v6.0.0, providing comprehensive distributed tracing, metrics collection, structured logging, and health checks.
+This directory contains production-grade observability infrastructure for YAWL v6.0.0, providing comprehensive distributed tracing, metrics collection, structured logging, health checks, and **Actor System Monitoring** for actor-based workflow systems.
 
 ## What's Included
 
@@ -21,13 +21,21 @@ This directory contains production-grade observability infrastructure for YAWL v
    - Custom histogram percentiles (P50, P95, P99)
    - Micrometer integration
 
-3. **Structured Logging** (`StructuredLogger.java`)
+3. **Actor Monitoring System** (`src/org/yawlfoundation/yawl/observability/actor/`)
+   - **ActorHealthMetrics**: Real-time actor health and performance tracking
+   - **ActorTracer**: Distributed tracing for message flows between actors
+   - **ActorAlertManager**: Configurable alerting with thresholds and notifications
+   - **ActorDashboardData**: Real-time data for monitoring dashboards
+   - **ActorAnomalyDetector**: Advanced anomaly detection algorithms
+   - **ActorObservabilityService**: Main orchestration service for actor monitoring
+
+4. **Structured Logging** (`StructuredLogger.java`)
    - JSON log format for ELK/Loki aggregation
    - Correlation ID propagation via MDC
    - Log level routing (ERROR → PagerDuty, DEBUG → local)
    - Automatic exception serialization
 
-4. **Health Checks** (`HealthCheckEndpoint.java`)
+5. **Health Checks** (`HealthCheckEndpoint.java`)
    - Kubernetes-compatible probes (liveness, readiness, startup)
    - Subsystem status monitoring
    - JSON health responses
@@ -40,6 +48,11 @@ This directory contains production-grade observability infrastructure for YAWL v
 - **prometheus-scrape-config.yml** - Multi-target scrape configuration
 - **loki-config.yaml** - Log aggregation with retention policies
 - **grafana-dashboard-yawl-overview.json** - Production dashboard template
+- **actor-monitoring-config.yaml** - Actor monitoring configuration
+- **actor-alerting-rules.yml** - Actor-specific alert rules
+- **actor-dashboard.json** - Actor monitoring dashboard
+- **actor-docker-compose.yml** - Complete monitoring stack for actors
+- **otel-collector-config.yaml** - OpenTelemetry collector configuration
 
 ### Documentation
 
@@ -50,6 +63,8 @@ This directory contains production-grade observability infrastructure for YAWL v
 ### Tests
 
 - **ObservabilityTest.java** - Comprehensive test suite validating all components
+- **Actor*Test.java** - Actor monitoring system tests
+- **Mock data generator** - Test data generation for actor scenarios
 
 ## Quick Start
 
@@ -75,6 +90,9 @@ OpenTelemetryInitializer.initialize();
 MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
 YawlMetrics.initialize(registry);
 
+// Initialize Actor Monitoring System
+ActorObservabilityService.initialize(registry);
+
 // Set up health checks
 HealthCheckEndpoint health = new HealthCheckEndpoint(delegate);
 ```
@@ -96,21 +114,44 @@ try (Scope scope = span.makeCurrent()) {
 }
 ```
 
-### 4. Record Metrics
+### 4. Record Actor Metrics
 
 ```java
-YawlMetrics metrics = YawlMetrics.getInstance();
+// Basic actor lifecycle tracking
+ActorObservabilityService service = ActorObservabilityService.getInstance();
+service.recordActorCreated("worker-1", "worker");
+service.recordMessageProcessing("worker-1", "task", 1000000L, 1024L);
+service.updateQueueDepth("worker-1", 25);
+service.updateMemoryUsage("worker-1", 2048L);
 
-metrics.incrementCaseCreated();
-metrics.setQueueDepth(queue.size());
-metrics.setActiveThreads(threadPool.getActiveCount());
+// Advanced metrics recording
+Map<String, Double> metrics = Map.of(
+    "processing_time", 100.0,
+    "error_rate", 0.05,
+    "memory_usage", 2048.0
+);
+service.recordMetricsForAnomalyDetection("worker-1", metrics);
 
-Timer.Sample sample = metrics.startCaseExecutionTimer();
-try {
-    // execution
-} finally {
-    metrics.recordCaseExecutionTime(sample);
-}
+// Distributed tracing
+ActorTracer.ActorSpan span = service.startMessageFlow(
+    "flow-123", "worker-1", "worker-2", "task", Map.of()
+);
+// ... process message ...
+service.finishMessageFlow(span.getSpanId(), Duration.ofMillis(100));
+```
+
+### 5. Get Monitoring Data
+
+```java
+// Get dashboard data
+ActorDashboardData.DashboardOverview overview = service.getDashboardOverview();
+ActorDashboardData.PerformanceDashboard perfDashboard = service.getPerformanceDashboard();
+
+// Get real-time metrics
+Map<String, Object> realtime = service.getRealTimeMetrics();
+
+// Get anomaly detection results
+ActorAnomalyDetector.AnomalyStatistics anomalyStats = service.getAnomalyStatistics();
 ```
 
 ### 5. Add Structured Logging

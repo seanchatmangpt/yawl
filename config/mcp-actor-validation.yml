@@ -1,0 +1,197 @@
+# MCP Server Configuration for Actor Validation
+
+# Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 8080
+  ssl:
+    enabled: false
+    key-store-path: ""
+    key-store-password: ""
+
+# Actor Validation Configuration
+validation:
+  enabled: true
+  # Validation settings
+  interval-seconds: 30
+  parallel-threads: 512
+
+  # Memory leak detection
+  memory:
+    threshold-mb: 100
+    check-interval-seconds: 60
+    alert-threshold-percent: 80
+
+  # Deadlock detection
+  deadlock:
+    enabled: true
+    timeout-seconds: 30
+    thread-count-threshold: 5
+
+  # Performance monitoring
+  performance:
+    slow-threshold-ms: 5000
+    alert-threshold-percent: 90
+    history-size: 1000
+
+# MCP Integration
+mcp:
+  resources:
+    - name: "actor_validation"
+      path: "/resources/actor_validation"
+      description: "Actor validation summary"
+    - name: "actor_health"
+      path: "/resources/actor_health"
+      description: "Actor health status"
+    - name: "actor_performance"
+      path: "/resources/actor_performance"
+      description: "Performance metrics"
+
+  tools:
+    - name: "actor_validate_memory"
+      description: "Validate actor for memory leaks"
+      parameters:
+        - name: "case_id"
+          type: "string"
+          required: true
+          description: "The case ID to validate"
+        - name: "threshold_mb"
+          type: "number"
+          required: false
+          default: 100.0
+          description: "Memory leak detection threshold in MB"
+
+    - name: "actor_validate_deadlock"
+      description: "Validate actor for deadlock potential"
+      parameters:
+        - name: "case_id"
+          type: "string"
+          required: true
+          description: "The case ID to validate"
+
+    - name: "actor_performance_metrics"
+      description: "Get actor performance metrics"
+      parameters:
+        - name: "case_id"
+          type: "string"
+          required: true
+          description: "The case ID to monitor"
+        - name: "time_range_minutes"
+          type: "number"
+          required: false
+          default: 60.0
+          description: "Time range for metrics (minutes)"
+
+    - name: "actor_health_summary"
+      description: "Get actor health summary"
+      parameters:
+        - name: "case_id"
+          type: "string"
+          required: true
+          description: "The case ID to check"
+
+    - name: "actor_validate_all"
+      description: "Validate all actors"
+      parameters: []
+
+# Observability Configuration
+observability:
+  enabled: true
+  metrics:
+    port: 9090
+    enabled: true
+    path: "/metrics"
+  tracing:
+    enabled: true
+    jaeger:
+      endpoint: "http://localhost:14268/api/traces"
+    sample-rate: 1.0
+  logs:
+    level: INFO
+    format: json
+    file: "logs/mcp-actor-validation.log"
+
+# Security Configuration
+security:
+  enabled: true
+  authentication:
+    enabled: false
+    type: "jwt"
+    jwt:
+      secret: ""
+      expiration-minutes: 60
+  authorization:
+    enabled: false
+    roles:
+      - "admin"
+      - "validator"
+
+# CI/CD Integration
+ci-cd:
+  enabled: true
+  workflows:
+    - name: "actor-validation"
+      triggers:
+        - "push"
+        - "pull_request"
+      conditions:
+        - "paths: ['src/org/yawlfoundation/yawl/integration/actor/**']"
+        - "paths: ['yawl-ggen/**']"
+      artifacts:
+        - "validation-reports"
+        - "metrics"
+    - name: "production-readiness"
+      triggers:
+        - "schedule"
+        - "workflow_dispatch"
+      conditions:
+        - "status: 'success'"
+      steps:
+        - "validate-violations"
+        - "check-metrics"
+
+# Performance Configuration
+performance:
+  thread-pool:
+    core-size: 4
+    max-size: 16
+    keep-alive-seconds: 60
+  caching:
+    enabled: true
+    max-size: 1000
+    expire-after-write-minutes: 60
+  batch-size: 100
+  timeout-seconds: 30
+
+# Database Configuration
+database:
+  enabled: false
+  type: "postgresql"
+  url: "jdbc:postgresql://localhost:5432/yawl_actor_validation"
+  username: "yawlfoundation"
+  password: "securepassword"
+  pool-size: 10
+  connection-timeout-seconds: 30
+
+# Storage Configuration
+storage:
+  reports:
+    enabled: true
+    path: "target/validation-reports"
+    retention-days: 30
+    format: ["html", "json"]
+  metrics:
+    enabled: true
+    path: "target/metrics"
+    retention-days: 7
+  logs:
+    enabled: true
+    path: "logs"
+    retention-days: 30
+
+# Development Configuration
+development:
+  mock-data-enabled: false
+  verbose-logging: false
+  test-mode: false
+  debug-mode: false

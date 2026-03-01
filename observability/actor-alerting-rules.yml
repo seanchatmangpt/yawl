@@ -1,0 +1,196 @@
+# YAWL Actor Alerting Rules for Prometheus
+
+groups:
+  - name: actor_monitoring
+    interval: 15s
+
+    rules:
+      # System Health Alerts
+      - alert: ActorSystemHealthCritical
+        expr: yawl.actor.system.health.score < 30
+        for: 1m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "Actor system health is critical (score: {{ $value }})"
+          description: "The actor system health score is below 30 for 1 minute. Current score: {{ $value }}. This indicates a serious system-wide issue affecting multiple actors."
+
+      - alert: ActorSystemHealthWarning
+        expr: yawl.actor.system.health.score < 60
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "Actor system health degraded (score: {{ $value }})"
+          description: "The actor system health score is below 60 for 5 minutes. Current score: {{ $value }}. This indicates some system-wide performance issues."
+
+      # Actor Health Alerts
+      - alert: ActorUnhealthyCountHigh
+        expr: yawl.actor.unhealthy.count > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: actor
+        annotations:
+          summary: "High number of unhealthy actors ({{ $value }})"
+          description: "There are {{ $value }} unhealthy actors in the system. This may indicate issues with specific actor types or system resources."
+
+      - alert: ActorSuspendedCountHigh
+        expr: yawl.actor.suspended.count > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: actor
+        annotations:
+          summary: "High number of suspended actors ({{ $value }})"
+          description: "There are {{ $value }} suspended actors in the system. This may indicate resource constraints or processing backlogs."
+
+      # Queue Alerts
+      - alert: ActorQueueOverflow
+        expr: yawl.actor.queue.total_depth > 10000
+        for: 2m
+        labels:
+          severity: critical
+          category: queue
+        annotations:
+          summary: "Actor queue overflow detected (depth: {{ $value }})"
+          description: "Total actor queue depth has exceeded 10,000 messages for 2 minutes. Current depth: {{ $value }}. This indicates severe system congestion."
+
+      - alert: ActorQueueBacklog
+        expr: yawl.actor.queue.total_depth > 5000
+        for: 5m
+        labels:
+          severity: warning
+          category: queue
+        annotations:
+          summary: "Actor queue backlog detected (depth: {{ $value }})"
+          description: "Total actor queue depth is above 5,000 messages for 5 minutes. Current depth: {{ $value }}. This indicates system stress and potential performance degradation."
+
+      # Memory Alerts
+      - alert: ActorMemoryUsageHigh
+        expr: yawl.actor.memory.max_bytes > 8388608  # 8MB
+        for: 5m
+        labels:
+          severity: critical
+          category: memory
+        annotations:
+          summary: "High actor memory usage detected ({{ $value | humanizeBytes }})"
+          description: "At least one actor is using more than 8MB of memory. Current maximum: {{ $value | humanizeBytes }}. This may indicate memory leaks or inefficient data structures."
+
+      - alert: ActorSystemMemoryLow
+        expr: system_memory_used_bytes / system_memory_total_bytes > 0.9  # 90%
+        for: 5m
+        labels:
+          severity: warning
+          category: memory
+        annotations:
+          summary: "System memory usage high ({{ $value | humanizePercentage }})"
+          description: "System memory usage is above 90% for 5 minutes. Current usage: {{ $value | humanizePercentage }}. This may affect actor performance and stability."
+
+      # Performance Alerts
+      - alert: ActorMessageProcessingSlow
+        expr: rate(yawl.actor.message.processing.duration_sum[5m]) / rate(yawl.actor.message.processing_duration_count[5m]) > 5000  # 5 seconds
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow actor message processing detected ({{ $value | humanizeDuration }})"
+          description: "Average message processing time is above 5 seconds for 5 minutes. Current average: {{ $value | humanizeDuration }}. This indicates performance issues affecting actor throughput."
+
+      - alert: ActorMessageDeliveryTimeout
+        expr: rate(yawl.actor.message.delivery_timeout_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Actor message delivery timeouts detected ({{ $value }}/5m)"
+          description: "Message delivery timeouts are occurring at a rate of {{ $value }} per 5 minutes. This indicates network or system performance issues affecting actor communication."
+
+      # Error Alerts
+      - alert: ActorErrorRateHigh
+        expr: rate(yawl.actor.error_total[5m]) / rate(yawl.actor.processed_total[5m]) > 0.1  # 10%
+        for: 5m
+        labels:
+          severity: critical
+          category: errors
+        annotations:
+          summary: "High actor error rate detected ({{ $value | humanizePercentage }})"
+          description: "Actor error rate is above 10% for 5 minutes. Current rate: {{ $value | humanizePercentage }}. This indicates serious issues with actor processing logic."
+
+      - alert: ActorCreationFailures
+        expr: rate(yawl.actor.creation_failures_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          category: errors
+        annotations:
+          summary: "Actor creation failures detected ({{ $value }}/5m)"
+          description: "Actor creation failures are occurring at a rate of {{ $value }} per 5 minutes. This indicates issues with actor initialization or resource allocation."
+
+      # Resource Alerts
+      - alert: ActorCpuUsageHigh
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80  # 80%
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High CPU usage detected ({{ $value | humanizePercentage }})"
+          description: "CPU usage is above 80% for 5 minutes. Current usage: {{ $value | humanizePercentage }}. This may affect actor performance and system responsiveness."
+
+      - alert: ActorThreadCountHigh
+        expr: yawl.threadpool.active > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High thread count detected ({{ $value }})"
+          description: "Number of active worker threads is above 1,000 for 5 minutes. Current count: {{ $value }}. This may indicate excessive concurrency or memory pressure."
+
+      # Alert Volume Alerts
+      - alert: AlertVolumeHigh
+        expr: rate(yawl.actor.alert_total[10m]) > 10  # 10 alerts per minute
+        for: 5m
+        labels:
+          severity: warning
+          category: monitoring
+        annotations:
+          summary: "High alert volume detected ({{ $value }}/10m)"
+          description: "Alert rate is above 10 per 10 minutes. This indicates potential issues with the monitoring system or excessive alerting due to system problems."
+
+      # Resource Saturation Alerts
+      - alert: ActorQueueUtilizationHigh
+        expr: yawl.actor.queue.max_depth / yawl.actor.queue.capacity > 0.8  # 80%
+        for: 5m
+        labels:
+          severity: warning
+          category: capacity
+        annotations:
+          summary: "High queue utilization detected ({{ $value | humanizePercentage }})"
+          description: "Queue utilization is above 80% for 5 minutes. Current utilization: {{ $value | humanizePercentage }}. This indicates potential bottlenecks in message processing."
+
+      # Pattern Anomaly Alerts
+      - alert: ActorAnomalyDetected
+        expr: rate(yawl.actor.anomaly_detected_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: anomalies
+        annotations:
+          summary: "Actor anomaly detected"
+          description: "Anomaly detection system has identified behavioral patterns that deviate from normal operation. This may indicate emerging issues or configuration changes."
+
+      - alert: CriticalAnomalyDetected
+        expr: rate(yawl.actor.anomaly_critical_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: anomalies
+        annotations:
+          summary: "Critical actor anomaly detected"
+          description: "Critical anomaly detection system has identified severe behavioral deviations requiring immediate attention. This may indicate serious system issues or security concerns."

@@ -1,0 +1,164 @@
+{
+  "charts": [
+    {
+      "type": "bar",
+      "title": "Message Throughput by Benchmark",
+      "data": {
+        "x": [
+          "SingleThreadedThroughput",
+          "MultiThreadedThroughput",
+          "BatchThroughput",
+          "MemoryGrowth",
+          "MemoryLeakDetection",
+          "GCPressure",
+          "ActorOverhead",
+          "LinearScaling",
+          "ThreadScaling",
+          "LoadBalancing",
+          "MessageLatency",
+          "EndToEndLatency",
+          "FailureRecovery",
+          "CrashRecovery"
+        ],
+        "y": [
+          6925925.989866407,
+          6483857.481868745,
+          3817940.926013727,
+          8397518.341583887,
+          2094380.4262948176,
+          5958516.3603319395,
+          2431951.804950311,
+          7063288.709193956,
+          3784345.3265023,
+          6486208.6894150395,
+          4194932.686443558,
+          4896898.02458172,
+          3358013.524192563,
+          6441750.91875699
+        ],
+        "labels": [
+          "SingleThreadedThroughput: 6.9M",
+          "MultiThreadedThroughput: 6.5M",
+          "BatchThroughput: 3.8M",
+          "MemoryGrowth: 8.4M",
+          "MemoryLeakDetection: 2.1M",
+          "GCPressure: 6.0M",
+          "ActorOverhead: 2.4M",
+          "LinearScaling: 7.1M",
+          "ThreadScaling: 3.8M",
+          "LoadBalancing: 6.5M",
+          "MessageLatency: 4.2M",
+          "EndToEndLatency: 4.9M",
+          "FailureRecovery: 3.4M",
+          "CrashRecovery: 6.4M"
+        ]
+      }
+    },
+    {
+      "type": "scatter",
+      "title": "Scalability vs Throughput",
+      "data": {
+        "x": [
+          83.64453240454081,
+          75.13990396589547,
+          80.01239457937268,
+          93.21954772382298,
+          79.76309042588396,
+          91.2607730013622,
+          78.81495123495058,
+          73.05180134235778,
+          92.5763339165032,
+          71.22539486603722,
+          75.15405831631243,
+          75.65324579629599,
+          75.56655437960839,
+          83.04136316405638
+        ],
+        "y": [
+          6925925.989866407,
+          6483857.481868745,
+          3817940.926013727,
+          8397518.341583887,
+          2094380.4262948176,
+          5958516.3603319395,
+          2431951.804950311,
+          7063288.709193956,
+          3784345.3265023,
+          6486208.6894150395,
+          4194932.686443558,
+          4896898.02458172,
+          3358013.524192563,
+          6441750.91875699
+        ],
+        "color": [
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          true,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          true
+        ],
+        "size": [
+          7.454506950948245,
+          4.0825221208854074,
+          4.1749832764619565,
+          3.936273004627561,
+          2.9077780358519756,
+          2.1837740455184584,
+          3.7721806911395457,
+          5.63047070975973,
+          2.2808093642574505,
+          6.996620022254909,
+          5.263425685823074,
+          4.436386162385526,
+          6.096007134957484,
+          3.628195163878064
+        ],
+        "labels": [
+          "SingleThreadedThroughput",
+          "MultiThreadedThroughput",
+          "BatchThroughput",
+          "MemoryGrowth",
+          "MemoryLeakDetection",
+          "GCPressure",
+          "ActorOverhead",
+          "LinearScaling",
+          "ThreadScaling",
+          "LoadBalancing",
+          "MessageLatency",
+          "EndToEndLatency",
+          "FailureRecovery",
+          "CrashRecovery"
+        ]
+      }
+    },
+    {
+      "type": "radar",
+      "title": "Overall Performance Profile",
+      "data": {
+        "categories": [
+          "Throughput",
+          "Memory",
+          "Latency",
+          "Scalability",
+          "Recovery"
+        ],
+        "values": [
+          51.66823514999712,
+          55.11147687946474,
+          74.37861199713869,
+          80.58028179407144,
+          62.22439810823589
+        ]
+      }
+    }
+  ]
+}

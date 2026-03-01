@@ -235,6 +235,19 @@ public class YawlMcpServer {
         allTools.addAll(WorkflowComplexitySpecification.createAll(
             interfaceBClient, interfaceAClient, sessionHandle));
 
+        // Actor validation tools (comprehensive monitoring for memory leaks and deadlocks)
+        int actorValidationToolCount = 0;
+        try {
+            org.yawlfoundation.yawl.integration.actor.ActorMcpIntegration actorIntegration =
+                new org.yawlfoundation.yawl.integration.actor.ActorMcpIntegration(this,
+                    new org.yawlfoundation.yawl.integration.observability.ObservabilityService());
+            actorIntegration.initialize();
+            actorIntegrationToolCount = 6; // Number of actor validation tools
+            System.out.println("INFO [YawlMcpServer] Actor validation tools loaded");
+        } catch (Exception e) {
+            System.err.println("WARN [YawlMcpServer] Actor validation tools not loaded: " + e.getMessage());
+        }
+
         // Ontology-derived tools from Rust/Oxigraph service (optional, graceful degradation)
         int ontologyToolCount = 0;
         try {

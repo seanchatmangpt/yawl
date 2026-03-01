@@ -1,52 +1,155 @@
 PREFIX code: <http://ggen.io/code#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax#>
 
-SELECT ?violation ?line ?pattern
+SELECT ?violation ?line ?pattern ?violationType
 WHERE {
-  # Actor memory leak patterns
+  # Enhanced actor memory leak patterns with comprehensive detection
+
+  # Pattern 1: Creating but not destroying actors (explicit and implicit)
   {
-    # Creating but not destroying actors
     ?method a code:Method ;
             code:name ?name ;
             code:body ?body ;
             code:lineNumber ?line ;
             code:returnType ?retType .
-    
-    FILTER(REGEX(?name, "(create|spawn|new)[A-Z]")) &&
-    FILTER(REGEX(?body, 'new\\s+(Actor|Message|WorkItem)') &&
-    !REGEX(?body, 'destroy|dispose|close'))
-    
+
+    FILTER(
+      # Creation patterns
+      REGEX(?name, "(create|spawn|instantiate|new)[A-Z]") ||
+      REGEX(?body, 'new\\s+(Actor|Message|WorkItem|Case|Instance)') ||
+      REGEX(?body, 'Actor\\.builder\\(\\)|Actor\\.create\\(')
+    ) &&
+    # Missing destruction patterns
+    !REGEX(?body, 'actor\\.(destroy|dispose|close|cleanup|shutdown)') &&
+    !REGEX(?body, 'actor\\.cancel\\(|actor\\.stop\\(|actor\\.terminate\\(') &&
+    !REGEX(?body, 'AutoCloseable|try-with-resources|close\\(\\)')
+
     BIND("H_ACTOR_LEAK" AS ?pattern)
-    BIND(CONCAT("Potential actor memory leak at line ", STR(?line), ": actor created but not destroyed")
+    BIND("ACTOR_CREATION_NO_DESTRUCTION" AS ?violationType)
+    BIND(CONCAT("Actor creation without destruction at line ", STR(?line), ": actor created but no cleanup method called")
          AS ?violation)
   } UNION {
-    # Accumulating state without cleanup
+    # Pattern 2: Accumulating state without cleanup (unbounded collections)
     ?method a code:Method ;
             code:body ?body ;
             code:lineNumber ?line .
-    
+
     FILTER(
-      REGEX(?body, '(actor|message)\\.(put|add|append)\\(') &&
-      REGEX(?body, '(actor|message)\\.(get|remove)\\(') &&
-      !REGEX(?body, 'clear|reset|dispose')
+      # Accumulation patterns
+      (
+        REGEX(?body, '(actor|message|queue)\\.(put|add|append|offer)\\(') &&
+        REGEX(?body, '(actor|message|queue)\\.(size|isEmpty|get|remove|poll)\\(') &&
+        !REGEX(?body, 'clear\\(|reset\\(|cleanup\\(|dispose\\(') &&
+        !REGEX(?body, 'if\\s*\\([^)]*size\\s*<[^)]*\\)|while\\s*\\([^)]*!isEmpty\\([^)]*\\)')
+      ) ||
+      # Unbounded collection growth
+      (
+        REGEX(?body, 'new\\s+(ArrayList|LinkedList|HashMap|HashSet|ConcurrentHashMap)\\(\\)') &&
+        REGEX(?body, '\\.(put|add)\\(') &&
+        !REGEX(?body, 'clear\\(|reset\\(|size\\s*<|!isEmpty\\s*&&')
+      ) ||
+      # Infinite loops accumulating data
+      (
+        REGEX(?body, 'while\\s*\\([^)]+\\)') &&
+        REGEX(?body, '(actor|message|queue)\\.(put|add|append|offer)\\(') &&
+        !REGEX(?body, 'clear\\(|reset\\(|break|return')
+      )
     )
-    
+
     BIND("H_ACTOR_LEAK" AS ?pattern)
-    BIND(CONCAT("Accumulating state without cleanup at line ", STR(?line))
+    BIND("UNBOUNDED_ACCUMULATION" AS ?violationType)
+    BIND(CONCAT("Unbounded state accumulation at line ", STR(?line), ": growing collection without bounds or cleanup")
          AS ?violation)
   } UNION {
-    # Holding references to dead actors
+    # Pattern 3: Holding references to dead actors (strong and weak)
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line ;
+            code:returnType ?retType .
+
+    FILTER(
+      # Strong reference leaks
+      (
+        REGEX(?body, 'Actor\\s+[a-zA-Z_][a-zA-Z0-9_]*\\s*=') &&
+        REGEX(?body, 'new\\s+Actor\\(') &&
+        !REGEX(?body, 'null|dispose|destroy|cleanup') &&
+        !REGEX(?body, 'if\\s*\\([^)]*actor\\s*!=\\s*null\\)')
+      ) ||
+      # Weak/Soft reference not managed
+      (
+        REGEX(?body, '(Weak|Soft)Reference') &&
+        !REGEX(?body, 'get\\(|clear\\(|cleanup\\(|null\\s*check') &&
+        !REGEX(?body, 'if\\s*\\([^)]*ref\\s*!=\\s*null\\)')
+      ) ||
+      # Static references to actors
+      (
+        REGEX(?body, 'static\\s+.*Actor') &&
+        !REGEX(?body, 'volatile|@Volatile|AtomicReference') &&
+        !REGEX(?body, 'null|clear|cleanup')
+      )
+    )
+
+    BIND("H_ACTOR_LEAK" AS ?pattern)
+    BIND("REFERENCE_LEAK" AS ?violationType)
+    BIND(CONCAT("Reference leak at line ", STR(?line), ": ",
+               STRBEFORE(REGEX(?body, 'Reference|Actor'), " "),
+               " not properly managed")
+         AS ?violation)
+  } UNION {
+    # Pattern 4: Thread/memory resource leaks
     ?method a code:Method ;
             code:body ?body ;
             code:lineNumber ?line .
-    
+
     FILTER(
-      REGEX(?body, '(Weak|Soft)Reference') &&
-      !REGEX(?body, 'get|clear|cleanup')
+      # Unbounded thread creation
+      (
+        REGEX(?body, 'Thread\\.|Executors\\.|ExecutorService') &&
+        !REGEX(?body, 'shutdown\\(|shutdownNow\\(|awaitTermination\\(') &&
+        !REGEX(?body, 'threadPool|bounded|withTimeout')
+      ) ||
+      # Timer/TimerTask leaks
+      (
+        REGEX(?body, 'Timer|TimerTask|ScheduledExecutorService') &&
+        !REGEX(?body, 'cancel\\(|purge\\(|shutdown\\(')
+      ) ||
+      # Unclosed resources
+      (
+        REGEX(?body, 'FileInputStream|FileOutputStream|BufferedReader|Socket|Connection') &&
+        !REGEX(?body, 'try-with-resources|close\\(|AutoCloseable')
+      )
     )
-    
+
     BIND("H_ACTOR_LEAK" AS ?pattern)
-    BIND(CONCAT("Potential reference leak at line ", STR(?line), ": weak reference not managed")
+    BIND("RESOURCE_LEAK" AS ?violationType)
+    BIND(CONCAT("Resource leak at line ", STR(?line), ": ",
+               STRBEFORE(REGEX(?body, 'InputStream|OutputStream|Thread|Executor'), " "),
+               " not properly closed")
+         AS ?violation)
+  } UNION {
+    # Pattern 5: Message/mailbox overflow patterns
+    ?method a code:Method ;
+            code:body ?body ;
+            code:lineNumber ?line .
+
+    FILTER(
+      # Unbounded queue growth without backpressure
+      (
+        REGEX(?body, 'BlockingQueue|LinkedBlockingQueue|ArrayBlockingQueue') &&
+        REGEX(?body, '\\.(put|offer)\\(') &&
+        !REGEX(?body, 'remainingCapacity\\(|poll\\(|take\\(|drainTo\\(') &&
+        !REGEX(?body, 'if\\s*\\([^)]*queue\\.size\\s*<[^)]*\\)')
+      ) ||
+      # No backpressure or flow control
+      (
+        REGEX(?body, 'tell\\(|send\\(|forward\\(') &&
+        !REGEX(?body, 'timeout\\(|backpressure\\(|rate\\s*limit|throttle')
+      )
+    )
+
+    BIND("H_ACTOR_LEAK" AS ?pattern)
+    BIND("MAILBOX_OVERFLOW" AS ?violationType)
+    BIND(CONCAT("Mailbox overflow risk at line ", STR(?line), ": message queue growing without bounds")
          AS ?violation)
   }
 }

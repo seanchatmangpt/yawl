@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: yawl-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./actor-alerting-rules.yml:/etc/prometheus/alerts.yml
+      - ./actor-monitoring-config.yaml:/etc/prometheus/config.yaml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - yawl-monitoring
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: yawl-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./actor-dashboard.json:/etc/grafana/provisioning/dashboards/actor-dashboard.json
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/prometheus.yaml
+    networks:
+      - yawl-monitoring
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: yawl-otel-collector
+    ports:
+      - "4317:4317"  # OTLP/gRPC
+      - "4318:4318"  # OTLP/HTTP
+      - "8888:8888"  # Prometheus metrics
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    networks:
+      - yawl-monitoring
+
+  # Loki for log aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: yawn-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - yawl-monitoring
+
+  # Prometheus Alertmanager
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: yawl-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager-config.yaml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - yawl-monitoring
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: yawl-jaeger
+    ports:
+      - "16686:16686"  # Query UI
+      - "14268:14268"  # Collector HTTP
+      - "14250:14250"  # Collector gRPC
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    networks:
+      - yawl-monitoring
+
+  # YAWL Actor Monitor (mock monitoring service)
+  actor-monitor:
+    image: openjdk:17-jre-slim
+    container_name: yawl-actor-monitor
+    ports:
+      - "8080:8080"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms128m
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - PROMETHEUS_PORT=8080
+    volumes:
+      - ./src:/app/src
+    working_dir: /app
+    command: ["java", "-jar", "/app/actor-monitor.jar"]
+    networks:
+      - yawl-monitoring
+    depends_on:
+      - otel-collector
+      - prometheus
+
+  # Data generator for testing
+  data-generator:
+    image: curlimages/curl:latest
+    container_name: yawl-data-generator
+    command: >
+      sh -c "
+        while true; do
+          curl -X POST http://actor-monitor:8080/api/generate-data
+          sleep 1
+        done
+      "
+    networks:
+      - yawl-monitoring
+    depends_on:
+      - actor-monitor
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  alertmanager_data:
+
+networks:
+  yawl-monitoring:
+    driver: bridge
