@@ -8,11 +8,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
- * Minimal agent runtime — AtomicInteger IDs + ConcurrentHashMap registry
- * + one virtual thread executor per task.
+ * Minimal agent runtime — low-level API operating on Agent objects.
+ *
+ * Behavior receives raw Object messages (not ActorRef).
+ * For high-level ActorRef-based API, use VirtualThreadRuntime.
  *
  * Note on boxing at 10M scale:
- *   ConcurrentHashMap&lt;Integer, Agent&gt; boxes int keys -&gt; Integer (16 bytes each).
+ *   ConcurrentHashMap<Integer, Agent> boxes int keys -> Integer (16 bytes each).
  *   At 10M agents: 160MB of Integer objects. Measure first; switch to
  *   Eclipse Collections IntObjectHashMap if GC overhead exceeds 5%.
  */
@@ -35,6 +37,7 @@ final class Runtime implements Closeable {
         registry.put(a.id, a);
         vt.submit(() ->
             ScopedValue.where(CURRENT, a).run(() -> {
+                a.thread = Thread.currentThread();
                 try {
                     while (!Thread.interrupted()) {
                         // take() parks virtual thread when idle — unmounts from carrier

@@ -119,8 +119,8 @@ public record LlmRefinementRequest(
     public String toString() {
         return "LlmRefinementRequest{"
                 + "schemaLength=" + schema.length()
-                + ", samples=" + Arrays.length(samples)
-                + ", objectives=" + Arrays.length(objectives)
+                + ", samples=" + (samples != null ? samples.length : 0)
+                + ", objectives=" + (objectives != null ? objectives.length : 0)
                 + ", context=" + (context != null ? "[set]" : "null")
                 + ", config=" + config
                 + '}';

@@ -1216,10 +1216,8 @@ public final class DataModellingBridge implements AutoCloseable {
      */
     public org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
             queryBuilder(String workspaceJson) {
-        org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter converter =
-                new org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter();
         org.yawlfoundation.yawl.datamodelling.models.DataModellingWorkspace workspace =
-                converter.fromJson(workspaceJson);
+                org.yawlfoundation.yawl.datamodelling.converters.WorkspaceConverter.fromJson(workspaceJson);
         return org.yawlfoundation.yawl.datamodelling.queries.DataModellingQueryBuilder
                 .forWorkspace(workspace);
     }

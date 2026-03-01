@@ -27,7 +27,8 @@ imports = [
     ".specify/patterns/milestone.ttl",
     ".specify/patterns/interleaved.ttl",
     ".specify/patterns/deferred-choice.ttl",
-    ".specify/patterns/ontology/extended-patterns.ttl"
+    ".specify/patterns/ontology/extended-patterns.ttl",
+    ".specify/patterns/native-bridge.ttl"
 ]
 
 [ontology.prefixes]
@@ -42,6 +43,7 @@ yawl-worklet = "http://yawlfoundation.org/yawl/worklet#"
 yawl-case = "http://yawlfoundation.org/yawl/case#"
 yawl-task = "http://yawlfoundation.org/yawl/task#"
 yawl-workitem = "http://yawlfoundation.org/yawl/workitem#"
+yawl-bridge = "http://yawlfoundation.org/yawl/bridge#"
 rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 rdfs = "http://www.w3.org/2000/01/rdf-schema#"
 owl = "http://www.w3.org/2002/07/owl#"
@@ -1175,6 +1177,124 @@ output_file = "java/patterns/extended/YCaseManagementTask.java"
 mode = "Overwrite"
 
 # =============================================================================
+# PHASE 12: NATIVE BRIDGE PATTERN GENERATION
+# Pattern: WCP-NB Native Bridge — L2 FFI transport + L3 domain API
+# Enforces correctness-by-construction: capability enum → registry → L2 → L3
+# All generated code is H-Guards compliant (no TODO/mock/stub/fake/empty/lie/silent)
+# =============================================================================
+
+# --- WCP-NB-01: Capability Enum ---
+[[generation.rules]]
+name = "native-bridge-capability-enum"
+description = "Generate native bridge capability enum from ontology"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?capabilityName ?capabilityDescription ?nativeTarget ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:hasCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?capabilityName .
+  OPTIONAL { ?cap yawl-bridge:capabilityDescription ?capabilityDescription }
+  OPTIONAL { ?cap yawl-bridge:nativeTarget ?nativeTarget }
+}
+ORDER BY ?bridgeName ?capabilityName
+""" }
+template = { file = "templates/yawl-patterns/native-bridge-capability.tera" }
+output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}Capability.java"
+mode = "Overwrite"
+
+# --- WCP-NB-02: Capability Registry ---
+[[generation.rules]]
+name = "native-bridge-capability-registry"
+description = "Generate native bridge capability registry (startup gate)"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?l2Class ?l3Class ?testClass ?nativeLibrary
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+  OPTIONAL { ?bridge yawl-bridge:l2Class ?l2Class }
+  OPTIONAL { ?bridge yawl-bridge:l3Class ?l3Class }
+  OPTIONAL { ?bridge yawl-bridge:testClass ?testClass }
+  OPTIONAL { ?bridge yawl-bridge:nativeLibrary ?nativeLibrary }
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "templates/yawl-patterns/native-bridge-registry.tera" }
+output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}CapabilityRegistry.java"
+mode = "Overwrite"
+
+# --- WCP-NB-03: L2 FFI Transport ---
+[[generation.rules]]
+name = "native-bridge-l2-transport"
+description = "Generate L2 FFI transport layer (thin Panama FFM wrapper)"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?nativeLibrary ?libraryPathProp
+       ?fnHandleName ?fnJavaName ?fnNativeSymbol ?fnReturnType
+       ?fnDescriptor ?fnDescription ?fnReturnDoc
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:nativeLibrary ?nativeLibrary ;
+          yawl-bridge:hasFunction ?fn .
+  ?fn a yawl-bridge:NativeFunction ;
+      yawl-bridge:fnHandleName ?fnHandleName ;
+      yawl-bridge:fnJavaName ?fnJavaName ;
+      yawl-bridge:fnNativeSymbol ?fnNativeSymbol ;
+      yawl-bridge:fnReturnType ?fnReturnType ;
+      yawl-bridge:fnDescriptor ?fnDescriptor .
+  OPTIONAL { ?bridge yawl-bridge:libraryPathProp ?libraryPathProp }
+  OPTIONAL { ?fn yawl-bridge:fnDescription ?fnDescription }
+  OPTIONAL { ?fn yawl-bridge:fnReturnDoc ?fnReturnDoc }
+}
+ORDER BY ?bridgeName ?fnNativeSymbol
+""" }
+template = { file = "templates/yawl-patterns/native-bridge-l2.tera" }
+output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}L2.java"
+mode = "Overwrite"
+
+# --- WCP-NB-04: L3 Domain API ---
+[[generation.rules]]
+name = "native-bridge-l3-domain"
+description = "Generate L3 domain API layer (zero FFI types at call site)"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?nativeLibrary ?domainDescription
+       ?opName ?opDescription ?opReturnType ?opReturnDoc
+       ?opExceptionType ?opNativeException ?opImpl
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:nativeLibrary ?nativeLibrary ;
+          yawl-bridge:hasDomainOperation ?op .
+  ?op a yawl-bridge:DomainOperation ;
+      yawl-bridge:opName ?opName ;
+      yawl-bridge:opReturnType ?opReturnType ;
+      yawl-bridge:opExceptionType ?opExceptionType .
+  OPTIONAL { ?bridge yawl-bridge:domainDescription ?domainDescription }
+  OPTIONAL { ?op yawl-bridge:opDescription ?opDescription }
+  OPTIONAL { ?op yawl-bridge:opReturnDoc ?opReturnDoc }
+  OPTIONAL { ?op yawl-bridge:opNativeException ?opNativeException }
+  OPTIONAL { ?op yawl-bridge:opImpl ?opImpl }
+}
+ORDER BY ?bridgeName ?opName
+""" }
+template = { file = "templates/yawl-patterns/native-bridge-l3.tera" }
+output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}L3.java"
+mode = "Overwrite"
+
+# =============================================================================
 # VALIDATION GATES (Quality Checks)
 # Pattern from: factory-paas
 # =============================================================================
@@ -1185,6 +1305,32 @@ mode = "Overwrite"
 name = "ontology_valid"
 description = "Ontology must be valid RDF"
 rule = "sparql_validates"
+
+[[gates.completeness]]
+name = "all_bridges_have_capabilities"
+description = "Every native bridge must declare at least one capability"
+query = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+ASK {
+  ?bridge a yawl-bridge:NativeBridge .
+  FILTER NOT EXISTS { ?bridge yawl-bridge:hasCapability ?cap }
+}
+"""
+
+[[gates.completeness]]
+name = "all_capabilities_have_l2_and_l3"
+description = "Every bridge capability must have L2 and L3 coverage annotations"
+query = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+ASK {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:hasCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?name .
+  FILTER NOT EXISTS { ?bridge yawl-bridge:l2Class ?l2 }
+  FILTER NOT EXISTS { ?bridge yawl-bridge:l3Class ?l3 }
+}
+"""
 
 [[gates.completeness]]
 name = "all_tasks_have_decomposition"

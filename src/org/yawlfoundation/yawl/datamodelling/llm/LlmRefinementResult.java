@@ -151,6 +151,25 @@ public final class LlmRefinementResult {
     }
 
     /**
+     * Creates a builder pre-populated with all fields from this instance.
+     *
+     * @return a builder containing this instance's values
+     */
+    public Builder toBuilder() {
+        return new Builder()
+                .refinedSchema(refinedSchema)
+                .confidence(confidence)
+                .suggestions(suggestions)
+                .applied(applied)
+                .skipped(skipped)
+                .fallbackUsed(fallbackUsed)
+                .modelUsed(modelUsed)
+                .executionTimeMs(executionTimeMs)
+                .rawLlmResponse(rawLlmResponse)
+                .errorMessage(errorMessage);
+    }
+
+    /**
      * Builder for immutable LlmRefinementResult instances.
      */
     public static final class Builder {

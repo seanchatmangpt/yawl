@@ -42,6 +42,11 @@ build/logs/
 build/3rdParty/
 build/jar/*.jar
 
+# =============================================================================
+# dx.sh runtime state (ephemeral, per-session build metadata)
+# =============================================================================
+.yawl/.dx-state/
+
 # Ant build output
 ant_compile.log
 
@@ -249,3 +254,14 @@ META-INF/
 .claude/context/receipts/
 .claude/worktrees/
 receipts/
+
+# YAWL dx.sh runtime state
+.yawl/
+
+# =============================================================================
+# Erlang/OTP runtime installation (installed by session-start.sh hook)
+# =============================================================================
+.erlmcp/
+rebar3.crashdump
+*/rebar3.crashdump
+*.beam

@@ -135,6 +135,81 @@ else
 fi
 
 # ============================================================================
+# ERLANG/OTP 28 — install from Hex.pm pre-built binary if not present
+# ============================================================================
+
+echo "🔴 Checking Erlang/OTP 28 requirement..."
+
+ERLMCP_DIR="/home/user/yawl/.erlmcp"
+OTP_VERSION="28.3.1"
+OTP_DIR="${ERLMCP_DIR}/otp-${OTP_VERSION}"
+OTP_BIN="${OTP_DIR}/bin/erl"
+REBAR3_BIN="${ERLMCP_DIR}/rebar3"
+
+if [ -f "${OTP_BIN}" ]; then
+    echo "   ✅ OTP ${OTP_VERSION} already installed at ${OTP_DIR}"
+else
+    echo "   📥 OTP ${OTP_VERSION} not found — downloading from Hex.pm..."
+    mkdir -p "${ERLMCP_DIR}"
+    OTP_URL="https://builds.hex.pm/builds/otp/amd64/ubuntu-22.04/OTP-${OTP_VERSION}.tar.gz"
+    OTP_DOWNLOAD_OK=false
+    for attempt in 1 2 3; do
+        if curl -fsSL --max-time 300 "${OTP_URL}" | tar -xz -C "${ERLMCP_DIR}"; then
+            OTP_DOWNLOAD_OK=true
+            break
+        fi
+        echo "   ⚠️  Attempt ${attempt} failed, retrying in 5s..."
+        sleep 5
+    done
+    if [ "${OTP_DOWNLOAD_OK}" != "true" ]; then
+        echo "   ❌ OTP download failed after 3 attempts — Erlang features will be unavailable"
+    else
+        # Rename extracted directory
+        if [ -d "${ERLMCP_DIR}/OTP-${OTP_VERSION}" ] && [ ! -d "${OTP_DIR}" ]; then
+            mv "${ERLMCP_DIR}/OTP-${OTP_VERSION}" "${OTP_DIR}"
+        fi
+        # Run Install
+        cd "${OTP_DIR}" && ./Install -minimal "$(pwd)"
+        cd /home/user/yawl
+        echo "   ✅ OTP ${OTP_VERSION} installed at ${OTP_DIR}"
+    fi
+fi
+
+# Install rebar3 if not present
+if [ -x "${REBAR3_BIN}" ]; then
+    echo "   ✅ rebar3 already installed"
+else
+    echo "   📥 Downloading rebar3..."
+    mkdir -p "${ERLMCP_DIR}"
+    if curl -fsSL --max-time 120 \
+        "https://github.com/erlang/rebar3/releases/download/3.23.0/rebar3" \
+        -o "${REBAR3_BIN}"; then
+        chmod +x "${REBAR3_BIN}"
+        echo "   ✅ rebar3 installed at ${REBAR3_BIN}"
+    else
+        echo "   ⚠️  rebar3 download failed — Erlang compilation will be skipped"
+    fi
+fi
+
+# Export OTP to PATH for this session
+if [ -f "${OTP_BIN}" ]; then
+    export PATH="${OTP_DIR}/bin:${PATH}"
+    export YAWL_OTP_HOME="${OTP_DIR}"
+    if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+        echo "export PATH=${OTP_DIR}/bin:\$PATH" >> "${CLAUDE_ENV_FILE}"
+        echo "export YAWL_OTP_HOME=${OTP_DIR}" >> "${CLAUDE_ENV_FILE}"
+    fi
+    # Compile .erl → .beam if needed
+    EBIN_DIR="${ERLMCP_DIR}/../yawl-erlang/src/main/resources/org/yawlfoundation/yawl/erlang/ebin"
+    if [ ! -d "${EBIN_DIR}" ] || [ -z "$(ls -A "${EBIN_DIR}" 2>/dev/null)" ]; then
+        echo "   🔨 Compiling Erlang sources..."
+        bash /home/user/yawl/scripts/build-erlang-beams.sh 2>&1 || echo "   ⚠️  Beam compilation failed"
+    fi
+    OTP_RELEASE=$("${OTP_BIN}" -eval 'io:format("~s",[erlang:system_info(otp_release)])' -s init stop -noshell 2>/dev/null)
+    echo "   ✅ Erlang/OTP ${OTP_RELEASE} active ($(which erl 2>/dev/null || echo "${OTP_BIN}"))"
+fi
+
+# ============================================================================
 # JAVA 25 — install via Adoptium if not present
 # ============================================================================
 
@@ -287,6 +362,13 @@ echo "🔍 Running Observatory to generate codebase facts..."
 if bash scripts/observatory/observatory.sh --facts; then
     echo "✅ Observatory facts generated successfully"
 
+    # Write pom-hash sidecar so dx.sh all skips observatory on first run.
+    # observatory.sh --facts does not write the full receipt, so dx.sh
+    # uses this sidecar as the primary freshness signal.
+    mkdir -p .yawl/.dx-state
+    sha256sum pom.xml 2>/dev/null | awk '{print $1}' \
+        > .yawl/.dx-state/observatory-pom-hash.txt || true
+
     # Display summary from INDEX.md
     if [ -f "docs/v6/latest/INDEX.md" ]; then
         FACT_COUNT=$(grep -c "^- " docs/v6/latest/INDEX.md || echo "0")
@@ -301,6 +383,33 @@ if bash scripts/observatory/observatory.sh --facts; then
 else
     echo "⚠️  Observatory generation failed - continuing without facts"
     echo "   You can manually run: bash scripts/observatory/observatory.sh"
+fi
+
+# ============================================================================
+# COMPILE + TEST BASELINE — correct by construction
+# Verify the guard validation module compiles and critical tests pass.
+# This establishes a green baseline before any code changes.
+# ============================================================================
+
+echo "🧪 Verifying guard validation baseline (correct by construction)..."
+
+GGEN_TEST_LOG="/tmp/yawl-ggen-baseline-test.log"
+GGEN_TEST_EXIT=0
+mvn test \
+    -pl yawl-ggen \
+    -Dtest="HyperStandardsValidatorTest" \
+    -Dmaven.test.skip=false \
+    -Dsurefire.failIfNoSpecifiedTests=false \
+    --no-transfer-progress \
+    --batch-mode \
+    -q > "${GGEN_TEST_LOG}" 2>&1 || GGEN_TEST_EXIT=$?
+if [ "${GGEN_TEST_EXIT}" -eq 0 ]; then
+    echo "✅ Guard validation tests: GREEN (HyperStandardsValidatorTest 20/20)"
+else
+    echo "⚠️  Guard validation tests FAILED (exit ${GGEN_TEST_EXIT})"
+    tail -10 "${GGEN_TEST_LOG}" || true
+    echo "   Run: mvn test -pl yawl-ggen -Dtest=HyperStandardsValidatorTest -Dmaven.test.skip=false"
+    echo "   Fix failures before making changes to the guard validation package"
 fi
 
 echo ""

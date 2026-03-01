@@ -20,10 +20,12 @@ Quantum = one orthogonal axis: Toolchain|Dependency|Schema|Engine-semantic|MCP/A
 Fact files ~50 tokens vs grep ~5000 tokens = 100× compression. Facts only, not vibes.
 Files: modules.json|gates.json|deps-conflicts.json|reactor.json|shared-src.json|tests.json|dual-family.json|duplicates.json|maven-hazards.json
 Stale or >3 files explored → bash scripts/observatory/observatory.sh. Verify via receipts/observatory.json SHA256.
+dx.sh all auto-refreshes facts when pom.xml changes (Ψ phase); DX_SKIP_OBSERVE=1 bypasses in CI. session-start.sh pre-generates facts on startup.
 
 ## Λ BUILD
 
 dx.sh compile (fast) → dx.sh -pl <module> (one module) → dx.sh all (pre-commit gate, mandatory).
+dx.sh all pipeline: observe(Ψ) → compile → test → guards(H) → invariants(Q) → report. No gate skipping.
 mvn clean verify -P analysis for SpotBugs/PMD static analysis. No commit until dx.sh all green.
 Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE_CODE_REMOTE=true.
 yawl-engine source root = ../src (not src/main/java) | test root = ../test — read pom.xml <sourceDirectory> before placing any file.

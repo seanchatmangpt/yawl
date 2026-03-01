@@ -189,7 +189,7 @@ public final class OcpmDiscovery {
                 String activity = objectTrace.get(i).activity();
 
                 // Count activity
-                activityCounts.merge(activity, 1L, Long::addExact);
+                activityCounts.merge(activity, 1L, (a, b) -> a + b);
 
                 // Mark start/end
                 if (i == 0) {
@@ -203,7 +203,7 @@ public final class OcpmDiscovery {
                 if (i < objectTrace.size() - 1) {
                     String nextActivity = objectTrace.get(i + 1).activity();
                     followsEdges.computeIfAbsent(activity, k -> new HashMap<>())
-                        .merge(nextActivity, 1L, Long::addExact);
+                        .merge(nextActivity, 1L, (a, b) -> a + b);
                 }
             }
         }

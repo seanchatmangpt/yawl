@@ -22,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yawlfoundation.yawl.engine.A2ACaseMonitor;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
-import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEventQueue;
 import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.observability.BottleneckDetector;
 
@@ -217,7 +216,7 @@ public class ProcessMiningEventBridge {
                     report.traceCount,
                     report.conformance != null ? report.conformance.computeFitness() : 0.0,
                     0.0, // precision - requires net comparison
-                    report.performance.avgFlowTimeMs
+                    report.performance.avgFlowTimeMs()
                 );
                 activeSessions.put(meta.specificationId, updated);
             }
@@ -285,7 +284,7 @@ public class ProcessMiningEventBridge {
                     String[] activities = variant.getKey().split(",");
                     for (String activity : activities) {
                         aggregatedTaskMetrics.computeIfAbsent(activity, k -> new TaskMetrics())
-                            .recordExecution(report.performance.avgFlowTimeMs, 0);
+                            .recordExecution(report.performance.avgFlowTimeMs(), 0);
                     }
                 }
             } catch (Exception e) {
@@ -316,7 +315,7 @@ public class ProcessMiningEventBridge {
      */
     private void updateBottleneckMetrics(CaseMetadata caseMetadata, ProcessMiningFacade.ProcessMiningReport report) {
         // For each activity in variants, record execution
-        long avgFlowMs = (long) report.performance.avgFlowTimeMs;
+        long avgFlowMs = (long) report.performance.avgFlowTimeMs();
 
         for (String variant : report.variantFrequencies.keySet()) {
             String[] activities = variant.split(",");

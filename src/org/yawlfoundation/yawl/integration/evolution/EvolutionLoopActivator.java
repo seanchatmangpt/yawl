@@ -129,27 +129,27 @@ public class EvolutionLoopActivator {
         // Register bottleneck listener
         bottleneckDetector.onBottleneckDetected(alert -> {
             LoopState state = loopStates.computeIfAbsent(
-                alert.specId,
+                alert.specId(),
                 id -> new LoopState(id)
             );
-            state.lastBottleneckTask = alert.taskName;
-            state.lastBottleneckTime = alert.detectedAt;
+            state.lastBottleneckTask = alert.taskName();
+            state.lastBottleneckTime = alert.detectedAt();
 
-            _logger.debug("Bottleneck detected: {} in {}", alert.taskName, alert.specId);
+            _logger.debug("Bottleneck detected: {} in {}", alert.taskName(), alert.specId());
             evaluateEvolutionConditions(state);
         });
 
         // Register conformance listener
         conformanceMonitor.onConformanceUpdate(alert -> {
             LoopState state = loopStates.computeIfAbsent(
-                alert.specificationId,
+                alert.specificationId(),
                 id -> new LoopState(id)
             );
-            state.lastConformance = alert.fitness;
-            state.lastConformanceCheckTime = alert.detectedAt;
+            state.lastConformance = alert.fitness();
+            state.lastConformanceCheckTime = alert.detectedAt();
 
             _logger.debug("Conformance update: {} fitness={:.3f} in {}",
-                alert.level, alert.fitness, alert.specificationId);
+                alert.level(), alert.fitness(), alert.specificationId());
             evaluateEvolutionConditions(state);
         });
 
