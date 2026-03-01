@@ -97,6 +97,9 @@
                     <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                     <forkCount>1</forkCount>
                     <reuseForks>true</reuseForks>
+                    <systemPropertyVariables>
+                        <project.basedir>${project.basedir}</project.basedir>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
