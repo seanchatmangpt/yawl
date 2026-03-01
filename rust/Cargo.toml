@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "yawl-native",
     "rust4pm",
+    "../data-modelling-ffi",
 ]
 
 [workspace.dependencies]

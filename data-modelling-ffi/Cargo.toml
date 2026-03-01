@@ -1,0 +1,18 @@
+[package]
+name = "data-modelling-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+data-modelling-sdk = "2.3.0"
+serde_json = "1"
+
+[features]
+openapi = []
+odps-validation = []
+
+[patch.crates-io]
+data-modelling-sdk = { path = "stubs/data-modelling-sdk" }
