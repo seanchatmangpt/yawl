@@ -189,7 +189,11 @@ endif()
 # Shared Library Build
 # ============================================================================
 
-# Only include main source files, not tests or benchmarks
+# Only include main source files, not tests or benchmarks.
+# NOTE: qlever_ffi_types.c has been consolidated into qlever_ffi.cpp
+# to eliminate cross-compilation-unit linkage complexity between C and C++.
+# The media type string mapping functions are now compiled as part of the
+# C++ translation unit with proper extern "C" linkage.
 set(FFI_SOURCES
     qlever_ffi.cpp
 )

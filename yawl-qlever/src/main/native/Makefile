@@ -1,3 +1,6 @@
+# Convenience wrapper around CMake. Source of truth: CMakeLists.txt
+# Do not add compile rules here — all build logic belongs in CMakeLists.txt
+#
 # QLever FFI Makefile
 # ===================
 #

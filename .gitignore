@@ -249,3 +249,10 @@ META-INF/
 .claude/context/receipts/
 .claude/worktrees/
 receipts/
+
+# =============================================================================
+# QLever native build artifacts
+# =============================================================================
+yawl-qlever/src/main/native/build/
+yawl-qlever/src/main/native/build_test/
+generated-sources/
