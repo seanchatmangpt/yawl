@@ -252,3 +252,11 @@ receipts/
 
 # YAWL dx.sh runtime state
 .yawl/
+
+# =============================================================================
+# Erlang/OTP runtime installation (installed by session-start.sh hook)
+# =============================================================================
+.erlmcp/
+rebar3.crashdump
+*/rebar3.crashdump
+*.beam
