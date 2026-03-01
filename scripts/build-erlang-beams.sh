@@ -36,13 +36,26 @@ if [ -z "${REBAR3_BIN}" ]; then
     exit 0
 fi
 
-echo "INFO: Compiling Erlang sources with rebar3..."
+echo "INFO: Compiling Erlang sources..."
 cd "${ERLANG_MODULE_DIR}"
-"${REBAR3_BIN}" compile
 
 EBIN_SRC="${ERLANG_MODULE_DIR}/_build/default/lib/yawl/ebin"
-if [ ! -d "${EBIN_SRC}" ]; then
-    echo "ERROR: rebar3 compiled but no ebin at ${EBIN_SRC}" >&2
+
+# Try rebar3 first; fall back to erlc if rebar3 is incompatible with this OTP version
+if "${REBAR3_BIN}" compile 2>&1; then
+    echo "INFO: rebar3 compilation succeeded"
+else
+    echo "WARNING: rebar3 failed (likely OTP version mismatch) — falling back to erlc" >&2
+    mkdir -p "${EBIN_SRC}"
+    "${ERL_BIN%/erl}/erlc" \
+        +debug_info \
+        -o "${EBIN_SRC}" \
+        src/main/erlang/*.erl
+    echo "INFO: erlc compilation succeeded"
+fi
+
+if [ ! -d "${EBIN_SRC}" ] || [ -z "$(ls -A "${EBIN_SRC}" 2>/dev/null)" ]; then
+    echo "ERROR: No .beam files produced at ${EBIN_SRC}" >&2
     exit 1
 fi
 
