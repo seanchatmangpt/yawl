@@ -1,0 +1,8 @@
+language = "C"
+include_guard = "DATA_MODELLING_FFI_H"
+tab_width = 2
+documentation = true
+after_includes = """
+#include <stddef.h>
+#include <stdint.h>
+"""

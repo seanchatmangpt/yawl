@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://yawl.test/orders"
+             id="orders-process">
+  <process id="order-fulfillment" name="Order Fulfillment" isExecutable="true">
+    <startEvent id="start" name="Order Received"/>
+    <sequenceFlow id="sf1" sourceRef="start" targetRef="validate"/>
+    <serviceTask id="validate" name="Validate Order"/>
+    <sequenceFlow id="sf2" sourceRef="validate" targetRef="end"/>
+    <endEvent id="end" name="Order Fulfilled"/>
+  </process>
+</definitions>

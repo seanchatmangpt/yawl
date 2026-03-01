@@ -1,0 +1,17 @@
+# ODPS — Open Data Product Specification
+apiVersion: "v2"
+kind: DataProduct
+metadata:
+  name: orders-product
+  owner: order-team
+  tags: [orders, commerce]
+spec:
+  tables:
+    - name: orders
+      columns:
+        - name: order_id
+          dataType: integer
+          isNullable: false
+        - name: status
+          dataType: varchar
+          isNullable: false

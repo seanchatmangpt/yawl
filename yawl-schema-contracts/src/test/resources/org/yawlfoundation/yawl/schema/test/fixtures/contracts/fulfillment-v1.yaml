@@ -1,0 +1,10 @@
+# ODCS contract for order processing task output
+name: fulfillment-workspace
+description: Order fulfillment output contract
+tables:
+  - name: fulfillment
+    description: Fulfillment output fields
+    columns:
+      - fulfillment_id
+      - order_id
+      - shipped

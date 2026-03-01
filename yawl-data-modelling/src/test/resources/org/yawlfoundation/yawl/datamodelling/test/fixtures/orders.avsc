@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "Order",
+  "namespace": "com.yawl.orders",
+  "fields": [
+    {"name": "order_id",      "type": "int"},
+    {"name": "customer_id",   "type": "int"},
+    {"name": "total_amount",  "type": "double"},
+    {"name": "status",        "type": "string"},
+    {"name": "created_at",    "type": "string"}
+  ]
+}

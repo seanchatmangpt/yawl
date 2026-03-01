@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             namespace="http://yawl.test/decisions"
+             name="OrderDecisions"
+             id="order-decisions">
+  <decision id="order-routing" name="Order Routing">
+    <decisionTable id="dt1">
+      <input id="i1" label="Order Total">
+        <inputExpression id="ie1" typeRef="number">
+          <text>total_amount</text>
+        </inputExpression>
+      </input>
+      <output id="o1" label="Route" typeRef="string"/>
+      <rule id="r1">
+        <inputEntry id="ie1r1"><text>&gt; 1000</text></inputEntry>
+        <outputEntry id="oe1r1"><text>"priority"</text></outputEntry>
+      </rule>
+      <rule id="r2">
+        <inputEntry id="ie1r2"><text>&lt;= 1000</text></inputEntry>
+        <outputEntry id="oe1r2"><text>"standard"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

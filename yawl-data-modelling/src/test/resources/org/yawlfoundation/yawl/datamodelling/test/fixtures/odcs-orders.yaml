@@ -1,0 +1,37 @@
+# ODCS v2 — Open Data Contract Standard
+dataset: orders
+version: "1.0.0"
+description: "Order management tables"
+tables:
+  - name: orders
+    columns:
+      - name: order_id
+        type: integer
+        primaryKey: true
+        nullable: false
+      - name: customer_id
+        type: integer
+        nullable: false
+      - name: total_amount
+        type: decimal
+        nullable: false
+      - name: status
+        type: varchar
+        nullable: false
+      - name: created_at
+        type: timestamp
+        nullable: false
+  - name: order_items
+    columns:
+      - name: item_id
+        type: integer
+        primaryKey: true
+      - name: order_id
+        type: integer
+        nullable: false
+      - name: product_id
+        type: integer
+      - name: quantity
+        type: integer
+      - name: unit_price
+        type: decimal

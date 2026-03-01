@@ -1,0 +1,22 @@
+# CADS — Context-Aware Data Schema
+version: "1.0"
+entities:
+  - name: Order
+    infrastructure: relational
+    owner: order-team
+    tags: [orders, commerce]
+    attributes:
+      - name: order_id
+        type: integer
+        key: true
+      - name: customer_id
+        type: integer
+      - name: total_amount
+        type: decimal
+      - name: status
+        type: string
+relationships:
+  - from: Order
+    to: Customer
+    type: belongsTo
+    owner: order-team

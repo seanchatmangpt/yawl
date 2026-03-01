@@ -38,6 +38,7 @@ import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.elements.state.YInternalCondition;
 import org.yawlfoundation.yawl.engine.announcement.YAnnouncement;
 import org.yawlfoundation.yawl.engine.announcement.YEngineEvent;
+import org.yawlfoundation.yawl.engine.spi.TaskSchemaInterceptor;
 import org.yawlfoundation.yawl.engine.time.YTimer;
 import org.yawlfoundation.yawl.engine.time.YTimerVariable;
 import org.yawlfoundation.yawl.engine.time.YWorkItemTimer;
@@ -148,6 +149,9 @@ public class YNetRunner {
     private Map<String, String> _timerStates;
     private ExecutionStatus _executionStatus;
     private Set<YAnnouncement> _announcements;
+
+    /** Schema validation interceptors, called synchronously at task boundaries. */
+    private final List<TaskSchemaInterceptor> _schemaInterceptors = new CopyOnWriteArrayList<>();
 
     /**
      * P2 HIGH - Lock Contention Optimization: ReentrantReadWriteLock replacing
@@ -379,6 +383,17 @@ public class YNetRunner {
     public long getStartTime() { return _startTime; }
 
     public void setStartTime(long time) { _startTime = time ; }
+
+
+    /**
+     * Registers a schema validation interceptor to be called at task boundaries.
+     * Interceptors are called in registration order.
+     *
+     * @param interceptor the interceptor to register; must be thread-safe
+     */
+    public void registerSchemaInterceptor(TaskSchemaInterceptor interceptor) {
+        _schemaInterceptors.add(interceptor);
+    }
 
 
     /************************************************/
@@ -732,6 +747,8 @@ public class YNetRunner {
             YAtomicTask task = (YAtomicTask) _net.getNetElement(taskID);
             boolean success = completeTask(pmgr, workItem, task, caseID, outputData);
 
+            _schemaInterceptors.forEach(i -> i.afterTaskCompletion(workItem, outputData));
+
             // notify exception checkpoint to service if available
             if (_announcer.hasInterfaceXListeners()) {
                 _announcer.announceCheckWorkItemConstraints(
@@ -1020,6 +1037,8 @@ public class YNetRunner {
         YWorkItem item = createEnabledWorkItem(pmgr, _caseIDForNet, task);
         if (groupID != null) item.setDeferredChoiceGroupID(groupID);
         if (pmgr != null) pmgr.updateObject(this);
+
+        _schemaInterceptors.forEach(i -> i.beforeTaskExecution(item));
 
         YAWLServiceGateway wsgw = (YAWLServiceGateway) task.getDecompositionPrototype();
         YAnnouncement announcement = _announcer.createAnnouncement(wsgw.getYawlService(),
