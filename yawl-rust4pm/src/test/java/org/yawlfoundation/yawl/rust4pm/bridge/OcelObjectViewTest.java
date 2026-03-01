@@ -130,13 +130,11 @@ class OcelObjectViewTest {
         long stride = rust4pm_h.OCEL_OBJECT_C_LAYOUT.byteSize();
         MemorySegment arrayBase = sharedArena.allocate(stride * 3);
 
-        try (Arena setupArena = Arena.ofConfined()) {
-            MemorySegment id1 = setupArena.allocateFrom("obj-100", StandardCharsets.UTF_8);
-            MemorySegment type1 = setupArena.allocateFrom("Item", StandardCharsets.UTF_8);
+        MemorySegment id1 = sharedArena.allocateFrom("obj-100", StandardCharsets.UTF_8);
+        MemorySegment type1 = sharedArena.allocateFrom("Item", StandardCharsets.UTF_8);
 
-            rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, 1 * stride, id1);
-            rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, 1 * stride, type1);
-        }
+        rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, 1 * stride, id1);
+        rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, 1 * stride, type1);
 
         OcelObjectView view = new OcelObjectView(arrayBase, 3);
         OcelObject object = view.get(1);
@@ -153,13 +151,11 @@ class OcelObjectViewTest {
 
         MemorySegment objectSeg = sharedArena.allocate(rust4pm_h.OCEL_OBJECT_C_LAYOUT);
 
-        try (Arena setupArena = Arena.ofConfined()) {
-            MemorySegment idPtr = setupArena.allocateFrom("empty-type-obj", StandardCharsets.UTF_8);
-            MemorySegment typePtr = setupArena.allocateFrom("", StandardCharsets.UTF_8);
+        MemorySegment idPtr = sharedArena.allocateFrom("empty-type-obj", StandardCharsets.UTF_8);
+        MemorySegment typePtr = sharedArena.allocateFrom("", StandardCharsets.UTF_8);
 
-            rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(objectSeg, 0L, idPtr);
-            rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(objectSeg, 0L, typePtr);
-        }
+        rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(objectSeg, 0L, idPtr);
+        rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(objectSeg, 0L, typePtr);
 
         OcelObjectView view = new OcelObjectView(objectSeg, 1);
 
@@ -223,13 +219,11 @@ class OcelObjectViewTest {
 
         MemorySegment testSeg = sharedArena.allocate(rust4pm_h.OCEL_OBJECT_C_LAYOUT);
 
-        try (Arena setupArena = Arena.ofConfined()) {
-            MemorySegment idPtr = setupArena.allocateFrom("stream-obj-1", StandardCharsets.UTF_8);
-            MemorySegment typePtr = setupArena.allocateFrom("StreamType", StandardCharsets.UTF_8);
+        MemorySegment idPtr = sharedArena.allocateFrom("stream-obj-1", StandardCharsets.UTF_8);
+        MemorySegment typePtr = sharedArena.allocateFrom("StreamType", StandardCharsets.UTF_8);
 
-            rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(testSeg, 0L, idPtr);
-            rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(testSeg, 0L, typePtr);
-        }
+        rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(testSeg, 0L, idPtr);
+        rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(testSeg, 0L, typePtr);
 
         OcelObjectView view = new OcelObjectView(testSeg, 1);
 
@@ -248,15 +242,13 @@ class OcelObjectViewTest {
         long stride = rust4pm_h.OCEL_OBJECT_C_LAYOUT.byteSize();
         MemorySegment arrayBase = sharedArena.allocate(stride * 5);
 
-        try (Arena setupArena = Arena.ofConfined()) {
-            String[] types = {"Order", "Item", "Customer", "Invoice", "Payment"};
-            for (int i = 0; i < 5; i++) {
-                MemorySegment idPtr = setupArena.allocateFrom("obj-" + i, StandardCharsets.UTF_8);
-                MemorySegment typePtr = setupArena.allocateFrom(types[i], StandardCharsets.UTF_8);
+        String[] types = {"Order", "Item", "Customer", "Invoice", "Payment"};
+        for (int i = 0; i < 5; i++) {
+            MemorySegment idPtr = sharedArena.allocateFrom("obj-" + i, StandardCharsets.UTF_8);
+            MemorySegment typePtr = sharedArena.allocateFrom(types[i], StandardCharsets.UTF_8);
 
-                rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, (long) i * stride, idPtr);
-                rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, (long) i * stride, typePtr);
-            }
+            rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, (long) i * stride, idPtr);
+            rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, (long) i * stride, typePtr);
         }
 
         OcelObjectView view = new OcelObjectView(arrayBase, 5);
@@ -276,14 +268,12 @@ class OcelObjectViewTest {
         long stride = rust4pm_h.OCEL_OBJECT_C_LAYOUT.byteSize();
         MemorySegment arrayBase = sharedArena.allocate(stride * 10);
 
-        try (Arena setupArena = Arena.ofConfined()) {
-            for (int i = 0; i < 10; i++) {
-                MemorySegment idPtr = setupArena.allocateFrom("lazy-obj-" + i, StandardCharsets.UTF_8);
-                MemorySegment typePtr = setupArena.allocateFrom("LazyType", StandardCharsets.UTF_8);
+        for (int i = 0; i < 10; i++) {
+            MemorySegment idPtr = sharedArena.allocateFrom("lazy-obj-" + i, StandardCharsets.UTF_8);
+            MemorySegment typePtr = sharedArena.allocateFrom("LazyType", StandardCharsets.UTF_8);
 
-                rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, (long) i * stride, idPtr);
-                rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, (long) i * stride, typePtr);
-            }
+            rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, (long) i * stride, idPtr);
+            rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, (long) i * stride, typePtr);
         }
 
         OcelObjectView view = new OcelObjectView(arrayBase, 10);
@@ -303,15 +293,13 @@ class OcelObjectViewTest {
         long stride = rust4pm_h.OCEL_OBJECT_C_LAYOUT.byteSize();
         MemorySegment arrayBase = sharedArena.allocate(stride * 3);
 
-        try (Arena setupArena = Arena.ofConfined()) {
-            String[] types = {"Purchase", "Delivery", "Return"};
-            for (int i = 0; i < 3; i++) {
-                MemorySegment idPtr = setupArena.allocateFrom("equiv-obj-" + i, StandardCharsets.UTF_8);
-                MemorySegment typePtr = setupArena.allocateFrom(types[i], StandardCharsets.UTF_8);
+        String[] types = {"Purchase", "Delivery", "Return"};
+        for (int i = 0; i < 3; i++) {
+            MemorySegment idPtr = sharedArena.allocateFrom("equiv-obj-" + i, StandardCharsets.UTF_8);
+            MemorySegment typePtr = sharedArena.allocateFrom(types[i], StandardCharsets.UTF_8);
 
-                rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, (long) i * stride, idPtr);
-                rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, (long) i * stride, typePtr);
-            }
+            rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, (long) i * stride, idPtr);
+            rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, (long) i * stride, typePtr);
         }
 
         OcelObjectView view = new OcelObjectView(arrayBase, 3);
@@ -339,14 +327,12 @@ class OcelObjectViewTest {
         long stride = rust4pm_h.OCEL_OBJECT_C_LAYOUT.byteSize();
         MemorySegment arrayBase = sharedArena.allocate(stride * objectCount);
 
-        try (Arena setupArena = Arena.ofConfined()) {
             for (int i = 0; i < objectCount; i++) {
-                MemorySegment idPtr = setupArena.allocateFrom("many-obj-" + i, StandardCharsets.UTF_8);
-                MemorySegment typePtr = setupArena.allocateFrom("ManyType", StandardCharsets.UTF_8);
+                MemorySegment idPtr = sharedArena.allocateFrom("many-obj-" + i, StandardCharsets.UTF_8);
+                MemorySegment typePtr = sharedArena.allocateFrom("ManyType", StandardCharsets.UTF_8);
 
                 rust4pm_h.OCEL_OBJECT_C_OBJECT_ID.set(arrayBase, (long) i * stride, idPtr);
                 rust4pm_h.OCEL_OBJECT_C_OBJECT_TYPE.set(arrayBase, (long) i * stride, typePtr);
-            }
         }
 
         OcelObjectView view = new OcelObjectView(arrayBase, objectCount);

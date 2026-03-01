@@ -575,11 +575,11 @@ class ProcessMiningEngineTest {
         }
     }
 
-    private static boolean libraryPresent() {
+    public static boolean libraryPresent() {
         return rust4pm_h.LIBRARY.isPresent();
     }
 
-    private static boolean libraryAbsent() {
+    public static boolean libraryAbsent() {
         return rust4pm_h.LIBRARY.isEmpty();
     }
 }
