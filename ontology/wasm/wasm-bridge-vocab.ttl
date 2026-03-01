@@ -1,0 +1,240 @@
+# YAWL WASM Bridge Vocabulary
+# Defines RDF vocabulary for GraalJS+WASM bridge code generation.
+#
+# The WASM bridge pattern provides correctness-by-construction for Rust/WASM↔Java:
+#   L0: Rust compiled to data_modelling_wasm_bg.wasm
+#   L1: wasm-bindgen ES module glue (data_modelling_wasm.js)
+#   L2: GraalJS+WASM polyglot context (JavaScriptExecutionEngine)
+#   L3: Typed Java bridge (DataModellingBridge) — generated from this spec
+#
+# Generation: ggen-data-modelling.toml → wasm-bridge.tera → DataModellingBridge.java
+# Pattern compliance: H-Guards (no TODO/mock/stub/empty/fallback/lie/silent)
+#                     Q-Invariants (real impl or throw UnsupportedOperationException)
+
+@prefix owl:         <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:        <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:         <http://www.w3.org/2001/XMLSchema#> .
+@prefix wasm:        <http://yawlfoundation.org/yawl/wasm-bridge#> .
+
+<http://yawlfoundation.org/yawl/wasm-bridge> a owl:Ontology ;
+    rdfs:label "YAWL WASM Bridge Vocabulary" ;
+    rdfs:comment "RDF vocabulary for GraalJS+WASM bridge code generation (data-modelling-sdk)" ;
+    owl:versionInfo "1.0.0" .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Classes
+# ─────────────────────────────────────────────────────────────────────────────
+
+wasm:WasmBridge a owl:Class ;
+    rdfs:label "WasmBridge" ;
+    rdfs:comment "Root descriptor for a GraalJS+WASM polyglot bridge to a Rust library." .
+
+wasm:WasmOperation a owl:Class ;
+    rdfs:label "WasmOperation" ;
+    rdfs:comment "A single operation exported by the WASM module and exposed as a Java method." .
+
+wasm:WasmParam a owl:Class ;
+    rdfs:label "WasmParam" ;
+    rdfs:comment "A typed parameter for a WasmOperation." .
+
+wasm:WasmCategory a owl:Class ;
+    rdfs:label "WasmCategory" ;
+    rdfs:comment "Logical grouping of related WASM operations (used for Javadoc section comments)." .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WasmBridge properties
+# ─────────────────────────────────────────────────────────────────────────────
+
+wasm:bridgeName a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "bridgeName" ;
+    rdfs:comment "Simple name of the generated bridge class (e.g. 'DataModellingBridge')." .
+
+wasm:packageName a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "packageName" ;
+    rdfs:comment "Java package for the generated bridge class." .
+
+wasm:wasmResource a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "wasmResource" ;
+    rdfs:comment "Classpath resource path to the compiled .wasm binary." .
+
+wasm:glueResource a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "glueResource" ;
+    rdfs:comment "Classpath resource path to the wasm-bindgen ES module JS glue." .
+
+wasm:sdkVersion a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "sdkVersion" ;
+    rdfs:comment "Version of the upstream Rust SDK compiled into the WASM binary." .
+
+wasm:sdkSource a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "sdkSource" ;
+    rdfs:comment "Source repository URL for the upstream SDK." .
+
+wasm:sdkLicense a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "sdkLicense" ;
+    rdfs:comment "SPDX license identifier for the upstream SDK." .
+
+wasm:exceptionClass a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "exceptionClass" ;
+    rdfs:comment "Simple name of the domain exception class (e.g. 'DataModellingException')." .
+
+wasm:bridgeDescription a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "bridgeDescription" ;
+    rdfs:comment "Human-readable description for the Javadoc class comment." .
+
+wasm:hasOperation a owl:ObjectProperty ;
+    rdfs:domain wasm:WasmBridge ;
+    rdfs:range  wasm:WasmOperation ;
+    rdfs:label  "hasOperation" ;
+    rdfs:comment "Links a bridge to its exported WASM operations." .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WasmOperation properties
+# ─────────────────────────────────────────────────────────────────────────────
+
+wasm:javaName a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "javaName" ;
+    rdfs:comment "Java method name in the generated bridge class (camelCase)." .
+
+wasm:wasmFunction a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "wasmFunction" ;
+    rdfs:comment "WASM export name (snake_case) called via GraalJS eval()." .
+
+wasm:category a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "category" ;
+    rdfs:comment "Logical category for Javadoc section grouping (e.g. 'Schema import')." .
+
+wasm:sortOrder a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:integer ;
+    rdfs:label  "sortOrder" ;
+    rdfs:comment "Sort order within a category (lower = earlier in generated file)." .
+
+wasm:opDescription a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "opDescription" ;
+    rdfs:comment "Javadoc summary for the operation." .
+
+wasm:returnType a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "returnType" ;
+    rdfs:comment "Java return type: 'String' or 'void'." .
+
+wasm:returnDoc a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "returnDoc" ;
+    rdfs:comment "@return Javadoc text." .
+
+wasm:throwsDoc a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "throwsDoc" ;
+    rdfs:comment "@throws Javadoc text for DataModellingException." .
+
+# Implementation strategy enum:
+#   "wasm-call"    — delegates to call(wasmFunction, args...)
+#   "unsupported"  — throws UnsupportedOperationException (SDK not yet exposed)
+#   "query-builder" — delegates to DataModellingQueryBuilder (pure Java, no WASM)
+#   "llm-check"    — special: catches exception and returns "false"
+wasm:implStrategy a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "implStrategy" ;
+    rdfs:comment "Code generation strategy: wasm-call | unsupported | query-builder | llm-check." .
+
+wasm:unsupportedReason a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "unsupportedReason" ;
+    rdfs:comment "Reason text for UnsupportedOperationException (implStrategy=unsupported)." .
+
+wasm:queryBuilderExpr a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "queryBuilderExpr" ;
+    rdfs:comment "Java expression body for query-builder operations." .
+
+wasm:hasParam a owl:ObjectProperty ;
+    rdfs:domain wasm:WasmOperation ;
+    rdfs:range  wasm:WasmParam ;
+    rdfs:label  "hasParam" ;
+    rdfs:comment "Parameters of the WASM operation (ordered by wasm:paramOrder)." .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WasmParam properties
+# ─────────────────────────────────────────────────────────────────────────────
+
+wasm:paramName a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmParam ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "paramName" ;
+    rdfs:comment "Parameter name (camelCase)." .
+
+wasm:paramType a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmParam ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "paramType" ;
+    rdfs:comment "Java parameter type (e.g. 'String', 'int', '@Nullable String', 'String[]', 'LlmConfig')." .
+
+wasm:paramOrder a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmParam ;
+    rdfs:range  xsd:integer ;
+    rdfs:label  "paramOrder" ;
+    rdfs:comment "Zero-based parameter position." .
+
+wasm:paramDoc a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmParam ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "paramDoc" ;
+    rdfs:comment "@param Javadoc text." .
+
+# Conversion applied when passing this param to call():
+#   "string"           — pass as-is (String)
+#   "int-to-string"    — String.valueOf(param)
+#   "nullable-or-empty" — param != null ? param : ""
+#   "array-to-json"    — stringArrayToJson(param)
+#   "llm-model"        — config.getModel()
+#   "llm-temperature"  — String.valueOf(config.getTemperature())
+#   "llm-max-tokens"   — String.valueOf(config.getMaxTokens())
+#   "llm-base-url"     — config.getBaseUrl()
+#   "llm-timeout"      — String.valueOf(config.getTimeoutSeconds())
+#   "llm-mode"         — config.getMode().getValue()
+#   "inference-config" — (deferred: UnsupportedOperationException)
+wasm:paramConversion a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmParam ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "paramConversion" ;
+    rdfs:comment "Conversion applied when passing the parameter to the call() dispatcher." .
+
+wasm:paramRequired a owl:DatatypeProperty ;
+    rdfs:domain wasm:WasmParam ;
+    rdfs:range  xsd:boolean ;
+    rdfs:label  "paramRequired" ;
+    rdfs:comment "True if the parameter must not be null (generates null-check in constructor javadoc)." .
