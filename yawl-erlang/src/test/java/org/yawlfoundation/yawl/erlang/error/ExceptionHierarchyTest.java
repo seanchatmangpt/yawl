@@ -61,7 +61,7 @@ class ExceptionHierarchyTest {
     void erlangException_extendsCheckedException() {
         ErlangException ex = new ErlangException("test");
         assertInstanceOf(Exception.class, ex);
-        assertFalse(ex instanceof RuntimeException,
+        assertFalse(RuntimeException.class.isAssignableFrom(ErlangException.class),
             "ErlangException must be checked (not RuntimeException)");
     }
 
