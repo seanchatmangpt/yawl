@@ -112,6 +112,45 @@ public final class QLeverSparqlEngine implements SparqlEngine {
         }
     }
 
+    /**
+     * Execute a SPARQL 1.1 Update (INSERT DATA, DELETE DATA, CLEAR, etc.) against QLever.
+     *
+     * <p>QLever supports SPARQL 1.1 Update via {@code POST /api/update} with
+     * {@code Content-Type: application/sparql-update}. The expected success response
+     * is HTTP 200 or 204.</p>
+     *
+     * @param updateQuery a valid SPARQL 1.1 Update string
+     * @throws SparqlEngineException on failure or when the endpoint is unreachable
+     */
+    public void sparqlUpdate(String updateQuery) throws SparqlEngineException {
+        Objects.requireNonNull(updateQuery, "updateQuery must not be null");
+        if (!isAvailable()) {
+            throw new SparqlEngineUnavailableException(engineType(), baseUrl);
+        }
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/update"))
+                .header("Content-Type", "application/sparql-update")
+                .POST(HttpRequest.BodyPublishers.ofString(updateQuery, StandardCharsets.UTF_8))
+                .timeout(DEFAULT_TIMEOUT)
+                .build();
+        try {
+            HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() != 200 && resp.statusCode() != 204) {
+                throw new SparqlEngineException(
+                        "QLever UPDATE failed with HTTP " + resp.statusCode()
+                        + ": " + resp.body());
+            }
+        } catch (ConnectException e) {
+            throw new SparqlEngineUnavailableException(
+                    "QLever endpoint unreachable at " + baseUrl, e);
+        } catch (IOException e) {
+            throw new SparqlEngineException("QLever UPDATE I/O error: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SparqlEngineException("QLever UPDATE interrupted", e);
+        }
+    }
+
     @Override
     public boolean isAvailable() {
         try {
