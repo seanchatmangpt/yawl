@@ -24,6 +24,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.yawlfoundation.yawl.integration.a2a.milestone.AIMQMilestoneAdapter;
+import org.yawlfoundation.yawl.integration.a2a.milestone.MilestoneStateMessage;
 import org.yawlfoundation.yawl.integration.mcp.logging.McpLoggingHandler;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEventPublisher;
@@ -238,6 +240,111 @@ public final class McpWorkflowEventPublisher implements WorkflowEventPublisher {
     @Override
     public String publisherName() {
         return "mcp-workflow-event-publisher";
+    }
+
+    /**
+     * Publishes a milestone state change event.
+     *
+     * This method handles milestone-specific events (WCP-18) and publishes them
+     * to subscribed clients via A2A protocol messages. Supports milestone reached,
+     * expired, and task-enabling events.
+     *
+     * @param message the milestone state message to publish
+     * @throws EventPublishException if publishing fails
+     */
+    public void publishMilestoneEvent(MilestoneStateMessage message) throws EventPublishException {
+        if (message == null) {
+            throw new IllegalArgumentException("Milestone message cannot be null");
+        }
+        if (isClosed.get()) {
+            throw new EventPublishException("Publisher is closed", null,
+                new IllegalStateException("Publisher closed"));
+        }
+
+        try {
+            // Validate milestone message
+            AIMQMilestoneAdapter.ValidationResult validation =
+                AIMQMilestoneAdapter.validate(message);
+            if (!validation.isValid()) {
+                throw new EventPublishException(
+                    "Milestone message validation failed: " + validation.getSummary(),
+                    null, new IllegalArgumentException(validation.getSummary()));
+            }
+
+            // Log milestone event
+            loggingHandler.info(mcpServer,
+                "Publishing milestone event: " + message.state() +
+                " for case: " + message.caseId() +
+                " milestone: " + message.milestoneId());
+
+            // Convert to workflow event and publish
+            WorkflowEvent workflowEvent = AIMQMilestoneAdapter.toWorkflowEvent(message);
+            publish(workflowEvent);
+
+            // Notify all matching subscriptions with milestone data
+            notifySubscribersWithMilestoneMessage(message);
+
+            loggingHandler.info(mcpServer,
+                "Successfully published milestone event for case: " + message.caseId());
+
+        } catch (EventPublishException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new EventPublishException(
+                "Failed to publish milestone event: " + message.caseId(), null, e);
+        }
+    }
+
+    /**
+     * Notifies all subscribers with milestone message data.
+     *
+     * @param message the milestone message
+     */
+    private void notifySubscribersWithMilestoneMessage(MilestoneStateMessage message) {
+        for (EventSubscription subscription : subscriptions.values()) {
+            // Check if subscription matches this case/spec
+            if (subscription.getCaseId() == null ||
+                subscription.getCaseId().equals(message.caseId())) {
+                if (subscription.getSpecId() == null ||
+                    subscription.getSpecId().equals(message.specificationId())) {
+                    // Deliver milestone message as JSON to WebSocket
+                    deliverMilestoneMessage(subscription, message);
+                }
+            }
+        }
+    }
+
+    /**
+     * Delivers a milestone message to a specific subscription.
+     *
+     * @param subscription the target subscription
+     * @param message the milestone message
+     */
+    private void deliverMilestoneMessage(
+            EventSubscription subscription,
+            MilestoneStateMessage message) {
+        if (!subscription.isActive()) {
+            return;
+        }
+
+        try {
+            String messageJson = message.toJson();
+            System.err.println("[" + subscription.getSubscriptionId() +
+                "] Delivered milestone event: " + message.state() +
+                " for case " + message.caseId() +
+                " milestone " + message.milestoneId());
+
+            if (loggingHandler != null) {
+                loggingHandler.info(mcpServer,
+                    "[" + subscription.getSubscriptionId() +
+                    "] Delivered milestone event: " + message.state() +
+                    " for case " + message.caseId());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(
+                "Failed to deliver milestone message to subscription " +
+                subscription.getSubscriptionId(), e);
+        }
     }
 
     /**

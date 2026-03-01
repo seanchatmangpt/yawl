@@ -17,6 +17,7 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 | [configure-autonomous-agents.md](configure-autonomous-agents.md) | Configure autonomous agent integration |
 | [java25-setup.md](java25-setup.md) | Set up Java 25 development environment |
 | [validate-spec.md](validate-spec.md) | Validate a YAWL specification against the schema |
+| [stateless-engine/migrate-to-stateless.md](stateless-engine/migrate-to-stateless.md) | Migrate from YEngine to YStatelessEngine for high-throughput workflows |
 
 ## Deployment
 
@@ -49,6 +50,7 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 
 | Guide | Task |
 |-------|------|
+| [migration/agents-and-teams.md](migration/agents-and-teams.md) | Adopt agents and teams for parallel multi-domain development |
 | [migration/v5-to-v6.md](migration/v5-to-v6.md) | Upgrade from YAWL 5.x to 6.x |
 | [migration/v6-guide.md](migration/v6-guide.md) | v6 migration guide |
 | [migration/v6-upgrade.md](migration/v6-upgrade.md) | v6 upgrade process |
@@ -91,6 +93,24 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 | Guide | Task |
 |-------|------|
 | [performance-testing.md](performance-testing.md) | Run performance benchmarks |
+
+## Observability
+
+| Guide | Task |
+|-------|------|
+| [observability/debug-with-observatory.md](observability/debug-with-observatory.md) | Debug YAWL using the Observatory system and fact analysis |
+
+## GODSPEED
+
+| Guide | Task |
+|-------|------|
+| [godspeed/run-the-full-circuit.md](godspeed/run-the-full-circuit.md) | Run complete GODSPEED validation circuit (Ψ→Λ→H→Q→Ω) |
+
+## H-Guards (Production Quality Standards)
+
+| Guide | Task |
+|-------|------|
+| [h-guards/fix-guard-violations.md](h-guards/fix-guard-violations.md) | Fix H-Guards violations (TODO, mock, stub, empty, fallback, lie, silent) |
 
 ## Development
 

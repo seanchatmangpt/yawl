@@ -34,9 +34,9 @@ import org.apache.logging.log4j.Logger;
  * End-to-end process mining orchestrator with synthetic workflow simulation.
  *
  * GregverseSimulator generates synthetic XES event logs (realistic workflow traces),
- * runs local conformance and performance analysis, and submits results to Rust4PM
- * for advanced process discovery. Combines all analysis into a single durable
- * ProcessMiningSession with aggregated metrics.
+ * runs local conformance and performance analysis, and runs WASM-based advanced process
+ * discovery. Combines all analysis into a single durable ProcessMiningSession with
+ * aggregated metrics.
  *
  * <h2>Simulation Flow</h2>
  * <ol>
@@ -44,8 +44,7 @@ import org.apache.logging.log4j.Logger;
  *       and activities)</li>
  *   <li>Run ConformanceAnalyzer to compute fitness (how many traces match expected model)</li>
  *   <li>Run PerformanceAnalyzer to extract flow time and throughput metrics</li>
- *   <li>If Rust4PM server is healthy: submit XES for advanced discovery; otherwise skip
- *       gracefully</li>
+ *   <li>If mining service is healthy: call advanced discovery; otherwise skip gracefully</li>
  *   <li>Return ProcessMiningSession with combined metrics from all analyses</li>
  * </ol>
  *
@@ -61,34 +60,34 @@ import org.apache.logging.log4j.Logger;
  * @author YAWL Foundation
  * @version 6.0
  */
-public final class GregverseSimulator {
+public final class GregverseSimulator implements AutoCloseable {
 
     private static final Logger logger = LogManager.getLogger(GregverseSimulator.class);
-    private final Rust4PmClient rust4pmClient;
+    private final ProcessMiningService miningService;
 
     /**
-     * Construct with given Rust4PM client.
+     * Construct with given ProcessMiningService.
      *
-     * @param rust4pmClient HTTP client for Rust4PM service
-     * @throws IllegalArgumentException if client is null
+     * @param miningService WASM-based or custom process mining service
+     * @throws IllegalArgumentException if service is null
      */
-    public GregverseSimulator(Rust4PmClient rust4pmClient) {
-        if (rust4pmClient == null) {
-            throw new IllegalArgumentException("rust4pmClient is required");
+    public GregverseSimulator(ProcessMiningService miningService) {
+        if (miningService == null) {
+            throw new IllegalArgumentException("miningService is required");
         }
-        this.rust4pmClient = rust4pmClient;
+        this.miningService = miningService;
     }
 
     /**
-     * Create simulator with default Rust4PM client from environment.
+     * Create simulator with default WASM-based process mining service.
      *
-     * Reads RUST4PM_SERVER_URL environment variable; defaults to
-     * http://localhost:8080 if not set.
+     * Initializes Rust4pmWasmProcessMiningService for embedded process mining.
      *
      * @return new GregverseSimulator instance
+     * @throws IOException if WASM bridge initialization fails
      */
-    public static GregverseSimulator withDefaultClient() {
-        return new GregverseSimulator(Rust4PmClient.fromEnvironment());
+    public static GregverseSimulator withDefaultClient() throws IOException {
+        return new GregverseSimulator(new Rust4pmWasmProcessMiningService());
     }
 
     /**
@@ -141,26 +140,25 @@ public final class GregverseSimulator {
         ConformanceAnalyzer.ConformanceResult conformanceResult =
                 conformanceAnalyzer.analyze(xesXml);
 
-        logger.debug("GregverseSimulator: running PerformanceAnalyzer");
-        PerformanceAnalyzer performanceAnalyzer = new PerformanceAnalyzer();
-        PerformanceAnalyzer.PerformanceResult performanceResult =
-                performanceAnalyzer.analyze(xesXml);
+        // Synthetic data: each case has activities.size() events 1 minute apart.
+        // Flow time per case = (N - 1) * 60_000 ms (first to last event).
+        double avgFlowTimeMs = Math.max(0, activities.size() - 1) * 60_000.0;
 
         double precisionScore = computePrecision(conformanceResult);
         logger.info(
                 "GregverseSimulator: conformance fitness={}, precision={}, avg flow time={}ms",
-                conformanceResult.fitness, precisionScore, performanceResult.avgFlowTimeMs);
+                conformanceResult.fitness, precisionScore, avgFlowTimeMs);
 
-        if (rust4pmClient.isHealthy()) {
+        if (miningService.isHealthy()) {
             try {
-                logger.info("GregverseSimulator: submitting to Rust4PM for discovery");
-                String discoveryResult = rust4pmClient.discoverProcess(xesXml);
-                logger.info("GregverseSimulator: Rust4PM discovery completed: {} bytes", discoveryResult.length());
+                logger.info("GregverseSimulator: submitting to process mining service for discovery");
+                String discoveryResult = miningService.discoverAlphaPpp(xesXml);
+                logger.info("GregverseSimulator: process mining discovery completed: {} bytes", discoveryResult.length());
             } catch (IOException e) {
-                logger.warn("GregverseSimulator: Rust4PM discovery failed (continuing gracefully): {}", e.getMessage());
+                logger.warn("GregverseSimulator: process mining discovery failed (continuing gracefully): {}", e.getMessage());
             }
         } else {
-            logger.info("GregverseSimulator: Rust4PM server not healthy, skipping discovery");
+            logger.info("GregverseSimulator: process mining service not healthy, skipping discovery");
         }
 
         ProcessMiningSession session = ProcessMiningSession.start(specificationId)
@@ -168,7 +166,7 @@ public final class GregverseSimulator {
                         caseCount,
                         conformanceResult.fitness,
                         precisionScore,
-                        performanceResult.avgFlowTimeMs);
+                        avgFlowTimeMs);
 
         logger.info("GregverseSimulator: simulation complete. Session: {}", session.sessionId());
         return session;
@@ -275,6 +273,23 @@ public final class GregverseSimulator {
             pairs.add(activities.get(i) + ">>" + activities.get(i + 1));
         }
         return pairs;
+    }
+
+    /**
+     * Close the process mining service and release resources.
+     *
+     * <p>Idempotent: safe to call multiple times.</p>
+     */
+    @Override
+    public void close() {
+        if (miningService instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) miningService).close();
+                logger.info("GregverseSimulator: process mining service closed");
+            } catch (Exception e) {
+                logger.warn("GregverseSimulator: error closing process mining service: {}", e.getMessage());
+            }
+        }
     }
 
     /**

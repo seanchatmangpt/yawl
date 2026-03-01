@@ -178,6 +178,8 @@
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>
+                        <!-- Exclude src/test/java tree from main compilation -->
+                        <exclude>test/java/**</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/elements/**</testInclude>

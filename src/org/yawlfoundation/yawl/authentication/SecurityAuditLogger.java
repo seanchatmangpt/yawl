@@ -216,6 +216,18 @@ public final class SecurityAuditLogger {
     }
 
     /**
+     * Logs a governance validation decision (approved or rejected).
+     *
+     * @param specificationId the workflow specification that was evaluated
+     * @param decision        "APPROVED" or "REJECTED"
+     * @param reason          human-readable reason for the decision
+     */
+    public static void recordGovernanceDecision(String specificationId, String decision,
+                                                String reason) {
+        log("GOVERNANCE_DECISION", "system", specificationId, decision, reason);
+    }
+
+    /**
      * Core audit logging method. Writes a structured, pipe-delimited log entry to the
      * dedicated security audit logger at INFO level.
      *

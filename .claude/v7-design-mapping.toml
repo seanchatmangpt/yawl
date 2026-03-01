@@ -1,0 +1,132 @@
+# YAWL v7 Design Gap-to-Agent Mapping
+# Configuration file for Phase 4: Z.AI-integrated self-play loop
+#
+# This file maps each v7 design gap to the responsible Z.AI agent(s)
+# that will propose solutions during the self-play loop.
+#
+# Format:
+#   [gaps]
+#   GAP_NAME = "AgentType" | ["AgentType1", "AgentType2", ...]
+#
+# Generated: 2026-02-28
+# Modified: Phase 4 (Z.AI Integration)
+
+[metadata]
+version = "1.0"
+description = "V7 gap-to-agent routing configuration for self-play design loop"
+total_gaps = 7
+primary_agents = 4
+backup_agents = 1
+
+# Gap-to-Agent Mapping
+# Each gap is assigned to one or more agents for PROPOSE phase
+# Agents may also be used in CHALLENGE phase for adversarial review
+
+[gaps]
+
+# Gap 1: Performance Optimization (GenAI agent)
+ASYNC_A2A_GOSSIP = "GenAIOptimizationAgent"
+
+# Gap 2: Coordination/Integration (ValueStream agent)
+MCP_SERVERS_SLACK_GITHUB_OBS = "ValueStreamCoordinationAgent"
+
+# Gap 3: Compliance/Audit (Compliance agent)
+DETERMINISTIC_REPLAY_BLAKE3 = "ComplianceGovernanceAgent"
+
+# Gap 4: Performance Optimization (GenAI agent)
+THREADLOCAL_YENGINE_PARALLELIZATION = "GenAIOptimizationAgent"
+
+# Gap 5: Compliance/Audit (Compliance agent)
+SHACL_COMPLIANCE_SHAPES = "ComplianceGovernanceAgent"
+
+# Gap 6: Strategic/Governance (Portfolio agent)
+BYZANTINE_CONSENSUS = "PortfolioGovernanceAgent"
+
+# Gap 7: Coordination/Integration (ValueStream agent)
+BURIED_ENGINES_MCP_A2A_WIRING = "ValueStreamCoordinationAgent"
+
+# Agent Configuration
+# Defines each agent's configuration: type, capability, endpoint, timeout
+
+[agents]
+
+[agents.GenAIOptimizationAgent]
+capability = "GEN_AI_OPTIMIZATION"
+responsible_gaps = [
+  "ASYNC_A2A_GOSSIP",
+  "THREADLOCAL_YENGINE_PARALLELIZATION"
+]
+proposal_timeout_seconds = 30
+challenge_timeout_seconds = 20
+description = "GenAI-powered optimization proposals using LLM reasoning and performance modeling"
+
+[agents.ValueStreamCoordinationAgent]
+capability = "VALUE_STREAM_COORDINATION"
+responsible_gaps = [
+  "MCP_SERVERS_SLACK_GITHUB_OBS",
+  "BURIED_ENGINES_MCP_A2A_WIRING"
+]
+proposal_timeout_seconds = 30
+challenge_timeout_seconds = 20
+description = "Value stream coordination agent for integration enablement and coordination"
+
+[agents.ComplianceGovernanceAgent]
+capability = "COMPLIANCE_GOVERNANCE"
+responsible_gaps = [
+  "DETERMINISTIC_REPLAY_BLAKE3",
+  "SHACL_COMPLIANCE_SHAPES"
+]
+proposal_timeout_seconds = 30
+challenge_timeout_seconds = 20
+description = "Compliance enforcement agent for regulatory and audit requirements"
+
+[agents.PortfolioGovernanceAgent]
+capability = "PORTFOLIO_GOVERNANCE"
+responsible_gaps = [
+  "BYZANTINE_CONSENSUS"
+]
+proposal_timeout_seconds = 30
+challenge_timeout_seconds = 20
+description = "Portfolio governance agent for strategic-level design decisions"
+
+[agents.ARTOrchestrationAgent]
+capability = "ART_ORCHESTRATION"
+responsible_gaps = []
+proposal_timeout_seconds = 30
+challenge_timeout_seconds = 20
+optional = true
+description = "Optional backup agent providing secondary validation and cross-ART coordination insights"
+
+# Fitness Configuration
+# Thresholds for acceptance and convergence
+
+[fitness]
+acceptance_threshold = 0.85
+max_rounds = 5
+convergence_check_rounds = 2
+convergence_tolerance = 0.02
+
+# Weighting for 4-axis fitness scoring
+
+[fitness.weights]
+completeness = 0.35
+consistency = 0.25
+compatibility = 0.25
+performance = 0.15
+
+# Self-Play Loop Configuration
+
+[selfplay]
+initial_round = 1
+max_rounds = 5
+round_proposal_limit = 4  # Max proposals per round to prevent explosion
+challenge_ratio = 0.6     # 60% of proposals get challenged
+
+# Output Configuration
+
+[output]
+design_spec_file = "YAWL_v7_DESIGN_SPEC.md"
+audit_log_file = "v7_design_receipt.json"
+round_metrics_file = "selfplay-round-metrics.json"
+include_agent_decisions = true
+include_fitness_history = true

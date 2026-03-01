@@ -1,0 +1,286 @@
+# TEMPLATE: Docker Compose for YAWL Stateless Engine
+# PURPOSE: Production-ready deployment with monitoring and persistence
+# CUSTOMIZATION: Update image versions, ports, resource limits
+# LINK: docs/DEPLOYMENT-GUIDE.md#docker-compose
+
+version: '3.8'
+
+services:
+  # Main YAWL Engine (Stateless)
+  yawl-engine:
+    image: yawl/yawl-engine:v6.0.0-jdk25
+    container_name: yawl-engine-primary
+    restart: unless-stopped
+    ports:
+      - "8080:8080"      # HTTP API
+      - "8443:8443"      # HTTPS API
+    environment:
+      # Core Configuration
+      YAWL_ENGINE_MODE: stateless
+      YAWL_WORKLET_SERVICE_ENABLED: "true"
+      YAWL_MCP_A2A_ENABLED: "true"
+
+      # Database Configuration
+      DB_DRIVER: org.postgresql.Driver
+      DB_URL: jdbc:postgresql://postgres:5432/yawl_db
+      DB_USER: yawl_user
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+      DB_POOL_SIZE: "20"
+      DB_CONNECTION_TIMEOUT: "30000"
+
+      # Authentication & Security
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-me}
+      JWT_EXPIRATION: "86400"  # 24 hours
+      CORS_ALLOWED_ORIGINS: "http://localhost:3000,https://yourapp.com"
+      CSRF_PROTECTION_ENABLED: "true"
+
+      # Monitoring & Observability
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      OTEL_SERVICE_NAME: yawl-engine
+      PROMETHEUS_METRICS_ENABLED: "true"
+      PROMETHEUS_METRICS_PORT: "9090"
+
+      # Logging
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json  # For better parsing by log aggregators
+
+      # Resource Tuning
+      JVM_HEAP_SIZE: 2048m
+      JVM_THREAD_POOL_SIZE: "50"
+
+    volumes:
+      - yawl-logs:/opt/yawl/logs
+      - yawl-specs:/opt/yawl/specs
+      - ./config/yawl-engine.properties:/opt/yawl/config/yawl-engine.properties:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    networks:
+      - yawl-network
+
+    resources:
+      limits:
+        cpus: '2'
+        memory: 3G
+      reservations:
+        cpus: '1'
+        memory: 2G
+
+  # PostgreSQL Database (Primary persistence)
+  postgres:
+    image: postgres:16-alpine
+    container_name: yawl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yawl_db
+      POSTGRES_USER: yawl_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./config/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    ports:
+      - "5432:5432"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yawl_user -d yawl_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - yawl-network
+
+    resources:
+      limits:
+        cpus: '1'
+        memory: 1G
+      reservations:
+        cpus: '0.5'
+        memory: 512M
+
+  # Redis (Session/Cache layer)
+  redis:
+    image: redis:7-alpine
+    container_name: yawl-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+
+    volumes:
+      - redis-data:/data
+
+    ports:
+      - "6379:6379"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - yawl-network
+
+    resources:
+      limits:
+        cpus: '1'
+        memory: 512M
+      reservations:
+        cpus: '0.25'
+        memory: 256M
+
+  # Prometheus (Metrics collection)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: yawl-prometheus
+    restart: unless-stopped
+
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+    ports:
+      - "9090:9090"
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+
+    networks:
+      - yawl-network
+
+    resources:
+      limits:
+        cpus: '1'
+        memory: 512M
+      reservations:
+        cpus: '0.25'
+        memory: 256M
+
+  # Jaeger (Distributed tracing)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: yawl-jaeger
+    restart: unless-stopped
+
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"  # UI
+      - "14250:14250"
+      - "14268:14268"
+      - "14269:14269"
+      - "9411:9411"
+
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
+    networks:
+      - yawl-network
+
+    resources:
+      limits:
+        cpus: '1'
+        memory: 512M
+      reservations:
+        cpus: '0.25'
+        memory: 256M
+
+  # Grafana (Visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: yawl-grafana
+    restart: unless-stopped
+
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_USER: admin
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./config/grafana-dashboards.json:/etc/grafana/provisioning/dashboards/dashboards.json:ro
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - prometheus
+
+    networks:
+      - yawl-network
+
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 256M
+      reservations:
+        cpus: '0.25'
+        memory: 128M
+
+  # Worklet Service (Dynamic sub-workflow execution)
+  yawl-worklet-service:
+    image: yawl/yawl-worklet-service:v6.0.0-jdk25
+    container_name: yawl-worklet-service
+    restart: unless-stopped
+
+    environment:
+      ENGINE_HOST: yawl-engine
+      ENGINE_PORT: 8080
+      SERVICE_PORT: 8081
+      DB_URL: jdbc:postgresql://postgres:5432/yawl_worklet
+      DB_USER: yawl_user
+      DB_PASSWORD: ${DB_PASSWORD:-changeme}
+
+    ports:
+      - "8081:8081"
+
+    depends_on:
+      - postgres
+      - yawl-engine
+
+    networks:
+      - yawl-network
+
+    resources:
+      limits:
+        cpus: '1'
+        memory: 1G
+      reservations:
+        cpus: '0.5'
+        memory: 512M
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  yawl-logs:
+    driver: local
+  yawl-specs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  yawl-network:
+    driver: bridge

@@ -322,14 +322,14 @@ public final class YawlPromptSpecifications {
         sb.append("### Performance Metrics\n");
         if (report.performance != null) {
             sb.append("- Average flow time: ")
-              .append(String.format("%.1f", report.performance.avgFlowTimeMs)).append(" ms\n");
+              .append(String.format("%.1f", report.performance.avgFlowTimeMs())).append(" ms\n");
             sb.append("- Throughput: ")
-              .append(String.format("%.2f", report.performance.throughputPerHour))
+              .append(String.format("%.2f", report.performance.throughputPerHour()))
               .append(" cases/hour\n");
-            if (report.performance.activityCounts != null
-                    && !report.performance.activityCounts.isEmpty()) {
+            if (report.performance.activityCounts() != null
+                    && !report.performance.activityCounts().isEmpty()) {
                 sb.append("- Activity execution counts:\n");
-                report.performance.activityCounts.entrySet().stream()
+                report.performance.activityCounts().entrySet().stream()
                     .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
                     .limit(10)
                     .forEach(e -> sb.append("  - ").append(e.getKey())
