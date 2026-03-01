@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-03-01T00:55:49Z",
+  "lib_path": "not_built",
+  "lib_built": false,
+  "audit_status": "SKIP",
+  "message": "Run: bash scripts/build-rust4pm.sh",
+  "rust_symbols": [],
+  "rust_symbol_count": 0,
+  "expected_total": 40,
+  "coverage_pct": 0
+}
