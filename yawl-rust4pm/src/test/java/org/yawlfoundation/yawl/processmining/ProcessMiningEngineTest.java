@@ -65,7 +65,7 @@ class ProcessMiningEngineTest {
          * when native library is absent.
          */
         @Test
-        @DisabledIf("libraryPresent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryPresent")
         @DisplayName("parseOcel2Json throws UnsupportedOperationException when library absent")
         void parseOcel2JsonThrowsWhenLibraryAbsent() throws Exception {
             try {
@@ -97,7 +97,7 @@ class ProcessMiningEngineTest {
          * Verify that discoverDfg throws UnsupportedOperationException when library absent.
          */
         @Test
-        @DisabledIf("libraryPresent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryPresent")
         @DisplayName("discoverDfg throws UnsupportedOperationException when library absent")
         void discoverDfgThrowsWhenLibraryAbsent() throws Exception {
             try {
@@ -128,7 +128,7 @@ class ProcessMiningEngineTest {
          * Verify that checkConformance throws UnsupportedOperationException when library absent.
          */
         @Test
-        @DisabledIf("libraryPresent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryPresent")
         @DisplayName("checkConformance throws UnsupportedOperationException when library absent")
         void checkConformanceThrowsWhenLibraryAbsent() throws Exception {
             try {
@@ -183,7 +183,7 @@ class ProcessMiningEngineTest {
          * wrapping UnsupportedOperationException when library absent.
          */
         @Test
-        @DisabledIf("libraryPresent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryPresent")
         @DisplayName("parseAll with non-empty list throws ExecutionException when library absent")
         void parseAllNonEmptyThrowsExecutionExceptionWhenLibraryAbsent() throws Exception {
             try {
@@ -281,7 +281,7 @@ class ProcessMiningEngineTest {
          * library is present.
          */
         @Test
-        @DisabledIf("libraryAbsent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryAbsent")
         @DisplayName("DFG JSON parsing extracts nodes and edges correctly")
         void dfgJsonParsingExtractsNodesAndEdges() throws Exception {
             try {
@@ -376,7 +376,7 @@ class ProcessMiningEngineTest {
          * Verify that parseAll returns results in the same order as input.
          */
         @Test
-        @DisabledIf("libraryAbsent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryAbsent")
         @DisplayName("parseAll returns handles in input order")
         void parseAllPreservesOrder() throws Exception {
             try {
@@ -421,7 +421,7 @@ class ProcessMiningEngineTest {
          * Verify that parseAll with single JSON parses successfully.
          */
         @Test
-        @DisabledIf("libraryAbsent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryAbsent")
         @DisplayName("parseAll with single JSON parses successfully")
         void parseAllSingleJson() throws Exception {
             try {
@@ -460,7 +460,7 @@ class ProcessMiningEngineTest {
          * Verify that InterruptedException from parseAll is not masked.
          */
         @Test
-        @DisabledIf("libraryAbsent")
+        @DisabledIf("org.yawlfoundation.yawl.processmining.ProcessMiningEngineTest#libraryAbsent")
         @DisplayName("parseAll declares InterruptedException in signature")
         void parseAllDeclaresInterruptedException() throws Exception {
             try {
