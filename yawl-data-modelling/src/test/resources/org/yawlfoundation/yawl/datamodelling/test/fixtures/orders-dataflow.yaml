@@ -1,0 +1,18 @@
+# DataFlow migration format
+version: "1.0"
+domain: orders
+systems:
+  - name: OrderService
+    type: microservice
+    owner: order-team
+    entities:
+      - Order
+      - OrderItem
+  - name: OrderDB
+    type: database
+    infrastructure: postgresql
+    owner: order-team
+flows:
+  - from: OrderService
+    to: OrderDB
+    type: write
