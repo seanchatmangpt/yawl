@@ -25,6 +25,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import org.junit.jupiter.api.Test;
+
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.concurrent.CountDownLatch;
@@ -310,6 +313,80 @@ public class AgentBenchmark {
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // Benchmark 4b: Scheduling Latency Histogram (p99/p999)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Measures scheduling latency distribution with HdrHistogram percentiles.
+     *
+     * Unlike schedulingLatency() which reports JMH AverageTime (mean only),
+     * this benchmark captures the full distribution including p99 and p999
+     * — the metrics that reveal tail latency under virtual-thread scheduling.
+     *
+     * Expected (from thesis Appendix D, ZGC, 4 schedulers):
+     *   p50  ≈ 517µs | p95 ≈ 1.2ms | p99 ≈ 2.1ms | p999 ≈ 8.4ms
+     *
+     * @see #schedulingLatency for JMH mean measurement
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.SingleShotTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @Warmup(iterations = 0)
+    public void schedulingLatencyHistogram(Blackhole bh) throws InterruptedException {
+        Runtime r = new Runtime();
+        int N = 1000;  // fixed count: histogram semantics, not @Param scaling
+        CountDownLatch latch = new CountDownLatch(N);
+        java.util.concurrent.atomic.AtomicLongArray deliveryTimes = 
+            new java.util.concurrent.atomic.AtomicLongArray(N);
+        Agent[] agents = new Agent[N];
+
+        try {
+            for (int i = 0; i < N; i++) {
+                final int idx = i;
+                agents[i] = r.spawn(msg -> {
+                    deliveryTimes.set(idx, System.nanoTime());
+                    latch.countDown();
+                });
+            }
+
+            // Send all messages at a single timestamp
+            long sendTime = System.nanoTime();
+            for (Agent a : agents) {
+                a.send("ping");
+            }
+
+            if (!latch.await(30, TimeUnit.SECONDS)) {
+                throw new TimeoutException("schedulingLatencyHistogram: timeout after 30s");
+            }
+
+            // Build histogram: max trackable = 10s in µs = 10_000_000µs, 3 significant digits
+            org.HdrHistogram.Histogram histogram =
+                new org.HdrHistogram.Histogram(10_000_000L, 3);
+
+            for (int i = 0; i < N; i++) {
+                long latencyNs = deliveryTimes.get(i) - sendTime;
+                if (latencyNs > 0) {
+                    histogram.recordValue(latencyNs / 1_000L); // convert ns → µs
+                }
+            }
+
+            System.out.printf(
+                "%n[SchedulingLatencyHistogram N=%d] p50=%.1fµs p95=%.1fµs p99=%.1fµs p999=%.1fµs%n",
+                N,
+                (double) histogram.getValueAtPercentile(50.0),
+                (double) histogram.getValueAtPercentile(95.0),
+                (double) histogram.getValueAtPercentile(99.0),
+                (double) histogram.getValueAtPercentile(99.9)
+            );
+
+            bh.consume(histogram.getTotalCount());
+        } finally {
+            r.close();
+        }
+    }
+
+
+
     // Benchmark 5: Request-Reply Pattern (simple RPC)
     // ─────────────────────────────────────────────────────────────────────
 
@@ -416,8 +493,9 @@ public class AgentBenchmark {
      */
     @Benchmark
     public long gcImpact() throws InterruptedException {
-        MemoryMXBean mem = ManagementFactory.getMemoryMXBean();
-        long gcCountBefore = mem.getCollectionCount("ZGC");
+        long gcCountBefore = ManagementFactory.getGarbageCollectorMXBeans().stream()
+            .mapToLong(GarbageCollectorMXBean::getCollectionCount)
+            .sum();
 
         Runtime r = new Runtime();
         try {
@@ -427,7 +505,9 @@ public class AgentBenchmark {
             }
             Thread.sleep(100);
 
-            long gcCountAfter = mem.getCollectionCount("ZGC");
+            long gcCountAfter = ManagementFactory.getGarbageCollectorMXBeans().stream()
+                .mapToLong(GarbageCollectorMXBean::getCollectionCount)
+                .sum();
             return gcCountAfter - gcCountBefore;
         } finally {
             r.close();
@@ -437,6 +517,23 @@ public class AgentBenchmark {
     // ─────────────────────────────────────────────────────────────────────
     // Standalone Runner
     // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * JUnit 5 entry point — runs benchmarks in-process (forks=0) for CI.
+     */
+    @Test
+    @org.junit.jupiter.api.Timeout(value = 300, unit = TimeUnit.SECONDS)
+    void runBenchmarks() throws Exception {
+        Options opt = new OptionsBuilder()
+            .include(getClass().getSimpleName())
+            .forks(0)
+            .warmupIterations(1)
+            .warmupTime(org.openjdk.jmh.runner.options.TimeValue.seconds(1))
+            .measurementIterations(3)
+            .measurementTime(org.openjdk.jmh.runner.options.TimeValue.seconds(3))
+            .build();
+        new Runner(opt).run();
+    }
 
     /**
      * Standalone entry point for running benchmarks without maven-jmh-plugin.
@@ -458,7 +555,7 @@ public class AgentBenchmark {
     // Helper: TimeoutException (Java 8 compatibility)
     // ─────────────────────────────────────────────────────────────────────
 
-    static class TimeoutException extends Exception {
+    static class TimeoutException extends RuntimeException {
         TimeoutException(String msg) {
             super(msg);
         }
