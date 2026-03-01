@@ -258,6 +258,9 @@ receipts/
 # YAWL dx.sh runtime state
 .yawl/
 
+# Native library build artifacts (compiled by cargo, bundled into JAR at build time)
+yawl-data-modelling/src/main/resources/native/
+
 # =============================================================================
 # Erlang/OTP runtime installation (installed by session-start.sh hook)
 # =============================================================================

@@ -147,8 +147,7 @@ public final class DataModellingL3 implements AutoCloseable {
      * @return a new L3 instance with L2 transport initialized from system property
      */
     public static DataModellingL3 fromSystemProperty() {
-        String libPath = System.getProperty(DataModellingL2.LIB_PATH_PROP);
-        return new DataModellingL3(new DataModellingL2(libPath));
+        return new DataModellingL3(DataModellingL2.load(System.getProperty(DataModellingL2.LIB_PATH_PROP)));
     }
 
     /**

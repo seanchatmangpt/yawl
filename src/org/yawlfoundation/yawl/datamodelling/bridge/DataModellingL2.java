@@ -18,6 +18,10 @@
 
 package org.yawlfoundation.yawl.datamodelling.bridge;
 
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -66,9 +70,11 @@ public final class DataModellingL2 implements AutoCloseable {
     public static final String LIB_PATH_PROP = "datamodelling.library.path";
 
     private static final Linker LINKER = Linker.nativeLinker();
+    private static final Logger log = LoggerFactory.getLogger(DataModellingL2.class);
 
-    private final Arena           arena;
+    private final Arena                  arena;
     private final Optional<SymbolLookup> library;
+    private final NativeLibraryExtractor extractor;
 
     /** Downcall handle for {@code dm_call}. */
     private final MethodHandle hDmCall;
@@ -86,12 +92,43 @@ public final class DataModellingL2 implements AutoCloseable {
     private final MethodHandle hDmOffsetofErrorLen;
 
     /**
+     * Creates an L2 transport using the three-tier loading strategy:
+     * <ol>
+     *   <li>Explicit {@code -Ddatamodelling.library.path} system property</li>
+     *   <li>Bundled classpath resource ({@code native/<os-arch>/libdata_modelling_ffi.so})</li>
+     *   <li>Degraded mode — {@link #isLibraryLoaded()} returns false</li>
+     * </ol>
+     *
+     * @param explicitPath absolute library path override, or null to use classpath/degraded
+     * @return a new L2 instance
+     */
+    public static DataModellingL2 load(@Nullable String explicitPath) {
+        if (explicitPath != null && !explicitPath.isBlank()) {
+            return new DataModellingL2(explicitPath, null);
+        }
+        try {
+            NativeLibraryExtractor ext = NativeLibraryExtractor.extract();
+            return new DataModellingL2(ext.absolutePath(), ext);
+        } catch (Exception e) {
+            log.warn("libdata_modelling_ffi not found on classpath ({}); running in degraded mode. "
+                    + "Set -D{}=<path> or rebuild with skipRustBuild=false.",
+                    e.getMessage(), LIB_PATH_PROP);
+            return new DataModellingL2(null, null);
+        }
+    }
+
+    /**
      * Creates an L2 transport, loading the native library from the given path.
      * If the path is null or blank, all operations throw {@link UnsupportedOperationException}.
      *
      * @param libraryPath absolute path to {@code libdata_modelling_ffi.so}, or null to operate degraded
      */
     public DataModellingL2(String libraryPath) {
+        this(libraryPath, null);
+    }
+
+    private DataModellingL2(String libraryPath, NativeLibraryExtractor extractor) {
+        this.extractor = extractor;
         this.arena = Arena.ofShared();
         Optional<SymbolLookup> lib = Optional.empty();
         if (libraryPath != null && !libraryPath.isBlank()) {
@@ -248,11 +285,14 @@ public final class DataModellingL2 implements AutoCloseable {
     }
 
     /**
-     * Releases the shared Arena holding all native memory segments.
+     * Releases the shared Arena and deletes any extracted temp library file.
      */
     @Override
     public void close() {
         arena.close();
+        if (extractor != null) {
+            extractor.close();
+        }
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
@@ -267,8 +307,11 @@ public final class DataModellingL2 implements AutoCloseable {
     private void requireLibrary() {
         if (library.isEmpty()) {
             throw new UnsupportedOperationException(
-                    "libdata_modelling_ffi.so not loaded. "
-                    + "Set -D" + LIB_PATH_PROP + "=/path/to/libdata_modelling_ffi.so");
+                    "libdata_modelling_ffi not loaded. "
+                    + "Either bundle the native library in the JAR (rebuild with skipRustBuild=false) "
+                    + "or set -D" + LIB_PATH_PROP + "=/path/to/libdata_modelling_ffi.so. "
+                    + "Use DataModellingL2.load() or DataModellingL3.fromSystemProperty() "
+                    + "to enable automatic classpath extraction.");
         }
     }
 }

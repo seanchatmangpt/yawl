@@ -74,6 +74,12 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
 
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
             <!-- Compile Rust cdylib during generate-sources -->
             <plugin>
@@ -93,6 +99,22 @@
                                 <argument>--release</argument>
                                 <argument>--manifest-path</argument>
                                 <argument>${project.basedir}/../rust/data-modelling-ffi/Cargo.toml</argument>
+                            </arguments>
+                            <skip>${skipRustBuild}</skip>
+                        </configuration>
+                    </execution>
+                    <!-- Copy the compiled native library into classpath resources for JAR bundling -->
+                    <execution>
+                        <id>copy-native-lib</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>OS=$(uname -s | tr '[:upper:]' '[:lower:]' | sed 's/darwin/darwin/'); ARCH=$(uname -m | sed 's/arm64/aarch64/'); if [ "$OS" = "darwin" ]; then LIB="libdata_modelling_ffi.dylib"; else LIB="libdata_modelling_ffi.so"; fi; DEST="src/main/resources/native/${OS}-${ARCH}"; mkdir -p "${DEST}"; cp "../rust/data-modelling-ffi/target/release/${LIB}" "${DEST}/${LIB}"</argument>
                             </arguments>
                             <skip>${skipRustBuild}</skip>
                         </configuration>
