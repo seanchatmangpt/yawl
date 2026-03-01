@@ -225,6 +225,44 @@ public final class ErlangBridge implements AutoCloseable {
     }
 
     /**
+     * Hot-reloads an OTP module without stopping the node.
+     *
+     * <p>Invokes {@code code:purge(Module)} to remove the old version, then
+     * {@code code:load_file(Module)} to load the new version from the node's
+     * code path. Requires the {@code .beam} file to be accessible on the
+     * Erlang node's code path.</p>
+     *
+     * <p>All three YAWL gen_servers implement {@code code_change/3} which OTP
+     * calls automatically during hot reload to migrate state.</p>
+     *
+     * @param moduleName atom name of the module (e.g. {@code "yawl_workflow"})
+     * @throws ErlangRpcException if purge or load fails, or if the Erlang node
+     *                            returns {@code {error, Reason}}
+     * @throws IllegalStateException if not connected
+     */
+    public void reloadModule(String moduleName) throws ErlangRpcException {
+        if (moduleName == null || moduleName.isBlank()) {
+            throw new IllegalArgumentException("moduleName must be non-blank");
+        }
+
+        if (!node.isConnected()) {
+            throw new IllegalStateException("Bridge is not connected");
+        }
+
+        node.rpc("code", "purge", List.of(new ErlAtom(moduleName)));
+
+        ErlTerm result = node.rpc("code", "load_file", List.of(new ErlAtom(moduleName)));
+
+        if (result instanceof ErlTuple t
+                && t.elements().size() == 2
+                && t.elements().get(0) instanceof ErlAtom a
+                && "error".equals(a.value())) {
+            throw new ErlangRpcException("code", "load_file",
+                    "Hot reload failed for '" + moduleName + "': " + t.elements().get(1));
+        }
+    }
+
+    /**
      * Closes the bridge and releases all resources.
      *
      * <p>Stops the event listener thread (if running) and closes the underlying
