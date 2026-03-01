@@ -1,145 +1,122 @@
 package org.yawlfoundation.yawl.engine.agent.core;
 
 /**
- * Root sealed interface for all actor messages.
+ * Sealed message hierarchy for zero-overhead polymorphism.
  *
- * Type hierarchy (exhaustively matched in switch expressions):
- * - Command: Imperative action (no reply expected)
- * - Event: Notification of something that happened
- * - Query: Request for information (reply expected)
- * - Reply: Response to a Query
- * - Internal: Framework-level signals (actor shutdown, heartbeat)
+ * Design rationale:
+ * 1. Sealed hierarchy — compiler verifies exhaustiveness
+ * 2. Records for data — auto equals/hashCode/toString
+ * 3. Pattern matching — zero-cost cast elimination
+ * 4. Hot path: dispatcher uses switch on type, not instanceof
  *
- * Benefits:
- * - Type-safe pattern matching in message handlers
- * - Compiler-verified exhaustiveness in switch expressions
- * - Zero-cost records (no boxing overhead)
- * - Serialization-friendly (records serialize naturally)
+ * Message types:
+ * - Command: instruction to perform work (no reply expected)
+ * - Event: notification (no reply expected)
+ * - Query: request for information (reply expected)
+ * - Reply: response to a Query (correlation ID included)
+ * - Internal: control messages (supervision, shutdown)
  *
- * Example usage:
- * <pre>
- * ActorRef worker = runtime.spawn(msg -> {
- *     switch (msg) {
- *         case Msg.Command cmd -> handleCommand(cmd);
- *         case Msg.Event evt -> handleEvent(evt);
- *         case Msg.Query q -> handleQuery(q);
- *         case Msg.Reply r -> handleReply(r);
- *         case Msg.Internal i -> handleInternal(i);
+ * Usage in message loop:
+ *
+ *     while (!interrupted()) {
+ *         Object raw = self.recv();
+ *         switch (raw) {
+ *             case Msg.Command cmd -> handleCommand(cmd);
+ *             case Msg.Event evt -> handleEvent(evt);
+ *             case Msg.Query qry -> {
+ *                 Object result = handleQuery(qry);
+ *                 qry.sender().tell(new Msg.Reply(qry.correlationId(), result, null));
+ *             }
+ *             case Msg.Internal ctl -> handleControl(ctl);
+ *             default -> ignoreUnknown(raw);
+ *         }
  *     }
- * });
- * </pre>
+ *
+ * Compiler inlines pattern matching — no virtual dispatch overhead.
  */
 public sealed interface Msg permits Msg.Command, Msg.Event, Msg.Query, Msg.Reply, Msg.Internal {
 
     /**
-     * Imperative action: tell the actor to do something.
-     * No reply is expected.
+     * Instruction to perform work (fire-and-forget).
+     * No correlation ID needed.
+     *
+     * @param action Descriptive name of the command
+     * @param payload Arbitrary data (null OK)
      */
-    sealed interface Command extends Msg permits Msg.Command.Impl {
-        String action();
-        Object payload();
-
-        record Impl(String action, Object payload) implements Command {}
-
-        static Command of(String action, Object payload) {
-            if (action == null || action.isBlank()) {
-                throw new IllegalArgumentException("action cannot be null or blank");
+    record Command(String action, Object payload) implements Msg {
+        public Command {
+            if (action == null) {
+                throw new NullPointerException("action cannot be null");
             }
-            return new Impl(action, payload);
         }
     }
 
     /**
-     * Notification: something happened in the system.
-     * No reply is expected; typically broadcast.
+     * Notification of state change (fire-and-forget).
+     * No correlation ID needed.
+     *
+     * @param type Event type (e.g., "WORK_COMPLETED", "AGENT_READY")
+     * @param timestamp System.nanoTime() when event occurred
+     * @param source Source actor ID (for tracing)
+     * @param data Event payload (null OK)
      */
-    sealed interface Event extends Msg permits Msg.Event.Impl {
-        String eventType();
-        Object data();
-        long timestamp();
-
-        record Impl(String eventType, Object data, long timestamp) implements Event {}
-
-        static Event of(String eventType, Object data) {
-            if (eventType == null || eventType.isBlank()) {
-                throw new IllegalArgumentException("eventType cannot be null or blank");
+    record Event(String type, long timestamp, int source, Object data) implements Msg {
+        public Event {
+            if (type == null) {
+                throw new NullPointerException("type cannot be null");
             }
-            return new Impl(eventType, data, System.currentTimeMillis());
         }
     }
 
     /**
-     * Request for information: ask the actor to return something.
-     * A reply is expected (correlation ID must be handled by behavior code).
+     * Request for information (expect Reply).
+     * Sender must be included so receiver can send reply.
+     *
+     * @param correlationId Unique ID for this query (sender's nanoTime or UUID)
+     * @param sender ActorRef of sender (for reply routing)
+     * @param question Descriptive name of the query
+     * @param params Query parameters (null OK)
      */
-    sealed interface Query extends Msg permits Msg.Query.Impl {
-        String question();
-        Object parameter();
-
-        record Impl(String question, Object parameter) implements Query {}
-
-        static Query of(String question, Object parameter) {
-            if (question == null || question.isBlank()) {
-                throw new IllegalArgumentException("question cannot be null or blank");
+    record Query(long correlationId, ActorRef sender, String question, Object params) implements Msg {
+        public Query {
+            // sender may be null when using RequestReply.dispatch() (reply routed via registry)
+            if (question == null) {
+                throw new NullPointerException("question cannot be null");
             }
-            return new Impl(question, parameter);
         }
     }
 
     /**
-     * Response to a Query: the actor sends this back to the requester.
-     * Behavior code must handle correlation with the original Query
-     * (correlation ID pattern to be implemented in ask()).
+     * Response to a Query (reply-to-sender).
+     * Correlation ID links reply to original query.
+     *
+     * @param correlationId Matches Query.correlationId()
+     * @param result Result value (null OK)
+     * @param error Throwable if query failed (null OK)
      */
-    sealed interface Reply extends Msg permits Msg.Reply.Impl {
-        String correlationId();
-        Object result();
-        Throwable error();
-
-        record Impl(String correlationId, Object result, Throwable error) implements Reply {}
-
-        static Reply success(String correlationId, Object result) {
-            if (correlationId == null || correlationId.isBlank()) {
-                throw new IllegalArgumentException("correlationId cannot be null or blank");
-            }
-            return new Impl(correlationId, result, null);
-        }
-
-        static Reply failure(String correlationId, Throwable error) {
-            if (correlationId == null || correlationId.isBlank()) {
-                throw new IllegalArgumentException("correlationId cannot be null or blank");
-            }
-            if (error == null) {
-                throw new IllegalArgumentException("error cannot be null");
-            }
-            return new Impl(correlationId, null, error);
-        }
+    record Reply(long correlationId, Object result, Throwable error) implements Msg {
+        // At least one of result or error should be non-null
     }
 
     /**
-     * Framework-level signals: actor shutdown, heartbeat, etc.
-     * Not typically sent by user code.
+     * Control message for supervision, restart, or shutdown.
+     * Internal use only (not sent by user code).
+     *
+     * @param type Control type (RESTART, SHUTDOWN, PAUSE, RESUME)
+     * @param reason Reason for control action (for logging)
+     * @param supervisor Supervisor ActorRef (null for engine-initiated)
      */
-    sealed interface Internal extends Msg permits Msg.Internal.Shutdown, Msg.Internal.Heartbeat {
-
-        record Shutdown(String reason) implements Internal {
-            public Shutdown {
-                if (reason == null || reason.isBlank()) {
-                    throw new IllegalArgumentException("reason cannot be null or blank");
-                }
+    record Internal(String type, String reason, ActorRef supervisor) implements Msg {
+        public Internal {
+            if (type == null) {
+                throw new NullPointerException("type cannot be null");
             }
         }
 
-        record Heartbeat(long timestamp) implements Internal {
-            public Heartbeat {
-                if (timestamp < 0) {
-                    throw new IllegalArgumentException("timestamp cannot be negative");
-                }
-            }
-
-            static Heartbeat now() {
-                return new Heartbeat(System.currentTimeMillis());
-            }
-        }
+        // Common control types as constants
+        public static final String RESTART = "RESTART";
+        public static final String SHUTDOWN = "SHUTDOWN";
+        public static final String PAUSE = "PAUSE";
+        public static final String RESUME = "RESUME";
     }
 }

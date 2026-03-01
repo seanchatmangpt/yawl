@@ -1,17 +1,12 @@
 package org.yawlfoundation.yawl.engine.agent.core;
 
-import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 
 /**
- * Opaque handle to an actor instance. Wraps the actor's internal id and a reference
- * to the runtime, providing a type-safe messaging API without exposing the Actor itself.
+ * Opaque handle to an actor instance.
  *
- * ActorRef enables:
- * - Serialization (just send the id across the network)
- * - Location transparency (future: resolve id to remote runtime)
- * - Clean API separation (behavior code never sees Actor objects)
+ * Wraps the actor's internal id and a reference to the runtime,
+ * providing a type-safe messaging API without exposing the Agent itself.
  *
  * Thread-safe: All methods are safe to call from any thread.
  */
@@ -20,11 +15,9 @@ public final class ActorRef {
     private final ActorRuntime runtime;
 
     /**
-     * Create a reference to an actor.
      * Package-private: only ActorRuntime implementations can create ActorRefs.
      */
     ActorRef(int id, ActorRuntime runtime) {
-        if (id < 0) throw new IllegalArgumentException("id must be non-negative");
         this.id = id;
         this.runtime = Objects.requireNonNull(runtime, "runtime cannot be null");
     }
@@ -32,8 +25,6 @@ public final class ActorRef {
     /**
      * Send a message to this actor asynchronously (fire-and-forget).
      * Non-blocking. No guarantee of delivery if actor has terminated.
-     *
-     * @param message the message object (typically a record or sealed type)
      */
     public void tell(Object message) {
         Objects.requireNonNull(message, "message cannot be null");
@@ -41,32 +32,40 @@ public final class ActorRef {
     }
 
     /**
-     * Send a message and await a reply (request-reply pattern).
-     * Blocks until timeout expires or a reply is received.
+     * Block until this actor receives a message from its mailbox.
+     * ONLY valid to call from within this actor's own virtual thread.
      *
-     * Requires correlation-based request-reply mechanism with request IDs to pair
-     * requests with replies. This enables multiple concurrent ask() calls on the same ActorRef.
+     * If an ExceptionTrigger was injected (via injectException()), this method
+     * will throw the injected RuntimeException instead of returning a message.
      *
-     * @param message  the request message
-     * @param timeout  how long to wait for a reply
-     * @return the reply message from the actor
-     * @throws TimeoutException if no reply received within timeout
-     * @throws InterruptedException if the waiting thread is interrupted
-     * @throws UnsupportedOperationException until correlation-based implementation is available
+     * @return the next message from this actor's mailbox
+     * @throws InterruptedException if the thread is interrupted while waiting
      */
-    public Object ask(Object message, Duration timeout)
-            throws TimeoutException, InterruptedException {
-        Objects.requireNonNull(message, "message cannot be null");
-        Objects.requireNonNull(timeout, "timeout cannot be null");
-        throw new UnsupportedOperationException(
-            "ask() requires implementation of correlation-based request-reply mechanism " +
-            "with request IDs. See ACTOR-IMPLEMENTATION-GUIDE.md for design details."
-        );
+    public Object recv() throws InterruptedException {
+        return runtime.recv(id);
     }
 
     /**
-     * Stop this actor immediately. After calling stop(), tell() and ask() will be no-ops.
-     * The actor's virtual thread will receive an InterruptedException.
+     * Check if this actor is currently alive (registered in the runtime).
+     */
+    public boolean isAlive() {
+        return runtime.isAlive(id);
+    }
+
+    /**
+     * Inject a RuntimeException into this actor's behavior.
+     *
+     * Places an ExceptionTrigger sentinel in the actor's mailbox AND interrupts
+     * its virtual thread. The next call to recv() will throw the specified exception.
+     */
+    public void injectException(RuntimeException cause) {
+        Objects.requireNonNull(cause, "cause cannot be null");
+        runtime.injectException(id, cause);
+    }
+
+    /**
+     * Stop this actor immediately. The actor's virtual thread is interrupted
+     * and removed from the registry.
      */
     public void stop() {
         runtime.stop(id);
@@ -74,15 +73,12 @@ public final class ActorRef {
 
     /**
      * Get the actor's id (useful for debugging and logging).
-     * @return the actor's numeric id
      */
     public int id() {
         return id;
     }
 
-    /**
-     * Get the runtime that manages this actor (package-private for testing).
-     */
+    /** Package-private for testing. */
     ActorRuntime runtime() {
         return runtime;
     }
@@ -101,6 +97,6 @@ public final class ActorRef {
 
     @Override
     public String toString() {
-        return "ActorRef{" + "id=" + id + '}';
+        return "ActorRef{id=" + id + '}';
     }
 }

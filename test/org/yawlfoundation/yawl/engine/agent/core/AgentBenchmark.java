@@ -25,6 +25,9 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import org.junit.jupiter.api.Test;
+
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.concurrent.CountDownLatch;
@@ -416,8 +419,9 @@ public class AgentBenchmark {
      */
     @Benchmark
     public long gcImpact() throws InterruptedException {
-        MemoryMXBean mem = ManagementFactory.getMemoryMXBean();
-        long gcCountBefore = mem.getCollectionCount("ZGC");
+        long gcCountBefore = ManagementFactory.getGarbageCollectorMXBeans().stream()
+            .mapToLong(GarbageCollectorMXBean::getCollectionCount)
+            .sum();
 
         Runtime r = new Runtime();
         try {
@@ -427,7 +431,9 @@ public class AgentBenchmark {
             }
             Thread.sleep(100);
 
-            long gcCountAfter = mem.getCollectionCount("ZGC");
+            long gcCountAfter = ManagementFactory.getGarbageCollectorMXBeans().stream()
+                .mapToLong(GarbageCollectorMXBean::getCollectionCount)
+                .sum();
             return gcCountAfter - gcCountBefore;
         } finally {
             r.close();
@@ -437,6 +443,23 @@ public class AgentBenchmark {
     // ─────────────────────────────────────────────────────────────────────
     // Standalone Runner
     // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * JUnit 5 entry point — runs benchmarks in-process (forks=0) for CI.
+     */
+    @Test
+    @org.junit.jupiter.api.Timeout(value = 300, unit = TimeUnit.SECONDS)
+    void runBenchmarks() throws Exception {
+        Options opt = new OptionsBuilder()
+            .include(getClass().getSimpleName())
+            .forks(0)
+            .warmupIterations(1)
+            .warmupTime(org.openjdk.jmh.runner.options.TimeValue.seconds(1))
+            .measurementIterations(3)
+            .measurementTime(org.openjdk.jmh.runner.options.TimeValue.seconds(3))
+            .build();
+        new Runner(opt).run();
+    }
 
     /**
      * Standalone entry point for running benchmarks without maven-jmh-plugin.
@@ -458,7 +481,7 @@ public class AgentBenchmark {
     // Helper: TimeoutException (Java 8 compatibility)
     // ─────────────────────────────────────────────────────────────────────
 
-    static class TimeoutException extends Exception {
+    static class TimeoutException extends RuntimeException {
         TimeoutException(String msg) {
             super(msg);
         }
