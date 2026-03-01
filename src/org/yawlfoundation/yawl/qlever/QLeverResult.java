@@ -44,9 +44,11 @@ public final class QLeverResult implements AutoCloseable {
 
     private final QLeverFfiBindings ffi;
     private final MemorySegment resultHandle;
+    private final String accumulatedData;
+    private final int accumulatedRows;
 
     /**
-     * Creates a new QLeverResult wrapper.
+     * Creates a new QLeverResult wrapper for streaming results.
      *
      * @param ffi the FFI bindings instance
      * @param resultHandle the native result handle
@@ -54,6 +56,34 @@ public final class QLeverResult implements AutoCloseable {
     public QLeverResult(QLeverFfiBindings ffi, MemorySegment resultHandle) {
         this.ffi = ffi;
         this.resultHandle = resultHandle;
+        this.accumulatedData = null;
+        this.accumulatedRows = 0;
+    }
+
+    /**
+     * Creates a new QLeverResult wrapper for eager (accumulated) results.
+     * Internal use only; call {@link #ofEager(String, int)} instead.
+     *
+     * @param data the accumulated result data
+     * @param rowCount the number of rows
+     */
+    private QLeverResult(String data, int rowCount) {
+        this.ffi = null;
+        this.resultHandle = null;
+        this.accumulatedData = data;
+        this.accumulatedRows = rowCount;
+    }
+
+    /**
+     * Creates an eager QLeverResult with accumulated data.
+     * Suitable for test fixtures and scenarios where data is already collected.
+     *
+     * @param data the accumulated result data as a string
+     * @param rowCount the number of result rows
+     * @return a new QLeverResult backed by eager data
+     */
+    public static QLeverResult ofEager(String data, int rowCount) {
+        return new QLeverResult(data, rowCount);
     }
 
     /**
@@ -93,12 +123,42 @@ public final class QLeverResult implements AutoCloseable {
     }
 
     /**
+     * Returns the accumulated result data.
+     * Only available for eager results created via {@link #ofEager(String, int)}.
+     *
+     * @return the accumulated data string
+     * @throws IllegalStateException if this is a streaming result
+     */
+    public String data() {
+        if (accumulatedData == null) {
+            throw new IllegalStateException("data() not available for streaming results");
+        }
+        return accumulatedData;
+    }
+
+    /**
+     * Returns the number of accumulated result rows.
+     * Only available for eager results created via {@link #ofEager(String, int)}.
+     *
+     * @return the row count
+     * @throws IllegalStateException if this is a streaming result
+     */
+    public int rowCount() {
+        if (accumulatedData == null) {
+            throw new IllegalStateException("rowCount() not available for streaming results");
+        }
+        return accumulatedRows;
+    }
+
+    /**
      * Destroys the result handle and releases native resources.
      *
      * <p>This method is called automatically when using try-with-resources.</p>
      */
     @Override
     public void close() {
-        ffi.resultDestroy(resultHandle);
+        if (ffi != null) {
+            ffi.resultDestroy(resultHandle);
+        }
     }
 }

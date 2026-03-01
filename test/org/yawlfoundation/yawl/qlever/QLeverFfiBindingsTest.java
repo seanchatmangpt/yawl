@@ -39,18 +39,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("QLever FFI Bindings")
 class QLeverFfiBindingsTest {
 
-/**
- * Unit tests for QLever FFI bindings.
- *
- * <p>These tests verify the Panama FFM bindings to libqlever_ffi native library.
- * Tests are skipped if the native library is not available.</p>
- *
- * @author YAWL Foundation
- * @since YAWL 6.0
- */
-@DisplayName("QLever FFI Bindings")
-class QLeverFfiBindingsTest {
-
     /** Test index path - set via system property or defaults to /tmp */
     private static final Path TEST_INDEX = Paths.get(
         System.getProperty("qlever.test.index", "/tmp/qlever-test-index")

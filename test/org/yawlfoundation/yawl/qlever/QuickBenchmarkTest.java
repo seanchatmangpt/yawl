@@ -21,11 +21,12 @@ package org.yawlfoundation.yawl.qlever;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIf;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,129 +40,134 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @Tag("benchmark")
 class QuickBenchmarkTest {
 
-    private static final String INDEX_PATH = System.getProperty("qlever.test.index", 
-        "/tmp/qlever-benchmark-index");
     private static final int MEASUREMENT_ITERATIONS = 10; // Reduced for quick test
-    
+
     private QLeverEmbeddedSparqlEngine engine;
-    
+
     @BeforeAll
-    static void setupClass() {
-        assumeTrue(Files.exists(Path.of(INDEX_PATH)), 
-            "QLever test index not found at: " + INDEX_PATH);
+    static void ensureAvailable() {
+        assumeTrue(QLeverTestNode.isAvailable(), "QLever native lib not available");
     }
-    
+
     @BeforeEach
     void setup() throws Exception {
-        engine = new QLeverEmbeddedSparqlEngine(Paths.get(INDEX_PATH));
-        
+        engine = QLeverTestNode.engine();
+
         // Quick warmup
         for (int i = 0; i < 3; i++) {
-            String result = engine.query("SELECT ?s WHERE { ?s ?p ?o } LIMIT 1");
-            if (result == null || result.isEmpty()) {
-                throw new RuntimeException("Engine warmup failed");
+            try (QLeverResult result = engine.executeSelect("SELECT ?s WHERE { ?s ?p ?o } LIMIT 1", QLeverMediaType.JSON)) {
+                String data = result.data();
+                if (data == null || data.isEmpty()) {
+                    throw new RuntimeException("Engine warmup failed");
+                }
             }
         }
     }
-    
+
     @AfterEach
     void cleanup() throws Exception {
-        if (engine != null) {
-            engine.close();
-        }
+        // Engine is managed by QLeverTestNode, no manual cleanup needed
     }
-    
+
     @Test
     @EnabledIf("isEngineAvailable")
-    void testBasicQueryPerformance() {
+    void testBasicQueryPerformance() throws Exception {
         List<Long> durations = new ArrayList<>();
-        
+
         for (int i = 0; i < MEASUREMENT_ITERATIONS; i++) {
             long start = System.nanoTime();
-            String result = engine.query("SELECT ?s WHERE { ?s ?p ?o } LIMIT 10");
-            long end = System.nanoTime();
-            
-            assertNotNull(result, "Query should return a result");
-            assertFalse(result.isEmpty(), "Result should not be empty");
-            
-            durations.add((end - start) / 1_000); // Convert to microseconds
+            try (QLeverResult result = engine.executeSelect("SELECT ?s WHERE { ?s ?p ?o } LIMIT 10", QLeverMediaType.JSON)) {
+                String data = result.data();
+
+                long end = System.nanoTime();
+
+                assertNotNull(data, "Query should return a result");
+                assertFalse(data.isEmpty(), "Result should not be empty");
+
+                durations.add((end - start) / 1_000); // Convert to microseconds
+            }
         }
-        
+
         // Calculate statistics
         double mean = durations.stream().mapToLong(Long::longValue).average().orElse(0);
         double median = calculateMedian(durations);
         double stdDev = calculateStandardDeviation(durations, mean);
-        
+
         System.out.println("Basic Query Performance:");
         System.out.println("  Mean: " + mean + " μs");
         System.out.println("  Median: " + median + " μs");
         System.out.println("  Std Dev: " + stdDev + " μs");
         System.out.println("  Throughput: " + (1_000_000.0 / mean) + " ops/sec");
-        
+
         // Basic validation
         assertTrue(mean < 100_000, "Mean query time should be < 100ms");
         assertTrue(durations.size() == MEASUREMENT_ITERATIONS, "Should have " + MEASUREMENT_ITERATIONS + " measurements");
     }
-    
+
     @Test
     @EnabledIf("isEngineAvailable")
-    void testDifferentQueryComplexities() {
+    void testDifferentQueryComplexities() throws Exception {
         String[] queries = {
             "SELECT ?s WHERE { ?s ?p ?o } LIMIT 10",                                    // Simple
             "SELECT ?s ?p ?o WHERE { ?s ?p ?o }",                                       // Medium
             "PREFIX yawl: <http://yawl.io/> SELECT ?case ?task WHERE { ?case yawl:hasTask ?task }" // Complex
         };
-        
+
         for (String query : queries) {
             List<Long> durations = new ArrayList<>();
-            
+
             for (int i = 0; i < MEASUREMENT_ITERATIONS; i++) {
                 long start = System.nanoTime();
-                String result = engine.query(query);
-                long end = System.nanoTime();
-                
-                assertNotNull(result, "Query should return a result");
-                assertFalse(result.isEmpty(), "Result should not be empty");
-                
-                durations.add((end - start) / 1_000); // Convert to microseconds
+                try (QLeverResult result = engine.executeSelect(query, QLeverMediaType.JSON)) {
+                    String data = result.data();
+
+                    long end = System.nanoTime();
+
+                    assertNotNull(data, "Query should return a result");
+                    assertFalse(data.isEmpty(), "Result should not be empty");
+
+                    durations.add((end - start) / 1_000); // Convert to microseconds
+                }
             }
-            
+
             double mean = durations.stream().mapToLong(Long::longValue).average().orElse(0);
-            System.out.printf("Query '%s': %.2f μs mean%n", 
+            System.out.printf("Query '%s': %.2f μs mean%n",
                 query.length() > 50 ? query.substring(0, 50) + "..." : query, mean);
-            
+
             // Complex queries should not take orders of magnitude longer
             assertTrue(mean < 1_000_000, "Query should complete within 1 second");
         }
     }
-    
+
     @Test
     @EnabledIf("isEngineAvailable")
     void testMemoryUsage() throws Exception {
         long startMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        
+
         // Execute multiple queries
         for (int i = 0; i < 50; i++) {
             String query = BenchmarkDataGenerator.generateRandomQuery();
-            String result = engine.query(query);
-            
-            // Process results to encourage memory allocation
-            if (result != null) {
-                result.length();
-                result.intern();
+            try (QLeverResult result = engine.executeSelect(query, QLeverMediaType.JSON)) {
+                String data = result.data();
+
+                // Process results to encourage memory allocation
+                if (data != null) {
+                    data.length();
+                    data.intern();
+                }
             }
         }
-        
+
         long endMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         long memoryUsed = endMemory - startMemory;
-        
+
         System.out.println("Memory Usage:");
         System.out.println("  Memory allocated: " + (memoryUsed / 1024.0 / 1024.0) + " MB");
-        
+
         // Reasonable memory growth check
         assertTrue(memoryUsed < 100 * 1024 * 1024, "Should use less than 100MB");
     }
-    
+
     @Test
     @EnabledIf("isEngineAvailable")
     void testConcurrentQueries() throws Exception {
@@ -169,22 +175,24 @@ class QuickBenchmarkTest {
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         List<Future<String>> futures = new ArrayList<>();
         List<Long> durations = new ArrayList<>();
-        
+
         // Submit concurrent queries
         for (int i = 0; i < threadCount * 5; i++) {
             final int threadId = i;
             Future<String> future = executor.submit(() -> {
                 long start = System.nanoTime();
-                String result = engine.query(
-                    "SELECT ?s WHERE { ?s ?p ?o } LIMIT " + (10 + threadId % 10));
-                long end = System.nanoTime();
-                
-                durations.add((end - start) / 1_000); // Convert to microseconds
-                return result;
+                try (QLeverResult result = engine.executeSelect(
+                    "SELECT ?s WHERE { ?s ?p ?o } LIMIT " + (10 + threadId % 10), QLeverMediaType.JSON)) {
+                    String data = result.data();
+                    long end = System.nanoTime();
+
+                    durations.add((end - start) / 1_000); // Convert to microseconds
+                    return data;
+                }
             });
             futures.add(future);
         }
-        
+
         // Wait for completion
         for (Future<String> future : futures) {
             try {
@@ -194,73 +202,64 @@ class QuickBenchmarkTest {
                 fail("Concurrent query failed: " + e.getMessage());
             }
         }
-        
+
         executor.shutdown();
-        
+
         System.out.println("Concurrent Query Performance:");
         System.out.println("  Total queries: " + futures.size());
-        System.out.println("  Mean: " + 
+        System.out.println("  Mean: " +
             durations.stream().mapToLong(Long::longValue).average().orElse(0) + " μs");
         System.out.println("  Max: " + durations.stream().mapToLong(Long::longValue).max().orElse(0) + " μs");
-        
+
         assertTrue(durations.size() == futures.size(), "Should have results for all queries");
     }
-    
+
     @Test
     @EnabledIf("isEngineAvailable")
     void testFormatSerialization() {
         String query = "SELECT ?case ?status WHERE { ?case workflow:status ?status } LIMIT 50";
-        
+
         // Test different formats
-        String[] formats = {
-            "JSON", "TSV", "CSV"
+        QLeverMediaType[] formats = {
+            QLeverMediaType.JSON,
+            QLeverMediaType.TSV,
+            QLeverMediaType.CSV
         };
-        
-        for (String format : formats) {
+
+        for (QLeverMediaType format : formats) {
             long start = System.nanoTime();
-            
+
             try {
-                String result;
-                switch (format) {
-                    case "JSON":
-                        result = ((QLeverEmbeddedSparqlEngine) engine).selectToJson(query);
-                        break;
-                    case "TSV":
-                        result = ((QLeverEmbeddedSparqlEngine) engine).selectToTsv(query);
-                        break;
-                    case "CSV":
-                        result = ((QLeverEmbeddedSparqlEngine) engine).selectToCsv(query);
-                        break;
-                    default:
-                        result = engine.query(query);
+                try (QLeverResult result = engine.executeSelect(query, format)) {
+                    String data = result.data();
+
+                    long end = System.nanoTime();
+                    long duration = (end - start) / 1_000; // Convert to microseconds
+
+                    System.out.printf("%s format: %.2f μs, %d bytes%n",
+                        format.name(), duration, data.getBytes().length);
+
+                    assertNotNull(data, format.name() + " serialization should return result");
+                    assertFalse(data.isEmpty(), format.name() + " result should not be empty");
+                    assertTrue(duration < 500_000, format.name() + " serialization should be < 500ms");
                 }
-                
-                long end = System.nanoTime();
-                long duration = (end - start) / 1_000; // Convert to microseconds
-                
-                System.out.printf("%s format: %.2f μs, %d bytes%n", 
-                    format, duration, result.getBytes().length);
-                
-                assertNotNull(result, format + " serialization should return result");
-                assertFalse(result.isEmpty(), format + " result should not be empty");
-                assertTrue(duration < 500_000, format + " serialization should be < 500ms");
-                
+
             } catch (Exception e) {
-                fail(format + " serialization failed: " + e.getMessage());
+                fail(format.name() + " serialization failed: " + e.getMessage());
             }
         }
     }
-    
+
     // Helper methods
-    
+
     private static boolean isEngineAvailable() {
-        return Files.exists(Path.of(INDEX_PATH));
+        return QLeverTestNode.isAvailable();
     }
-    
+
     private static double calculateMedian(List<Long> values) {
         List<Long> sorted = new ArrayList<>(values);
         Collections.sort(sorted);
-        
+
         int size = sorted.size();
         if (size % 2 == 1) {
             return sorted.get(size / 2);
@@ -268,7 +267,7 @@ class QuickBenchmarkTest {
             return (sorted.get(size / 2 - 1) + sorted.get(size / 2)) / 2.0;
         }
     }
-    
+
     private static double calculateStandardDeviation(List<Long> values, double mean) {
         double variance = values.stream()
             .mapToDouble(value -> Math.pow(value - mean, 2))

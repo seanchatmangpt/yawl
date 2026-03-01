@@ -43,6 +43,9 @@ public enum QLeverMediaType {
     /** N-Triples (RDF) format */
     N_TRIPLES("application/n-triples"),
 
+    /** Binary results format (QLever proprietary) */
+    BINARY("application/qlever-results-binary"),
+
     /** RDF/XML format */
     RDF_XML("application/rdf+xml");
 

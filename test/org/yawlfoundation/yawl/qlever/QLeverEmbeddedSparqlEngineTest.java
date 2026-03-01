@@ -45,21 +45,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("QLever Embedded SPARQL Engine")
 class QLeverEmbeddedSparqlEngineTest {
 
-/**
- * Integration tests for QLever Embedded SPARQL Engine.
- *
- * <p>Tests the full engine lifecycle and query execution. Requires:</p>
- * <ul>
- *   <li>libqlever_ffi native library in java.library.path</li>
- *   <li>Pre-built test index at the path specified by qlever.test.index system property</li>
- * </ul>
- *
- * @author YAWL Foundation
- * @since YAWL 6.0
- */
-@DisplayName("QLever Embedded SPARQL Engine")
-class QLeverEmbeddedSparqlEngineTest {
-
     /** Test index path - set via system property or defaults to /tmp */
     private static final Path TEST_INDEX = Paths.get(
         System.getProperty("qlever.test.index", "/tmp/qlever-test-index")
