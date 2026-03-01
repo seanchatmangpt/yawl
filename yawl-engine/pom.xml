@@ -255,6 +255,20 @@
             <version>1.8.5</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- JMH for benchmarks -->
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -370,6 +384,8 @@
                         <!-- BlackSwanDetector test only - other observability tests have pre-existing API mismatches -->
                         <testInclude>**/org/yawlfoundation/yawl/observability/BlackSwanDetectorTest.java</testInclude>
                         <testInclude>**/org/yawlfoundation/yawl/engine/interfce/**</testInclude>
+                        <!-- Actor pattern benchmarks, marathons, chaos tests -->
+                        <testInclude>**/org/yawlfoundation/yawl/patterns/**</testInclude>
                     </testIncludes>
                     <testExcludes>
                         <testExclude>**/*.xsd</testExclude>
@@ -470,8 +486,8 @@
                         <testExclude>**/engine/ParallelExecutionVerificationTest.java</testExclude>
                         <!-- ScopedTenantContextTest: Object[] to String[] incompatible type conversion -->
                         <testExclude>**/engine/ScopedTenantContextTest.java</testExclude>
-                        <!-- AgentBenchmark: JMH benchmarks require separate JMH runner, not JUnit -->
-                        <testExclude>**/engine/agent/core/AgentBenchmark.java</testExclude>
+                        <!-- AgentBenchmark: included now that JMH is a test dependency with @Test wrapper -->
+                        <!-- <testExclude>**/engine/agent/core/AgentBenchmark.java</testExclude> -->
                         <!-- Stress tests tagged @Tag("stress") - exclude from default test run -->
                         <testExclude>**/engine/agent/core/AgentDensityStressTest.java</testExclude>
                         <testExclude>**/engine/agent/core/MessageFloodStressTest.java</testExclude>
@@ -568,6 +584,8 @@
                         <include>**/org/yawlfoundation/yawl/observatory/**</include>
                         <!-- BlackSwanDetector test only - other observability tests have pre-existing API mismatches -->
                         <include>**/org/yawlfoundation/yawl/observability/BlackSwanDetectorTest.java</include>
+                        <!-- Actor pattern benchmarks, marathons, chaos tests -->
+                        <include>**/org/yawlfoundation/yawl/patterns/**</include>
                     </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
