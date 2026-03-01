@@ -278,6 +278,8 @@ public class YAnnouncer {
                 "for workitem '{}'.", oldStatus, newStatus, item.getWorkItemID().toString());
         _controller.notifyWorkItemStatusChange(_engine.getYAWLServices(), item,
                 oldStatus, newStatus);
+        _eventBus.publish(new WorkflowEvent(YEventType.ITEM_STATUS_CHANGE,
+                item.getCaseID(), item));
     }
 
 
