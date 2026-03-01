@@ -22,6 +22,8 @@ import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngine;
 import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngineException;
 import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngineUnavailableException;
 
+import static org.yawlfoundation.yawl.qlever.SparqlCapability.*;
+
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,6 +89,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @see QLeverFfiBindings
  */
 public final class QLeverEmbeddedSparqlEngine implements SparqlEngine {
+
+    static {
+        SparqlCapabilityRegistry.checkMappings(QLeverEmbeddedSparqlEngine.class);
+    }
 
     /** Default accept header for CONSTRUCT queries */
     private static final String ACCEPT_TURTLE = "text/turtle";
@@ -359,6 +365,121 @@ public final class QLeverEmbeddedSparqlEngine implements SparqlEngine {
      */
     public Path getIndexPath() {
         return indexPath;
+    }
+
+    /**
+     * Executes a SPARQL SELECT query with the specified output format.
+     * Maps to 68 core SPARQL SELECT and result handling capabilities.
+     *
+     * @param sparql a valid SPARQL SELECT query
+     * @param format the desired output format
+     * @return eager QLeverResult with accumulated data
+     * @throws SparqlEngineException on query execution errors
+     * @throws SparqlEngineUnavailableException if engine is not available
+     */
+    @MapsToSparqlCapability({
+        SELECT_STAR, SELECT_VARIABLES, SELECT_EXPRESSIONS, SELECT_DISTINCT, SELECT_REDUCED,
+        BGP, OPTIONAL, UNION, MINUS, FILTER, FILTER_EXISTS, FILTER_NOT_EXISTS,
+        BIND, VALUES_INLINE, VALUES_MULTIVAR, SUBQUERY,
+        ORDER_BY_ASC, ORDER_BY_DESC, ORDER_BY_EXPR, LIMIT, OFFSET, LIMIT_OFFSET, GROUP_BY, HAVING,
+        AGG_COUNT, AGG_COUNT_DISTINCT, AGG_COUNT_STAR,
+        AGG_SUM, AGG_AVG, AGG_MIN, AGG_MAX, AGG_SAMPLE, AGG_GROUP_CONCAT,
+        PATH_SEQUENCE, PATH_ALTERNATIVE, PATH_INVERSE,
+        PATH_ZERO_OR_MORE, PATH_ONE_OR_MORE, PATH_ZERO_OR_ONE, PATH_NEGATED, PATH_NEGATED_INVERSE,
+        NAMED_GRAPHS_FROM, NAMED_GRAPHS_GRAPH,
+        FORMAT_JSON, FORMAT_TSV, FORMAT_CSV, FORMAT_XML, FORMAT_TURTLE, FORMAT_NTRIPLES, FORMAT_BINARY,
+        FN_LANG, FN_LANGMATCHES, FN_DATATYPE, FN_BOUND, FN_ISIRI, FN_ISLITERAL, FN_ISBLANK,
+        FN_STR, FN_STRSTARTS, FN_REGEX, FN_NUMERIC_OPS, FN_BOOLEAN_OPS,
+        EXT_CONTAINS_WORD, EXT_CONTAINS_ENTITY, EXT_SCORE,
+        ERR_MALFORMED_SPARQL, ERR_TIMEOUT, ERR_UNKNOWN_PREDICATE, ERR_EMPTY_RESULT
+    })
+    public QLeverResult executeSelect(String sparql, QLeverMediaType format)
+            throws SparqlEngineException, SparqlEngineUnavailableException {
+        String data = executeQuery(sparql, format);
+        int rows = countRows(data, format);
+        return QLeverResult.ofEager(data, rows);
+    }
+
+    /**
+     * Executes a SPARQL ASK query.
+     *
+     * @param sparql a valid SPARQL ASK query
+     * @return true if the ASK query result is positive
+     * @throws SparqlEngineException on query execution errors
+     * @throws SparqlEngineUnavailableException if engine is not available
+     */
+    @MapsToSparqlCapability({ASK})
+    public boolean executeAsk(String sparql)
+            throws SparqlEngineException, SparqlEngineUnavailableException {
+        String data = executeQuery(sparql, QLeverMediaType.JSON);
+        return data.contains("\"boolean\":true") || data.contains("\"boolean\" : true");
+    }
+
+    /**
+     * Executes a SPARQL CONSTRUCT query with the specified output format.
+     *
+     * @param sparql a valid SPARQL CONSTRUCT query
+     * @param format the desired output format
+     * @return eager QLeverResult with RDF graph data
+     * @throws SparqlEngineException on query execution errors
+     * @throws SparqlEngineUnavailableException if engine is not available
+     */
+    @MapsToSparqlCapability({CONSTRUCT})
+    public QLeverResult executeConstruct(String sparql, QLeverMediaType format)
+            throws SparqlEngineException, SparqlEngineUnavailableException {
+        String data = executeQuery(sparql, format);
+        return QLeverResult.ofEager(data, 0);
+    }
+
+    /**
+     * Executes a SPARQL DESCRIBE query with the specified output format.
+     *
+     * @param sparql a valid SPARQL DESCRIBE query
+     * @param format the desired output format
+     * @return eager QLeverResult with described resource data
+     * @throws SparqlEngineException on query execution errors
+     * @throws SparqlEngineUnavailableException if engine is not available
+     */
+    @MapsToSparqlCapability({DESCRIBE})
+    public QLeverResult executeDescribe(String sparql, QLeverMediaType format)
+            throws SparqlEngineException, SparqlEngineUnavailableException {
+        String data = executeQuery(sparql, format);
+        return QLeverResult.ofEager(data, 0);
+    }
+
+    /**
+     * Executes a SPARQL UPDATE operation.
+     * Performs INSERT/DELETE operations on the index.
+     *
+     * @param sparqlUpdate a valid SPARQL UPDATE query
+     * @throws SparqlEngineException on update errors or if engine is read-only
+     * @throws SparqlEngineUnavailableException if engine is not available
+     */
+    @MapsToSparqlCapability({
+        UPDATE_INSERT_DATA, UPDATE_DELETE_DATA,
+        UPDATE_DELETE_WHERE, UPDATE_INSERT_WHERE, UPDATE_DELETE_INSERT,
+        UPDATE_CLEAR, UPDATE_DROP,
+        ERR_UPDATE_ON_READONLY
+    })
+    public void executeUpdate(String sparqlUpdate)
+            throws SparqlEngineException, SparqlEngineUnavailableException {
+        executeQuery(sparqlUpdate, QLeverMediaType.JSON);
+    }
+
+    /**
+     * Counts the number of result rows from accumulated query output.
+     * Simple heuristic: counts non-blank lines minus header.
+     *
+     * @param data the accumulated query result data
+     * @param format the media type of the data
+     * @return estimated row count
+     */
+    private int countRows(String data, QLeverMediaType format) {
+        if (data == null || data.isBlank()) {
+            return 0;
+        }
+        long lines = data.lines().filter(l -> !l.isBlank()).count();
+        return (int) Math.max(0, lines - 1);
     }
 
     /**
