@@ -1,0 +1,75 @@
+# Claude Code Context Isolation Configuration
+# Prevents conflicts between local and web sessions
+
+[session]
+# Context source identifier
+# Values: "local", "web", "ci"
+# Set via: export CLAUDE_CODE_CONTEXT=web
+context_source = "local"
+
+# Default merge strategy for conflicts
+# Values: "ours" (keep local), "theirs" (keep incoming), "merge" (attempt merge)
+merge_strategy = "ours"
+
+# Whether to skip Maven configuration modifications
+# When true: pom.xml, .mvn/jvm.config are not modified
+skip_maven_config = false
+
+# Module scope - which modules can be modified
+# Values: "core", "experimental", "all"
+module_scope = "all"
+
+[protected_files]
+# Files that should NOT be modified by web sessions
+# These are protected when CLAUDE_CODE_CONTEXT=web
+web_protected = [
+    "pom.xml",
+    ".mvn/jvm.config",
+    ".mvn/maven-build-cache-remote-config.xml",
+    "yawl-dspy/pom.xml",
+    "yawl-engine/pom.xml",
+    "yawl-graalpy/pom.xml"
+]
+
+# Files that should NOT be modified by local sessions
+# (empty by default - local has full access)
+local_protected = []
+
+[ownership]
+# Module ownership by context
+# "local" context can modify all
+# "web" context can only modify modules not in core
+
+# Core modules - only modifiable by local context
+core_modules = [
+    "yawl-engine",
+    "yawl-elements",
+    "yawl-graalpy",
+    "yawl-utilities",
+    "yawl-security"
+]
+
+# Experimental modules - can be modified by web context
+experimental_modules = [
+    "yawl-dspy",
+    "yawl-pi",
+    "yawl-ggen"
+]
+
+[build]
+# Build configuration per context
+[build.local]
+# Local: Full Maven access
+use_profiles = true
+default_profile = "all-modules"
+
+[build.web]
+# Web: Use profiles, don't modify pom.xml
+use_profiles = true
+default_profile = "core"
+protected_profiles = ["all-modules", "release"]
+
+[build.ci]
+# CI: Full access for releases
+use_profiles = true
+default_profile = "all-modules"

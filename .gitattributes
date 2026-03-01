@@ -1,0 +1,15 @@
+# Git merge strategies for Claude Code context isolation
+# See: .claude/context/environment.toml
+
+# Maven configuration - prefer local changes during merges
+pom.xml merge=ours
+.mvn/jvm.config merge=ours
+.mvn/maven-build-cache-remote-config.xml merge=ours
+
+# Claude Code configuration - prefer local changes
+.claude/**/*.toml merge=ours
+.claude/**/*.md merge=ours
+
+# Lock files - always accept incoming (they're regenerated)
+*.lock text merge=binary
+uv.lock text merge=binary

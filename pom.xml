@@ -3799,6 +3799,53 @@
             </build>
         </profile>
 
+        <!-- ═══════════════════════════════════════════════════════════════════
+             OPTIONAL MODULE PROFILES
+
+             These profiles allow building optional/experimental modules without
+             modifying the main <modules> section. Use for Claude Code isolation.
+
+             Usage:
+               mvn compile -P dspy           # Build with yawl-dspy
+               mvn compile -P experimental   # Build all experimental modules
+               mvn compile -P all-modules    # Build everything
+
+             Claude Code Web should use profiles instead of modifying pom.xml
+             ═══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Profile: DSPy integration module -->
+        <profile>
+            <id>dspy</id>
+            <activation>
+                <file>
+                    <exists>yawl-dspy/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>yawl-dspy</module>
+            </modules>
+        </profile>
+
+        <!-- Profile: All experimental modules (DSPy, PI, GGen) -->
+        <profile>
+            <id>experimental</id>
+            <modules>
+                <module>yawl-dspy</module>
+                <module>yawl-pi</module>
+                <module>yawl-ggen</module>
+            </modules>
+        </profile>
+
+        <!-- Profile: Complete build with all optional modules -->
+        <profile>
+            <id>all-modules</id>
+            <modules>
+                <module>yawl-dspy</module>
+                <module>yawl-pi</module>
+                <module>yawl-ggen</module>
+            </modules>
+        </profile>
+
     </profiles>
 
 </project>
