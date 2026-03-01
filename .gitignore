@@ -42,6 +42,11 @@ build/logs/
 build/3rdParty/
 build/jar/*.jar
 
+# =============================================================================
+# dx.sh runtime state (ephemeral, per-session build metadata)
+# =============================================================================
+.yawl/.dx-state/
+
 # Ant build output
 ant_compile.log
 

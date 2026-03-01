@@ -11,8 +11,30 @@ paths:
 - `bash scripts/dx.sh` - Compile + test CHANGED modules only (~5-15s)
 - `bash scripts/dx.sh compile` - Compile changed modules only (fastest)
 - `bash scripts/dx.sh test` - Test changed modules (assumes compiled)
-- `bash scripts/dx.sh all` - All modules compile + test
+- `bash scripts/dx.sh all` - Full 6-phase pipeline: observe(Ψ)→compile→test→guards(H)→invariants(Q)→report
 - `bash scripts/dx.sh -pl yawl-engine` - Target specific module
+
+## dx.sh all — Phase Pipeline
+
+| Phase | Symbol | Description | Skip condition |
+|-------|--------|-------------|----------------|
+| observe | Ψ | Check observatory facts; auto-refresh if pom.xml changed | `DX_SKIP_OBSERVE=1` or `--offline` |
+| compile | Λ | Compile changed (or all) modules | — |
+| test | Λ | Run JUnit tests | — |
+| guards | H | hyper-validate.sh: 7 forbidden patterns | `--skip-validate` |
+| invariants | Q | real_impl ∨ throw UnsupportedOperationException | `--skip-validate` |
+| report | Ω | Emit phase-status.json summary | `--skip-validate` |
+
+```bash
+# Full pre-commit gate
+bash scripts/dx.sh all
+
+# Skip validation phases (fast compile+test only)
+bash scripts/dx.sh all --skip-validate
+
+# Skip observe phase (CI — session-start.sh pre-generates facts)
+DX_SKIP_OBSERVE=1 bash scripts/dx.sh all
+```
 
 ## Maven Commands
 - Always use `-T 1.5C` for parallel execution (1.5x CPU cores)
