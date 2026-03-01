@@ -393,22 +393,70 @@ fi
 
 echo "🧪 Verifying guard validation baseline (correct by construction)..."
 
+# Remove stale .lastUpdated poison markers for local YAWL modules.
+# These are created by Maven when a local artifact has never been installed
+# to .m2. They prevent re-installation even after source changes.
+find /root/.m2/repository/org/yawlfoundation -name "*.lastUpdated" -delete 2>/dev/null || true
+
+# Pre-flight: ensure zstd-jni is in the local cache before Maven needs it.
+# maven-jar-plugin:3.4.1 (used by mvn install) depends on zstd-jni:1.5.5-11 (6.7 MB).
+# The egress proxy caps per-CONNECT-tunnel at ~1.6 MB, so Maven's built-in
+# transport always truncates this download and leaves a .lastUpdated marker.
+# curl opens a fresh connection per retry and reliably fetches the full file.
+_ZSTD_JAR="${HOME}/.m2/repository/com/github/luben/zstd-jni/1.5.5-11/zstd-jni-1.5.5-11.jar"
+if [ ! -f "${_ZSTD_JAR}" ] && [ -n "${https_proxy:-${HTTPS_PROXY:-}}" ]; then
+    _UPSTREAM="${https_proxy:-${HTTPS_PROXY:-}}"
+    rm -f "${_ZSTD_JAR}.lastUpdated"
+    mkdir -p "$(dirname "${_ZSTD_JAR}")"
+    curl --silent --proxy "${_UPSTREAM}" --retry 3 --retry-delay 2 \
+         -o "${_ZSTD_JAR}" \
+         "https://repo.maven.apache.org/maven2/com/github/luben/zstd-jni/1.5.5-11/zstd-jni-1.5.5-11.jar" \
+         2>/dev/null || rm -f "${_ZSTD_JAR}"
+fi
+
 GGEN_TEST_LOG="/tmp/yawl-ggen-baseline-test.log"
 GGEN_TEST_EXIT=0
-mvn test \
-    -pl yawl-ggen \
-    -Dtest="HyperStandardsValidatorTest" \
-    -Dmaven.test.skip=false \
-    -Dsurefire.failIfNoSpecifiedTests=false \
+
+# Step 1: Install yawl-parent POM into .m2 (non-recursive: just the root POM).
+# yawl-graalpy's installed POM references this parent; Maven must be able to
+# resolve it from .m2 when yawl-ggen reads graalpy's transitive dependency chain.
+mvn install -N \
+    -Dmaven.test.skip=true \
     --no-transfer-progress \
     --batch-mode \
-    -q > "${GGEN_TEST_LOG}" 2>&1 || GGEN_TEST_EXIT=$?
+    -q >> "${GGEN_TEST_LOG}" 2>&1 || GGEN_TEST_EXIT=$?
+
+# Step 2: Install yawl-graalpy (Layer 0) into .m2, skipping its own test
+# compilation. Its integration tests have cross-module dependencies on
+# yawl-engine that are not yet built at this point in the session, so
+# -Dmaven.test.skip=true avoids cascading testCompile failures.
+if [ "${GGEN_TEST_EXIT}" -eq 0 ]; then
+    mvn install \
+        -pl yawl-graalpy \
+        -Dmaven.test.skip=true \
+        --no-transfer-progress \
+        --batch-mode \
+        -q >> "${GGEN_TEST_LOG}" 2>&1 || GGEN_TEST_EXIT=$?
+fi
+
+# Step 3: Test yawl-ggen against the now-installed yawl-graalpy JAR.
+if [ "${GGEN_TEST_EXIT}" -eq 0 ]; then
+    mvn test \
+        -pl yawl-ggen \
+        -Dtest="HyperStandardsValidatorTest" \
+        -Dmaven.test.skip=false \
+        -Dsurefire.failIfNoSpecifiedTests=false \
+        --no-transfer-progress \
+        --batch-mode \
+        -q >> "${GGEN_TEST_LOG}" 2>&1 || GGEN_TEST_EXIT=$?
+fi
+
 if [ "${GGEN_TEST_EXIT}" -eq 0 ]; then
     echo "✅ Guard validation tests: GREEN (HyperStandardsValidatorTest 20/20)"
 else
     echo "⚠️  Guard validation tests FAILED (exit ${GGEN_TEST_EXIT})"
     tail -10 "${GGEN_TEST_LOG}" || true
-    echo "   Run: mvn test -pl yawl-ggen -Dtest=HyperStandardsValidatorTest -Dmaven.test.skip=false"
+    echo "   Run: mvn install -pl yawl-graalpy -Dmaven.test.skip=true && mvn test -pl yawl-ggen -Dtest=HyperStandardsValidatorTest -Dmaven.test.skip=false"
     echo "   Fix failures before making changes to the guard validation package"
 fi
 
