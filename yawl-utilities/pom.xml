@@ -147,6 +147,23 @@
             </exclusions>
         </dependency>
 
+        <!-- OpenTelemetry (required by InterfaceMetrics in engine/interfce/metrics) -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+
+        <!-- Resilience4j (required by InterfaceX_EngineSideClient in engine/interfce/interfaceX,
+             pulled in via javac source path during compilation of InterfaceMetrics) -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

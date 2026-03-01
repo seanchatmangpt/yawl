@@ -159,7 +159,7 @@ public final class DataModellingBridge implements AutoCloseable {
     @MapsToCapability(CONVERT_TO_ODCS)
     public String convertToOdcs(String json, String sourceFormat) {
         try (Arena call = Arena.ofConfined()) {
-            return unwrapResult(data_modelling_ffi_h.dm_convert_to_odcs(call, cstrCall(call, json), cstrCall(call, sourceFormat)));
+            return unwrapResult(data_modelling_ffi_h.dm_convert_to_odcs(call, cstrCall(call, json), cstrOpt(call, sourceFormat)));
         }
     }
 

@@ -86,6 +86,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>--enable-preview --enable-native-access=ALL-UNNAMED</argLine>
+                    <systemPropertyVariables>
+                        <data_modelling_ffi.library.path>${project.basedir}/../target/release/libdata_modelling_ffi.so</data_modelling_ffi.library.path>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
