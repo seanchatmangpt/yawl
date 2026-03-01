@@ -225,13 +225,17 @@ class ErlTermCodecStressTest {
     // Helper
     // =========================================================================
 
-    private void testRoundTrip(ErlTerm original, Class<?> expectedType) throws ErlangReceiveException {
+    private void testRoundTrip(ErlTerm original, Class<?> expectedType) {
         byte[] encoded = ErlTermCodec.encode(original);
         assertNotNull(encoded);
         assertTrue(encoded.length > 0);
 
-        ErlTerm decoded = ErlTermCodec.decode(encoded);
-        assertNotNull(decoded);
-        assertInstanceOf(expectedType, decoded);
+        try {
+            ErlTerm decoded = ErlTermCodec.decode(encoded);
+            assertNotNull(decoded);
+            assertInstanceOf(expectedType, decoded);
+        } catch (ErlangReceiveException e) {
+            throw new AssertionError("Round-trip decode failed for " + original + ": " + e.getMessage(), e);
+        }
     }
 }

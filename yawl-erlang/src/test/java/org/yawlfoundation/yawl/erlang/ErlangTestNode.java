@@ -19,6 +19,7 @@ package org.yawlfoundation.yawl.erlang;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -113,7 +114,7 @@ public final class ErlangTestNode implements AutoCloseable {
 
         Thread.ofVirtual().start(() -> {
             try (InputStream is = process.getInputStream()) {
-                is.transferTo(InputStream.nullInputStream());
+                is.transferTo(OutputStream.nullOutputStream());
             } catch (IOException ignored) {
             }
         });

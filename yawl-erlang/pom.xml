@@ -172,10 +172,16 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
+                        <configuration combine.self="override">
                             <skipTests>false</skipTests>
+                            <includes>
+                                <include>**/*Test.java</include>
+                            </includes>
                             <groups>stress</groups>
+                            <excludedGroups/>
                             <argLine>--enable-native-access=ALL-UNNAMED</argLine>
+                            <forkCount>1</forkCount>
+                            <reuseForks>true</reuseForks>
                         </configuration>
                     </plugin>
                 </plugins>
