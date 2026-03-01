@@ -1,6 +1,5 @@
 package org.yawlfoundation.yawl.processmining;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -8,14 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.yawlfoundation.yawl.rust4pm.bridge.OcelLogHandle;
 import org.yawlfoundation.yawl.rust4pm.bridge.Rust4pmBridge;
-import org.yawlfoundation.yawl.rust4pm.error.ConformanceException;
-import org.yawlfoundation.yawl.rust4pm.error.ParseException;
-import org.yawlfoundation.yawl.rust4pm.error.ProcessMiningException;
 import org.yawlfoundation.yawl.rust4pm.generated.rust4pm_h;
 import org.yawlfoundation.yawl.rust4pm.model.ConformanceReport;
 import org.yawlfoundation.yawl.rust4pm.model.DirectlyFollowsGraph;
 import org.yawlfoundation.yawl.rust4pm.model.DfgEdge;
 import org.yawlfoundation.yawl.rust4pm.model.DfgNode;
+import org.yawlfoundation.yawl.rust4pm.model.ProcessModel;
 
 import java.util.ArrayList;
 import java.util.List;
