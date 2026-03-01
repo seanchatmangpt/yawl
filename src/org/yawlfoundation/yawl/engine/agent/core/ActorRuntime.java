@@ -22,6 +22,21 @@ public interface ActorRuntime extends Closeable {
     ActorRef spawn(ActorBehavior behavior);
 
     /**
+     * Spawn a new actor with a bounded mailbox for backpressure.
+     * Default implementation throws UnsupportedOperationException.
+     * VirtualThreadRuntime provides the full implementation.
+     *
+     * @param behavior           the actor behavior
+     * @param mailboxCapacity    maximum messages in the mailbox (must be > 0)
+     * @return an opaque reference to the spawned actor
+     * @throws UnsupportedOperationException if not implemented by the runtime
+     */
+    default ActorRef spawnBounded(ActorBehavior behavior, int mailboxCapacity) {
+        throw new UnsupportedOperationException(
+            "spawnBounded not implemented by " + getClass().getSimpleName());
+    }
+
+    /**
      * Send a message to an actor by id. No-op if id not found.
      * Called by ActorRef.tell() and injectException().
      */

@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.engine.agent.core;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 
 /**
@@ -27,21 +29,63 @@ import java.util.concurrent.LinkedTransferQueue;
  *
  * stop() race note: 'stopped' flag must be checked before any blocking call.
  * See VirtualThreadRuntime.stop() for the two-phase cancellation protocol.
+ *
+ * Mailbox types:
+ *   - Unbounded (default): LinkedTransferQueue (fire-and-forget, never blocks on send)
+ *   - Bounded: ArrayBlockingQueue with capacity (supports backpressure)
  */
 final class Agent {
 
-    final int id;                        // 4 bytes — identity, 4B agents addressable
-    final LinkedTransferQueue<Object> q; // 8 bytes ref — lock-free MPSC/MPMC mailbox
-    volatile Thread thread;              // set by VirtualThreadRuntime; used for injectException
-    volatile boolean stopped;            // true after stop() — task checks this on start
+    final int id;                          // 4 bytes — identity, 4B agents addressable
+    final BlockingQueue<Object> q;         // 8 bytes ref — MPSC/MPMC mailbox (bounded or unbounded)
+    final boolean bounded;                 // true if using ArrayBlockingQueue with backpressure
+    volatile Thread thread;                // set by VirtualThreadRuntime; used for injectException
+    volatile boolean stopped;              // true after stop() — task checks this on start
 
+    /**
+     * Create an unbounded agent (default, fire-and-forget semantics).
+     */
     Agent(int id) {
         this.id = id;
         this.q = new LinkedTransferQueue<>();
+        this.bounded = false;
     }
 
+    /**
+     * Create a bounded agent with backpressure (blocking send on full mailbox).
+     *
+     * @param id       actor identity
+     * @param capacity maximum messages in mailbox (must be > 0)
+     */
+    Agent(int id, int capacity) {
+        this.id = id;
+        this.q = new ArrayBlockingQueue<>(capacity);
+        this.bounded = true;
+    }
+
+    /**
+     * Send a message non-blocking.
+     * For unbounded agents: always succeeds (fire-and-forget).
+     * For bounded agents: offer() — may drop if queue is full.
+     */
     void send(Object msg) {
         q.offer(msg);
+    }
+
+    /**
+     * Send a message with backpressure (blocking if queue is full).
+     * For unbounded agents: equivalent to send() (never blocks).
+     * For bounded agents: put() — blocks caller until space available.
+     *
+     * @param msg message to send
+     * @throws InterruptedException if the calling thread is interrupted while waiting
+     */
+    void sendBlocking(Object msg) throws InterruptedException {
+        if (bounded) {
+            q.put(msg);  // blocks until space available (backpressure)
+        } else {
+            q.offer(msg);  // unbounded: always succeeds, non-blocking
+        }
     }
 
     Object recv() {

@@ -11,6 +11,7 @@ import org.yawlfoundation.yawl.engine.agent.core.ActorRef;
 import org.yawlfoundation.yawl.engine.agent.core.VirtualThreadRuntime;
 import org.yawlfoundation.yawl.engine.agent.patterns.RoutingSlip;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
@@ -124,7 +125,7 @@ public class RoutingSlipBenchmark extends BenchmarkBase {
             for (int i = 0; i < slipLength; i++) {
                 slipActors[i] = routingActors.get((id * slipLength + i) % routingActors.size());
             }
-            Deque<ActorRef> slip = RoutingSlip.create(slipActors);
+            Deque<WeakReference<ActorRef>> slip = RoutingSlip.create(slipActors);
 
             String caseId = "case-" + id;
             RoutingSlip.Envelope envelope = RoutingSlip.envelope(caseId, "payload-" + id, slip);
@@ -167,7 +168,7 @@ public class RoutingSlipBenchmark extends BenchmarkBase {
             for (int hop = 0; hop < 5; hop++) {
                 slipActors[hop] = routingActors.get((id * 5 + hop) % routingActors.size());
             }
-            Deque<ActorRef> slip = RoutingSlip.create(slipActors);
+            Deque<WeakReference<ActorRef>> slip = RoutingSlip.create(slipActors);
 
             String caseId = "case-" + id;
             RoutingSlip.Envelope envelope = RoutingSlip.envelope(caseId, "payload-" + id, slip);
@@ -231,7 +232,7 @@ public class RoutingSlipBenchmark extends BenchmarkBase {
                 for (int hop = 0; hop < variedSlipLength; hop++) {
                     slipActors[hop] = routingActors.get((id * variedSlipLength + hop) % routingActors.size());
                 }
-                Deque<ActorRef> slip = RoutingSlip.create(slipActors);
+                Deque<WeakReference<ActorRef>> slip = RoutingSlip.create(slipActors);
 
                 String caseId = "case-" + id;
                 RoutingSlip.Envelope envelope = RoutingSlip.envelope(caseId, "payload-" + id, slip);

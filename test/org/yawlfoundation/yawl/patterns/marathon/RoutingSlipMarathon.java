@@ -12,6 +12,7 @@ import org.yawlfoundation.yawl.engine.agent.patterns.RoutingSlip;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.lang.ref.WeakReference;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -266,7 +267,7 @@ class RoutingSlipMarathon extends MarathonTestBase {
             String caseData = "data-" + caseId;
 
             // Create routing slip with all routing actors
-            Deque<ActorRef> slip = RoutingSlip.create(routingActors);
+            Deque<WeakReference<ActorRef>> slip = RoutingSlip.create(routingActors);
 
             // Create envelope
             RoutingSlip.Envelope envelope = RoutingSlip.envelope(caseId, caseData, slip);
