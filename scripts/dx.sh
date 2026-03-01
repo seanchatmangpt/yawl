@@ -554,10 +554,44 @@ dx_phase_observe() {
 # Extracts core compilation logic with all optimizations (warm cache, CDS, semantic filtering)
 # Input: SCOPE, EXPLICIT_MODULES, various DX_* flags
 # Output: exit code (0=GREEN, 2=RED)
+dx_phase_native_bridge() {
+    # Build libdata_modelling_ffi.so from data-modelling-sdk v2.3.0 (real crate, no stubs).
+    # Skipped when cargo is absent or data-modelling-ffi/ directory does not exist.
+    local ffi_dir="${REPO_ROOT}/data-modelling-ffi"
+    local out_so="${REPO_ROOT}/target/release/libdata_modelling_ffi.so"
+
+    if [[ ! -d "$ffi_dir" ]]; then
+        return 0
+    fi
+    if ! command -v cargo &>/dev/null; then
+        printf "${C_RED}${E_FAIL} cargo not found — cannot build native bridge${C_RESET}\n" >&2
+        return 1
+    fi
+
+    printf "${C_CYAN}dx${C_RESET}: ${C_BLUE}--- Native bridge: building libdata_modelling_ffi.so ---${C_RESET}\n"
+
+    local cargo_args=(build -p data-modelling-ffi --release --manifest-path "${ffi_dir}/Cargo.toml")
+    (cd "$REPO_ROOT" && cargo "${cargo_args[@]}" 2>&1)
+    local cargo_exit=$?
+
+    if [[ $cargo_exit -ne 0 ]]; then
+        printf "${C_RED}${E_FAIL} Native bridge build failed (exit $cargo_exit)${C_RESET}\n" >&2
+        return $cargo_exit
+    fi
+
+    local so_src="${ffi_dir}/target/release/libdata_modelling_ffi.so"
+    mkdir -p "${REPO_ROOT}/target/release"
+    cp "$so_src" "$out_so"
+    printf "${C_GREEN}${E_OK} Native bridge ready: %s${C_RESET}\n" "$out_so"
+}
+
 dx_phase_compile() {
     save_phase_status "compile" "running" 0
 
     printf "${C_CYAN}dx${C_RESET}: ${C_BLUE}=== PHASE: Compile ===${C_RESET}\n"
+
+    # Build native bridge first — yawl-data-modelling loads libdata_modelling_ffi.so at runtime
+    dx_phase_native_bridge || return $?
 
     # Build and execute Maven compile (all logic preserved from original)
     # MVN_ARGS, GOALS, etc. are already set up by earlier code sections
