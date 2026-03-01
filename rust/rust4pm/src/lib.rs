@@ -594,6 +594,109 @@ pub extern "C" fn rust4pm_sizeof_conformance_result_c() -> usize {
     std::mem::size_of::<ConformanceResultC>()
 }
 
+// ── Correct-by-construction: offsetof probes ──────────────────────────────────
+// Java Layer 1 calls these at class-init alongside sizeof probes.
+// They verify each field's BYTE OFFSET within the struct matches the Java
+// StructLayout.byteOffset(groupElement("fieldName")).
+// sizeof alone cannot detect field swaps (two ADDRESS fields of equal size);
+// offsetof catches them at JVM startup, not silently at runtime.
+
+// OcelLogHandle fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_log_handle_ptr() -> usize {
+    std::mem::offset_of!(OcelLogHandle, ptr)
+}
+
+// ParseResult fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_parse_result_handle() -> usize {
+    std::mem::offset_of!(ParseResult, handle)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_parse_result_error() -> usize {
+    std::mem::offset_of!(ParseResult, error)
+}
+
+// OcelEventC fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_event_c_event_id() -> usize {
+    std::mem::offset_of!(OcelEventC, event_id)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_event_c_event_type() -> usize {
+    std::mem::offset_of!(OcelEventC, event_type)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_event_c_timestamp_ms() -> usize {
+    std::mem::offset_of!(OcelEventC, timestamp_ms)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_event_c_attr_count() -> usize {
+    std::mem::offset_of!(OcelEventC, attr_count)
+}
+
+// OcelEventsResult fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_events_result_events() -> usize {
+    std::mem::offset_of!(OcelEventsResult, events)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_events_result_count() -> usize {
+    std::mem::offset_of!(OcelEventsResult, count)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_events_result_error() -> usize {
+    std::mem::offset_of!(OcelEventsResult, error)
+}
+
+// OcelObjectC fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_object_c_object_id() -> usize {
+    std::mem::offset_of!(OcelObjectC, object_id)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_object_c_object_type() -> usize {
+    std::mem::offset_of!(OcelObjectC, object_type)
+}
+
+// OcelObjectsResult fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_objects_result_objects() -> usize {
+    std::mem::offset_of!(OcelObjectsResult, objects)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_objects_result_count() -> usize {
+    std::mem::offset_of!(OcelObjectsResult, count)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_ocel_objects_result_error() -> usize {
+    std::mem::offset_of!(OcelObjectsResult, error)
+}
+
+// DfgResultC fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_dfg_result_c_json() -> usize {
+    std::mem::offset_of!(DfgResultC, json)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_dfg_result_c_error() -> usize {
+    std::mem::offset_of!(DfgResultC, error)
+}
+
+// ConformanceResultC fields
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_conformance_result_c_fitness() -> usize {
+    std::mem::offset_of!(ConformanceResultC, fitness)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_conformance_result_c_precision() -> usize {
+    std::mem::offset_of!(ConformanceResultC, precision)
+}
+#[no_mangle]
+pub extern "C" fn rust4pm_offsetof_conformance_result_c_error() -> usize {
+    std::mem::offset_of!(ConformanceResultC, error)
+}
+
 // ── Unit tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]

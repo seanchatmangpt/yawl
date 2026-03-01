@@ -206,6 +206,27 @@ public final class rust4pm_h {
     static final MethodHandle MH$sizeof_ocel_objects_result;
     static final MethodHandle MH$sizeof_dfg_result_c;
     static final MethodHandle MH$sizeof_conformance_result_c;
+    // offsetof probes — verify field byte positions (sizeof alone cannot detect swapped fields)
+    static final MethodHandle MH$offsetof_ocel_log_handle_ptr;
+    static final MethodHandle MH$offsetof_parse_result_handle;
+    static final MethodHandle MH$offsetof_parse_result_error;
+    static final MethodHandle MH$offsetof_ocel_event_c_event_id;
+    static final MethodHandle MH$offsetof_ocel_event_c_event_type;
+    static final MethodHandle MH$offsetof_ocel_event_c_timestamp_ms;
+    static final MethodHandle MH$offsetof_ocel_event_c_attr_count;
+    static final MethodHandle MH$offsetof_ocel_events_result_events;
+    static final MethodHandle MH$offsetof_ocel_events_result_count;
+    static final MethodHandle MH$offsetof_ocel_events_result_error;
+    static final MethodHandle MH$offsetof_ocel_object_c_object_id;
+    static final MethodHandle MH$offsetof_ocel_object_c_object_type;
+    static final MethodHandle MH$offsetof_ocel_objects_result_objects;
+    static final MethodHandle MH$offsetof_ocel_objects_result_count;
+    static final MethodHandle MH$offsetof_ocel_objects_result_error;
+    static final MethodHandle MH$offsetof_dfg_result_c_json;
+    static final MethodHandle MH$offsetof_dfg_result_c_error;
+    static final MethodHandle MH$offsetof_conformance_result_c_fitness;
+    static final MethodHandle MH$offsetof_conformance_result_c_precision;
+    static final MethodHandle MH$offsetof_conformance_result_c_error;
 
     static {
         if (LIBRARY.isPresent()) {
@@ -276,6 +297,68 @@ public final class rust4pm_h {
                 lib.find("rust4pm_sizeof_conformance_result_c").orElseThrow(),
                 FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
 
+            // offsetof probes
+            MH$offsetof_ocel_log_handle_ptr = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_log_handle_ptr").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_parse_result_handle = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_parse_result_handle").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_parse_result_error = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_parse_result_error").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_event_c_event_id = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_event_c_event_id").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_event_c_event_type = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_event_c_event_type").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_event_c_timestamp_ms = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_event_c_timestamp_ms").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_event_c_attr_count = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_event_c_attr_count").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_events_result_events = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_events_result_events").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_events_result_count = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_events_result_count").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_events_result_error = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_events_result_error").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_object_c_object_id = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_object_c_object_id").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_object_c_object_type = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_object_c_object_type").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_objects_result_objects = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_objects_result_objects").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_objects_result_count = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_objects_result_count").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_ocel_objects_result_error = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_ocel_objects_result_error").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_dfg_result_c_json = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_dfg_result_c_json").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_dfg_result_c_error = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_dfg_result_c_error").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_conformance_result_c_fitness = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_conformance_result_c_fitness").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_conformance_result_c_precision = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_conformance_result_c_precision").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+            MH$offsetof_conformance_result_c_error = LINKER.downcallHandle(
+                lib.find("rust4pm_offsetof_conformance_result_c_error").orElseThrow(),
+                FunctionDescriptor.of(JAVA_LONG), Linker.Option.critical(true));
+
             // ── Correct-by-construction layout assertions ───────────────────
             // Verify every hand-written StructLayout byte size against the
             // actual Rust sizeof at JVM startup. Mismatch = AssertionError here,
@@ -288,6 +371,11 @@ public final class rust4pm_h {
             assertLayout("OcelObjectsResult",   OCEL_OBJECTS_RESULT_LAYOUT,   MH$sizeof_ocel_objects_result);
             assertLayout("DfgResultC",          DFG_RESULT_C_LAYOUT,          MH$sizeof_dfg_result_c);
             assertLayout("ConformanceResultC",  CONFORMANCE_RESULT_C_LAYOUT,  MH$sizeof_conformance_result_c);
+
+            // ── Field offset assertions (closes sizeof gap) ─────────────────
+            // sizeof proves total struct size; offsetof proves each field is at
+            // the correct byte position. Together they rule out field swaps.
+            assertOffsets();
         } else {
             MH$parse_ocel2_json       = null;
             MH$log_event_count        = null;
@@ -309,6 +397,115 @@ public final class rust4pm_h {
             MH$sizeof_ocel_objects_result= null;
             MH$sizeof_dfg_result_c       = null;
             MH$sizeof_conformance_result_c = null;
+            MH$offsetof_ocel_log_handle_ptr         = null;
+            MH$offsetof_parse_result_handle         = null;
+            MH$offsetof_parse_result_error          = null;
+            MH$offsetof_ocel_event_c_event_id       = null;
+            MH$offsetof_ocel_event_c_event_type     = null;
+            MH$offsetof_ocel_event_c_timestamp_ms   = null;
+            MH$offsetof_ocel_event_c_attr_count     = null;
+            MH$offsetof_ocel_events_result_events   = null;
+            MH$offsetof_ocel_events_result_count    = null;
+            MH$offsetof_ocel_events_result_error    = null;
+            MH$offsetof_ocel_object_c_object_id     = null;
+            MH$offsetof_ocel_object_c_object_type   = null;
+            MH$offsetof_ocel_objects_result_objects = null;
+            MH$offsetof_ocel_objects_result_count   = null;
+            MH$offsetof_ocel_objects_result_error   = null;
+            MH$offsetof_dfg_result_c_json           = null;
+            MH$offsetof_dfg_result_c_error          = null;
+            MH$offsetof_conformance_result_c_fitness   = null;
+            MH$offsetof_conformance_result_c_precision = null;
+            MH$offsetof_conformance_result_c_error     = null;
+        }
+    }
+
+    private static void assertOffsets() {
+        // OcelLogHandle
+        assertOffset("OcelLogHandle.ptr",
+            OCEL_LOG_HANDLE_LAYOUT.byteOffset(groupElement("ptr")),
+            MH$offsetof_ocel_log_handle_ptr);
+        // ParseResult
+        assertOffset("ParseResult.handle",
+            PARSE_RESULT_LAYOUT.byteOffset(groupElement("handle")),
+            MH$offsetof_parse_result_handle);
+        assertOffset("ParseResult.error",
+            PARSE_RESULT_LAYOUT.byteOffset(groupElement("error")),
+            MH$offsetof_parse_result_error);
+        // OcelEventC
+        assertOffset("OcelEventC.event_id",
+            OCEL_EVENT_C_LAYOUT.byteOffset(groupElement("event_id")),
+            MH$offsetof_ocel_event_c_event_id);
+        assertOffset("OcelEventC.event_type",
+            OCEL_EVENT_C_LAYOUT.byteOffset(groupElement("event_type")),
+            MH$offsetof_ocel_event_c_event_type);
+        assertOffset("OcelEventC.timestamp_ms",
+            OCEL_EVENT_C_LAYOUT.byteOffset(groupElement("timestamp_ms")),
+            MH$offsetof_ocel_event_c_timestamp_ms);
+        assertOffset("OcelEventC.attr_count",
+            OCEL_EVENT_C_LAYOUT.byteOffset(groupElement("attr_count")),
+            MH$offsetof_ocel_event_c_attr_count);
+        // OcelEventsResult
+        assertOffset("OcelEventsResult.events",
+            OCEL_EVENTS_RESULT_LAYOUT.byteOffset(groupElement("events")),
+            MH$offsetof_ocel_events_result_events);
+        assertOffset("OcelEventsResult.count",
+            OCEL_EVENTS_RESULT_LAYOUT.byteOffset(groupElement("count")),
+            MH$offsetof_ocel_events_result_count);
+        assertOffset("OcelEventsResult.error",
+            OCEL_EVENTS_RESULT_LAYOUT.byteOffset(groupElement("error")),
+            MH$offsetof_ocel_events_result_error);
+        // OcelObjectC
+        assertOffset("OcelObjectC.object_id",
+            OCEL_OBJECT_C_LAYOUT.byteOffset(groupElement("object_id")),
+            MH$offsetof_ocel_object_c_object_id);
+        assertOffset("OcelObjectC.object_type",
+            OCEL_OBJECT_C_LAYOUT.byteOffset(groupElement("object_type")),
+            MH$offsetof_ocel_object_c_object_type);
+        // OcelObjectsResult
+        assertOffset("OcelObjectsResult.objects",
+            OCEL_OBJECTS_RESULT_LAYOUT.byteOffset(groupElement("objects")),
+            MH$offsetof_ocel_objects_result_objects);
+        assertOffset("OcelObjectsResult.count",
+            OCEL_OBJECTS_RESULT_LAYOUT.byteOffset(groupElement("count")),
+            MH$offsetof_ocel_objects_result_count);
+        assertOffset("OcelObjectsResult.error",
+            OCEL_OBJECTS_RESULT_LAYOUT.byteOffset(groupElement("error")),
+            MH$offsetof_ocel_objects_result_error);
+        // DfgResultC
+        assertOffset("DfgResultC.json",
+            DFG_RESULT_C_LAYOUT.byteOffset(groupElement("json")),
+            MH$offsetof_dfg_result_c_json);
+        assertOffset("DfgResultC.error",
+            DFG_RESULT_C_LAYOUT.byteOffset(groupElement("error")),
+            MH$offsetof_dfg_result_c_error);
+        // ConformanceResultC
+        assertOffset("ConformanceResultC.fitness",
+            CONFORMANCE_RESULT_C_LAYOUT.byteOffset(groupElement("fitness")),
+            MH$offsetof_conformance_result_c_fitness);
+        assertOffset("ConformanceResultC.precision",
+            CONFORMANCE_RESULT_C_LAYOUT.byteOffset(groupElement("precision")),
+            MH$offsetof_conformance_result_c_precision);
+        assertOffset("ConformanceResultC.error",
+            CONFORMANCE_RESULT_C_LAYOUT.byteOffset(groupElement("error")),
+            MH$offsetof_conformance_result_c_error);
+    }
+
+    private static void assertOffset(String fieldName, long javaOffset, MethodHandle offsetofMH) {
+        try {
+            long rustOffset = (long) offsetofMH.invokeExact();
+            if (javaOffset != rustOffset) {
+                throw new AssertionError(
+                    "Field offset mismatch for " + fieldName +
+                    ": Java StructLayout.byteOffset()=" + javaOffset +
+                    " but Rust offsetof=" + rustOffset +
+                    ". Field order or padding differs from #[repr(C)]. " +
+                    "Fix the Java StructLayout field order to match the C struct.");
+            }
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new AssertionError("offsetof probe failed for " + fieldName, t);
         }
     }
 
