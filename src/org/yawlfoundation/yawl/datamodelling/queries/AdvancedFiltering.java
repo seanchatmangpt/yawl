@@ -191,7 +191,7 @@ public final class AdvancedFiltering {
      * @return a predicate that returns true if artifact does not have tagValue
      */
     public static <T extends Tagged> Predicate<T> byTagNot(String tagValue) {
-        return byTag(tagValue).negate();
+        return AdvancedFiltering.<T>byTag(tagValue).negate();
     }
 
     // ── Boolean Combinations ───────────────────────────────────────────────────

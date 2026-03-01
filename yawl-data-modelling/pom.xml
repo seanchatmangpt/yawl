@@ -112,6 +112,10 @@
                     <includes>
                         <include>**/org/yawlfoundation/yawl/datamodelling/**</include>
                     </includes>
+                    <excludes>
+                        <!-- Exclude src/test/java tree from main compilation -->
+                        <exclude>test/java/**</exclude>
+                    </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/datamodelling/**</testInclude>
                     </testIncludes>

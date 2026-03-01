@@ -102,7 +102,7 @@ public final class DataModellingQueryBuilder {
      * @return this builder for chaining
      */
     public DataModellingQueryBuilder filterTablesByOwner(String owner) {
-        tablePredicates.add(AdvancedFiltering.byOwner(owner));
+        tablePredicates.add(AdvancedFiltering.<DataModellingTable>byOwner(owner));
         return this;
     }
 
@@ -113,7 +113,7 @@ public final class DataModellingQueryBuilder {
      * @return this builder for chaining
      */
     public DataModellingQueryBuilder filterTablesByInfrastructureType(String infrastructureType) {
-        tablePredicates.add(AdvancedFiltering.byInfrastructureType(infrastructureType));
+        tablePredicates.add(AdvancedFiltering.<DataModellingTable>byInfrastructureType(infrastructureType));
         return this;
     }
 
@@ -124,7 +124,7 @@ public final class DataModellingQueryBuilder {
      * @return this builder for chaining
      */
     public DataModellingQueryBuilder filterTablesByMedallionLayer(String layer) {
-        tablePredicates.add(AdvancedFiltering.byMedallionLayer(layer));
+        tablePredicates.add(AdvancedFiltering.<DataModellingTable>byMedallionLayer(layer));
         return this;
     }
 
@@ -135,7 +135,7 @@ public final class DataModellingQueryBuilder {
      * @return this builder for chaining
      */
     public DataModellingQueryBuilder filterTablesByTag(String tag) {
-        tablePredicates.add(AdvancedFiltering.byTag(tag));
+        tablePredicates.add(AdvancedFiltering.<DataModellingTable>byTag(tag));
         return this;
     }
 

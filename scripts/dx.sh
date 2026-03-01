@@ -832,10 +832,9 @@ if [[ "${DX_CDS_GENERATE:-1}" == "1" && "$PHASE" != "test" ]]; then
         # Get CDS flags if archives exist
         CDS_FLAGS=$(bash "${SCRIPT_DIR}/cds-helper.sh" flags 2>/dev/null || echo "")
         if [[ -n "$CDS_FLAGS" ]]; then
-            # Add each flag as a separate argument
-            for flag in $CDS_FLAGS; do
-                MVN_ARGS+=("$flag")
-            done
+            # CDS flags are JVM args (-XX:...) — must go to MAVEN_OPTS, not MVN_ARGS
+            # Passing them as Maven args causes "No plugin found for prefix 'X'" error
+            export MAVEN_OPTS="${MAVEN_OPTS:-} $CDS_FLAGS"
             printf "${C_CYAN}dx${C_RESET}: ${C_BLUE}CDS${C_RESET} archives available\n" >&2
         fi
     fi
@@ -1141,7 +1140,7 @@ extract_slowest_tests() {
 echo ""
 if [[ $EXIT_CODE -eq 0 ]]; then
     # Build success message with warm cache info if applicable
-    local success_msg="${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d"
+    success_msg="${C_GREEN}${E_OK} SUCCESS${C_RESET} | time: ${ELAPSED_SEC}s | modules: %d | tests: %d"
     if [[ -n "$WARM_CACHE_MODULES_SKIPPED" ]]; then
         success_msg+=" | warm cache: %d module(s)"
     fi

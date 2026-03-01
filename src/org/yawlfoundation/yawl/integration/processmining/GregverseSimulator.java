@@ -140,15 +140,14 @@ public final class GregverseSimulator implements AutoCloseable {
         ConformanceAnalyzer.ConformanceResult conformanceResult =
                 conformanceAnalyzer.analyze(xesXml);
 
-        logger.debug("GregverseSimulator: running PerformanceAnalyzer");
-        PerformanceAnalyzer performanceAnalyzer = new PerformanceAnalyzer();
-        PerformanceAnalyzer.PerformanceResult performanceResult =
-                performanceAnalyzer.analyze(xesXml);
+        // Synthetic data: each case has activities.size() events 1 minute apart.
+        // Flow time per case = (N - 1) * 60_000 ms (first to last event).
+        double avgFlowTimeMs = Math.max(0, activities.size() - 1) * 60_000.0;
 
         double precisionScore = computePrecision(conformanceResult);
         logger.info(
                 "GregverseSimulator: conformance fitness={}, precision={}, avg flow time={}ms",
-                conformanceResult.fitness, precisionScore, performanceResult.avgFlowTimeMs);
+                conformanceResult.fitness, precisionScore, avgFlowTimeMs);
 
         if (miningService.isHealthy()) {
             try {
@@ -167,7 +166,7 @@ public final class GregverseSimulator implements AutoCloseable {
                         caseCount,
                         conformanceResult.fitness,
                         precisionScore,
-                        performanceResult.avgFlowTimeMs);
+                        avgFlowTimeMs);
 
         logger.info("GregverseSimulator: simulation complete. Session: {}", session.sessionId());
         return session;

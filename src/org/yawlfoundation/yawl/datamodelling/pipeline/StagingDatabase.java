@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.datamodelling.pipeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.datamodelling.DataModellingBridge;
 import org.yawlfoundation.yawl.datamodelling.DataModellingException;
 
 /**

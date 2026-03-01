@@ -256,7 +256,7 @@ public class HyperStandardsValidator {
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
-            if (TODO_PATTERN.matcher(line).find()) {
+            if (DEFERRED_WORK_PATTERN.matcher(line).find()) {
                 violations.add(new GuardViolation(
                         "H_TODO", file, i + 1, line.trim()));
             }

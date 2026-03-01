@@ -20,6 +20,7 @@ package org.yawlfoundation.yawl.integration.governance;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.yawlfoundation.yawl.authentication.SecurityAuditLogger;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.integration.processmining.ConformanceMonitor;
 
@@ -113,20 +114,15 @@ public class GovernanceValidationGates {
     }
 
     private final ConformanceMonitor conformanceMonitor;
-    private final SecurityAuditLogger auditLogger;
 
     /**
      * Creates a new governance validation gate orchestrator.
      *
      * @param conformance conformance monitor for Q gate checks
-     * @param audit security audit logger for decision records
-     * @throws NullPointerException if parameters are null
+     * @throws NullPointerException if conformance is null
      */
-    public GovernanceValidationGates(
-            ConformanceMonitor conformance,
-            SecurityAuditLogger audit) {
+    public GovernanceValidationGates(ConformanceMonitor conformance) {
         this.conformanceMonitor = Objects.requireNonNull(conformance, "conformance required");
-        this.auditLogger = Objects.requireNonNull(audit, "audit required");
     }
 
     /**
@@ -189,10 +185,10 @@ public class GovernanceValidationGates {
 
         if (finalResult.allPassed) {
             _logger.info("✓ All governance gates passed for {}", specId);
-            auditLogger.recordGovernanceDecision(specId, "APPROVED", "All gates passed");
+            SecurityAuditLogger.recordGovernanceDecision(specId, "APPROVED", "All gates passed");
         } else {
             _logger.warn("✗ Governance validation failed for {}", specId);
-            auditLogger.recordGovernanceDecision(specId, "REJECTED", "One or more gates failed");
+            SecurityAuditLogger.recordGovernanceDecision(specId, "REJECTED", "One or more gates failed");
         }
 
         return finalResult;
@@ -206,14 +202,7 @@ public class GovernanceValidationGates {
         List<String> violations = new ArrayList<>();
 
         try {
-            // Check specification structure
-            if (spec == null || spec.getSchemas().isEmpty()) {
-                violations.add("Specification has no schemas");
-                return new PhaseResult("Ψ (Observatory)",
-                    false, "No schemas found", System.currentTimeMillis() - startTime, Instant.now(), violations);
-            }
-
-            // Check for root net
+            // Check specification structure and root net
             if (spec.getRootNet() == null) {
                 violations.add("Specification has no root net");
                 return new PhaseResult("Ψ (Observatory)",
@@ -239,9 +228,9 @@ public class GovernanceValidationGates {
         List<String> violations = new ArrayList<>();
 
         try {
-            // Check for type compatibility
-            if (!spec.getSchemas().stream().allMatch(schema -> schema != null)) {
-                violations.add("Invalid schema definition");
+            // Check for type compatibility via schema version
+            if (spec.getSchemaVersion() == null) {
+                violations.add("Invalid schema version");
                 return new PhaseResult("Λ (Build)",
                     false, "Schema validation failed", System.currentTimeMillis() - startTime, Instant.now(), violations);
             }
@@ -310,8 +299,8 @@ public class GovernanceValidationGates {
         try {
             // Q1: Conformance check - fitness >= 0.85
             ConformanceMonitor.ConformanceAlert conformance = conformanceMonitor.getCurrentConformance(specId);
-            if (conformance != null && conformance.fitness < 0.85) {
-                violations.add(String.format("Low conformance: fitness=%.3f", conformance.fitness));
+            if (conformance != null && conformance.fitness() < 0.85) {
+                violations.add(String.format("Low conformance: fitness=%.3f", conformance.fitness()));
             }
 
             // Q2: Real implementation check

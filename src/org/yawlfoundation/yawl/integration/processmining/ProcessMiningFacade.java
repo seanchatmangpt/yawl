@@ -13,6 +13,8 @@
 
 package org.yawlfoundation.yawl.integration.processmining;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,6 +32,9 @@ import org.yawlfoundation.yawl.integration.processmining.discovery.InductiveMine
 import org.yawlfoundation.yawl.integration.processmining.discovery.ProcessDiscoveryAlgorithm;
 import org.yawlfoundation.yawl.integration.processmining.discovery.DirectlyFollowsGraph;
 import org.yawlfoundation.yawl.integration.processmining.discovery.ProcessTree;
+import org.yawlfoundation.yawl.integration.processmining.ocpm.OcpmDiscovery;
+import org.yawlfoundation.yawl.integration.processmining.ocpm.OcpmInput;
+import org.yawlfoundation.yawl.integration.processmining.responsibleai.FairnessAnalyzer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,23 +49,26 @@ import org.yawlfoundation.yawl.util.XNodeParser;
  * <p>Orchestrates all process mining components: XES export, performance analysis,
  * conformance checking (token-based replay), variant extraction, and OCEL conversion.
  * Users call one method ({@link #analyze(YSpecificationID, YNet, boolean)}) instead of
- * coordinating five separate classes.</p>
+ * coordinating separate classes.</p>
+ *
+ * <p>All pm4py operations run in-process via {@link GraalPyProcessMiningService}, which
+ * uses GraalPy to embed pm4py directly in the JVM — no network round-trips.</p>
  *
  * <h2>Usage Example</h2>
  * <pre>
  *   ProcessMiningFacade facade = new ProcessMiningFacade(engineUrl, user, password);
  *   ProcessMiningReport report = facade.analyze(specId, net);
- *   System.out.println("Fitness: " + report.conformance.computeFitness());
- *   System.out.println("Flow time: " + report.performance.avgFlowTimeMs + " ms");
+ *   System.out.println("Fitness: " + report.conformance.fitness());
+ *   System.out.println("Flow time: " + report.performance.avgFlowTimeMs() + " ms");
  * </pre>
  *
  * <h2>Analysis Components</h2>
  * <ul>
  *   <li><b>XES Export</b> ({@link EventLogExporter}) - Event log in eXtensible Event Stream format</li>
- *   <li><b>Performance</b> ({@link PerformanceAnalyzer}) - Flow time, throughput, activity counts</li>
- *   <li><b>Conformance</b> ({@link TokenReplayConformanceChecker}) - Token-based replay fitness (if YNet provided)</li>
+ *   <li><b>Performance</b> ({@link ProcessMiningService#performanceAnalysis}) - Flow time, throughput</li>
+ *   <li><b>Conformance</b> ({@link ProcessMiningService#tokenReplay}) - Token-based replay fitness</li>
  *   <li><b>Variants</b> - Unique activity sequences ranked by frequency (inline computation)</li>
- *   <li><b>OCEL</b> ({@link OcelExporter}) - Object-centric event log for multi-instance analysis</li>
+ *   <li><b>OCEL</b> ({@link ProcessMiningService#xesToOcel}) - Object-centric event log</li>
  * </ul>
  *
  * @author YAWL Foundation
@@ -69,8 +77,41 @@ import org.yawlfoundation.yawl.util.XNodeParser;
 public final class ProcessMiningFacade {
 
     private static final Logger _log = LogManager.getLogger(ProcessMiningFacade.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final EventLogExporter exporter;
+    private final ProcessMiningService service;
+
+    // ─── Result types ─────────────────────────────────────────────────────────────
+
+    /**
+     * Conformance checking result from token-based replay.
+     *
+     * @param fitness  log fitness score in [0.0, 1.0]; higher is better
+     * @param rawJson  full pm4py token replay JSON for further inspection
+     */
+    public record ConformanceResult(double fitness, String rawJson) {
+        /** Returns the fitness score (alias for {@link #fitness()} for backward compat). */
+        public double computeFitness() { return fitness; }
+    }
+
+    /**
+     * Performance analysis result from pm4py case-duration statistics.
+     *
+     * @param traceCount         number of traces (cases) in the log
+     * @param avgFlowTimeMs      average case flow time in milliseconds
+     * @param throughputPerHour  estimated throughput in cases per hour
+     * @param activityCounts     occurrence count per activity (start activities proxy)
+     * @param rawJson            full pm4py performance analysis JSON
+     */
+    public record PerformanceResult(
+            int traceCount,
+            double avgFlowTimeMs,
+            double throughputPerHour,
+            Map<String, Integer> activityCounts,
+            String rawJson) {}
+
+    // ─── Report ───────────────────────────────────────────────────────────────────
 
     /**
      * Complete process mining analysis report.
@@ -88,12 +129,12 @@ public final class ProcessMiningFacade {
          * Conformance checking result from token-based replay.
          * Null if no YNet was provided during analysis.
          */
-        public final TokenReplayConformanceChecker.TokenReplayResult conformance;
+        public final ConformanceResult conformance;
 
         /**
          * Performance metrics: flow time, throughput, activity counts.
          */
-        public final PerformanceAnalyzer.PerformanceResult performance;
+        public final PerformanceResult performance;
 
         /**
          * Unique activity sequence variants, ranked by frequency.
@@ -127,20 +168,9 @@ public final class ProcessMiningFacade {
          */
         public final Instant analysisTime;
 
-        /**
-         * Construct a process mining report with all results.
-         *
-         * @param xesXml XES export
-         * @param conformance token replay result (or null)
-         * @param performance performance metrics
-         * @param variantFrequencies map of variants to counts
-         * @param ocelJson OCEL 2.0 JSON
-         * @param traceCount number of traces
-         * @param specId specification identifier
-         */
         ProcessMiningReport(String xesXml,
-                           TokenReplayConformanceChecker.TokenReplayResult conformance,
-                           PerformanceAnalyzer.PerformanceResult performance,
+                           ConformanceResult conformance,
+                           PerformanceResult performance,
                            Map<String, Long> variantFrequencies,
                            String ocelJson,
                            int traceCount,
@@ -157,8 +187,11 @@ public final class ProcessMiningFacade {
         }
     }
 
+    // ─── Constructors ─────────────────────────────────────────────────────────────
+
     /**
-     * Create a facade connected to a YAWL engine.
+     * Create a facade connected to a YAWL engine, backed by an in-process
+     * {@link GraalPyProcessMiningService}.
      *
      * @param engineUrl Base URL of YAWL engine (e.g., "http://localhost:8080/yawl")
      * @param username Username for authentication
@@ -167,8 +200,29 @@ public final class ProcessMiningFacade {
      */
     public ProcessMiningFacade(String engineUrl, String username, String password)
             throws IOException {
-        this.exporter = new EventLogExporter(engineUrl, username, password);
+        this(engineUrl, username, password, new GraalPyProcessMiningService());
     }
+
+    /**
+     * Create a facade with an externally supplied {@link ProcessMiningService}.
+     *
+     * <p>The facade does not own the service lifecycle; the caller is responsible
+     * for closing it. Use this constructor for testing or when sharing a service
+     * across multiple facades.</p>
+     *
+     * @param engineUrl Base URL of YAWL engine
+     * @param username  Username for authentication
+     * @param password  Password for authentication
+     * @param service   pm4py service to delegate analysis to; must not be null
+     * @throws IOException If connection to engine fails
+     */
+    public ProcessMiningFacade(String engineUrl, String username, String password,
+                                ProcessMiningService service) throws IOException {
+        this.exporter = new EventLogExporter(engineUrl, username, password);
+        this.service = Objects.requireNonNull(service, "service");
+    }
+
+    // ─── Analysis ─────────────────────────────────────────────────────────────────
 
     /**
      * Run complete process mining analysis: XES → performance → conformance → variants → OCEL.
@@ -176,10 +230,10 @@ public final class ProcessMiningFacade {
      * <p>This is the main orchestration method. It coordinates all analysis phases in sequence:</p>
      * <ol>
      *   <li>Export event log to XES via {@link EventLogExporter}</li>
-     *   <li>Analyze performance metrics via {@link PerformanceAnalyzer}</li>
+     *   <li>Analyze performance metrics via {@link ProcessMiningService#performanceAnalysis}</li>
      *   <li>Check conformance via token-based replay (if YNet provided)</li>
      *   <li>Extract variants (unique activity sequences)</li>
-     *   <li>Convert to OCEL 2.0 format via {@link OcelExporter}</li>
+     *   <li>Convert to OCEL 2.0 format via {@link ProcessMiningService#xesToOcel}</li>
      * </ol>
      *
      * @param specId Specification to analyze
@@ -200,17 +254,19 @@ public final class ProcessMiningFacade {
         String xesXml = exporter.exportSpecificationToXes(specId, withData);
         _log.debug("XES export complete: {} bytes", xesXml.length());
 
-        // Step 2: Analyze performance
-        PerformanceAnalyzer performanceAnalyzer = new PerformanceAnalyzer();
-        PerformanceAnalyzer.PerformanceResult performance = performanceAnalyzer.analyze(xesXml);
+        // Step 2: Analyze performance via pm4py
+        String perfJson = service.performanceAnalysis(xesXml);
+        PerformanceResult performance = parsePerformanceResult(perfJson);
         _log.debug("Performance analysis complete: {} traces, avg flow time {} ms",
-                   performance.traceCount, performance.avgFlowTimeMs);
+                   performance.traceCount(), performance.avgFlowTimeMs());
 
         // Step 3: Conformance check (if YNet provided)
-        TokenReplayConformanceChecker.TokenReplayResult conformance = null;
+        ConformanceResult conformance = null;
         if (net != null) {
-            conformance = TokenReplayConformanceChecker.replay(net, xesXml);
-            _log.debug("Conformance analysis complete: fitness = {}", conformance.computeFitness());
+            String pnmlXml = PnmlExporter.netToPnml(net);
+            String replayJson = service.tokenReplay(pnmlXml, xesXml);
+            conformance = parseConformanceResult(replayJson);
+            _log.debug("Conformance analysis complete: fitness = {}", conformance.fitness());
         } else {
             _log.debug("Skipping conformance check (no YNet provided)");
         }
@@ -220,7 +276,7 @@ public final class ProcessMiningFacade {
         _log.debug("Variant extraction complete: {} variants", variantFrequencies.size());
 
         // Step 5: Export OCEL
-        String ocelJson = OcelExporter.xesToOcel(xesXml);
+        String ocelJson = service.xesToOcel(xesXml);
         _log.debug("OCEL export complete: {} bytes", ocelJson.length());
 
         _log.info("Process mining analysis complete for {}", specId);
@@ -231,7 +287,7 @@ public final class ProcessMiningFacade {
             performance,
             variantFrequencies,
             ocelJson,
-            performance.traceCount,
+            performance.traceCount(),
             specId.getIdentifier()
         );
     }
@@ -264,7 +320,7 @@ public final class ProcessMiningFacade {
      * @param caseId     Case identifier to analyze (must not be null)
      * @param eventStore Source of workflow events (must not be null)
      * @return Analysis report with performance and variant data (null conformance)
-     * @throws WorkflowEventStore.EventStoreException If reading from the store fails
+     * @throws WorkflowEventStore.EventStoreException If reading from the store or analysis fails
      * @throws NullPointerException If caseId or eventStore is null
      */
     public ProcessMiningReport analyzeFromEventStore(
@@ -280,23 +336,29 @@ public final class ProcessMiningFacade {
 
         String xesXml = workflowEventsToXes(caseId, events);
 
-        PerformanceAnalyzer performanceAnalyzer = new PerformanceAnalyzer();
-        PerformanceAnalyzer.PerformanceResult performance = performanceAnalyzer.analyze(xesXml);
-        _log.debug("Performance analysis complete: {} traces, avg flow time {} ms",
-                   performance.traceCount, performance.avgFlowTimeMs);
+        try {
+            String perfJson = service.performanceAnalysis(xesXml);
+            PerformanceResult performance = parsePerformanceResult(perfJson);
+            _log.debug("Performance analysis complete: {} traces, avg flow time {} ms",
+                       performance.traceCount(), performance.avgFlowTimeMs());
 
-        Map<String, Long> variants = computeVariants(xesXml);
-        _log.debug("Variant extraction complete: {} variants", variants.size());
+            Map<String, Long> variants = computeVariants(xesXml);
+            _log.debug("Variant extraction complete: {} variants", variants.size());
 
-        String ocelJson = OcelExporter.xesToOcel(xesXml);
-        _log.debug("OCEL export complete: {} bytes", ocelJson.length());
+            String ocelJson = service.xesToOcel(xesXml);
+            _log.debug("OCEL export complete: {} bytes", ocelJson.length());
 
-        _log.info("Event-store analysis complete for case '{}': {} events, {} variants",
-                  caseId, events.size(), variants.size());
+            _log.info("Event-store analysis complete for case '{}': {} events, {} variants",
+                      caseId, events.size(), variants.size());
 
-        return new ProcessMiningReport(
-            xesXml, null, performance, variants, ocelJson,
-            performance.traceCount, caseId);
+            return new ProcessMiningReport(
+                xesXml, null, performance, variants, ocelJson,
+                performance.traceCount(), caseId);
+
+        } catch (IOException e) {
+            throw new WorkflowEventStore.EventStoreException(
+                "Process mining analysis failed for case '" + caseId + "': " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -311,6 +373,23 @@ public final class ProcessMiningFacade {
      */
     public String exportPnml(YNet net) {
         return PnmlExporter.netToPnml(net);
+    }
+
+    /**
+     * Run token-based replay conformance check against an external XES event log.
+     *
+     * @param net    reference YAWL net to replay against
+     * @param xesXml XES event log XML string
+     * @return conformance result with fitness score
+     * @throws IOException if PNML export or token replay fails
+     * @throws NullPointerException if either argument is null
+     */
+    public ConformanceResult tokenReplayConformance(YNet net, String xesXml) throws IOException {
+        Objects.requireNonNull(net, "net is required");
+        Objects.requireNonNull(xesXml, "xesXml is required");
+        String pnmlXml = PnmlExporter.netToPnml(net);
+        String replayJson = service.tokenReplay(pnmlXml, xesXml);
+        return parseConformanceResult(replayJson);
     }
 
     /**
@@ -373,8 +452,7 @@ public final class ProcessMiningFacade {
         _log.info("Inductive Miner discovery complete: fitness={}, precision={}",
                   result.fitness(), result.precision());
 
-        // Extract process tree from result (would require parsing the JSON representation)
-        // For now, create a simple placeholder tree
+        // Process tree extraction requires parsing the JSON representation
         throw new UnsupportedOperationException(
             "Process tree extraction from discovery result requires full implementation. " +
             "Use discoverAlpha() for Petri net-based discovery."
@@ -405,12 +483,55 @@ public final class ProcessMiningFacade {
     }
 
     /**
-     * Close connection to YAWL engine.
+     * Close connection to YAWL engine and the process mining service (if it implements
+     * {@link AutoCloseable}).
      *
      * @throws IOException If disconnection fails
      */
     public void close() throws IOException {
         exporter.close();
+        if (service instanceof AutoCloseable ac) {
+            try {
+                ac.close();
+            } catch (Exception e) {
+                throw new IOException("Failed to close ProcessMiningService", e);
+            }
+        }
+    }
+
+    // ─── Private helpers ──────────────────────────────────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    private static PerformanceResult parsePerformanceResult(String json) throws IOException {
+        try {
+            Map<String, Object> m = MAPPER.readValue(json, Map.class);
+            int traceCount = ((Number) m.getOrDefault("trace_count", 0)).intValue();
+            double avgFlowTimeMs = ((Number) m.getOrDefault("avg_flow_time_ms", 0.0)).doubleValue();
+            double throughputPerHour = ((Number) m.getOrDefault("throughput_per_hour", 0.0)).doubleValue();
+            // start_activities is Map<String, Long>; convert to Map<String, Integer>
+            Map<String, Integer> activityCounts = new HashMap<>();
+            Object startActivities = m.get("start_activities");
+            if (startActivities instanceof Map<?, ?> rawMap) {
+                rawMap.forEach((k, v) ->
+                    activityCounts.put(String.valueOf(k), ((Number) v).intValue()));
+            }
+            return new PerformanceResult(traceCount, avgFlowTimeMs, throughputPerHour, activityCounts, json);
+        } catch (Exception e) {
+            throw new IOException("Failed to parse performance result: " + e.getMessage(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ConformanceResult parseConformanceResult(String json) throws IOException {
+        try {
+            Map<String, Object> m = MAPPER.readValue(json, Map.class);
+            // pm4py fitness_token_based_replay returns log_fitness
+            double fitness = ((Number) m.getOrDefault("log_fitness",
+                m.getOrDefault("average_trace_fitness", 0.0))).doubleValue();
+            return new ConformanceResult(fitness, json);
+        } catch (Exception e) {
+            throw new IOException("Failed to parse conformance result: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -478,9 +599,7 @@ public final class ProcessMiningFacade {
     }
 
     private static String escapeXml(String value) {
-        if (value == null) {
-            throw new NullPointerException("value cannot be null for XML escaping");
-        }
+        Objects.requireNonNull(value, "XML attribute value must not be null");
         return value.replace("&", "&amp;")
                     .replace("<", "&lt;")
                     .replace(">", "&gt;")

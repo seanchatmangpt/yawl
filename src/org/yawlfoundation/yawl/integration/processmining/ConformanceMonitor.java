@@ -172,22 +172,22 @@ public class ConformanceMonitor {
         }
 
         try {
-            // Run token replay conformance check
-            TokenReplayConformanceChecker.TokenReplayResult result =
-                TokenReplayConformanceChecker.replay(state.referenceNet, xesLog);
+            // Run token replay conformance check via ProcessMiningFacade (pm4py in-process)
+            ProcessMiningFacade.ConformanceResult result =
+                facade.tokenReplayConformance(state.referenceNet, xesLog);
 
             double fitness = result.computeFitness();
             ConformanceLevel level = classifyConformanceLevel(fitness);
 
-            // Create alert
+            // Create alert (trace counts not available from token replay JSON summary)
             ConformanceAlert alert = new ConformanceAlert(
                 specId,
                 fitness,
                 0.0, // precision not computed in simple token replay
                 0.0, // generalization not computed
-                result.fittingTraces,
-                result.traceCount,
-                new ArrayList<>(result.deviatingCases),
+                0,   // fittingTraces not exposed by pm4py fitness summary
+                0,   // traceCount not exposed by pm4py fitness summary
+                new ArrayList<>(), // deviatingCases not exposed by pm4py fitness summary
                 level,
                 Instant.now()
             );
@@ -195,8 +195,8 @@ public class ConformanceMonitor {
             // Update state
             state.lastFitness = fitness;
             state.lastLevel = level;
-            state.lastTracesConforming = result.fittingTraces;
-            state.lastTracesTotal = result.traceCount;
+            state.lastTracesConforming = 0;
+            state.lastTracesTotal = 0;
             state.lastAnalyzedAt = Instant.now();
             state.alertHistory.add(alert);
 

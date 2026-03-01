@@ -54,7 +54,11 @@ import java.util.UUID;
  * @version 6.0.0
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class DataModellingTable {
+public class DataModellingTable implements
+        org.yawlfoundation.yawl.datamodelling.queries.AdvancedFiltering.Owned,
+        org.yawlfoundation.yawl.datamodelling.queries.AdvancedFiltering.InfrastructureTyped,
+        org.yawlfoundation.yawl.datamodelling.queries.AdvancedFiltering.MedallionLayered,
+        org.yawlfoundation.yawl.datamodelling.queries.AdvancedFiltering.Tagged {
 
     @JsonProperty("id")
     private String id;

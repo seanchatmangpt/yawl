@@ -344,7 +344,7 @@ public final class DataModellingLlmRefiner implements AutoCloseable {
         try {
             checkNotClosed();
             Objects.requireNonNull(config, "config must not be null");
-            return bridge.checkLlmAvailability(config);
+            return Boolean.parseBoolean(bridge.checkLlmAvailability(config));
         } catch (Exception e) {
             log.debug("LLM availability check failed", e);
             return false;
