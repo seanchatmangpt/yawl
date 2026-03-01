@@ -1,0 +1,11 @@
+# ODCS contract for order processing task input
+name: orders-workspace
+description: Order processing input contract
+tables:
+  - name: orders
+    description: Order input fields
+    columns:
+      - order_id
+      - customer_id
+      - status
+      - total_amount

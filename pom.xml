@@ -86,6 +86,7 @@
         <module>yawl-scheduling</module>
         <module>yawl-monitoring</module>
         <module>yawl-worklet</module>
+        <module>yawl-schema-contracts</module>
         <module>yawl-control-panel</module>
         <module>yawl-integration</module>
         <module>yawl-webapps</module>
