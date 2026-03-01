@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.datamodelling.DataModellingBridge;
+import org.yawlfoundation.yawl.datamodelling.bridge.DataModellingL3;
 import org.yawlfoundation.yawl.datamodelling.DataModellingException;
 
 import java.nio.file.Files;
@@ -56,7 +56,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * <h2>Usage Example</h2>
  * <pre>{@code
- * try (DataModellingBridge bridge = new DataModellingBridge()) {
+ * try (DataModellingL3 bridge = new DataModellingL3()) {
  *     DataModellingDatabaseSync sync = new DataModellingDatabaseSync(bridge);
  *
  *     // Configure DuckDB
@@ -124,7 +124,7 @@ public final class DataModellingDatabaseSync {
     private static final Logger log = LoggerFactory.getLogger(DataModellingDatabaseSync.class);
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private final DataModellingBridge bridge;
+    private final DataModellingL3 bridge;
 
     // Per-backend synchronization: ConcurrentHashMap<backend-key, ReadWriteLock>
     private final ConcurrentHashMap<String, ReadWriteLock> backendLocks = new ConcurrentHashMap<>();
@@ -132,10 +132,10 @@ public final class DataModellingDatabaseSync {
     /**
      * Constructs the sync engine with a data modelling bridge.
      *
-     * @param bridge the DataModellingBridge instance; must not be null
+     * @param bridge the DataModellingL3 instance; must not be null
      * @throws IllegalArgumentException if bridge is null
      */
-    public DataModellingDatabaseSync(DataModellingBridge bridge) {
+    public DataModellingDatabaseSync(DataModellingL3 bridge) {
         this.bridge = Objects.requireNonNull(bridge, "bridge must not be null");
         log.info("DataModellingDatabaseSync initialised");
     }

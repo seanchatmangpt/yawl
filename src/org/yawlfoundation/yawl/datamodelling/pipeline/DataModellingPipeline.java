@@ -20,7 +20,7 @@ package org.yawlfoundation.yawl.datamodelling.pipeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.datamodelling.DataModellingBridge;
+import org.yawlfoundation.yawl.datamodelling.bridge.DataModellingL3;
 import org.yawlfoundation.yawl.datamodelling.DataModellingException;
 import org.yawlfoundation.yawl.datamodelling.models.DataModellingWorkspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +38,7 @@ import java.util.Objects;
  *
  * <p>Example usage:</p>
  * <pre>{@code
- * try (DataModellingBridge bridge = new DataModellingBridge();
+ * try (DataModellingL3 bridge = new DataModellingL3();
  *      DataModellingPipeline pipeline = new DataModellingPipeline(bridge)) {
  *
  *     // Execute full pipeline
@@ -66,7 +66,7 @@ public final class DataModellingPipeline implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(DataModellingPipeline.class);
 
-    private final DataModellingBridge bridge;
+    private final DataModellingL3 bridge;
     private final Map<PipelineStage, Object> stageResults; // results cache
     private final StagingDatabase stagingDatabase;
     private boolean closed;
@@ -74,12 +74,12 @@ public final class DataModellingPipeline implements AutoCloseable {
     /**
      * Constructs a DataModellingPipeline with the given bridge.
      *
-     * @param bridge the DataModellingBridge for WASM operations; must not be null
+     * @param bridge the DataModellingL3 for WASM operations; must not be null
      * @throws IllegalArgumentException if bridge is null
      */
-    public DataModellingPipeline(DataModellingBridge bridge) {
+    public DataModellingPipeline(DataModellingL3 bridge) {
         if (bridge == null) {
-            throw new IllegalArgumentException("DataModellingBridge must not be null");
+            throw new IllegalArgumentException("DataModellingL3 must not be null");
         }
         this.bridge = bridge;
         this.stageResults = new HashMap<>();
@@ -280,7 +280,7 @@ public final class DataModellingPipeline implements AutoCloseable {
                     config);
             case "database", "iceberg", "parquet" -> throw new UnsupportedOperationException(
                     "Data source type '" + sourceType + "' requires WASM bridge support for remote data ingestion. "
-                    + "Implement via DataModellingBridge.ingest" + capitalize(sourceType) + "Data() when SDK exposes it.");
+                    + "Implement via DataModellingL3.ingest" + capitalize(sourceType) + "Data() when SDK exposes it.");
             default -> throw new IllegalArgumentException("Unknown source type: " + sourceType);
         };
     }
@@ -298,7 +298,7 @@ public final class DataModellingPipeline implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "Schema inference requires WASM bridge support. "
-                + "Implement via DataModellingBridge.inferSchemaFromStaging(stagingLocation, config) "
+                + "Implement via DataModellingL3.inferSchemaFromStaging(stagingLocation, config) "
                 + "when SDK exposes it. "
                 + "Expected return: InferenceResult with inferredSchema, columnCount, and confidence score.");
     }
@@ -316,7 +316,7 @@ public final class DataModellingPipeline implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "Schema refinement requires WASM bridge support. "
-                + "Implement via DataModellingBridge.refineSchema(schema, config) "
+                + "Implement via DataModellingL3.refineSchema(schema, config) "
                 + "when SDK exposes it. "
                 + "Expected return: RefineResult with refinedSchema and confidence score.");
     }
@@ -334,7 +334,7 @@ public final class DataModellingPipeline implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "Field mapping requires WASM bridge support. "
-                + "Implement via DataModellingBridge.mapSchemas(sourceSchema, targetSchema, config) "
+                + "Implement via DataModellingL3.mapSchemas(sourceSchema, targetSchema, config) "
                 + "when SDK exposes it. "
                 + "Expected return: MappingResult with fieldMappings and transformationScript.");
     }
@@ -352,7 +352,7 @@ public final class DataModellingPipeline implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "Schema export requires WASM bridge support. "
-                + "Implement via DataModellingBridge.exportSchema(schema, config) "
+                + "Implement via DataModellingL3.exportSchema(schema, config) "
                 + "when SDK exposes it. "
                 + "Expected return: ExportResult with exportedContent in the target format.");
     }

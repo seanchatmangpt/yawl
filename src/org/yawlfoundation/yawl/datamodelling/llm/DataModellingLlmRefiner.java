@@ -20,7 +20,7 @@ package org.yawlfoundation.yawl.datamodelling.llm;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.datamodelling.DataModellingBridge;
+import org.yawlfoundation.yawl.datamodelling.bridge.DataModellingL3;
 import org.yawlfoundation.yawl.datamodelling.DataModellingException;
 import org.yawlfoundation.yawl.datamodelling.pipeline.InferenceResult;
 import org.yawlfoundation.yawl.datamodelling.pipeline.RefineResult;
@@ -63,7 +63,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author YAWL Foundation
  * @version 6.0.0
- * @see DataModellingBridge
+ * @see DataModellingL3
  * @see LlmConfig
  * @see LlmRefinementRequest
  * @see LlmRefinementResult
@@ -72,17 +72,17 @@ public final class DataModellingLlmRefiner implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(DataModellingLlmRefiner.class);
 
-    private final DataModellingBridge bridge;
+    private final DataModellingL3 bridge;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Constructs a refiner with the given bridge instance.
      *
-     * @param bridge the DataModellingBridge to use for WASM operations; must not be null
+     * @param bridge the DataModellingL3 to use for WASM operations; must not be null
      * @throws IllegalArgumentException if bridge is null
      */
-    public DataModellingLlmRefiner(DataModellingBridge bridge) {
+    public DataModellingLlmRefiner(DataModellingL3 bridge) {
         this.bridge = Objects.requireNonNull(bridge, "bridge must not be null");
         log.info("DataModellingLlmRefiner initialised");
     }

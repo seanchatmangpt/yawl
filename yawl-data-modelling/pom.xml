@@ -14,51 +14,30 @@
 
     <artifactId>yawl-data-modelling</artifactId>
     <packaging>jar</packaging>
-    <name>YAWL Data Modelling — Thin WASM Facade</name>
+    <name>YAWL Data Modelling — Native Panama FFM Bridge</name>
     <description>
-        Thin Java facade over the data-modelling-sdk WebAssembly module (v2.3.0).
-        Exposes 70+ schema operations — ODCS/ODPS/CADS/OpenAPI/BPMN/DMN import-export,
+        Native Java 25 Panama FFM bridge over the data-modelling-sdk Rust crate (v2.3.0).
+        Exposes 67 schema operations — ODCS/ODPS/CADS/OpenAPI/BPMN/DMN import-export,
         decision records (MADR), knowledge base (KB), sketches, domain organisation,
-        and validation — without reimplementing any logic in Java.
+        and validation — via a generated L2/L3 bridge (WCP-NB-03/WCP-NB-04).
 
-        All computation runs inside data_modelling_wasm_bg.wasm via GraalJS+WASM
-        polyglot (same pattern as yawl-graalwasm Rust4pmBridge). The Java layer is
-        a 1:1 mapping of WASM exports to typed Java methods + JSON string returns.
+        The Rust cdylib (libdata_modelling_ffi.so) is compiled during generate-sources
+        via cargo build. All computation delegates to the Rust SDK through a single
+        dm_call dispatcher; no WASM or GraalVM runtime required.
 
-        SDK source: github.com/OffeneDatenmodellierung/data-modelling-sdk v2.3.0
-        License: MIT
+        SDK source: github.com/OffeneDatenmodellierung/data-modelling-sdk v2.3.0 (MIT)
+        Pattern: native-bridge-dm.ttl → ggen → DataModellingL2/L3.java
     </description>
 
     <dependencies>
-        <!-- yawl-graalwasm: WasmExecutionEngine + WasmModule -->
+        <!-- Jackson for JSON serialization in sync/pipeline layers -->
         <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-graalwasm</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
-        <!-- yawl-graaljs: JavaScriptExecutionEngine for JS+WASM polyglot context -->
         <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-graaljs</artifactId>
-        </dependency>
-        <!-- GraalVM Polyglot API (transitive, declared for compilation) -->
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>polyglot</artifactId>
-        </dependency>
-        <!-- GraalVM JavaScript language runtime — needed for js.ECMAScript-version option.
-             POM-type deps are not transitive from yawl-graaljs; declare explicitly. -->
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>js</artifactId>
-            <version>${graalvm.version}</version>
-            <type>pom</type>
-        </dependency>
-        <!-- GraalVM WASM language runtime (for JS+WASM polyglot context) -->
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>wasm</artifactId>
-            <version>${graalvm.version}</version>
-            <type>pom</type>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -95,20 +74,40 @@
         <sourceDirectory>../src</sourceDirectory>
         <testSourceDirectory>../test</testSourceDirectory>
 
-        <!-- Module-local resources: WASM binary + JS glue are module-specific,
-             not in the shared ../src tree. -->
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-        </resources>
-
         <plugins>
+            <!-- Compile Rust cdylib during generate-sources -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-rust-ffi</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>cargo</executable>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>--release</argument>
+                                <argument>--manifest-path</argument>
+                                <argument>${project.basedir}/../rust/data-modelling-ffi/Cargo.toml</argument>
+                            </arguments>
+                            <skip>${skipRustBuild}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <compilerArgs><arg>--enable-preview</arg></compilerArgs>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
+                        <!-- Panama FFM: enable-native-access required for SymbolLookup -->
+                        <arg>-J--enable-native-access=ALL-UNNAMED</arg>
+                    </compilerArgs>
                     <includes>
                         <include>**/org/yawlfoundation/yawl/datamodelling/**</include>
                     </includes>
@@ -141,6 +140,7 @@
                     <includes>
                         <include>**/org/yawlfoundation/yawl/datamodelling/**Test.java</include>
                     </includes>
+                    <argLine>--enable-preview --enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -149,4 +149,9 @@
             </plugin>
         </plugins>
     </build>
+
+    <properties>
+        <!-- Set to true to skip Rust cargo build (e.g. in CI without cargo) -->
+        <skipRustBuild>false</skipRustBuild>
+    </properties>
 </project>

@@ -1,0 +1,18 @@
+[package]
+name = "data-modelling-ffi"
+version = "2.3.0"
+edition = "2021"
+description = "C ABI FFI wrapper around data-modelling-sdk for Java 25 Panama FFM"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "data_modelling_ffi"
+
+[dependencies]
+# data-modelling-sdk v2.3.0 from crates.io — shared SDK for model operations (MIT)
+data-modelling-sdk = "2.3.0"
+serde_json = "1"
+
+# ── Standalone workspace so Cargo.lock does not pollute the YAWL root ──────────
+[workspace]

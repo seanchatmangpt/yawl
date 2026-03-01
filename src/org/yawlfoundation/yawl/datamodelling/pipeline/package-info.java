@@ -179,5 +179,5 @@
  */
 package org.yawlfoundation.yawl.datamodelling.pipeline;
 
-import org.yawlfoundation.yawl.datamodelling.DataModellingBridge;
+import org.yawlfoundation.yawl.datamodelling.bridge.DataModellingL3;
 import org.yawlfoundation.yawl.datamodelling.models.DataModellingWorkspace;

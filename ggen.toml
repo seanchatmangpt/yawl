@@ -28,7 +28,8 @@ imports = [
     ".specify/patterns/interleaved.ttl",
     ".specify/patterns/deferred-choice.ttl",
     ".specify/patterns/ontology/extended-patterns.ttl",
-    ".specify/patterns/native-bridge.ttl"
+    ".specify/patterns/native-bridge.ttl",
+    ".specify/patterns/native-bridge-dm.ttl"
 ]
 
 [ontology.prefixes]

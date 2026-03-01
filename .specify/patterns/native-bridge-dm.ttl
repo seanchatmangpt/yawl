@@ -1,0 +1,326 @@
+# DataModelling Native Bridge Ontology
+# Extends native-bridge.ttl with the DataModelling bridge instance.
+#
+# This file specifies the data-modelling-sdk v2.3.0 bridge using the
+# YAWL native bridge pattern (WCP-NB-01..04). The bridge uses a dispatcher
+# architecture: one Rust dm_call() function handles all 67 SDK operations.
+#
+# Architecture:
+#   DataModellingL3 (domain API)
+#     ↓ delegates to DataModellingFFI.call(transport, fn, args...)
+#   DataModellingL2 (Panama FFM transport) — 7 native symbols
+#     ↓ dm_call(fn_name, fn_name_len, args_json, args_json_len) → *mut DmResult
+#   libdata_modelling_ffi.so (Rust cdylib)
+#     ↓ dispatches by fn_name to data-modelling-sdk v2.3.0 (crates.io, MIT)
+#
+# Generation: native-bridge-l2.tera → DataModellingL2.java (WCP-NB-03)
+#             native-bridge-l3.tera → DataModellingL3.java (WCP-NB-04)
+#             native-bridge-capability.tera → DataModellingCapability.java (WCP-NB-01)
+#             native-bridge-registry.tera → DataModellingCapabilityRegistry.java (WCP-NB-02)
+
+@prefix owl:         <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:        <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:         <http://www.w3.org/2001/XMLSchema#> .
+@prefix yawl-bridge: <http://yawlfoundation.org/yawl/bridge#> .
+@prefix dm:          <http://yawlfoundation.org/yawl/bridge/dm#> .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bridge descriptor
+# ─────────────────────────────────────────────────────────────────────────────
+
+dm:DataModellingBridge a yawl-bridge:NativeBridge ;
+    yawl-bridge:bridgeName        "DataModelling" ;
+    yawl-bridge:packageName       "org.yawlfoundation.yawl.datamodelling.bridge" ;
+    yawl-bridge:nativeLibrary     "libdata_modelling_ffi.so" ;
+    yawl-bridge:libraryPathProp   "datamodelling.library.path" ;
+    yawl-bridge:domainDescription "data-modelling-sdk v2.3.0 — ODCS/ODPS/CADS schema import-export, domain management, MADR decisions, knowledge base, sketches, validation, and LLM refinement" ;
+    yawl-bridge:l2Class           "DataModellingL2" ;
+    yawl-bridge:l3Class           "DataModellingL3" ;
+    yawl-bridge:testClass         "DataModellingCapabilityTest" ;
+
+    # ── 7 Native Functions (L2 layer) ────────────────────────────────────────
+    # Dispatcher pattern: one dm_call entry point covers all 67 SDK operations.
+    yawl-bridge:hasFunction       dm:fn_dmCall ;
+    yawl-bridge:hasFunction       dm:fn_dmResultFree ;
+    yawl-bridge:hasFunction       dm:fn_dmSizeof ;
+    yawl-bridge:hasFunction       dm:fn_dmOffsetofData ;
+    yawl-bridge:hasFunction       dm:fn_dmOffsetofDataLen ;
+    yawl-bridge:hasFunction       dm:fn_dmOffsetofError ;
+    yawl-bridge:hasFunction       dm:fn_dmOffsetofErrorLen ;
+
+    # ── 67 Domain Operations (L3 layer) ──────────────────────────────────────
+
+    # Schema import
+    yawl-bridge:hasDomainOperation dm:op_parseOdcsYaml ;
+    yawl-bridge:hasDomainOperation dm:op_parseOdcsYamlV2 ;
+    yawl-bridge:hasDomainOperation dm:op_importFromSql ;
+    yawl-bridge:hasDomainOperation dm:op_importFromAvro ;
+    yawl-bridge:hasDomainOperation dm:op_importFromJsonSchema ;
+    yawl-bridge:hasDomainOperation dm:op_importFromProtobuf ;
+    yawl-bridge:hasDomainOperation dm:op_importFromCads ;
+    yawl-bridge:hasDomainOperation dm:op_importFromOdps ;
+    yawl-bridge:hasDomainOperation dm:op_importBpmnModel ;
+    yawl-bridge:hasDomainOperation dm:op_importDmnModel ;
+    yawl-bridge:hasDomainOperation dm:op_importOpenapiSpec ;
+
+    # Schema export
+    yawl-bridge:hasDomainOperation dm:op_exportOdcsYamlV2 ;
+    yawl-bridge:hasDomainOperation dm:op_exportToSql ;
+    yawl-bridge:hasDomainOperation dm:op_exportBpmnModel ;
+    yawl-bridge:hasDomainOperation dm:op_exportDmnModel ;
+    yawl-bridge:hasDomainOperation dm:op_exportOdcsYamlToMarkdown ;
+    yawl-bridge:hasDomainOperation dm:op_exportOdpsToMarkdown ;
+
+    # Format conversion
+    yawl-bridge:hasDomainOperation dm:op_convertToOdcs ;
+    yawl-bridge:hasDomainOperation dm:op_convertOpenapiToOdcs ;
+    yawl-bridge:hasDomainOperation dm:op_analyzeOpenapiConversion ;
+    yawl-bridge:hasDomainOperation dm:op_migrateDataflowToDomain ;
+
+    # Workspace
+    yawl-bridge:hasDomainOperation dm:op_createWorkspace ;
+    yawl-bridge:hasDomainOperation dm:op_parseWorkspaceYaml ;
+    yawl-bridge:hasDomainOperation dm:op_addRelationshipToWorkspace ;
+    yawl-bridge:hasDomainOperation dm:op_removeRelationshipFromWorkspace ;
+    yawl-bridge:hasDomainOperation dm:op_createDomain ;
+    yawl-bridge:hasDomainOperation dm:op_addDomainToWorkspace ;
+    yawl-bridge:hasDomainOperation dm:op_removeDomainFromWorkspace ;
+    yawl-bridge:hasDomainOperation dm:op_addSystemToDomain ;
+    yawl-bridge:hasDomainOperation dm:op_addOdcsNodeToDomain ;
+    yawl-bridge:hasDomainOperation dm:op_addCadsNodeToDomain ;
+
+    # Decision records (MADR)
+    yawl-bridge:hasDomainOperation dm:op_createDecision ;
+    yawl-bridge:hasDomainOperation dm:op_createDecisionIndex ;
+    yawl-bridge:hasDomainOperation dm:op_parseDecisionYaml ;
+    yawl-bridge:hasDomainOperation dm:op_exportDecisionToYaml ;
+    yawl-bridge:hasDomainOperation dm:op_exportDecisionToMarkdown ;
+    yawl-bridge:hasDomainOperation dm:op_parseDecisionIndexYaml ;
+    yawl-bridge:hasDomainOperation dm:op_exportDecisionIndexToYaml ;
+    yawl-bridge:hasDomainOperation dm:op_addDecisionToIndex ;
+
+    # Knowledge base
+    yawl-bridge:hasDomainOperation dm:op_createKnowledgeArticle ;
+    yawl-bridge:hasDomainOperation dm:op_createKnowledgeIndex ;
+    yawl-bridge:hasDomainOperation dm:op_parseKnowledgeYaml ;
+    yawl-bridge:hasDomainOperation dm:op_exportKnowledgeToYaml ;
+    yawl-bridge:hasDomainOperation dm:op_exportKnowledgeToMarkdown ;
+    yawl-bridge:hasDomainOperation dm:op_parseKnowledgeIndexYaml ;
+    yawl-bridge:hasDomainOperation dm:op_exportKnowledgeIndexToYaml ;
+    yawl-bridge:hasDomainOperation dm:op_addArticleToKnowledgeIndex ;
+    yawl-bridge:hasDomainOperation dm:op_searchKnowledgeArticles ;
+
+    # Sketch
+    yawl-bridge:hasDomainOperation dm:op_createSketch ;
+    yawl-bridge:hasDomainOperation dm:op_createSketchIndex ;
+    yawl-bridge:hasDomainOperation dm:op_parseSketchYaml ;
+    yawl-bridge:hasDomainOperation dm:op_exportSketchToYaml ;
+    yawl-bridge:hasDomainOperation dm:op_parseSketchIndexYaml ;
+    yawl-bridge:hasDomainOperation dm:op_addSketchToIndex ;
+    yawl-bridge:hasDomainOperation dm:op_searchSketches ;
+
+    # Validation
+    yawl-bridge:hasDomainOperation dm:op_validateOdps ;
+    yawl-bridge:hasDomainOperation dm:op_validateTableName ;
+    yawl-bridge:hasDomainOperation dm:op_validateColumnName ;
+    yawl-bridge:hasDomainOperation dm:op_validateDataType ;
+    yawl-bridge:hasDomainOperation dm:op_checkCircularDependency ;
+    yawl-bridge:hasDomainOperation dm:op_detectNamingConflicts ;
+
+    # LLM integration
+    yawl-bridge:hasDomainOperation dm:op_refineSchemaWithLlmOffline ;
+    yawl-bridge:hasDomainOperation dm:op_refineSchemaWithLlmOnline ;
+    yawl-bridge:hasDomainOperation dm:op_matchFieldsWithLlm ;
+    yawl-bridge:hasDomainOperation dm:op_enrichDocumentationWithLlm ;
+    yawl-bridge:hasDomainOperation dm:op_detectPatternsWithLlm ;
+    yawl-bridge:hasDomainOperation dm:op_checkLlmAvailability ;
+
+    # ── Capabilities ────────────────────────────────────────────────────────
+    yawl-bridge:hasCapability dm:cap_PARSE_ODCS_YAML ;
+    yawl-bridge:hasCapability dm:cap_PARSE_ODCS_YAML_V2 ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_FROM_SQL ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_FROM_AVRO ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_FROM_JSON_SCHEMA ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_FROM_PROTOBUF ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_FROM_CADS ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_FROM_ODPS ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_BPMN_MODEL ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_DMN_MODEL ;
+    yawl-bridge:hasCapability dm:cap_IMPORT_OPENAPI_SPEC ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_ODCS_YAML_V2 ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_TO_SQL ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_BPMN_MODEL ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_DMN_MODEL ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_ODCS_YAML_TO_MARKDOWN ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_ODPS_TO_MARKDOWN ;
+    yawl-bridge:hasCapability dm:cap_CONVERT_TO_ODCS ;
+    yawl-bridge:hasCapability dm:cap_CONVERT_OPENAPI_TO_ODCS ;
+    yawl-bridge:hasCapability dm:cap_ANALYZE_OPENAPI_CONVERSION ;
+    yawl-bridge:hasCapability dm:cap_MIGRATE_DATAFLOW_TO_DOMAIN ;
+    yawl-bridge:hasCapability dm:cap_CREATE_WORKSPACE ;
+    yawl-bridge:hasCapability dm:cap_PARSE_WORKSPACE_YAML ;
+    yawl-bridge:hasCapability dm:cap_ADD_RELATIONSHIP_TO_WORKSPACE ;
+    yawl-bridge:hasCapability dm:cap_REMOVE_RELATIONSHIP_FROM_WORKSPACE ;
+    yawl-bridge:hasCapability dm:cap_CREATE_DOMAIN ;
+    yawl-bridge:hasCapability dm:cap_ADD_DOMAIN_TO_WORKSPACE ;
+    yawl-bridge:hasCapability dm:cap_REMOVE_DOMAIN_FROM_WORKSPACE ;
+    yawl-bridge:hasCapability dm:cap_ADD_SYSTEM_TO_DOMAIN ;
+    yawl-bridge:hasCapability dm:cap_ADD_ODCS_NODE_TO_DOMAIN ;
+    yawl-bridge:hasCapability dm:cap_ADD_CADS_NODE_TO_DOMAIN ;
+    yawl-bridge:hasCapability dm:cap_CREATE_DECISION ;
+    yawl-bridge:hasCapability dm:cap_CREATE_DECISION_INDEX ;
+    yawl-bridge:hasCapability dm:cap_PARSE_DECISION_YAML ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_DECISION_TO_YAML ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_DECISION_TO_MARKDOWN ;
+    yawl-bridge:hasCapability dm:cap_PARSE_DECISION_INDEX_YAML ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_DECISION_INDEX_TO_YAML ;
+    yawl-bridge:hasCapability dm:cap_ADD_DECISION_TO_INDEX ;
+    yawl-bridge:hasCapability dm:cap_CREATE_KNOWLEDGE_ARTICLE ;
+    yawl-bridge:hasCapability dm:cap_CREATE_KNOWLEDGE_INDEX ;
+    yawl-bridge:hasCapability dm:cap_PARSE_KNOWLEDGE_YAML ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_KNOWLEDGE_TO_YAML ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_KNOWLEDGE_TO_MARKDOWN ;
+    yawl-bridge:hasCapability dm:cap_PARSE_KNOWLEDGE_INDEX_YAML ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_KNOWLEDGE_INDEX_TO_YAML ;
+    yawl-bridge:hasCapability dm:cap_ADD_ARTICLE_TO_KNOWLEDGE_INDEX ;
+    yawl-bridge:hasCapability dm:cap_SEARCH_KNOWLEDGE_ARTICLES ;
+    yawl-bridge:hasCapability dm:cap_CREATE_SKETCH ;
+    yawl-bridge:hasCapability dm:cap_CREATE_SKETCH_INDEX ;
+    yawl-bridge:hasCapability dm:cap_PARSE_SKETCH_YAML ;
+    yawl-bridge:hasCapability dm:cap_EXPORT_SKETCH_TO_YAML ;
+    yawl-bridge:hasCapability dm:cap_PARSE_SKETCH_INDEX_YAML ;
+    yawl-bridge:hasCapability dm:cap_ADD_SKETCH_TO_INDEX ;
+    yawl-bridge:hasCapability dm:cap_SEARCH_SKETCHES ;
+    yawl-bridge:hasCapability dm:cap_VALIDATE_ODPS ;
+    yawl-bridge:hasCapability dm:cap_VALIDATE_TABLE_NAME ;
+    yawl-bridge:hasCapability dm:cap_VALIDATE_COLUMN_NAME ;
+    yawl-bridge:hasCapability dm:cap_VALIDATE_DATA_TYPE ;
+    yawl-bridge:hasCapability dm:cap_CHECK_CIRCULAR_DEPENDENCY ;
+    yawl-bridge:hasCapability dm:cap_DETECT_NAMING_CONFLICTS ;
+    yawl-bridge:hasCapability dm:cap_REFINE_SCHEMA_WITH_LLM_OFFLINE ;
+    yawl-bridge:hasCapability dm:cap_REFINE_SCHEMA_WITH_LLM_ONLINE ;
+    yawl-bridge:hasCapability dm:cap_MATCH_FIELDS_WITH_LLM ;
+    yawl-bridge:hasCapability dm:cap_ENRICH_DOCUMENTATION_WITH_LLM ;
+    yawl-bridge:hasCapability dm:cap_DETECT_PATTERNS_WITH_LLM ;
+    yawl-bridge:hasCapability dm:cap_CHECK_LLM_AVAILABILITY .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NativeFunction instances (L2 layer — 7 native symbols)
+# ─────────────────────────────────────────────────────────────────────────────
+
+dm:fn_dmCall a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName    "hDmCall" ;
+    yawl-bridge:fnJavaName      "dmCall" ;
+    yawl-bridge:fnNativeSymbol  "dm_call" ;
+    yawl-bridge:fnReturnType    "MemorySegment" ;
+    yawl-bridge:fnDescriptor    "FunctionDescriptor.of(ADDRESS, ADDRESS, JAVA_LONG, ADDRESS, JAVA_LONG)" ;
+    yawl-bridge:fnDescription   "Dispatcher: routes any of the 67 SDK operations by name with JSON-array args" ;
+    yawl-bridge:fnReturnDoc     "pointer to a heap-allocated DmResult; caller must free via dm_result_free" .
+
+dm:fn_dmResultFree a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName    "hDmResultFree" ;
+    yawl-bridge:fnJavaName      "dmResultFree" ;
+    yawl-bridge:fnNativeSymbol  "dm_result_free" ;
+    yawl-bridge:fnReturnType    "void" ;
+    yawl-bridge:fnDescriptor    "FunctionDescriptor.ofVoid(ADDRESS)" ;
+    yawl-bridge:fnDescription   "Releases a heap-allocated DmResult and its data/error strings" ;
+    yawl-bridge:fnReturnDoc     "void" .
+
+dm:fn_dmSizeof a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName    "hDmSizeof" ;
+    yawl-bridge:fnJavaName      "dmSizeofDmResult" ;
+    yawl-bridge:fnNativeSymbol  "dm_sizeof_dm_result" ;
+    yawl-bridge:fnReturnType    "long" ;
+    yawl-bridge:fnDescriptor    "FunctionDescriptor.of(JAVA_LONG)" ;
+    yawl-bridge:fnDescription   "Correctness probe: sizeof(DmResult) for ABI layout validation" ;
+    yawl-bridge:fnReturnDoc     "native sizeof(DmResult) in bytes" .
+
+dm:fn_dmOffsetofData a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName    "hDmOffsetofData" ;
+    yawl-bridge:fnJavaName      "dmOffsetofData" ;
+    yawl-bridge:fnNativeSymbol  "dm_offsetof_data" ;
+    yawl-bridge:fnReturnType    "long" ;
+    yawl-bridge:fnDescriptor    "FunctionDescriptor.of(JAVA_LONG)" ;
+    yawl-bridge:fnDescription   "Correctness probe: offsetof(DmResult, data)" ;
+    yawl-bridge:fnReturnDoc     "byte offset of data field in DmResult" .
+
+dm:fn_dmOffsetofDataLen a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName    "hDmOffsetofDataLen" ;
+    yawl-bridge:fnJavaName      "dmOffsetofDataLen" ;
+    yawl-bridge:fnNativeSymbol  "dm_offsetof_data_len" ;
+    yawl-bridge:fnReturnType    "long" ;
+    yawl-bridge:fnDescriptor    "FunctionDescriptor.of(JAVA_LONG)" ;
+    yawl-bridge:fnDescription   "Correctness probe: offsetof(DmResult, data_len)" ;
+    yawl-bridge:fnReturnDoc     "byte offset of data_len field in DmResult" .
+
+dm:fn_dmOffsetofError a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName    "hDmOffsetofError" ;
+    yawl-bridge:fnJavaName      "dmOffsetofError" ;
+    yawl-bridge:fnNativeSymbol  "dm_offsetof_error" ;
+    yawl-bridge:fnReturnType    "long" ;
+    yawl-bridge:fnDescriptor    "FunctionDescriptor.of(JAVA_LONG)" ;
+    yawl-bridge:fnDescription   "Correctness probe: offsetof(DmResult, error)" ;
+    yawl-bridge:fnReturnDoc     "byte offset of error field in DmResult" .
+
+dm:fn_dmOffsetofErrorLen a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName    "hDmOffsetofErrorLen" ;
+    yawl-bridge:fnJavaName      "dmOffsetofErrorLen" ;
+    yawl-bridge:fnNativeSymbol  "dm_offsetof_error_len" ;
+    yawl-bridge:fnReturnType    "long" ;
+    yawl-bridge:fnDescriptor    "FunctionDescriptor.of(JAVA_LONG)" ;
+    yawl-bridge:fnDescription   "Correctness probe: offsetof(DmResult, error_len)" ;
+    yawl-bridge:fnReturnDoc     "byte offset of error_len field in DmResult" .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BridgeCapability instances
+# ─────────────────────────────────────────────────────────────────────────────
+
+dm:cap_PARSE_ODCS_YAML a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "PARSE_ODCS_YAML" ;
+    yawl-bridge:capabilityDescription "Parse ODCS YAML (v3.1.0 or v2.x) into workspace JSON" ;
+    yawl-bridge:nativeTarget          "dm_call/parse_odcs_yaml" .
+
+dm:cap_PARSE_ODCS_YAML_V2 a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "PARSE_ODCS_YAML_V2" ;
+    yawl-bridge:capabilityDescription "Parse ODCS YAML v2 with extended field preservation" ;
+    yawl-bridge:nativeTarget          "dm_call/parse_odcs_yaml_v2" .
+
+dm:cap_IMPORT_FROM_SQL a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "IMPORT_FROM_SQL" ;
+    yawl-bridge:capabilityDescription "Import SQL DDL into workspace JSON" ;
+    yawl-bridge:nativeTarget          "dm_call/import_from_sql" .
+
+dm:cap_VALIDATE_ODPS a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "VALIDATE_ODPS" ;
+    yawl-bridge:capabilityDescription "Validate ODPS YAML against JSON Schema (void — throws on failure)" ;
+    yawl-bridge:nativeTarget          "dm_call/validate_odps" .
+
+dm:cap_CHECK_LLM_AVAILABILITY a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "CHECK_LLM_AVAILABILITY" ;
+    yawl-bridge:capabilityDescription "Check LLM service availability; returns 'true' or 'false'" ;
+    yawl-bridge:nativeTarget          "dm_call/check_llm_availability" .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DomainOperation instances (key subset — L3 opImpl reference)
+# Full 67 operations defined; representative sample shown for brevity.
+# The DataModellingL3.java file contains the complete implementation.
+# ─────────────────────────────────────────────────────────────────────────────
+
+dm:op_parseOdcsYaml a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName          "parseOdcsYaml" ;
+    yawl-bridge:opDescription   "Parses ODCS YAML (v3.1.0 or v2.x) into workspace JSON" ;
+    yawl-bridge:opReturnType    "String" ;
+    yawl-bridge:opReturnDoc     "workspace JSON string; never null" ;
+    yawl-bridge:opExceptionType "org.yawlfoundation.yawl.datamodelling.DataModellingException" ;
+    yawl-bridge:opNativeException "Throwable" ;
+    yawl-bridge:opImpl          "return DataModellingFFI.call(transport, \"parse_odcs_yaml\", yaml);" .
+
+dm:op_validateOdps a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName          "validateOdps" ;
+    yawl-bridge:opDescription   "Validates ODPS YAML against the ODPS JSON Schema; throws on failure" ;
+    yawl-bridge:opReturnType    "void" ;
+    yawl-bridge:opReturnDoc     "void" ;
+    yawl-bridge:opExceptionType "org.yawlfoundation.yawl.datamodelling.DataModellingException" ;
+    yawl-bridge:opNativeException "Throwable" ;
+    yawl-bridge:opImpl          "DataModellingFFI.callVoid(transport, \"validate_odps\", yamlContent);" .

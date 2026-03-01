@@ -20,7 +20,7 @@ package org.yawlfoundation.yawl.datamodelling.pipeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yawlfoundation.yawl.datamodelling.DataModellingBridge;
+import org.yawlfoundation.yawl.datamodelling.bridge.DataModellingL3;
 import org.yawlfoundation.yawl.datamodelling.DataModellingException;
 
 /**
@@ -28,7 +28,7 @@ import org.yawlfoundation.yawl.datamodelling.DataModellingException;
  *
  * <p>Manages data ingestion into a temporary DuckDB instance for schema inference,
  * data profiling, and transformation testing. Provides high-level operations while
- * delegating actual WASM calls to {@link DataModellingBridge}.</p>
+ * delegating actual WASM calls to {@link DataModellingL3}.</p>
  *
  * <p>Key responsibilities:</p>
  * <ul>
@@ -40,7 +40,7 @@ import org.yawlfoundation.yawl.datamodelling.DataModellingException;
  *   <li>Clean up temporary resources</li>
  * </ul>
  *
- * <p>Thread-safe via underlying DataModellingBridge context pool.</p>
+ * <p>Thread-safe via underlying DataModellingL3 context pool.</p>
  *
  * @author YAWL Foundation
  * @version 6.0.0
@@ -49,19 +49,19 @@ public final class StagingDatabase implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(StagingDatabase.class);
 
-    private final DataModellingBridge bridge;
+    private final DataModellingL3 bridge;
     private final String databaseId; // unique identifier for this staging instance
     private boolean closed;
 
     /**
      * Constructs a StagingDatabase with the given bridge.
      *
-     * @param bridge the DataModellingBridge for WASM operations; must not be null
+     * @param bridge the DataModellingL3 for WASM operations; must not be null
      * @throws IllegalArgumentException if bridge is null
      */
-    public StagingDatabase(DataModellingBridge bridge) {
+    public StagingDatabase(DataModellingL3 bridge) {
         if (bridge == null) {
-            throw new IllegalArgumentException("DataModellingBridge must not be null");
+            throw new IllegalArgumentException("DataModellingL3 must not be null");
         }
         this.bridge = bridge;
         this.databaseId = "staging_" + System.nanoTime();
@@ -92,7 +92,7 @@ public final class StagingDatabase implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "DuckDB JSON ingestion requires WASM bridge support. "
-                + "Implement via DataModellingBridge.ingestJsonData(jsonData, config) when SDK exposes it. "
+                + "Implement via DataModellingL3.ingestJsonData(jsonData, config) when SDK exposes it. "
                 + "Expected return: IngestResult with stagingLocation and rowCount from DuckDB.");
     }
 
@@ -116,7 +116,7 @@ public final class StagingDatabase implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "DuckDB CSV ingestion requires WASM bridge support. "
-                + "Implement via DataModellingBridge.ingestCsvData(csvData, config) when SDK exposes it. "
+                + "Implement via DataModellingL3.ingestCsvData(csvData, config) when SDK exposes it. "
                 + "Expected return: IngestResult with stagingLocation, rowCount, and columnCount from DuckDB.");
     }
 
@@ -138,7 +138,7 @@ public final class StagingDatabase implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "DuckDB query execution requires WASM bridge support. "
-                + "Implement via DataModellingBridge.executeStagingQuery(sql) when SDK exposes it. "
+                + "Implement via DataModellingL3.executeStagingQuery(sql) when SDK exposes it. "
                 + "Expected return: JSON string with query results.");
     }
 
@@ -160,7 +160,7 @@ public final class StagingDatabase implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "DuckDB data profiling requires WASM bridge support. "
-                + "Implement via DataModellingBridge.profileTable(databaseId, tableName) when SDK exposes it. "
+                + "Implement via DataModellingL3.profileTable(databaseId, tableName) when SDK exposes it. "
                 + "Expected return: JSON with column statistics (types, cardinality, null counts).");
     }
 
@@ -184,7 +184,7 @@ public final class StagingDatabase implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "DuckDB deduplication requires WASM bridge support. "
-                + "Implement via DataModellingBridge.deduplicateTable(databaseId, tableName, strategy) "
+                + "Implement via DataModellingL3.deduplicateTable(databaseId, tableName, strategy) "
                 + "when SDK exposes it. "
                 + "Expected return: JSON with originalRowCount, deduplicatedRowCount, and duplicateRows removed.");
     }
@@ -209,7 +209,7 @@ public final class StagingDatabase implements AutoCloseable {
 
         throw new UnsupportedOperationException(
                 "DuckDB table export requires WASM bridge support. "
-                + "Implement via DataModellingBridge.exportTable(databaseId, tableName, format) "
+                + "Implement via DataModellingL3.exportTable(databaseId, tableName, format) "
                 + "when SDK exposes it. "
                 + "Expected return: exported table data as string (JSON/CSV/Parquet) or file path.");
     }
