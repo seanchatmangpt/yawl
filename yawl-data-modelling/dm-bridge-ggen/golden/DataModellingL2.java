@@ -161,6 +161,7 @@ public final class DataModellingL2 implements AutoCloseable {
     private final MethodHandle mh$dm_validate_openapi_schema;
     private final MethodHandle mh$dm_validate_sketch;
     private final MethodHandle mh$dm_string_free;
+    private volatile boolean closed = false;
 
     /**
      * Creates an L2 transport with the native library loaded from the given path.
@@ -384,6 +385,10 @@ public final class DataModellingL2 implements AutoCloseable {
      * @throws AssertionError if the native call fails or returns NULL
      */
     private String callDm(MethodHandle mh, String json) {
+        if (mh == null) {
+            throw new UnsupportedOperationException(
+                "Native method handle is null — library not loaded. Set -D" + LIB_PATH_PROP);
+        }
         try (Arena call = Arena.ofConfined()) {
             MemorySegment jsonSeg = call.allocateFrom(json, StandardCharsets.UTF_8);
             MemorySegment result = (MemorySegment) mh.invokeExact(jsonSeg);
@@ -391,10 +396,14 @@ public final class DataModellingL2 implements AutoCloseable {
                 throw new AssertionError(
                     "libdatamodelling.so returned NULL — check input JSON");
             }
-            String out = result.reinterpret(Long.MAX_VALUE)
-                               .getString(0, StandardCharsets.UTF_8);
-            this.mh$dm_string_free.invokeExact(result);
-            return out;
+            try {
+                return result.reinterpret(Long.MAX_VALUE)
+                             .getString(0, StandardCharsets.UTF_8);
+            } finally {
+                this.mh$dm_string_free.invokeExact(result);
+            }
+        } catch (AssertionError e) {
+            throw e;
         } catch (Throwable t) {
             throw new AssertionError("DataModelling native call failed", t);
         }
@@ -1122,10 +1131,13 @@ public final class DataModellingL2 implements AutoCloseable {
 
     /**
      * Releases the shared Arena holding all native SymbolLookup segments.
-     * After closing, method calls will fail with {@link IllegalStateException}.
+     * Idempotent — safe to call more than once.
      */
     @Override
     public void close() {
-        arena.close();
+        if (!closed) {
+            closed = true;
+            arena.close();
+        }
     }
 }
