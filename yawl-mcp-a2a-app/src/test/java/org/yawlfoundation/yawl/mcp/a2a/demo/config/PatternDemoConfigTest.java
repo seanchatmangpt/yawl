@@ -319,11 +319,11 @@ class PatternDemoConfigTest {
         @Test
         @DisplayName("Builder should add single category")
         void builderShouldAddSingleCategory() {
-            builder.addCategory(PatternCategory.BASIC);
+            builder.addCategory(PatternCategory.ADVANCED_BRANCHING);
             PatternDemoConfig config = builder.build();
 
             assertEquals(1, config.categories().size());
-            assertEquals(PatternCategory.BASIC, config.categories().get(0));
+            assertEquals(PatternCategory.ADVANCED_BRANCHING, config.categories().get(0));
             assertTrue(config.hasCategoryFilter());
         }
 
@@ -404,7 +404,7 @@ class PatternDemoConfigTest {
         private PatternDemoConfig createConfigWithFilters() {
             return PatternDemoConfig.builder()
                 .addPatternId("WCP-1")
-                .addCategory(PatternCategory.BASIC)
+                .addCategory(PatternCategory.ADVANCED_BRANCHING)
                 .build();
         }
 
@@ -502,11 +502,11 @@ class PatternDemoConfigTest {
         @DisplayName("shouldExecutePattern should respect category filter")
         void shouldExecutePatternShouldRespectCategoryFilter() {
             PatternDemoConfig config = PatternDemoConfig.builder()
-                .addCategory(PatternCategory.BASIC)
+                .addCategory(PatternCategory.ADVANCED_BRANCHING)
                 .build();
 
-            assertTrue(config.shouldExecutePattern("WCP-1", PatternCategory.BASIC));
-            assertFalse(config.shouldExecutePattern("WCP-6", PatternCategory.ADVANCED_BRANCHING));
+            assertTrue(config.shouldExecutePattern("WCP-1", PatternCategory.ADVANCED_BRANCHING));
+            assertFalse(config.shouldExecutePattern("WCP-6", PatternCategory.ITERATION));
         }
 
         @Test
@@ -514,17 +514,17 @@ class PatternDemoConfigTest {
         void shouldExecutePatternShouldRequireBothMatchesWhenBothFiltersSet() {
             PatternDemoConfig config = PatternDemoConfig.builder()
                 .addPatternId("WCP-1")
-                .addCategory(PatternCategory.BASIC)
+                .addCategory(PatternCategory.ADVANCED_BRANCHING)
                 .build();
 
             // Pattern ID matches but category doesn't
             assertFalse(config.shouldExecutePattern("WCP-1", PatternCategory.AI_ML));
 
             // Category matches but pattern ID doesn't
-            assertFalse(config.shouldExecutePattern("WCP-6", PatternCategory.BASIC));
+            assertFalse(config.shouldExecutePattern("WCP-6", PatternCategory.ADVANCED_BRANCHING));
 
             // Both match
-            assertTrue(config.shouldExecutePattern("WCP-1", PatternCategory.BASIC));
+            assertTrue(config.shouldExecutePattern("WCP-1", PatternCategory.ADVANCED_BRANCHING));
         }
     }
 

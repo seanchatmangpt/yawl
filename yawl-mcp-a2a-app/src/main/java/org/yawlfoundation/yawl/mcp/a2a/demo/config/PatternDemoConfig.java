@@ -112,27 +112,33 @@ public record PatternDemoConfig(
         if (timeoutSeconds <= 0) {
             timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }
-        // Apply defaults for boolean flags when false is passed
-        if (!enableTracing) enableTracing = true;
-        if (!enableMetrics) enableMetrics = true;
-        if (!autoComplete) autoComplete = true;
-        if (!parallelExecution) parallelExecution = true;
-        if (!tokenAnalysis) tokenAnalysis = true;
-        if (withCommentary) withCommentary = false; // Default is false
+        // Apply boolean defaults - false means use default (true for most, false for withCommentary)
+        if (!enableTracing) {
+            enableTracing = true;
+        }
+        if (!enableMetrics) {
+            enableMetrics = true;
+        }
+        if (!autoComplete) {
+            autoComplete = true;
+        }
+        if (!parallelExecution) {
+            parallelExecution = true;
+        }
+        if (!tokenAnalysis) {
+            tokenAnalysis = true;
+        }
+        // withCommentary default is false, so no change needed
 
-        // Handle pattern IDs - null means empty, empty means defaults
+        // Handle pattern IDs - null means empty, copy otherwise
         if (patternIds == null) {
             patternIds = Collections.emptyList();
-        } else if (patternIds.isEmpty()) {
-            patternIds = Collections.singletonList("DEFAULT");
         } else {
             patternIds = List.copyOf(patternIds);
         }
-        // Handle categories - null means empty, empty means defaults
+        // Handle categories - null means empty, copy otherwise
         if (categories == null) {
             categories = Collections.emptyList();
-        } else if (categories.isEmpty()) {
-            categories = Collections.singletonList(PatternCategory.BASIC);
         } else {
             categories = List.copyOf(categories);
         }
@@ -256,7 +262,11 @@ public record PatternDemoConfig(
         if (categories == null || categories.isEmpty()) {
             return false;
         }
-        // Any non-empty list = filtering
+        // Just BASIC (default category) = not filtering
+        if (categories.size() == 1 && PatternCategory.BASIC.equals(categories.get(0))) {
+            return false;
+        }
+        // Any other non-empty list = filtering
         return true;
     }
 
