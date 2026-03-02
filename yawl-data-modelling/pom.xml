@@ -29,6 +29,10 @@
         License: MIT
     </description>
 
+    <properties>
+        <skipRustBuild>false</skipRustBuild>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -97,6 +101,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>--enable-preview --enable-native-access=ALL-UNNAMED</argLine>
+                    <systemPropertyVariables>
+                        <yawl.datamodelling.lib>${project.basedir}/../rust/data-modelling-ffi/target/release/libdatamodelling.so</yawl.datamodelling.lib>
+                    </systemPropertyVariables>
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
@@ -105,6 +112,31 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
+            <!-- WCP-NB-09: Build Rust cdylib during generate-sources -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>cargo-build-data-modelling-ffi</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipRustBuild}</skip>
+                            <executable>cargo</executable>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>--release</argument>
+                                <argument>--manifest-path</argument>
+                                <argument>${project.basedir}/../rust/data-modelling-ffi/Cargo.toml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

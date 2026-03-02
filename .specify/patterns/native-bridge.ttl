@@ -240,6 +240,18 @@ yawl-bridge:opImpl a owl:DatatypeProperty ;
     rdfs:label  "opImpl" ;
     rdfs:comment "Template-safe body expression delegating to the L2 transport." .
 
+yawl-bridge:sdkCall a owl:DatatypeProperty ;
+    rdfs:domain yawl-bridge:NativeFunction ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "sdkCall" ;
+    rdfs:comment "Short routing token identifying the SDK call pattern. Used by native-bridge-rust-ffi.tera to emit the correct SDK invocation body (e.g. 'import_odcs', 'export_odps', 'validate_bpmn')." .
+
+yawl-bridge:testFixture a owl:DatatypeProperty ;
+    rdfs:domain yawl-bridge:DomainOperation ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "testFixture" ;
+    rdfs:comment "Name of the JSON fixture file (without extension) used in integration tests. Used by native-bridge-integration-test.tera. Loaded via JTBDTestSupport.loadFixture(name)." .
+
 yawl-bridge:opHasParam a owl:ObjectProperty ;
     rdfs:domain yawl-bridge:DomainOperation ;
     rdfs:range  yawl-bridge:FunctionParameter ;

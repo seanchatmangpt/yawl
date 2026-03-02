@@ -240,6 +240,63 @@ template = { file = "templates/05-dm-jtbd.tera" }
 output_file = "bridge/{{ bridgeName }}JTBDJob.java"
 mode = "Overwrite"
 
+# --- WCP-NB-09: Rust FFI cdylib source ---
+[[generation.rules]]
+name = "dm-ffi-rust"
+description = "Generate Rust C-ABI cdylib lib.rs from ontology — the actual libdatamodelling.so implementation"
+output_dir = "../rust/data-modelling-ffi/src"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?fnNativeSymbol ?fnJavaName ?fnCapName ?sdkCall
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:hasFunction ?fn .
+  ?fn a yawl-bridge:NativeFunction ;
+      yawl-bridge:fnNativeSymbol ?fnNativeSymbol ;
+      yawl-bridge:fnJavaName ?fnJavaName ;
+      yawl-bridge:sdkCall ?sdkCall ;
+      yawl-bridge:forCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?fnCapName .
+}
+ORDER BY ?fnNativeSymbol
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-rust-ffi.tera" }
+output_file = "lib.rs"
+mode = "Overwrite"
+
+# --- WCP-NB-10: Real Integration Tests ---
+[[generation.rules]]
+name = "dm-integration-test"
+description = "Generate DataModellingIntegrationTest.java — 55 live integration tests proving libdatamodelling.so works"
+output_dir = "../src/test/java/org/yawlfoundation/yawl/datamodelling"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?nativeLibrary
+       ?opName ?opCapName ?opL2JavaName ?testFixture
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:nativeLibrary ?nativeLibrary ;
+          yawl-bridge:hasDomainOperation ?op .
+  ?op a yawl-bridge:DomainOperation ;
+      yawl-bridge:opName ?opName ;
+      yawl-bridge:opL2JavaName ?opL2JavaName ;
+      yawl-bridge:testFixture ?testFixture ;
+      yawl-bridge:forCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?opCapName .
+}
+ORDER BY ?opName
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-integration-test.tera" }
+output_file = "bridge/{{ bridgeName }}IntegrationTest.java"
+mode = "Overwrite"
+
 # =============================================================================
 # VALIDATION GATES
 # =============================================================================

@@ -1,0 +1,11 @@
+{
+  "apiVersion": "v1.0",
+  "kind": "Application",
+  "id": "test-cads-001",
+  "name": "TestAsset",
+  "version": "1.0.0",
+  "status": "draft",
+  "description": {
+    "purpose": "Test CADS asset for integration tests"
+  }
+}
