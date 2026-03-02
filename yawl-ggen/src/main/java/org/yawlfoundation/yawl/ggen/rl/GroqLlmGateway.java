@@ -88,8 +88,9 @@ public class GroqLlmGateway implements LlmGateway {
     }
 
     /**
-     * Factory method: reads {@code GROQ_API_KEY} from environment and creates a
-     * gateway using {@link #DEFAULT_MODEL} ({@value #DEFAULT_MODEL}).
+     * Factory method: reads {@code GROQ_API_KEY} and optional {@code GROQ_MODEL}
+     * from the environment. Falls back to {@link #DEFAULT_MODEL} when
+     * {@code GROQ_MODEL} is unset or blank.
      *
      * @param timeout HTTP timeout to use
      * @return configured gateway instance
@@ -103,7 +104,14 @@ public class GroqLlmGateway implements LlmGateway {
                 "Obtain your key from https://console.groq.com and run: " +
                 "export GROQ_API_KEY=<your-key>");
         }
-        return new GroqLlmGateway(key, DEFAULT_MODEL, timeout);
+        String modelEnv = System.getenv("GROQ_MODEL");
+        String model = (modelEnv != null && !modelEnv.isBlank()) ? modelEnv.trim() : DEFAULT_MODEL;
+        return new GroqLlmGateway(key, model, timeout);
+    }
+
+    /** Returns the model identifier this gateway sends to the Groq API. */
+    public String getModel() {
+        return model;
     }
 
     /**
