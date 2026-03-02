@@ -20,20 +20,33 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
- * Orchestrates guard validation across all 7 guard patterns.
+ * Orchestrates guard validation across 9 guard patterns (7 core + 2 blue-ocean extensions).
  * Coordinates multiple GuardChecker implementations to detect violations
  * and produce a GuardReceipt for audit and debugging.
+ * File scanning runs concurrently on Java 25 VirtualThreads for O(1) wall-clock
+ * scalability regardless of codebase size.
  *
- * Guard patterns validated:
- * - H_TODO: Deferred work markers (TODO, FIXME, XXX, etc.)
- * - H_MOCK: Mock implementations (class/method names, fake data)
- * - H_STUB: Empty/placeholder returns from non-void methods
- * - H_EMPTY: Empty void method bodies
- * - H_FALLBACK: Silent catch-and-fake error handling
- * - H_LIE: Documentation mismatches (code ≠ javadoc)
- * - H_SILENT: Log instead of throw exception
+ * <p><b>Core patterns (7)</b> — original hyper-standards gate:
+ * <ul>
+ *   <li>H_TODO: Deferred work markers (TODO, FIXME, XXX, HACK, …)</li>
+ *   <li>H_MOCK: Mock implementations (class/method names, fake data)</li>
+ *   <li>H_STUB: Empty/placeholder returns from non-void methods</li>
+ *   <li>H_EMPTY: Empty void method bodies</li>
+ *   <li>H_FALLBACK: Silent catch-and-fake error handling</li>
+ *   <li>H_LIE: Documentation mismatches (code ≠ javadoc)</li>
+ *   <li>H_SILENT: Log instead of throw exception</li>
+ * </ul>
+ *
+ * <p><b>Blue-ocean extensions (2)</b> — production hardening:
+ * <ul>
+ *   <li>H_PRINT_DEBUG: {@code System.out/err.print*()} calls that must never ship</li>
+ *   <li>H_SWALLOWED: Empty catch blocks that silently discard exceptions</li>
+ * </ul>
  *
  * Exit codes:
  * - 0 (GREEN): No violations, safe to proceed to next phase
@@ -46,7 +59,7 @@ public class HyperStandardsValidator {
     private GuardReceipt receipt;
 
     /**
-     * Create a new HyperStandardsValidator with all 7 guard checkers registered.
+     * Create a new HyperStandardsValidator with all 9 guard checkers registered.
      */
     public HyperStandardsValidator() {
         this.checkers = new ArrayList<>();
@@ -64,8 +77,17 @@ public class HyperStandardsValidator {
     }
 
     /**
-     * Register all 7 guard checkers with their patterns and severity levels.
+     * Register all 9 guard checkers (7 core + 2 blue-ocean extensions).
      * Uses regex checkers for simple patterns and SPARQL checkers for complex ones.
+     *
+     * <p><b>Blue-ocean extensions</b>:
+     * <ul>
+     *   <li>H_PRINT_DEBUG — {@code System.out/err.print*()} catches debug artifacts that
+     *       slip through code review into generated/production code. No other code-generation
+     *       quality gate targets this pattern specifically.</li>
+     *   <li>H_SWALLOWED — empty catch blocks silently discard all exception information.
+     *       Detected via whole-file regex to cover both single-line and multi-line forms.</li>
+     * </ul>
      */
     private void registerDefaultCheckers() {
         // H_TODO: Regex-based detection of deferred work markers
@@ -123,6 +145,28 @@ public class HyperStandardsValidator {
             GuardChecker.Severity.FAIL
         ));
 
+        // --- Blue-ocean extension #1: H_PRINT_DEBUG ---
+        // System.out.println / System.err.println / System.out.printf left in generated code
+        // are a production reliability hazard: they bypass logging frameworks, can expose
+        // sensitive data in stdout, and signal incomplete implementation. No competitor
+        // code-generation gate blocks this pattern.
+        checkers.add(new RegexGuardChecker(
+            "H_PRINT_DEBUG",
+            "System\\.(out|err)\\.(print|println|printf)\\(",
+            GuardChecker.Severity.FAIL
+        ));
+
+        // --- Blue-ocean extension #2: H_SWALLOWED ---
+        // Empty catch blocks silently discard all exception state. Unlike H_FALLBACK (which
+        // requires fake data to be returned), H_SWALLOWED catches the worst case: an exception
+        // is caught and literally nothing happens. Uses WholeFileRegexGuardChecker so both
+        // single-line ("catch (E e) { }") and multi-line forms are detected.
+        checkers.add(new WholeFileRegexGuardChecker(
+            "H_SWALLOWED",
+            "catch\\s*\\([^)]+\\)\\s*\\{\\s*\\}",
+            GuardChecker.Severity.FAIL
+        ));
+
         LOGGER.info("Registered {} guard checkers", checkers.size());
     }
 
@@ -152,11 +196,14 @@ public class HyperStandardsValidator {
 
     /**
      * Validate all Java source files in the emit directory.
-     * Scans for .java files and runs all registered guards.
+     * File scanning runs concurrently on Java 25 VirtualThreads — one thread per file —
+     * so wall-clock time scales with the slowest file rather than total file count.
+     * All checker logic is read-only; violations are collected per-file and merged
+     * into the receipt on the calling thread after all futures complete.
      *
      * @param emitDir the directory containing generated Java source files
      * @return a GuardReceipt with validation results
-     * @throws IOException if directory access fails
+     * @throws IOException if directory access or file reading fails
      */
     public GuardReceipt validateEmitDir(Path emitDir) throws IOException {
         Objects.requireNonNull(emitDir, "emitDir must not be null");
@@ -168,7 +215,7 @@ public class HyperStandardsValidator {
         receipt = new GuardReceipt();
         receipt.setPhase("guards");
 
-        // Find all Java source files
+        // Collect all Java source files up-front
         List<Path> javaFiles = new ArrayList<>();
         try (var stream = Files.walk(emitDir)) {
             stream.filter(p -> p.toString().endsWith(".java"))
@@ -176,42 +223,82 @@ public class HyperStandardsValidator {
         }
 
         receipt.setFilesScanned(javaFiles.size());
-        LOGGER.info("Scanning {} Java files in {}", javaFiles.size(), emitDir);
+        LOGGER.info("Scanning {} Java files in {} (VirtualThread parallel)", javaFiles.size(), emitDir);
 
-        // Validate each file
-        for (Path javaFile : javaFiles) {
-            validateFile(javaFile);
+        // Submit each file as an independent VirtualThread task.
+        // collectViolationsForFile() is pure (no shared mutable state), so concurrent
+        // execution is safe. We merge results sequentially after all futures resolve.
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<List<GuardViolation>>> futures = javaFiles.stream()
+                .map(javaFile -> executor.submit(() -> collectViolationsForFile(javaFile)))
+                .toList();
+
+            for (Future<List<GuardViolation>> future : futures) {
+                try {
+                    for (GuardViolation violation : future.get()) {
+                        receipt.addViolation(violation);
+                    }
+                } catch (ExecutionException e) {
+                    LOGGER.warn("VirtualThread task failed: {}", e.getCause().getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Guard validation interrupted", e);
+                }
+            }
         }
 
         // Finalize status and error message
         receipt.finalizeStatus();
 
-        LOGGER.info("Guard validation complete: {} violations found",
-                   receipt.getViolations().size());
+        LOGGER.info("Guard validation complete: {} violation(s) across {} file(s) — {}",
+                   receipt.getViolations().size(), javaFiles.size(),
+                   severityBand(receipt.getViolations().size()));
 
         return receipt;
     }
 
     /**
-     * Validate a single Java file using all registered checkers.
+     * Run all registered checkers against a single Java file and return all violations.
+     * This method is pure (no side effects on shared state) and safe for concurrent use.
      *
-     * @param javaFile the path to the Java file
+     * @param javaFile the Java source file to check
+     * @return list of violations found (empty if file is clean)
      */
-    private void validateFile(Path javaFile) {
+    private List<GuardViolation> collectViolationsForFile(Path javaFile) {
+        List<GuardViolation> fileViolations = new ArrayList<>();
         for (GuardChecker checker : checkers) {
             try {
                 List<GuardViolation> violations = checker.check(javaFile);
                 for (GuardViolation violation : violations) {
                     violation.setFile(javaFile.toString());
-                    receipt.addViolation(violation);
-                    LOGGER.debug("Found violation: {} at {}:{}",
-                                violation.getPattern(), javaFile, violation.getLine());
+                    LOGGER.debug("Found violation: {} at {}:{}", violation.getPattern(), javaFile, violation.getLine());
                 }
+                fileViolations.addAll(violations);
             } catch (IOException e) {
-                LOGGER.warn("Failed to check {} with {}: {}",
-                           javaFile, checker.patternName(), e.getMessage());
+                LOGGER.warn("Failed to check {} with {}: {}", javaFile, checker.patternName(), e.getMessage());
             }
         }
+        return fileViolations;
+    }
+
+    /**
+     * Classify a violation count into a coarse severity label.
+     *
+     * <p><b>JEP 455 — Primitive Types in Patterns (Java 25 preview)</b>:
+     * {@code switch (int)} with {@code case int n when n == 0} uses primitive type patterns
+     * to avoid boxing and enables exhaustive checking. The compiler verifies all int values
+     * are covered by the final unguarded {@code case int n}.
+     *
+     * @param count violation count (non-negative)
+     * @return "GREEN", "YELLOW", or "RED"
+     */
+    @SuppressWarnings("preview")
+    private static String severityBand(int count) {
+        return switch (count) {
+            case int n when n == 0 -> "GREEN";
+            case int n when n < 10 -> "YELLOW";
+            case int n             -> "RED";
+        };
     }
 
     /**

@@ -1,0 +1,28 @@
+{
+  "vocabulary_id": "fixture-vocabulary-001",
+  "name": "DataQualityTerms",
+  "version": "1.0.0",
+  "description": "Minimal vocabulary fixture for JTBD testing",
+  "format": "skos",
+  "domain_id": "fixture-domain-001",
+  "content": "apiVersion: v3.1.0\nkind: DataContract\nid: data-quality-vocabulary-001\nversion: 1.0.0\nname: DataQualityTerms\nschema:\n  - name: quality_terms\n    physicalName: quality_terms\n    description: Data quality vocabulary terms\n    properties:\n      - name: term_id\n        logicalType: string\n        primaryKey: true\n      - name: label\n        logicalType: string\n        required: true\n      - name: definition\n        logicalType: string\n",
+  "terms": [
+    {
+      "id": "dq:completeness",
+      "label": "Completeness",
+      "definition": "The degree to which required data is present",
+      "broader": "dq:DataQualityDimension"
+    },
+    {
+      "id": "dq:accuracy",
+      "label": "Accuracy",
+      "definition": "The degree to which data correctly represents the real-world construct",
+      "broader": "dq:DataQualityDimension"
+    }
+  ],
+  "metadata": {
+    "owner": "data-governance",
+    "domain": "data-quality",
+    "standard": "ISO-8000"
+  }
+}

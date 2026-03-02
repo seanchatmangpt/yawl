@@ -1,0 +1,4 @@
+# ggen local cache and scratch files
+.ggen-cache/
+*.ggen.lock
+target/

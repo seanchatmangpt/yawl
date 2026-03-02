@@ -62,6 +62,26 @@ public class GuardViolation {
         };
     }
 
+    /**
+     * Classify the line number into a coarse code region.
+     *
+     * <p><b>JEP 455 — Primitive Types in Patterns (Java 25 preview)</b>:
+     * {@code switch (int)} with guarded {@code case int ln when ln <= N} patterns gives
+     * exhaustive, zero-boxing dispatch over the primitive {@code line} field.
+     * Before JEP 455 this required {@code Integer.compare} or an if/else ladder.
+     *
+     * @return one of "imports" (≤10), "class-header" (≤50), "body" (≤200), or "end"
+     */
+    @SuppressWarnings("preview")
+    public String getLocationBand() {
+        return switch (line) {
+            case int ln when ln <= 10  -> "imports";
+            case int ln when ln <= 50  -> "class-header";
+            case int ln when ln <= 200 -> "body";
+            case int ln                -> "end";
+        };
+    }
+
     // Getters
 
     public String getPattern() {

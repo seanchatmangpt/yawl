@@ -1,0 +1,9 @@
+{
+  "id": "660e8400-e29b-41d4-a716-446655440000",
+  "number": 1,
+  "title": "Test Knowledge Article",
+  "article_type": "guide",
+  "status": "published",
+  "summary": "A test knowledge base article",
+  "content": "This is test article content for the knowledge base."
+}

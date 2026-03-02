@@ -225,7 +225,7 @@ class HyperStandardsValidatorTest {
         Path javaFile = tempDir.resolve("GoodCode.java");
         String content = "public class GoodCode { " +
                         "public void doWork() { " +
-                        "System.out.println(\"Implementation\"); } }";
+                        "logger.info(\"Implementation running\"); } }";
         Files.writeString(javaFile, content);
 
         GuardReceipt receipt = validator.validateEmitDir(tempDir);
@@ -268,14 +268,106 @@ class HyperStandardsValidatorTest {
     }
 
     @Test
-    @DisplayName("Validator registers default checkers")
+    @DisplayName("H_PRINT_DEBUG: Detects System.out.println in production code")
+    void testDetectPrintlnDebugStatement(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("DebugCode.java");
+        String content = "public class DebugCode { " +
+                        "public void process() { " +
+                        "System.out.println(\"debug: value=\" + value); " +
+                        "runTask(); } }";
+        Files.writeString(javaFile, content);
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_PRINT_DEBUG".equals(v.getPattern())),
+            "Should detect System.out.println as H_PRINT_DEBUG violation");
+    }
+
+    @Test
+    @DisplayName("H_PRINT_DEBUG: Detects System.err.println in production code")
+    void testDetectErrPrintlnDebugStatement(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("DebugCode.java");
+        String content = "public class DebugCode { " +
+                        "public void processError() { " +
+                        "System.err.println(\"error occurred\"); } }";
+        Files.writeString(javaFile, content);
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_PRINT_DEBUG".equals(v.getPattern())),
+            "Should detect System.err.println as H_PRINT_DEBUG violation");
+    }
+
+    @Test
+    @DisplayName("H_SWALLOWED: Detects single-line empty catch block")
+    void testDetectSwallowedExceptionSingleLine(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("SwallowedCode.java");
+        String content = "public class SwallowedCode { " +
+                        "public void doWork() { " +
+                        "try { process(); } catch (IOException e) { } } }";
+        Files.writeString(javaFile, content);
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_SWALLOWED".equals(v.getPattern())),
+            "Should detect empty catch block as H_SWALLOWED violation");
+    }
+
+    @Test
+    @DisplayName("H_SWALLOWED: Detects multi-line empty catch block")
+    void testDetectSwallowedExceptionMultiLine(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("SwallowedCode.java");
+        String content = "public class SwallowedCode {\n" +
+                        "    public void doWork() {\n" +
+                        "        try {\n" +
+                        "            process();\n" +
+                        "        } catch (IOException e) {\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}\n";
+        Files.writeString(javaFile, content);
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_SWALLOWED".equals(v.getPattern())),
+            "Should detect multi-line empty catch block as H_SWALLOWED violation");
+    }
+
+    @Test
+    @DisplayName("H_SWALLOWED: Allows non-empty catch blocks that re-throw")
+    void testNonEmptyCatchBlockIsAccepted(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("GoodCode.java");
+        String content = "public class GoodCode {\n" +
+                        "    public void doWork() {\n" +
+                        "        try {\n" +
+                        "            process();\n" +
+                        "        } catch (IOException e) {\n" +
+                        "            throw new RuntimeException(\"Process failed\", e);\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}\n";
+        Files.writeString(javaFile, content);
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .noneMatch(v -> "H_SWALLOWED".equals(v.getPattern())),
+            "Non-empty catch block with rethrow should not trigger H_SWALLOWED");
+    }
+
+    @Test
+    @DisplayName("Validator registers 9 default checkers (7 core + 2 blue-ocean)")
     void testValidatorRegistersDefaultCheckers() {
         List<GuardChecker> checkers = validator.getCheckers();
 
-        assertEquals(7, checkers.size(), "Should register 7 default checkers");
-        assertTrue(checkers.stream()
-                .map(GuardChecker::patternName)
-                .allMatch(name -> name.matches("H_(T|M|S|E|F|L|S).*")));
+        assertEquals(9, checkers.size(), "Should register 9 checkers: 7 core + H_PRINT_DEBUG + H_SWALLOWED");
+        List<String> names = checkers.stream().map(GuardChecker::patternName).toList();
+        assertTrue(names.contains("H_PRINT_DEBUG"), "Should include H_PRINT_DEBUG");
+        assertTrue(names.contains("H_SWALLOWED"), "Should include H_SWALLOWED");
     }
 
     @Test
@@ -338,7 +430,7 @@ class HyperStandardsValidatorTest {
         String content = "public class TestCode { " +
                         "public void doWork() { " +
                         "// " + marker + ": work " +
-                        "System.out.println(\"done\"); } }";
+                        "logger.info(\"done\"); } }";
         Files.writeString(javaFile, content);
 
         GuardReceipt receipt = validator.validateEmitDir(tempDir);

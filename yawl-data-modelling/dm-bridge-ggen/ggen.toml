@@ -1,0 +1,346 @@
+# =============================================================================
+# dm-bridge-ggen — Standalone ggen compilation target
+# data-modelling-sdk v2.3.0: Java 25 Panama FFM native bridge
+#
+# Compile invariant:
+#   edit ontology/dm-bridge.ttl  → ggen sync → all 7 bridge artifacts regenerated
+#   edit ontology/dm-jtbd.ttl    → ggen sync → DataModellingJTBDJob.java regenerated
+#
+# Generated output: ../src/main/java/org/yawlfoundation/yawl/datamodelling/
+# =============================================================================
+
+[project]
+name = "dm-bridge-ggen"
+version = "2.3.0"
+description = "ggen compilation target for data-modelling-sdk v2.3.0 native FFM bridge"
+authors = ["YAWL Foundation"]
+license = "MIT"
+
+# =============================================================================
+# ONTOLOGY: vocabulary + data-modelling bridge instances
+# =============================================================================
+
+[ontology]
+# Bridge vocabulary (yawl-bridge: namespace — classes, properties, shapes)
+# JTBD vocabulary (yawl-jtbd: namespace — JTBDJob, JTBDRole, JTBDTrigger, JTBDStep)
+imports = [
+    "../../../.specify/patterns/native-bridge.ttl",
+    "../../../.specify/patterns/jtbd.ttl"
+]
+# Bridge instance definitions for data-modelling-sdk v2.3.0
+source = "ontology/dm-bridge.ttl"
+# JTBD job instances (5 L4 jobs)
+extra_sources = [
+    "ontology/dm-jtbd.ttl"
+]
+
+[ontology.prefixes]
+yawl-bridge = "http://yawlfoundation.org/yawl/bridge#"
+dm           = "http://yawlfoundation.org/yawl/datamodelling/bridge#"
+rdf          = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+rdfs         = "http://www.w3.org/2000/01/rdf-schema#"
+xsd          = "http://www.w3.org/2001/XMLSchema#"
+
+# =============================================================================
+# GENERATION: output to yawl-data-modelling/src/main/java/…/datamodelling
+# =============================================================================
+
+[generation]
+output_dir = "../src/main/java/org/yawlfoundation/yawl/datamodelling"
+require_audit_trail = true
+validate_syntax = true
+
+# --- WCP-NB-01: Capability Enum ---
+[[generation.rules]]
+name = "dm-capability-enum"
+description = "Generate DataModellingCapability enum from ontology (55 capabilities + TOTAL)"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?capabilityName ?capabilityDescription ?nativeTarget ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:hasCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?capabilityName .
+  OPTIONAL { ?cap yawl-bridge:capabilityDescription ?capabilityDescription }
+  OPTIONAL { ?cap yawl-bridge:nativeTarget ?nativeTarget }
+}
+ORDER BY ?bridgeName ?capabilityName
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-capability.tera" }
+output_file = "bridge/{{ bridgeName }}Capability.java"
+mode = "Overwrite"
+
+# --- WCP-NB-02: Capability Registry ---
+[[generation.rules]]
+name = "dm-capability-registry"
+description = "Generate DataModellingCapabilityRegistry startup validation gate"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?l2Class ?l3Class ?testClass ?nativeLibrary
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+  OPTIONAL { ?bridge yawl-bridge:l2Class ?l2Class }
+  OPTIONAL { ?bridge yawl-bridge:l3Class ?l3Class }
+  OPTIONAL { ?bridge yawl-bridge:testClass ?testClass }
+  OPTIONAL { ?bridge yawl-bridge:nativeLibrary ?nativeLibrary }
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-registry.tera" }
+output_file = "bridge/{{ bridgeName }}CapabilityRegistry.java"
+mode = "Overwrite"
+
+# --- WCP-NB-03: L2 FFI Transport (custom — uniform char*→char* pattern) ---
+[[generation.rules]]
+name = "dm-l2-transport"
+description = "Generate DataModellingL2 FFI transport with callDm() helper for uniform char*→char*"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?nativeLibrary ?libraryPathProp
+       ?fnHandleName ?fnJavaName ?fnNativeSymbol ?fnCapName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:nativeLibrary ?nativeLibrary ;
+          yawl-bridge:hasFunction ?fn .
+  OPTIONAL { ?bridge yawl-bridge:libraryPathProp ?libraryPathProp }
+  ?fn a yawl-bridge:NativeFunction ;
+      yawl-bridge:fnHandleName ?fnHandleName ;
+      yawl-bridge:fnJavaName ?fnJavaName ;
+      yawl-bridge:fnNativeSymbol ?fnNativeSymbol ;
+      yawl-bridge:forCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?fnCapName .
+}
+ORDER BY ?bridgeName ?fnNativeSymbol
+""" }
+template = { file = "templates/03-dm-l2.tera" }
+output_file = "bridge/{{ bridgeName }}L2.java"
+mode = "Overwrite"
+
+# --- WCP-NB-04: L3 Domain API (custom — all ops return String, throw AssertionError) ---
+[[generation.rules]]
+name = "dm-l3-domain"
+description = "Generate DataModellingL3 domain API — zero Panama FFM types in public signatures"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?nativeLibrary
+       ?opName ?opDescription ?opCapName ?opL2JavaName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:nativeLibrary ?nativeLibrary ;
+          yawl-bridge:hasDomainOperation ?op .
+  ?op a yawl-bridge:DomainOperation ;
+      yawl-bridge:opName ?opName ;
+      yawl-bridge:forCapability ?cap ;
+      yawl-bridge:opL2JavaName ?opL2JavaName .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?opCapName .
+  OPTIONAL { ?op yawl-bridge:opDescription ?opDescription }
+}
+ORDER BY ?bridgeName ?opName
+""" }
+template = { file = "templates/04-dm-l3.tera" }
+output_file = "bridge/{{ bridgeName }}L3.java"
+mode = "Overwrite"
+
+# --- WCP-NB-05: @MapsToCapability Annotation ---
+[[generation.rules]]
+name = "dm-maps-to-capability-annotation"
+description = "Generate @DataModellingMapsToCapability repeatable annotation"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-maps-to-capability.tera" }
+output_file = "bridge/{{ bridgeName }}MapsToCapability.java"
+mode = "Overwrite"
+
+# --- WCP-NB-06: @CapabilityTest Annotation ---
+[[generation.rules]]
+name = "dm-capability-test-annotation"
+description = "Generate @DataModellingCapabilityTest repeatable annotation"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-capability-test.tera" }
+output_file = "bridge/{{ bridgeName }}CapabilityTest.java"
+mode = "Overwrite"
+
+# --- WCP-NB-07: CapabilityRegistryException ---
+[[generation.rules]]
+name = "dm-registry-exception"
+description = "Generate DataModellingCapabilityRegistryException thrown by startup gate"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+}
+ORDER BY ?bridgeName
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-registry-exception.tera" }
+output_file = "bridge/{{ bridgeName }}CapabilityRegistryException.java"
+mode = "Overwrite"
+
+# --- WCP-NB-08: JTBD Job Enum ---
+[[generation.rules]]
+name = "dm-jtbd-job-enum"
+description = "Generate DataModellingJTBDJob enum — machine-readable registry of 5 L4 JTBD jobs"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+PREFIX yawl-jtbd:   <http://yawlfoundation.org/yawl/jtbd#>
+
+SELECT ?bridgeName ?packageName ?jobName ?jobDescription ?roleName ?triggerName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+  ?job a yawl-jtbd:JTBDJob ;
+       yawl-jtbd:jobName ?jobName ;
+       yawl-jtbd:hasRole ?role ;
+       yawl-jtbd:hasTrigger ?trigger .
+  ?role    yawl-jtbd:roleName    ?roleName .
+  ?trigger yawl-jtbd:triggerName ?triggerName .
+  OPTIONAL { ?job yawl-jtbd:jobDescription ?jobDescription }
+}
+ORDER BY ?jobName
+""" }
+template = { file = "templates/05-dm-jtbd.tera" }
+output_file = "bridge/{{ bridgeName }}JTBDJob.java"
+mode = "Overwrite"
+
+# --- WCP-NB-09: Rust FFI cdylib source ---
+[[generation.rules]]
+name = "dm-ffi-rust"
+description = "Generate Rust C-ABI cdylib lib.rs from ontology — the actual libdatamodelling.so implementation"
+output_dir = "../rust/data-modelling-ffi/src"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?fnNativeSymbol ?fnJavaName ?fnCapName ?sdkCall
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:hasFunction ?fn .
+  ?fn a yawl-bridge:NativeFunction ;
+      yawl-bridge:fnNativeSymbol ?fnNativeSymbol ;
+      yawl-bridge:fnJavaName ?fnJavaName ;
+      yawl-bridge:sdkCall ?sdkCall ;
+      yawl-bridge:forCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?fnCapName .
+}
+ORDER BY ?fnNativeSymbol
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-rust-ffi.tera" }
+output_file = "lib.rs"
+mode = "Overwrite"
+
+# --- WCP-NB-10: Real Integration Tests ---
+[[generation.rules]]
+name = "dm-integration-test"
+description = "Generate DataModellingIntegrationTest.java — 55 live integration tests proving libdatamodelling.so works"
+output_dir = "../src/test/java/org/yawlfoundation/yawl/datamodelling"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+
+SELECT ?bridgeName ?packageName ?nativeLibrary
+       ?opName ?opCapName ?opL2JavaName ?testFixture
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName ;
+          yawl-bridge:nativeLibrary ?nativeLibrary ;
+          yawl-bridge:hasDomainOperation ?op .
+  ?op a yawl-bridge:DomainOperation ;
+      yawl-bridge:opName ?opName ;
+      yawl-bridge:opL2JavaName ?opL2JavaName ;
+      yawl-bridge:testFixture ?testFixture ;
+      yawl-bridge:forCapability ?cap .
+  ?cap a yawl-bridge:BridgeCapability ;
+       yawl-bridge:capabilityName ?opCapName .
+}
+ORDER BY ?opName
+""" }
+template = { file = "../../templates/yawl-patterns/native-bridge-integration-test.tera" }
+output_file = "bridge/{{ bridgeName }}IntegrationTest.java"
+mode = "Overwrite"
+
+# =============================================================================
+# VALIDATION GATES
+# =============================================================================
+
+[gates]
+
+[[gates.ontology]]
+name = "ontology_valid"
+description = "dm-bridge.ttl must be valid RDF/Turtle"
+rule = "sparql_validates"
+
+[[gates.completeness]]
+name = "bridge_has_capabilities"
+description = "DataModelling bridge must declare at least one capability"
+query = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+ASK {
+  ?bridge a yawl-bridge:NativeBridge .
+  FILTER NOT EXISTS { ?bridge yawl-bridge:hasCapability ?cap }
+}
+"""
+
+[[gates.completeness]]
+name = "all_functions_have_capability_link"
+description = "Every NativeFunction must link to a BridgeCapability via yawl-bridge:forCapability"
+query = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+ASK {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:hasFunction ?fn .
+  ?fn a yawl-bridge:NativeFunction .
+  FILTER NOT EXISTS { ?fn yawl-bridge:forCapability ?cap }
+}
+"""
+
+[[gates.completeness]]
+name = "all_operations_have_capability_link"
+description = "Every DomainOperation must link to a BridgeCapability via yawl-bridge:forCapability"
+query = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+ASK {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:hasDomainOperation ?op .
+  ?op a yawl-bridge:DomainOperation .
+  FILTER NOT EXISTS { ?op yawl-bridge:forCapability ?cap }
+}
+"""

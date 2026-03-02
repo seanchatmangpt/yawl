@@ -1,0 +1,1 @@
+{"content": "apiVersion: v3.1.0\nkind: DataContract\nid: test-schema-001\nversion: 1.0.0\nname: test-contract\nschema:\n  - name: test_table\n    physicalName: test_table\n    description: Test table\n    properties:\n      - name: id\n        logicalType: integer\n        primaryKey: true\n      - name: name\n        logicalType: string\n        required: true\n"}

@@ -1,0 +1,13 @@
+{
+  "schema_id": "fixture-odcs-schema-001",
+  "source_format": "odcs",
+  "target_format": "openapi",
+  "openapi_version": "3.1.0",
+  "title": "CustomerProfile API",
+  "version": "1.0.0",
+  "description": "OpenAPI specification generated from ODCS schema for JTBD testing",
+  "options": {
+    "include_examples": true,
+    "strict_nullable": true
+  }
+}
