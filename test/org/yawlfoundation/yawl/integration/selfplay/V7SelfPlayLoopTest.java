@@ -94,12 +94,15 @@ class V7SelfPlayLoopTest {
      * YEngine creation will fail fast if actual infrastructure is not initialized.
      */
     private static YEngine createYEngine() {
-        // YEngine initialization for V7 self-play loop
-        // This connects to the YAWL stateless engine with real A2A protocol support:
-        // - Real database persistence (H2 or PostgreSQL)
-        // - Real A2A message passing channels
-        // - Real audit log persistence
-        return new YEngine();
+        // YEngine has a protected no-arg constructor; access via reflection since
+        // the test package is separate from org.yawlfoundation.yawl.engine.
+        try {
+            var ctor = YEngine.class.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            return (YEngine) ctor.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create YEngine for V7 self-play test", e);
+        }
     }
 
     /**

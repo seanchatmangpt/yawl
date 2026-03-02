@@ -52,7 +52,7 @@ class GroqLlmGatewayIntegrationTest {
     @BeforeAll
     static void init() {
         gw = GroqLlmGateway.fromEnv(TIMEOUT);
-        System.out.println("[groq] model    = " + GroqLlmGateway.DEFAULT_MODEL);
+        System.out.println("[groq] model    = " + gw.getModel());
         System.out.println("[groq] endpoint = " + GroqLlmGateway.DEFAULT_BASE_URL);
         System.out.println("[groq] key      = " +
             System.getenv("GROQ_API_KEY").substring(0, 8) + "...");

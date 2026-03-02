@@ -36,6 +36,11 @@ import org.yawlfoundation.yawl.integration.a2a.skills.OntologyDrivenSkillFactory
 import org.yawlfoundation.yawl.integration.a2a.skills.ProcessMiningSkill;
 import org.yawlfoundation.yawl.integration.a2a.skills.SkillRequest;
 import org.yawlfoundation.yawl.integration.a2a.skills.SkillResult;
+import org.yawlfoundation.yawl.integration.a2a.safe.PIPlannningSkill;
+import org.yawlfoundation.yawl.integration.a2a.safe.SystemDemoSkill;
+import org.yawlfoundation.yawl.integration.a2a.safe.InspectAdaptSkill;
+import org.yawlfoundation.yawl.integration.a2a.safe.PortfolioSyncSkill;
+import org.yawlfoundation.yawl.integration.a2a.safe.StrategicPortfolioReviewSkill;
 // ZaiFunctionService is dynamically loaded via reflection to avoid dependency conflicts
 import org.yawlfoundation.yawl.util.SafeNumberParser;
 
@@ -212,6 +217,13 @@ public class YawlA2AServer {
             _logger.warn("Ontology skills not loaded at startup (engine or ontology service "
                 + "unavailable): {}", e.getMessage());
         }
+
+        // Register SAFe ceremony A2A skills
+        addSkill(new PIPlannningSkill());
+        addSkill(new SystemDemoSkill());
+        addSkill(new InspectAdaptSkill());
+        addSkill(new PortfolioSyncSkill());
+        addSkill(new StrategicPortfolioReviewSkill());
 
         AgentCard agentCard = buildAgentCard();
         executorService = Executors.newVirtualThreadPerTaskExecutor();
