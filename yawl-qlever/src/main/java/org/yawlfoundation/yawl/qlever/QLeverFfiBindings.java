@@ -58,17 +58,11 @@ public final class QLeverFfiBindings {
      * @throws QLeverFfiException if loading fails
      */
     public @NonNull QLeverResult loadRdfData(@NonNull String data, @NonNull String format) throws QLeverFfiException {
-        if (!isInitialized) {
-            initializeEngine();
-        }
-
-        try {
-            // Native call to load data
-            // String result = loadRdfDataNative(data, format);
-            return QLeverResult.success("Data loaded successfully", "Loaded " + data.length() + " bytes");
-        } catch (Exception e) {
-            throw new QLeverFfiException("Data loading failed", e);
-        }
+        throw new UnsupportedOperationException(
+            "Native QLever library not loaded. " +
+            "loadRdfData() requires native implementation via Panama FFI. " +
+            "See QLever documentation for native library integration."
+        );
     }
 
     /**
@@ -91,17 +85,11 @@ public final class QLeverFfiBindings {
      * @throws QLeverFfiException if execution fails or times out
      */
     public @NonNull QLeverResult executeSparqlQueryWithTimeout(@NonNull String query, long timeoutMs) throws QLeverFfiException {
-        if (!isInitialized) {
-            initializeEngine();
-        }
-
-        try {
-            // Native call with timeout handling
-            // String result = executeQueryNative(query, timeoutMs);
-            return QLeverResult.success("{\"results\": {\"bindings\": []}}", "Query executed");
-        } catch (Exception e) {
-            throw new QLeverFfiException("Query execution failed", e);
-        }
+        throw new UnsupportedOperationException(
+            "Native QLever library not loaded. " +
+            "executeSparqlQuery() requires native implementation via Panama FFI. " +
+            "Cannot execute SPARQL queries without native library."
+        );
     }
 
     /**
@@ -112,17 +100,11 @@ public final class QLeverFfiBindings {
      * @throws QLeverFfiException if execution fails
      */
     public @NonNull QLeverResult executeSparqlUpdate(@NonNull String update) throws QLeverFfiException {
-        if (!isInitialized) {
-            initializeEngine();
-        }
-
-        try {
-            // Native call for update
-            // String result = executeUpdateNative(update);
-            return QLeverResult.empty(QLeverStatus.READY);
-        } catch (Exception e) {
-            throw new QLeverFfiException("Update execution failed", e);
-        }
+        throw new UnsupportedOperationException(
+            "Native QLever library not loaded. " +
+            "executeSparqlUpdate() requires native implementation via Panama FFI. " +
+            "Cannot execute SPARQL updates without native library."
+        );
     }
 
     /**
@@ -132,17 +114,11 @@ public final class QLeverFfiBindings {
      * @throws QLeverFfiException if statistics retrieval fails
      */
     public @NonNull String getEngineStatistics() throws QLeverFfiException {
-        if (!isInitialized) {
-            initializeEngine();
-        }
-
-        try {
-            // Native call to get statistics
-            // return getStatisticsNative();
-            return "{\"triples\": 0, \"queries\": 0}";
-        } catch (Exception e) {
-            throw new QLeverFfiException("Statistics retrieval failed", e);
-        }
+        throw new UnsupportedOperationException(
+            "Native QLever library not loaded. " +
+            "getEngineStatistics() requires native implementation via Panama FFI. " +
+            "Cannot query engine statistics without native library."
+        );
     }
 
     /**
