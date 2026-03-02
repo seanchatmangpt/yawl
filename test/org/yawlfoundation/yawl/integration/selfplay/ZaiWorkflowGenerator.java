@@ -101,22 +101,48 @@ public class ZaiWorkflowGenerator {
         """;
 
     /**
-     * Create a new ZAI workflow generator.
+     * Create a new workflow generator that prefers Groq when {@code GROQ_API_KEY} is set,
+     * falls back to Z.AI when {@code ZAI_API_KEY} is set, or uses template generation
+     * when neither key is available.
+     *
+     * <p>Provider priority:
+     * <ol>
+     *   <li>Groq Cloud ({@code GROQ_API_KEY}) — OpenAI-compatible, {@code llama-3.3-70b-versatile}</li>
+     *   <li>Z.AI ({@code ZAI_API_KEY}) — endpoint from {@code ZAI_API_URL} or default</li>
+     *   <li>Template fallback — no LLM required</li>
+     * </ol>
      */
     public ZaiWorkflowGenerator(SelfPlayConfig config) {
         this.config = config;
-        this.apiKey = System.getenv("ZAI_API_KEY");
-        this.apiUrl = System.getenv("ZAI_API_URL");
-        this.model = System.getenv("ZAI_MODEL");
+
+        // Provider selection: Groq > Z.AI > fallback
+        String groqKey = System.getenv("GROQ_API_KEY");
+        if (groqKey != null && !groqKey.isEmpty()) {
+            this.apiKey = groqKey;
+            this.apiUrl = "https://api.groq.com/openai/v1/chat/completions";
+            String groqModel = System.getenv("GROQ_MODEL");
+            this.model = (groqModel != null && !groqModel.isEmpty()) ? groqModel : "llama-3.3-70b-versatile";
+            logger.info("LLM provider: Groq Cloud (" + this.model + ")");
+        } else {
+            String zaiKey = System.getenv("ZAI_API_KEY");
+            this.apiKey = zaiKey;
+            String zaiUrl = System.getenv("ZAI_API_URL");
+            this.apiUrl = (zaiUrl != null && !zaiUrl.isEmpty())
+                ? zaiUrl
+                : "https://api.z.ai/api/coding/paas/v4/chat/completions";
+            String zaiModel = System.getenv("ZAI_MODEL");
+            this.model = (zaiModel != null && !zaiModel.isEmpty()) ? zaiModel : "glm-4.7-flash";
+            if (zaiKey == null || zaiKey.isEmpty()) {
+                logger.info("No LLM API key found — workflow generation will use template fallback");
+            } else {
+                logger.info("LLM provider: Z.AI (" + this.model + ")");
+            }
+        }
 
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .version(HttpClient.Version.HTTP_2)
             .build();
-
-        if (apiKey == null || apiKey.isEmpty()) {
-            logger.info("ZAI_API_KEY not set - ZAI integration will use fallback generation");
-        }
     }
 
     /**
@@ -357,22 +383,19 @@ public class ZaiWorkflowGenerator {
     }
 
     /**
-     * Check if ZAI integration is available.
+     * Check if an LLM provider (Groq or Z.AI) is available.
      */
     public boolean isAvailable() {
         return apiKey != null && !apiKey.isEmpty();
     }
 
     /**
-     * Get ZAI configuration status.
+     * Get the active LLM provider status.
      */
     public String getStatus() {
         if (apiKey == null || apiKey.isEmpty()) {
-            return "disabled - ZAI_API_KEY not set";
+            return "disabled - set GROQ_API_KEY or ZAI_API_KEY";
         }
-        if (apiUrl == null || apiUrl.isEmpty()) {
-            return "configured - using default endpoint";
-        }
-        return "configured - " + apiUrl;
+        return "configured - " + apiUrl + " (model: " + model + ")";
     }
 }
