@@ -3,7 +3,8 @@
 # data-modelling-sdk v2.3.0: Java 25 Panama FFM native bridge
 #
 # Compile invariant:
-#   edit ontology/dm-bridge.ttl → ggen sync → all 7 Java artifacts regenerated
+#   edit ontology/dm-bridge.ttl  → ggen sync → all 7 bridge artifacts regenerated
+#   edit ontology/dm-jtbd.ttl    → ggen sync → DataModellingJTBDJob.java regenerated
 #
 # Generated output: ../src/main/java/org/yawlfoundation/yawl/datamodelling/
 # =============================================================================
@@ -21,11 +22,17 @@ license = "MIT"
 
 [ontology]
 # Bridge vocabulary (yawl-bridge: namespace — classes, properties, shapes)
+# JTBD vocabulary (yawl-jtbd: namespace — JTBDJob, JTBDRole, JTBDTrigger, JTBDStep)
 imports = [
-    "../../../.specify/patterns/native-bridge.ttl"
+    "../../../.specify/patterns/native-bridge.ttl",
+    "../../../.specify/patterns/jtbd.ttl"
 ]
 # Bridge instance definitions for data-modelling-sdk v2.3.0
 source = "ontology/dm-bridge.ttl"
+# JTBD job instances (5 L4 jobs)
+extra_sources = [
+    "ontology/dm-jtbd.ttl"
+]
 
 [ontology.prefixes]
 yawl-bridge = "http://yawlfoundation.org/yawl/bridge#"
@@ -204,6 +211,33 @@ ORDER BY ?bridgeName
 """ }
 template = { file = "../../templates/yawl-patterns/native-bridge-registry-exception.tera" }
 output_file = "bridge/{{ bridgeName }}CapabilityRegistryException.java"
+mode = "Overwrite"
+
+# --- WCP-NB-08: JTBD Job Enum ---
+[[generation.rules]]
+name = "dm-jtbd-job-enum"
+description = "Generate DataModellingJTBDJob enum — machine-readable registry of 5 L4 JTBD jobs"
+query = { inline = """
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+PREFIX yawl-jtbd:   <http://yawlfoundation.org/yawl/jtbd#>
+
+SELECT ?bridgeName ?packageName ?jobName ?jobDescription ?roleName ?triggerName
+WHERE {
+  ?bridge a yawl-bridge:NativeBridge ;
+          yawl-bridge:bridgeName ?bridgeName ;
+          yawl-bridge:packageName ?packageName .
+  ?job a yawl-jtbd:JTBDJob ;
+       yawl-jtbd:jobName ?jobName ;
+       yawl-jtbd:hasRole ?role ;
+       yawl-jtbd:hasTrigger ?trigger .
+  ?role    yawl-jtbd:roleName    ?roleName .
+  ?trigger yawl-jtbd:triggerName ?triggerName .
+  OPTIONAL { ?job yawl-jtbd:jobDescription ?jobDescription }
+}
+ORDER BY ?jobName
+""" }
+template = { file = "templates/05-dm-jtbd.tera" }
+output_file = "bridge/{{ bridgeName }}JTBDJob.java"
 mode = "Overwrite"
 
 # =============================================================================

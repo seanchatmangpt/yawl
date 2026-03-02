@@ -1,0 +1,33 @@
+{
+  "schema_id": "fixture-odcs-schema-001",
+  "name": "CustomerProfile",
+  "version": "1.0.0",
+  "description": "Minimal ODCS schema fixture for JTBD testing",
+  "fields": [
+    {
+      "name": "customer_id",
+      "type": "string",
+      "required": true,
+      "description": "Unique customer identifier"
+    },
+    {
+      "name": "email",
+      "type": "string",
+      "format": "email",
+      "required": true,
+      "description": "Customer email address"
+    },
+    {
+      "name": "created_at",
+      "type": "string",
+      "format": "date-time",
+      "required": false,
+      "description": "Schema creation timestamp"
+    }
+  ],
+  "metadata": {
+    "owner": "data-engineering",
+    "domain": "customer",
+    "classification": "internal"
+  }
+}

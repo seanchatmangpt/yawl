@@ -25,6 +25,7 @@ GENERATED_FILES=(
   DataModellingMapsToCapability.java
   DataModellingCapabilityTest.java
   DataModellingCapabilityRegistryException.java
+  DataModellingJTBDJob.java
 )
 
 diverged=0
