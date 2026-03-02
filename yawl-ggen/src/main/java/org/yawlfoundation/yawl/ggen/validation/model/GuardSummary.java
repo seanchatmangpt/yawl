@@ -65,6 +65,25 @@ public class GuardSummary {
         return map;
     }
 
+    /**
+     * Classify the overall severity of this summary as a label.
+     *
+     * <p><b>JEP 455 — Primitive Types in Patterns (Java 25 preview)</b>:
+     * {@code switch (int)} with {@code case int n when n == 0} eliminates Integer boxing
+     * and enables compiler-verified exhaustiveness for primitive values.
+     * Prior to JEP 455, this required an {@code if/else} chain or boxing to {@code Integer}.
+     *
+     * @return "GREEN" for zero violations, "YELLOW" for 1–5, "RED" for 6 or more
+     */
+    @SuppressWarnings("preview")
+    public String getSeverityLabel() {
+        return switch (getTotalViolations()) {
+            case int n when n == 0 -> "GREEN";
+            case int n when n <= 5 -> "YELLOW";
+            case int n             -> "RED";
+        };
+    }
+
     // Getters
     public int getH_todo_count() { return h_todo_count; }
     public int getH_mock_count() { return h_mock_count; }

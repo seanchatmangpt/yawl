@@ -250,8 +250,9 @@ public class HyperStandardsValidator {
         // Finalize status and error message
         receipt.finalizeStatus();
 
-        LOGGER.info("Guard validation complete: {} violation(s) across {} file(s)",
-                   receipt.getViolations().size(), javaFiles.size());
+        LOGGER.info("Guard validation complete: {} violation(s) across {} file(s) — {}",
+                   receipt.getViolations().size(), javaFiles.size(),
+                   severityBand(receipt.getViolations().size()));
 
         return receipt;
     }
@@ -278,6 +279,26 @@ public class HyperStandardsValidator {
             }
         }
         return fileViolations;
+    }
+
+    /**
+     * Classify a violation count into a coarse severity label.
+     *
+     * <p><b>JEP 455 — Primitive Types in Patterns (Java 25 preview)</b>:
+     * {@code switch (int)} with {@code case int n when n == 0} uses primitive type patterns
+     * to avoid boxing and enables exhaustive checking. The compiler verifies all int values
+     * are covered by the final unguarded {@code case int n}.
+     *
+     * @param count violation count (non-negative)
+     * @return "GREEN", "YELLOW", or "RED"
+     */
+    @SuppressWarnings("preview")
+    private static String severityBand(int count) {
+        return switch (count) {
+            case int n when n == 0 -> "GREEN";
+            case int n when n < 10 -> "YELLOW";
+            case int n             -> "RED";
+        };
     }
 
     /**

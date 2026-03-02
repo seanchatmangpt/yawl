@@ -100,7 +100,9 @@
         <testSourceDirectory>src/test/java</testSourceDirectory>
 
         <plugins>
-            <!-- Java compiler for Java 21 -->
+            <!-- Java 25 compiler with explicit preview-feature flag.
+                 fork=false uses in-process javac (faster); the compilerArg ensures
+                 preview features are enabled regardless of fork mode or CI environment. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -110,6 +112,9 @@
                     <parameters>true</parameters>
                     <!-- Use in-process javac -->
                     <fork>false</fork>
+                    <compilerArgs>
+                        <arg>--enable-preview</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
