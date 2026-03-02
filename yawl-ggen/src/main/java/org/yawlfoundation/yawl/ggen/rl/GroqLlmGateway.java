@@ -81,7 +81,10 @@ public class GroqLlmGateway implements LlmGateway {
         this.apiKey = apiKey;
         this.model = model;
         this.timeout = timeout;
-        this.httpClient = HttpClient.newBuilder().connectTimeout(timeout).build();
+        this.httpClient = HttpClient.newBuilder()
+            .connectTimeout(timeout)
+            .proxy(resolveProxy())
+            .build();
     }
 
     /**
@@ -193,6 +196,25 @@ public class GroqLlmGateway implements LlmGateway {
             throw rethrow;
         } catch (Exception e) {
             throw new IOException("Failed to parse Groq response JSON: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Returns the proxy selector for outbound HTTP requests.
+     *
+     * <p>In Claude Code Web sessions, a local proxy bridge runs at
+     * {@code 127.0.0.1:3128} and handles egress-proxy authentication internally.
+     * When that bridge is reachable, use it directly — no credentials needed.
+     * In all other environments (direct internet, corporate proxy via system props,
+     * etc.) fall back to {@code ProxySelector.getDefault()} which reads
+     * {@code http.proxyHost} / {@code https.proxyHost} JVM system properties.
+     */
+    private static java.net.ProxySelector resolveProxy() {
+        try (var probe = new java.net.Socket()) {
+            probe.connect(new java.net.InetSocketAddress("127.0.0.1", 3128), 200);
+            return java.net.ProxySelector.of(new java.net.InetSocketAddress("127.0.0.1", 3128));
+        } catch (IOException ignored) {
+            return java.net.ProxySelector.getDefault();
         }
     }
 

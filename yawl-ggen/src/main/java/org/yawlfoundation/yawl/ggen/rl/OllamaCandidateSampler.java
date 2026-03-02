@@ -143,7 +143,10 @@ public class OllamaCandidateSampler implements CandidateSampler {
             this.gateway = ZaiLlmGateway.fromEnv(this.timeout);
         } else {
             // Fallback: Ollama HTTP at configured baseUrl
-            this.httpClient = HttpClient.newBuilder().connectTimeout(this.timeout).build();
+            this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(this.timeout)
+                .proxy(java.net.ProxySelector.getDefault())
+                .build();
             this.gateway = this::callOllamaHttp;
         }
     }
