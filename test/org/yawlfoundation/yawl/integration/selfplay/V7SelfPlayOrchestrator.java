@@ -1,7 +1,9 @@
 package org.yawlfoundation.yawl.integration.selfplay;
 
 import org.yawlfoundation.yawl.integration.coordination.events.AgentDecisionEvent;
+import org.yawlfoundation.yawl.integration.selfplay.model.Blake3Receipt;
 import org.yawlfoundation.yawl.integration.selfplay.model.DesignChallenge;
+import org.yawlfoundation.yawl.integration.selfplay.model.DesignProposal;
 import org.yawlfoundation.yawl.integration.selfplay.model.FitnessScore;
 import org.yawlfoundation.yawl.integration.selfplay.model.V7DesignState;
 import org.yawlfoundation.yawl.integration.selfplay.model.V7Gap;
@@ -128,6 +130,8 @@ public class V7SelfPlayOrchestrator {
         // INITIALIZE: seed design state from v6 gap inventory
         V7DesignState state = V7DesignState.initial();
         List<String> auditLogEventIds = new ArrayList<>();
+        // Blake3 receipt chain — one hash per round (closes V7Gap.DETERMINISTIC_REPLAY_BLAKE3)
+        List<String> receiptHashes = new ArrayList<>();
 
         boolean converged = false;
 
@@ -179,6 +183,15 @@ public class V7SelfPlayOrchestrator {
                 .map(this::toChallengeRecord)
                 .collect(Collectors.toList());
 
+            // DETERMINISTIC_REPLAY_BLAKE3: compute per-round receipt hash and chain it
+            final int currentRound = round;
+            List<DesignProposal> roundDesignProposals = proposals.stream()
+                .map(p -> toDesignProposal(p, currentRound))
+                .collect(Collectors.toList());
+            String priorHash = receiptHashes.isEmpty() ? "" : receiptHashes.get(receiptHashes.size() - 1);
+            String roundReceipt = Blake3Receipt.hash(round, roundDesignProposals, challengeRecords, fitness, priorHash);
+            receiptHashes.add(roundReceipt);
+
             // Advance state
             state = state.nextRound(
                 proposals,
@@ -208,7 +221,8 @@ public class V7SelfPlayOrchestrator {
             auditLogEventIds,
             state.addressedGaps(),
             durationMs,
-            Instant.now()
+            Instant.now(),
+            receiptHashes
         );
     }
 
@@ -312,6 +326,36 @@ public class V7SelfPlayOrchestrator {
             objection,
             0.0,
             round,
+            Instant.now()
+        );
+    }
+
+    /**
+     * Convert an AgentDecisionEvent proposal to a DesignProposal for Blake3 receipt hashing.
+     * Extracts gap, scores, and reasoning from the event's metadata and decision fields.
+     */
+    private DesignProposal toDesignProposal(AgentDecisionEvent event, int round) {
+        String gapStr = (String) event.getMetadata().getOrDefault("gap", V7Gap.ASYNC_A2A_GOSSIP.name());
+        V7Gap gap;
+        try {
+            gap = V7Gap.valueOf(gapStr);
+        } catch (IllegalArgumentException e) {
+            gap = V7Gap.ASYNC_A2A_GOSSIP;
+        }
+        double compat = ((Number) event.getMetadata().getOrDefault("v6_interface_impact", 0.5)).doubleValue();
+        double perf = ((Number) event.getMetadata().getOrDefault("estimated_gain", 0.0)).doubleValue();
+        String rationale = event.getFinalDecision().getReasoning();
+        if (rationale == null || rationale.isBlank()) {
+            rationale = "Proposal by agent " + event.getAgentId() + " for gap " + gap.name();
+        }
+        return new DesignProposal(
+            event.getDecisionId(),
+            gap,
+            "Solution for " + gap.name(),
+            rationale,
+            Math.min(1.0, Math.max(0.0, compat)),
+            Math.min(1.0, Math.max(0.0, perf)),
+            Math.max(1, round),
             Instant.now()
         );
     }

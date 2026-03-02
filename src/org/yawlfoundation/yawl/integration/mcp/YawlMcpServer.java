@@ -40,6 +40,7 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlConscienceToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlFactoryToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
+import org.yawlfoundation.yawl.integration.mcp.spec.BlueOceanMcpTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.McpToolRegistry;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlAdaptationToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlConformanceToolSpecifications;
@@ -323,6 +324,11 @@ public class YawlMcpServer {
         var safeToolList = safeTools.createAll();
         allTools.addAll(safeToolList);
         int safeToolCount = safeToolList.size();
+
+        // Blue-ocean buried engines — MCP tool wrappers (closes V7Gap.BURIED_ENGINES_MCP_A2A_WIRING)
+        var blueOceanTools = new BlueOceanMcpTools();
+        var blueOceanList = blueOceanTools.createAll();
+        allTools.addAll(blueOceanList);
 
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)

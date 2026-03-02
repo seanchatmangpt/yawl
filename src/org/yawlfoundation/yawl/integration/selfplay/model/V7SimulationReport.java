@@ -24,6 +24,9 @@ import java.util.Set;
  * @param addressedGaps set of v7 gaps that have at least one accepted proposal
  * @param durationMs total wall-clock time for the simulation in milliseconds
  * @param completedAt when the simulation completed
+ * @param receiptHashes Blake3 (SHA3-256) receipt hashes forming a deterministic audit chain —
+ *                      one hash per round; hash[i] incorporates hash[i-1] (hash chain).
+ *                      Closes V7Gap.DETERMINISTIC_REPLAY_BLAKE3.
  */
 public record V7SimulationReport(
     int totalRounds,
@@ -34,7 +37,8 @@ public record V7SimulationReport(
     List<String> auditLogEventIds,
     Set<V7Gap> addressedGaps,
     long durationMs,
-    Instant completedAt
+    Instant completedAt,
+    List<String> receiptHashes
 ) {
 
     public V7SimulationReport {
@@ -58,6 +62,9 @@ public record V7SimulationReport(
         }
         if (completedAt == null) {
             completedAt = Instant.now();
+        }
+        if (receiptHashes == null) {
+            receiptHashes = List.of();
         }
     }
 
@@ -83,6 +90,12 @@ public record V7SimulationReport(
         sb.append("\nAudit trail (").append(auditLogEventIds.size()).append(" event IDs):\n");
         for (int i = 0; i < auditLogEventIds.size(); i++) {
             sb.append("  Event ").append(i + 1).append(": ").append(auditLogEventIds.get(i)).append("\n");
+        }
+        if (!receiptHashes.isEmpty()) {
+            sb.append("\nBlake3 receipt chain (").append(receiptHashes.size()).append(" hashes):\n");
+            for (int i = 0; i < receiptHashes.size(); i++) {
+                sb.append("  Round ").append(i + 1).append(": ").append(receiptHashes.get(i)).append("\n");
+            }
         }
         return sb.toString();
     }
