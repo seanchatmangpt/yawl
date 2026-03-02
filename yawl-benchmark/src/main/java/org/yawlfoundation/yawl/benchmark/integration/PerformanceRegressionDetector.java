@@ -152,16 +152,20 @@ public class PerformanceRegressionDetector {
 
             try {
                 String[] parts = line.split(",");
-                if (parts.length >= 5) {
+                if (parts.length >= 6) {
                     String benchmark = parts[0].trim();
                     double avgLatency = Double.parseDouble(parts[1].trim());
                     int successCount = Integer.parseInt(parts[2].trim());
                     double errorRate = Double.parseDouble(parts[3].trim());
                     long timestamp = Long.parseLong(parts[4].trim());
+                    double throughput = Double.parseDouble(parts[5].trim());
 
-                    results.put(benchmark, new BenchmarkResult(
+                    BenchmarkResult result = new BenchmarkResult(
                         benchmark, avgLatency, successCount, errorRate, timestamp
-                    ));
+                    );
+                    // Update the throughput field since constructor calculates it dynamically
+                    result.throughput = throughput;
+                    results.put(benchmark, result);
                 }
             } catch (Exception e) {
                 System.err.println("Warning: Could not parse line: " + line);
@@ -215,6 +219,7 @@ public class PerformanceRegressionDetector {
         public final int successCount;
         public final double errorRate;
         public final long timestamp;
+        public final double throughput;
         public long memoryUsage; // Optional
 
         public BenchmarkResult(String benchmarkName, double avgLatency, int successCount,
@@ -224,10 +229,15 @@ public class PerformanceRegressionDetector {
             this.successCount = successCount;
             this.errorRate = errorRate;
             this.timestamp = timestamp;
+            this.throughput = calculateThroughput(successCount, timestamp);
             this.memoryUsage = 0;
         }
 
         public double getThroughput() {
+            return throughput;
+        }
+
+        private double calculateThroughput(int successCount, long timestamp) {
             // Simple throughput calculation: successful operations per second
             double timeSeconds = (System.currentTimeMillis() - timestamp) / 1000.0;
             return timeSeconds > 0 ? successCount / timeSeconds : 0;

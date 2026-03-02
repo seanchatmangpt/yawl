@@ -13,6 +13,7 @@ package org.yawlfoundation.yawl.benchmark.jmh;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.StructuredTaskScope;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -137,7 +138,7 @@ public class StructuredConcurrencyBenchmark {
             }
 
             scope.join();
-            scope.throwIfFailed();
+            scope.checkException();
         } catch (ExecutionException e) {
             exceptionCaught = true;
         }

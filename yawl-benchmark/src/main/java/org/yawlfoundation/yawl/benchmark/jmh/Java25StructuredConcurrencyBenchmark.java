@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.StructuredTaskScope;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -172,7 +173,7 @@ public class Java25StructuredConcurrencyBenchmark {
                 scope.fork(() -> processWorkItem(idx, taskDurationMs, shouldFail));
             }
             scope.join();
-            scope.throwIfFailed();
+            scope.checkException();
         } catch (ExecutionException ex) {
             caught = true;
         }
@@ -284,7 +285,7 @@ public class Java25StructuredConcurrencyBenchmark {
                 tasks.add(scope.fork(() -> val * 2));
             }
             scope.join();
-            scope.throwIfFailed();
+            scope.checkException();
 
             int sum = 0;
             for (var t : tasks) {

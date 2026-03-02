@@ -697,7 +697,7 @@
             <dependency>
                 <groupId>io.modelcontextprotocol.sdk</groupId>
                 <artifactId>mcp-spring-webmvc</artifactId>
-                <version>${mcp.version}</version>
+                <version>0.12.1</version>
             </dependency>
 
             <!-- A2A SDK (Agent-to-Agent Protocol) -->
