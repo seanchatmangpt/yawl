@@ -1,0 +1,132 @@
+# YAWL Jobs To Be Done (JTBD) Pattern Ontology
+# Defines the RDF vocabulary for L4 JTBD test generation.
+#
+# JTBD tests encode real business actors doing real jobs with real outcomes.
+# They live above integration tests and block release (not merge).
+#
+# Layer architecture:
+#   L1: Unit tests         — individual method correctness
+#   L2: Integration tests  — bridge capability coverage (56 tests)
+#   L3: (reserved)
+#   L4: JTBD tests         — end-to-end job completion by role + trigger
+#
+# Each JTBD job specifies:
+#   - Who performs it (JTBDRole): DataEngineer, BusinessAnalyst, DataSteward, etc.
+#   - When it's triggered (JTBDTrigger): ApiDocumentationUpdate, DataQualityIncident, etc.
+#   - What steps it involves (JTBDStep): ordered sequence of L3 calls
+#
+# Tests use assumeTrue(l3.isAvailable()) — skip (not fail) when native lib absent.
+# assertPlausible() encodes domain-expert assertions on output JSON shape.
+
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:       <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+@prefix yawl-jtbd: <http://yawlfoundation.org/yawl/jtbd#> .
+
+<http://yawlfoundation.org/yawl/jtbd> a owl:Ontology ;
+    rdfs:label "YAWL JTBD Pattern Ontology" ;
+    rdfs:comment "RDF vocabulary for Jobs To Be Done (JTBD) L4 test generation" ;
+    owl:versionInfo "1.0.0" .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Classes
+# ─────────────────────────────────────────────────────────────────────────────
+
+yawl-jtbd:JTBDJob a owl:Class ;
+    rdfs:label "JTBDJob" ;
+    rdfs:comment "A named workflow job — the 'thing to be done' by a role under a trigger." .
+
+yawl-jtbd:JTBDRole a owl:Class ;
+    rdfs:label "JTBDRole" ;
+    rdfs:comment "The actor role that performs the job (DataEngineer, BusinessAnalyst, etc.)" .
+
+yawl-jtbd:JTBDTrigger a owl:Class ;
+    rdfs:label "JTBDTrigger" ;
+    rdfs:comment "The business event or context that initiates the job." .
+
+yawl-jtbd:JTBDStep a owl:Class ;
+    rdfs:label "JTBDStep" ;
+    rdfs:comment "One L3 call within the job, with an explicit ordering index." .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JTBDJob properties
+# ─────────────────────────────────────────────────────────────────────────────
+
+yawl-jtbd:jobName a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDJob ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "jobName" ;
+    rdfs:comment "Java enum constant name, UPPER_SNAKE_CASE (e.g. SCHEMA_DOCUMENTATION_PUBLISHING)." .
+
+yawl-jtbd:jobDescription a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDJob ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "jobDescription" ;
+    rdfs:comment "Human-readable description of the business outcome." .
+
+yawl-jtbd:hasRole a owl:ObjectProperty ;
+    rdfs:domain yawl-jtbd:JTBDJob ;
+    rdfs:range  yawl-jtbd:JTBDRole ;
+    rdfs:label  "hasRole" ;
+    rdfs:comment "Links a JTBD job to its actor role." .
+
+yawl-jtbd:hasTrigger a owl:ObjectProperty ;
+    rdfs:domain yawl-jtbd:JTBDJob ;
+    rdfs:range  yawl-jtbd:JTBDTrigger ;
+    rdfs:label  "hasTrigger" ;
+    rdfs:comment "Links a JTBD job to the business trigger that initiates it." .
+
+yawl-jtbd:hasStep a owl:ObjectProperty ;
+    rdfs:domain yawl-jtbd:JTBDJob ;
+    rdfs:range  yawl-jtbd:JTBDStep ;
+    rdfs:label  "hasStep" ;
+    rdfs:comment "Links a JTBD job to one of its workflow steps." .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JTBDRole properties
+# ─────────────────────────────────────────────────────────────────────────────
+
+yawl-jtbd:roleName a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDRole ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "roleName" ;
+    rdfs:comment "Role identifier (e.g. DataEngineer, BusinessAnalyst, DataSteward)." .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JTBDTrigger properties
+# ─────────────────────────────────────────────────────────────────────────────
+
+yawl-jtbd:triggerName a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDTrigger ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "triggerName" ;
+    rdfs:comment "Trigger identifier (e.g. ApiDocumentationUpdate, DataQualityIncident)." .
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JTBDStep properties
+# ─────────────────────────────────────────────────────────────────────────────
+
+yawl-jtbd:stepOrder a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDStep ;
+    rdfs:range  xsd:integer ;
+    rdfs:label  "stepOrder" ;
+    rdfs:comment "1-based ordering index for steps within a job." .
+
+yawl-jtbd:stepOperation a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDStep ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "stepOperation" ;
+    rdfs:comment "L3 method name called at this step (e.g. importOdcsSchema)." .
+
+yawl-jtbd:stepFixture a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDStep ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "stepFixture" ;
+    rdfs:comment "Name of the JSON fixture file (without .json) to use as input for this step." .
+
+yawl-jtbd:stepPlausibilityField a owl:DatatypeProperty ;
+    rdfs:domain yawl-jtbd:JTBDStep ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "stepPlausibilityField" ;
+    rdfs:comment "Required JSON field name in the step output, checked by assertPlausible()." .

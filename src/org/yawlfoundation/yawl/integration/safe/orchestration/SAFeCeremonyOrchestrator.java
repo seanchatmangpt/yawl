@@ -28,6 +28,8 @@ import org.yawlfoundation.yawl.integration.safe.agent.SAFeAgentRole;
 import org.yawlfoundation.yawl.integration.safe.agent.AgentCapability;
 import org.yawlfoundation.yawl.integration.safe.registry.SAFeAgentRegistry;
 import org.yawlfoundation.yawl.integration.safe.messages.CeremonyMessage;
+import org.yawlfoundation.yawl.engine.receipts.Receipt;
+import org.yawlfoundation.yawl.engine.receipts.ReceiptChain;
 
 /**
  * Orchestrates SAFe ceremonies across agents using A2A and MCP communication.
@@ -171,7 +173,7 @@ public class SAFeCeremonyOrchestrator {
     }
 
     /**
-     * Completes a ceremony session.
+     * Completes a ceremony session and commits receipt to ReceiptChain.
      *
      * @param ceremonyId the ceremony session ID
      * @param outcome the ceremony outcome (SUCCESS, PARTIAL, CANCELLED)
@@ -186,9 +188,56 @@ public class SAFeCeremonyOrchestrator {
             fireEvent(new CeremonyEventListener.CeremonyCompleted(
                 ceremonyId, session.ceremonyType(), outcome.name()
             ));
+
+            // Commit receipt to ReceiptChain for audit trail
+            commitCeremonyReceipt(session, outcome);
         }
 
         return Optional.ofNullable(session);
+    }
+
+    /**
+     * Commits a ceremony completion as a receipt to the ReceiptChain.
+     * This creates an immutable audit record of the ceremony outcome and decisions.
+     *
+     * @param session the completed ceremony session
+     * @param outcome the ceremony outcome
+     */
+    private void commitCeremonyReceipt(CeremonySession session, CeremonyOutcome outcome) {
+        try {
+            String caseId = "safe-ceremony-" + session.ceremonyType() + "-" + session.ceremonyId();
+            long receiptId = System.identityHashCode(session);  // Use object hash as receipt ID
+            long timestamp = System.currentTimeMillis();
+
+            // Build before state (ceremony initiated)
+            String beforeState = "{\"ceremonyType\":\"" + session.ceremonyType() + "\",\"participantCount\":" + session.participants().size() + ",\"status\":\"initiated\"}";
+
+            // Build delta (ceremony completed with outcome)
+            String delta = "[{\"ceremonyId\":\"" + session.ceremonyId() + "\",\"outcome\":\"" + outcome.name() + "\"}]";
+
+            // Build after state (ceremony completed)
+            String afterState = "{\"ceremonyType\":\"" + session.ceremonyType() + "\",\"outcome\":\"" + outcome.name() + "\",\"completedTime\":\"" + Instant.now() + "\"}";
+
+            Receipt receipt = new Receipt.Builder(receiptId, caseId, "ceremony-orchestrator", timestamp)
+                .beforeState(beforeState)
+                .delta(delta)
+                .afterState(afterState)
+                .admitted()
+                .validatorId("SAFeCeremonyOrchestrator")
+                .ingressSource("A2A")
+                .build();
+
+            ReceiptChain.getInstance().commit(caseId, new Receipt.Builder(receiptId, caseId, "ceremony-orchestrator", timestamp)
+                .beforeState(beforeState)
+                .delta(delta)
+                .afterState(afterState)
+                .admitted()
+                .validatorId("SAFeCeremonyOrchestrator")
+                .ingressSource("A2A"));
+        } catch (Exception e) {
+            // Log but don't propagate: receipt failure should not fail ceremony completion
+            System.err.println("Warning: Failed to commit ceremony receipt: " + e.getMessage());
+        }
     }
 
     /**

@@ -1,0 +1,1 @@
+{"content": "apiVersion: v1.0\nkind: Application\nid: test-cads-001\nname: TestAsset\nversion: 1.0.0\nstatus: draft\n"}

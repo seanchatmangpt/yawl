@@ -1,0 +1,12 @@
+{
+  "schema_id": "fixture-odcs-schema-001",
+  "name": "CustomerProfile",
+  "version": "1.0.0",
+  "description": "Minimal ODCS schema fixture for JTBD testing",
+  "content": "apiVersion: v3.1.0\nkind: DataContract\nid: customer-profile-schema-001\nversion: 1.0.0\nname: CustomerProfile\nschema:\n  - name: customer_profile\n    physicalName: customer_profile\n    description: Customer profile table\n    properties:\n      - name: customer_id\n        logicalType: string\n        primaryKey: true\n      - name: email\n        logicalType: string\n        required: true\n      - name: created_at\n        logicalType: timestamp\n",
+  "metadata": {
+    "owner": "data-engineering",
+    "domain": "customer",
+    "classification": "internal"
+  }
+}

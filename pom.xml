@@ -107,7 +107,10 @@
         <maven.compiler.release>25</maven.compiler.release>
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
-        <!-- Enable virtual threads, compact object headers, and Java preview features -->
+        <!-- Enable virtual threads, compact object headers, and Java 25 preview features.
+             The enable-preview flag propagates to ALL surefire-forked test JVMs via the
+             argLine property (JaCoCo prepare-agent appends -javaagent to this value).
+             Without this flag, classloading preview-compiled classes throws ClassFormatError. -->
         <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC --enable-preview</argLine>
 
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
@@ -767,7 +770,9 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Maven Compiler Plugin: Java 25 with preview features -->
+                <!-- Maven Compiler Plugin: Java 25 with explicit preview-feature flag.
+                     The enable-preview arg is set here (not only in .mvn/jvm.config) so
+                     it works regardless of whether javac is forked or in-process. -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -776,6 +781,9 @@
                         <release>25</release>
                         <enablePreview>true</enablePreview>
                         <parameters>true</parameters>
+                        <compilerArgs>
+                            <arg>--enable-preview</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
 

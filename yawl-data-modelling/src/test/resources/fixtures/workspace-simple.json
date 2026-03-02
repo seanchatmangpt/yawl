@@ -1,0 +1,18 @@
+{
+  "id": "00000000-0000-0000-0000-000000000001",
+  "name": "test-workspace",
+  "git_directory_path": "/tmp/test-workspace",
+  "control_file_path": "/tmp/test-workspace/relationships.yaml",
+  "content": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"TestTable\",\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"},\"name\":{\"type\":\"string\"}}}",
+  "tables": [
+    {
+      "id": "00000000-0000-0000-0000-000000000010",
+      "name": "test_table",
+      "description": "Test table for integration tests",
+      "columns": [
+        {"name": "id", "data_type": "INTEGER", "required": true, "primary_key": true},
+        {"name": "name", "data_type": "VARCHAR(255)", "required": true}
+      ]
+    }
+  ]
+}

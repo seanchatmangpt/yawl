@@ -1,0 +1,1 @@
+{"domain_id": "00000000-0000-0000-0000-000000000001", "content": "openapi: 3.0.0\ninfo:\n  title: Test API\n  version: 1.0.0\npaths:\n  /test:\n    get:\n      summary: Test endpoint\n      responses:\n        '200':\n          description: OK\n"}

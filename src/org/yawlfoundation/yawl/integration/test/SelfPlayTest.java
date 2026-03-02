@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.yawlfoundation.yawl.integration.a2a.YawlA2AClient;
+import org.yawlfoundation.yawl.integration.groq.GroqService;
 import org.yawlfoundation.yawl.integration.mcp.YawlMcpClient;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
@@ -27,20 +28,30 @@ public class SelfPlayTest {
     private static int checksPassed = 0;
     private static int checksSkipped = 0;
 
+    // Provider flag: true = Groq, false = Z.AI
+    private static boolean useGroq = false;
+
     public static void main(String[] args) {
         System.out.println("========================================");
-        System.out.println("YAWL MCP/A2A/Z.AI Integration Checks");
+        System.out.println("YAWL MCP/A2A/LLM Integration Checks");
         System.out.println("========================================\n");
 
-        String apiKey = System.getenv("ZAI_API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            System.err.println("ZAI_API_KEY environment variable not set");
-            System.err.println("Set ZAI_API_KEY and run again");
+        String groqKey = System.getenv("GROQ_API_KEY");
+        String zaiKey  = System.getenv("ZAI_API_KEY");
+
+        if (groqKey != null && !groqKey.isEmpty()) {
+            useGroq = true;
+            System.out.println("LLM provider: Groq Cloud (llama-3.3-70b-versatile)\n");
+        } else if (zaiKey != null && !zaiKey.isEmpty()) {
+            useGroq = false;
+            System.out.println("LLM provider: Z.AI\n");
+        } else {
+            System.err.println("No LLM API key found.");
+            System.err.println("Set GROQ_API_KEY (preferred) or ZAI_API_KEY and run again.");
             System.exit(1);
         }
-        System.out.println("Z.AI Service initialized successfully\n");
 
-        verifyZaiConnection();
+        verifyLlmConnection();
         verifyBasicChat();
         verifyWorkflowDecision();
         verifyDataTransformation();
@@ -53,22 +64,30 @@ public class SelfPlayTest {
         printSummary();
     }
 
-    static void verifyZaiConnection() {
-        runCheck("Z.AI Connection", () -> {
-            ZaiService service = new ZaiService();
-            boolean connected = service.verifyConnection();
+    static void verifyLlmConnection() {
+        String label = useGroq ? "Groq Connection" : "Z.AI Connection";
+        runCheck(label, () -> {
+            boolean connected = useGroq
+                ? new GroqService().verifyConnection()
+                : new ZaiService().verifyConnection();
             if (!connected) {
-                throw new AssertionError("Failed to connect to Z.AI API");
+                throw new AssertionError("Failed to connect to " + (useGroq ? "Groq" : "Z.AI") + " API");
             }
         });
     }
 
     static void verifyBasicChat() {
         runCheck("Basic Chat", () -> {
-            ZaiService service = new ZaiService();
-            service.setSystemPrompt("You are a helpful assistant for YAWL workflows.");
-
-            String response = service.chat("Say 'hello' in exactly one word");
+            String response;
+            if (useGroq) {
+                GroqService service = new GroqService();
+                service.setSystemPrompt("You are a helpful assistant for YAWL workflows.");
+                response = service.chat("Say 'hello' in exactly one word");
+            } else {
+                ZaiService service = new ZaiService();
+                service.setSystemPrompt("You are a helpful assistant for YAWL workflows.");
+                response = service.chat("Say 'hello' in exactly one word");
+            }
             if (response == null || response.isEmpty()) {
                 throw new AssertionError("Empty response from chat");
             }
@@ -78,14 +97,21 @@ public class SelfPlayTest {
 
     static void verifyWorkflowDecision() {
         runCheck("Workflow Decision", () -> {
-            ZaiService service = new ZaiService();
-
-            String decision = service.makeWorkflowDecision(
+            String decision;
+            List<String> options = Arrays.asList("Manager Approval", "Director Approval", "Auto-Approve", "Reject");
+            if (useGroq) {
+                decision = new GroqService().makeWorkflowDecision(
                     "Approval Level",
                     "{\"amount\": 5000, \"department\": \"IT\"}",
-                    Arrays.asList("Manager Approval", "Director Approval", "Auto-Approve", "Reject")
-            );
-
+                    options
+                );
+            } else {
+                decision = new ZaiService().makeWorkflowDecision(
+                    "Approval Level",
+                    "{\"amount\": 5000, \"department\": \"IT\"}",
+                    options
+                );
+            }
             if (decision == null || decision.isEmpty()) {
                 throw new AssertionError("Empty decision response");
             }
@@ -95,13 +121,18 @@ public class SelfPlayTest {
 
     static void verifyDataTransformation() {
         runCheck("Data Transformation", () -> {
-            ZaiService service = new ZaiService();
-
-            String transformed = service.transformData(
+            String transformed;
+            if (useGroq) {
+                transformed = new GroqService().transformData(
                     "John Doe, 123 Main St",
                     "Convert to JSON with fields: name, address"
-            );
-
+                );
+            } else {
+                transformed = new ZaiService().transformData(
+                    "John Doe, 123 Main St",
+                    "Convert to JSON with fields: name, address"
+                );
+            }
             if (transformed == null || transformed.isEmpty()) {
                 throw new AssertionError("Empty transformation response");
             }
@@ -260,7 +291,8 @@ public class SelfPlayTest {
 
     static void verifyEndToEndWorkflow() {
         runCheck("End-to-End Workflow", () -> {
-            ZaiService zai = new ZaiService();
+            // Use whichever LLM provider is configured
+            final boolean groq = useGroq;
             ZaiFunctionService functions = new ZaiFunctionService();
 
             String engineUrl = System.getenv("YAWL_ENGINE_URL");
@@ -298,11 +330,11 @@ public class SelfPlayTest {
             if (!mcp.isConnected()) throw new AssertionError("MCP not connected");
             if (!a2a.isConnected()) throw new AssertionError("A2A not connected");
 
-            String analysis = zai.analyzeWorkflowContext(
-                    "OrderProcessing",
-                    "ValidateOrder",
-                    "{\"orderId\": \"ORD-123\"}"
-            );
+            String analysis = groq
+                ? new GroqService().analyzeWorkflowContext(
+                    "OrderProcessing", "ValidateOrder", "{\"orderId\": \"ORD-123\"}")
+                : new ZaiService().analyzeWorkflowContext(
+                    "OrderProcessing", "ValidateOrder", "{\"orderId\": \"ORD-123\"}");
             if (analysis == null || analysis.isEmpty()) {
                 throw new AssertionError("Empty analysis");
             }

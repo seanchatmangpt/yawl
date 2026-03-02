@@ -1,0 +1,1 @@
+{"content": "apiVersion: v1.0.0\nkind: DataProduct\nid: test-product-001\nstatus: active\nname: test-product\nversion: 1.0.0\ndomain: test-domain\n"}

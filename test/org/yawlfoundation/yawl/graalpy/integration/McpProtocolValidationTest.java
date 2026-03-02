@@ -691,7 +691,7 @@ public class McpProtocolValidationTest {
 
             assertTrue(result.isError(), "Should handle nonexistent specification");
             assertTrue(result.contents().get(0).text().contains("not found") ||
-                      result.contents().0).text().contains("does not exist"),
+                      result.contents().get(0).text().contains("does not exist"),
                 "Error message should indicate specification not found");
         }
 

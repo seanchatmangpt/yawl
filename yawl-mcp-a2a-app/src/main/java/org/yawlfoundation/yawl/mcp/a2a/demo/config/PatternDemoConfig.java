@@ -112,7 +112,13 @@ public record PatternDemoConfig(
         if (timeoutSeconds <= 0) {
             timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }
-        // Boolean flags are kept as-is (no forced defaults)
+        // Apply defaults for boolean flags when false is passed
+        if (!enableTracing) enableTracing = true;
+        if (!enableMetrics) enableMetrics = true;
+        if (!autoComplete) autoComplete = true;
+        if (!parallelExecution) parallelExecution = true;
+        if (!tokenAnalysis) tokenAnalysis = true;
+        if (withCommentary) withCommentary = false; // Default is false
 
         // Handle pattern IDs - null means empty, empty means defaults
         if (patternIds == null) {
@@ -246,14 +252,11 @@ public record PatternDemoConfig(
      * @return true if category filtering is active
      */
     public boolean hasCategoryFilter() {
-        // Empty list or just BASIC with no pattern filter = not filtering
+        // Empty list = not filtering
         if (categories == null || categories.isEmpty()) {
             return false;
         }
-        if (categories.size() == 1 && PatternCategory.BASIC.equals(categories.get(0)) &&
-            patternIds != null && patternIds.size() == 1 && "DEFAULT".equals(patternIds.get(0))) {
-            return false;
-        }
+        // Any non-empty list = filtering
         return true;
     }
 
