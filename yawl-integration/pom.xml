@@ -372,15 +372,64 @@
         </resources>
 
         <plugins>
+            <!-- SAFe autonomous agents + selfplay model classes needed by main compile -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-safe-source</id>
+                        <phase>generate-sources</phase>
+                        <goals><goal>add-source</goal></goals>
+                        <configuration>
+                            <sources>
+                                <!-- SAFe autonomous agents, ZAIOrchestrator, V7GapProposalService impls -->
+                                <source>../src/main/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <!-- Force test compilation: default testCompile mojo skips when
+                         testSourceDirectory=../test (non-standard layout). Explicit execution
+                         with forceJavacCompilerUse=true and useIncrementalCompilation=false
+                         bypasses the incremental skip. -->
+                    <execution>
+                        <id>force-test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals><goal>testCompile</goal></goals>
+                        <configuration>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <useIncrementalCompilation>false</useIncrementalCompilation>
+                            <compilerArgs>
+                                <arg>--enable-preview</arg>
+                            </compilerArgs>
+                            <testExcludes>
+                                <!-- Pre-existing syntax errors incompatible with Java 25 -->
+                                <testExclude>**/java_python/java_python_temp/**</testExclude>
+                                <testExclude>**/java_python/security/**</testExclude>
+                                <testExclude>**/java_python/performance/**</testExclude>
+                            </testExcludes>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                     </compilerArgs>
                     <includes>
                         <include>**/org/yawlfoundation/yawl/integration/**</include>
+                        <!-- SAFe base agent classes (src/org/...safe/agent/) -->
+                        <include>**/org/yawlfoundation/yawl/safe/agent/**</include>
+                        <!-- ZAIOrchestrator and autonomous agent coordination (src/main/java/...safe/autonomous/) -->
+                        <include>**/org/yawlfoundation/yawl/safe/autonomous/**</include>
+                        <!-- V7 gap proposal services (src/main/java/...safe/v7/) -->
+                        <include>**/org/yawlfoundation/yawl/safe/v7/**</include>
                     </includes>
                     <excludes>
                         <!-- A2A classes - HandoffProtocol API changes in SDK -->
@@ -446,69 +495,41 @@
                         <exclude>test/java/**</exclude>
 
                     </excludes>
-                    <testIncludes>
-                        <!-- Container fixtures (YawlContainerFixtures, WorkflowDataFactory) used by mcp tests -->
-                        <!-- Exclude testcontainers-dependent tests: MySQLContainerIntegrationTest, PostgresContainerIntegrationTest, ContainerTestSuite, RequiresDocker -->
-                        <testInclude>**/org/yawlfoundation/yawl/containers/YawlContainerFixtures.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/containers/WorkflowDataFactory.java</testInclude>
-                        <!-- GraalPy process mining tests (null-arg + isHealthy false on standard JDK) -->
-                        <testInclude>**/org/yawlfoundation/yawl/integration/processmining/GraalPyProcessMiningServiceTest.java</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/mcp/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/spiffe/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/dedup/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/pool/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/memory/**</testInclude>
-                        <!-- a2a tests now included - A2A sources are compiled -->
-                        <testInclude>**/org/yawlfoundation/yawl/integration/a2a/skills/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/zai/**</testInclude>
-                        <!-- autonomous marketplace tests (strategies excluded - pre-existing breaks) -->
-                        <testInclude>**/org/yawlfoundation/yawl/integration/autonomous/marketplace/**</testInclude>
-                        <!-- workflow analytics engine (QLever-backed process mining) -->
-                        <testInclude>**/org/yawlfoundation/yawl/integration/autonomous/analytics/**</testInclude>
-                        <!-- MCP-A2A end-to-end integration tests -->
-                        <testInclude>**/org/yawlfoundation/yawl/integration/YawlMcpA2aEndToEndIntegrationTest.java</testInclude>
-                        <!-- Blue-ocean innovation tests (v6.0 new capabilities) -->
-                        <testInclude>**/org/yawlfoundation/yawl/integration/temporal/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/immune/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/conscience/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/synthesis/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/verification/**</testInclude>
-                        <testInclude>**/org/yawlfoundation/yawl/integration/reactor/**</testInclude>
-                        <!-- YAWL v7 self-play design loop (AlphaGo-style convergence) -->
-                        <testInclude>**/org/yawlfoundation/yawl/integration/selfplay/**</testInclude>
-                    </testIncludes>
-                    <testExcludes>
-                        <!-- ProcessMiningSkill not yet implemented (pre-existing) -->
-                        <testExclude>**/a2a/skills/ProcessMiningSkillTest.java</testExclude>
-                        <testExclude>**/SelfPlayTest.java</testExclude>
-                        <!-- IntegrationTestSuite references excluded classes -->
-                        <testExclude>**/IntegrationTestSuite.java</testExclude>
-                        <testExclude>**/multimodule/**</testExclude>
-                        <!-- V6EndToEndIntegrationTest references excluded classes -->
-                        <testExclude>**/V6EndToEndIntegrationTest.java</testExclude>
-                        <!-- EnterpriseIntegrationPatternsTest references excluded classes -->
-                        <testExclude>**/EnterpriseIntegrationPatternsTest.java</testExclude>
-                        <!-- IT tests require failsafe plugin not available offline -->
-                        <testExclude>**/*IT.java</testExclude>
-                        <!-- PinnedTrustManagerTest references deleted PinnedTrustManager class -->
-                        <testExclude>**/zai/PinnedTrustManagerTest.java</testExclude>
-                        <!-- ZaiHttpClientCertificatePinningTest references missing ZaiHttpClient -->
-                        <testExclude>**/zai/ZaiHttpClientCertificatePinningTest.java</testExclude>
-                        <!-- ZaiServiceTest requires okhttp3 runtime dep (3.14.9 not cached offline) -->
-                        <testExclude>**/zai/ZaiServiceTest.java</testExclude>
-                        <!-- A2ASkillBenchmark uses JUnit 4 style assertTrue(message,cond) not JUnit 5 -->
-                        <testExclude>**/a2a/skills/A2ASkillBenchmark.java</testExclude>
-                        <!-- AutoUpdateSkillTest - AuthenticatedPrincipal constructor API mismatch -->
-                        <testExclude>**/a2a/skills/AutoUpdateSkillTest.java</testExclude>
-                        <!-- V7SelfPlay* - depend on org.yawlfoundation.yawl.safe.* packages not yet available -->
-                        <testExclude>**/selfplay/V7SelfPlayLoopTest.java</testExclude>
-                        <testExclude>**/selfplay/V7SelfPlayOrchestrator.java</testExclude>
-                        <!-- ScalableAgentRegistryTest - assertThrows API mismatch (missing JUnit 5 import) -->
-                        <testExclude>**/marketplace/ScalableAgentRegistryTest.java</testExclude>
-                        <!-- CaseTimelineIntegrationTest - missing symbols (pre-existing API mismatch) -->
-                        <testExclude>**/mcp/timeline/CaseTimelineIntegrationTest.java</testExclude>
-                    </testExcludes>
+                    <!-- Test compilation: default includes (**/*.java) apply, surefire controls execution -->
                 </configuration>
+            </plugin>
+            <!-- Compile SAFe integration tests directly via Ant javac.
+                 maven-compiler-plugin 3.13.0 returns "Not compiling test sources"
+                 for non-standard testSourceDirectory (../test). Antrun bypasses
+                 the broken incremental stale-source scanner entirely. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>compile-safe-tests</id>
+                        <phase>test-compile</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.testOutputDirectory}"/>
+                                <javac fork="true"
+                                       executable="${java.home}/bin/javac"
+                                       srcdir="${basedir}/../test"
+                                       destdir="${project.build.testOutputDirectory}"
+                                       includes="**/integration/mcp/safe/*.java,**/integration/a2a/safe/*.java,**/integration/governance/*.java,**/integration/selfplay/**/*.java"
+                                       encoding="UTF-8"
+                                       includeantruntime="false">
+                                    <classpath refid="maven.test.classpath"/>
+                                    <compilerarg value="--release"/>
+                                    <compilerarg value="25"/>
+                                    <compilerarg value="--enable-preview"/>
+                                </javac>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

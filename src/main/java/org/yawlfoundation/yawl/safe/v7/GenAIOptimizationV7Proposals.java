@@ -172,7 +172,21 @@ public class GenAIOptimizationV7Proposals implements V7GapProposalService {
         };
     }
 
+    /**
+     * Generate reasoning for a V7 gap proposal.
+     *
+     * <p>When GROQ_API_KEY is set, calls GroqLlmGateway (openai/gpt-oss-20b) via reflection
+     * to produce LLM-generated reasoning. Falls back to deterministic text when Groq is
+     * unavailable (no API key, network failure, or rate limit).
+     */
     private String generateReasoning(V7Gap gap) {
+        if (isGroqAvailable()) {
+            try {
+                return callGroqForReasoning(gap);
+            } catch (Exception e) {
+                // fall through to deterministic fallback
+            }
+        }
         return switch (gap) {
             case THREADLOCAL_YENGINE_PARALLELIZATION ->
                 "ThreadLocal YEngine enables 30% test parallelization by eliminating shared engine state. " +
@@ -182,5 +196,27 @@ public class GenAIOptimizationV7Proposals implements V7GapProposalService {
                 "similar to Apache Cassandra. Estimated 25% throughput improvement in high-load scenarios.";
             default -> "Performance optimization proposal";
         };
+    }
+
+    private boolean isGroqAvailable() {
+        try {
+            Class<?> gwClass = Class.forName("org.yawlfoundation.yawl.ggen.rl.GroqLlmGateway");
+            return (boolean) gwClass.getMethod("isAvailable").invoke(null);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String callGroqForReasoning(V7Gap gap) throws Exception {
+        Class<?> gwClass = Class.forName("org.yawlfoundation.yawl.ggen.rl.GroqLlmGateway");
+        Object gw = gwClass.getMethod("fromEnv", java.time.Duration.class)
+                           .invoke(null, java.time.Duration.ofSeconds(30));
+        String prompt = String.format(
+            "You are a SAFe enterprise architect analyzing YAWL v7 design gaps. " +
+            "For gap '%s', provide exactly 2 sentences of technical reasoning for the " +
+            "proposed solution, covering: (1) the performance gain mechanism, " +
+            "(2) backward compatibility impact. Be concise and specific.", gap.name());
+        return (String) gwClass.getMethod("send", String.class, double.class)
+                               .invoke(gw, prompt, 0.7);
     }
 }

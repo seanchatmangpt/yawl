@@ -290,14 +290,29 @@ public class V7SelfPlayOrchestrator {
      * Convert an AgentDecisionEvent challenge to a DesignChallenge record for legacy compat.
      */
     private DesignChallenge toChallengeRecord(AgentDecisionEvent challenge) {
-        Object decision = challenge.getMetadata().get("challenge_decision");
-        String verdict = (String) decision;
+        String rawVerdict = (String) challenge.getMetadata().getOrDefault("challenge_decision", "ACCEPTED");
+        String verdict = switch (rawVerdict) {
+            case "REJECTED" -> DesignChallenge.REJECTED;
+            case "MODIFIED" -> DesignChallenge.MODIFIED;
+            default -> DesignChallenge.ACCEPTED;
+        };
+        String objection = (String) challenge.getMetadata().getOrDefault("reasoning", "");
+        Number roundNum = (Number) challenge.getMetadata().getOrDefault("round", 1);
+        int round = roundNum != null ? roundNum.intValue() : 1;
+        // proposalId from challenge context ("challenge_of" key set by proposal services)
+        String proposalId = challenge.getContext().getOrDefault("challenge_of", challenge.getDecisionId());
+        // gap not carried in challenge event — use first gap as sentinel (V7FitnessEvaluator
+        // only reads isAccepted()/isRejected() from DesignChallenge, never the gap field)
+        V7Gap gap = V7Gap.values()[0];
         return new DesignChallenge(
             challenge.getDecisionId(),
-            challenge.getAgentId(),
-            verdict.equals("ACCEPTED"),
-            verdict.equals("REJECTED"),
-            (String) challenge.getMetadata().getOrDefault("reasoning", "")
+            proposalId,
+            gap,
+            verdict,
+            objection,
+            0.0,
+            round,
+            Instant.now()
         );
     }
 
