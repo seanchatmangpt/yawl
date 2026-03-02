@@ -93,6 +93,7 @@
         <!-- Layer 5: Advanced services (build in parallel) -->
         <module>yawl-pi</module>
         <module>yawl-resourcing</module>
+        <module>yawl-qlever</module>
 
         <!-- Layer 6: Top-level application -->
         <module>yawl-mcp-a2a-app</module>

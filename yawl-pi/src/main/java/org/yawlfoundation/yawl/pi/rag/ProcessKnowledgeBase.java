@@ -82,7 +82,7 @@ public class ProcessKnowledgeBase {
                 // Average flow time
                 String avgFlowTimeText = String.format(
                     "Specification %s average flow time is %.2f ms",
-                    specIdStr, report.performance.avgFlowTimeMs
+                    specIdStr, report.performance.avgFlowTimeMs()
                 );
                 addEntry("perf_avg_flow_" + specIdStr, specIdStr, avgFlowTimeText,
                          "performance", report);
@@ -90,7 +90,7 @@ public class ProcessKnowledgeBase {
                 // Throughput
                 String throughputText = String.format(
                     "Specification %s throughput is %.2f cases per hour",
-                    specIdStr, report.performance.throughputPerHour
+                    specIdStr, report.performance.throughputPerHour()
                 );
                 addEntry("perf_throughput_" + specIdStr, specIdStr, throughputText,
                          "performance", report);

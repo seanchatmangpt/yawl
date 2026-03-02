@@ -373,7 +373,7 @@ public class BenchmarkReportGenerator {
             html.append(formatMetricCard("Peak Heap Usage", lastMetric.heapUsedMb, "MB"));
             html.append(formatMetricCard("Heap Growth", heapGrowthMB, "MB"));
             html.append(formatMetricCard("Peak Threads", lastMetric.peakThreadCount, "threads"));
-            html.append(formatMetricCard("Avg Throughput", formatDouble(calculateAverageThroughput()), "cases/sec"));
+            html.append(formatMetricCard("Avg Throughput", calculateAverageThroughput(), "cases/sec"));
         }
 
         html.append("  </div>\n");

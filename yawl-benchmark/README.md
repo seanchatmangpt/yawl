@@ -1,226 +1,165 @@
-# YAWL Benchmark Suite
+# YAWL SPARQL Engine Benchmark Suite
 
-A comprehensive performance benchmark suite for the YAWL workflow engine v6.0.0, built with JMH (Java Microbenchmark Harness).
-
-## Overview
-
-This benchmark suite provides comprehensive performance testing for YAWL engine components:
-
-### Core Benchmarks
-- **YAWLEngineBenchmarks**: Core engine performance (startup, task execution, work item operations)
-- **WorkflowPatternBenchmarks**: Control flow pattern performance (sequential, parallel, multi-choice, cancel regions)
-- **ConcurrencyBenchmarks**: Multi-threaded performance and scalability
-- **MemoryBenchmarks**: Memory usage patterns and GC behavior
-
-### Integration Benchmarks
-Located in `test/org/yawlfoundation/yawl/integration/benchmark/`:
-- **IntegrationBenchmarks**: A2A, MCP, and Z.ai performance
-- **StressTestBenchmarks**: Extreme load testing
-- **PerformanceRegressionDetector**: Regression analysis against baselines
+This benchmark suite compares different SPARQL engine implementations used in YAWL:
+- QLever HTTP (remote)
+- QLever Embedded (FFI)
+- Oxigraph (Rust FFI)
 
 ## Quick Start
 
 ### Prerequisites
-- Java 25+
-- Maven 3.9+
-- 4GB+ available memory
 
-### Building
-```bash
-mvn clean install
-```
+1. Java 25+
+2. Maven 3.9+
+3. One of the following SPARQL engines:
+   - QLever (HTTP mode) - running on port 7001
+   - Oxigraph/Yawl-Native - running on port 8083
 
 ### Running Benchmarks
+
 ```bash
-# Run from project root
-./scripts/benchmark.sh
+# Run all engines
+./scripts/benchmark-qlever.sh
 
-# Run specific benchmarks
-./scripts/benchmark.sh YAWLEngineBenchmarks
-./scripts/benchmark.sh ConcurrencyBenchmarks
-./scripts/benchmark.sh MemoryBenchmarks
+# Run specific engine
+./scripts/benchmark-qlever.sh qlever-http
+./scripts/benchmark-qlever.sh qlever-embedded
+./scripts/benchmark-qlever.sh oxigraph
 
-# Custom configuration
-./scripts/benchmark.sh -n 50 -w 10 -t 8 ConcurrencyBenchmarks
+# Run with custom JMH parameters
+mvn -pl yawl-benchmark clean install
+java -jar yawl-benchmark/target/benchmarks.jar QLeverBenchmark -wi 5 -i 10 -f 2
 ```
 
-## Benchmark Classes
+### Expected Results
 
-### YAWLEngineBenchmarks
-Measures fundamental YAWL engine performance:
-- `netRunnerTaskExecutionLatency`: Task execution latency
-- `workItemCheckoutLatency`: Work item operations
-- `statelessEngineCaseCreationThroughput`: Case creation throughput
-- `engineStartupPerformance`: Engine initialization time
-- `taskTransitionPerformance`: Task state transitions
-- `concurrentTaskExecution`: Multi-threaded task processing
+Results are saved in JSON format with execution times and percentiles (p50, p95, p99).
 
-### WorkflowPatternBenchmarks
-Tests specific YAWL control flow patterns:
-- `sequentialWorkflowPerformance`: Linear workflow execution
-- `parallelSplitSyncPerformance`: Parallel execution with synchronization
-- `multiChoiceMergePerformance`: Conditional branching
-- `cancelRegionPerformance`: Task cancellation
-- `nOutOfMPatternPerformance`: N-out-of-M patterns
-- `mixedPatternComplexityPerformance`: Combined patterns
+## Benchmarks
 
-### ConcurrencyBenchmarks
-Evaluates multi-threaded performance:
-- `virtualVsPlatformThreadPerformance`: Thread model comparison
-- `threadScalingPerformance`: Scaling with thread count
-- `concurrentCaseCreationThroughput`: Concurrent case creation
-- `resourceContentionUnderLoad`: Resource contention scenarios
-- `contextSwitchingOverhead`: Context switching impact
+### QLeverBenchmark
 
-### MemoryBenchmarks
-Measures memory usage patterns:
-- `heapUsageDuringWorkflowExecution`: Heap consumption
-- `gcPressureUnderLoad`: GC activity under load
-- `memoryScalabilityWithCaseCounts`: Memory scaling
-- `memoryLeakDetection`: Leak detection
-- `memoryRecoveryAfterLoad`: Memory recovery
+Tests four query patterns:
 
-## Performance Targets
+1. **simpleConstruct**: Basic CONSTRUCT queries with simple patterns
+2. **complexJoin**: Queries with joins and multiple predicates
+3. **largeResult**: Queries returning large result sets (2000+ triples)
+4. **patternJoin**: Specific workflow pattern queries with case/task relationships
 
-### Engine Performance
-- Startup: < 60 seconds
-- Case creation (P95): < 500ms
-- Work item checkout (P95): < 200ms
-- Work item checkin (P95): < 300ms
-- Task transition: < 100ms
-- DB query (P95): < 50ms
+## Dataset Generation
 
-### Concurrency
-- Virtual threads: 1200+ cases/second
-- Platform threads: 800 cases/second
-- Scaling efficiency: 85% at 16 threads
+Generate test RDF datasets:
 
-### Memory
-- GC time: < 5% of total time
-- Memory per case: < 2MB
-- Memory leaks: < 5MB growth at 10,000 cases
-
-## Test Data Generation
-
-Use `TestDataGenerator` to create synthetic test data:
-```java
-TestDataGenerator generator = new TestDataGenerator();
-
-// Generate workflow specifications
-Map<String, String> specs = generator.generateWorkflowSpecifications();
-
-// Generate work items
-List<Map<String, Object>> workItems = generator.generateWorkItems(100);
-
-// Generate performance scenarios
-List<Map<String, Object>> scenarios = generator.generatePerformanceScenarios();
-```
-
-## Results Format
-
-Benchmarks output results in JSON format:
-```json
-{
-  "benchmark": "org.yawlfoundation.yawl.benchmark.YAWLEngineBenchmarks",
-  "mode": "thrpt",
-  "threads": 1,
-  "forks": 3,
-  "warmupIterations": 10,
-  "measurementIterations": 50,
-  "results": [
-    {
-      "params": {
-        "threadCount": "1"
-      },
-      "primaryMetric": {
-        "score": 1250.0,
-        "error": "+/- 45.2",
-        "scoreError": "+/- 45.2",
-        "unit": "ops/ms"
-      }
-    }
-  ]
-}
-```
-
-## Baseline Metrics
-
-Baseline metrics are documented in `docs/v6/latest/performance/baseline-metrics.md`. These serve as references for regression detection.
-
-### Regression Thresholds
-- Latency: > 20% increase triggers warning
-- Throughput: > 15% decrease triggers warning
-- Memory: > 25% increase triggers warning
-- Errors: > 0.5% error rate triggers warning
-
-## Integration with CI/CD
-
-Add to your Maven profile for automated benchmarking:
-```xml
-<profile>
-  <id>benchmark</id>
-  <properties>
-    <skipTests>false</skipTests>
-  </properties>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.openjdk.jmh</groupId>
-        <artifactId>jmh-maven-plugin</artifactId>
-        <version>${jmh.version}</version>
-        <executions>
-          <execution>
-            <phase>test</phase>
-            <goals>
-              <goal>benchmark</goal>
-            </goals>
-            <configuration>
-              <resultFormat>JSON</resultFormat>
-              <resultFile>target/benchmarks.json</resultFile>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-</profile>
-```
-
-## Running in Docker
-
-For consistent benchmarking environments:
 ```bash
-docker buildx bake --load
-docker run --rm -v $(pwd):/work -w /work cre:0.3.0 ./scripts/benchmark.sh
+# Generate small dataset (1K triples)
+mvn exec:java -pl yawl-benchmark -Dexec.mainClass="org.yawlfoundation.yawl.benchmark.sparql.RdfDataGenerator"
+
+# Or use standalone
+java -cp target/classes:target/dependency/* org.yawlfoundation.yawl.benchmark.sparql.RdfDataGenerator
+
+# Datasets are generated in the datasets/ directory:
+# - datasets/dataset-1000.ttl    (1K triples)
+# - datasets/dataset-10000.ttl   (10K triples)
+# - datasets/dataset-100000.ttl  (100K triples)
+# - datasets/dataset-1000000.ttl (1M triples)
 ```
+
+## JMH Configuration
+
+The benchmarks use the following JMH settings:
+- Warmup: 3 iterations, 1 second each
+- Measurement: 5 iterations, 1 second each
+- Forks: 1 (reduces JVM warmup overhead)
+- Time unit: milliseconds
+- Mode: AverageTime
+
+## Output
+
+Results are saved in `benchmark-results/` directory:
+- `qlever-http-results.json`
+- `qlever-embedded-results.json`
+- `oxigraph-results.json`
+
+Each result file contains:
+- Benchmark name and mode
+- Score (mean time)
+- Error (standard error)
+- Percentiles (p50, p75, p95, p99, p999)
+- Primary metric name
 
 ## Troubleshooting
 
-### Common Issues
-1. **Out of Memory**: Increase heap size with `-Xms4g -Xmx8g`
-2. **Slow Execution**: Reduce iterations or use fewer forks
-3. **JVM Startup Time**: Use JMH's `-prof perfnorm` for warmup tuning
+### Engine Not Available
 
-### Debug Mode
+If engines are not running:
+
+1. **QLever HTTP**:
+   ```bash
+   # Start QLever on port 7001
+   docker run -p 7001:7001 qlever/qlever:latest
+   ```
+
+2. **Oxigraph**:
+   ```bash
+   # Start yawl-native service with Oxigraph
+   ./scripts/start-yawl-native.sh
+   ```
+
+3. **QLever Embedded**:
+   - Requires native libraries: `qlever_java.dylib` (macOS) or `qlever_java.dll` (Windows)
+   - Build from source: `cmake -DCMAKE_BUILD_TYPE=Release && make`
+
+### Build Issues
+
+If benchmark fails to build:
+
 ```bash
-./scripts/benchmark.sh -d
+# Clean and rebuild
+mvn -pl yawl-benchmark clean install -U
+
+# Check dependencies
+mvn dependency:tree -pl yawl-benchmark
 ```
 
-## Contributing
+### Performance Tips
 
-When adding new benchmarks:
-1. Follow JMH best practices
-2. Include comprehensive annotations
-3. Add to appropriate benchmark class
-4. Update baseline metrics
-5. Add regression detection thresholds
+1. **Memory**: Use sufficient heap (4GB+)
+2. **GC**: ZGC or G1GC recommended
+3. **CPU**: More cores = better parallel benchmarking
+4. **Data**: Pre-load datasets for consistent results
+
+## Integration with CI
+
+Add to your CI pipeline:
+
+```yaml
+# Example GitHub Actions
+- name: Run SPARQL Benchmarks
+  run: |
+    ./scripts/benchmark-qlever.sh
+    # Upload results
+    tar -czf benchmark-results.tar.gz benchmark-results/
+    artifact upload benchmark-results.tar.gz
+
+- name: Benchmark Analysis
+  run: |
+    python scripts/analyze-results.py benchmark-results/*.json
+```
 
 ## License
 
-Copyright (c) 2004-2026 The YAWL Foundation. Licensed under the LGPL License.
+This benchmark suite is part of YAWL and licensed under the GNU Lesser General Public License v3.0.
+
+## Contributing
+
+1. Add new benchmark patterns
+2. Support additional SPARQL engines
+3. Improve dataset realism
+4. Add performance analysis tools
 
 ## References
 
-- [JMH Documentation](https://openjdk.org/projects/code-tools/jmh/)
-- [YAWL Foundation](https://www.yawlfoundation.org/)
-- [Performance Regression Detection](docs/v6/latest/performance/baseline-metrics.md)
+- [JMH (Java Microbenchmark Harness)](https://openjdk.org/projects/code-tools/jmh/)
+- [QLever SPARQL Engine](https://qlever.cs.uni-freiburg.de/)
+- [Oxigraph RDF Store](https://oxigraph.org/)
+- [SPARQL 1.1 Query Language](https://www.w3.org/TR/sparql11-query/)
