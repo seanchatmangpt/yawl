@@ -153,11 +153,15 @@ EOF
     VIOLATIONS_ARRAY=""
     VIOLATIONS_JSON_BLOCK=""
 
-    # Collect all Java files first
+    # Collect all Java files first (exclude test fixtures, test source code, and docs templates)
     java_files=()
     while IFS= read -r java_file; do
         java_files+=("$java_file")
-    done < <(find "$EMIT_DIR" -name "*.java" -type f 2>/dev/null)
+    done < <(find "$EMIT_DIR" -name "*.java" -type f \
+        -not -path "*/test/fixtures/*" \
+        -not -path "*/src/test/*" \
+        -not -path "*/docs/*" \
+        2>/dev/null)
 
     # Define patterns once (outside the loop to avoid declare -A issues in subshells)
     declare -A patterns=(

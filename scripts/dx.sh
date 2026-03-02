@@ -1069,12 +1069,12 @@ if [[ "$CACHE_ENABLED" == "true" ]]; then
                 CACHE_SKIPPED_MODULES+=","
             fi
             CACHE_SKIPPED_MODULES+="$module"
-            ((CACHE_HIT_COUNT++))
+            CACHE_HIT_COUNT=$((CACHE_HIT_COUNT + 1))
 
             printf "  ${C_GREEN}✓${C_RESET} %s — %d tests (cached, %.1fs)\n" \
                 "$module" "$test_count" "$(echo "scale=1; $test_time / 1000" | bc 2>/dev/null || echo '0.0')"
         else
-            ((CACHE_MISS_COUNT++))
+            CACHE_MISS_COUNT=$((CACHE_MISS_COUNT + 1))
             printf "  ${C_YELLOW}◇${C_RESET} %s — will run tests\n" "$module"
         fi
     done

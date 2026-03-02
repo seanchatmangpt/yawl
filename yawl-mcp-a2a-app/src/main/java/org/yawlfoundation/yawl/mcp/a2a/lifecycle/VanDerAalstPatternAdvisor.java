@@ -154,7 +154,7 @@ public class VanDerAalstPatternAdvisor {
 
         List<String> patternIds = selectPatterns(goals);
 
-        DemoConfig demoConfig = DemoConfig.builder()
+        DemoConfig runnerConfig = DemoConfig.builder()
             .outputFormat(DemoConfig.OutputFormat.CONSOLE)
             .parallelExecution(true)
             .autoComplete(true)
@@ -165,7 +165,7 @@ public class VanDerAalstPatternAdvisor {
             .patternIds(patternIds)
             .build();
 
-        int exitCode = new PatternDemoRunner(demoConfig).run();
+        int exitCode = new PatternDemoRunner(runnerConfig).run();
         boolean allDemonstrated = (exitCode == 0);
 
         return buildInsights(patternIds, goals, allDemonstrated);
