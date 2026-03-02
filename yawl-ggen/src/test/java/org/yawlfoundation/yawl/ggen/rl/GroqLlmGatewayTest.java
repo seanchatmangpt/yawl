@@ -150,8 +150,8 @@ class GroqLlmGatewayTest {
     // ----- constants -----
 
     @Test
-    void defaultModel_isLlama33_70b() {
-        assertEquals("llama-3.3-70b-versatile", GroqLlmGateway.DEFAULT_MODEL);
+    void defaultModel_isGptOss20b() {
+        assertEquals("openai/gpt-oss-20b", GroqLlmGateway.DEFAULT_MODEL);
     }
 
     @Test

@@ -51,7 +51,7 @@ import java.util.Objects;
 public class GroqLlmGateway implements LlmGateway {
 
     static final String DEFAULT_BASE_URL = "https://api.groq.com/openai/v1";
-    static final String DEFAULT_MODEL    = "llama-3.3-70b-versatile";
+    static final String DEFAULT_MODEL    = "openai/gpt-oss-20b";
     private static final String CHAT_PATH = "/chat/completions";
 
     /**
