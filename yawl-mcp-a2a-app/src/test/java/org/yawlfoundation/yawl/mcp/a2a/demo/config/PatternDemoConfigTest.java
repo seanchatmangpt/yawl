@@ -74,20 +74,21 @@ class PatternDemoConfigTest {
         @DisplayName("Compact constructor should apply defaults for empty string outputPath")
         void compactConstructorShouldApplyDefaultsForEmptyPath() {
             PatternDemoConfig config = new PatternDemoConfig(
-                PatternDemoConfig.OutputFormat.JSON, "", 0, false, false, false, false, false, false, List.of(), List.of()
+                PatternDemoConfig.OutputFormat.JSON, "", 0, true, true, true, true, true, false, List.of(), List.of()
             );
 
             assertEquals(PatternDemoConfig.OutputFormat.JSON, config.outputFormat());
             assertEquals(DEFAULT_OUTPUT_PATH, config.outputPath());
             assertEquals(DEFAULT_TIMEOUT_SECONDS, config.timeoutSeconds());
-            assertTrue(config.enableTracing()); // default
-            assertTrue(config.enableMetrics()); // default
-            assertTrue(config.autoComplete()); // default
-            assertTrue(config.parallelExecution()); // default
-            assertTrue(config.tokenAnalysis()); // default
-            assertFalse(config.withCommentary()); // default
-            assertEquals(1, config.patternIds().size());
-            assertEquals(1, config.categories().size());
+            assertTrue(config.enableTracing());
+            assertTrue(config.enableMetrics());
+            assertTrue(config.autoComplete());
+            assertTrue(config.parallelExecution());
+            assertTrue(config.tokenAnalysis());
+            assertFalse(config.withCommentary());
+            // Empty lists should get defaults from builder, not compact constructor
+            assertEquals(0, config.patternIds().size());
+            assertEquals(0, config.categories().size());
         }
 
         @Test
@@ -142,10 +143,9 @@ class PatternDemoConfigTest {
             assertTrue(config.parallelExecution());
             assertTrue(config.tokenAnalysis());
             assertFalse(config.withCommentary());
-            assertEquals(1, config.patternIds().size());
-            assertEquals(1, config.categories().size());
-            assertEquals("DEFAULT", config.patternIds().get(0));
-            assertEquals(PatternCategory.BASIC, config.categories().get(0));
+            // Empty lists when not explicitly set
+            assertTrue(config.patternIds().isEmpty());
+            assertTrue(config.categories().isEmpty());
         }
 
         @Test

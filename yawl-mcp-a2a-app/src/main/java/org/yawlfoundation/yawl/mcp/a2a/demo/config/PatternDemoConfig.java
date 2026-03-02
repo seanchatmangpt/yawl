@@ -112,23 +112,6 @@ public record PatternDemoConfig(
         if (timeoutSeconds <= 0) {
             timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }
-        // Apply boolean defaults - false means use default (true for most, false for withCommentary)
-        if (!enableTracing) {
-            enableTracing = true;
-        }
-        if (!enableMetrics) {
-            enableMetrics = true;
-        }
-        if (!autoComplete) {
-            autoComplete = true;
-        }
-        if (!parallelExecution) {
-            parallelExecution = true;
-        }
-        if (!tokenAnalysis) {
-            tokenAnalysis = true;
-        }
-        // withCommentary default is false, so no change needed
 
         // Handle pattern IDs - null means empty, copy otherwise
         if (patternIds == null) {
@@ -241,12 +224,12 @@ public record PatternDemoConfig(
      * @return true if pattern filtering is active
      */
     public boolean hasPatternFilter() {
-        // Empty list or just DEFAULT with no category filter = not filtering
+        // Empty list = not filtering
         if (patternIds == null || patternIds.isEmpty()) {
             return false;
         }
-        if (patternIds.size() == 1 && "DEFAULT".equals(patternIds.get(0)) &&
-            categories != null && categories.size() == 1 && PatternCategory.BASIC.equals(categories.get(0))) {
+        // Just DEFAULT (default pattern) = not filtering, regardless of categories
+        if (patternIds.size() == 1 && "DEFAULT".equals(patternIds.get(0))) {
             return false;
         }
         return true;
@@ -556,14 +539,6 @@ public record PatternDemoConfig(
          * @return new PatternDemoConfig instance
          */
         public PatternDemoConfig build() {
-            // Apply defaults for empty lists
-            List<String> finalPatternIds = patternIds.isEmpty()
-                ? Collections.singletonList("DEFAULT")
-                : new ArrayList<>(patternIds);
-            List<PatternCategory> finalCategories = categories.isEmpty()
-                ? Collections.singletonList(PatternCategory.BASIC)
-                : new ArrayList<>(categories);
-
             return new PatternDemoConfig(
                 outputFormat,
                 outputPath,
@@ -574,8 +549,8 @@ public record PatternDemoConfig(
                 parallelExecution,
                 tokenAnalysis,
                 withCommentary,
-                finalPatternIds,
-                finalCategories
+                new ArrayList<>(patternIds),
+                new ArrayList<>(categories)
             );
         }
     }
