@@ -41,7 +41,7 @@ public class SelfPlayTest {
 
         if (groqKey != null && !groqKey.isEmpty()) {
             useGroq = true;
-            System.out.println("LLM provider: Groq Cloud (llama-3.3-70b-versatile)\n");
+            System.out.println("LLM provider: Groq Cloud (openai/gpt-oss-20b)\n");
         } else if (zaiKey != null && !zaiKey.isEmpty()) {
             useGroq = false;
             System.out.println("LLM provider: Z.AI\n");

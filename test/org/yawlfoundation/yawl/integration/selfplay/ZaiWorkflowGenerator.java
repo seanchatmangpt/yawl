@@ -107,7 +107,7 @@ public class ZaiWorkflowGenerator {
      *
      * <p>Provider priority:
      * <ol>
-     *   <li>Groq Cloud ({@code GROQ_API_KEY}) — OpenAI-compatible, {@code llama-3.3-70b-versatile}</li>
+     *   <li>Groq Cloud ({@code GROQ_API_KEY}) — OpenAI-compatible, {@code openai/gpt-oss-20b}</li>
      *   <li>Z.AI ({@code ZAI_API_KEY}) — endpoint from {@code ZAI_API_URL} or default</li>
      *   <li>Template fallback — no LLM required</li>
      * </ol>
@@ -121,7 +121,7 @@ public class ZaiWorkflowGenerator {
             this.apiKey = groqKey;
             this.apiUrl = "https://api.groq.com/openai/v1/chat/completions";
             String groqModel = System.getenv("GROQ_MODEL");
-            this.model = (groqModel != null && !groqModel.isEmpty()) ? groqModel : "llama-3.3-70b-versatile";
+            this.model = (groqModel != null && !groqModel.isEmpty()) ? groqModel : "openai/gpt-oss-20b";
             logger.info("LLM provider: Groq Cloud (" + this.model + ")");
         } else {
             String zaiKey = System.getenv("ZAI_API_KEY");

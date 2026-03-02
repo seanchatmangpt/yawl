@@ -20,7 +20,7 @@ import java.util.concurrent.Semaphore;
  * Groq Cloud Intelligence Service for YAWL — Java 25 Edition.
  *
  * <p>Provides AI-powered capabilities for MCP and A2A integrations using
- * the Groq Cloud API (OpenAI-compatible), backed by {@code llama-3.3-70b-versatile}
+ * the Groq Cloud API (OpenAI-compatible), backed by {@code openai/gpt-oss-20b}
  * by default.
  *
  * <ul>
@@ -45,7 +45,7 @@ public class GroqService {
 
     private static final String BASE_URL  = "https://api.groq.com/openai/v1";
     private static final String CHAT_PATH = "/chat/completions";
-    private static final String DEFAULT_MODEL = "llama-3.3-70b-versatile";
+    private static final String DEFAULT_MODEL = "openai/gpt-oss-20b";
 
     /**
      * Scoped value carrying the current workflow context (system prompt override).
@@ -134,7 +134,7 @@ public class GroqService {
      * Send a chat message with an explicit model identifier.
      *
      * @param message the user message
-     * @param model   the Groq model to use (e.g., "llama-3.3-70b-versatile")
+     * @param model   the Groq model to use (e.g., "openai/gpt-oss-20b")
      * @return the assistant's reply
      */
     public String chat(String message, String model) {
@@ -336,6 +336,7 @@ public class GroqService {
      */
     public static List<String> getAvailableModels() {
         return Arrays.asList(
+            "openai/gpt-oss-20b",
             "llama-3.3-70b-versatile",
             "llama-3.1-8b-instant",
             "llama3-70b-8192",

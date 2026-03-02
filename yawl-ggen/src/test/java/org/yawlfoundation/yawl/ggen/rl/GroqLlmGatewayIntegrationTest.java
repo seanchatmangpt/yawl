@@ -9,7 +9,6 @@
 package org.yawlfoundation.yawl.ggen.rl;
 
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -35,10 +34,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>Test 4 — bad key → confirm 401 path</li>
  * </ul>
  *
- * <p>Skipped automatically when {@code GROQ_API_KEY} is absent.
+ * <p>FAILS (andon violation) when {@code GROQ_API_KEY} is absent — no silent skipping.
  */
 @Tag("integration")
-@EnabledIfEnvironmentVariable(named = "GROQ_API_KEY", matches = ".+")
 @DisplayName("GroqLlmGateway — Live API")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class GroqLlmGatewayIntegrationTest {
@@ -51,6 +49,9 @@ class GroqLlmGatewayIntegrationTest {
 
     @BeforeAll
     static void init() {
+        assertNotNull(System.getenv("GROQ_API_KEY"),
+            "ANDON VIOLATION: GROQ_API_KEY not set — LLM tests must never be silently skipped. " +
+            "Set GROQ_API_KEY in the environment before running self LLM tests.");
         gw = GroqLlmGateway.fromEnv(TIMEOUT);
         System.out.println("[groq] model    = " + gw.getModel());
         System.out.println("[groq] endpoint = " + GroqLlmGateway.DEFAULT_BASE_URL);
