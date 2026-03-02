@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.ShutdownOnFailure;
+import java.util.concurrent.StructuredTaskScope.Subtask;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -32,7 +34,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  *
  * <h2>Key findings</h2>
  * <ul>
- *   <li>StructuredTaskScope.ShutdownOnFailure cancels remaining tasks immediately on failure
+ *   <li>ShutdownOnFailure cancels remaining tasks immediately on failure
  *       → 50-80% faster error propagation vs CompletableFuture.allOf()</li>
  *   <li>Scope creates an explicit parent-child task tree, visible in JFR thread dumps</li>
  *   <li>CompletableFuture leaks ExecutorService unless careful finally{} cleanup</li>
@@ -78,7 +80,7 @@ public class Java25StructuredConcurrencyBenchmark {
     private int taskDurationMs;
 
     // -----------------------------------------------------------------------
-    // Benchmark 1: StructuredTaskScope.ShutdownOnFailure — happy path
+    // Benchmark 1: ShutdownOnFailure — happy path
     // -----------------------------------------------------------------------
 
     /**
@@ -87,8 +89,8 @@ public class Java25StructuredConcurrencyBenchmark {
      */
     @Benchmark
     public int structuredScopeHappyPath(Blackhole bh) throws Exception {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            List<StructuredTaskScope.Subtask<WorkItemResult>> subtasks = new ArrayList<>(batchSize);
+        try (var scope = new ShutdownOnFailure()) {
+            List<Subtask<WorkItemResult>> subtasks = new ArrayList<>(batchSize);
 
             for (int i = 0; i < batchSize; i++) {
                 final int idx = i;
@@ -165,7 +167,7 @@ public class Java25StructuredConcurrencyBenchmark {
     @Benchmark
     public boolean structuredScopeErrorPropagation(Blackhole bh) throws InterruptedException {
         boolean caught = false;
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = new ShutdownOnFailure()) {
             for (int i = 0; i < batchSize; i++) {
                 final int idx = i;
                 // task at midpoint always fails (simulates network timeout)
@@ -233,17 +235,17 @@ public class Java25StructuredConcurrencyBenchmark {
      */
     @Benchmark
     public int nestedStructuredScopes(Blackhole bh) throws Exception {
-        try (var outerScope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var outerScope = new ShutdownOnFailure()) {
             int outerTasks = Math.min(batchSize, 5); // top-level parallel tasks
             int innerTasks = batchSize / outerTasks;   // sub-tasks per composite
 
-            List<StructuredTaskScope.Subtask<Integer>> outerSubtasks = new ArrayList<>(outerTasks);
+            List<Subtask<Integer>> outerSubtasks = new ArrayList<>(outerTasks);
             for (int outer = 0; outer < outerTasks; outer++) {
                 final int outerIdx = outer;
                 outerSubtasks.add(outerScope.fork(() -> {
                     // Inner scope for composite task sub-net
-                    try (var innerScope = new StructuredTaskScope.ShutdownOnFailure()) {
-                        List<StructuredTaskScope.Subtask<WorkItemResult>> innerSubtasks = new ArrayList<>(innerTasks);
+                    try (var innerScope = new ShutdownOnFailure()) {
+                        List<Subtask<WorkItemResult>> innerSubtasks = new ArrayList<>(innerTasks);
                         for (int inner = 0; inner < innerTasks; inner++) {
                             final int innerIdx = outerIdx * innerTasks + inner;
                             innerSubtasks.add(innerScope.fork(
@@ -262,7 +264,7 @@ public class Java25StructuredConcurrencyBenchmark {
             outerScope.join();
             outerScope.throwIfFailed();
 
-            int total = outerSubtasks.stream().mapToInt(StructuredTaskScope.Subtask::get).sum();
+            int total = outerSubtasks.stream().mapToInt(Subtask::get).sum();
             bh.consume(total);
             return total;
         }
@@ -278,8 +280,8 @@ public class Java25StructuredConcurrencyBenchmark {
      */
     @Benchmark
     public int scopeForkLatency(Blackhole bh) throws Exception {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            List<StructuredTaskScope.Subtask<Integer>> tasks = new ArrayList<>(batchSize);
+        try (var scope = new ShutdownOnFailure()) {
+            List<Subtask<Integer>> tasks = new ArrayList<>(batchSize);
             for (int i = 0; i < batchSize; i++) {
                 final int val = i;
                 tasks.add(scope.fork(() -> val * 2));

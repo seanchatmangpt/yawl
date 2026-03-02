@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.ShutdownOnFailure;
+import java.util.concurrent.StructuredTaskScope.Subtask;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -60,12 +62,12 @@ public class StructuredConcurrencyBenchmark {
      */
     @Benchmark
     public void structuredTaskScope(Blackhole bh) throws Exception {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            List<StructuredTaskScope.Subtask<String>> subtasks = new ArrayList<>();
+        try (var scope = new ShutdownOnFailure()) {
+            List<Subtask<String>> subtasks = new ArrayList<>();
 
             for (int i = 0; i < taskCount; i++) {
                 final int taskId = i;
-                StructuredTaskScope.Subtask<String> subtask = scope.fork(() -> {
+                Subtask<String> subtask = scope.fork(() -> {
                     Thread.sleep(taskDurationMs);
                     return "task-" + taskId;
                 });
@@ -75,7 +77,7 @@ public class StructuredConcurrencyBenchmark {
             scope.join();
             scope.throwIfFailed();
 
-            for (StructuredTaskScope.Subtask<String> subtask : subtasks) {
+            for (Subtask<String> subtask : subtasks) {
                 bh.consume(subtask.get());
             }
         }
@@ -125,7 +127,7 @@ public class StructuredConcurrencyBenchmark {
     public void structuredTaskScopeWithError(Blackhole bh) throws Exception {
         boolean exceptionCaught = false;
         
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = new ShutdownOnFailure()) {
             for (int i = 0; i < taskCount; i++) {
                 final int taskId = i;
                 scope.fork(() -> {

@@ -209,8 +209,10 @@ class QLeverFfiBindingsTest {
 
         // Validate results
         for (int i = 0; i < threadCount; i++) {
-            // Either success or expected exception is acceptable
-            assertNull(exceptions[i] || exceptions[i].getMessage().contains("native library"));
+            // Either success (null) or expected exception is acceptable
+            if (exceptions[i] != null) {
+                assertTrue(exceptions[i].getMessage().contains("native library"));
+            }
         }
     }
 

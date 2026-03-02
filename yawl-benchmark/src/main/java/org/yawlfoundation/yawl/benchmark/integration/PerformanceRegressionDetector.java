@@ -161,10 +161,8 @@ public class PerformanceRegressionDetector {
                     double throughput = Double.parseDouble(parts[5].trim());
 
                     BenchmarkResult result = new BenchmarkResult(
-                        benchmark, avgLatency, successCount, errorRate, timestamp
+                        benchmark, avgLatency, successCount, errorRate, timestamp, throughput
                     );
-                    // Update the throughput field since constructor calculates it dynamically
-                    result.throughput = throughput;
                     results.put(benchmark, result);
                 }
             } catch (Exception e) {
@@ -224,12 +222,18 @@ public class PerformanceRegressionDetector {
 
         public BenchmarkResult(String benchmarkName, double avgLatency, int successCount,
                               double errorRate, long timestamp) {
+            this(benchmarkName, avgLatency, successCount, errorRate, timestamp,
+                 calculateThroughput(successCount, timestamp));
+        }
+
+        public BenchmarkResult(String benchmarkName, double avgLatency, int successCount,
+                              double errorRate, long timestamp, double throughput) {
             this.benchmarkName = benchmarkName;
             this.avgLatency = avgLatency;
             this.successCount = successCount;
             this.errorRate = errorRate;
             this.timestamp = timestamp;
-            this.throughput = calculateThroughput(successCount, timestamp);
+            this.throughput = throughput;
             this.memoryUsage = 0;
         }
 
@@ -237,7 +241,7 @@ public class PerformanceRegressionDetector {
             return throughput;
         }
 
-        private double calculateThroughput(int successCount, long timestamp) {
+        private static double calculateThroughput(int successCount, long timestamp) {
             // Simple throughput calculation: successful operations per second
             double timeSeconds = (System.currentTimeMillis() - timestamp) / 1000.0;
             return timeSeconds > 0 ? successCount / timeSeconds : 0;

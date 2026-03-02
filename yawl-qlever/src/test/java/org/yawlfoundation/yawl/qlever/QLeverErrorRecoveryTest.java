@@ -38,7 +38,7 @@ class QLeverErrorRecoveryTest {
     @DisplayName("QLeverFfiException creation with message and cause")
     void testFfiExceptionWithMessageAndCause() {
         String errorMessage = "Memory allocation failure";
-        RuntimeException cause = new OutOfMemoryError("Native heap exhausted");
+        Throwable cause = new OutOfMemoryError("Native heap exhausted");
         QLeverFfiException exception = new QLeverFfiException(errorMessage, cause);
 
         assertEquals(errorMessage, exception.getMessage());
@@ -133,7 +133,7 @@ class QLeverErrorRecoveryTest {
         assertNotNull(QLeverMediaType.TURTLE);
         assertNotNull(QLeverMediaType.JSON);
         assertNotNull(QLeverMediaType.XML);
-        assertNotNull(QLLeverMediaType.CSV);
+        assertNotNull(QLeverMediaType.CSV);
     }
 
     @Test
@@ -192,9 +192,11 @@ class QLeverErrorRecoveryTest {
         assertEquals("meta", result.metadata());
 
         // Test immutability
+        // Records are immutable - cannot modify fields
+        // This would compile error, so we test different approach
         assertThrows(UnsupportedOperationException.class, () -> {
-            // Records are immutable, cannot modify
-            result.data() = "modified";
+            // Create new record instead of modifying
+            QLeverResult modified = new QLeverResult(result.status(), "modified", result.metadata());
         });
     }
 }
