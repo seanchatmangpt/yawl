@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Integration test: V7 self-play loop backed by real Groq LLM (A2A-style agents).
  *
- * <p>All tests are skipped when {@code GROQ_API_KEY} is absent — safe for CI without API access.
+ * <p>ANDON VIOLATION (test failure) when {@code GROQ_API_KEY} is absent — no LLM means no pass.
  *
  * <p>When Groq is available, verifies:
  * <ul>
@@ -33,10 +33,12 @@ class V7SelfPlayGroqTest {
 
     @BeforeAll
     static void checkGroqAndRunLoop() {
-        Assumptions.assumeTrue(
-            System.getenv("GROQ_API_KEY") != null,
-            "GROQ_API_KEY not set — skipping Groq LLM integration tests"
-        );
+        String key = System.getenv("GROQ_API_KEY");
+        if (key == null || key.isBlank()) {
+            fail("ANDON VIOLATION: GROQ_API_KEY is not set. " +
+                 "LLM must be configured for self LLM tests. " +
+                 "Export GROQ_API_KEY before running V7 self-play loop tests.");
+        }
 
         GroqService groq                           = new GroqService();
         GroqV7GapProposalService proposalService   = new GroqV7GapProposalService(groq);

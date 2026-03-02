@@ -9,7 +9,6 @@
 package org.yawlfoundation.yawl.ggen.rl;
 
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -35,10 +34,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>Test 4 — bad key → confirm 401 path</li>
  * </ul>
  *
- * <p>Skipped automatically when {@code GROQ_API_KEY} is absent.
+ * <p>ANDON VIOLATION (test failure) when {@code GROQ_API_KEY} is absent — no LLM means no pass.
  */
 @Tag("integration")
-@EnabledIfEnvironmentVariable(named = "GROQ_API_KEY", matches = ".+")
 @DisplayName("GroqLlmGateway — Live API")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class GroqLlmGatewayIntegrationTest {
@@ -51,11 +49,16 @@ class GroqLlmGatewayIntegrationTest {
 
     @BeforeAll
     static void init() {
+        String key = System.getenv("GROQ_API_KEY");
+        if (key == null || key.isBlank()) {
+            fail("ANDON VIOLATION: GROQ_API_KEY is not set. " +
+                 "LLM must be configured for self LLM tests. " +
+                 "Export GROQ_API_KEY before running integration tests.");
+        }
         gw = GroqLlmGateway.fromEnv(TIMEOUT);
         System.out.println("[groq] model    = " + gw.getModel());
         System.out.println("[groq] endpoint = " + GroqLlmGateway.DEFAULT_BASE_URL);
-        System.out.println("[groq] key      = " +
-            System.getenv("GROQ_API_KEY").substring(0, 8) + "...");
+        System.out.println("[groq] key      = " + key.substring(0, 8) + "...");
     }
 
     // ─── T1: Baseline latency ─────────────────────────────────────────────────
