@@ -20,6 +20,8 @@ package org.yawlfoundation.yawl.schema;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -215,7 +217,7 @@ class SchemaContractExceptionTest {
             current = current.getCause();
             depth++;
         }
-        assertEquals(1, depth, "Should traverse one level of cause chain");
+        assertEquals(2, depth, "Should traverse one level of cause chain (2 getCause calls to reach null)");
     }
 
     @Test

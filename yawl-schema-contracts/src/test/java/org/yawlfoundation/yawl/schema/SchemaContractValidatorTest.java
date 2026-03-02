@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.datamodelling.model.OdcsTable;
 import org.yawlfoundation.yawl.datamodelling.model.WorkspaceModel;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -225,11 +226,10 @@ class SchemaContractValidatorTest {
         }
         WorkspaceModel contract = contractWith(manyFields);
 
-        Map.Builder<String, String> builder = Map.builder();
+        Map<String, String> actual = new HashMap<>();
         for (int i = 0; i < 100; i++) {
-            builder.put("field_" + i, "value_" + i);
+            actual.put("field_" + i, "value_" + i);
         }
-        Map<String, String> actual = builder.build();
 
         List<SchemaViolation> violations = SchemaContractValidator.validate(actual, contract);
 
@@ -244,11 +244,10 @@ class SchemaContractValidatorTest {
         }
         WorkspaceModel contract = contractWith(manyFields);
 
-        Map.Builder<String, String> builder = Map.builder();
+        Map<String, String> actual = new HashMap<>();
         for (int i = 0; i < 50; i++) {
-            builder.put("field_" + i, "value_" + i);
+            actual.put("field_" + i, "value_" + i);
         }
-        Map<String, String> actual = builder.build();
 
         List<SchemaViolation> violations = SchemaContractValidator.validate(actual, contract);
 

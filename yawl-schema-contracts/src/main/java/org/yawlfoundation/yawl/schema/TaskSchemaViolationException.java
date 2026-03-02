@@ -1,5 +1,7 @@
 package org.yawlfoundation.yawl.schema;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -43,7 +45,7 @@ public final class TaskSchemaViolationException extends RuntimeException {
         this.caseId       = caseId;
         this.contractPath = contractPath;
         this.inputViolation = inputViolation;
-        this.violations   = List.copyOf(violations);
+        this.violations   = Collections.unmodifiableList(new ArrayList<>(violations));
     }
 
     /** Returns the YAWL task ID that failed validation. */

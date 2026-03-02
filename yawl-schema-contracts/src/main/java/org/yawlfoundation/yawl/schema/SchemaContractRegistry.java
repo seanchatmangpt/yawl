@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.schema;
 import org.yawlfoundation.yawl.datamodelling.DataModellingModule;
 import org.yawlfoundation.yawl.datamodelling.api.DataModellingService;
 import org.yawlfoundation.yawl.datamodelling.model.WorkspaceModel;
+import org.yawlfoundation.yawl.elements.YTask;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,6 +109,36 @@ public final class SchemaContractRegistry implements AutoCloseable {
      */
     public Optional<WorkspaceModel> outputContract(Map<String, String> attributes) {
         return contractFor(attributes, ATTR_SCHEMA_OUTPUT);
+    }
+
+    /**
+     * Returns the input schema contract for a YAWL task, or empty if no
+     * {@code schema.input} attribute is declared on the task's decomposition.
+     *
+     * @param task the YAWL task (must have a non-null decomposition prototype)
+     * @return the input contract model, or empty
+     * @throws SchemaContractException if the declared contract file cannot be loaded
+     */
+    public Optional<WorkspaceModel> inputContract(YTask task) {
+        if (task == null || task.getDecompositionPrototype() == null) {
+            return Optional.empty();
+        }
+        return inputContract(task.getDecompositionPrototype().getAttributes());
+    }
+
+    /**
+     * Returns the output schema contract for a YAWL task, or empty if no
+     * {@code schema.output} attribute is declared on the task's decomposition.
+     *
+     * @param task the YAWL task (must have a non-null decomposition prototype)
+     * @return the output contract model, or empty
+     * @throws SchemaContractException if the declared contract file cannot be loaded
+     */
+    public Optional<WorkspaceModel> outputContract(YTask task) {
+        if (task == null || task.getDecompositionPrototype() == null) {
+            return Optional.empty();
+        }
+        return outputContract(task.getDecompositionPrototype().getAttributes());
     }
 
     /**
