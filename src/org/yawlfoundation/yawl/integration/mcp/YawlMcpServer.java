@@ -40,6 +40,7 @@ import org.yawlfoundation.yawl.integration.mcp.spec.YawlCompletionSpecifications
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlConscienceToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlFactoryToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlMcpContext;
+import org.yawlfoundation.yawl.integration.mcp.spec.BlueOceanMcpTools;
 import org.yawlfoundation.yawl.integration.mcp.spec.McpToolRegistry;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlAdaptationToolSpecifications;
 import org.yawlfoundation.yawl.integration.mcp.spec.YawlConformanceToolSpecifications;
@@ -57,6 +58,10 @@ import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
 import org.yawlfoundation.yawl.integration.reactor.LivingProcessReactor;
 import org.yawlfoundation.yawl.integration.reactor.ReactorPolicy;
 import org.yawlfoundation.yawl.integration.zai.ZaiFunctionService;
+import org.yawlfoundation.yawl.integration.mcp.safe.ModelRegistry;
+import org.yawlfoundation.yawl.integration.mcp.safe.NfrCatalog;
+import org.yawlfoundation.yawl.integration.mcp.safe.SafeMcpResourceProvider;
+import org.yawlfoundation.yawl.integration.mcp.safe.SafeMcpToolRegistry;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -309,6 +314,22 @@ public class YawlMcpServer {
         var conformanceList = conformanceTools.createAll();
         allTools.addAll(conformanceList);
 
+        // SAFe MCP resources and governance tools
+        ModelRegistry modelRegistry = new ModelRegistry();
+        NfrCatalog nfrCatalog = new NfrCatalog();
+        SafeMcpResourceProvider safeResources = new SafeMcpResourceProvider(modelRegistry);
+        SafeMcpToolRegistry safeTools = new SafeMcpToolRegistry(nfrCatalog, modelRegistry);
+        var safeResourceSpecs = safeResources.createAllResources();
+        var safeResourceTemplates = safeResources.createAllResourceTemplates();
+        var safeToolList = safeTools.createAll();
+        allTools.addAll(safeToolList);
+        int safeToolCount = safeToolList.size();
+
+        // Blue-ocean buried engines — MCP tool wrappers (closes V7Gap.BURIED_ENGINES_MCP_A2A_WIRING)
+        var blueOceanTools = new BlueOceanMcpTools();
+        var blueOceanList = blueOceanTools.createAll();
+        allTools.addAll(blueOceanList);
+
         mcpServer = McpServer.sync(transportProvider)
             .serverInfo(SERVER_NAME, SERVER_VERSION)
             .capabilities(YawlServerCapabilities.full())
@@ -343,8 +364,8 @@ public class YawlMcpServer {
                 """.formatted(allTools.size(), coreToolCount, constructToolCount, formalToolCount,
                     ontologyToolCount, pmToolCount, reactorToolCount, conscienceToolCount, patternToolCount))
             .tools(allTools)
-            .resources(buildAllResources(interfaceBClient, sessionHandle))
-            .resourceTemplates(buildAllResourceTemplates(interfaceBClient, sessionHandle))
+            .resources(buildAllResourcesWithSafe(interfaceBClient, sessionHandle, safeResourceSpecs))
+            .resourceTemplates(buildAllResourceTemplatesWithSafe(interfaceBClient, sessionHandle, safeResourceTemplates))
             .prompts(buildAllPrompts())
             .completions(YawlCompletionSpecifications.createAll(
                 interfaceBClient, sessionHandle))
@@ -365,6 +386,14 @@ public class YawlMcpServer {
         if (agentMarketplace != null) {
             resources.add(buildMarketplaceResource());
         }
+        return resources;
+    }
+
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification>
+            buildAllResourcesWithSafe(InterfaceB_EnvironmentBasedClient client, String session,
+                                     List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceSpecification> safeResources) {
+        var resources = buildAllResources(client, session);
+        resources.addAll(safeResources);
         return resources;
     }
 
@@ -416,6 +445,14 @@ public class YawlMcpServer {
         var templates = new ArrayList<>(
             YawlResourceProvider.createAllResourceTemplates(client, session));
         templates.add(MermaidStateResource.create(client, session));
+        return templates;
+    }
+
+    private List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification>
+            buildAllResourceTemplatesWithSafe(InterfaceB_EnvironmentBasedClient client, String session,
+                                             List<io.modelcontextprotocol.server.McpServerFeatures.SyncResourceTemplateSpecification> safeTemplates) {
+        var templates = buildAllResourceTemplates(client, session);
+        templates.addAll(safeTemplates);
         return templates;
     }
 
