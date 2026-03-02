@@ -1,144 +1,76 @@
-# YAWL v6.0.0 Makefile - Haiku Speed Shortcuts
-# Run: make <target>  or  make help
+# YAWL SPARQL Benchmark Makefile
 
-.PHONY: help build test verify push clean fast audit
+.PHONY: help benchmark test datasets clean-all clean-results
 
+# Default target
 help:
-	@echo "⚡ YAWL Makefile - Haiku Speed Commands"
+	@echo "YAWL SPARQL Benchmark Suite"
 	@echo ""
-	@echo "FAST COMMANDS:"
-	@echo "  make fast       - Compile only (30s)"
-	@echo "  make build      - Full build (2m)"
-	@echo "  make test       - Run tests"
-	@echo "  make verify     - Verify 5 blockers"
+	@echo "Available targets:"
+	@echo "  benchmark    - Run all SPARQL engine benchmarks"
+	@echo "  benchmark-<engine>  - Run specific engine benchmark"
+	@echo "    (qlever-http, qlever-embedded, oxigraph)"
+	@echo "  datasets     - Generate test RDF datasets"
+	@echo "  test         - Run benchmark tests"
+	@echo "  clean-all    - Clean all generated files"
+	@echo "  clean-results - Clean benchmark results"
 	@echo ""
-	@echo "DEVELOPMENT:"
-	@echo "  make clean      - Remove build artifacts"
-	@echo "  make audit      - Security audit"
-	@echo "  make push       - Commit + push (with msg)"
-	@echo ""
-	@echo "AUTONOMICS:"
-	@echo "  make yamcp      - Show MCP quick setup"
-	@echo "  make yaa2a      - Show A2A quick setup"
-	@echo "  make yagent     - Show agent integration"
-	@echo "  make yauto      - Show autonomics architecture"
-	@echo "  make ypatterns  - Show 7 autonomics patterns"
-	@echo ""
-	@echo "EXAMPLE: make push MSG='Fix tenant validation'"
+	@echo "Examples:"
+	@echo "  make benchmark"
+	@echo "  make benchmark-qlever-http"
+	@echo "  make datasets"
 
-fast:
-	@echo "🔨 Compiling (fast mode)..."
-	@bash scripts/dx.sh compile -q
+# Run all benchmarks
+benchmark:
+	./scripts/benchmark-qlever.sh
 
-build:
-	@echo "🏗️  Building all modules..."
-	@bash scripts/dx.sh all
+# Run individual benchmarks
+benchmark-qlever-http:
+	./scripts/benchmark-qlever.sh qlever-http
 
+benchmark-qlever-embedded:
+	./scripts/benchmark-qlever.sh qlever-embedded
+
+benchmark-oxigraph:
+	./scripts/benchmark-qlever.sh oxigraph
+
+# Generate test datasets
+datasets:
+	./scripts/generate-test-data.sh
+
+# Run tests
 test:
-	@echo "🧪 Running tests..."
-	@bash scripts/dx.sh test -q
+	mvn test -pl yawl-benchmark
 
-verify:
-	@echo "✅ Verifying marketplace readiness..."
-	@python3 scripts/verify-marketplace.py
+# Clean everything
+clean-all: clean-results
+	mvn clean -pl yawl-benchmark
+	rm -rf datasets/
 
-clean:
-	@echo "🧹 Cleaning..."
-	@find . -name "target" -type d -exec rm -rf {} + 2>/dev/null || true
-	@echo "Clean complete"
+# Clean only results
+clean-results:
+	rm -rf benchmark-results/
+	rm -f *.json *.log
 
-audit:
-	@echo "🔒 Security audit..."
-	@mvn clean verify -P analysis -q 2>/dev/null || echo "Audit complete"
-
-push:
-	@if [ -z "$(MSG)" ]; then \
-		echo "❌ Usage: make push MSG='Your commit message'"; \
-		exit 1; \
+# View results
+view-results:
+	@if [ -d "benchmark-results" ]; then \
+		echo "Benchmark Results:"; \
+		echo "=================="; \
+		for file in benchmark-results/*.json; do \
+			echo "$(basename $$file):"; \
+			jq '.benchmarks[0].benchmark, .benchmarks[0].score' $$file 2>/dev/null || \
+			echo "  Raw JSON format"; \
+			echo ""; \
+		done; \
+	else \
+		echo "No benchmark results found. Run 'make benchmark' first."; \
 	fi
-	@echo "📤 Staging changes..."
-	@git add -A
-	@echo "💾 Committing..."
-	@git commit -m "$(MSG)"
-	@echo "🚀 Pushing..."
-	@git push -u origin $$(git rev-parse --abbrev-ref HEAD)
-	@echo "✅ Done!"
 
-yamcp:
-	@echo "🔌 MCP Server Quick Setup"
-	@echo "YawlMcpServer mcp = new YawlMcpServer(9000);"
-	@echo "mcp.registerTool(\"list_cases\", (args) -> engine.getCaseList());"
-	@echo "mcp.registerTool(\"complete_task\", (args) -> engine.completeWorkItem(...));"
-	@echo "mcp.start();  // Ready for Claude to call"
-	@echo ""
-	@echo "See: .claude/AUTONOMICS-PATTERNS.md"
-
-yaa2a:
-	@echo "🤝 A2A Server Quick Setup"
-	@echo "YawlA2AServer server = new YawlA2AServer(9001);"
-	@echo "server.registerAgent(\"approval-agent\", (req) -> {"
-	@echo "    if (req.getDouble(\"amount\") < 10000)"
-	@echo "        return WorkflowResponse.success().put(\"approved\", true);"
-	@echo "    return WorkflowResponse.success().put(\"approved\", false);"
-	@echo "});"
-	@echo "server.start();  // Ready for agents to call"
-	@echo ""
-	@echo "See: .claude/AGENT-INTEGRATION.md"
-
-yagent:
-	@echo "🤖 Agent Integration Quick Setup"
-	@echo "A2AClient agent = new A2AClient(\"approval-agent\");"
-	@echo "WorkflowResponse res = agent.invoke("
-	@echo "    new WorkflowRequest().put(\"amount\", 5000)"
-	@echo ");"
-	@echo "if (res.getBoolean(\"approved\")) {"
-	@echo "    engine.completeWorkItem(workItem.getID(), res.getData());"
-	@echo "}"
-	@echo ""
-	@echo "See: .claude/AGENT-INTEGRATION.md"
-
-yauto:
-	@echo "🚀 YAWL v6.0.0 - Autonomics Architecture"
-	@echo ""
-	@echo "Autonomous Agents + YAWL Workflows = Enterprise Automation"
-	@echo ""
-	@echo "Components:"
-	@echo "  • YawlMcpServer      - Claude integration via MCP"
-	@echo "  • YawlA2AServer      - Agent-to-agent communication"
-	@echo "  • A2AClient          - Invoke remote agents"
-	@echo "  • AgentMetrics       - Track agent performance"
-	@echo "  • AgentHealthCheck   - Monitor degradation"
-	@echo ""
-	@echo "Patterns:"
-	@echo "  1. Agent-Driven Approval    (auto-approve + escalation)"
-	@echo "  2. Multi-Agent Orchestration (parallel invocation)"
-	@echo "  3. Autonomous Escalation    (confidence-based routing)"
-	@echo "  4. Agent Feedback Loop      (continuous improvement)"
-	@echo "  5. Agent Chain              (sequential composition)"
-	@echo "  6. Agent Timeout/Fallback   (reliability)"
-	@echo "  7. Agent Pool               (load balancing)"
-	@echo ""
-	@echo "Documentation:"
-	@echo "  • .claude/AUTONOMICS-PATTERNS.md  (7 patterns, copy/paste ready)"
-	@echo "  • .claude/AGENT-INTEGRATION.md    (5-minute setup guide)"
-
-ypatterns:
-	@echo "📋 YAWL Autonomics - 7 Production Patterns"
-	@echo ""
-	@head -150 .claude/AUTONOMICS-PATTERNS.md | tail -80
-
-# Aliases for lazy typing
-.PHONY: f b t v c a p
-f: fast
-b: build
-t: test
-v: verify
-c: clean
-a: audit
-p: push
-
-# Autonomics aliases
-.PHONY: yamcp yaa2a yagent yauto ypatterns
-ag: yagent
-am: yamcp
-aa: yaa2a
+# Check prerequisites
+check:
+	@echo "Checking prerequisites..."
+	@command -v mvn >/dev/null 2>&1 && echo "✓ Maven" || echo "✗ Maven not found"
+	@command -v java >/dev/null 2>&1 && echo "✓ Java" || echo "✗ Java not found"
+	@curl -s -f http://localhost:7001/api/ >/dev/null 2>&1 && echo "✓ QLever HTTP" || echo "✗ QLever HTTP not available"
+	@curl -s -f http://localhost:8083/sparql/health >/dev/null 2>&1 && echo "✓ Oxigraph" || echo "✗ Oxigraph not available"

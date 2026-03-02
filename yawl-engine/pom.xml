@@ -186,6 +186,10 @@
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
         </dependency>
         <dependency>
@@ -195,19 +199,16 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <exclusions>
-                <!-- opentelemetry-exporter-common:1.52.0 JAR not in local Maven cache -->
-                <exclusion>
-                    <groupId>io.opentelemetry</groupId>
-                    <artifactId>opentelemetry-exporter-common</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- opentelemetry-exporter-prometheus:1.52.0-alpha POM not in local Maven cache;
              excluded to allow offline builds. Prometheus metrics handled via micrometer-registry-prometheus -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-logging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-metrics</artifactId>
         </dependency>
 
         <!-- Spring Boot Test for integration tests -->

@@ -106,14 +106,14 @@
         <maven.compiler.release>25</maven.compiler.release>
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
-        <!-- Enable virtual threads and compact object headers -->
-        <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC</argLine>
+        <!-- Enable virtual threads, compact object headers, and Java preview features -->
+        <argLine>-XX:+UseCompactObjectHeaders -XX:+UseZGC --enable-preview</argLine>
 
         <!-- BOM versions - used as type=pom/scope=import in dependencyManagement -->
         <spring-boot.version>3.5.11</spring-boot.version>
         <jakarta-ee.version>10.0.0</jakarta-ee.version>
-        <opentelemetry.version>1.59.0</opentelemetry.version>
-        <opentelemetry-instrumentation.version>2.25.0</opentelemetry-instrumentation.version>
+        <opentelemetry.version>1.49.0</opentelemetry.version>
+        <opentelemetry-instrumentation.version>2.9.0</opentelemetry-instrumentation.version>
         <grpc.version>1.66.0</grpc.version>
         <resilience4j.version>2.3.0</resilience4j.version>
         <testcontainers.version>1.21.4</testcontainers.version>
@@ -133,7 +133,6 @@
         <jakarta.cdi.version>4.1.0</jakarta.cdi.version>
         <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
-        <resilience4j.version>2.3.0</resilience4j.version>
 
         <!-- ORM                                                                -->
         <hibernate.version>6.6.43.Final</hibernate.version>
@@ -315,6 +314,13 @@
                 <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- OpenTelemetry SDK Metrics -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-sdk-metrics</artifactId>
+                <version>${opentelemetry.version}</version>
             </dependency>
 
             <!-- Resilience4j BOM (circuit breaker, retry, rate limiter, etc.) -->
@@ -767,6 +773,7 @@
                     <version>3.13.0</version>
                     <configuration>
                         <release>25</release>
+                        <enablePreview>true</enablePreview>
                         <parameters>true</parameters>
                     </configuration>
                 </plugin>
@@ -780,6 +787,7 @@
                         <includes>
                             <include>**/*Test.java</include>
                         </includes>
+                        <argLine>${argLine}</argLine>
                     </configuration>
                 </plugin>
 
@@ -792,6 +800,7 @@
                         <includes>
                             <include>**/*IT.java</include>
                         </includes>
+                        <argLine>${argLine}</argLine>
                     </configuration>
                 </plugin>
 
