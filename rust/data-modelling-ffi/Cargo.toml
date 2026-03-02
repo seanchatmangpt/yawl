@@ -10,9 +10,18 @@ crate-type = ["cdylib", "lib"]
 name = "data_modelling_ffi"
 
 [dependencies]
-# data-modelling-sdk v2.3.0 from crates.io — shared SDK for model operations (MIT)
-data-modelling-sdk = "2.3.0"
+# data-modelling-sdk v2.3.0 from crates.io — re-exports all of data-modelling-core
+data-modelling-sdk = { version = "2.3.0", features = [
+    "bpmn",      # BPMNImporter / BPMNExporter
+    "dmn",       # DMNImporter / DMNExporter
+    "openapi",   # OpenAPIImporter / OpenAPIToODCSConverter
+    "inference", # SchemaInferrer for infer_schema_from_json
+] }
+# Direct dep to enable mapping feature (not exposed via SDK's feature flags)
+data-modelling-core = { version = "2", features = ["mapping"] }
 serde_json = "1"
+serde_yaml = "0.9"
+uuid = { version = "1.0", features = ["v4", "v5"] }
 
 # ── Standalone workspace so Cargo.lock does not pollute the YAWL root ──────────
 [workspace]

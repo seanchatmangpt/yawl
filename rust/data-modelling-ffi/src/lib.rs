@@ -16,6 +16,38 @@ use std::ffi::CString;
 use std::mem;
 use std::os::raw::c_char;
 
+// ── SDK imports ────────────────────────────────────────────────────────────────
+
+use data_modelling_core::convert::converter::reconstruct_tables;
+use data_modelling_core::convert::{
+    convert_to_odcs, migrate_dataflow_to_domain, OpenAPIToODCSConverter,
+};
+use data_modelling_core::export::{
+    BPMNExporter, DMNExporter, DecisionExporter, KnowledgeExporter, MarkdownExporter,
+    ODCSExporter, SketchExporter, SQLExporter,
+};
+use data_modelling_core::import::bpmn::BPMNImporter;
+use data_modelling_core::import::dmn::DMNImporter;
+use data_modelling_core::import::openapi::OpenAPIImporter;
+use data_modelling_core::import::{
+    AvroImporter, CADSImporter, DecisionImporter, JSONSchemaImporter, KnowledgeImporter,
+    ODCSImporter, ODPSImporter, ProtobufImporter, SketchImporter, SQLImporter,
+};
+use data_modelling_core::models::decision::{Decision, DecisionIndex};
+use data_modelling_core::models::domain::{CADSNode, Domain, ODCSNode, System};
+use data_modelling_core::models::knowledge::{KnowledgeArticle, KnowledgeIndex};
+use data_modelling_core::models::odcs::ODCSContract;
+use data_modelling_core::models::odps::ODPSDataProduct;
+use data_modelling_core::models::sketch::{Sketch, SketchIndex, SketchType};
+use data_modelling_core::models::{DataModel, Relationship, Table};
+use data_modelling_core::validation::input::{
+    validate_column_name, validate_data_type, validate_table_name,
+};
+use data_modelling_core::validation::relationships::RelationshipValidator;
+use data_modelling_core::validation::schema::validate_odps_internal;
+use data_modelling_core::validation::tables::TableValidator;
+use uuid::Uuid;
+
 // ── C ABI result type ─────────────────────────────────────────────────────────
 //
 // Heap-allocated by Rust, freed by the caller via dm_result_free().
@@ -125,6 +157,55 @@ unsafe fn str_from_raw<'a>(ptr: *const c_char, len: usize) -> &'a str {
     std::str::from_utf8_unchecked(std::slice::from_raw_parts(ptr as *const u8, len))
 }
 
+// ── Markdown helpers ──────────────────────────────────────────────────────────
+
+fn tables_to_markdown(tables: &[Table]) -> String {
+    let mut md = String::new();
+    for table in tables {
+        md.push_str(&format!("# Data Contract: {}\n\n", table.name));
+        if let Some(notes) = &table.notes {
+            md.push_str(&format!("{}\n\n", notes));
+        }
+        md.push_str("## Schema\n\n");
+        md.push_str("| Column | Type | Required | Description |\n");
+        md.push_str("|--------|------|----------|-------------|\n");
+        for col in &table.columns {
+            let required = if !col.nullable { "Yes" } else { "No" };
+            let desc = col.description.as_str();
+            md.push_str(&format!(
+                "| {} | {} | {} | {} |\n",
+                col.name, col.data_type, required, desc
+            ));
+        }
+        md.push('\n');
+    }
+    if md.is_empty() {
+        md.push_str("# Data Contract\n\n*No schema objects found.*\n");
+    }
+    md
+}
+
+fn odps_product_to_markdown(product: &ODPSDataProduct) -> String {
+    let name = product.name.as_deref().unwrap_or(&product.id);
+    let mut md = format!("# Data Product: {}\n\n", name);
+    md.push_str("| Property | Value |\n");
+    md.push_str("|----------|-------|\n");
+    md.push_str(&format!("| **ID** | {} |\n", product.id));
+    md.push_str(&format!("| **Kind** | {} |\n", product.kind));
+    if let Some(v) = &product.version {
+        md.push_str(&format!("| **Version** | {} |\n", v));
+    }
+    if let Some(d) = &product.domain {
+        md.push_str(&format!("| **Domain** | {} |\n", d));
+    }
+    if let Some(desc) = &product.description {
+        if let Some(purpose) = &desc.purpose {
+            md.push_str(&format!("\n## Description\n\n{}\n", purpose));
+        }
+    }
+    md
+}
+
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 //
 // All 67 data-modelling-sdk operations are dispatched through this single entry
@@ -137,9 +218,9 @@ unsafe fn str_from_raw<'a>(ptr: *const c_char, len: usize) -> &'a str {
 
 #[no_mangle]
 pub unsafe extern "C" fn dm_call(
-    fn_name:      *const c_char,
-    fn_name_len:  usize,
-    args_json:    *const c_char,
+    fn_name:       *const c_char,
+    fn_name_len:   usize,
+    args_json:     *const c_char,
     args_json_len: usize,
 ) -> *mut DmResult {
     let fn_name   = str_from_raw(fn_name,   fn_name_len);
@@ -160,308 +241,581 @@ pub unsafe extern "C" fn dm_call(
 
         // ── Schema import ─────────────────────────────────────────────────────
 
-        "parse_odcs_yaml" =>
-            data_modelling_sdk::parse_odcs_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        "parse_odcs_yaml" | "parse_odcs_yaml_v2" => {
+            let mut imp = ODCSImporter::new();
+            imp.import(get(0))
+                .map_err(|e| e.to_string())
+                .and_then(|r| serde_json::to_string(&r).map_err(|e| e.to_string()))
+                .map(Some)
+        }
 
-        "parse_odcs_yaml_v2" =>
-            data_modelling_sdk::parse_odcs_yaml_v2(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        "import_from_sql" => {
+            let dialect = get(1);
+            let dialect = if dialect.is_empty() { "standard" } else { dialect };
+            SQLImporter::new(dialect)
+                .parse(get(0))
+                .map_err(|e| e.to_string())
+                .and_then(|r| serde_json::to_string(&r).map_err(|e| e.to_string()))
+                .map(Some)
+        }
 
-        "import_from_sql" =>
-            data_modelling_sdk::import_from_sql(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        "import_from_avro" => {
+            let imp = AvroImporter::new();
+            imp.import(get(0))
+                .map_err(|e| e.to_string())
+                .and_then(|r| serde_json::to_string(&r).map_err(|e| e.to_string()))
+                .map(Some)
+        }
 
-        "import_from_avro" =>
-            data_modelling_sdk::import_from_avro(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        "import_from_json_schema" => {
+            let imp = JSONSchemaImporter::new();
+            imp.import(get(0))
+                .map_err(|e| e.to_string())
+                .and_then(|r| serde_json::to_string(&r).map_err(|e| e.to_string()))
+                .map(Some)
+        }
 
-        "import_from_json_schema" =>
-            data_modelling_sdk::import_from_json_schema(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        "import_from_protobuf" => {
+            let imp = ProtobufImporter::new();
+            imp.import(get(0))
+                .map_err(|e| e.to_string())
+                .and_then(|r| serde_json::to_string(&r).map_err(|e| e.to_string()))
+                .map(Some)
+        }
 
-        "import_from_protobuf" =>
-            data_modelling_sdk::import_from_protobuf(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        "import_from_cads" => {
+            let imp = CADSImporter::new();
+            imp.import(get(0))
+                .map_err(|e| e.to_string())
+                .and_then(|r| serde_json::to_string(&r).map_err(|e| e.to_string()))
+                .map(Some)
+        }
 
-        "import_from_cads" =>
-            data_modelling_sdk::import_from_cads(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        "import_from_odps" => {
+            let imp = ODPSImporter::new();
+            imp.import(get(0))
+                .map_err(|e| e.to_string())
+                .and_then(|r| serde_json::to_string(&r).map_err(|e| e.to_string()))
+                .map(Some)
+        }
 
-        "import_from_odps" =>
-            data_modelling_sdk::import_from_odps(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=domainId, args[1]=xmlContent, args[2]=modelName
+        "import_bpmn_model" => (|| -> Result<Option<String>, String> {
+            let domain_id = Uuid::parse_str(get(0)).map_err(|e| e.to_string())?;
+            let name_opt = if get(2).is_empty() { None } else { Some(get(2)) };
+            let mut imp = BPMNImporter::new();
+            let model = imp.import(get(1), domain_id, name_opt).map_err(|e| e.to_string())?;
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "import_bpmn_model" =>
-            data_modelling_sdk::import_bpmn_model(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=domainId, args[1]=xmlContent, args[2]=modelName
+        "import_dmn_model" => (|| -> Result<Option<String>, String> {
+            let domain_id = Uuid::parse_str(get(0)).map_err(|e| e.to_string())?;
+            let name_opt = if get(2).is_empty() { None } else { Some(get(2)) };
+            let mut imp = DMNImporter::new();
+            let model = imp.import(get(1), domain_id, name_opt).map_err(|e| e.to_string())?;
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "import_dmn_model" =>
-            data_modelling_sdk::import_dmn_model(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
-
-        "import_openapi_spec" =>
-            data_modelling_sdk::import_openapi_spec(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=domainId, args[1]=content, args[2]=modelName
+        "import_openapi_spec" => (|| -> Result<Option<String>, String> {
+            let domain_id = Uuid::parse_str(get(0)).map_err(|e| e.to_string())?;
+            let name_opt = if get(2).is_empty() { None } else { Some(get(2)) };
+            let mut imp = OpenAPIImporter::new();
+            let model = imp.import(get(1), domain_id, name_opt).map_err(|e| e.to_string())?;
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
         // ── Schema export ─────────────────────────────────────────────────────
 
-        "export_odcs_yaml_v2" =>
-            data_modelling_sdk::export_odcs_yaml_v2(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=contractJson or importResultJson → ODCS v3.1.0 YAML
+        "export_odcs_yaml_v2" => (|| -> Result<Option<String>, String> {
+            let v: serde_json::Value =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            // Determine input type: ImportResult has a "tables" array at top level;
+            // ODCSContract has an "apiVersion" field.
+            let yaml = if v.get("apiVersion").is_some() || v.get("schemas").is_some() {
+                // Treat as ODCSContract
+                let contract: ODCSContract =
+                    serde_json::from_value(v).map_err(|e| e.to_string())?;
+                ODCSExporter::export_contract(&contract)
+            } else {
+                // Treat as ImportResult → reconstruct tables → export each as ODCS
+                let import_result: data_modelling_core::import::ImportResult =
+                    serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+                let tables = reconstruct_tables(&import_result);
+                if tables.is_empty() {
+                    return Err("export_odcs_yaml_v2: no tables found in import result".to_string());
+                }
+                tables
+                    .iter()
+                    .map(|t| ODCSExporter::export_table(t, "odcs_v3_1_0"))
+                    .collect::<Vec<_>>()
+                    .join("\n---\n")
+            };
+            Ok(Some(yaml))
+        })(),
 
-        "export_to_sql" =>
-            data_modelling_sdk::export_to_sql(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=dialect → SQL DDL for all tables
+        "export_to_sql" => (|| -> Result<Option<String>, String> {
+            let model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let dialect = get(1);
+            let dialect_opt = if dialect.is_empty() { None } else { Some(dialect) };
+            let sql = model
+                .tables
+                .iter()
+                .map(|t| SQLExporter::export_table(t, dialect_opt))
+                .collect::<Vec<_>>()
+                .join("\n\n");
+            Ok(Some(if sql.is_empty() {
+                "-- No tables in workspace".to_string()
+            } else {
+                sql
+            }))
+        })(),
 
-        "export_bpmn_model" =>
-            data_modelling_sdk::export_bpmn_model(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=xmlContent
+        "export_bpmn_model" => BPMNExporter::new()
+            .export(get(0))
+            .map_err(|e| e.to_string())
+            .map(Some),
 
-        "export_dmn_model" =>
-            data_modelling_sdk::export_dmn_model(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=xmlContent
+        "export_dmn_model" => DMNExporter::new()
+            .export(get(0))
+            .map_err(|e| e.to_string())
+            .map(Some),
 
-        "export_odcs_yaml_to_markdown" =>
-            data_modelling_sdk::export_odcs_yaml_to_markdown(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=odcsYaml → Markdown documentation
+        "export_odcs_yaml_to_markdown" => (|| -> Result<Option<String>, String> {
+            let mut imp = ODCSImporter::new();
+            let import_result = imp.import(get(0)).map_err(|e| e.to_string())?;
+            let tables = reconstruct_tables(&import_result);
+            Ok(Some(tables_to_markdown(&tables)))
+        })(),
 
-        "export_odps_to_markdown" =>
-            data_modelling_sdk::export_odps_to_markdown(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=productJson → Markdown documentation
+        "export_odps_to_markdown" => (|| -> Result<Option<String>, String> {
+            let product: ODPSDataProduct =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            Ok(Some(odps_product_to_markdown(&product)))
+        })(),
 
         // ── Format conversion ─────────────────────────────────────────────────
 
-        "convert_to_odcs" =>
-            data_modelling_sdk::convert_to_odcs(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=input, args[1]=format (may be empty)
+        "convert_to_odcs" => {
+            let format = get(1);
+            let format_opt = if format.is_empty() { None } else { Some(format) };
+            convert_to_odcs(get(0), format_opt)
+                .map_err(|e| e.to_string())
+                .map(Some)
+        }
 
-        "convert_openapi_to_odcs" =>
-            data_modelling_sdk::convert_openapi_to_odcs(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=openapiContent, args[1]=componentName, args[2]=tableName (ignored)
+        "convert_openapi_to_odcs" => (|| -> Result<Option<String>, String> {
+            let tables = OpenAPIToODCSConverter::new()
+                .convert_components(get(0), &[get(1)])
+                .map_err(|e| e.to_string())?;
+            serde_json::to_string(&tables).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "analyze_openapi_conversion" =>
-            data_modelling_sdk::analyze_openapi_conversion(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=openapiContent, args[1]=componentName
+        "analyze_openapi_conversion" => (|| -> Result<Option<String>, String> {
+            let report = OpenAPIToODCSConverter::new()
+                .analyze_conversion(get(0), get(1))
+                .map_err(|e| e.to_string())?;
+            serde_json::to_string(&report).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "migrate_dataflow_to_domain" =>
-            data_modelling_sdk::migrate_dataflow_to_domain(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=dataflowYaml, args[1]=domainName (may be empty)
+        "migrate_dataflow_to_domain" => (|| -> Result<Option<String>, String> {
+            let name_opt = if get(1).is_empty() { None } else { Some(get(1)) };
+            let domain = migrate_dataflow_to_domain(get(0), name_opt)
+                .map_err(|e| e.to_string())?;
+            serde_json::to_string(&domain).map_err(|e| e.to_string()).map(Some)
+        })(),
 
         // ── Workspace operations ──────────────────────────────────────────────
 
-        "create_workspace" =>
-            data_modelling_sdk::create_workspace(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=name, args[1]=ownerId
+        "create_workspace" => (|| -> Result<Option<String>, String> {
+            let model = DataModel::new(
+                get(0).to_string(),
+                get(1).to_string(),
+                "relationships.yaml".to_string(),
+            );
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "parse_workspace_yaml" =>
-            data_modelling_sdk::parse_workspace_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=yaml
+        "parse_workspace_yaml" => (|| -> Result<Option<String>, String> {
+            let model: DataModel = serde_yaml::from_str(get(0)).map_err(|e| e.to_string())?;
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "add_relationship_to_workspace" =>
-            data_modelling_sdk::add_relationship_to_workspace(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=relJson
+        "add_relationship_to_workspace" => (|| -> Result<Option<String>, String> {
+            let mut model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let rel: Relationship =
+                serde_json::from_str(get(1)).map_err(|e| e.to_string())?;
+            model.relationships.push(rel);
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "remove_relationship_from_workspace" =>
-            data_modelling_sdk::remove_relationship_from_workspace(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=relId (UUID string)
+        "remove_relationship_from_workspace" => (|| -> Result<Option<String>, String> {
+            let mut model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let rel_id = Uuid::parse_str(get(1)).map_err(|e| e.to_string())?;
+            model.relationships.retain(|r| r.id != rel_id);
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "create_domain" =>
-            data_modelling_sdk::create_domain(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=name
+        "create_domain" => (|| -> Result<Option<String>, String> {
+            let domain = Domain::new(get(0).to_string());
+            serde_json::to_string(&domain).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "add_domain_to_workspace" =>
-            data_modelling_sdk::add_domain_to_workspace(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=domainId, args[2]=domainName
+        "add_domain_to_workspace" => (|| -> Result<Option<String>, String> {
+            let mut model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let domain_id = Uuid::parse_str(get(1)).map_err(|e| e.to_string())?;
+            let mut domain = Domain::new(get(2).to_string());
+            domain.id = domain_id;
+            model.add_domain(domain);
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "remove_domain_from_workspace" =>
-            data_modelling_sdk::remove_domain_from_workspace(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=domainId
+        "remove_domain_from_workspace" => (|| -> Result<Option<String>, String> {
+            let mut model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let domain_id = Uuid::parse_str(get(1)).map_err(|e| e.to_string())?;
+            model.domains.retain(|d| d.id != domain_id);
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "add_system_to_domain" =>
-            data_modelling_sdk::add_system_to_domain(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=domainId, args[2]=systemJson
+        "add_system_to_domain" => (|| -> Result<Option<String>, String> {
+            let mut model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let domain_id = Uuid::parse_str(get(1)).map_err(|e| e.to_string())?;
+            let system: System = serde_json::from_str(get(2)).map_err(|e| e.to_string())?;
+            let domain = model
+                .domains
+                .iter_mut()
+                .find(|d| d.id == domain_id)
+                .ok_or_else(|| format!("Domain {} not found in workspace", domain_id))?;
+            domain.add_system(system);
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "add_odcs_node_to_domain" =>
-            data_modelling_sdk::add_odcs_node_to_domain(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=domainId, args[2]=nodeJson
+        "add_odcs_node_to_domain" => (|| -> Result<Option<String>, String> {
+            let mut model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let domain_id = Uuid::parse_str(get(1)).map_err(|e| e.to_string())?;
+            let node: ODCSNode = serde_json::from_str(get(2)).map_err(|e| e.to_string())?;
+            let domain = model
+                .domains
+                .iter_mut()
+                .find(|d| d.id == domain_id)
+                .ok_or_else(|| format!("Domain {} not found in workspace", domain_id))?;
+            domain.add_odcs_node(node);
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "add_cads_node_to_domain" =>
-            data_modelling_sdk::add_cads_node_to_domain(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=workspaceJson, args[1]=domainId, args[2]=nodeJson
+        "add_cads_node_to_domain" => (|| -> Result<Option<String>, String> {
+            let mut model: DataModel =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let domain_id = Uuid::parse_str(get(1)).map_err(|e| e.to_string())?;
+            let node: CADSNode = serde_json::from_str(get(2)).map_err(|e| e.to_string())?;
+            let domain = model
+                .domains
+                .iter_mut()
+                .find(|d| d.id == domain_id)
+                .ok_or_else(|| format!("Domain {} not found in workspace", domain_id))?;
+            domain.add_cads_node(node);
+            serde_json::to_string(&model).map_err(|e| e.to_string()).map(Some)
+        })(),
 
         // ── Decision records (MADR) ───────────────────────────────────────────
 
-        "create_decision" => {
-            let n: u32 = get(0).parse().unwrap_or(0);
-            data_modelling_sdk::create_decision(n, get(1), get(2), get(3), get(4))
-                .map(Some).map_err(|e| e.to_string())
-        }
+        // args[0]=number, args[1]=title, args[2]=context, args[3]=decision, args[4]=author
+        "create_decision" => (|| -> Result<Option<String>, String> {
+            let n: u64 = get(0).parse().unwrap_or(0);
+            let d = Decision::new(n, get(1), get(2), get(3), get(4));
+            serde_json::to_string(&d).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "create_decision_index" =>
-            data_modelling_sdk::create_decision_index()
-                .map(Some).map_err(|e| e.to_string()),
+        "create_decision_index" => (|| -> Result<Option<String>, String> {
+            serde_json::to_string(&DecisionIndex::new())
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "parse_decision_yaml" =>
-            data_modelling_sdk::parse_decision_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=yaml
+        "parse_decision_yaml" => (|| -> Result<Option<String>, String> {
+            let d = DecisionImporter::new().import(get(0)).map_err(|e| e.to_string())?;
+            serde_json::to_string(&d).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "export_decision_to_yaml" =>
-            data_modelling_sdk::export_decision_to_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=decisionJson
+        "export_decision_to_yaml" => (|| -> Result<Option<String>, String> {
+            let d: Decision = serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            DecisionExporter::new().export(&d).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "export_decision_to_markdown" =>
-            data_modelling_sdk::export_decision_to_markdown(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=decisionJson
+        "export_decision_to_markdown" => (|| -> Result<Option<String>, String> {
+            let d: Decision = serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            MarkdownExporter::new()
+                .export_decision(&d)
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "parse_decision_index_yaml" =>
-            data_modelling_sdk::parse_decision_index_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=yaml
+        "parse_decision_index_yaml" => (|| -> Result<Option<String>, String> {
+            let idx = DecisionIndex::from_yaml(get(0)).map_err(|e| e.to_string())?;
+            serde_json::to_string(&idx).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "export_decision_index_to_yaml" =>
-            data_modelling_sdk::export_decision_index_to_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=indexJson
+        "export_decision_index_to_yaml" => (|| -> Result<Option<String>, String> {
+            let idx: DecisionIndex =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            DecisionExporter::new()
+                .export_index(&idx)
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "add_decision_to_index" =>
-            data_modelling_sdk::add_decision_to_index(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=indexJson, args[1]=decisionJson, args[2]=filename
+        "add_decision_to_index" => (|| -> Result<Option<String>, String> {
+            let mut idx: DecisionIndex =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let d: Decision = serde_json::from_str(get(1)).map_err(|e| e.to_string())?;
+            idx.add_decision(&d, get(2).to_string());
+            serde_json::to_string(&idx).map_err(|e| e.to_string()).map(Some)
+        })(),
 
         // ── Knowledge base (KB) ───────────────────────────────────────────────
 
-        "create_knowledge_article" => {
-            let n: u32 = get(0).parse().unwrap_or(0);
-            data_modelling_sdk::create_knowledge_article(n, get(1), get(2), get(3), get(4))
-                .map(Some).map_err(|e| e.to_string())
-        }
+        // args[0]=number, args[1]=title, args[2]=summary, args[3]=content, args[4]=author
+        "create_knowledge_article" => (|| -> Result<Option<String>, String> {
+            let n: u64 = get(0).parse().unwrap_or(0);
+            let article = KnowledgeArticle::new(n, get(1), get(2), get(3), get(4));
+            serde_json::to_string(&article).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "create_knowledge_index" =>
-            data_modelling_sdk::create_knowledge_index()
-                .map(Some).map_err(|e| e.to_string()),
+        "create_knowledge_index" => (|| -> Result<Option<String>, String> {
+            serde_json::to_string(&KnowledgeIndex::new())
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "parse_knowledge_yaml" =>
-            data_modelling_sdk::parse_knowledge_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=yaml
+        "parse_knowledge_yaml" => (|| -> Result<Option<String>, String> {
+            let article =
+                KnowledgeImporter::new().import(get(0)).map_err(|e| e.to_string())?;
+            serde_json::to_string(&article).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "export_knowledge_to_yaml" =>
-            data_modelling_sdk::export_knowledge_to_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=articleJson
+        "export_knowledge_to_yaml" => (|| -> Result<Option<String>, String> {
+            let article: KnowledgeArticle =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            KnowledgeExporter::new()
+                .export(&article)
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "export_knowledge_to_markdown" =>
-            data_modelling_sdk::export_knowledge_to_markdown(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=articleJson
+        "export_knowledge_to_markdown" => (|| -> Result<Option<String>, String> {
+            let article: KnowledgeArticle =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            MarkdownExporter::new()
+                .export_knowledge(&article)
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "parse_knowledge_index_yaml" =>
-            data_modelling_sdk::parse_knowledge_index_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=yaml
+        "parse_knowledge_index_yaml" => (|| -> Result<Option<String>, String> {
+            let idx = KnowledgeIndex::from_yaml(get(0)).map_err(|e| e.to_string())?;
+            serde_json::to_string(&idx).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "export_knowledge_index_to_yaml" =>
-            data_modelling_sdk::export_knowledge_index_to_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=indexJson
+        "export_knowledge_index_to_yaml" => (|| -> Result<Option<String>, String> {
+            let idx: KnowledgeIndex =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            KnowledgeExporter::new()
+                .export_index(&idx)
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "add_article_to_knowledge_index" =>
-            data_modelling_sdk::add_article_to_knowledge_index(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=indexJson, args[1]=articleJson, args[2]=filename
+        "add_article_to_knowledge_index" => (|| -> Result<Option<String>, String> {
+            let mut idx: KnowledgeIndex =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let article: KnowledgeArticle =
+                serde_json::from_str(get(1)).map_err(|e| e.to_string())?;
+            idx.add_article(&article, get(2).to_string());
+            serde_json::to_string(&idx).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "search_knowledge_articles" =>
-            data_modelling_sdk::search_knowledge_articles(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=articlesJson (JSON array of KnowledgeArticle), args[1]=query
+        "search_knowledge_articles" => (|| -> Result<Option<String>, String> {
+            let articles: Vec<KnowledgeArticle> =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let query = get(1).to_lowercase();
+            let matches: Vec<&KnowledgeArticle> = articles
+                .iter()
+                .filter(|a| {
+                    a.title.to_lowercase().contains(&query)
+                        || a.summary.to_lowercase().contains(&query)
+                        || a.content.to_lowercase().contains(&query)
+                })
+                .collect();
+            serde_json::to_string(&matches).map_err(|e| e.to_string()).map(Some)
+        })(),
 
         // ── Sketch operations ─────────────────────────────────────────────────
 
-        "create_sketch" => {
-            let n: u32 = get(0).parse().unwrap_or(0);
-            data_modelling_sdk::create_sketch(n, get(1), get(2), get(3))
-                .map(Some).map_err(|e| e.to_string())
-        }
+        // args[0]=number, args[1]=title, args[2]=sketchType, args[3]=excalidrawData
+        "create_sketch" => (|| -> Result<Option<String>, String> {
+            let n: u64 = get(0).parse().unwrap_or(0);
+            let mut sketch = Sketch::new(n, get(1), get(3));
+            let type_str = get(2).to_lowercase();
+            sketch.sketch_type =
+                serde_json::from_value(serde_json::Value::String(type_str))
+                    .unwrap_or(SketchType::Architecture);
+            serde_json::to_string(&sketch).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "create_sketch_index" =>
-            data_modelling_sdk::create_sketch_index()
-                .map(Some).map_err(|e| e.to_string()),
+        "create_sketch_index" => (|| -> Result<Option<String>, String> {
+            serde_json::to_string(&SketchIndex::new())
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "parse_sketch_yaml" =>
-            data_modelling_sdk::parse_sketch_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=yaml
+        "parse_sketch_yaml" => (|| -> Result<Option<String>, String> {
+            let sketch = SketchImporter::new().import(get(0)).map_err(|e| e.to_string())?;
+            serde_json::to_string(&sketch).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "export_sketch_to_yaml" =>
-            data_modelling_sdk::export_sketch_to_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=sketchJson
+        "export_sketch_to_yaml" => (|| -> Result<Option<String>, String> {
+            let sketch: Sketch = serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            SketchExporter::new()
+                .export(&sketch)
+                .map_err(|e| e.to_string())
+                .map(Some)
+        })(),
 
-        "parse_sketch_index_yaml" =>
-            data_modelling_sdk::parse_sketch_index_yaml(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=yaml
+        "parse_sketch_index_yaml" => (|| -> Result<Option<String>, String> {
+            let idx = SketchIndex::from_yaml(get(0)).map_err(|e| e.to_string())?;
+            serde_json::to_string(&idx).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "add_sketch_to_index" =>
-            data_modelling_sdk::add_sketch_to_index(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=indexJson, args[1]=sketchJson, args[2]=filename
+        "add_sketch_to_index" => (|| -> Result<Option<String>, String> {
+            let mut idx: SketchIndex =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let sketch: Sketch = serde_json::from_str(get(1)).map_err(|e| e.to_string())?;
+            idx.add_sketch(&sketch, get(2).to_string());
+            serde_json::to_string(&idx).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "search_sketches" =>
-            data_modelling_sdk::search_sketches(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=sketchesJson (JSON array of Sketch), args[1]=query
+        "search_sketches" => (|| -> Result<Option<String>, String> {
+            let sketches: Vec<Sketch> =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let query = get(1).to_lowercase();
+            let matches: Vec<&Sketch> = sketches
+                .iter()
+                .filter(|s| {
+                    s.title.to_lowercase().contains(&query)
+                        || s.description
+                            .as_deref()
+                            .unwrap_or("")
+                            .to_lowercase()
+                            .contains(&query)
+                })
+                .collect();
+            serde_json::to_string(&matches).map_err(|e| e.to_string()).map(Some)
+        })(),
 
         // ── Validation ────────────────────────────────────────────────────────
 
-        "validate_odps" =>
-            data_modelling_sdk::validate_odps(get(0))
-                .map(|_| None).map_err(|e| e.to_string()),
+        // args[0]=yamlContent — Java calls via callVoid(); errors throw DataModellingException
+        "validate_odps" => validate_odps_internal(get(0))
+            .map(|_| None)
+            .map_err(|e| e.to_string()),
 
-        "validate_table_name" =>
-            data_modelling_sdk::validate_table_name(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=name — returns {"valid":true} on success
+        "validate_table_name" => validate_table_name(get(0))
+            .map(|_| Some(r#"{"valid":true}"#.to_string()))
+            .map_err(|e| e.to_string()),
 
-        "validate_column_name" =>
-            data_modelling_sdk::validate_column_name(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=name — returns {"valid":true} on success
+        "validate_column_name" => validate_column_name(get(0))
+            .map(|_| Some(r#"{"valid":true}"#.to_string()))
+            .map_err(|e| e.to_string()),
 
-        "validate_data_type" =>
-            data_modelling_sdk::validate_data_type(get(0))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=dataType — returns {"valid":true} on success
+        "validate_data_type" => validate_data_type(get(0))
+            .map(|_| Some(r#"{"valid":true}"#.to_string()))
+            .map_err(|e| e.to_string()),
 
-        "check_circular_dependency" =>
-            data_modelling_sdk::check_circular_dependency(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=relationshipsJson, args[1]=sourceTableId, args[2]=targetTableId
+        "check_circular_dependency" => (|| -> Result<Option<String>, String> {
+            let rels: Vec<Relationship> =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let src = Uuid::parse_str(get(1)).map_err(|e| e.to_string())?;
+            let tgt = Uuid::parse_str(get(2)).map_err(|e| e.to_string())?;
+            let (has_cycle, path) = RelationshipValidator::new()
+                .check_circular_dependency(&rels, src, tgt)
+                .map_err(|e| e.to_string())?;
+            let out = serde_json::json!({ "hasCycle": has_cycle, "cyclePath": path });
+            serde_json::to_string(&out).map_err(|e| e.to_string()).map(Some)
+        })(),
 
-        "detect_naming_conflicts" =>
-            data_modelling_sdk::detect_naming_conflicts(get(0), get(1))
-                .map(Some).map_err(|e| e.to_string()),
+        // args[0]=existingTablesJson, args[1]=newTablesJson
+        "detect_naming_conflicts" => (|| -> Result<Option<String>, String> {
+            let existing: Vec<Table> =
+                serde_json::from_str(get(0)).map_err(|e| e.to_string())?;
+            let new_tables: Vec<Table> =
+                serde_json::from_str(get(1)).map_err(|e| e.to_string())?;
+            let conflicts = TableValidator::new().detect_naming_conflicts(&existing, &new_tables);
+            serde_json::to_string(&conflicts).map_err(|e| e.to_string()).map(Some)
+        })(),
 
         // ── LLM integration ───────────────────────────────────────────────────
-        // args: schema, samplesJson, objectivesJson, context,
-        //        model, temperature, maxTokens
+        // LLM features require the llm/llm-online/llm-offline build feature.
+        // This build of data-modelling-ffi is compiled without LLM support.
 
-        "refine_schema_with_llm_offline" =>
-            data_modelling_sdk::refine_schema_with_llm_offline(
-                get(0), get(1), get(2), get(3), get(4), get(5), get(6))
-                .map(Some).map_err(|e| e.to_string()),
-
-        // args: schema, samplesJson, objectivesJson, context,
-        //        model, baseUrl, temperature, maxTokens, timeoutSeconds
-        "refine_schema_with_llm_online" =>
-            data_modelling_sdk::refine_schema_with_llm_online(
-                get(0), get(1), get(2), get(3), get(4), get(5), get(6), get(7), get(8))
-                .map(Some).map_err(|e| e.to_string()),
-
-        // args: sourceSchema, targetSchema, model, temperature, baseUrl
-        "match_fields_with_llm" =>
-            data_modelling_sdk::match_fields_with_llm(
-                get(0), get(1), get(2), get(3), get(4))
-                .map(Some).map_err(|e| e.to_string()),
-
-        // args: schema, model, temperature, baseUrl
-        "enrich_documentation_with_llm" =>
-            data_modelling_sdk::enrich_documentation_with_llm(
-                get(0), get(1), get(2), get(3))
-                .map(Some).map_err(|e| e.to_string()),
-
-        // args: schema, model, temperature, baseUrl
-        "detect_patterns_with_llm" =>
-            data_modelling_sdk::detect_patterns_with_llm(
-                get(0), get(1), get(2), get(3))
-                .map(Some).map_err(|e| e.to_string()),
-
-        // args: mode, baseUrl, timeoutSeconds
-        "check_llm_availability" =>
-            data_modelling_sdk::check_llm_availability(get(0), get(1), get(2))
-                .map(Some).map_err(|e| e.to_string()),
+        "refine_schema_with_llm_offline"
+        | "refine_schema_with_llm_online"
+        | "match_fields_with_llm"
+        | "enrich_documentation_with_llm"
+        | "detect_patterns_with_llm"
+        | "check_llm_availability" => Err(
+            "LLM feature not available: rebuild data-modelling-ffi with llm feature enabled"
+                .to_string(),
+        ),
 
         // ── Unknown ───────────────────────────────────────────────────────────
 
