@@ -1,0 +1,120 @@
+# YAWL GitHub MCP Server Configuration
+#
+# This file configures the GitHub MCP server for YAWL integration.
+# Provides GitHub API integration, PR/Issue management, and webhook handling.
+
+server:
+  port: 8083
+  servlet:
+    context-path: /github-mcp
+
+# GitHub MCP Server Configuration
+yawl:
+  github:
+    # Server configuration
+    server:
+      port: 8083
+      name: "yawl-github-integration"
+      enabled: true
+
+    # GitHub API configuration
+    github:
+      # GitHub Personal Access Token (required)
+      # Generate at: https://github.com/settings/tokens
+      access-token: "${GITHUB_ACCESS_TOKEN:}"
+
+      # Webhook secret token for signature verification (optional but recommended)
+      secret-token: "${GITHUB_SECRET_TOKEN:}"
+
+      # Default repository for operations (format: owner/repo)
+      # Example: "yawlfoundation/yawl"
+      default-repo: "${GITHUB_DEFAULT_REPO:yawlfoundation/yawl}"
+
+      # GitHub API base URL (use for GitHub Enterprise)
+      # api-base-url: "https://github.yourcompany.com/api/v3"
+
+      # API request timeout in seconds
+      timeout-seconds: 30
+
+    # Webhook configuration
+    webhook:
+      enabled: true
+
+      # URL for webhook callbacks (must be publicly accessible)
+      # Example: "https://your-domain.com/github/webhook"
+      url: "${GITHUB_WEBHOOK_URL:}"
+
+      # Events to listen for
+      events:
+        - "pull_request"
+        - "issues"
+        - "issue_comment"
+        - "workflow_run"
+        - "push"
+        - "pull_request_review"
+        - "pull_request_review_comment"
+
+      # Enable webhook signature verification
+      signature-verification: true
+
+# Logging configuration
+logging:
+  level:
+    org.yawlfoundation.yawl.integration.mcp.github: INFO
+    org.yawlfoundation.yawl.observability.mcp: INFO
+    com.sun.net.httpserver: WARNING
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/github-mcp-server.log
+    max-size: 10MB
+    max-history: 10
+
+# Management endpoints for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    github:
+      enabled: true
+      show-details: true
+
+# OpenTelemetry configuration (if using observability)
+otel:
+  traces:
+    sampler: "always_on"
+  metrics:
+    exporter: "none"
+    enabled: false
+  logs:
+    exporter: "none"
+    enabled: false
+
+# GitHub Integration Examples
+#
+# Basic setup:
+# 1. Create a GitHub Personal Access Token with repo scope
+# 2. Set the access token in environment variable: GITHUB_ACCESS_TOKEN=your_token
+# 3. Set your default repository: GITHUB_DEFAULT_REPO=owner/repo
+# 4. Set webhook URL if using webhooks: GITHUB_WEBHOOK_URL=https://your-domain.com/webhook
+#
+# GitHub Enterprise setup:
+# 1. Set custom API base URL: GITHUB_API_BASE_URL=https://github.yourcompany.com/api/v3
+# 2. Ensure your token has access to the enterprise instance
+#
+# Webhook setup:
+# 1. The webhook URL must be publicly accessible
+# 2. GitHub will send POST requests to this URL for configured events
+# 3. Set up signature verification for security (recommended)
+# 4. The server will automatically create issues from failed workflows
+#
+# API usage examples:
+# - Create PR: {"name": "create_pr", "arguments": {"repo": "owner/repo", "title": "Fix bug", "head": "feature-branch", "base": "main"}}
+# - Create Issue: {"name": "create_issue", "arguments": {"repo": "owner/repo", "title": "New feature request", "body": "Description"}}
+# - Register webhook: {"name": "register_webhook", "arguments": {"repo": "owner/repo", "url": "https://your-domain.com/webhook", "events": ["pull_request"]}}

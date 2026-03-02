@@ -84,8 +84,14 @@ public record PatternDemoConfig(
     boolean parallelExecution,
     boolean tokenAnalysis,
     boolean withCommentary,
+    boolean mockEngine,
+    int circuitBreakerFailureRateThreshold,
+    int circuitBreakerWaitDurationOpen,
+    int circuitBreakerPermittedCallsHalfOpen,
+    int circuitBreakerSlidingWindowSize,
     List<String> patternIds,
-    List<PatternCategory> categories
+    List<PatternCategory> categories,
+    boolean failOnValidationError
 ) {
 
     /**
@@ -111,6 +117,18 @@ public record PatternDemoConfig(
         }
         if (timeoutSeconds <= 0) {
             timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
+        }
+        if (circuitBreakerFailureRateThreshold <= 0) {
+            circuitBreakerFailureRateThreshold = 50;
+        }
+        if (circuitBreakerWaitDurationOpen <= 0) {
+            circuitBreakerWaitDurationOpen = 30;
+        }
+        if (circuitBreakerPermittedCallsHalfOpen <= 0) {
+            circuitBreakerPermittedCallsHalfOpen = 3;
+        }
+        if (circuitBreakerSlidingWindowSize <= 0) {
+            circuitBreakerSlidingWindowSize = 10;
         }
 
         // Handle pattern IDs - null means empty, copy otherwise
@@ -143,8 +161,14 @@ public record PatternDemoConfig(
             true,
             true,
             false,
+            false,
+            50,
+            30,
+            3,
+            10,
             Collections.singletonList("DEFAULT"),
-            Collections.singletonList(PatternCategory.BASIC)
+            Collections.singletonList(PatternCategory.BASIC),
+            false
         );
     }
 
@@ -287,7 +311,11 @@ public record PatternDemoConfig(
         return new PatternDemoConfig(
             newFormat, outputPath, timeoutSeconds, enableTracing, enableMetrics,
             autoComplete, parallelExecution, tokenAnalysis, withCommentary,
-            patternIds, categories
+            mockEngine,
+            circuitBreakerFailureRateThreshold, circuitBreakerWaitDurationOpen,
+            circuitBreakerPermittedCallsHalfOpen, circuitBreakerSlidingWindowSize,
+            patternIds, categories,
+            failOnValidationError
         );
     }
 
@@ -301,8 +329,48 @@ public record PatternDemoConfig(
         return new PatternDemoConfig(
             outputFormat, outputPath, newTimeoutSeconds, enableTracing, enableMetrics,
             autoComplete, parallelExecution, tokenAnalysis, withCommentary,
-            patternIds, categories
+            mockEngine,
+            circuitBreakerFailureRateThreshold, circuitBreakerWaitDurationOpen,
+            circuitBreakerPermittedCallsHalfOpen, circuitBreakerSlidingWindowSize,
+            patternIds, categories,
+            failOnValidationError
         );
+    }
+
+    /**
+     * Get the circuit breaker failure rate threshold.
+     *
+     * @return failure rate threshold percentage
+     */
+    public int circuitBreakerFailureRateThreshold() {
+        return circuitBreakerFailureRateThreshold;
+    }
+
+    /**
+     * Get the circuit breaker wait duration in open state (seconds).
+     *
+     * @return wait duration in seconds
+     */
+    public int circuitBreakerWaitDurationOpen() {
+        return circuitBreakerWaitDurationOpen;
+    }
+
+    /**
+     * Get the number of permitted calls in half-open state.
+     *
+     * @return permitted number of calls
+     */
+    public int circuitBreakerPermittedCallsHalfOpen() {
+        return circuitBreakerPermittedCallsHalfOpen;
+    }
+
+    /**
+     * Get the circuit breaker sliding window size.
+     *
+     * @return sliding window size
+     */
+    public int circuitBreakerSlidingWindowSize() {
+        return circuitBreakerSlidingWindowSize;
     }
 
     /**
@@ -377,6 +445,8 @@ public record PatternDemoConfig(
         private boolean parallelExecution = true;
         private boolean tokenAnalysis = true;
         private boolean withCommentary = false;
+        private boolean mockEngine = false;
+        private boolean failOnValidationError = false;
         private final List<String> patternIds = new ArrayList<>();
         private final List<PatternCategory> categories = new ArrayList<>();
 
@@ -480,6 +550,28 @@ public record PatternDemoConfig(
         }
 
         /**
+         * Enable or disable mock engine for CI testing.
+         *
+         * @param enabled mock engine enabled
+         * @return this builder
+         */
+        public Builder mockEngine(boolean enabled) {
+            this.mockEngine = enabled;
+            return this;
+        }
+
+        /**
+         * Set whether to fail on pattern validation errors.
+         *
+         * @param fail whether to fail on validation errors
+         * @return this builder
+         */
+        public Builder failOnValidationError(boolean fail) {
+            this.failOnValidationError = fail;
+            return this;
+        }
+
+        /**
          * Set the pattern IDs to run.
          *
          * @param ids pattern IDs
@@ -549,8 +641,14 @@ public record PatternDemoConfig(
                 parallelExecution,
                 tokenAnalysis,
                 withCommentary,
+                mockEngine,
+                circuitBreakerFailureRateThreshold,
+                circuitBreakerWaitDurationOpen,
+                circuitBreakerPermittedCallsHalfOpen,
+                circuitBreakerSlidingWindowSize,
                 new ArrayList<>(patternIds),
-                new ArrayList<>(categories)
+                new ArrayList<>(categories),
+                failOnValidationError
             );
         }
     }
@@ -575,6 +673,7 @@ public record PatternDemoConfig(
               --no-parallel              Disable parallel pattern execution
               --no-token-analysis        Disable token savings analysis
               --commentary               Include detailed commentary in output
+              --fail-on-validation-error  Fail fast on pattern validation errors
               -p, --patterns <ids>       Comma-separated pattern IDs to run
               -c, --categories <cats>    Comma-separated categories to run
               -h, --help                 Show this help message
@@ -659,6 +758,7 @@ public record PatternDemoConfig(
                     case "--no-parallel" -> builder.parallelExecution(false);
                     case "--no-token-analysis" -> builder.tokenAnalysis(false);
                     case "--commentary" -> builder.withCommentary(true);
+                    case "--fail-on-validation-error" -> builder.failOnValidationError(true);
                     case "-p", "--patterns" -> {
                         if (i + 1 < args.length) {
                             String[] patterns = args[++i].split(",");

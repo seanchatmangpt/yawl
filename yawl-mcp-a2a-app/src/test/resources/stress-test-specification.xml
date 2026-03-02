@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<yawl:specification xmlns:yawl="http://www.yawlfoundation.org/yawlspec">
+    <header>
+        <identification>StressTestSpecification</identification>
+        <name>Stress Test Workflow</name>
+        <version>1.0</version>
+        <author>YAWL Stress Test</author>
+        <description>A simple linear workflow for stress testing YNetRunner concurrency</description>
+        <createdAt>2026-03-02T00:00:00Z</createdAt>
+        <modifiedAt>2026-03-02T00:00:00Z</modifiedAt>
+        <contributor>Claude Code Generator</contributor>
+    </header>
+
+    <decomposition>
+        <net id="StressTestNet" name="Stress Test Net">
+            <!-- Input Condition -->
+            <condition id="inputCondition" name="Start"/>
+
+            <!-- Tasks - simple atomic tasks for stress testing -->
+            <task id="TaskA" name="Task A" abstraction="atomic">
+                <flowsFrom>
+                    <conditionRef ref="inputCondition"/>
+                </flowsFrom>
+                <flowsTo>
+                    <taskRef ref="TaskB"/>
+                </flowsTo>
+                <!-- Simple input/output data for testing -->
+                <data type="input" name="inputData" xsi:type="yawltypes:YDataType"
+                      xmlns:yawltypes="http://www.yawlfoundation.org/yawltypes">
+                    <type>string</type>
+                </data>
+                <data type="output" name="outputData" xsi:type="yawltypes:YDataType">
+                    <type>string</type>
+                </data>
+            </task>
+
+            <task id="TaskB" name="Task B" abstraction="atomic">
+                <flowsFrom>
+                    <taskRef ref="TaskA"/>
+                </flowsFrom>
+                <flowsTo>
+                    <taskRef ref="TaskC"/>
+                </flowsTo>
+                <data type="input" name="inputData" xsi:type="yawltypes:YDataType">
+                    <type>string</type>
+                </data>
+                <data type="output" name="outputData" xsi:type="yawltypes:YDataType">
+                    <type>string</type>
+                </data>
+            </task>
+
+            <task id="TaskC" name="Task C" abstraction="atomic">
+                <flowsFrom>
+                    <taskRef ref="TaskB"/>
+                </flowsFrom>
+                <flowsTo>
+                    <conditionRef ref="outputCondition"/>
+                </flowsTo>
+                <data type="input" name="inputData" xsi:type="yawltypes:YDataType">
+                    <type>string</type>
+                </data>
+                <data type="output" name="outputData" xsi:type="yawltypes:YDataType">
+                    <type>string</type>
+                </data>
+            </task>
+
+            <!-- Output Condition -->
+            <condition id="outputCondition" name="End"/>
+
+            <!-- Simple data mappings for testing -->
+            <dataMappings>
+                <!-- TaskA mappings -->
+                <inputMapping for="TaskA">
+                    <fromVariable>inputData</fromVariable>
+                    <toExpression>"stress-test-data"</toExpression>
+                </inputMapping>
+                <outputMapping for="TaskA">
+                    <fromVariable>outputData</fromVariable>
+                    <toExpression>"processed-by-A-" + inputData</toExpression>
+                </outputMapping>
+
+                <!-- TaskB mappings -->
+                <inputMapping for="TaskB">
+                    <fromVariable>inputData</fromVariable>
+                    <toExpression>outputData_from_A</toExpression>
+                </inputMapping>
+                <outputMapping for="TaskB">
+                    <fromVariable>outputData</fromVariable>
+                    <toExpression>"processed-by-B-" + inputData</toExpression>
+                </outputMapping>
+
+                <!-- TaskC mappings -->
+                <inputMapping for="TaskC">
+                    <fromVariable>inputData</fromVariable>
+                    <toExpression>outputData_from_B</toExpression>
+                </inputMapping>
+                <outputMapping for="TaskC">
+                    <fromVariable>outputData</fromVariable>
+                    <toExpression>"completed-" + inputData</toExpression>
+                </outputMapping>
+            </dataMappings>
+        </net>
+    </decomposition>
+</yawl:specification>

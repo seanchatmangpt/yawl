@@ -19,6 +19,7 @@ package org.yawlfoundation.yawl.mcp.a2a.demo;
 import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternDemoConfig;
 import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternCategory;
 import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistry;
+import org.yawlfoundation.yawl.mcp.a2a.demo.config.RequiredConfigValidator;
 import org.yawlfoundation.yawl.mcp.a2a.demo.execution.ExecutionHarness;
 import org.yawlfoundation.yawl.mcp.a2a.demo.execution.ExecutionHarness.ExecutionResult;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult;
@@ -29,8 +30,18 @@ import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.TokenAnalysis;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.TraceEvent;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.ReportGenerator;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.YawlPatternDemoReport;
+import org.yawlfoundation.yawl.mcp.a2a.demo.health.DemoHealthCheck;
 import org.yawlfoundation.yawl.mcp.a2a.example.ExtendedYamlConverter;
 import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.metrics.DoubleHistogram;
+import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.GlobalOpenTelemetry;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,6 +55,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.xml.sax.InputSource;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,9 +72,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
 /**
  * CLI entry point for the YAWL Pattern Demo.
@@ -109,9 +127,15 @@ public class PatternDemoRunner {
     private final PatternDemoConfig config;
     private final ExtendedYamlConverter yamlConverter;
     private final PatternRegistry registry;
+    private final DemoHealthCheck healthCheck = new DemoHealthCheck();
+    private final CircuitBreaker zaiCircuitBreaker;
     private YStatelessEngine engine;
     private HttpClient zaiClient;
     private String zaiApiKey;
+
+    private volatile boolean shutdownRequested = false;
+    private final AtomicInteger completedPatterns = new AtomicInteger(0);
+    private int totalPatterns = 0;
 
     /**
      * Main entry point for the pattern demo runner.
@@ -135,6 +159,15 @@ public class PatternDemoRunner {
         this.config = config;
         this.yamlConverter = new ExtendedYamlConverter();
         this.registry = new PatternRegistry();
+
+        // Initialize Z.AI circuit breaker
+        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+            .failureRateThreshold(config.circuitBreakerFailureRateThreshold())
+            .waitDurationInOpenState(Duration.ofSeconds(config.circuitBreakerWaitDurationOpen()))
+            .permittedNumberOfCallsInHalfOpenState(config.circuitBreakerPermittedCallsHalfOpen())
+            .slidingWindowSize(config.circuitBreakerSlidingWindowSize())
+            .build();
+        this.zaiCircuitBreaker = CircuitBreaker.of("zai-api", circuitBreakerConfig);
     }
 
     /**
@@ -198,6 +231,9 @@ public class PatternDemoRunner {
                 totalPatterns,
                 totalPatterns == 1 ? "" : "s",
                 config.parallelExecution() ? "virtual threads" : "sequential execution");
+
+            // Register shutdown hook for graceful shutdown
+            registerShutdownHook();
 
             // Execute patterns
             List<PatternResult> results = config.parallelExecution()
@@ -273,6 +309,13 @@ public class PatternDemoRunner {
     private List<PatternResult> executePatternsParallel(List<PatternInfo> patterns) {
         Map<String, PatternResult> results = new ConcurrentHashMap<>();
         int total = patterns.size();
+        this.totalPatterns = total;
+
+        // Check for shutdown request before starting
+        if (shutdownRequested) {
+            LOGGER.warn("Shutdown requested, skipping pattern execution");
+            return List.of();
+        }
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             List<Future<PatternResult>> futures = patterns.stream()
