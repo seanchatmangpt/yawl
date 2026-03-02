@@ -70,7 +70,10 @@ public class ZaiLlmGateway implements LlmGateway {
         this.apiKey = apiKey;
         this.model = model;
         this.timeout = timeout;
-        this.httpClient = HttpClient.newBuilder().connectTimeout(timeout).build();
+        this.httpClient = HttpClient.newBuilder()
+            .connectTimeout(timeout)
+            .proxy(resolveProxy())
+            .build();
     }
 
     /**
@@ -159,6 +162,15 @@ public class ZaiLlmGateway implements LlmGateway {
             throw rethrow;
         } catch (Exception e) {
             throw new IOException("Failed to parse Z.AI response JSON: " + e.getMessage(), e);
+        }
+    }
+
+    private static java.net.ProxySelector resolveProxy() {
+        try (var probe = new java.net.Socket()) {
+            probe.connect(new java.net.InetSocketAddress("127.0.0.1", 3128), 200);
+            return java.net.ProxySelector.of(new java.net.InetSocketAddress("127.0.0.1", 3128));
+        } catch (IOException ignored) {
+            return java.net.ProxySelector.getDefault();
         }
     }
 

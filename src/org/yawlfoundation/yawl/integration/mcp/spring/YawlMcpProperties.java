@@ -78,6 +78,11 @@ public class YawlMcpProperties {
     private ZaiConfig zai = new ZaiConfig();
 
     /**
+     * Groq Cloud LLM integration configuration.
+     */
+    private GroqConfig groq = new GroqConfig();
+
+    /**
      * Connection retry and timeout configuration.
      */
     private ConnectionConfig connection = new ConnectionConfig();
@@ -138,6 +143,14 @@ public class YawlMcpProperties {
 
     public void setZai(ZaiConfig zai) {
         this.zai = zai;
+    }
+
+    public GroqConfig getGroq() {
+        return groq;
+    }
+
+    public void setGroq(GroqConfig groq) {
+        this.groq = groq;
     }
 
     public ConnectionConfig getConnection() {
@@ -235,6 +248,81 @@ public class YawlMcpProperties {
 
         public void setApiKey(String apiKey) {
             this.apiKey = apiKey;
+        }
+    }
+
+    /**
+     * Groq Cloud LLM integration configuration.
+     *
+     * <p>Example application.yml:
+     * <pre>{@code
+     * yawl:
+     *   mcp:
+     *     groq:
+     *       enabled: true
+     *       api-key: ${GROQ_API_KEY}
+     *       model: llama-3.3-70b-versatile
+     *       max-concurrency: 30
+     * }</pre>
+     *
+     * <p>When both {@code groq} and {@code zai} are enabled, Groq takes precedence.
+     * Free-tier rate limit: 30 RPM per model.
+     */
+    public static class GroqConfig {
+        /**
+         * Enable Groq LLM integration.
+         * Default: true if api-key is provided.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Groq API key (from environment variable GROQ_API_KEY).
+         * Required for Groq integration.
+         */
+        private String apiKey;
+
+        /**
+         * Groq model identifier.
+         * Default: llama-3.3-70b-versatile
+         */
+        private String model = "llama-3.3-70b-versatile";
+
+        /**
+         * Maximum concurrent in-flight requests to Groq.
+         * Default: 30 (matches free-tier RPM). Increase for paid plans.
+         */
+        private int maxConcurrency = 30;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+        public void setApiKey(String apiKey) {
+            this.apiKey = apiKey;
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public void setModel(String model) {
+            this.model = model;
+        }
+
+        public int getMaxConcurrency() {
+            return maxConcurrency;
+        }
+
+        public void setMaxConcurrency(int maxConcurrency) {
+            this.maxConcurrency = maxConcurrency;
         }
     }
 
