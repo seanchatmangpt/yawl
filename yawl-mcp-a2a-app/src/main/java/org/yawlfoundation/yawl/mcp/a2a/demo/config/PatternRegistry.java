@@ -83,15 +83,15 @@ public class PatternRegistry {
 
         // Multi-Instance Patterns (WCP 12-17)
         registerPattern("WCP-12", "MI Without Synchronization", "Multiple instances without sync",
-            Difficulty.INTERMEDIATE, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-12-mi-no-sync.yaml");
+            Difficulty.INTERMEDIATE, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-12-mi-no-sync.yaml");
         registerPattern("WCP-13", "MI With A Priori Design Time Knowledge", "Fixed number of instances",
-            Difficulty.INTERMEDIATE, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-13-mi-static.yaml");
+            Difficulty.INTERMEDIATE, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-13-mi-static.yaml");
         registerPattern("WCP-14", "MI With A Priori Runtime Knowledge", "Dynamic instance count at runtime",
-            Difficulty.INTERMEDIATE, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-14-mi-dynamic.yaml");
+            Difficulty.INTERMEDIATE, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-14-mi-dynamic.yaml");
         registerPattern("WCP-15", "MI Without A Priori Runtime Knowledge", "Instance count determined during execution",
-            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-15-mi-runtime.yaml");
+            Difficulty.ADVANCED, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-15-mi-runtime.yaml");
         registerPattern("WCP-16", "MI Without A Priori Knowledge", "Instance count unknown at design and runtime",
-            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-16-mi-without-runtime.yaml");
+            Difficulty.ADVANCED, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-16-mi-without-runtime.yaml");
         registerPattern("WCP-17", "Interleaved Parallel Routing", "Parallel tasks executed one at a time",
             Difficulty.INTERMEDIATE, PatternCategory.STATE_BASED, "multiinstance/wcp-17-interleaved-routing.yaml");
 
@@ -239,11 +239,11 @@ public class PatternRegistry {
 
         // Multi-Instance Patterns (WCP-24, WCP-26, WCP-27)
         registerPattern("WCP-24", "Complete Multiple Instances", "Force-complete all active instances of a multi-instance task simultaneously",
-            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-24-complete-mi.yaml");
+            Difficulty.ADVANCED, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-24-complete-mi.yaml");
         registerPattern("WCP-26", "Sequential MI Without A Priori Knowledge", "Sequential multi-instance where item count is determined dynamically during execution",
-            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-26-sequential-mi.yaml");
+            Difficulty.ADVANCED, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-26-sequential-mi.yaml");
         registerPattern("WCP-27", "Concurrent MI Without A Priori Knowledge", "Concurrent multi-instance where item count is discovered at runtime",
-            Difficulty.ADVANCED, PatternCategory.MULTIINSTANCE, "multiinstance/wcp-27-concurrent-mi.yaml");
+            Difficulty.ADVANCED, PatternCategory.MULTI_INSTANCE, "multiinstance/wcp-27-concurrent-mi.yaml");
 
         // State-Based Patterns (WCP-32, WCP-33, WCP-34, WCP-35)
         registerPattern("WCP-32", "Synchronizing Merge with Cancel", "Synchronize multiple parallel branches with optional region cancellation",

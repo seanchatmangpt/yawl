@@ -40,8 +40,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ZaiService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ZaiService.class);
-    public static final ScopedValue<String> WORKFLOW_SYSTEM_PROMPT = ScopedValue.newInstance();
-    public static final ScopedValue<String> MODEL_OVERRIDE = ScopedValue.newInstance();
+    // Note: ScopedValue is a Java 25+ feature. Using Object for compatibility
+    // until ZAI SDK integration is complete
+    public static final Object WORKFLOW_SYSTEM_PROMPT = new Object();
+    public static final Object MODEL_OVERRIDE = new Object();
 
     private final String apiKey;
     private String systemPrompt;

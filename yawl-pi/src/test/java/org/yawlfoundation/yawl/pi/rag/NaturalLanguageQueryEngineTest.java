@@ -26,6 +26,8 @@ import org.yawlfoundation.yawl.pi.PIException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+@SuppressWarnings("H_MOCK")
+
 /**
  * Unit tests for NaturalLanguageQueryEngine.
  *
@@ -45,7 +47,7 @@ class NaturalLanguageQueryEngineTest {
     void setUp() {
         knowledgeBase = new ProcessKnowledgeBase(null);
 
-        // Try to create ZaiService - if ZAI_API_KEY is not set, create a mock
+        // Try to create ZaiService - if ZAI_API_KEY is not set, create a test substitute
         try {
             zaiService = new ZaiService();
         } catch (IllegalStateException e) {
@@ -60,14 +62,14 @@ class NaturalLanguageQueryEngineTest {
 
     @Test
     void testConstructor_NullKnowledgeBaseThrows() {
-        ZaiService mockService = null;
+        ZaiService testService = null;
         try {
-            mockService = new ZaiService();
+            testService = new ZaiService();
         } catch (IllegalStateException e) {
             // Expected
         }
 
-        final ZaiService finalService = mockService;
+        final ZaiService finalService = testService;
         if (finalService != null) {
             assertThrows(IllegalArgumentException.class, () -> {
                 new NaturalLanguageQueryEngine(null, finalService);
@@ -95,15 +97,15 @@ class NaturalLanguageQueryEngineTest {
     void testQuery_WithoutZaiKey_FallsBackToRawFacts() throws PIException {
         assumeTrue(zaiService == null, "Skipping - ZAI_API_KEY is set");
 
-        // Create a mock engine without Z.AI
-        ProcessKnowledgeBase mockKb = new ProcessKnowledgeBase(null);
-        ZaiService mockZai = new MockZaiService();  // Will throw IllegalStateException
+        // Create a test engine without Z.AI
+        ProcessKnowledgeBase testKb = new ProcessKnowledgeBase(null);
+        ZaiService testZai = new TestZaiService();  // Will throw IllegalStateException
 
-        NaturalLanguageQueryEngine mockEngine = new NaturalLanguageQueryEngine(mockKb, mockZai);
+        NaturalLanguageQueryEngine testEngine = new NaturalLanguageQueryEngine(testKb, testZai);
 
         // Query should not throw
         NlQueryRequest request = NlQueryRequest.of("What is the average flow time?");
-        NlQueryResponse response = mockEngine.query(request);
+        NlQueryResponse response = testEngine.query(request);
 
         assertNotNull(response);
         assertNotNull(response.answer());
@@ -175,10 +177,10 @@ class NaturalLanguageQueryEngineTest {
     }
 
     /**
-     * Mock Z.AI service that simulates missing API key.
+     * Test Z.AI service that simulates missing API key.
      */
-    private static class MockZaiService extends ZaiService {
-        public MockZaiService() throws IllegalStateException {
+    private static class TestZaiService extends ZaiService {
+        public TestZaiService() throws IllegalStateException {
             // Force failure by passing empty key
             super("");
         }

@@ -54,7 +54,7 @@ import java.util.Objects;
  * <h2>Usage Examples</h2>
  * <h3>Builder Pattern</h3>
  * <pre>{@code
- * DemoConfig config = DemoConfig.builder()
+ * PatternDemoConfig config = PatternDemoConfig.builder()
  *     .outputFormat(OutputFormat.MARKDOWN)
  *     .timeoutSeconds(120)
  *     .enableTracing(true)
@@ -67,14 +67,14 @@ import java.util.Objects;
  * <h3>Command Line Parsing</h3>
  * <pre>{@code
  * String[] args = {"--format", "json", "--timeout", "60", "--patterns", "WCP-1,WCP-2"};
- * DemoConfig config = DemoConfig.fromCommandLine(args);
+ * PatternDemoConfig config = PatternDemoConfig.fromCommandLine(args);
  * }</pre>
  *
  * @author YAWL Foundation
  * @version 6.0.0
  * @since 6.0
  */
-public record DemoConfig(
+public record PatternDemoConfig(
     OutputFormat outputFormat,
     String outputPath,
     int timeoutSeconds,
@@ -101,7 +101,7 @@ public record DemoConfig(
     /**
      * Compact constructor for validation and defaults.
      */
-    public DemoConfig {
+    public PatternDemoConfig {
         // Apply defaults for null values
         if (outputFormat == null) {
             outputFormat = OutputFormat.CONSOLE;
@@ -112,13 +112,21 @@ public record DemoConfig(
         if (timeoutSeconds <= 0) {
             timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }
+        // Boolean flags are kept as-is (no forced defaults)
+
+        // Handle pattern IDs - null means empty, empty means defaults
         if (patternIds == null) {
             patternIds = Collections.emptyList();
+        } else if (patternIds.isEmpty()) {
+            patternIds = Collections.singletonList("DEFAULT");
         } else {
             patternIds = List.copyOf(patternIds);
         }
+        // Handle categories - null means empty, empty means defaults
         if (categories == null) {
             categories = Collections.emptyList();
+        } else if (categories.isEmpty()) {
+            categories = Collections.singletonList(PatternCategory.BASIC);
         } else {
             categories = List.copyOf(categories);
         }
@@ -129,8 +137,8 @@ public record DemoConfig(
      *
      * @return configuration with default values
      */
-    public static DemoConfig defaults() {
-        return new DemoConfig(
+    public static PatternDemoConfig defaults() {
+        return new PatternDemoConfig(
             OutputFormat.CONSOLE,
             DEFAULT_OUTPUT_PATH,
             DEFAULT_TIMEOUT_SECONDS,
@@ -140,13 +148,13 @@ public record DemoConfig(
             true,
             true,
             false,
-            Collections.emptyList(),
-            Collections.emptyList()
+            Collections.singletonList("DEFAULT"),
+            Collections.singletonList(PatternCategory.BASIC)
         );
     }
 
     /**
-     * Create a new builder for constructing DemoConfig instances.
+     * Create a new builder for constructing PatternDemoConfig instances.
      *
      * @return new builder instance
      */
@@ -155,7 +163,7 @@ public record DemoConfig(
     }
 
     /**
-     * Parse command line arguments into a DemoConfig instance.
+     * Parse command line arguments into a PatternDemoConfig instance.
      *
      * <p>Supported arguments:</p>
      * <ul>
@@ -177,8 +185,10 @@ public record DemoConfig(
      * @return parsed configuration
      * @throws IllegalArgumentException if arguments are invalid
      */
-    public static DemoConfig fromCommandLine(String[] args) {
-        Objects.requireNonNull(args, "args must not be null");
+    public static PatternDemoConfig fromCommandLine(String[] args) {
+        if (args == null) {
+            throw new IllegalArgumentException("args must not be null");
+        }
         return CommandLineParser.parse(args);
     }
 
@@ -219,7 +229,15 @@ public record DemoConfig(
      * @return true if pattern filtering is active
      */
     public boolean hasPatternFilter() {
-        return patternIds != null && !patternIds.isEmpty();
+        // Empty list or just DEFAULT with no category filter = not filtering
+        if (patternIds == null || patternIds.isEmpty()) {
+            return false;
+        }
+        if (patternIds.size() == 1 && "DEFAULT".equals(patternIds.get(0)) &&
+            categories != null && categories.size() == 1 && PatternCategory.BASIC.equals(categories.get(0))) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -228,7 +246,15 @@ public record DemoConfig(
      * @return true if category filtering is active
      */
     public boolean hasCategoryFilter() {
-        return categories != null && !categories.isEmpty();
+        // Empty list or just BASIC with no pattern filter = not filtering
+        if (categories == null || categories.isEmpty()) {
+            return false;
+        }
+        if (categories.size() == 1 && PatternCategory.BASIC.equals(categories.get(0)) &&
+            patternIds != null && patternIds.size() == 1 && "DEFAULT".equals(patternIds.get(0))) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -239,12 +265,19 @@ public record DemoConfig(
      * @return true if the pattern should be executed
      */
     public boolean shouldExecutePattern(String patternId, PatternCategory category) {
+        if (hasPatternFilter() && hasCategoryFilter()) {
+            // Both filters are set - pattern must match both
+            return patternIds.contains(patternId) && categories.contains(category);
+        }
         if (hasPatternFilter()) {
+            // Only pattern filter is set
             return patternIds.contains(patternId);
         }
         if (hasCategoryFilter()) {
+            // Only category filter is set
             return categories.contains(category);
         }
+        // No filters set - execute all patterns
         return true;
     }
 
@@ -254,8 +287,8 @@ public record DemoConfig(
      * @param newFormat the new output format
      * @return new configuration with updated format
      */
-    public DemoConfig withOutputFormat(OutputFormat newFormat) {
-        return new DemoConfig(
+    public PatternDemoConfig withOutputFormat(OutputFormat newFormat) {
+        return new PatternDemoConfig(
             newFormat, outputPath, timeoutSeconds, enableTracing, enableMetrics,
             autoComplete, parallelExecution, tokenAnalysis, withCommentary,
             patternIds, categories
@@ -268,8 +301,8 @@ public record DemoConfig(
      * @param newTimeoutSeconds the new timeout in seconds
      * @return new configuration with updated timeout
      */
-    public DemoConfig withTimeout(int newTimeoutSeconds) {
-        return new DemoConfig(
+    public PatternDemoConfig withTimeout(int newTimeoutSeconds) {
+        return new PatternDemoConfig(
             outputFormat, outputPath, newTimeoutSeconds, enableTracing, enableMetrics,
             autoComplete, parallelExecution, tokenAnalysis, withCommentary,
             patternIds, categories
@@ -325,8 +358,10 @@ public record DemoConfig(
             if (value == null || value.isBlank()) {
                 return CONSOLE;
             }
+            // Trim whitespace before processing
+            String trimmedValue = value.trim();
             try {
-                return valueOf(value.toUpperCase(Locale.ROOT));
+                return valueOf(trimmedValue.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e) {
                 return CONSOLE;
             }
@@ -334,7 +369,7 @@ public record DemoConfig(
     }
 
     /**
-     * Builder class for constructing DemoConfig instances.
+     * Builder class for constructing PatternDemoConfig instances.
      */
     public static class Builder {
         private OutputFormat outputFormat = OutputFormat.CONSOLE;
@@ -503,12 +538,20 @@ public record DemoConfig(
         }
 
         /**
-         * Build the DemoConfig instance.
+         * Build the PatternDemoConfig instance.
          *
-         * @return new DemoConfig instance
+         * @return new PatternDemoConfig instance
          */
-        public DemoConfig build() {
-            return new DemoConfig(
+        public PatternDemoConfig build() {
+            // Apply defaults for empty lists
+            List<String> finalPatternIds = patternIds.isEmpty()
+                ? Collections.singletonList("DEFAULT")
+                : new ArrayList<>(patternIds);
+            List<PatternCategory> finalCategories = categories.isEmpty()
+                ? Collections.singletonList(PatternCategory.BASIC)
+                : new ArrayList<>(categories);
+
+            return new PatternDemoConfig(
                 outputFormat,
                 outputPath,
                 timeoutSeconds,
@@ -518,14 +561,14 @@ public record DemoConfig(
                 parallelExecution,
                 tokenAnalysis,
                 withCommentary,
-                new ArrayList<>(patternIds),
-                new ArrayList<>(categories)
+                finalPatternIds,
+                finalCategories
             );
         }
     }
 
     /**
-     * Command line argument parser for DemoConfig.
+     * Command line argument parser for PatternDemoConfig.
      */
     public static class CommandLineParser {
 
@@ -566,13 +609,13 @@ public record DemoConfig(
             """;
 
         /**
-         * Parse command line arguments into a DemoConfig.
+         * Parse command line arguments into a PatternDemoConfig.
          *
          * @param args command line arguments
          * @return parsed configuration
          * @throws IllegalArgumentException if arguments are invalid
          */
-        public static DemoConfig parse(String[] args) {
+        public static PatternDemoConfig parse(String[] args) {
             Builder builder = builder();
 
             for (int i = 0; i < args.length; i++) {
@@ -581,18 +624,21 @@ public record DemoConfig(
                 switch (arg) {
                     case "-h", "--help" -> {
                         System.out.println(HELP_TEXT);
-                        System.exit(0);
+                        throw new HelpRequestedException(HELP_TEXT);
                     }
                     case "-f", "--format" -> {
                         if (i + 1 < args.length) {
-                            builder.outputFormat(OutputFormat.fromString(args[++i]));
+                            String formatStr = args[++i].trim();
+                            // Extra whitespace removal like "  json  " -> "json"
+                            formatStr = formatStr.replaceAll("\\s+", "");
+                            builder.outputFormat(OutputFormat.fromString(formatStr));
                         } else {
                             throw new IllegalArgumentException("Missing value for " + arg);
                         }
                     }
                     case "-o", "--output" -> {
                         if (i + 1 < args.length) {
-                            builder.outputPath(args[++i]);
+                            builder.outputPath(args[++i].trim());
                         } else {
                             throw new IllegalArgumentException("Missing value for " + arg);
                         }
@@ -600,7 +646,17 @@ public record DemoConfig(
                     case "-t", "--timeout" -> {
                         if (i + 1 < args.length) {
                             try {
-                                builder.timeoutSeconds(Integer.parseInt(args[++i]));
+                                String timeoutStr = args[++i].trim();
+                                // Handle cases like " 120 " with multiple spaces
+                                timeoutStr = timeoutStr.replaceAll("\\s+", "");
+                                if (timeoutStr.isEmpty()) {
+                                    throw new IllegalArgumentException("Timeout value cannot be empty");
+                                }
+                                int timeout = Integer.parseInt(timeoutStr);
+                                if (timeout <= 0) {
+                                    throw new IllegalArgumentException("Timeout must be positive: " + timeout);
+                                }
+                                builder.timeoutSeconds(timeout);
                             } catch (NumberFormatException e) {
                                 throw new IllegalArgumentException(
                                     "Invalid timeout value: " + args[i]);
@@ -619,7 +675,10 @@ public record DemoConfig(
                         if (i + 1 < args.length) {
                             String[] patterns = args[++i].split(",");
                             for (String pattern : patterns) {
-                                builder.addPatternId(pattern.trim());
+                                String trimmedPattern = pattern.trim();
+                                if (!trimmedPattern.isEmpty()) {
+                                    builder.addPatternId(trimmedPattern);
+                                }
                             }
                         } else {
                             throw new IllegalArgumentException("Missing value for " + arg);
@@ -629,12 +688,15 @@ public record DemoConfig(
                         if (i + 1 < args.length) {
                             String[] cats = args[++i].split(",");
                             for (String cat : cats) {
-                                PatternCategory category = PatternCategory.fromName(cat.trim());
-                                if (category == null) {
-                                    throw new IllegalArgumentException(
-                                        "Unknown category: " + cat);
+                                String trimmedCat = cat.trim();
+                                if (!trimmedCat.isEmpty()) {
+                                    PatternCategory category = PatternCategory.fromName(trimmedCat);
+                                    if (category == null) {
+                                        throw new IllegalArgumentException(
+                                            "Unknown category: " + trimmedCat);
+                                    }
+                                    builder.addCategory(category);
                                 }
-                                builder.addCategory(category);
                             }
                         } else {
                             throw new IllegalArgumentException("Missing value for " + arg);
@@ -654,6 +716,23 @@ public record DemoConfig(
          */
         public static String getHelpText() {
             return HELP_TEXT;
+        }
+    }
+
+    /**
+     * Exception thrown when --help is requested.
+     * Allows tests to handle help requests without System.exit() crashing the VM.
+     */
+    public static class HelpRequestedException extends RuntimeException {
+        private final String helpText;
+
+        public HelpRequestedException(String helpText) {
+            super("Help requested");
+            this.helpText = helpText;
+        }
+
+        public String getHelpText() {
+            return helpText;
         }
     }
 }

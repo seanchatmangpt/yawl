@@ -17,7 +17,7 @@
 package org.yawlfoundation.yawl.mcp.a2a.lifecycle;
 
 import org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunner;
-import org.yawlfoundation.yawl.mcp.a2a.demo.config.DemoConfig;
+import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternDemoConfig;
 import org.yawlfoundation.yawl.mcp.a2a.therapy.domain.LifestyleGoal;
 
 import java.time.Duration;
@@ -154,8 +154,8 @@ public class VanDerAalstPatternAdvisor {
 
         List<String> patternIds = selectPatterns(goals);
 
-        DemoConfig demoConfig = DemoConfig.builder()
-            .outputFormat(DemoConfig.OutputFormat.CONSOLE)
+        PatternDemoConfig config = PatternDemoConfig.builder()
+            .outputFormat(PatternDemoConfig.OutputFormat.CONSOLE)
             .parallelExecution(true)
             .autoComplete(true)
             .enableMetrics(true)
@@ -165,7 +165,7 @@ public class VanDerAalstPatternAdvisor {
             .patternIds(patternIds)
             .build();
 
-        int exitCode = new PatternDemoRunner(demoConfig).run();
+        int exitCode = new PatternDemoRunner(config).run();
         boolean allDemonstrated = (exitCode == 0);
 
         return buildInsights(patternIds, goals, allDemonstrated);
@@ -225,5 +225,29 @@ public class VanDerAalstPatternAdvisor {
             return "leisure";
         }
         return "productivity";
+    }
+
+    /**
+     * Create demo configuration from pattern configuration.
+     * This method adapts the production configuration to the demo runner's requirements.
+     *
+     * @param config pattern configuration
+     * @return demo configuration
+     */
+    private PatternDemoConfig createDemoConfig(PatternDemoConfig config) {
+        PatternDemoConfig.Builder configBuilder = PatternDemoConfig.builder()
+            .outputFormat(config.outputFormat())
+            .timeoutSeconds(config.timeoutSeconds())
+            .parallelExecution(config.parallelExecution())
+            .autoComplete(config.autoComplete())
+            .enableMetrics(config.enableMetrics())
+            .withCommentary(config.withCommentary())
+            .tokenAnalysis(config.tokenAnalysis());
+
+        if (!config.patternIds().isEmpty()) {
+            configBuilder.patternIds(config.patternIds());
+        }
+
+        return configBuilder.build();
     }
 }

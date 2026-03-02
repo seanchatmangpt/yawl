@@ -16,6 +16,7 @@
 
 package org.yawlfoundation.yawl.mcp.a2a.gregverse;
 
+import org.yawlfoundation.yawl.mcp.a2a.gregverse.GregVerseAgent;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
 import org.junit.jupiter.api.BeforeEach;

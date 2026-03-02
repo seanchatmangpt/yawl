@@ -59,17 +59,17 @@ public enum PatternCategory {
     BASIC("Basic Control Flow", "\u001B[32m"),
 
     /**
-     * Branching and Synchronization patterns.
+     * Branching patterns.
      * <p>Includes: Multi-Choice (WCP-6), Structured Synchronizing Merge (WCP-7),
      * Multi-Merge (WCP-8), Structured Discriminator (WCP-9)</p>
      */
-    BRANCHING("Branching and Sync", "\u001B[34m"),
+    BRANCHING("Branching", "\u001B[34m"),
 
     /**
      * Multi-Instance patterns.
-     * <p>Includes: Arbitrary Cycles (WCP-10), Implicit Termination (WCP-11),
-     * MI without Synchronization (WCP-12), MI with a priori Design Time Knowledge (WCP-13),
-     * MI with a priori Runtime Knowledge (WCP-14), MI without a priori Runtime Knowledge (WCP-15)</p>
+     * <p>Includes: MI without Synchronization (WCP-12),
+     * MI with a priori Design Time Knowledge (WCP-13), MI with a priori Runtime Knowledge (WCP-14),
+     * MI without a priori Runtime Knowledge (WCP-15)</p>
      */
     MULTI_INSTANCE("Multi-Instance", "\u001B[35m"),
 
@@ -130,7 +130,7 @@ public enum PatternCategory {
 
     /**
      * Structural patterns.
-     * <p>Includes: Implicit Termination and structural workflow patterns.</p>
+     * <p>Includes: Implicit Termination (WCP-11)</p>
      */
     STRUCTURAL("Structural", "\u001B[38;5;102m"),
 
@@ -148,7 +148,8 @@ public enum PatternCategory {
 
     /**
      * Extended patterns.
-     * <p>Includes: Blocked And-Split, Critical Section, Saga patterns.</p>
+     * <p>Includes: Blocked And-Split (WCP-23), Critical Section (WCP-24-33),
+     * Saga patterns (WCP-25-43)</p>
      */
     EXTENDED("Extended", "\u001B[38;5;243m"),
 
@@ -158,12 +159,7 @@ public enum PatternCategory {
      */
     CANCELLATION("Cancellation", "\u001B[38;5;197m"),
 
-    /**
-     * Multi-Instance patterns.
-     * <p>Includes patterns for handling multiple task instances.</p>
-     */
-    MULTIINSTANCE("Multi-Instance", "\u001B[38;5;141m"),
-
+    
     /**
      * Unclassified patterns that don't fit other categories.
      */
@@ -301,12 +297,19 @@ public enum PatternCategory {
         // Control-flow patterns (WCP-1 to WCP-43)
         if (id.startsWith("WCP-")) {
             try {
+                // Handle cancellation patterns first
+                if (id.equals("WCP-19-CF") || id.equals("WCP-20-CF") || id.equals("WCP-22")) {
+                    return CANCELLATION;
+                }
+
                 int num = Integer.parseInt(id.substring(4));
                 if (num >= 1 && num <= 5) return BASIC;
-                if (num >= 6 && num <= 11) return BRANCHING;
+                if (num >= 6 && num <= 10) return BRANCHING;
+                if (num == 11) return STRUCTURAL;  // WCP-11 is Structural, not Branching
                 if (num >= 12 && num <= 17) return MULTI_INSTANCE;
                 if (num >= 18 && num <= 21) return STATE_BASED;
-                if (num >= 22 && num <= 43) return EXTENDED;
+                if (num == 28 || num == 31) return ITERATION;  // WCP-28 and WCP-31 are Iteration
+                if (num >= 23 && num <= 43) return EXTENDED;
                 if (num >= 44 && num <= 50) return DISTRIBUTED;
                 if (num >= 51 && num <= 59) return EVENT_DRIVEN;
                 if (num >= 60 && num <= 68) return AI_ML;

@@ -16,7 +16,7 @@
 
 package org.yawlfoundation.yawl.mcp.a2a.demo;
 
-import org.yawlfoundation.yawl.mcp.a2a.demo.config.DemoConfig;
+import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternDemoConfig;
 import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternCategory;
 import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistry;
 import org.yawlfoundation.yawl.mcp.a2a.demo.execution.ExecutionHarness;
@@ -106,7 +106,7 @@ public class PatternDemoRunner {
     private static final String ZAI_API_URL = "https://api.z.ai/api/paas/v4/chat/completions";
     private static final String ZAI_MODEL = "GLM-4.7-Flash";
 
-    private final DemoConfig config;
+    private final PatternDemoConfig config;
     private final ExtendedYamlConverter yamlConverter;
     private final PatternRegistry registry;
     private YStatelessEngine engine;
@@ -119,7 +119,7 @@ public class PatternDemoRunner {
      * @param args command-line arguments
      */
     public static void main(String[] args) {
-        DemoConfig config = DemoConfig.fromCommandLine(args);
+        PatternDemoConfig config = PatternDemoConfig.fromCommandLine(args);
 
         PatternDemoRunner runner = new PatternDemoRunner(config);
         int exitCode = runner.run();
@@ -131,7 +131,7 @@ public class PatternDemoRunner {
      *
      * @param config the demo configuration
      */
-    public PatternDemoRunner(DemoConfig config) {
+    public PatternDemoRunner(PatternDemoConfig config) {
         this.config = config;
         this.yamlConverter = new ExtendedYamlConverter();
         this.registry = new PatternRegistry();
@@ -515,7 +515,7 @@ public class PatternDemoRunner {
                 System.err.println("Failed to write output: " + e.getMessage());
                 System.out.println("\n" + output);
             }
-        } else if (config.outputFormat() != DemoConfig.OutputFormat.CONSOLE) {
+        } else if (config.outputFormat() != PatternDemoConfig.OutputFormat.CONSOLE) {
             // Non-console formats default to stdout
             System.out.println("\n" + output);
         }

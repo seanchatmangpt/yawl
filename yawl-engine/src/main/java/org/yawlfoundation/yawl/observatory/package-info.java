@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+ * Engine layer observability for YAWL workflow DNA tracking.
+ *
+ * <p>This package provides observability tools for monitoring and analyzing
+ * YAWL engine behavior through the YAWL DNA tracking system, enabling real-time
+ * insights into workflow execution patterns and drift detection.</p>
+ *
+ * <p>Key components:</p>
+ * <ul>
+ *   <li>{@link org.yawlfoundation.yawl.observatory.DriftDetector} - Detects workflow model execution drift</li>
+ *   <li>{@link org.yawlfoundation.yawl.observatory.FactsToRDFConverter} - Converts workflow facts to RDF</li>
+ *   <li>{@link org.yawlfoundation.yawl.observatory.GgenObservationBridge} - Bridge between ggen and observability</li>
+ *   <li>{@link org.yawlfoundation.yawl.observatory.WorkflowDNAOracle} - Real-time workflow DNA analysis</li>
+ * </ul>
+ *
+ * @since 6.0.0
+ * @see org.yawlfoundation.yawl.observatory.DriftDetector
+ * @see org.yawlfoundation.yawl.observatory.WorkflowDNAOracle
+ */
+package org.yawlfoundation.yawl.observability;

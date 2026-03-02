@@ -66,7 +66,7 @@ class QLeverIntegrationSuite {
     @Test
     @DisplayName("Error recovery: Test multiple failure scenarios")
     @EnabledOnJre(JRE.JAVA_25)
-    void testErrorRecoveryScenarios() {
+    void testErrorRecoveryScenarios() throws QLeverFfiException {
         QLeverEmbeddedSparqlEngine engine = new QLeverEmbeddedSparqlEngine();
 
         // Test 1: Native library loading failure
@@ -95,7 +95,7 @@ class QLeverIntegrationSuite {
     @Test
     @DisplayName("Concurrent operations: Multiple threads accessing engine")
     @EnabledOnJre(JRE.JAVA_25)
-    void testConcurrentOperations() throws InterruptedException {
+    void testConcurrentOperations() throws InterruptedException, QLeverFfiException, java.util.concurrent.TimeoutException {
         QLeverEmbeddedSparqlEngine engine = new QLeverEmbeddedSparqlEngine();
         engine.initialize();
 
@@ -298,7 +298,7 @@ class QLeverIntegrationSuite {
     @Test
     @DisplayName("Resource cleanup verification")
     @EnabledOnJre(JRE.JAVA_25)
-    void testResourceCleanup() {
+    void testResourceCleanup() throws QLeverFfiException {
         QLeverEmbeddedSparqlEngine engine = new QLeverEmbeddedSparqlEngine();
 
         try {

@@ -72,6 +72,104 @@ generate_summary() {
 EOF
 }
 
+# ─── HELPER: Load guard configuration ───────────────────────────────────────
+load_guard_config() {
+    local config_file=".ggen/config/guard-config.toml"
+    if [ -f "$config_file" ]; then
+        # Use a more robust TOML parsing approach
+        # Extract exclusions array
+        GUARD_EXCLUSIONS=$(sed -n '/^exclusions = \[/,/\]/{
+            /^exclusions = \[/d;
+            /^\]/d;
+            s/^[[:space:]]*["'\'']\([^"'\'']*\)["'\''].*/\1/;
+            s/[[:space:]]*,*$//;
+            p;
+        }' "$config_file" | tr '\n' ' ')
+
+        # Extract always_exclude array
+        GUARD_ALWAYS_EXCLUDE=$(sed -n '/^always_exclude = \[/,/\]/{
+            /^always_exclude = \[/d;
+            /^\]/d;
+            s/^[[:space:]]*["'\'']\([^"'\'']*\)["'\''].*/\1/;
+            s/[[:space:]]*,*$//;
+            p;
+        }' "$config_file" | tr '\n' ' ')
+
+        # Extract inclusion_patterns array
+        GUARD_INCLUSION_PATTERNS=$(sed -n '/^inclusion_patterns = \[/,/\]/{
+            /^inclusion_patterns = \[/d;
+            /^\]/d;
+            s/^[[:space:]]*["'\'']\([^"'\'']*\)["'\''].*/\1/;
+            s/[[:space:]]*,*$//;
+            p;
+        }' "$config_file" | tr '\n' ' ')
+
+        if [ "${VERBOSE:-0}" -eq 1 ]; then
+            echo "[DEBUG] Loaded exclusions: $GUARD_EXCLUSIONS" >&2
+            echo "[DEBUG] Loaded always_exclude: $GUARD_ALWAYS_EXCLUDE" >&2
+        fi
+    else
+        # Default exclusions if no config file
+        GUARD_EXCLUSIONS="test/fixtures/** docs/templates/** **/src/test/** **/*Test.java"
+        GUARD_ALWAYS_EXCLUDE=""
+        GUARD_INCLUSION_PATTERNS="src/**/*.java"
+
+        if [ "${VERBOSE:-0}" -eq 1 ]; then
+            echo "[DEBUG] Using default exclusions: $GUARD_EXCLUSIONS" >&2
+        fi
+    fi
+}
+
+# ─── HELPER: Check if file should be excluded ───────────────────────────────
+should_exclude_file() {
+    local file="$1"
+
+    # Convert to relative path if absolute
+    if [[ "$file" =~ ^/ ]]; then
+        file="${file#$(pwd)/}"
+    fi
+
+    # Remove leading ./ if present for consistent pattern matching
+    file="${file#./}"
+
+    # Check exclusions with proper glob pattern matching
+    for pattern in $GUARD_EXCLUSIONS; do
+        # Convert glob to regex for matching
+        local regex_pattern="${pattern//\*/\**}"
+        regex_pattern="${regex_pattern//\?/\.}"
+        if [[ "$file" == $pattern ]] || [[ "$file" == $regex_pattern ]]; then
+            if [ "${VERBOSE:-0}" -eq 1 ]; then
+                echo "[DEBUG] Excluded file '$file' matches pattern '$pattern'" >&2
+            fi
+            return 0
+        fi
+
+        # Handle ** patterns recursively
+        if [[ "$pattern" == "**" ]]; then
+            if [[ "$file" =~ ^[A-Za-z0-9_\./-]+$ ]]; then
+                return 0
+            fi
+        elif [[ "$pattern" == "**/"* ]]; then
+            local prefix="${pattern#**/}"
+            if [[ "$file" == *"$prefix"* ]]; then
+                if [ "${VERBOSE:-0}" -eq 1 ]; then
+                    echo "[DEBUG] Excluded file '$file' matches recursive pattern '$pattern'" >&2
+                fi
+                return 0
+            fi
+        fi
+    done
+
+    # Check always exclude
+    for pattern in $GUARD_ALWAYS_EXCLUDE; do
+        if [[ "$file" == "$pattern" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 # ─── PARAMETER PARSING ─────────────────────────────────────────────────────
 EMIT_DIR=""
 RECEIPT_FILE=".claude/receipts/guard-receipt.json"
@@ -79,6 +177,9 @@ JSON_ONLY=0
 VERBOSE=0
 VALIDATE_EMIT_MODE=0
 REMAINING_ARGS=()
+
+# Load guard configuration
+load_guard_config
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -153,10 +254,21 @@ EOF
     VIOLATIONS_ARRAY=""
     VIOLATIONS_JSON_BLOCK=""
 
-    # Collect all Java files first
+    # Collect all Java files first, applying exclusions
     java_files=()
     while IFS= read -r java_file; do
-        java_files+=("$java_file")
+        # Convert to relative path for exclusion checking
+        relative_file="${java_file#$(pwd)/}"
+        relative_file="${relative_file#./}"
+
+        # Skip excluded files
+        if ! should_exclude_file "$relative_file"; then
+            java_files+=("$java_file")
+        else
+            if [ "$VERBOSE" -eq 1 ]; then
+                echo "[hyper-validate.sh] Excluded: $relative_file" >&2
+            fi
+        fi
     done < <(find "$EMIT_DIR" -name "*.java" -type f 2>/dev/null)
 
     # Define patterns once (outside the loop to avoid declare -A issues in subshells)
@@ -335,17 +447,27 @@ if [ "${1:-}" != "--file-only" ]; then
 fi
 
 # Only validate Java source files in src/
-if [[ ! "$FILE" =~ \.java$ ]] || [[ ! "$FILE" =~ ^/.*/(src|test)/ ]]; then
+if [[ ! "$FILE" =~ \.java$ ]]; then
     exit 0
 fi
 
-# Skip validation for test fixtures (intentional violation fixtures for testing)
-if [[ "$FILE" =~ /test/fixtures/(h-guards|q-invariants)/ ]]; then
+# Convert to relative path for exclusion checking
+if [[ "$FILE" =~ ^/ ]]; then
+    relative_file="${FILE#$(pwd)/}"
+else
+    relative_file="$FILE"
+fi
+
+# Skip validation for excluded files using guard configuration
+if should_exclude_file "$relative_file"; then
+    if [ "${VERBOSE:-0}" -eq 1 ]; then
+        echo "[hyper-validate.sh] Excluded: $relative_file" >&2
+    fi
     exit 0
 fi
 
 # Skip validation for deprecated orderfulfillment package (legacy code)
-if [[ "$FILE" =~ /orderfulfillment/ ]]; then
+if [[ "$relative_file" =~ /orderfulfillment/ ]]; then
     exit 0
 fi
 

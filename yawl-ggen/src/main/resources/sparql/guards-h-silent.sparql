@@ -1,0 +1,20 @@
+# H_SILENT Guard — Log Instead of Throw
+# Pattern: log.warn/error about unimplemented feature instead of throwing exception
+# Severity: FAIL
+# Fix: Throw UnsupportedOperationException instead of silently logging
+# Source: H-GUARDS-QUERIES.md Query 7
+
+PREFIX code: <http://ggen.io/code#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  ?method a code:Method ;
+          code:body ?body ;
+          code:lineNumber ?line .
+
+  FILTER(REGEX(?body, 'log\\.(warn|error)\\([^)]*"[^"]*not\\s+implemented[^"]*"[^)]*\\)'))
+
+  BIND("H_SILENT" AS ?pattern)
+  BIND(CONCAT("Silent logging at line ", STR(?line), ": ", ?body)
+       AS ?violation)
+}

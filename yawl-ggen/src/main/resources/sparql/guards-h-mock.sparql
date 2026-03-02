@@ -1,0 +1,30 @@
+# H_MOCK Guard — Mock Method/Class Names
+# Pattern: (mock|stub|fake|demo)[A-Z] on identifiers; ^(Mock|Stub|Fake|Demo) on class names
+# Severity: FAIL
+# Fix: Delete mock class or implement real service
+# Source: H-GUARDS-QUERIES.md Query 2
+
+PREFIX code: <http://ggen.io/code#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  {
+    # Mock method names: mockFetch(), getMockData()
+    ?method a code:Method ;
+            code:name ?name ;
+            code:lineNumber ?line .
+    FILTER(REGEX(?name, "(mock|stub|fake|demo)[A-Z]"))
+    BIND("H_MOCK" AS ?pattern)
+    BIND(CONCAT("Mock method name at line ", STR(?line), ": ", ?name)
+         AS ?violation)
+  } UNION {
+    # Mock class declarations: class MockService
+    ?class a code:Class ;
+           code:name ?className ;
+           code:lineNumber ?line .
+    FILTER(REGEX(?className, "^(Mock|Stub|Fake|Demo)"))
+    BIND("H_MOCK" AS ?pattern)
+    BIND(CONCAT("Mock class name at line ", STR(?line), ": ", ?className)
+         AS ?violation)
+  }
+}
