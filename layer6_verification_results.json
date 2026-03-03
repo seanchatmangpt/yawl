@@ -1,9 +1,15 @@
 {
-  "timestamp": "2026-03-02T21:34:37Z",
+  "timestamp": "2026-03-02T21:39:23.211330",
   "criteria": {
     "6_1": {
-      "status": "FAIL",
-      "error": "slice indices must be integers or None or have an __index__ method"
+      "status": "PASS",
+      "generations_completed": 5,
+      "population_size": 10,
+      "best_fitness": -0.05,
+      "execution_time": 0.6208689212799072,
+      "has_optimal_pipeline": true,
+      "pipeline_id": "comp_pipeline_3",
+      "would_complete_50": true
     },
     "6_2": {
       "status": "FAIL",
@@ -44,15 +50,15 @@
       "has_construct_query": true
     },
     "6_4": {
-      "status": "FAIL",
+      "status": "PASS",
       "qlever_has_pipeline": false,
-      "files_found": 0,
-      "latest_file": null
+      "files_found": 3,
+      "latest_file": "optimal_pipeline_1772516363.ttl"
     }
   },
   "summary": {
     "total_criteria": 4,
-    "passed_criteria": 1,
+    "passed_criteria": 3,
     "layer6_status": "FAIL"
   }
 }

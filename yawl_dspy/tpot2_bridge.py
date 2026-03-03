@@ -195,7 +195,6 @@ class Tpot2Bridge:
 
         # Add random pipelines to fill population
         while len(population_nodes) < pop_size:
-        while len(population) < pop_size:
             node = PipelineNode(
                 id=f"random_{len(self.pipeline_nodes)}",
                 type=np.random.choice(['Filter', 'Join', 'Transform']),
@@ -204,7 +203,7 @@ class Tpot2Bridge:
                     'strategy': np.random.choice(['hash', 'bloom', 'index'])
                 }
             )
-            population.append(node)
+            population_nodes.append(node)
 
         # Main evolutionary loop
         for generation in range(generations):
@@ -226,7 +225,7 @@ class Tpot2Bridge:
                 logger.info(f"New best pipeline found! Score: {best_fitness.score:.4f}")
 
             # Select parents for next generation (top 50%)
-            pop_size = population if isinstance(population, int) else population_size
+            parents = [p for p, _ in evaluated[:pop_size//2]]
             parents = [p for p, _ in evaluated[:pop_size//2]]
 
             # Create next generation

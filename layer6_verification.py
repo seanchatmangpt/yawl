@@ -14,6 +14,7 @@ import time
 import logging
 from pathlib import Path
 from typing import Dict, Any
+from datetime import datetime
 
 from yawl_dspy import Tpot2Bridge, GepaEvaluator, ConstructQueryAuthor
 
@@ -34,7 +35,7 @@ class Layer6Verification:
     def __init__(self, qlever_endpoint: str = "http://localhost:8080"):
         self.qlever_endpoint = qlever_endpoint
         self.verification_results = {
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp": datetime.now().isoformat(),
             "criteria": {},
             "summary": {}
         }
@@ -74,7 +75,7 @@ class Layer6Verification:
             verification = {
                 "status": "PASS",
                 "generations_completed": result['generations'],
-                "population_size": result['population_size'],
+                "population_size": len(result['population_size']) if isinstance(result['population_size'], list) else result['population_size'],
                 "best_fitness": result['best_fitness'].score if result['best_fitness'] else 0.0,
                 "execution_time": end_time - start_time,
                 "has_optimal_pipeline": result['best_pipeline'] is not None,
