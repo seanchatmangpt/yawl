@@ -1,315 +1,469 @@
+/*
+ * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ */
+
 package org.yawlfoundation.yawl.ggen.validation;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yawlfoundation.yawl.ggen.validation.model.GuardReceipt;
-import org.yawlfoundation.yawl.ggen.validation.model.GuardSummary;
 import org.yawlfoundation.yawl.ggen.validation.model.GuardViolation;
-import org.yawlfoundation.yawl.ggen.validation.Severity;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.stream.Stream;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
- * HyperStandardsValidator - Orchestrator for guard pattern validation.
+ * Orchestrates guard validation across 9 guard patterns (7 core + 2 blue-ocean extensions).
+ * Coordinates multiple GuardChecker implementations to detect violations
+ * and produce a GuardReceipt for audit and debugging.
+ * File scanning runs concurrently on Java 25 VirtualThreads for O(1) wall-clock
+ * scalability regardless of codebase size.
  *
- * This validator implements the H (Guards) phase of the YAWL validation pipeline,
- * enforcing Fortune 5 production standards by detecting and blocking 7+ forbidden
- * patterns in generated code.
- *
- * <p><b>Guard Patterns Enforced:</b></p>
+ * <p><b>Core patterns (7)</b> — original hyper-standards gate:
  * <ul>
- *   <li><b>H_TODO:</b> Deferred work markers (TODO, FIXME, etc.)</li>
- *   <li><b>H_MOCK:</b> Mock implementations (class/method names)</li>
- *   <li><b>H_STUB:</b> Empty/placeholder returns</li>
- *   <li><b>H_EMPTY:</b> No-op method bodies</li>
- *   <li><b>H_FALLBACK:</b> Silent degradation catch blocks</li>
- *   <li><b>H_LIE:</b> Code ≠ documentation</li>
- *   <li><b>H_SILENT:</b> Log instead of throw</li>
- *   <li><b>H_PRINT_DEBUG:</b> System.out/err.println</li>
- *   <li><b>H_SWALLOWED:</b> Empty catch blocks</li>
+ *   <li>H_TODO: Deferred work markers (TODO, FIXME, XXX, HACK, …)</li>
+ *   <li>H_MOCK: Mock implementations (class/method names, fake data)</li>
+ *   <li>H_STUB: Empty/placeholder returns from non-void methods</li>
+ *   <li>H_EMPTY: Empty void method bodies</li>
+ *   <li>H_FALLBACK: Silent catch-and-fake error handling</li>
+ *   <li>H_LIE: Documentation mismatches (code ≠ javadoc)</li>
+ *   <li>H_SILENT: Log instead of throw exception</li>
  * </ul>
  *
- * <p><b>Exit Codes:</b></p>
+ * <p><b>Blue-ocean extensions (2)</b> — production hardening:
  * <ul>
- *   <li>0: No violations - proceed to next phase</li>
- *   <li>1: Transient error (IO, parse) - retry</li>
- *   <li>2: Guard violations found - fix and re-run</li>
+ *   <li>H_PRINT_DEBUG: {@code System.out/err.print*()} calls that must never ship</li>
+ *   <li>H_SWALLOWED: Empty catch blocks that silently discard exceptions</li>
  * </ul>
+ *
+ * Exit codes:
+ * - 0 (GREEN): No violations, safe to proceed to next phase
+ * - 2 (RED): Violations found, developer must fix or throw UnsupportedOperationException
  */
 public class HyperStandardsValidator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HyperStandardsValidator.class);
 
     private final List<GuardChecker> checkers;
+    private final List<String> exclusionPatterns;
     private GuardReceipt receipt;
 
+    // Default exclusion patterns
+    private static final List<String> DEFAULT_EXCLUSIONS = List.of(
+        "**/test/fixtures/**",
+        "**/fixtures/**",
+        "**/*fixture*/**",
+        "**/src/test/**",
+        "**/*Test.java",
+        "**/*Tests.java",
+        "**/target/**",
+        "**/build/**",
+        "**/node_modules/**"
+    );
+
     /**
-     * Constructs a new HyperStandardsValidator with all guard checkers initialized.
+     * Create a new HyperStandardsValidator with all 9 guard checkers registered.
+     * Uses default exclusion patterns.
      */
     public HyperStandardsValidator() {
-        this.checkers = initializeGuardCheckers();
+        this.checkers = new ArrayList<>();
+        this.exclusionPatterns = DEFAULT_EXCLUSIONS;
+        registerDefaultCheckers();
     }
 
     /**
-     * Initializes all guard checkers (7 core + 2 extended patterns).
-     */
-    private List<GuardChecker> initializeGuardCheckers() {
-        List<GuardChecker> checkers = new ArrayList<>();
-
-        // Core guard patterns (7)
-        checkers.add(RegexGuardChecker.Factory.createTodoChecker());
-        checkers.add(RegexGuardChecker.Factory.createPatternChecker());
-        checkers.add(new SparqlGuardChecker("H_STUB", SparqlGuardChecker.QueryFactory.createStubReturnQuery().toString()));
-        checkers.add(new SparqlGuardChecker("H_EMPTY", SparqlGuardChecker.QueryFactory.createEmptyQuery().toString()));
-        checkers.add(new SparqlGuardChecker("H_FALLBACK", SparqlGuardChecker.QueryFactory.createFallbackQuery().toString()));
-        checkers.add(new SparqlGuardChecker("H_LIE", SparqlGuardChecker.QueryFactory.createLieQuery().toString()));
-        checkers.add(RegexGuardChecker.Factory.createSilentChecker());
-
-        // Extended guard patterns (2)
-        checkers.add(new RegexGuardChecker("H_PRINT_DEBUG",
-            "System\\.(out|err)\\.print(ln)?\\("));
-        checkers.add(new RegexGuardChecker("H_SWALLOWED",
-            "}\\s*catch\\s*\\([^)]+\\)\\s*\\{\\s*\\}"));
-
-        return checkers;
-    }
-
-    /**
-     * Validates all Java files in the specified emit directory.
+     * Create a new HyperStandardsValidator with custom checkers and exclusion patterns.
+     * Useful for testing or custom guard pattern implementations.
      *
-     * @param emitDir Directory containing generated Java files to validate
-     * @return GuardReceipt containing validation results
-     * @throws IOException if directory scanning fails
+     * @param customCheckers list of GuardChecker implementations to use
+     * @param exclusionPatterns list of glob patterns to exclude from validation
+     */
+    public HyperStandardsValidator(List<GuardChecker> customCheckers, List<String> exclusionPatterns) {
+        this.checkers = Objects.requireNonNull(customCheckers, "customCheckers must not be null");
+        this.exclusionPatterns = Objects.requireNonNull(exclusionPatterns, "exclusionPatterns must not be null");
+        registerDefaultCheckers();
+    }
+
+    /**
+     * Create a new HyperStandardsValidator with custom checkers.
+     * Useful for testing or custom guard pattern implementations.
+     *
+     * @param customCheckers list of GuardChecker implementations to use
+     */
+    public HyperStandardsValidator(List<GuardChecker> customCheckers) {
+        this.checkers = Objects.requireNonNull(customCheckers, "customCheckers must not be null");
+        this.exclusionPatterns = DEFAULT_EXCLUSIONS;
+    }
+
+    /**
+     * Register all 9 guard checkers (7 core + 2 blue-ocean extensions).
+     * Uses regex checkers for simple patterns and SPARQL checkers for complex ones.
+     *
+     * <p><b>Blue-ocean extensions</b>:
+     * <ul>
+     *   <li>H_PRINT_DEBUG — {@code System.out/err.print*()} catches debug artifacts that
+     *       slip through code review into generated/production code. No other code-generation
+     *       quality gate targets this pattern specifically.</li>
+     *   <li>H_SWALLOWED — empty catch blocks silently discard all exception information.
+     *       Detected via whole-file regex to cover both single-line and multi-line forms.</li>
+     * </ul>
+     */
+    private void registerDefaultCheckers() {
+        // H_TODO: Regex-based detection of deferred work markers
+        checkers.add(new RegexGuardChecker(
+            "H_TODO",
+            "//\\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|@incomplete|@stub|placeholder)",
+            GuardChecker.Severity.FAIL
+        ));
+
+        // H_MOCK: Regex-based detection of forbidden class/method name prefixes.
+        // (?i) flag catches both PascalCase (class names) and camelCase (method names).
+        checkers.add(new RegexGuardChecker(
+            "H_MOCK",
+            "(?i)(mock|stub|fake|demo)[A-Z]\\w*",
+            GuardChecker.Severity.FAIL
+        ));
+
+        // H_SILENT: Regex-based detection of logging instead of throwing.
+        // (?i) flag catches phrases regardless of capitalisation ("Not implemented", "not implemented").
+        checkers.add(new RegexGuardChecker(
+            "H_SILENT",
+            "(?i)log\\.(warn|error)\\([^)]*['\"].*not\\s+implemented",
+            GuardChecker.Severity.FAIL
+        ));
+
+        // H_STUB: SPARQL-based detection of placeholder returns
+        String placeholderReturnQuery = loadSparqlQuery("guards-h-stub.sparql");
+        checkers.add(new SparqlGuardChecker(
+            "H_STUB",
+            placeholderReturnQuery,
+            GuardChecker.Severity.FAIL
+        ));
+
+        // H_EMPTY: SPARQL-based detection of empty method bodies
+        String emptyMethodBodyQuery = loadSparqlQuery("guards-h-empty.sparql");
+        checkers.add(new SparqlGuardChecker(
+            "H_EMPTY",
+            emptyMethodBodyQuery,
+            GuardChecker.Severity.FAIL
+        ));
+
+        // H_FALLBACK: SPARQL-based detection of silent error handling
+        String silentErrorHandlingQuery = loadSparqlQuery("guards-h-fallback.sparql");
+        checkers.add(new SparqlGuardChecker(
+            "H_FALLBACK",
+            silentErrorHandlingQuery,
+            GuardChecker.Severity.FAIL
+        ));
+
+        // H_LIE: SPARQL-based detection of documentation mismatches
+        String documentationMismatchQuery = loadSparqlQuery("guards-h-lie.sparql");
+        checkers.add(new SparqlGuardChecker(
+            "H_LIE",
+            documentationMismatchQuery,
+            GuardChecker.Severity.FAIL
+        ));
+
+        // --- Blue-ocean extension #1: H_PRINT_DEBUG ---
+        // System.out.println / System.err.println / System.out.printf left in generated code
+        // are a production reliability hazard: they bypass logging frameworks, can expose
+        // sensitive data in stdout, and signal incomplete implementation. No competitor
+        // code-generation gate blocks this pattern.
+        checkers.add(new RegexGuardChecker(
+            "H_PRINT_DEBUG",
+            "System\\.(out|err)\\.(print|println|printf)\\(",
+            GuardChecker.Severity.FAIL
+        ));
+
+        // --- Blue-ocean extension #2: H_SWALLOWED ---
+        // Empty catch blocks silently discard all exception state. Unlike H_FALLBACK (which
+        // requires fake data to be returned), H_SWALLOWED catches the worst case: an exception
+        // is caught and literally nothing happens. Uses WholeFileRegexGuardChecker so both
+        // single-line ("catch (E e) { }") and multi-line forms are detected.
+        checkers.add(new WholeFileRegexGuardChecker(
+            "H_SWALLOWED",
+            "catch\\s*\\([^)]+\\)\\s*\\{\\s*\\}",
+            GuardChecker.Severity.FAIL
+        ));
+
+        LOGGER.info("Registered {} guard checkers", checkers.size());
+    }
+
+    /**
+     * Check if a path matches a glob pattern using Java's built-in PathMatcher.
+     * Supports the full glob syntax: ** for recursive matching, * for single segment,
+     * ? for single character.
+     *
+     * @param relativePath the file path relative to the emit directory (forward slashes)
+     * @param pattern the glob pattern (e.g. "&#42;&#42;/target/&#42;&#42;", "&#42;&#42;/&#42;Test.java")
+     * @return true if the path matches the pattern
+     */
+    private boolean matchesPattern(String relativePath, String pattern) {
+        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+        return matcher.matches(Path.of(relativePath));
+    }
+
+    /**
+     * Load a SPARQL query from classpath resources.
+     * Throws exception if resource not found.
+     *
+     * @param filename the filename in src/main/resources/sparql/
+     * @return the SPARQL query string
+     * @throws IllegalStateException if resource not found
+     */
+    private String loadSparqlQuery(String filename) {
+        try (InputStream is = getClass().getResourceAsStream("/sparql/" + filename)) {
+            if (is == null) {
+                throw new IllegalStateException(
+                    "Required SPARQL query resource not found: " + filename +
+                    " — verify src/main/resources/sparql/ contains all query files"
+                );
+            }
+            return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                "Failed to load SPARQL query " + filename + ": " + e.getMessage(), e
+            );
+        }
+    }
+
+    /**
+     * Validate all Java source files in the emit directory.
+     * File scanning runs concurrently on Java 25 VirtualThreads — one thread per file —
+     * so wall-clock time scales with the slowest file rather than total file count.
+     * All checker logic is read-only; violations are collected per-file and merged
+     * into the receipt on the calling thread after all futures complete.
+     *
+     * @param emitDir the directory containing generated Java source files
+     * @return a GuardReceipt with validation results
+     * @throws IOException if directory access or file reading fails
      */
     public GuardReceipt validateEmitDir(Path emitDir) throws IOException {
+        Objects.requireNonNull(emitDir, "emitDir must not be null");
+
+        if (!Files.isDirectory(emitDir)) {
+            throw new IOException("emitDir is not a directory: " + emitDir);
+        }
+
         receipt = new GuardReceipt();
-        receipt.setFilesScanned(0);
-        receipt.setViolations(new ArrayList<>());
+        receipt.setPhase("guards");
 
-        // Scan for Java files
-        List<Path> javaFiles = findJavaFiles(emitDir);
+      // Collect all Java source files up-front
+        List<Path> javaFiles = new ArrayList<>();
+        try (var stream = Files.walk(emitDir)) {
+            stream.filter(p -> {
+                String path = p.toString();
+
+                // Include only .java files
+                if (!path.endsWith(".java")) {
+                    return false;
+                }
+
+                // Convert to relative path for pattern matching
+                String relativePath = emitDir.relativize(p).toString().replace('\\', '/');
+
+                // Check against exclusion patterns
+                for (String pattern : exclusionPatterns) {
+                    if (matchesPattern(relativePath, pattern)) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Excluding file: {} (matches pattern: {})", path, pattern);
+                        }
+                        return false;
+                    }
+                }
+
+                return true;
+            })
+            .forEach(javaFiles::add);
+        }
+
         receipt.setFilesScanned(javaFiles.size());
+        LOGGER.info("Scanning {} Java files in {} (VirtualThread parallel)", javaFiles.size(), emitDir);
 
-        // Validate each Java file
-        for (Path javaFile : javaFiles) {
-            validateFile(javaFile);
+        // Submit each file as an independent VirtualThread task.
+        // collectViolationsForFile() is pure (no shared mutable state), so concurrent
+        // execution is safe. We merge results sequentially after all futures resolve.
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<List<GuardViolation>>> futures = javaFiles.stream()
+                .map(javaFile -> executor.submit(() -> collectViolationsForFile(javaFile)))
+                .toList();
+
+            for (Future<List<GuardViolation>> future : futures) {
+                try {
+                    for (GuardViolation violation : future.get()) {
+                        receipt.addViolation(violation);
+                    }
+                } catch (ExecutionException e) {
+                    LOGGER.warn("VirtualThread task failed: {}", e.getCause().getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Guard validation interrupted", e);
+                }
+            }
         }
 
-        // Generate error message for violations
-        if (receipt.isRed()) {
-            receipt.setErrorMessage(String.format(
-                "%d guard violations found. Fix violations or throw UnsupportedOperationException.",
-                receipt.getViolations().size()
-            ));
-        }
+        // Finalize status and error message
+        receipt.finalizeStatus();
 
-        // Write receipt to JSON file
-        writeReceiptToFile();
+        LOGGER.info("Guard validation complete: {} violation(s) across {} file(s) — {}",
+                   receipt.getViolations().size(), javaFiles.size(),
+                   severityBand(receipt.getViolations().size()));
 
         return receipt;
     }
 
     /**
-     * Helper method to find all Java files in a directory (recursive).
-     */
-    private List<Path> findJavaFiles(Path directory) throws IOException {
-        return Files.walk(directory)
-            .filter(Files::isRegularFile)
-            .filter(p -> p.toString().endsWith(".java"))
-            .collect(Collectors.toList());
-    }
-
-    /**
-     * Validates a single Java file using all guard checkers.
+     * Run all registered checkers against a single Java file and return all violations.
+     * This method is pure (no side effects on shared state) and safe for concurrent use.
      *
-     * @param javaFile Java file to validate
-     * @throws IOException if file cannot be read
+     * @param javaFile the Java source file to check
+     * @return list of violations found (empty if file is clean)
      */
-    private void validateFile(Path javaFile) throws IOException {
+    private List<GuardViolation> collectViolationsForFile(Path javaFile) {
+        List<GuardViolation> fileViolations = new ArrayList<>();
         for (GuardChecker checker : checkers) {
             try {
                 List<GuardViolation> violations = checker.check(javaFile);
                 for (GuardViolation violation : violations) {
-                    // Create a new violation with the file path set
-                    GuardViolation violationWithFile = new GuardViolation(
-                        violation.getPattern(),
-                        violation.getSeverity(),
-                        javaFile.toString(),
-                        violation.getLine(),
-                        violation.getContent()
-                    );
-                    receipt.addViolation(violationWithFile);
+                    violation.setFile(javaFile.toString());
+                    LOGGER.debug("Found violation: {} at {}:{}", violation.getPattern(), javaFile, violation.getLine());
                 }
+                fileViolations.addAll(violations);
             } catch (IOException e) {
-                // Log transient error but continue with other checkers
-                System.err.println("Error checking file " + javaFile + " with " +
-                    checker.patternName() + ": " + e.getMessage());
-
-                // Add violation for transient error
-                GuardViolation errorViolation = new GuardViolation(
-                    "H_ERROR",
-                    Severity.FAIL,
-                    javaFile.toString(),
-                    0,
-                    "IO error while checking: " + e.getMessage()
-                );
-                receipt.addViolation(errorViolation);
-            } catch (Exception e) {
-                // Handle unexpected errors gracefully
-                System.err.println("Unexpected error checking file " + javaFile + " with " +
-                    checker.patternName() + ": " + e.getMessage());
-
-                // Add violation for unexpected error
-                GuardViolation errorViolation = new GuardViolation(
-                    "H_ERROR",
-                    Severity.FAIL,
-                    javaFile.toString(),
-                    0,
-                    "Unexpected error: " + e.getMessage()
-                );
-                receipt.addViolation(errorViolation);
+                LOGGER.warn("Failed to check {} with {}: {}", javaFile, checker.patternName(), e.getMessage());
             }
         }
+        return fileViolations;
     }
 
     /**
-     * Writes the validation receipt to a JSON file.
-     */
-    private void writeReceiptToFile() throws IOException {
-        // Create receipts directory if it doesn't exist
-        Path receiptsDir = Paths.get(".claude/receipts");
-        Files.createDirectories(receiptsDir);
-
-        // Write receipt to JSON file
-        Path receiptFile = receiptsDir.resolve("guard-receipt.json");
-        String json = receiptToJson();
-        Files.writeString(receiptFile, json);
-
-        System.out.println("Guard validation receipt written to: " + receiptFile);
-    }
-
-    /**
-     * Converts the receipt to JSON string for output.
-     */
-    private String receiptToJson() {
-        // Simple JSON serialization - in production, use Jackson/ObjectMapper
-        StringBuilder json = new StringBuilder();
-        json.append("{\n");
-        json.append("  \"phase\": \"guards\",\n");
-        json.append("  \"timestamp\": \"").append(receipt.getTimestamp()).append("\",\n");
-        json.append("  \"files_scanned\": ").append(receipt.getFilesScanned()).append(",\n");
-        json.append("  \"status\": \"").append(receipt.getStatus()).append("\",\n");
-
-        if (receipt.isRed()) {
-            json.append("  \"error_message\": \"").append(receipt.getErrorMessage()).append("\",\n");
-        }
-
-        json.append("  \"violations\": [\n");
-
-        List<GuardViolation> violations = receipt.getViolations();
-        for (int i = 0; i < violations.size(); i++) {
-            GuardViolation v = violations.get(i);
-            json.append("    {\n");
-            json.append("      \"pattern\": \"").append(v.getPattern()).append("\",\n");
-            json.append("      \"severity\": \"").append(v.getSeverity()).append("\",\n");
-            json.append("      \"file\": \"").append(escapeJson(v.getFile())).append("\",\n");
-            json.append("      \"line\": ").append(v.getLine()).append(",\n");
-            json.append("      \"content\": \"").append(escapeJson(v.getContent())).append("\",\n");
-            json.append("      \"fix_guidance\": \"").append(escapeJson(v.getFixGuidance())).append("\"\n");
-            json.append("    }");
-            if (i < violations.size() - 1) {
-                json.append(",");
-            }
-            json.append("\n");
-        }
-
-        json.append("  ],\n");
-
-        // Add summary
-        GuardSummary summary = receipt.getSummary();
-        if (summary != null) {
-            json.append("  \"summary\": {\n");
-            json.append("    \"h_todo_count\": ").append(summary.getH_todo_count()).append(",\n");
-            json.append("    \"h_mock_count\": ").append(summary.getH_mock_violation_count()).append(",\n");
-            json.append("    \"h_stub_count\": ").append(summary.getH_stub_violation_count()).append(",\n");
-            json.append("    \"h_empty_count\": ").append(summary.getH_empty_count()).append(",\n");
-            json.append("    \"h_fallback_count\": ").append(summary.getH_fallback_count()).append(",\n");
-            json.append("    \"h_lie_count\": ").append(summary.getH_lie_count()).append(",\n");
-            json.append("    \"h_silent_count\": ").append(summary.getH_silent_count()).append(",\n");
-            json.append("    \"total_violations\": ").append(summary.getTotal_violations()).append("\n");
-            json.append("  },\n");
-        }
-
-        json.append("  \"exit_code\": ").append(getExitCode()).append("\n");
-        json.append("}");
-
-        return json.toString();
-    }
-
-    /**
-     * Escapes special characters in JSON strings.
-     */
-    private String escapeJson(String input) {
-        if (input == null) {
-            throw new UnsupportedOperationException(
-                "escapeJson requires non-null input. " +
-                "Real validation cannot proceed with null input."
-            );
-        }
-        return input.replace("\\", "\\\\")
-                   .replace("\"", "\\\"")
-                   .replace("\n", "\\n")
-                   .replace("\r", "\\r")
-                   .replace("\t", "\\t");
-    }
-
-    /**
-     * Determines the appropriate exit code based on validation results.
+     * Classify a violation count into a coarse severity label.
      *
-     * @return 0 for success, 1 for transient error, 2 for violations
+     * <p><b>JEP 455 — Primitive Types in Patterns (Java 25 preview)</b>:
+     * {@code switch (int)} with {@code case int n when n == 0} uses primitive type patterns
+     * to avoid boxing and enables exhaustive checking. The compiler verifies all int values
+     * are covered by the final unguarded {@code case int n}.
+     *
+     * @param count violation count (non-negative)
+     * @return "GREEN", "YELLOW", or "RED"
      */
-    public int getExitCode() {
-        if (receipt.isGreen()) {
-            return 0; // Success - proceed to next phase
-        } else if (hasTransientErrors()) {
-            return 1; // Transient error - retry
-        } else {
-            return 2; // Violations found - fix and re-run
-        }
+    @SuppressWarnings("preview")
+    private static String severityBand(int count) {
+        return switch (count) {
+            case int n when n == 0 -> "GREEN";
+            case int n when n < 10 -> "YELLOW";
+            case int n             -> "RED";
+        };
     }
 
     /**
-     * Checks if receipt contains only transient errors (H_ERROR patterns).
+     * Get the current guard receipt.
+     * Valid after calling validateEmitDir().
+     *
+     * @return the GuardReceipt, or null if validation hasn't run
      */
-    private boolean hasTransientErrors() {
-        return receipt.getViolations().stream()
-            .allMatch(v -> "H_ERROR".equals(v.getPattern()));
+    public GuardReceipt getReceipt() {
+        return receipt;
     }
 
     /**
-     * Gets the list of registered guard checkers.
+     * Get the list of registered checkers.
+     *
+     * @return an unmodifiable list of GuardChecker instances
      */
     public List<GuardChecker> getCheckers() {
-        return new ArrayList<>(checkers);
+        return List.copyOf(checkers);
     }
 
     /**
-     * Adds a custom guard checker to the validator.
+     * Get the exclusion patterns used for filtering files.
+     *
+     * @return an unmodifiable list of exclusion patterns
+     */
+    public List<String> getExclusionPatterns() {
+        return List.copyOf(exclusionPatterns);
+    }
+
+    /**
+     * Add an exclusion pattern dynamically.
+     *
+     * @param pattern the glob pattern to add
+     */
+    public void addExclusionPattern(String pattern) {
+        Objects.requireNonNull(pattern, "pattern must not be null");
+        if (!exclusionPatterns.contains(pattern)) {
+            exclusionPatterns.add(pattern);
+        }
+    }
+
+    /**
+     * Remove an exclusion pattern.
+     *
+     * @param pattern the glob pattern to remove
+     */
+    public void removeExclusionPattern(String pattern) {
+        exclusionPatterns.remove(Objects.requireNonNull(pattern, "pattern must not be null"));
+    }
+
+    /**
+     * Add a custom guard checker (for testing or extension).
+     *
+     * @param checker the GuardChecker to add
      */
     public void addChecker(GuardChecker checker) {
+        Objects.requireNonNull(checker, "checker must not be null");
         checkers.add(checker);
     }
 
     /**
-     * Validates using the legacy validateEmitDir method for backward compatibility.
+     * Main entry point for command-line invocation.
+     * Usage: java org.yawlfoundation.yawl.ggen.validation.HyperStandardsValidator <emitDir> [receiptFile]
      *
-     * @deprecated Use {@link #validateEmitDir(Path)} instead.
+     * @param args [0] = emit directory path, [1] = optional receipt file output path
      */
-    @Deprecated
-    public GuardReceipt validateEmitDir(String emitDirPath) throws IOException {
-        return validateEmitDir(Paths.get(emitDirPath));
+    public static void main(String[] args) {
+        if (args.length < 1) {
+            System.err.println("Usage: HyperStandardsValidator <emitDir> [receiptFile]");
+            System.exit(1);
+        }
+
+        Path emitDir = Path.of(args[0]);
+        Path receiptFile = args.length > 1 ? Path.of(args[1]) : null;
+
+        try {
+            HyperStandardsValidator validator = new HyperStandardsValidator();
+            GuardReceipt receipt = validator.validateEmitDir(emitDir);
+
+            // Output receipt to stdout or file
+            String json = receipt.toJson();
+            if (receiptFile != null) {
+                Files.writeString(receiptFile, json);
+                System.out.println("Receipt written to: " + receiptFile);
+            } else {
+                System.out.println(json);
+            }
+
+            // Exit with appropriate code
+            System.exit(receipt.getExitCode());
+
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }

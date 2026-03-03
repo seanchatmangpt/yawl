@@ -45,12 +45,6 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/yawl-state.sh",
             "timeout": 15,
             "statusMessage": "Loading YAWL build state..."
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/self-play-state.sh",
-            "timeout": 30,
-            "statusMessage": "Loading self-play loop state..."
           }
         ]
       }
