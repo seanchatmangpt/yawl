@@ -79,6 +79,12 @@
           },
           {
             "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/verify-ttl-write.sh",
+            "timeout": 15,
+            "statusMessage": "Validating TTL file integrity..."
+          },
+          {
+            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 30,
             "async": true,
@@ -101,6 +107,22 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Ψ quality gate..."
+          },
+          {
+            "type": "prompt",
+            "prompt": "You are a quality gate for a self-play simulation loop implementation.\n\nContext from the agent's session: $ARGUMENTS\n\nEvaluate whether the agent is allowed to stop by checking:\n\n1. If the agent claimed any component is complete (✅), did it show the actual output of the verification command? Not file existence checks — actual curl/mvn/cargo output showing the component works.\n\n2. If the agent mentioned QLever, did it verify QLever is running with: curl -sf http://localhost:7001/sparql -d \"query=SELECT (1 AS ?n) WHERE {}\"?\n\n3. If the agent said 'READY FOR APPROVAL' or 'implementation complete', did the invariant test script run and show BEFORE and AFTER composition counts with AFTER > BEFORE?\n\n4. If the agent wrote new TTL files, did it verify the NativeCall count in QLever after loading?\n\n5. If the agent mentioned mocks, did it flag them as MOCK DETECTED rather than marking the component ✅?\n\nIf ANY of these checks fails — the agent is claiming completion without verification — respond:\n{\"decision\": \"block\", \"reason\": \"Verification required before stopping. [Specific missing verification]. Run the verification command and show its output.\"}\n\nIf the agent ran actual commands and showed their output, respond:\n{\"decision\": \"approve\", \"reason\": \"Verification commands were executed and output shown.\"}",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are evaluating whether a YAWL self-play loop subagent has legitimately completed its task.\n\nSubagent output: $ARGUMENTS\n\nThis project has five agent roles: A1 (Ontology), A2 (Bridge Compiler), A3 (YAWL Simulation), A4 (Process Mining), A5 (Loop Controller).\n\nFor each role, check what verification is required:\n- A1: Must show curl output proving NativeCall count >= 86 in live QLever\n- A2: Must show 'grep -c NativeCall pm-bridge.ttl' output = 30 AND ggen sync exit 0\n- A3: Must show PI OCEL file exists with >= 50 events (python3 validation output)\n- A4: Must show Erlang bridge call returning {ok, Id} and conformance score in QLever\n- A5: Must show BEFORE and AFTER composition counts with AFTER > BEFORE\n\nIf the subagent reported completion for any component WITHOUT showing the required verification output, block it:\n{\"decision\": \"block\", \"reason\": \"[Agent role] reported [component] complete without verification. Required: [specific command and expected output].\"}\n\nIf verification output is present and correct:\n{\"decision\": \"approve\", \"reason\": \"Verification shown for completed components.\"}",
+            "timeout": 30
           }
         ]
       }

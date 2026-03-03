@@ -483,3 +483,68 @@ if [ "${MAVEN_PROXY_ENABLED:-false}" = "true" ]; then
     echo "💡 TIP: To stop the Maven proxy, run: pkill -f maven-proxy"
     echo ""
 fi
+
+# ─── YAWL SELF-PLAY LOOP STATE ───────────────────────────────────────────────
+echo "=== YAWL SELF-PLAY LOOP — SESSION START STATE ==="
+echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo ""
+
+QLEVER_URL="http://localhost:7001/sparql"
+
+if curl -sf "$QLEVER_URL" -d "query=SELECT (1 AS ?n) WHERE {}" > /dev/null 2>&1; then
+    echo "QLever: RUNNING"
+
+    # NativeCall count
+    N=$(curl -s "$QLEVER_URL" \
+        -d "query=SELECT (COUNT(*) AS ?n) WHERE { ?x a <https://bridgecore.io/vocab#NativeCall> }" \
+        2>/dev/null | grep -o '"value":"[0-9]*"' | grep -o '[0-9]*' | head -1)
+    echo "NativeCall triples: ${N:-QUERY FAILED}"
+    if [[ "${N:-0}" -lt 86 ]]; then
+        echo "  WARNING: Need 86+, have ${N:-0}"
+    fi
+
+    # CapabilityPipeline (composition) count
+    C=$(curl -s "$QLEVER_URL" \
+        -d "query=SELECT (COUNT(*) AS ?n) WHERE { ?x a <https://bridgecore.io/vocab#CapabilityPipeline> }" \
+        2>/dev/null | grep -o '"value":"[0-9]*"' | grep -o '[0-9]*' | head -1)
+    echo "CapabilityPipeline triples: ${C:-QUERY FAILED}"
+    if [[ "${C:-0}" -lt 100 ]]; then
+        echo "  WARNING: Need 100+, have ${C:-0}"
+    fi
+
+    # Last conformance score
+    SCORE=$(curl -s "$QLEVER_URL" \
+        -d "query=SELECT ?s WHERE { ?r a <https://yawl.io/sim#SimulationRun> ; <https://yawl.io/sim#conformanceScore> ?s } ORDER BY DESC(?s) LIMIT 1" \
+        2>/dev/null | grep -o '"value":"[0-9.]*"' | grep -o '[0-9.]*' | head -1)
+    echo "Last conformance score: ${SCORE:-NONE (loop has not run)}"
+
+    # Open capability gaps
+    GAPS=$(curl -s "$QLEVER_URL" \
+        -d "query=SELECT (COUNT(*) AS ?n) WHERE { ?x a <https://yawl.io/sim#CapabilityGap> }" \
+        2>/dev/null | grep -o '"value":"[0-9]*"' | grep -o '[0-9]*' | head -1)
+    echo "Open capability gaps: ${GAPS:-QUERY FAILED}"
+else
+    echo "QLever: NOT RUNNING"
+    echo ""
+    echo "CRITICAL: QLever is not running at localhost:7001."
+    echo "All SPARQL queries will fail. All downstream components are unverifiable."
+    echo "Start QLever before claiming any component status."
+fi
+
+echo ""
+
+# PI OCEL output state
+OCEL_COUNT=$(ls "${CLAUDE_PROJECT_DIR:-$PWD}"/sim-output/pi-*.ocel 2>/dev/null | wc -l | tr -d ' ')
+echo "PI OCEL files in sim-output/: ${OCEL_COUNT}"
+if [[ "${OCEL_COUNT}" -eq 0 ]]; then
+    echo "  WARNING: YawlSimulator.runPI() has never completed successfully"
+fi
+
+echo ""
+echo "=== RULES IN EFFECT ==="
+echo "1. A phase is complete only when its verification command ran and output is quoted"
+echo "2. ls/find/grep proves existence only — never proves correctness"
+echo "3. Mocks passing != integration working"
+echo "4. READY FOR APPROVAL requires invariant script to have exited 0"
+echo "5. Composition count must be strictly greater after each loop iteration"
+echo "=================================================="
