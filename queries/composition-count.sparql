@@ -1,0 +1,16 @@
+# =============================================================================
+# composition-count.sparql — Count Valid 2-Hop Capability Pipelines
+# Self-Play Simulation Loop v3.0
+#
+# PURPOSE: Count all valid 2-hop capability pipelines for metrics
+#
+# OUTPUT: Number of sim:OptimalPipeline instances
+# =============================================================================
+
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+PREFIX sim:         <http://yawlfoundation.org/yawl/simulation#>
+PREFIX rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT (COUNT(?pipeline) AS ?count) WHERE {
+  ?pipeline a sim:OptimalPipeline .
+}

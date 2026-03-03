@@ -169,7 +169,7 @@ final class YawlSimulatorImpl implements YawlSimulator {
     static final YawlSimulator INSTANCE = createDefault();
     private static final String OCEL_OUTPUT_DIR = System.getProperty(
         "yawl.sim.ocel.dir",
-        System.getProperty("java.io.tmpdir") + "/yawl-sim/ocel"
+        System.getProperty("user.dir") + "/sim-output"
     );
 
     private final YEngine engine;
@@ -199,31 +199,58 @@ final class YawlSimulatorImpl implements YawlSimulator {
             throw new SimException("Invalid PI ID: " + piId);
         }
 
-        StringBuilder ocelBuilder = new StringBuilder();
-        ocelBuilder.append("{\"objectTypes\":[],\"eventTypes\":[],\"objects\":[],\"events\":[");
+        List<Ocel2Exporter.WorkflowEventRecord> events = new ArrayList<>();
 
-        // Run 4 sprints
+        // Create 4 sprint features
         for (int sprint = 1; sprint <= 4; sprint++) {
-            String sprintOcel = runSprintInternal(sprint, "PI" + piId + "-Feature", "DefaultART");
-            if (sprint > 1) ocelBuilder.append(",");
-            ocelBuilder.append(extractEvents(sprintOcel));
+            String featureId = "PI" + piId + "-Feature-" + sprint;
+            List<Ocel2Exporter.WorkflowEventRecord> sprintEvents = generateSprintEvents(sprint, featureId, "DefaultART");
+            events.addAll(sprintEvents);
         }
 
-        // Inspect & Adapt event
-        ocelBuilder.append(",{\"id\":\"ia-").append(piId)
-            .append("\",\"type\":\"InspectAdapt\",\"time\":\"")
-            .append(java.time.Instant.now())
-            .append("\",\"attributes\":[],\"relationships\":[]}");
+        // Add PI-level events
+        // PI Planning
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "pi-planning-" + piId,
+            "PI-" + piId,
+            null,
+            "pi_planning",
+            "PIPlanner",
+            java.time.Instant.now(),
+            "PIEvent"
+        ));
 
-        ocelBuilder.append("]}");
+        // Inspect & Adapt
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "inspect-adapt-" + piId,
+            "PI-" + piId,
+            null,
+            "inspect_adapt",
+            "PIPlanner",
+            java.time.Instant.now(),
+            "PIEvent"
+        ));
 
-        // Write to file
-        String ocelPath = writeOcelFile("pi-" + piId, ocelBuilder.toString());
+        // System Demo
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "system-demo-" + piId,
+            "PI-" + piId,
+            null,
+            "system_demo",
+            "ProductOwner",
+            java.time.Instant.now(),
+            "PIEvent"
+        ));
 
-        // Update fitness from process mining
-        updateFitness(ocelPath);
-
-        return ocelPath;
+        // Export to OCEL 2.0 using the proper exporter
+        try {
+            String ocelJson = new Ocel2Exporter().exportWorkflowEvents(events);
+            String ocelPath = writeOcelFile("pi-" + piId, ocelJson);
+            updateFitness(ocelPath);
+            return ocelPath;
+        } catch (IOException e) {
+            throw new SimException("Failed to export PI simulation to OCEL 2.0", e);
+        }
     }
 
     @Override
@@ -238,48 +265,112 @@ final class YawlSimulatorImpl implements YawlSimulator {
             throw new SimException("Team ID is required");
         }
 
-        String ocel = runSprintInternal(sprintId, featureId, teamId);
-        return writeOcelFile("sprint-" + sprintId + "-" + featureId, ocel);
+        List<Ocel2Exporter.WorkflowEventRecord> events = generateSprintEvents(sprintId, featureId, teamId);
+        try {
+            String ocelJson = new Ocel2Exporter().exportWorkflowEvents(events);
+            return writeOcelFile("sprint-" + sprintId + "-" + featureId, ocelJson);
+        } catch (IOException e) {
+            throw new SimException("Failed to export sprint to OCEL 2.0", e);
+        }
     }
 
-    private String runSprintInternal(int sprintId, String featureId, String teamId) {
-        // Simulate sprint events
-        StringBuilder ocel = new StringBuilder();
-        ocel.append("{\"objectTypes\":[{\"name\":\"Feature\",\"attributes\":[]}],");
-        ocel.append("\"eventTypes\":[{\"name\":\"SprintStart\",\"attributes\":[]},");
-        ocel.append("{\"name\":\"StoryComplete\",\"attributes\":[]},");
-        ocel.append("{\"name\":\"SprintEnd\",\"attributes\":[]}],");
-        ocel.append("\"objects\":[{\"id\":\"").append(featureId).append("\",\"type\":\"Feature\",\"attributes\":[]}],");
-        ocel.append("\"events\":[");
+    private List<Ocel2Exporter.WorkflowEventRecord> generateSprintEvents(int sprintId, String featureId, String teamId) {
+        List<Ocel2Exporter.WorkflowEventRecord> events = new ArrayList<>();
 
         // Sprint start
-        ocel.append("{\"id\":\"evt-s").append(sprintId).append("-1\",\"type\":\"SprintStart\",")
-            .append("\"time\":\"").append(java.time.Instant.now()).append("\",")
-            .append("\"attributes\":[],\"relationships\":[{\"objectId\":\"")
-            .append(featureId).append("\",\"qualifier\":\"\"}]}");
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "sprint-start-" + sprintId,
+            "PI-" + sprintId,
+            null,
+            "sprint_started",
+            teamId,
+            java.time.Instant.now(),
+            "SprintEvent"
+        ));
 
-        // Simulate story completions (3-5 stories per sprint)
+        // Simulate 3-5 story completions
         int stories = 3 + (int)(Math.random() * 3);
         int totalPoints = 0;
         for (int i = 0; i < stories; i++) {
             int points = 3 + (int)(Math.random() * 6); // 3-8 points
             totalPoints += points;
-            ocel.append(",{\"id\":\"evt-s").append(sprintId).append("-s").append(i).append("\",")
-                .append("\"type\":\"StoryComplete\",")
-                .append("\"time\":\"").append(java.time.Instant.now()).append("\",")
-                .append("\"attributes\":[{\"name\":\"points\",\"value\":").append(points).append("}],")
-                .append("\"relationships\":[{\"objectId\":\"").append(featureId).append("\",\"qualifier\":\"\"}]}");
+
+            events.add(new Ocel2Exporter.WorkflowEventRecord(
+                "story-complete-" + sprintId + "-" + i,
+                "PI-" + sprintId,
+                null,
+                "story_completed",
+                teamId,
+                java.time.Instant.now(),
+                "SprintEvent"
+            ));
         }
 
         // Update team velocity
         teamVelocities.merge(teamId, totalPoints, Math::max);
 
         // Sprint end
-        ocel.append(",{\"id\":\"evt-s").append(sprintId).append("-end\",\"type\":\"SprintEnd\",")
-            .append("\"time\":\"").append(java.time.Instant.now()).append("\",")
-            .append("\"attributes\":[{\"name\":\"velocity\",\"value\":").append(totalPoints).append("}],")
-            .append("\"relationships\":[{\"objectId\":\"").append(featureId).append("\",\"qualifier\":\"\"}]}]");
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "sprint-end-" + sprintId,
+            "PI-" + sprintId,
+            null,
+            "sprint_completed",
+            teamId,
+            java.time.Instant.now(),
+            "SprintEvent"
+        ));
 
+        return events;
+    }
+
+    private String runSprintInternal(int sprintId, String featureId, String teamId) {
+        // Legacy method - generate events in the old format for backward compatibility
+        // This should be updated to use generateSprintEvents and OCEL 2.0 format
+        List<Ocel2Exporter.WorkflowEventRecord> events = generateSprintEvents(sprintId, featureId, teamId);
+
+        // Convert to old format for now
+        StringBuilder ocel = new StringBuilder();
+        ocel.append("{");
+        ocel.append("\"ocel:version\":\"2.0\",");
+        ocel.append("\"ocel:ordering\":\"timestamp\",");
+        ocel.append("\"ocel:attribute-names\":[\"org:resource\"],");
+        ocel.append("\"ocel:object-types\":[\"Feature\"],");
+        ocel.append("\"ocel:objects\":{");
+        ocel.append("\"").append(featureId).append("\":{");
+        ocel.append("\"ocel:type\":\"Feature\",");
+        ocel.append("\"ocel:ovmap\":{");
+        ocel.append("\"feature:id\":\"").append(featureId).append("\"");
+        ocel.append("}");
+        ocel.append("}");
+        ocel.append("},");
+        ocel.append("\"ocel:events\":{");
+
+        // Convert each event to the old format
+        boolean first = true;
+        for (Ocel2Exporter.WorkflowEventRecord event : events) {
+            if (!first) ocel.append(",");
+            first = false;
+
+            String eventId = event.eventId();
+            ocel.append("\"").append(eventId).append("\":{");
+            ocel.append("\"ocel:activity\":\"").append(event.activity()).append("\",");
+            ocel.append("\"ocel:timestamp\":\"").append(event.timestamp()).append("\",");
+
+            // omap
+            ocel.append("\"ocel:omap\":{");
+            ocel.append("\"Feature\":[\"").append(featureId).append("\"]");
+            ocel.append("},");
+
+            // vmap
+            ocel.append("\"ocel:vmap\":{");
+            if (event.resource() != null) {
+                ocel.append("\"org:resource\":\"").append(event.resource()).append("\"");
+            }
+            ocel.append("}");
+            ocel.append("}");
+        }
+
+        ocel.append("}");
         ocel.append("}");
 
         return ocel.toString();
@@ -287,27 +378,128 @@ final class YawlSimulatorImpl implements YawlSimulator {
 
     @Override
     public String runPortfolioSync() throws SimException {
-        String ocel = "{\"objectTypes\":[{\"name\":\"Portfolio\",\"attributes\":[]}],"
-            + "\"eventTypes\":[{\"name\":\"PortfolioSync\",\"attributes\":[]}],"
-            + "\"objects\":[{\"id\":\"portfolio-1\",\"type\":\"Portfolio\",\"attributes\":[]}],"
-            + "\"events\":[{\"id\":\"evt-sync\",\"type\":\"PortfolioSync\","
-            + "\"time\":\"" + java.time.Instant.now() + "\","
-            + "\"attributes\":[],\"relationships\":[{\"objectId\":\"portfolio-1\",\"qualifier\":\"\"}]}]}";
+        List<Ocel2Exporter.WorkflowEventRecord> events = new ArrayList<>();
 
-        return writeOcelFile("portfolio-sync", ocel);
+        // Portfolio synchronization events
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "portfolio-sync-start",
+            "portfolio-sync",
+            null,
+            "portfolio_sync_started",
+            "PortfolioManager",
+            java.time.Instant.now(),
+            "PortfolioEvent"
+        ));
+
+        // WSJF ranking events
+        String[] epics = {"Epic1", "Epic2", "Epic3"};
+        for (String epic : epics) {
+            events.add(new Ocel2Exporter.WorkflowEventRecord(
+                "wsjf-rank-" + epic,
+                "portfolio-sync",
+                null,
+                "wsjf_ranking",
+                "PortfolioManager",
+                java.time.Instant.now(),
+                "PortfolioEvent"
+            ));
+        }
+
+        // Portfolio sync complete
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "portfolio-sync-complete",
+            "portfolio-sync",
+            null,
+            "portfolio_sync_completed",
+            "PortfolioManager",
+            java.time.Instant.now(),
+            "PortfolioEvent"
+        ));
+
+        try {
+            String ocelJson = new Ocel2Exporter().exportWorkflowEvents(events);
+            return writeOcelFile("portfolio-sync", ocelJson);
+        } catch (IOException e) {
+            throw new SimException("Failed to export portfolio sync to OCEL 2.0", e);
+        }
     }
 
     @Override
     public String runSelfAssessment() throws SimException {
-        String ocel = "{\"objectTypes\":[{\"name\":\"Simulation\",\"attributes\":[]}],"
-            + "\"eventTypes\":[{\"name\":\"SelfAssessment\",\"attributes\":[]}],"
-            + "\"objects\":[{\"id\":\"sim-1\",\"type\":\"Simulation\",\"attributes\":[]}],"
-            + "\"events\":[{\"id\":\"evt-assess\",\"type\":\"SelfAssessment\","
-            + "\"time\":\"" + java.time.Instant.now() + "\","
-            + "\"attributes\":[{\"name\":\"fitness\",\"value\":" + currentFitness + "}],"
-            + "\"relationships\":[{\"objectId\":\"sim-1\",\"qualifier\":\"\"}]}]}";
+        List<Ocel2Exporter.WorkflowEventRecord> events = new ArrayList<>();
 
-        return writeOcelFile("self-assessment", ocel);
+        // Self-assessment workflow events
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "assessment_started",
+            "self-assessment",
+            null,
+            "assessment_started",
+            "SelfAssessmentAgent",
+            java.time.Instant.now(),
+            "AssessmentEvent"
+        ));
+
+        // Gap discovery
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "gap_discovery",
+            "self-assessment",
+            null,
+            "gap_discovery",
+            "SelfAssessmentAgent",
+            java.time.Instant.now(),
+            "AssessmentEvent"
+        ));
+
+        // Query construction and execution
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "construct_query_run",
+            "self-assessment",
+            null,
+            "construct_query_run",
+            "SelfAssessmentAgent",
+            java.time.Instant.now(),
+            "AssessmentEvent"
+        ));
+
+        // Gap discovery event
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "gap_discovered",
+            "self-assessment",
+            null,
+            "gap_discovered",
+            "SelfAssessmentAgent",
+            java.time.Instant.now(),
+            "AssessmentEvent"
+        ));
+
+        // Gap closure
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "gap_closed",
+            "self-assessment",
+            null,
+            "gap_closed",
+            "SelfAssessmentAgent",
+            java.time.Instant.now(),
+            "AssessmentEvent"
+        ));
+
+        // Conformance update
+        events.add(new Ocel2Exporter.WorkflowEventRecord(
+            "conformance_updated",
+            "self-assessment",
+            null,
+            "conformance_updated",
+            "SelfAssessmentAgent",
+            java.time.Instant.now(),
+            "AssessmentEvent"
+        ));
+
+        try {
+            String ocelJson = new Ocel2Exporter().exportWorkflowEvents(events);
+            return writeOcelFile("selfassessment", ocelJson);
+        } catch (IOException e) {
+            throw new SimException("Failed to export self-assessment to OCEL 2.0", e);
+        }
     }
 
     @Override

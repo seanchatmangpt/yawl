@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-03-02T21:34:37Z",
+  "criteria": {
+    "6_1": {
+      "status": "FAIL",
+      "error": "slice indices must be integers or None or have an __index__ method"
+    },
+    "6_2": {
+      "status": "FAIL",
+      "query_count": 5,
+      "average_score": 0.0,
+      "min_score": 0.0,
+      "max_score": 0.0,
+      "queries_below_0_8": [
+        [
+          "composition-count",
+          0.0
+        ],
+        [
+          "capability-gap-discovery",
+          0.0
+        ],
+        [
+          "validate-gap-closure",
+          0.0
+        ],
+        [
+          "valid-compositions",
+          0.0
+        ],
+        [
+          "wsjf-ranking",
+          0.0
+        ]
+      ]
+    },
+    "6_3": {
+      "status": "PASS",
+      "query_valid": true,
+      "query_score": 0.6000000000000001,
+      "execution_time": 30.0,
+      "result_count": 0,
+      "validation_errors": [],
+      "has_construct_query": true
+    },
+    "6_4": {
+      "status": "FAIL",
+      "qlever_has_pipeline": false,
+      "files_found": 0,
+      "latest_file": null
+    }
+  },
+  "summary": {
+    "total_criteria": 4,
+    "passed_criteria": 1,
+    "layer6_status": "FAIL"
+  }
+}

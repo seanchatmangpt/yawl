@@ -37,6 +37,215 @@ class HyperStandardsValidatorTest {
     }
 
     @Test
+    @DisplayName("H_NO_VIOLATIONS: Clean code returns GREEN")
+    void testNoViolationsOnCleanCode(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("CleanCode.java");
+        String content = """
+            public class RealService {
+                // Proper implementation with clear error handling
+                public String fetchData(String id) {
+                    if (id == null || id.trim().isEmpty()) {
+                        throw new IllegalArgumentException("ID cannot be null or empty");
+                    }
+
+                    // Real implementation logic
+                    return databaseService.fetch(id);
+                }
+
+                // Proper implementation that throws when not ready
+                public void initialize() {
+                    if (!configuration.isReady()) {
+                        throw new UnsupportedOperationException(
+                            "Service requires valid configuration to initialize. " +
+                            "See IMPLEMENTATION_GUIDE.md"
+                        );
+                    }
+
+                    // Real initialization logic
+                    this.initializeDatabase();
+                    this.loadCache();
+                    this.startMonitoring();
+                }
+            }
+            """;
+        Files.writeString(javaFile, content);
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertEquals("GREEN", receipt.getStatus());
+        assertEquals(0, receipt.getViolations().size());
+        assertEquals(0, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("H_TODO: Detects TODO comments")
+    void testH_TodoDetection(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        Files.writeString(javaFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-h-todo.java")));
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_TODO".equals(v.getPattern())),
+            "Should detect H_TODO violations");
+        assertEquals("RED", receipt.getStatus());
+        assertEquals(2, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("H_MOCK: Detects mock classes and methods")
+    void testH_MockDetection(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        Files.writeString(javaFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-h-mock.java")));
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_MOCK".equals(v.getPattern())),
+            "Should detect H_MOCK violations");
+        assertEquals("RED", receipt.getStatus());
+        assertEquals(2, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("H_STUB: Detects stub returns from non-void methods")
+    void testH_StubDetection(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        Files.writeString(javaFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-h-stub.java")));
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_STUB".equals(v.getPattern())),
+            "Should detect H_STUB violations");
+        assertEquals("RED", receipt.getStatus());
+        assertEquals(2, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("H_EMPTY: Detects empty method bodies in void methods")
+    void testH_EmptyDetection(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        Files.writeString(javaFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-h-empty.java")));
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_EMPTY".equals(v.getPattern())),
+            "Should detect H_EMPTY violations");
+        assertEquals("RED", receipt.getStatus());
+        assertEquals(2, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("H_FALLBACK: Detects silent fallbacks in catch blocks")
+    void testH_FallbackDetection(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        Files.writeString(javaFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-h-fallback.java")));
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_FALLBACK".equals(v.getPattern())),
+            "Should detect H_FALLBACK violations");
+        assertEquals("RED", receipt.getStatus());
+        assertEquals(2, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("H_SILENT: Detects log-and-continue patterns")
+    void testH_SilentDetection(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        Files.writeString(javaFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-h-silent.java")));
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().stream()
+                .anyMatch(v -> "H_SILENT".equals(v.getPattern())),
+            "Should detect H_SILENT violations");
+        assertEquals("RED", receipt.getStatus());
+        assertEquals(2, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("Multiple violations in single file")
+    void testMultipleViolations(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        Files.writeString(javaFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-multiple.java")));
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertTrue(receipt.getViolations().size() >= 3,
+            "Should detect multiple violations in single file");
+        assertEquals("RED", receipt.getStatus());
+        assertEquals(2, receipt.getExitCode());
+    }
+
+    @Test
+    @DisplayName("GuardReceipt JSON is correctly generated")
+    void testReceiptGeneration(@TempDir Path tempDir) throws IOException {
+        Path javaFile = tempDir.resolve("TestCode.java");
+        String content = """
+            public class TestCode {
+                public void processData() {
+                    throw new UnsupportedOperationException("Real implementation required");
+                }
+            }
+            """;
+        Files.writeString(javaFile, content);
+
+        GuardReceipt receipt = validator.validateEmitDir(tempDir);
+
+        assertNotNull(receipt.getPhase());
+        assertEquals("guards", receipt.getPhase());
+        assertNotNull(receipt.getTimestamp());
+        assertEquals(1, receipt.getFilesScanned());
+        assertEquals(0, receipt.getViolations().size());
+        assertEquals("GREEN", receipt.getStatus());
+        assertEquals(0, receipt.getExitCode());
+
+        // Test JSON serialization
+        String json = receipt.toJson();
+        assertNotNull(json);
+        assertTrue(json.contains("\"phase\""));
+        assertTrue(json.contains("\"guards\""));
+        assertTrue(json.contains("\"violations\""));
+    }
+
+    @Test
+    @DisplayName("Exit codes: GREEN=0, RED=2")
+    void testExitCodes(@TempDir Path tempDir) throws IOException {
+        // Test clean code (GREEN)
+        Path cleanFile = tempDir.resolve("CleanCode.java");
+        String cleanContent = """
+            public class CleanCode {
+                public void doWork() {
+                    throw new UnsupportedOperationException("Real implementation required");
+                }
+            }
+            """;
+        Files.writeString(cleanFile, cleanContent);
+
+        GuardReceipt cleanReceipt = validator.validateEmitDir(tempDir);
+        assertEquals(0, cleanReceipt.getExitCode(), "Clean code should exit with 0");
+
+        // Test violation by reading from fixture
+        Path violationFile = tempDir.resolve("BadCode.java");
+        Files.writeString(violationFile, Files.readString(
+            Path.of("src/test/resources/fixtures/violation-h-todo.java")));
+
+        GuardReceipt violationReceipt = validator.validateEmitDir(tempDir);
+        assertEquals(2, violationReceipt.getExitCode(), "Violation should exit with 2");
+    }
+
+    @Test
     @DisplayName("H_TODO: Detects deferred work marker in comments")
     void testDetectDeferredWorkMarker(@TempDir Path tempDir) throws IOException {
         Path javaFile = tempDir.resolve("TestCode.java");

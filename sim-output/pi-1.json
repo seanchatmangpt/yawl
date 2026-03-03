@@ -1,0 +1,158 @@
+{
+  "ocel:version": "2.0",
+  "ocel:ordering": "timestamp",
+  "ocel:attribute-names": ["org:resource"],
+  "ocel:object-types": ["Feature", "Team", "PI", "ART"],
+  "ocel:objects": {
+    "PI1-Feature1": {
+      "ocel:type": "Feature",
+      "ocel:ovmap": {
+        "feature:id": "PI1-Feature1"
+      }
+    },
+    "PI1-Feature2": {
+      "ocel:type": "Feature",
+      "ocel:ovmap": {
+        "feature:id": "PI1-Feature2"
+      }
+    },
+    "PI1-Feature3": {
+      "ocel:type": "Feature",
+      "ocel:ovmap": {
+        "feature:id": "PI1-Feature3"
+      }
+    },
+    "PI1-Feature4": {
+      "ocel:type": "Feature",
+      "ocel:ovmap": {
+        "feature:id": "PI1-Feature4"
+      }
+    },
+    "PI1": {
+      "ocel:type": "PI",
+      "ocel:ovmap": {
+        "pi:id": "PI1"
+      }
+    },
+    "DefaultART": {
+      "ocel:type": "ART",
+      "ocel:ovmap": {
+        "art:id": "DefaultART"
+      }
+    }
+  },
+  "ocel:events": {
+    "evt-pi1-s1-start": {
+      "ocel:activity": "sprint_started",
+      "ocel:timestamp": "2026-03-03T05:35:01.844904Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature1"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART"
+      }
+    },
+    "evt-pi1-s1-end": {
+      "ocel:activity": "sprint_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.845364Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature1"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART",
+        "sprint:velocity": 5
+      }
+    },
+    "evt-pi1-s2-start": {
+      "ocel:activity": "sprint_started",
+      "ocel:timestamp": "2026-03-03T05:35:01.847189Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature2"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART"
+      }
+    },
+    "evt-pi1-s2-end": {
+      "ocel:activity": "sprint_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.847263Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature2"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART",
+        "sprint:velocity": 7
+      }
+    },
+    "evt-pi1-s3-start": {
+      "ocel:activity": "sprint_started",
+      "ocel:timestamp": "2026-03-03T05:35:01.847366Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature3"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART"
+      }
+    },
+    "evt-pi1-s3-end": {
+      "ocel:activity": "sprint_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.847505Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature3"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART",
+        "sprint:velocity": 9
+      }
+    },
+    "evt-pi1-s4-start": {
+      "ocel:activity": "sprint_started",
+      "ocel:timestamp": "2026-03-03T05:35:01.852534Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature4"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART"
+      }
+    },
+    "evt-pi1-s4-end": {
+      "ocel:activity": "sprint_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.852604Z",
+      "ocel:omap": {
+        "Feature": ["PI1-Feature4"],
+        "Team": ["DefaultART"]
+      },
+      "ocel:vmap": {
+        "org:resource": "DefaultART",
+        "sprint:velocity": 15
+      }
+    },
+    "evt-pi1-planning": {
+      "ocel:activity": "pi_planning",
+      "ocel:timestamp": "2026-03-03T05:35:01.852688Z",
+      "ocel:omap": {
+        "PI": ["PI1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "PIPlanner"
+      }
+    },
+    "evt-pi1-inspect-adapt": {
+      "ocel:activity": "inspect_adapt",
+      "ocel:timestamp": "2026-03-03T05:35:01.856352Z",
+      "ocel:omap": {
+        "PI": ["PI1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "PIPlanner"
+      }
+    }
+  }
+}

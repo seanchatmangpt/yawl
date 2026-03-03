@@ -1,181 +1,101 @@
-/*
- * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
- *
- * This file is part of YAWL. YAWL is free software: you can
- * redistribute it and/or modify it under the terms of the GNU Lesser
- * General Public License as published by the Free Software Foundation.
- */
-
 package org.yawlfoundation.yawl.ggen.validation.model;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
- * Receipt document for guard validation results.
- * Tracks phase metadata, timestamps, violations, and final status.
- * Serializes to JSON for audit trail and debugging.
+ * Receipt documenting the result of guard validation.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class GuardReceipt {
-    private String phase = "guards";
+
+    private String phase;
     private Instant timestamp;
-    private int filesScanned = 0;
-    private final List<GuardViolation> violations = new ArrayList<>();
-    private String status = "PENDING";
+    private int filesScanned;
+
+    @JsonProperty("violations")
+    private List<GuardViolation> violations;
+
+    private String status;  // GREEN or RED
     private String errorMessage;
     private GuardSummary summary;
 
-    /**
-     * Create a new guard receipt with current timestamp.
-     */
     public GuardReceipt() {
+        this.phase = "guards";
         this.timestamp = Instant.now();
+        this.violations = new ArrayList<>();
+        this.status = "GREEN";
         this.summary = new GuardSummary();
     }
 
-    /**
-     * Add a violation to this receipt and update summary.
-     *
-     * @param violation the GuardViolation to add
-     */
+    /** Add a violation and update summary. */
     public void addViolation(GuardViolation violation) {
-        Objects.requireNonNull(violation, "violation must not be null");
         violations.add(violation);
         summary.increment(violation.getPattern());
+        this.status = "RED";
     }
 
-    /**
-     * Set the final status based on violation count.
-     */
-    public void finalizeStatus() {
-        if (violations.isEmpty()) {
-            this.status = "GREEN";
-            this.errorMessage = "No guard violations detected.";
-        } else {
-            this.status = "RED";
-            this.errorMessage = violations.size() + " guard violation(s) found. " +
-                                "Fix violations or throw UnsupportedOperationException.";
+    /** Add all violations from a list. */
+    public void addViolations(List<GuardViolation> newViolations) {
+        for (GuardViolation v : newViolations) {
+            addViolation(v);
         }
     }
 
-    /**
-     * Get the exit code for this receipt.
-     * Returns 0 if GREEN (success), 2 if RED (violations found).
-     *
-     * @return 0 for success, 2 for violations
-     */
-    public int getExitCode() {
-        return "GREEN".equals(status) ? 0 : 2;
+    public boolean isGreen() { return "GREEN".equals(status) && violations.isEmpty(); }
+    public boolean isRed() { return "RED".equals(status) || !violations.isEmpty(); }
+
+    /** Update status and summary based on current violations. */
+    public void updateStatusAndSummary() {
+        this.summary = new GuardSummary();
+        for (GuardViolation v : violations) {
+            summary.increment(v.getPattern());
+        }
+        this.status = violations.isEmpty() ? "GREEN" : "RED";
     }
 
-    /**
-     * Create a shared GsonBuilder with Instant serialization support.
-     * Must be used by both toJson() and fromJson() for round-trip safety.
-     */
-    private static GsonBuilder createGsonBuilder() {
-        return new GsonBuilder()
-            .setPrettyPrinting()
-            .registerTypeAdapter(Instant.class,
-                (JsonSerializer<Instant>) (src, typeOfSrc, context) ->
-                    new JsonPrimitive(src.toString())
-            )
-            .registerTypeAdapter(Instant.class,
-                (JsonDeserializer<Instant>) (json, typeOfT, context) ->
-                    Instant.parse(json.getAsString())
-            );
+    // Getters
+    public String getPhase() { return phase; }
+    public Instant getTimestamp() { return timestamp; }
+    public int getFilesScanned() { return filesScanned; }
+    public List<GuardViolation> getViolations() { return Collections.unmodifiableList(violations); }
+    public String getStatus() { return status; }
+    public String getErrorMessage() { return errorMessage; }
+    public GuardSummary getSummary() { return summary; }
+
+    // Setters
+    public void setPhase(String phase) { this.phase = phase; }
+    public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
+    public void setFilesScanned(int filesScanned) { this.filesScanned = filesScanned; }
+    public void setViolations(List<GuardViolation> violations) {
+        this.violations = new ArrayList<>(violations);
+        this.summary = new GuardSummary();
+        for (GuardViolation v : violations) {
+            summary.increment(v.getPattern());
+        }
+        this.status = violations.isEmpty() ? "GREEN" : "RED";
     }
+    public void setStatus(String status) { this.status = status; }
+    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+    public void setSummary(GuardSummary summary) { this.summary = summary; }
 
-    /**
-     * Serialize this receipt to JSON string with ISO-8601 Instant format.
-     */
-    public String toJson() {
-        Gson gson = createGsonBuilder().create();
-        return gson.toJson(this);
-    }
+    // Builder
+    public static Builder builder() { return new Builder(); }
 
-    /**
-     * Deserialize a GuardReceipt from JSON string.
-     * Uses same GsonBuilder configuration as toJson() for round-trip safety.
-     */
-    public static GuardReceipt fromJson(String json) {
-        Gson gson = createGsonBuilder().create();
-        return gson.fromJson(json, GuardReceipt.class);
-    }
+    public static class Builder {
+        private final GuardReceipt receipt = new GuardReceipt();
 
-    // Getters and setters
-
-    public String getPhase() {
-        return phase;
-    }
-
-    public void setPhase(String phase) {
-        this.phase = phase;
-    }
-
-    public Instant getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Instant timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public int getFilesScanned() {
-        return filesScanned;
-    }
-
-    public void setFilesScanned(int filesScanned) {
-        this.filesScanned = filesScanned;
-    }
-
-    public List<GuardViolation> getViolations() {
-        return Collections.unmodifiableList(violations);
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public GuardSummary getSummary() {
-        return summary;
-    }
-
-    public void setSummary(GuardSummary summary) {
-        this.summary = summary;
-    }
-
-    @Override
-    public String toString() {
-        return "GuardReceipt{" +
-                "phase='" + phase + '\'' +
-                ", timestamp=" + timestamp +
-                ", filesScanned=" + filesScanned +
-                ", violationCount=" + violations.size() +
-                ", status='" + status + '\'' +
-                '}';
+        public Builder phase(String phase) { receipt.setPhase(phase); return this; }
+        public Builder timestamp(Instant timestamp) { receipt.setTimestamp(timestamp); return this; }
+        public Builder filesScanned(int filesScanned) { receipt.setFilesScanned(filesScanned); return this; }
+        public Builder violation(GuardViolation violation) { receipt.addViolation(violation); return this; }
+        public Builder violations(List<GuardViolation> violations) { receipt.addViolations(violations); return this; }
+        public Builder errorMessage(String errorMessage) { receipt.setErrorMessage(errorMessage); return this; }
+        public GuardReceipt build() { return receipt; }
     }
 }

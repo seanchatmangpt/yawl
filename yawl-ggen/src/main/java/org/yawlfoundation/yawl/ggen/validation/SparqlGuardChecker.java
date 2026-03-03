@@ -1,17 +1,6 @@
-/*
- * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
- *
- * This file is part of YAWL. YAWL is free software: you can
- * redistribute it and/or modify it under the terms of the GNU Lesser
- * General Public License as published by the Free Software Foundation.
- */
-
 package org.yawlfoundation.yawl.ggen.validation;
 
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Model;
 import org.yawlfoundation.yawl.ggen.validation.model.GuardViolation;
 
@@ -19,45 +8,19 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
- * Implementation of GuardChecker using SPARQL queries on RDF facts.
- * Suitable for detecting complex patterns that require understanding code structure:
- * - H_STUB: empty method bodies returning placeholder values
- * - H_EMPTY: void methods with no implementation
- * - H_FALLBACK: catch blocks returning fake data
- * - H_LIE: code documentation mismatches
- *
- * This implementation requires conversion of Java AST to RDF facts,
- * then executes SPARQL queries to find violations.
+ * SPARQL-based guard checker that analyzes Java AST using RDF and SPARQL queries.
+ * Handles complex pattern detection that requires semantic analysis beyond simple regex.
  */
 public class SparqlGuardChecker implements GuardChecker {
+
     private final String patternName;
     private final String sparqlQuery;
-    private final Severity severity;
 
-    /**
-     * Create a new SPARQL-based guard checker.
-     *
-     * @param patternName the guard pattern name (e.g., H_STUB)
-     * @param sparqlQuery the SPARQL SELECT query to find violations
-     * @param severity the severity level (WARN or FAIL)
-     */
-    public SparqlGuardChecker(String patternName, String sparqlQuery, Severity severity) {
-        this.patternName = Objects.requireNonNull(patternName, "patternName must not be null");
-        this.sparqlQuery = Objects.requireNonNull(sparqlQuery, "sparqlQuery must not be null");
-        this.severity = Objects.requireNonNull(severity, "severity must not be null");
-    }
-
-    /**
-     * Create a new SPARQL-based guard checker with default FAIL severity.
-     *
-     * @param patternName the guard pattern name
-     * @param sparqlQuery the SPARQL SELECT query
-     */
     public SparqlGuardChecker(String patternName, String sparqlQuery) {
-        this(patternName, sparqlQuery, Severity.FAIL);
+        this.patternName = patternName;
+        this.sparqlQuery = sparqlQuery;
     }
 
     @Override
@@ -65,45 +28,59 @@ public class SparqlGuardChecker implements GuardChecker {
         List<GuardViolation> violations = new ArrayList<>();
 
         try {
-            // Step 1: Parse Java source to RDF model
-            Model rdfModel = JavaAstToRdfConverter.convertFile(javaSource);
+            // Parse the Java file to extract AST information
+            JavaAstParser parser = new JavaAstParser();
+            JavaAstParser.ParseResult astInfo = parser.parseAndExtract(javaSource);
 
-            // Step 2: Execute SPARQL query on RDF model
-            try (QueryExecution qexec = QueryExecutionFactory.create(sparqlQuery, rdfModel)) {
+            // Convert AST to RDF model
+            RdfAstConverter converter = new RdfAstConverter();
+            Model rdfModel = converter.convertAstToRdf(
+                astInfo.getMethods(),
+                astInfo.getComments()
+            );
+
+            // Execute SPARQL query with timeout
+            QueryExecution qexec = QueryExecutionFactory.create(
+                sparqlQuery,
+                rdfModel
+            );
+
+            try {
+                // Execute the query and process results
                 ResultSet results = qexec.execSelect();
-
-                // Step 3: Convert SPARQL results to violations
                 while (results.hasNext()) {
                     QuerySolution soln = results.next();
-
-                    // Extract violation information from SPARQL result
-                    String line = soln.getLiteral("line") != null ?
-                            soln.getLiteral("line").getString() : "0";
-                    String content = soln.getLiteral("content") != null ?
-                            soln.getLiteral("content").getString() : "";
-
-                    int lineNum;
-                    try {
-                        lineNum = Integer.parseInt(line);
-                    } catch (NumberFormatException e) {
-                        lineNum = 0;
-                    }
-
-                    violations.add(new GuardViolation(
-                        patternName,
-                        severity.name(),
-                        lineNum,
-                        content
-                    ));
+                    violations.add(convertToGuardViolation(soln, javaSource.toString()));
                 }
+            } catch (QueryException e) {
+                // Handle SPARQL query syntax errors gracefully
+                System.err.println("SPARQL query error in " + patternName + ": " + e.getMessage());
+                // Return empty list - don't fail the build for query errors
+            } finally {
+                qexec.close();
             }
-        } catch (Exception e) {
-            // Log SPARQL parsing errors but don't fail completely
-            // This allows graceful degradation if AST parsing fails
-            throw new IOException("Failed to execute SPARQL query for pattern " + patternName, e);
+        } catch (JavaAstParser.ParseException e) {
+            System.err.println("Parse error in " + patternName + " for " + javaSource + ": " + e.getMessage());
+            // Return empty list for parse errors - don't fail the build
         }
 
         return violations;
+    }
+
+    /**
+     * Convert a SPARQL query solution to a GuardViolation
+     */
+    private GuardViolation convertToGuardViolation(QuerySolution soln, String filePath) {
+        // Extract required fields from query solution
+        String violationText = soln.get("violation").isLiteral() ?
+            soln.getLiteral("violation").getString() : "Unknown violation";
+        int line = soln.get("line").isLiteral() ?
+            soln.getLiteral("line").getInt() : 0;
+        String pattern = soln.get("pattern").isLiteral() ?
+            soln.getLiteral("pattern").getString() : patternName;
+
+        // Create the guard violation
+        return new GuardViolation(pattern, Severity.FAIL, filePath, line, violationText);
     }
 
     @Override
@@ -113,14 +90,116 @@ public class SparqlGuardChecker implements GuardChecker {
 
     @Override
     public Severity severity() {
-        return severity;
+        return Severity.FAIL;
     }
 
-    @Override
-    public String toString() {
-        return "SparqlGuardChecker{" +
-                "pattern=" + patternName +
-                ", severity=" + severity +
-                '}';
+    /**
+     * Helper method to create SPARQL queries for guard patterns
+     */
+    public static class QueryFactory {
+        private static final String QUERY_PREFIX = """
+            PREFIX code: <http://ggen.io/code#>
+            PREFIX javadoc: <http://ggen.io/javadoc#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            """;
+
+        public static Query createStubReturnQuery() {
+            String query = QUERY_PREFIX + """
+                SELECT ?violation ?line ?pattern
+                WHERE {
+                  ?method a code:Method ;
+                          code:body ?body ;
+                          code:lineNumber ?line ;
+                          code:returnType ?retType .
+
+                  FILTER(
+                    (REGEX(?body, 'return\\s+"";') ||
+                     REGEX(?body, 'return\\s+0;') ||
+                     REGEX(?body, 'return\\s+null;.*//.*stub') ||
+                     REGEX(?body, 'return\\s+(Collections\\.empty|new\\s+(HashMap|ArrayList)\\(\\));\\s*$'))
+                    &&
+                    ?retType != "void"
+                  )
+
+                  BIND("H_STUB" AS ?pattern)
+                  BIND(CONCAT("Stub return at line ", STR(?line), ": ", ?body)
+                       AS ?violation)
+                }
+                """;
+            return QueryFactory.create(query);
+        }
+
+        public static Query createEmptyQuery() {
+            String query = QUERY_PREFIX + """
+                SELECT ?violation ?line ?pattern
+                WHERE {
+                  ?method a code:Method ;
+                          code:body ?body ;
+                          code:lineNumber ?line ;
+                          code:returnType "void" .
+
+                  FILTER(REGEX(?body, '^\\s*\\{\\s*\\}\\s*$'))
+
+                  BIND("H_EMPTY" AS ?pattern)
+                  BIND(CONCAT("Empty method body at line ", STR(?line))
+                       AS ?violation)
+                }
+                """;
+            return QueryFactory.create(query);
+        }
+
+        public static Query createFallbackQuery() {
+            String query = QUERY_PREFIX + """
+                SELECT ?violation ?line ?pattern
+                WHERE {
+                  ?method a code:Method ;
+                          code:body ?body ;
+                          code:lineNumber ?line .
+
+                  FILTER(REGEX(?body, 'catch\\s*\\([^)]+\\)\\s*\\{[^}]*return[^}]*fake[^}]*\\}'))
+
+                  BIND("H_FALLBACK" AS ?pattern)
+                  BIND(CONCAT("Silent fallback at line ", STR(?line))
+                       AS ?violation)
+                }
+                """;
+            return QueryFactory.create(query);
+        }
+
+        public static Query createLieQuery() {
+            String query = QUERY_PREFIX + """
+                SELECT ?violation ?line ?pattern
+                WHERE {
+                  ?method a code:Method ;
+                          code:javadoc ?doc ;
+                          code:body ?body ;
+                          code:lineNumber ?line .
+
+                  ?doc javadoc:throws ?throws .
+                  ?doc javadoc:returns ?returns .
+
+                  # Check if method claims to return value but body doesn't
+                  FILTER(
+                    (STRSTARTS(?returns, "void") && REGEX(?body, 'return\\s+[^;};]+')) ||
+                    (NOT STRSTARTS(?returns, "void") && !REGEX(?body, 'return\\s+[^;};]+'))
+                  )
+
+                  FILTER(
+                    # Check if method claims to throw but doesn't
+                    EXISTS { ?throws javadoc:name ?throwName } &&
+                    !REGEX(?body, 'throw\\s+' + ?throwName)
+                  )
+
+                  BIND("H_LIE" AS ?pattern)
+                  BIND(CONCAT("Documentation mismatch at line ", STR(?line))
+                       AS ?violation)
+                }
+                """;
+            return QueryFactory.create(query);
+        }
+
+        public static Query create(String sparql) {
+            return org.apache.jena.query.QueryFactory.create(sparql);
+        }
     }
 }

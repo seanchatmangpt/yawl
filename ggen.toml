@@ -28,7 +28,8 @@ imports = [
     ".specify/patterns/interleaved.ttl",
     ".specify/patterns/deferred-choice.ttl",
     ".specify/patterns/ontology/extended-patterns.ttl",
-    ".specify/patterns/native-bridge.ttl"
+    ".specify/patterns/native-bridge.ttl",
+    ".specify/pm-bridge.ttl"
 ]
 
 [ontology.prefixes]
@@ -50,6 +51,7 @@ owl = "http://www.w3.org/2002/07/owl#"
 xsd = "http://www.w3.org/2001/XMLSchema#"
 sh = "http://www.w3.org/ns/shacl#"
 dct = "http://purl.org/dc/terms/"
+skos = "http://www.w3.org/2004/02/skos/core#"
 
 # =============================================================================
 # INFERENCE RULES (CONSTRUCT queries for graph enrichment)
