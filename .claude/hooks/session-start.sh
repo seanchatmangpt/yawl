@@ -452,7 +452,7 @@ if [ "${GGEN_TEST_EXIT}" -eq 0 ]; then
 fi
 
 if [ "${GGEN_TEST_EXIT}" -eq 0 ]; then
-    echo "✅ Guard validation tests: GREEN (HyperStandardsValidatorTest 20/20)"
+    echo "✅ Guard validation tests: GREEN (HyperStandardsValidatorTest 25/25)"
 else
     echo "⚠️  Guard validation tests FAILED (exit ${GGEN_TEST_EXIT})"
     tail -10 "${GGEN_TEST_LOG}" || true
