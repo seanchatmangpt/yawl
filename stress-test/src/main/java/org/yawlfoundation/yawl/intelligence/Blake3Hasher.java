@@ -53,7 +53,7 @@ public class Blake3Hasher {
 
         // Generate hash
         byte[] hashBytes = new byte[HASH_LENGTH];
-        digest.doFinal(hashBytes, 0, HASH_LENGTH);
+        digest.doFinal(hashBytes, 0);
 
         return Hex.toHexString(hashBytes);
     }
@@ -84,7 +84,7 @@ public class Blake3Hasher {
 
         // Generate hash
         byte[] hashBytes = new byte[HASH_LENGTH];
-        digest.doFinal(hashBytes, 0, hashBytes.length);
+        digest.doFinal(hashBytes, 0);
 
         return Hex.toHexString(hashBytes);
     }
