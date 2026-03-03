@@ -1,5 +1,9 @@
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
 import java.util.Collections;
+
+import java.util.LinkedHashMap;
 
 /**
  * SelectResult - Result of a SELECT query
@@ -7,47 +11,23 @@ import java.util.Collections;
  * Represents the tabular result of a SPARQL SELECT query.
  */
 public final record SelectResult(
-    String jsonResult,
-    String xmlResult,
-    String query,
     List<String> variables,
-    List<List<String>> rows,
-    boolean isSuccessful,
-    String errorMessage
+    List<Map<String, String>> rows
 ) implements QueryResult {
 
     /**
-     * Creates a successful SELECT result
+     * Checks if the query executed successfully
      */
-    public SelectResult(String jsonResult, String xmlResult, String query, List<String> variables, List<List<String>> rows) {
-        this(jsonResult, xmlResult, query, variables, rows, true, null);
+    @Override
+    public boolean isSuccessful() {
+        return true; // SelectResult only exists for successful queries
     }
 
     /**
-     * Creates a failed SELECT result
+     * Constructor with empty rows for testing
      */
-    public SelectResult(String query, String errorMessage) {
-        this(null, null, query, Collections.emptyList(), Collections.emptyList(), false, errorMessage);
-    }
-
-    @Override
-    public String getJsonResult() {
-        return jsonResult;
-    }
-
-    @Override
-    public String getXmlResult() {
-        return xmlResult;
-    }
-
-    @Override
-    public String getQuery() {
-        return query;
-    }
-
-    @Override
-    public String getErrorMessage() {
-        return errorMessage;
+    public SelectResult(List<String> variables) {
+        this(variables, Collections.emptyList());
     }
 
     /**
@@ -60,7 +40,7 @@ public final record SelectResult(
     /**
      * Gets the result rows
      */
-    public List<List<String>> getRows() {
+    public List<Map<String, String>> getRows() {
         return Collections.unmodifiableList(rows);
     }
 
@@ -88,7 +68,7 @@ public final record SelectResult(
     public String getValue(int rowIndex, int columnIndex) {
         if (rowIndex >= 0 && rowIndex < rows.size() &&
             columnIndex >= 0 && columnIndex < variables.size()) {
-            return rows.get(rowIndex).get(columnIndex);
+            return rows.get(rowIndex).get(variables.get(columnIndex));
         }
         return null;
     }
@@ -101,8 +81,10 @@ public final record SelectResult(
      * @return The cell value, or null if not found
      */
     public String getValue(int rowIndex, String variable) {
-        int columnIndex = variables.indexOf(variable);
-        return getValue(rowIndex, columnIndex);
+        if (rowIndex >= 0 && rowIndex < rows.size()) {
+            return rows.get(rowIndex).get(variable);
+        }
+        return null;
     }
 
     /**
@@ -115,16 +97,12 @@ public final record SelectResult(
     /**
      * Gets the first row of results
      */
-    public List<String> getFirstRow() {
-        return rows.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(rows.get(0));
+    public Map<String, String> getFirstRow() {
+        return rows.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(rows.get(0));
     }
 
     @Override
     public String toString() {
-        if (isSuccessful) {
-            return String.format("SelectResult[query=%s, columns=%d, rows=%d]", query, variables.size(), rows.size());
-        } else {
-            return "SelectResult[query=" + query + ", error=" + errorMessage + "]";
-        }
+        return String.format("SelectResult[columns=%d, rows=%d]", variables.size(), rows.size());
     }
 }

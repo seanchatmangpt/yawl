@@ -6,11 +6,13 @@
 package org.yawlfoundation.yawl.bridge.qlever.jextract;
 
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.ResourceScope;
 
 /**
- * Opaque handle for QLever query results
+ * Immutable opaque handle for QLever query results
  * Represents a pointer to the C++ QLeverResult object
+ *
+ * This record provides an immutable wrapper around native pointer values
+ * with proper validation and conversion utilities.
  */
 public final class QleverResultHandle {
 
@@ -38,7 +40,7 @@ public final class QleverResultHandle {
     }
 
     // Get the raw pointer value
-    public long getPointerValue() {
+    public long pointerValue() {
         return pointerValue;
     }
 
@@ -52,21 +54,19 @@ public final class QleverResultHandle {
         return pointerValue == 0;
     }
 
+    /**
+     * Validates that this handle is not null
+     *
+     * @throws IllegalStateException if handle is null
+     */
+    public void validate() {
+        if (isNull()) {
+            throw new IllegalStateException("QleverResultHandle is null - invalid result handle");
+        }
+    }
+
     @Override
     public String toString() {
         return "QleverResultHandle{0x" + Long.toHexString(pointerValue) + "}";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        QleverResultHandle that = (QleverResultHandle) o;
-        return pointerValue == that.pointerValue;
-    }
-
-    @Override
-    public int hashCode() {
-        return Long.hashCode(pointerValue);
     }
 }

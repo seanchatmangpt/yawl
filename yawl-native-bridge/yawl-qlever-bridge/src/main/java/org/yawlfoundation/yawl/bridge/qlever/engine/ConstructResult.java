@@ -1,93 +1,85 @@
+import java.util.List;
+
 /**
  * ConstructResult - Result of a CONSTRUCT query
  *
  * Represents the RDF graph result of a SPARQL CONSTRUCT query.
  */
 public final record ConstructResult(
-    String jsonResult,
-    String xmlResult,
-    String query,
-    String turtleResult,
-    String ntriplesResult,
-    boolean isSuccessful,
-    String errorMessage
+    List<Triple> triples
 ) implements QueryResult {
 
     /**
-     * Creates a successful CONSTRUCT result
+     * Checks if the query executed successfully
      */
-    public ConstructResult(String jsonResult, String xmlResult, String query, String turtleResult, String ntriplesResult) {
-        this(jsonResult, xmlResult, query, turtleResult, ntriplesResult, true, null);
+    @Override
+    public boolean isSuccessful() {
+        return true; // ConstructResult only exists for successful queries
     }
 
     /**
-     * Creates a failed CONSTRUCT result
+     * Gets the list of RDF triples in the result
      */
-    public ConstructResult(String query, String errorMessage) {
-        this(null, null, query, null, null, false, errorMessage);
-    }
-
-    @Override
-    public String getJsonResult() {
-        return jsonResult;
-    }
-
-    @Override
-    public String getXmlResult() {
-        return xmlResult;
-    }
-
-    @Override
-    public String getQuery() {
-        return query;
-    }
-
-    @Override
-    public String getErrorMessage() {
-        return errorMessage;
+    public List<Triple> getTriples() {
+        return triples;
     }
 
     /**
      * Gets the result as Turtle format
      */
     public String getTurtleResult() {
-        return turtleResult;
-    }
+        if (triples == null || triples.isEmpty()) {
+            throw new UnsupportedOperationException(
+                "getTurtleResult() called on empty result. " +
+                "Check hasContent() before calling this method."
+            );
+        }
 
-    /**
-     * Gets the result as N-Triples format
-     */
-    public String getNtriplesResult() {
-        return ntriplesResult;
+        StringBuilder sb = new StringBuilder();
+
+        // Add prefix declaration
+        sb.append("@prefix : <http://example.org/> .\n");
+        sb.append("@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n");
+        sb.append("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n");
+
+        // Add triples
+        for (Triple triple : triples) {
+            sb.append(" ").append(escapeTurtle(triple.subject))
+              append(" ").append(escapeTurtle(triple.predicate))
+              append(" ").append(escapeTurtle(triple.object))
+              append(" .\n");
+        }
+
+        return sb.toString();
     }
 
     /**
      * Checks if the result has content
      */
     public boolean hasContent() {
-        return turtleResult != null && !turtleResult.trim().isEmpty();
+        return triples != null && !triples.isEmpty();
     }
 
     /**
-     * Gets the result format for display
+     * Gets the number of triples in the result
      */
-    public String getFormattedResult() {
-        if (turtleResult != null && !turtleResult.trim().isEmpty()) {
-            return "Turtle:\n" + turtleResult;
-        } else if (ntriplesResult != null && !ntriplesResult.trim().isEmpty()) {
-            return "N-Triples:\n" + ntriplesResult;
+    public int getTripleCount() {
+        return triples == null ? 0 : triples.size();
+    }
+
+    private String escapeTurtle(String value) {
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+            return "<" + value + ">";
+        } else if (value.startsWith("_:")) {
+            return value; // BNode
         } else {
-            return "No content";
+            return "\"" + value.replace("\"", "\\\"") + "\"";
         }
     }
 
     @Override
     public String toString() {
-        if (isSuccessful) {
-            String content = hasContent() ? "(" + turtleResult.length() + " chars)" : "(empty)";
-            return "ConstructResult[query=" + query + ", " + content + "]";
-        } else {
-            return "ConstructResult[query=" + query + ", error=" + errorMessage + "]";
-        }
+        String content = hasContent() ? "(" + getTripleCount() + " triples)" : "(empty)";
+        return "ConstructResult[" + content + "]";
     }
 }

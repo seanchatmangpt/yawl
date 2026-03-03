@@ -428,4 +428,38 @@ public final class QleverNativeBridge {
             ));
         }
     }
+
+    /**
+     * Gets the version information from the QLever engine
+     */
+    public String getVersion() throws QleverException {
+        try (jdk.incubator.foreign.Arena arena = jdk.incubator.foreign.Arena.ofConfined()) {
+            // Create output buffer for version string
+            jdk.incubator.foreign.MemorySegment versionPtr = jdk.incubator.foreign.MemorySegment.allocateNative(
+                jdk.incubator.foreign.ValueLayout.ADDRESS,
+                arena
+            );
+
+            // Call native version function
+            jdk.incubator.foreign.Linker.nativeLinker().downcallHandle(
+                lookup.lookup("qlever_get_version").orElseThrow(),
+                jdk.incubator.foreign.FunctionDescriptor.of(
+                    jdk.incubator.foreign.ValueLayout.ADDRESS
+                )
+            ).invoke(versionPtr);
+
+            // Get version string
+            jdk.incubator.foreign.MemorySegment versionAddress = versionPtr.get(jdk.incubator.foreign.ValueLayout.ADDRESS, 0);
+            if (versionAddress == jdk.incubator.foreign.MemorySegment.NULL) {
+                return "Unknown";
+            }
+
+            return MemorySegment.ofAddress(versionAddress).getString(0);
+        } catch (Throwable e) {
+            throw new QleverException(new QleverStatus(
+                QleverStatus.ERROR_ENGINE_NOT_INITIALIZED,
+                "Failed to get version: " + e.getMessage()
+            ));
+        }
+    }
 }
