@@ -1,0 +1,45 @@
+{application, process_mining_bridge, [
+    {applications, [
+        kernel,
+        stdlib,
+        mnesia,
+        lager,
+        telemetry
+    ]},
+    {description, "YAWL Process Mining Bridge"},
+    {vsn, "1.0.0"},
+    {modules, [
+        process_mining_bridge,
+        data_modelling_bridge,
+        mnesia_registry,
+        yawl_bridge_sup,
+        yawl_bridge_health,
+        process_mining_bridge_app
+    ]},
+    {registered, [
+        process_mining_bridge,
+        data_modelling_bridge,
+        mnesia_registry,
+        yawl_bridge_sup
+    ]},
+    {mod, {process_mining_bridge_app, []}},
+    {env, [
+        {log_level, info},
+        {mnesia_dir, "mnesia"},
+        {backup_interval, 300000},  % 5 minutes
+        {health_check_interval, 30000},  % 30 seconds
+        {bridge_config, #{
+            process_mining => #{
+                endpoint => "http://localhost:8080",
+                timeout => 30000,
+                retries => 3
+            },
+            data_modelling => #{
+                schema_cache_ttl => 3600000,  % 1 hour
+                validation_timeout => 10000
+            }
+        }}
+    ]},
+    {start_phases, []},
+    {included_applications, []}
+]}.
