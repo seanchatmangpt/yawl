@@ -22,14 +22,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.Difficulty;
+import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.PatternInfo;
+import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.Difficulty;
 
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -97,7 +96,7 @@ class PatternRegistryTest {
             assertEquals("Sequence", info.name());
             assertNotNull(info.description());
             assertFalse(info.description().isBlank(), "WCP-1 description must not be blank");
-            assertEquals(Difficulty.BASIC, info.difficulty());
+            assertEquals(PatternResult.Difficulty.BASIC, info.difficulty());
         }
 
         @Test
@@ -108,7 +107,7 @@ class PatternRegistryTest {
             PatternInfo info = pattern.get();
             assertEquals("WCP-2", info.id());
             assertEquals("Parallel Split", info.name());
-            assertEquals(Difficulty.BASIC, info.difficulty());
+            assertEquals(PatternResult.Difficulty.BASIC, info.difficulty());
         }
 
         @Test
@@ -119,7 +118,7 @@ class PatternRegistryTest {
             PatternInfo info = pattern.get();
             assertEquals("WCP-3", info.id());
             assertEquals("Synchronization", info.name());
-            assertEquals(Difficulty.BASIC, info.difficulty());
+            assertEquals(PatternResult.Difficulty.BASIC, info.difficulty());
         }
 
         @Test
@@ -130,7 +129,7 @@ class PatternRegistryTest {
             PatternInfo info = pattern.get();
             assertEquals("WCP-4", info.id());
             assertEquals("Exclusive Choice", info.name());
-            assertEquals(Difficulty.BASIC, info.difficulty());
+            assertEquals(PatternResult.Difficulty.BASIC, info.difficulty());
         }
 
         @Test
@@ -141,7 +140,7 @@ class PatternRegistryTest {
             PatternInfo info = pattern.get();
             assertEquals("WCP-5", info.id());
             assertEquals("Simple Merge", info.name());
-            assertEquals(Difficulty.BASIC, info.difficulty());
+            assertEquals(PatternResult.Difficulty.BASIC, info.difficulty());
         }
 
         @Test
@@ -165,7 +164,7 @@ class PatternRegistryTest {
         void testWcp6MultiChoiceDifficulty() {
             PatternInfo info = registry.getPattern("WCP-6").orElseThrow();
             assertEquals("Multi-Choice", info.name());
-            assertEquals(Difficulty.INTERMEDIATE, info.difficulty());
+            assertEquals(PatternResult.Difficulty.INTERMEDIATE, info.difficulty());
         }
 
         @Test
@@ -173,7 +172,7 @@ class PatternRegistryTest {
         void testWcp9DiscriminatorDifficulty() {
             PatternInfo info = registry.getPattern("WCP-9").orElseThrow();
             assertEquals("Structured Discriminator", info.name());
-            assertEquals(Difficulty.INTERMEDIATE, info.difficulty());
+            assertEquals(PatternResult.Difficulty.INTERMEDIATE, info.difficulty());
         }
 
         @Test
@@ -182,7 +181,7 @@ class PatternRegistryTest {
             Optional<PatternInfo> pattern = registry.getPattern("WCP-10");
             assertTrue(pattern.isPresent(), "WCP-10 (Structured Loop) must be registered");
             assertEquals("Structured Loop", pattern.get().name());
-            assertEquals(Difficulty.BASIC, pattern.get().difficulty());
+            assertEquals(PatternResult.Difficulty.BASIC, pattern.get().difficulty());
         }
 
         @Test
@@ -191,7 +190,7 @@ class PatternRegistryTest {
             Optional<PatternInfo> pattern = registry.getPattern("WCP-11");
             assertTrue(pattern.isPresent(), "WCP-11 (Implicit Termination) must be registered");
             assertEquals("Implicit Termination", pattern.get().name());
-            assertEquals(Difficulty.BASIC, pattern.get().difficulty());
+            assertEquals(PatternResult.Difficulty.BASIC, pattern.get().difficulty());
         }
 
         @Test
@@ -216,10 +215,10 @@ class PatternRegistryTest {
         @DisplayName("WCP-15 and WCP-16 have ADVANCED difficulty reflecting complexity")
         void testAdvancedMultiInstanceDifficulty() {
             assertAll(
-                () -> assertEquals(Difficulty.ADVANCED,
+                () -> assertEquals(PatternResult.Difficulty.ADVANCED,
                     registry.getPattern("WCP-15").orElseThrow().difficulty(),
                     "WCP-15 must be ADVANCED"),
-                () -> assertEquals(Difficulty.ADVANCED,
+                () -> assertEquals(PatternResult.Difficulty.ADVANCED,
                     registry.getPattern("WCP-16").orElseThrow().difficulty(),
                     "WCP-16 must be ADVANCED")
             );
@@ -252,7 +251,7 @@ class PatternRegistryTest {
         @Test
         @DisplayName("WCP-18 Deferred Choice has ADVANCED difficulty")
         void testWcp18DeferredChoiceDifficulty() {
-            assertEquals(Difficulty.ADVANCED,
+            assertEquals(PatternResult.Difficulty.ADVANCED,
                 registry.getPattern("WCP-18").orElseThrow().difficulty(),
                 "WCP-18 (Deferred Choice) must be ADVANCED");
         }
@@ -405,7 +404,7 @@ class PatternRegistryTest {
             assertTrue(registry.hasPattern("WCP-36"),
                 "WCP-36 (Discriminator with Complete MI) must be registered");
             PatternInfo info = registry.getPattern("WCP-36").orElseThrow();
-            assertEquals(Difficulty.ADVANCED, info.difficulty());
+            assertEquals(PatternResult.Difficulty.ADVANCED, info.difficulty());
         }
 
         @Test
@@ -513,28 +512,28 @@ class PatternRegistryTest {
         }
 
         @Test
-        @DisplayName("MULTIINSTANCE category contains exactly 8 patterns (WCP-12..16, WCP-24, WCP-26..27)")
+        @DisplayName("MULTI_INSTANCE category contains exactly 8 patterns (WCP-12..16, WCP-24, WCP-26..27)")
         void testMultiInstanceCategoryCount() {
-            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTIINSTANCE);
+            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTI_INSTANCE);
             assertEquals(8, patterns.size(),
-                "MULTIINSTANCE must have exactly 8 patterns (WCP-12..16, WCP-24, WCP-26..27), found: "
+                "MULTI_INSTANCE must have exactly 8 patterns (WCP-12..16, WCP-24, WCP-26..27), found: "
                     + patterns.size());
         }
 
         @Test
-        @DisplayName("MULTIINSTANCE category contains the 5 core MI patterns")
+        @DisplayName("MULTI_INSTANCE category contains the 5 core MI patterns")
         void testMultiInstanceContainsCorePatternsWcp12To16() {
-            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTIINSTANCE);
+            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTI_INSTANCE);
             Set<String> ids = new HashSet<>();
             for (PatternInfo p : patterns) {
                 ids.add(p.id());
             }
             assertAll(
-                () -> assertTrue(ids.contains("WCP-12"), "MULTIINSTANCE must contain WCP-12"),
-                () -> assertTrue(ids.contains("WCP-13"), "MULTIINSTANCE must contain WCP-13"),
-                () -> assertTrue(ids.contains("WCP-14"), "MULTIINSTANCE must contain WCP-14"),
-                () -> assertTrue(ids.contains("WCP-15"), "MULTIINSTANCE must contain WCP-15"),
-                () -> assertTrue(ids.contains("WCP-16"), "MULTIINSTANCE must contain WCP-16")
+                () -> assertTrue(ids.contains("WCP-12"), "MULTI_INSTANCE must contain WCP-12"),
+                () -> assertTrue(ids.contains("WCP-13"), "MULTI_INSTANCE must contain WCP-13"),
+                () -> assertTrue(ids.contains("WCP-14"), "MULTI_INSTANCE must contain WCP-14"),
+                () -> assertTrue(ids.contains("WCP-15"), "MULTI_INSTANCE must contain WCP-15"),
+                () -> assertTrue(ids.contains("WCP-16"), "MULTI_INSTANCE must contain WCP-16")
             );
         }
 
@@ -656,16 +655,7 @@ class PatternRegistryTest {
                 "BRANCHING (legacy enum value not used in registry) must return empty list");
         }
 
-        @Test
-        @DisplayName("getPatternsByCategory for MULTI_INSTANCE returns empty list")
-        void testMultiInstanceLegacyEnumReturnsEmpty() {
-            // MULTI_INSTANCE (legacy) is not used in initializePatterns() — MULTIINSTANCE is used instead
-            List<PatternInfo> patterns = registry.getPatternsByCategory(PatternCategory.MULTI_INSTANCE);
-            assertNotNull(patterns, "getPatternsByCategory must never return null");
-            assertTrue(patterns.isEmpty(),
-                "MULTI_INSTANCE (legacy enum, registry uses MULTIINSTANCE) must return empty list");
-        }
-
+        
         @Test
         @DisplayName("Sum of all category counts equals total pattern count")
         void testCategoryCountsSumToTotal() {
@@ -1216,7 +1206,7 @@ class PatternRegistryTest {
         void testBasicCategoryPatternsAllHaveBasicDifficulty() {
             List<PatternInfo> basicPatterns = registry.getPatternsByCategory(PatternCategory.BASIC);
             for (PatternInfo info : basicPatterns) {
-                assertEquals(Difficulty.BASIC, info.difficulty(),
+                assertEquals(PatternResult.Difficulty.BASIC, info.difficulty(),
                     "Pattern " + info.id() + " in BASIC category must have BASIC difficulty");
             }
         }
@@ -1230,7 +1220,7 @@ class PatternRegistryTest {
                 () -> assertEquals("WCP-1", wcp1.id()),
                 () -> assertEquals("Sequence", wcp1.name()),
                 () -> assertNotNull(wcp1.description()),
-                () -> assertEquals(Difficulty.BASIC, wcp1.difficulty()),
+                () -> assertEquals(PatternResult.Difficulty.BASIC, wcp1.difficulty()),
                 () -> assertNotNull(wcp1.category()),
                 () -> assertEquals("Basic Control Flow", wcp1.category().name()),
                 () -> assertNotNull(wcp1.yamlExample()),
@@ -1276,7 +1266,7 @@ class PatternRegistryTest {
         void testExpertDifficultyPatternsExist() {
             List<PatternInfo> allPatterns = registry.getAllPatterns();
             long expertCount = allPatterns.stream()
-                .filter(p -> p.difficulty() == Difficulty.EXPERT)
+                .filter(p -> p.difficulty() == PatternResult.Difficulty.EXPERT)
                 .count();
             assertTrue(expertCount > 0,
                 "Registry must contain at least one EXPERT difficulty pattern");
@@ -1292,13 +1282,13 @@ class PatternRegistryTest {
             }
             assertAll(
                 "All four difficulty levels must be represented",
-                () -> assertTrue(difficulties.contains(Difficulty.BASIC),
+                () -> assertTrue(difficulties.contains(PatternResult.Difficulty.BASIC),
                     "Registry must contain at least one BASIC pattern"),
-                () -> assertTrue(difficulties.contains(Difficulty.INTERMEDIATE),
+                () -> assertTrue(difficulties.contains(PatternResult.Difficulty.INTERMEDIATE),
                     "Registry must contain at least one INTERMEDIATE pattern"),
-                () -> assertTrue(difficulties.contains(Difficulty.ADVANCED),
+                () -> assertTrue(difficulties.contains(PatternResult.Difficulty.ADVANCED),
                     "Registry must contain at least one ADVANCED pattern"),
-                () -> assertTrue(difficulties.contains(Difficulty.EXPERT),
+                () -> assertTrue(difficulties.contains(PatternResult.Difficulty.EXPERT),
                     "Registry must contain at least one EXPERT pattern")
             );
         }

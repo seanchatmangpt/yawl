@@ -1,0 +1,77 @@
+# =============================================================================
+# wsjf-ranking.sparql — WSJF Priority Ranking for Capability Gaps
+# Self-Play Simulation Loop v3.0
+#
+# PURPOSE: Rank capability gaps using WSJF (Weighted Shortest Job First)
+#   WSJF = (Business Value + Time Criticality + Risk Reduction) / Job Size
+#   Higher WSJF = Higher Priority
+#
+# OUTPUT: GapPriority instances ordered by WSJF score
+# =============================================================================
+
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+PREFIX sim:         <http://yawlfoundation.org/yawl/simulation#>
+PREFIX safe:        <http://yawlfoundation.org/yawl/safe#>
+PREFIX rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:        <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:         <http://www.w3.org/2001/XMLSchema#>
+
+CONSTRUCT {
+  ?priority a sim:GapPriority ;
+    rdfs:label ?priorityLabel ;
+    sim:wsjfRank ?rank ;
+    sim:demandScore ?demand ;
+    sim:complexity ?complexity ;
+    safe:wsjfScore ?wsjf ;
+    safe:businessValue ?bv ;
+    safe:timeCriticality ?tc ;
+    safe:riskReduction ?rr ;
+    safe:jobSize ?size .
+}
+WHERE {
+  # Get all capability gaps
+  ?gap a sim:CapabilityGap ;
+       sim:demandScore ?demand ;
+       sim:complexity ?complexity ;
+       rdfs:label ?gapLabel .
+
+  # Calculate WSJF components
+  # Business Value: based on demand score (how many consumers need this)
+  BIND(?demand * 2 AS ?bv)
+
+  # Time Criticality: estimated based on gap type
+  # Types like "MemorySegment" are more critical than domain-specific types
+  BIND(
+    IF(CONTAINS(STR(?gap), "MemorySegment"), 3,
+    IF(CONTAINS(STR(?gap), "long"), 2, 1))
+    AS ?tc
+  )
+
+  # Risk Reduction: gaps in core infrastructure reduce more risk
+  BIND(
+    IF(CONTAINS(STR(?gap), "OCEL"), 3,
+    IF(CONTAINS(STR(?gap), "DFG"), 2, 1))
+    AS ?rr
+  )
+
+  # Job Size: inverse of complexity (higher complexity = larger job)
+  BIND(?complexity * 2 AS ?size)
+
+  # WSJF Formula: (BV + TC + RR) / Size
+  # Avoid division by zero
+  BIND(
+    IF(?size > 0,
+       (?bv + ?tc + ?rr) / ?size,
+       0)
+    AS ?wsjf
+  )
+
+  # Create priority URI
+  BIND(IRI(CONCAT("http://yawlfoundation.org/yawl/simulation#Priority_",
+                  STRUUID())) AS ?priority)
+  BIND(CONCAT("Priority: ", ?gapLabel) AS ?priorityLabel)
+
+  # Rank will be computed in application code by sorting WSJF descending
+  BIND(0 AS ?rank)  # Placeholder, actual rank computed post-query
+}
+ORDER BY DESC(?wsjf)

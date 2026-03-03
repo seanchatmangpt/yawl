@@ -298,10 +298,45 @@ class CapacityModelImpl {
 
     public String generateReport() {
         long agents = 1_000_000;
-        return String.format("""
-            # Capacity Planning Report - 1M Agent Model
-            
-            ## Predicted Metrics (1,000,000 agents)
+        return String.format(
+            "# Capacity Planning Report - 1M Agent Model\n\n" +
+            "## Predicted Metrics (1,000,000 agents)\n\n" +
+            "| Metric | Value |\n" +
+            "|--------|-------|\n" +
+            "| p50 Latency | %.1f ms |\n" +
+            "| p95 Latency | %.1f ms |\n" +
+            "| p99 Latency | %.1f ms |\n" +
+            "| Throughput | %.0f ops/sec |\n" +
+            "| Memory per agent | %.2f MB |\n" +
+            "| GC Time | %.1f ms |\n" +
+            "| Full GCs/hour | < 10 |\n\n" +
+            "## Model Quality\n\n" +
+            "- R²: %.2f (polynomial fit quality)\n" +
+            "- Confidence: ±%.1f%% (68%% confidence interval)\n" +
+            "- Sample size: %d stages\n\n" +
+            "## Scaling Behavior\n\n" +
+            "- Latency scales logarithmically with agent count\n" +
+            "- Throughput remains relatively stable (sublinear degradation)\n" +
+            "- GC time increases linearly with heap size\n" +
+            "- Memory footprint ~%.2f MB/agent (including VM overhead)\n\n" +
+            "## Capacity Recommendations\n\n" +
+            "1. **Deployment**: 10 JVMs × 100K agents each for 1M total capacity\n" +
+            "2. **GC Tuning**: Use ZGC or G1GC with -XX:+UseCompactObjectHeaders\n" +
+            "3. **Load Balancer**: Distribute requests evenly across JVM instances\n" +
+            "4. **Database**: 10 read replicas for work item query distribution\n" +
+            "5. **Monitoring**: Alert on GC > 500ms, p95 latency > 300ms\n\n" +
+            "## Next Steps\n\n" +
+            "1. Validate model with staging environment (10K agents test run)\n" +
+            "2. Tune GC parameters based on actual workload patterns\n" +
+            "3. Implement connection pooling for database layer\n" +
+            "4. Test failover scenarios (single JVM failure)\n" +
+            "5. Monitor production metrics against predictions\n\n" +
+            "## Extrapolation Confidence\n\n" +
+            "This model extrapolates from 3 data points (1K, 10K, 100K agents) to 1M agents.\n" +
+            "The polynomial fit (R² = %.2f) indicates good alignment. However:\n\n" +
+            "- **Risk**: Unexpected behaviors may emerge at 1M scale (e.g., VM tuning effects)\n" +
+            "- **Mitigation**: Stagewise validation (100K → 500K → 1M deployment)\n" +
+            "- **Contingency**: Keep rollback plan for throughput degradation >20%% vs predicted"
             
             | Metric | Value |
             |--------|-------|
@@ -329,7 +364,7 @@ class CapacityModelImpl {
             ## Capacity Recommendations
             
             1. **Deployment**: 10 JVMs × 100K agents each for 1M total capacity
-            2. **GC Tuning**: Use ZGC or G1GC with `-XX:+UseCompactObjectHeaders`
+            2. **GC Tuning**: Use ZGC or G1GC with -XX:+UseCompactObjectHeaders
             3. **Load Balancer**: Distribute requests evenly across JVM instances
             4. **Database**: 10 read replicas for work item query distribution
             5. **Monitoring**: Alert on GC > 500ms, p95 latency > 300ms
@@ -340,17 +375,7 @@ class CapacityModelImpl {
             2. Tune GC parameters based on actual workload patterns
             3. Implement connection pooling for database layer
             4. Test failover scenarios (single JVM failure)
-            5. Monitor production metrics against predictions
-            
-            ## Extrapolation Confidence
-            
-            This model extrapolates from 3 data points (1K, 10K, 100K agents) to 1M agents.
-            The polynomial fit (R² = %.2f) indicates good alignment. However:
-            
-            - **Risk**: Unexpected behaviors may emerge at 1M scale (e.g., VM tuning effects)
-            - **Mitigation**: Stagewise validation (100K → 500K → 1M deployment)
-            - **Contingency**: Keep rollback plan for throughput degradation >20%% vs predicted
-            """.formatted(
+                        """.formatted(
                 predictLatency(agents, "p50"),
                 predictLatency(agents, "p95"),
                 predictLatency(agents, "p99"),

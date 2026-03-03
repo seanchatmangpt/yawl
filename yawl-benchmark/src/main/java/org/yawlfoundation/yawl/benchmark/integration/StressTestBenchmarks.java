@@ -547,8 +547,8 @@ public class StressTestBenchmarks {
 
                 // Calculate performance degradation
                 if (latencies.size() > 100) {
-                    long firstHalf = latencies.stream().limit(latencies.size() / 2).mapToLong(l -> l).average().orElse(0);
-                    long secondHalf = latencies.stream().skip(latencies.size() / 2).mapToLong(l -> l).average().orElse(0);
+                    double firstHalf = latencies.stream().limit(latencies.size() / 2).mapToLong(l -> l).average().orElse(0);
+                    double secondHalf = latencies.stream().skip(latencies.size() / 2).mapToLong(l -> l).average().orElse(0);
                     double degradation = ((secondHalf - firstHalf) / firstHalf) * 100;
                     System.out.println("  Performance Degradation: " + String.format("%.2f%%", degradation));
                 }

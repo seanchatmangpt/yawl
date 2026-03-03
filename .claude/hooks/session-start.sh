@@ -483,3 +483,6 @@ if [ "${MAVEN_PROXY_ENABLED:-false}" = "true" ]; then
     echo "💡 TIP: To stop the Maven proxy, run: pkill -f maven-proxy"
     echo ""
 fi
+
+# State summary (observatory + H/Q receipts) is emitted by yawl-state.sh,
+# which runs as a separate SessionStart hook and works on all platforms.

@@ -1,10 +1,10 @@
 package org.yawlfoundation.yawl.engine.agent.core;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * High-level actor runtime implementing ActorRuntime.
@@ -29,9 +29,6 @@ public final class VirtualThreadRuntime implements ActorRuntime {
     private final AtomicInteger nextId = new AtomicInteger(0);
     private final ConcurrentHashMap<Integer, Agent> registry = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-    private final AtomicLong spawnCount = new AtomicLong();
-    private final AtomicLong stopCount = new AtomicLong();
-    private final AtomicLong msgCount = new AtomicLong();
 
     /**
      * Spawn a new actor. Behavior receives its own ActorRef for self-reference.
@@ -42,7 +39,6 @@ public final class VirtualThreadRuntime implements ActorRuntime {
         int id = nextId.getAndIncrement();
         Agent a = new Agent(id);
         registry.put(id, a);
-        spawnCount.incrementAndGet();
         ActorRef ref = new ActorRef(id, this);
 
         executor.submit(() -> {
@@ -77,15 +73,25 @@ public final class VirtualThreadRuntime implements ActorRuntime {
     }
 
     /**
+     * Spawn a new actor asynchronously, returning a CompletableFuture.
+     * The behavior runs on a virtual thread; when behavior returns, actor is removed.
+     * The future completes when the actor is spawned (not when the behavior completes).
+     * This is a non-blocking operation that returns immediately after scheduling the spawn.
+     *
+     * @param behavior the actor behavior
+     * @return CompletableFuture that completes with the ActorRef when spawned
+     */
+    public CompletableFuture<ActorRef> spawnAsync(ActorBehavior behavior) {
+        return CompletableFuture.supplyAsync(() -> spawn(behavior), executor);
+    }
+
+    /**
      * Send a message to an actor by id. No-op if id not found.
      */
     @Override
     public void send(int targetId, Object msg) {
         Agent a = registry.get(targetId);
-        if (a != null) {
-            a.send(msg);
-            msgCount.incrementAndGet();
-        }
+        if (a != null) a.send(msg);
     }
 
     /**
@@ -103,7 +109,6 @@ public final class VirtualThreadRuntime implements ActorRuntime {
     public void stop(int actorId) {
         Agent a = registry.remove(actorId);
         if (a != null) {
-            stopCount.incrementAndGet();
             a.stopped = true;          // volatile write: happens-before task's volatile read
             Thread t = a.thread;       // volatile read: sees task's volatile write if it ran first
             if (t != null) t.interrupt();
@@ -159,81 +164,6 @@ public final class VirtualThreadRuntime implements ActorRuntime {
     @Override
     public int size() {
         return registry.size();
-    }
-
-    /**
-     * Spawn a new actor with a bounded mailbox.
-     *
-     * When the mailbox is full (capacity reached), sendBlocking() on the bounded
-     * agent blocks the calling thread until the actor consumes a message (backpressure).
-     *
-     * @param behavior           the actor behavior
-     * @param mailboxCapacity    maximum messages in the mailbox (must be > 0)
-     * @return an opaque reference to the spawned actor
-     * @throws IllegalArgumentException if mailboxCapacity <= 0
-     */
-    public ActorRef spawnBounded(ActorBehavior behavior, int mailboxCapacity) {
-        if (mailboxCapacity <= 0) {
-            throw new IllegalArgumentException(
-                "mailboxCapacity must be > 0, got: " + mailboxCapacity);
-        }
-        int id = nextId.getAndIncrement();
-        Agent a = new Agent(id, mailboxCapacity);
-        registry.put(id, a);
-        spawnCount.incrementAndGet();
-        ActorRef ref = new ActorRef(id, this);
-
-        executor.submit(() -> {
-            // Two-phase cancellation: write a.thread, then read a.stopped.
-            a.thread = Thread.currentThread();
-            if (a.stopped) {
-                return;
-            }
-            try {
-                behavior.run(ref);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (RuntimeException e) {
-                System.err.printf("[VirtualThreadRuntime] Bounded actor %d threw: %s%n",
-                    id, e.getMessage());
-            } finally {
-                registry.remove(id);
-            }
-        });
-
-        return ref;
-    }
-
-    /**
-     * Send a message with backpressure: blocks until mailbox has space.
-     * For unbounded actors, equivalent to send() (never blocks).
-     * For bounded actors, blocks the calling thread until the actor consumes a message.
-     *
-     * @param ref                the target actor reference
-     * @param msg                the message to send
-     * @throws InterruptedException if the calling thread is interrupted while waiting
-     */
-    public void tellBlocking(ActorRef ref, Object msg) throws InterruptedException {
-        Agent a = registry.get(ref.id());
-        if (a != null) {
-            a.sendBlocking(msg);
-            msgCount.incrementAndGet();
-        }
-    }
-
-    /**
-     * Returns a consistent snapshot of runtime statistics.
-     * Counters are AtomicLong reads — no locking needed.
-     *
-     * @return a RuntimeStats record with current metrics
-     */
-    public RuntimeStats stats() {
-        return new RuntimeStats(
-            registry.size(),
-            spawnCount.get(),
-            stopCount.get(),
-            msgCount.get()
-        );
     }
 
     /**

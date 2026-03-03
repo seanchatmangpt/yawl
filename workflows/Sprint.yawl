@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sprint.yawl — SAFe Sprint Simulation Workflow
+  Self-Play Simulation Loop v3.0
+
+  PURPOSE: Execute a 2-week sprint simulation for a team implementing a feature.
+  Generates OCEL2 events for process mining analysis.
+
+  WORKFLOW STEPS:
+  1. Sprint Planning - Team commits to sprint backlog
+  2. Daily Standup - Daily sync (repeated)
+  3. Story Development - Implement user stories (parallel)
+  4. Code Review - Peer review of changes
+  5. Integration - Merge and test
+  6. Sprint Review - Demo to stakeholders
+  7. Retrospective - Team improvement
+
+  BRIDGE CALLS:
+  - processMiningBridge.discoverDfg(events) → DFG model
+  - processMiningBridge.checkConformance(log, petriNet) → fitness metrics
+-->
+<specification xmlns="http://yawlfoundation.org/yawl/specification/3.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://yawlfoundation.org/yawl/specification/3.0
+                                   http://yawlfoundation.org/yawl/schemas/YAWL_Specification3.0.xsd">
+
+  <metaData>
+    <title>Sprint Simulation Workflow</title>
+    <creator>YAWL Self-Play Loop v3.0</creator>
+    <version>1.0.0</version>
+    <description>
+      Simulates a SAFe sprint with 2-week cadence. Records all events in OCEL2 format
+      for process mining analysis. Supports A3 simulation agent execution.
+    </description>
+    <persistent>false</persistent>
+    <identifier>Sprint_1.0.0</identifier>
+  </metaData>
+
+  <schema xmlns="http://www.yawlfoundation.org/yawl/specification/3.0">
+    <type definition="string" name="sprintId"/>
+    <type definition="string" name="featureId"/>
+    <type definition="string" name="teamId"/>
+    <type definition="int" name="storyPoints"/>
+    <type definition="string" name="ocelPath"/>
+    <type definition="double" name="fitness"/>
+  </schema>
+
+  <decomposition id="Sprint" isRootNet="true">
+    <processControlElements>
+      <inputCondition id="Start"/>
+      <task id="SprintPlanning">
+        <description>Team commits to sprint backlog</description>
+        <inputGate>
+          <split code="XOR">true</split>
+        </inputGate>
+        <outputGate>
+          <join code="XOR">true</join>
+        </outputGate>
+        <decomposesTo>SprintPlanning_decomp</decomposesTo>
+        <inputVar query="sprintId" type="string"/>
+        <inputVar query="featureId" type="string"/>
+        <inputVar query="teamId" type="string"/>
+        <outputVar type="string" name="sprintBacklog"/>
+      </task>
+      <task id="DailyStandup">
+        <description>Daily team synchronization</description>
+        <inputGate>
+          <split code="AND">true</split>
+        </inputGate>
+        <outputGate>
+          <join code="AND">true</join>
+        </outputGate>
+        <inputVar query="sprintBacklog" type="string"/>
+        <outputVar type="string" name="standupNotes"/>
+        <resetEvent>daily_timer</resetEvent>
+      </task>
+      <task id="StoryDevelopment">
+        <description>Implement user stories from backlog</description>
+        <inputGate>
+          <split code="OR">true</split>
+        </inputGate>
+        <outputGate>
+          <join code="OR">true</join>
+        </outputGate>
+        <inputVar query="sprintBacklog" type="string"/>
+        <outputVar type="string" name="completedStories"/>
+        <outputVar type="int" name="storyPoints"/>
+        <timer>PT4H</timer>
+      </task>
+      <task id="CodeReview">
+        <description>Peer review of completed code</description>
+        <inputGate>
+          <split code="XOR">true</split>
+        </inputGate>
+        <outputGate>
+          <join code="XOR">true</join>
+        </outputGate>
+        <inputVar query="completedStories" type="string"/>
+        <outputVar type="string" name="reviewedCode"/>
+      </task>
+      <task id="Integration">
+        <description>Merge and test changes</description>
+        <inputGate>
+          <split code="AND">true</split>
+        </inputGate>
+        <outputGate>
+          <join code="AND">true</join>
+        </outputGate>
+        <inputVar query="reviewedCode" type="string"/>
+        <outputVar type="string" name="integratedCode"/>
+        <outputVar type="string" name="ocelPath"/>
+        <extension code="ProcessMiningExport">
+          <parameter name="format">OCEL2</parameter>
+          <parameter name="bridge">ProcessMiningL3.discoverDfg</parameter>
+        </extension>
+      </task>
+      <task id="SprintReview">
+        <description>Demo to stakeholders</description>
+        <inputGate>
+          <split code="XOR">true</split>
+        </inputGate>
+        <outputGate>
+          <join code="XOR">true</join>
+        </outputGate>
+        <inputVar query="integratedCode" type="string"/>
+        <inputVar query="storyPoints" type="int"/>
+        <outputVar type="double" name="fitness"/>
+        <extension code="ConformanceCheck">
+          <parameter name="bridge">ProcessMiningL3.checkConformance</parameter>
+          <parameter name="referenceModel">sprint_reference.pnml</parameter>
+        </extension>
+      </task>
+      <task id="Retrospective">
+        <description>Team improvement actions</description>
+        <inputGate>
+          <split code="XOR">true</split>
+        </inputGate>
+        <outputGate>
+          <join code="XOR">true</join>
+        </outputGate>
+        <inputVar query="fitness" type="double"/>
+        <outputVar type="string" name="improvementActions"/>
+      </task>
+      <outputCondition id="End"/>
+
+      <flowsInto>
+        <source>SprintPlanning</source>
+        <destination>DailyStandup</destination>
+        <predicate>true</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>DailyStandup</source>
+        <destination>StoryDevelopment</destination>
+        <predicate>true</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>StoryDevelopment</source>
+        <destination>CodeReview</destination>
+        <predicate>true</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>CodeReview</source>
+        <destination>Integration</destination>
+        <predicate>true</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>Integration</source>
+        <destination>SprintReview</destination>
+        <predicate>true</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>SprintReview</source>
+        <destination>Retrospective</destination>
+        <predicate>fitness >= 0.60</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>SprintReview</source>
+        <destination>StoryDevelopment</destination>
+        <predicate>fitness &lt; 0.60</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>Retrospective</source>
+        <destination>End</destination>
+        <predicate>true</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>Start</source>
+        <destination>SprintPlanning</destination>
+      </flowsInto>
+    </processControlElements>
+  </decomposition>
+</specification>

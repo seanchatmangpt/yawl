@@ -1,0 +1,201 @@
+# Slack MCP Server Configuration
+# This file configures the Slack integration for YAWL
+
+# Server Configuration
+server:
+  port: 8085
+  name: "yawl-slack"
+
+# Slack Configuration
+slack:
+  # Bot token for API access (required)
+  bot_token: "${SLACK_BOT_TOKEN}"
+
+  # Signing secret for webhook verification (optional but recommended)
+  signing_secret: "${SLACK_SIGNING_SECRET}"
+
+  # Default notification channels
+  default_channels:
+    - name: "workflows"
+      purpose: "Workflow notifications"
+      id: "#workflows"
+      notifications_enabled: true
+    - name: "alerts"
+      purpose: "Critical alerts and errors"
+      id: "#alerts"
+      notifications_enabled: true
+    - name: "development"
+      purpose: "Development notifications"
+      id: "#development"
+      notifications_enabled: false
+
+# Notification Configuration
+notifications:
+  # Enable workflow event notifications
+  enabled: true
+
+  # Event types to notify about
+  event_types:
+    - "workitem_started"
+    - "workitem_completed"
+    - "workitem_failed"
+    - "case_started"
+    - "case_completed"
+    - "case_cancelled"
+    - "case_terminated"
+
+  # Message templates for different events
+  templates:
+    workitem_started: |
+      🚀 Work item started:
+      • Case: {{caseId}}
+      • Task: {{taskName}}
+      • User: {{user}}
+
+    workitem_completed: |
+      ✅ Work item completed:
+      • Case: {{caseId}}
+      • Task: {{taskName}}
+      • User: {{user}}
+      • Duration: {{duration}}ms
+
+    workitem_failed: |
+      ❌ Work item failed:
+      • Case: {{caseId}}
+      • Task: {{taskName}}
+      • User: {{user}}
+      • Error: {{error}}
+
+    case_started: |
+      🎯 New workflow instance started:
+      • Case: {{caseId}}
+      • Specification: {{specName}}
+      • Started by: {{user}}
+
+    case_completed: |
+      🎉 Workflow completed:
+      • Case: {{caseId}}
+      • Specification: {{specName}}
+      • Duration: {{duration}}ms
+
+    case_cancelled: |
+      ❌ Workflow cancelled:
+      • Case: {{caseId}}
+      • Cancelled by: {{user}}
+      • Reason: {{reason}}
+
+    case_terminated: |
+      💥 Workflow terminated:
+      • Case: {{caseId}}
+      • Reason: {{reason}}
+
+# Workflow Subscription Configuration
+subscriptions:
+  # Enable workflow event subscriptions
+  enabled: true
+
+  # Default channels for notifications
+  default_channels:
+    - "#workflows"
+    - "#alerts"
+
+  # Maximum number of subscriptions per channel
+  max_subscriptions_per_channel: 100
+
+  # Subscription duration (in milliseconds)
+  default_duration: 86400000  # 24 hours
+
+# Performance Configuration
+performance:
+  # Thread pool size (using virtual threads)
+  virtual_threads: true
+
+  # Message queue size
+  queue_size: 1000
+
+  # Batch size for processing messages
+  batch_size: 10
+
+  # Timeout for Slack API calls (in seconds)
+  api_timeout: 30
+
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    delay_ms: 1000
+    exponential_backoff: true
+
+# Security Configuration
+security:
+  # Enable request validation
+  validate_requests: true
+
+  # Maximum request size (in bytes)
+  max_request_size: 1048576  # 1MB
+
+  # Allowed origins for webhooks
+  allowed_origins:
+    - "https://your-slack-domain.slack.com"
+
+  # Rate limiting
+  rate_limit:
+    enabled: true
+    requests_per_minute: 60
+
+# Logging Configuration
+logging:
+  # Log level
+  level: "INFO"
+
+  # Enable specific loggers
+  loggers:
+    org.yawlfoundation.yawl.integration.mcp.SlackMcpServer: "DEBUG"
+    org.yawlfoundation.yawl.integration.mcp: "INFO"
+
+  # Log format
+  format: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+  # File appender
+  file:
+    enabled: true
+    file: "logs/slack-mcp-server.log"
+    max_size: "10MB"
+    max_files: 5
+
+# Metrics Configuration
+metrics:
+  # Enable metrics
+  enabled: true
+
+  # Exporter configuration
+  exporter:
+    type: "logging"
+    interval: "30s"
+
+  # Metrics to collect
+  metrics:
+    - "slack.mcp.server.requests.total"
+    - "slack.mcp.server.active.subscriptions"
+    - "slack.mcp.server.queue.size"
+    - "slack.mcp.server.messages.processed"
+    - "slack.api.calls.total"
+    - "slack.api.errors.total"
+
+# Health Check Configuration
+health:
+  # Enable health checks
+  enabled: true
+
+  # Health check endpoints
+  endpoints:
+    - "/health"
+    - "/mcp"
+
+  # Health check interval (in seconds)
+  check_interval: 30
+
+  # Thresholds
+  thresholds:
+    memory_usage_percent: 80
+    queue_size: 500
+    subscription_count: 1000

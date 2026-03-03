@@ -1,0 +1,96 @@
+<!-- Integration Test Profile Configuration -->
+<profile>
+    <id>integration</id>
+    <activation>
+        <activeByDefault>false</activeByDefault>
+        <property>
+            <name>skipITs</name>
+            <value>false</value>
+        </property>
+    </activation>
+
+    <properties>
+        <integration.test.timeout>30</integration.test.timeout>
+        <integration.test.retry.count>3</integration.test.retry.count>
+        <integration.test.service.timeout>5000</integration.test.service.timeout>
+    </properties>
+
+    <build>
+        <plugins>
+            <!-- Surefire plugin for integration tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*E2ETest.java</include>
+                        <include>**/*IntegrationTest.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/unit/**/*Test.java</exclude>
+                    </excludes>
+                    <systemPropertyVariables>
+                        <qlever.url>http://localhost:7001</qlever.url>
+                        <oxigraph.url>http://localhost:19877</oxigraph.url>
+                        <yawl.native.url>http://localhost:8083</yawl.native.url>
+                    </systemPropertyVariables>
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <systemPropertyVariables>
+                        <test.timeout.factor>1.5</test.timeout.factor>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <!-- Failsafe plugin for integration tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includes>
+                        <include>**/*IT.java</include>
+                        <include>**/*E2ETest.java</include>
+                        <include>**/*IntegrationTest.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <qlever.url>http://localhost:7001</qlever.url>
+                        <oxigraph.url>http://localhost:19877</oxigraph.url>
+                        <yawl.native.url>http://localhost:8083</yawl.native.url>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Test dependencies for integration tests -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.17.6</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>oxigraph</artifactId>
+            <version>0.3.25</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.1.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</profile>

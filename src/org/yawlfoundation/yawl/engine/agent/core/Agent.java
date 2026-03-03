@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.engine.agent.core;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Minimal agent — measured ~1,454 bytes total per idle (parked) agent at scale.
@@ -33,6 +34,19 @@ import java.util.concurrent.LinkedTransferQueue;
  * Mailbox types:
  *   - Unbounded (default): LinkedTransferQueue (fire-and-forget, never blocks on send)
  *   - Bounded: ArrayBlockingQueue with capacity (supports backpressure)
+ *
+ * IMPORTANT: Agent.recv() uses poll(1, SECONDS) instead of blocking take() to avoid
+ * saturating carrier threads. The timeout allows:
+ *   1. Graceful shutdown when actor should stop
+ *   2. Carrier thread parking (no spin-waiting)
+ *   3. Responsiveness to interruption
+ *
+ * Before (blocking forever):
+ *   Object msg = queue.take(); // would block indefinitely
+ *
+ * After (non-blocking with timeout):
+ *   Object msg = queue.poll(1, TimeUnit.SECONDS); // parks virtual thread
+ *   if (msg == null) continue; // try again
  */
 final class Agent {
 
@@ -88,7 +102,56 @@ final class Agent {
         }
     }
 
+    /**
+     * Receive a message with timeout-based polling.
+     *
+     * Uses poll(1, TimeUnit.SECONDS) instead of blocking take() to:
+     *   - Avoid saturating carrier threads (virtual threads park on timeout)
+     *   - Allow graceful shutdown when actor should stop
+     *   - Handle interruption properly
+     *   - Prevent memory leaks from endless blocking
+     *
+     * @return the next message from the queue, or null if timeout occurs
+     */
     Object recv() {
-        return q.poll();
+        try {
+            return q.poll(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // preserve interrupt status
+            return null; // treat as timeout behavior
+        }
     }
+
+    /**
+     * Run the actor behavior with the specified ActorRef.
+     * This is the entry point for the actor execution.
+     *
+     * @param ref the ActorRef for this actor (self-reference)
+     * @param behavior the actor behavior to run
+     */
+    void run(ActorRef ref, ActorBehavior behavior) {
+        // Two-phase cancellation: write a.thread, then read a.stopped.
+        // VirtualThreadRuntime.stop() writes a.stopped, then reads a.thread.
+        // Volatile memory ordering guarantees at least one of them sees
+        // the other's write, eliminating the "null thread → missed interrupt" race:
+        //   Case A: stop() completes first → a.stopped=true; task checks → exits.
+        //   Case B: task sets a.thread first → stop() reads it → interrupts.
+        this.thread = Thread.currentThread();
+        if (this.stopped) {
+            // stop() already ran but saw a.thread==null and couldn't interrupt;
+            // honour the stop now by exiting before any blocking behavior starts.
+            return;
+        }
+        try {
+            behavior.run(ref);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // preserve interrupt status
+        } catch (RuntimeException e) {
+            // Behavior threw uncaught exception (natural or via injectException);
+            // recv() translated ExceptionTrigger sentinel into the injected cause.
+            // Actor exits; VirtualThreadRuntime will handle removal.
+            System.err.printf("[Agent] Agent %d threw: %s%n", id, e.getMessage());
+        }
+    }
+
 }

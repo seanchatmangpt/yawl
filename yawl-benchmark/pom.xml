@@ -24,7 +24,7 @@
         <skipTests>false</skipTests>
         <jmh.version>1.37</jmh.version>
         <jmh.generator>org.openjdk.jmh.generators.bytecode.JmhBytecodeGenerator</jmh.generator>
-        <jvm.args.soak>-Xms8g -Xmx8g -XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:+DisableExplicitGC -XX:+AlwaysPreTouch</jvm.args.soak>
+        <jvm.args.soak>-Xms8g -Xmx8g -XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:+DisableExplicitGC -XX:+AlwaysPreTouch --enable-preview</jvm.args.soak>
     </properties>
 
     <dependencies>
@@ -126,9 +126,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
+                    <release>25</release>
+                    <enablePreview>true</enablePreview>
+                    <parameters>true</parameters>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
-                        <arg>-parameters</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

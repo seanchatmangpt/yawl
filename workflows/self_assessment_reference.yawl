@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specificationSet xmlns="http://yawlfoundation.org/yawlschema"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="http://yawlfoundation.org/yawlschema
+                                     http://yawlfoundation.org/yawl/schemas/YAWL_Schema3.0.xsd">
+
+  <specification uri="SelfAssessment_Reference_2.0.0">
+    <metaData>
+      <title>Self-Assessment Reference Model</title>
+      <creator>YAWL Self-Play Loop v3.0</creator>
+      <version>2.0.0</version>
+      <description>
+        Reference model for self-assessment workflow conformance checking.
+        Defines the expected flow for simulation evaluation.
+      </description>
+      <persistent>false</persistent>
+      <identifier>SelfAssessment_Reference_2.0.0</identifier>
+    </metaData>
+
+  <schema xmlns="http://www.yawlfoundation.org/yawl/specification/3.0">
+    <type definition="string" name="simulationId"/>
+    <type definition="string" name="ocelJson"/>
+    <type definition="string" name="dfgJson"/>
+    <type definition="double" name="fitness"/>
+    <type definition="double" name="precision"/>
+    <type definition="string" name="gaps"/>
+    <type definition="string" name="prioritizedGaps"/>
+    <type definition="string" name="proposals"/>
+    <type definition="string" name="ocel2Json"/>
+    <type definition="string" name="receiptHash"/>
+  </schema>
+
+  <decomposition id="SelfAssessment_Reference" isRootNet="true">
+    <processControlElements>
+      <inputCondition id="Start"/>
+
+      <task id="LoadHistory">
+        <description>Load simulation history (OCEL files from previous runs)</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="simulationId" type="string"/>
+        <outputVar type="string" name="ocelJson"/>
+      </task>
+
+      <task id="DiscoverDFG">
+        <description>Discover DFG using ProcessMiningL3.discoverDfg</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="ocelJson" type="string"/>
+        <outputVar type="string" name="dfgJson"/>
+      </task>
+
+      <task id="CheckConformance">
+        <description>Check conformance against reference model</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="ocelJson" type="string"/>
+        <inputVar query="dfgJson" type="string"/>
+        <outputVar type="double" name="fitness"/>
+        <outputVar type="double" name="precision"/>
+      </task>
+
+      <task id="IdentifyGaps">
+        <description>Identify capability gaps from simulation traces</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="ocelJson" type="string"/>
+        <inputVar query="fitness" type="double"/>
+        <inputVar query="precision" type="double"/>
+        <outputVar type="string" name="gaps"/>
+      </task>
+
+      <task id="RankByWSJF">
+        <description>Rank discovered gaps by WSJF score</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="gaps" type="string"/>
+        <outputVar type="string" name="prioritizedGaps"/>
+      </task>
+
+      <task id="GenerateProposals">
+        <description>Generate improvement proposals from prioritized gaps</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="prioritizedGaps" type="string"/>
+        <inputVar query="fitness" type="double"/>
+        <outputVar type="string" name="proposals"/>
+      </task>
+
+      <task id="ExportOCEL2">
+        <description>Export assessment results as OCEL2</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="proposals" type="string"/>
+        <inputVar query="ocelJson" type="string"/>
+        <inputVar query="fitness" type="double"/>
+        <outputVar type="string" name="ocel2Json"/>
+      </task>
+
+      <task id="MetaAnalysis">
+        <description>Perform meta-analysis on assessment results</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="proposals" type="string"/>
+        <inputVar query="fitness" type="double"/>
+        <inputVar query="ocel2Json" type="string"/>
+        <outputVar type="string" name="metaAnalysis"/>
+      </task>
+
+      <task id="ReceiptChainUpdate">
+        <description>Record assessment results in Blake3 receipt chain</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="ocel2Json" type="string"/>
+        <inputVar query="fitness" type="double"/>
+        <outputVar type="string" name="receiptHash"/>
+      </task>
+
+      <outputCondition id="End"/>
+
+      <flowsInto>
+        <source>Start</source>
+        <destination>LoadHistory</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>LoadHistory</source>
+        <destination>DiscoverDFG</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>DiscoverDFG</source>
+        <destination>CheckConformance</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>CheckConformance</source>
+        <destination>IdentifyGaps</destination>
+        <predicate>fitness &lt; 0.85 || precision &lt; 0.85</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>CheckConformance</source>
+        <destination>ExportOCEL2</destination>
+        <predicate>fitness >= 0.85 &amp;&amp; precision >= 0.85</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>IdentifyGaps</source>
+        <destination>RankByWSJF</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>RankByWSJF</source>
+        <destination>GenerateProposals</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>GenerateProposals</source>
+        <destination>ExportOCEL2</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>ExportOCEL2</source>
+        <destination>MetaAnalysis</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>MetaAnalysis</source>
+        <destination>ReceiptChainUpdate</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>ReceiptChainUpdate</source>
+        <destination>End</destination>
+      </flowsInto>
+    </processControlElements>
+  </decomposition>
+  </specification>
+</specificationSet>

@@ -1,18 +1,35 @@
-PREFIX code: <http://yawlfoundation.org/ggen/code#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+# H_LIE Guard — Code Does Not Match Documentation
+# Pattern: Method documentation claims one thing, implementation does another
+# Severity: FAIL
+# Fix: Update code to match documentation (or documentation to match code)
+# Source: H-GUARDS-QUERIES.md Query 6
 
-SELECT ?line ?content
+PREFIX code: <http://ggen.io/code#>
+PREFIX javadoc: <http://ggen.io/javadoc#>
+
+SELECT ?violation ?line ?pattern
 WHERE {
-    ?method a code:Method ;
-            code:lineNumber ?line ;
-            code:methodBody ?body ;
-            code:returnType ?returnType ;
-            code:hasComment ?comment .
+  ?method a code:Method ;
+          code:javadoc ?doc ;
+          code:body ?body ;
+          code:lineNumber ?line .
 
-    ?comment code:text ?commentText .
+  ?doc javadoc:throws ?throws .
+  ?doc javadoc:returns ?returns .
 
-    FILTER((REGEX(STR(?returnType), "void") && REGEX(STR(?body), "return\\s+[^;]*")) ||
-           (NOT REGEX(STR(?returnType), "void") && REGEX(STR(?body), "^\\s*$")))
+  # Check if method claims to return value but body doesn't
+  FILTER(
+    (STRSTARTS(?returns, "void") && REGEX(?body, 'return\\s+[^;};]+')) ||
+    (NOT STRSTARTS(?returns, "void") && !REGEX(?body, 'return\\s+[^;};]+'))
+  )
 
-    BIND(CONCAT("Documentation/code mismatch at line ", STR(?line)) AS ?content)
+  FILTER(
+    # Check if method claims to throw but doesn't
+    EXISTS { ?throws javadoc:name ?throwName } &&
+    !REGEX(?body, 'throw\\s+' + ?throwName)
+  )
+
+  BIND("H_LIE" AS ?pattern)
+  BIND(CONCAT("Documentation mismatch at line ", STR(?line))
+       AS ?violation)
 }

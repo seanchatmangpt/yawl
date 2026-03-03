@@ -147,13 +147,25 @@
             </exclusions>
         </dependency>
 
-        <!-- OpenTelemetry API (required by InterfaceMetrics and InterfaceX_EngineSideClient via sourcepath) -->
+        <!-- OpenTelemetry API (required by shared src/ observability classes) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-metrics</artifactId>
+        </dependency>
 
-        <!-- Resilience4j (required by InterfaceX_EngineSideClient via sourcepath implicit compilation) -->
+        <!-- Resilience4j (required by shared src/ InterfaceX client) -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-core</artifactId>

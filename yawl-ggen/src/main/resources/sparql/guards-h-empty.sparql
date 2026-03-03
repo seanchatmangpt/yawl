@@ -1,15 +1,21 @@
-PREFIX code: <http://yawlfoundation.org/ggen/code#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+# H_EMPTY Guard — No-Op Method Bodies
+# Pattern: Empty braces in void methods
+# Severity: FAIL
+# Fix: Implement real logic or throw UnsupportedOperationException
+# Source: H-GUARDS-QUERIES.md Query 4
 
-SELECT ?line ?content
+PREFIX code: <http://ggen.io/code#>
+
+SELECT ?violation ?line ?pattern
 WHERE {
-    ?method a code:Method ;
-            code:methodBody ?body ;
-            code:lineNumber ?line ;
-            code:returnType ?returnType .
+  ?method a code:Method ;
+          code:body ?body ;
+          code:lineNumber ?line ;
+          code:returnType "void" .
 
-    FILTER(REGEX(STR(?returnType), "void") &&
-           REGEX(STR(?body), "^\\s*$"))
+  FILTER(REGEX(?body, '^\\s*\\{\\s*\\}\\s*$'))
 
-    BIND(CONCAT("Empty void method at line ", STR(?line)) AS ?content)
+  BIND("H_EMPTY" AS ?pattern)
+  BIND(CONCAT("Empty method body at line ", STR(?line))
+       AS ?violation)
 }

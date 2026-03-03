@@ -373,7 +373,7 @@ public class BenchmarkReportGenerator {
             html.append(formatMetricCard("Peak Heap Usage", lastMetric.heapUsedMb, "MB"));
             html.append(formatMetricCard("Heap Growth", heapGrowthMB, "MB"));
             html.append(formatMetricCard("Peak Threads", lastMetric.peakThreadCount, "threads"));
-            html.append(formatMetricCard("Avg Throughput", formatDouble(calculateAverageThroughput()), "cases/sec"));
+            html.append(formatMetricCard("Avg Throughput", calculateAverageThroughput(), "cases/sec"));
         }
 
         html.append("  </div>\n");
@@ -711,7 +711,7 @@ public class BenchmarkReportGenerator {
                 heapGrowthPerHour > 500 ? "<span class=\"warning\">Above threshold</span>" : "<span class=\"success\">Within threshold</span>"));
         html.append(String.format("<tr><td>GC Efficiency</td><td>%,d bytes/collection</td><td>Suggests %s</span></td></tr>\n",
                 last.heapMaxMb / Math.max(1, last.gcCollectionCount),
-                last.heapUsedMb > (last.heapMaxMb * 0.9) ? "<span class=\"warning\">Memory pressure" : "<span class=\"success\">Healthy GC"));
+                last.heapUsedMb > (last.heapMaxMb * 0.9) ? "<span class=\"warning\">Memory pressure</span>" : "<span class=\"success\">Healthy GC</span>"));
         html.append("</table>\n");
         return html.toString();
     }
@@ -909,13 +909,7 @@ public class BenchmarkReportGenerator {
                 .orElse(0.0);
     }
 
-    /**
-     * Format a double with 2 decimal places.
-     */
-    private String formatDouble(double value) {
-        return String.format("%.2f", value);
-    }
-
+  
     /**
      * Simple JSON line parser (without external library).
      */
