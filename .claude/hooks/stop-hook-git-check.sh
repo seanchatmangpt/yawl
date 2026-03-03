@@ -3,14 +3,16 @@
 # Ensures no uncommitted changes remain after Claude finishes work
 # Exit 0 = Success (clean state), Exit 1 = Warning (uncommitted changes)
 
-set -euo pipefail
+set -eo pipefail
 
 # Colors
 YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-cd "$CLAUDE_PROJECT_DIR" || exit 0
+# Use CLAUDE_PROJECT_DIR if set, otherwise use current directory
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-.}"
+cd "$PROJECT_DIR" || exit 0
 
 # Check if we're in a git repository
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
