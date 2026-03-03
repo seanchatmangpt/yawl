@@ -15,8 +15,10 @@ import org.yawlfoundation.yawl.ggen.validation.model.GuardViolation;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -202,27 +204,17 @@ public class HyperStandardsValidator {
     }
 
     /**
-     * Check if a path matches a glob pattern.
-     * Supports ** for recursive matching, * for single segment, ? for single character.
+     * Check if a path matches a glob pattern using Java's built-in PathMatcher.
+     * Supports the full glob syntax: ** for recursive matching, * for single segment,
+     * ? for single character.
      *
-     * @param path the file path to check
-     * @param pattern the glob pattern
+     * @param relativePath the file path relative to the emit directory (forward slashes)
+     * @param pattern the glob pattern (e.g. "&#42;&#42;/target/&#42;&#42;", "&#42;&#42;/&#42;Test.java")
      * @return true if the path matches the pattern
      */
-    private boolean matchesPattern(String path, String pattern) {
-        // Convert glob pattern to regex
-        String regex = pattern.replace("**/", ".*")
-                            .replace("/**", "(?:/.*)?")
-                            .replace("*", "[^/]*")
-                            .replace("?", ".");
-
-        // Handle ** at the end
-        if (pattern.endsWith("**")) {
-            regex = ".*";
-        }
-
-        // Compile and match
-        return path.matches(regex);
+    private boolean matchesPattern(String relativePath, String pattern) {
+        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+        return matcher.matches(Path.of(relativePath));
     }
 
     /**
