@@ -398,6 +398,8 @@
                              A2AEventPublisher API mismatch (publishSpecificationEvent signature, getNamespace() missing).
                              StructuredTaskScope + timeout implemented correctly. Awaiting A2AEventPublisher fix. -->
                         <exclude>**/org/yawlfoundation/yawl/engine/A2ACaseMonitor.java</exclude>
+                        <!-- MCP adapter uses pre-1.0.0 MCP SDK API - needs update for SDK 1.0.0 -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/BuriedEngineMcpAdapter.java</exclude>
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>
                         <exclude>**/*.properties</exclude>

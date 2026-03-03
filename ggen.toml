@@ -29,7 +29,8 @@ imports = [
     ".specify/patterns/deferred-choice.ttl",
     ".specify/patterns/ontology/extended-patterns.ttl",
     ".specify/patterns/native-bridge.ttl",
-    ".specify/pm-bridge.ttl"
+    ".specify/pm-bridge.ttl",
+    "ontology/process-mining/pm-bridge.ttl"
 ]
 
 [ontology.prefixes]
@@ -52,6 +53,7 @@ xsd = "http://www.w3.org/2001/XMLSchema#"
 sh = "http://www.w3.org/ns/shacl#"
 dct = "http://purl.org/dc/terms/"
 skos = "http://www.w3.org/2004/02/skos/core#"
+pm = "http://yawlfoundation.org/yawl/processmining/bridge#"
 
 # =============================================================================
 # INFERENCE RULES (CONSTRUCT queries for graph enrichment)
@@ -63,6 +65,7 @@ name = "derive-task-handlers"
 description = "Enrich graph with task handler metadata"
 construct = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX yawl-gen: <http://yawlfoundation.org/yawl/generation#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
@@ -84,6 +87,7 @@ name = "derive-flow-metadata"
 description = "Enrich flows with evaluation metadata"
 construct = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX yawl-gen: <http://yawlfoundation.org/yawl/generation#>
 
 CONSTRUCT {
@@ -103,6 +107,7 @@ name = "derive-state-transitions"
 description = "Generate state transition metadata from status definitions"
 construct = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX yawl-state: <http://yawlfoundation.org/yawl/state#>
 
 CONSTRUCT {
@@ -157,6 +162,7 @@ name = "java-specification"
 description = "Generate YSpecification.java from ontology"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?specId ?specName ?version ?uri ?rootNetId ?documentation
@@ -184,6 +190,7 @@ name = "java-net"
 description = "Generate YNet.java from ontology"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?netId ?netName ?isRootNet ?inputCondition ?outputCondition ?documentation
@@ -214,6 +221,7 @@ name = "java-task"
 description = "Generate YTask subclasses from ontology"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?taskId ?taskName ?taskType ?splitType ?joinType ?decomposesTo ?documentation
@@ -248,6 +256,7 @@ name = "java-condition"
 description = "Generate YCondition subclasses from ontology"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?conditionId ?conditionName ?conditionType ?documentation
@@ -270,6 +279,7 @@ name = "java-flow"
 description = "Generate YFlow.java from ontology"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?flowId ?sourceId ?targetId ?predicate ?evaluationOrder ?isDefault
 WHERE {
@@ -298,6 +308,7 @@ name = "java-workitem-status"
 description = "Generate YWorkItemStatus enum with transitions"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX yawl-state: <http://yawlfoundation.org/yawl/state#>
 
 SELECT ?statusName ?isInitial ?isFinal
@@ -322,6 +333,7 @@ name = "java-marking"
 description = "Generate YMarking for Petri net state"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX yawl-state: <http://yawlfoundation.org/yawl/state#>
 
 SELECT DISTINCT ?markingClass
@@ -340,6 +352,7 @@ name = "java-identifier"
 description = "Generate YIdentifier for workflow tokens"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT DISTINCT ?feature
 WHERE {
@@ -361,6 +374,7 @@ name = "java-exceptions"
 description = "Generate exception classes from ontology"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?exceptionName ?parentException ?errorCode ?message ?documentation
@@ -463,6 +477,7 @@ name = "zod-schemas"
 description = "Generate Zod validation schemas"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?entityName ?propName ?propType ?required ?minLength ?maxLength ?pattern
 WHERE {
@@ -492,6 +507,7 @@ name = "yawl-xml-spec"
 description = "Generate YAWL XML specification files"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?specId ?specName ?specVersion ?specUri ?rootNetId
@@ -528,6 +544,7 @@ description = "Generate JUnit tests from SHACL shapes"
 query = { inline = """
 PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?shapeName ?targetClass ?constraintType ?constraintValue ?message
 WHERE {
@@ -578,6 +595,7 @@ name = "concurrency-tests"
 description = "Generate concurrency stress tests"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?componentName ?threadCount ?operationsPerThread ?timeout
 WHERE {
@@ -631,6 +649,7 @@ description = "Generate C4 Container diagram (Mermaid)"
 query = { inline = """
 PREFIX c4: <http://ggen.io/c4#>
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?containerLabel ?containerType ?dataflowLabel ?targetContainer
 WHERE {
@@ -692,6 +711,7 @@ description = "Generate Terraform main.tf for YAWL deployment"
 query = { inline = """
 PREFIX infra: <http://ggen.io/infra#>
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?resourceName ?resourceType ?cpuRequest ?memoryRequest ?replicas
 WHERE {
@@ -716,6 +736,7 @@ description = "Generate Kubernetes deployment manifests"
 query = { inline = """
 PREFIX k8s: <http://ggen.io/k8s#>
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?serviceName ?image ?port ?replicas ?cpuLimit ?memoryLimit ?namespace
 WHERE {
@@ -742,6 +763,7 @@ description = "Generate Docker Compose configuration"
 query = { inline = """
 PREFIX docker: <http://ggen.io/docker#>
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?serviceName ?image ?ports ?volumes ?environment ?dependsOn
 WHERE {
@@ -771,6 +793,7 @@ name = "sbom-cyclonedx"
 description = "Generate CycloneDX SBOM from specification"
 query = { inline = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?componentName ?componentVersion ?componentType ?license ?purl
 WHERE {
@@ -938,6 +961,7 @@ description = "Generate Saga Orchestration pattern (WCP-44)"
 query = { inline = """
 PREFIX yawl-new: <http://yawlfoundation.org/yawl/pattern/new#>
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?stepId ?stepName ?forwardActionId ?compensatingActionId ?isCompensatable ?timeout ?retryLimit
 WHERE {
@@ -1354,6 +1378,39 @@ output_file = "java/bridge/{{ bridgeName }}/{{ bridgeName }}CapabilityRegistryEx
 mode = "Overwrite"
 
 # =============================================================================
+# PHASE 13: PROCESS MINING BRIDGE GENERATION
+# Pattern: WCP-PM Process Mining Bridge — Erlang gen_server + Java codec
+# NativeCall triples → gen_server handle_call clauses + ErlTerm codec
+# All generated code is H-Guards compliant (no TODO/mock/stub/fake/empty/lie/silent)
+# =============================================================================
+
+# --- WCP-PM-01: Erlang Process Mining Bridge ---
+[[generation.rules]]
+name = "process-mining-bridge-erlang"
+description = "Generate Erlang gen_server handle_call clauses from NativeCall triples"
+query = { file = "templates/bridge/discover-native-calls.sparql" }
+template = { file = "templates/bridge/process_mining_bridge.tera" }
+output_file = "erlang/process_mining_bridge.erl"
+mode = "Overwrite"
+
+# --- WCP-PM-02: Java ErlTerm Codec Interface ---
+[[generation.rules]]
+name = "erl-term-codec-java"
+description = "Generate ErlTerm sealed interface hierarchy for cross-language data exchange"
+query = { file = "templates/bridge/discover-native-calls.sparql" }
+template = { file = "templates/bridge/erl_term_codec.java.tera" }
+output_file = "java/bridge/ErlTermCodec.java"
+mode = "Overwrite"
+
+# --- WCP-PM-03: Bridge Validation Queries ---
+[[generation.rules]]
+name = "bridge-validation-sparql"
+description = "Generate SPARQL queries for capability discovery and validation from QLever"
+query = { file = "templates/bridge/discover-native-calls.sparql" }
+output_file = "sparql/bridge-validation.sparql"
+mode = "Overwrite"
+
+# =============================================================================
 # VALIDATION GATES (Quality Checks)
 # Pattern from: factory-paas
 # =============================================================================
@@ -1396,6 +1453,7 @@ name = "all_tasks_have_decomposition"
 description = "Every task must have a decomposition reference"
 query = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 ASK {
   ?task a yawl:Task .
   FILTER NOT EXISTS { ?task yawl:decomposesTo ?decomp }
@@ -1407,6 +1465,7 @@ name = "all_flows_valid"
 description = "All flows must reference existing tasks/conditions"
 query = """
 PREFIX yawl: <http://yawlfoundation.org/yawl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 ASK {
   ?flow a yawl:Flow ;
         yawl:sourceId ?source ;

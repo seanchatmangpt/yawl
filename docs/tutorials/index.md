@@ -27,6 +27,8 @@ Work through these in order for the best introduction to YAWL:
 | [09-marketplace-quick-start.md](09-marketplace-quick-start.md) | Deploy YAWL to a cloud marketplace (GCP/AWS/Azure) |
 | [10-getting-started.md](10-getting-started.md) | End-user perspective: navigate the control panel and run cases |
 | [quick-start-users.md](quick-start-users.md) | 5-minute "does it work?" check for new installations |
+| [process-discovery-getting-started.md](process-discovery-getting-started.md) | Learn process discovery from YAWL event logs (15 min) |
+| [process-discovery-getting-started.md](process-discovery-getting-started.md) | Discover process models from event logs using Alpha, Heuristic, and Inductive miners |
 
 ---
 
