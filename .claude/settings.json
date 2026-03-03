@@ -27,7 +27,8 @@
     "environment": "Dual-track: Docker/DevContainer (local) + Claude Code Web (remote)",
     "hooks": "Omnipresent Rust hook system: Ψ facts injected at every prompt (65ms)",
     "webSessions": "Supported via SessionStart hook (Maven proxy + H2 database)",
-    "hookArchitecture": "yawl-hooks binary handles UserPromptSubmit/PreToolUse/PostToolUse/Stop/PreCompact"
+    "hookArchitecture": "yawl-hooks binary handles UserPromptSubmit/PreToolUse/PostToolUse/Stop/PreCompact",
+    "selfPlayLoop": "Enforcement hooks prevent false completion reports"
   },
   "hooks": {
     "SessionStart": [
@@ -38,6 +39,12 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
             "timeout": 120,
             "statusMessage": "Setting up YAWL environment..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/self-play-state.sh",
+            "timeout": 30,
+            "statusMessage": "Loading self-play loop state..."
           }
         ]
       }
@@ -79,6 +86,12 @@
           },
           {
             "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/verify-ttl-write.sh",
+            "timeout": 15,
+            "statusMessage": "Validating TTL syntax..."
+          },
+          {
+            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 30,
             "async": true,
@@ -101,6 +114,22 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Ψ quality gate..."
+          },
+          {
+            "type": "prompt",
+            "prompt": "You are a quality gate for a YAWL self-play simulation loop.\n\nSession context: $ARGUMENTS\n\nEvaluate whether the agent can stop. Check for these failure modes:\n\n1. VERIFICATION BY OUTPUT: If agent claimed ✅ for any component, did it show actual verification command output (curl/mvn/cargo) quoted in the response? ls/find/grep proves existence only — never proves correctness.\n\n2. QLEVER STATUS: If agent mentioned QLever, did it verify QLever is running with curl returning JSON (not HTML error)?\n\n3. READY FOR APPROVAL: If agent said 'READY FOR APPROVAL', did invariant script show BEFORE and AFTER composition counts with AFTER > BEFORE?\n\n4. TTL FILES: If agent wrote TTL files, did it verify NativeCall count after loading into QLever?\n\n5. MOCK DETECTION: If tests use mocks, did agent flag MOCK DETECTED instead of claiming ✅?\n\n6. GEN-TTL OUTPUT: If gen-ttl was run, did agent show the triple count output (not just 'completed')?\n\nIf ANY check fails:\n{\"decision\": \"block\", \"reason\": \"Verification required: [specific missing verification].\"}\n\nIf all verified:\n{\"decision\": \"approve\", \"reason\": \"Verification commands executed.\"}",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Evaluate whether a YAWL self-play subagent completed legitimately.\n\nSubagent output: $ARGUMENTS\n\nRequired verification by role:\n- A1 Ontology: curl showing NativeCall >= 86 in QLever\n- A2 Bridge Compiler: grep -c NativeCall = 30 for pm-bridge, ggen sync exit 0\n- A3 Simulation: PI OCEL file exists with >= 50 events\n- A4 Process Mining: rust4pm returning {ok, Id}, conformance score stored in QLever\n- A5 Loop Controller: composition count BEFORE/AFTER shown with AFTER > BEFORE\n\nCommon failure modes to detect:\n- Claimed ✅ without showing command output\n- Used ls/grep to 'prove' content correctness\n- Said 'completed successfully' without verification output\n- Mock tests passing treated as integration working\n\nIf completion claimed without verification:\n{\"decision\": \"block\", \"reason\": \"[Role] reported complete without [specific verification].\"}\n\nIf verification shown:\n{\"decision\": \"approve\", \"reason\": \"Verification present.\"}",
+            "timeout": 30
           }
         ]
       }
