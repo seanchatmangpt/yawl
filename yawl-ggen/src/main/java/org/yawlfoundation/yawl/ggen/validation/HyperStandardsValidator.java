@@ -127,7 +127,7 @@ public class HyperStandardsValidator {
         checkers.add(new RegexGuardChecker(
             "H_TODO",
             "//\\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|@incomplete|@stub|placeholder)",
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // H_MOCK: Regex-based detection of forbidden class/method name prefixes.
@@ -135,7 +135,7 @@ public class HyperStandardsValidator {
         checkers.add(new RegexGuardChecker(
             "H_MOCK",
             "(?i)(mock|stub|fake|demo)[A-Z]\\w*",
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // H_SILENT: Regex-based detection of logging instead of throwing.
@@ -143,7 +143,7 @@ public class HyperStandardsValidator {
         checkers.add(new RegexGuardChecker(
             "H_SILENT",
             "(?i)log\\.(warn|error)\\([^)]*['\"].*not\\s+implemented",
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // H_STUB: SPARQL-based detection of placeholder returns
@@ -151,7 +151,7 @@ public class HyperStandardsValidator {
         checkers.add(new SparqlGuardChecker(
             "H_STUB",
             placeholderReturnQuery,
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // H_EMPTY: SPARQL-based detection of empty method bodies
@@ -159,7 +159,7 @@ public class HyperStandardsValidator {
         checkers.add(new SparqlGuardChecker(
             "H_EMPTY",
             emptyMethodBodyQuery,
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // H_FALLBACK: SPARQL-based detection of silent error handling
@@ -167,7 +167,7 @@ public class HyperStandardsValidator {
         checkers.add(new SparqlGuardChecker(
             "H_FALLBACK",
             silentErrorHandlingQuery,
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // H_LIE: SPARQL-based detection of documentation mismatches
@@ -175,7 +175,7 @@ public class HyperStandardsValidator {
         checkers.add(new SparqlGuardChecker(
             "H_LIE",
             documentationMismatchQuery,
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // --- Blue-ocean extension #1: H_PRINT_DEBUG ---
@@ -186,7 +186,7 @@ public class HyperStandardsValidator {
         checkers.add(new RegexGuardChecker(
             "H_PRINT_DEBUG",
             "System\\.(out|err)\\.(print|println|printf)\\(",
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         // --- Blue-ocean extension #2: H_SWALLOWED ---
@@ -197,7 +197,7 @@ public class HyperStandardsValidator {
         checkers.add(new WholeFileRegexGuardChecker(
             "H_SWALLOWED",
             "catch\\s*\\([^)]+\\)\\s*\\{\\s*\\}",
-            GuardChecker.Severity.FAIL
+            Severity.FAIL
         ));
 
         LOGGER.info("Registered {} guard checkers", checkers.size());
@@ -339,12 +339,21 @@ public class HyperStandardsValidator {
             try {
                 List<GuardViolation> violations = checker.check(javaFile);
                 for (GuardViolation violation : violations) {
-                    violation.setFile(javaFile.toString());
-                    LOGGER.debug("Found violation: {} at {}:{}", violation.getPattern(), javaFile, violation.getLine());
+                    // GuardViolation is immutable - recreate with file path set
+                    GuardViolation withFile = GuardViolation.builder()
+                        .pattern(violation.getPattern())
+                        .severity(violation.getSeverity())
+                        .file(javaFile.toString())
+                        .line(violation.getLine())
+                        .content(violation.getContent())
+                        .build();
+                    fileViolations.add(withFile);
+                    LOGGER.debug("Found violation: {} at {}:{}", withFile.getPattern(), javaFile, withFile.getLine());
                 }
-                fileViolations.addAll(violations);
             } catch (IOException e) {
                 LOGGER.warn("Failed to check {} with {}: {}", javaFile, checker.patternName(), e.getMessage());
+            } catch (GuardCheckerException e) {
+                LOGGER.warn("Checker {} failed on {}: {}", checker.patternName(), javaFile, e.getMessage());
             }
         }
         return fileViolations;

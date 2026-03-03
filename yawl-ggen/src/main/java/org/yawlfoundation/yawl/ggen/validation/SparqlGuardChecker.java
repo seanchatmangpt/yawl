@@ -17,10 +17,16 @@ public class SparqlGuardChecker implements GuardChecker {
 
     private final String patternName;
     private final String sparqlQuery;
+    private final Severity severity;
 
     public SparqlGuardChecker(String patternName, String sparqlQuery) {
+        this(patternName, sparqlQuery, Severity.FAIL);
+    }
+
+    public SparqlGuardChecker(String patternName, String sparqlQuery, Severity severity) {
         this.patternName = patternName;
         this.sparqlQuery = sparqlQuery;
+        this.severity = severity;
     }
 
     @Override
@@ -90,7 +96,7 @@ public class SparqlGuardChecker implements GuardChecker {
 
     @Override
     public Severity severity() {
-        return Severity.FAIL;
+        return severity;
     }
 
     /**

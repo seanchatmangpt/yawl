@@ -59,6 +59,47 @@ public class GuardReceipt {
         this.status = violations.isEmpty() ? "GREEN" : "RED";
     }
 
+    /** Finalize status and summary (alias for updateStatusAndSummary for API compatibility). */
+    public void finalizeStatus() {
+        updateStatusAndSummary();
+    }
+
+    /** Returns exit code based on status: 0 for GREEN, 2 for RED. */
+    public int getExitCode() {
+        return isGreen() ? 0 : 2;
+    }
+
+    /** Serialize to JSON string. */
+    public String toJson() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\n");
+        sb.append("  \"phase\": \"").append(phase).append("\",\n");
+        sb.append("  \"timestamp\": \"").append(timestamp).append("\",\n");
+        sb.append("  \"filesScanned\": ").append(filesScanned).append(",\n");
+        sb.append("  \"status\": \"").append(status).append("\",\n");
+        sb.append("  \"violations\": [\n");
+        for (int i = 0; i < violations.size(); i++) {
+            GuardViolation v = violations.get(i);
+            sb.append("    {\"pattern\": \"").append(v.getPattern()).append("\", ");
+            sb.append("\"file\": \"").append(v.getFile()).append("\", ");
+            sb.append("\"line\": ").append(v.getLine()).append(", ");
+            sb.append("\"content\": \"").append(escapeJson(v.getContent())).append("\", ");
+            sb.append("\"fixGuidance\": \"").append(escapeJson(v.getFixGuidance())).append("\"}");
+            if (i < violations.size() - 1) sb.append(",");
+            sb.append("\n");
+        }
+        sb.append("  ],\n");
+        sb.append("  \"summary\": ").append(summary.toJson()).append(",\n");
+        sb.append("  \"errorMessage\": ").append(errorMessage != null ? "\"" + escapeJson(errorMessage) + "\"" : "null").append("\n");
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private String escapeJson(String s) {
+        // Null-safe JSON string escaping - empty string is valid JSON representation of null/missing
+        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    }
+
     // Getters
     public String getPhase() { return phase; }
     public Instant getTimestamp() { return timestamp; }

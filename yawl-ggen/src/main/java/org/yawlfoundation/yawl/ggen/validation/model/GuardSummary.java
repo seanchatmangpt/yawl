@@ -97,4 +97,16 @@ public class GuardSummary {
     public void setHLieCount(int hLieCount) { this.hLieCount = hLieCount; }
     public void setHSilentCount(int hSilentCount) { this.hSilentCount = hSilentCount; }
     public void setTotalViolations(int totalViolations) { this.totalViolations = totalViolations; }
+
+    /** Serialize to JSON string. */
+    public String toJson() {
+        return String.format(
+            "{\"h_todo_count\": %d, \"h_mock_count\": %d, \"h_stub_count\": %d, " +
+            "\"h_empty_count\": %d, \"h_fallback_count\": %d, \"h_lie_count\": %d, " +
+            "\"h_silent_count\": %d, \"total_violations\": %d}",
+            hTodoCount, hMockViolationCount, hStubViolationCount,
+            hEmptyCount, hFallbackCount, hLieCount,
+            hSilentCount, totalViolations
+        );
+    }
 }
