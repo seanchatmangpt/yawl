@@ -129,6 +129,33 @@ public final class ErlTuple implements ErlTerm {
     }
 
     @Override
+    public byte[] encodeETF() throws ErlangException {
+        try {
+            EiBuffer buffer = new EiBuffer();
+            // Add external term tag
+            buffer.put((byte) 131); // EXTERNAL_TERM_TAG
+
+            if (arity() < 256) {
+                // SMALL_TUPLE_EXT
+                buffer.put((byte) 104);
+                buffer.put((byte) arity());
+            } else {
+                // LARGE_TUPLE_EXT
+                buffer.put((byte) 105);
+                buffer.putInt(arity());
+            }
+
+            for (ErlTerm element : elements) {
+                element.encodeToEiBuffer(buffer);
+            }
+
+            return buffer.toArray();
+        } catch (IOException e) {
+            throw new ErlangException("Failed to encode tuple to ETF", e);
+        }
+    }
+
+    @Override
     public String asString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");

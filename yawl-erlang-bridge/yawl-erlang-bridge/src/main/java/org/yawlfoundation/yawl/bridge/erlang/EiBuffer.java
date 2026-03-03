@@ -3,6 +3,7 @@ package org.yawlfoundation.yawl.bridge.erlang;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * Wrapper for the ei_x_buff structure from the Erlang interface.
@@ -14,7 +15,7 @@ import java.nio.charset.StandardCharsets;
  */
 public final class EiBuffer {
 
-    private final ByteBuffer buffer;
+    private byte[] bufferArray;
     private int size;
 
     /**
@@ -23,7 +24,7 @@ public final class EiBuffer {
      * @param initialCapacity The initial buffer capacity
      */
     public EiBuffer(int initialCapacity) {
-        this.buffer = ByteBuffer.allocate(initialCapacity);
+        this.bufferArray = new byte[initialCapacity];
         this.size = 0;
     }
 
@@ -59,7 +60,7 @@ public final class EiBuffer {
      */
     public byte[] toArray() {
         byte[] result = new byte[size];
-        System.arraycopy(buffer.array(), 0, result, 0, size);
+        System.arraycopy(bufferArray, 0, result, 0, size);
         return result;
     }
 
@@ -74,9 +75,9 @@ public final class EiBuffer {
         ensureCapacity(bytes.length);
 
         // Atom header: 1 byte type + 2 byte length + atom data
-        buffer.put((byte) 100); // ATOM_EXT
-        putShort(bytes.length);
-        buffer.put(bytes);
+        put((byte) 100); // ATOM_EXT
+        putShort((short) bytes.length);
+        put(bytes);
         size += bytes.length + 3;
     }
 
@@ -90,9 +91,9 @@ public final class EiBuffer {
         ensureCapacity(bytes.length);
 
         // Binary header: 1 byte type + 4 byte length + binary data
-        buffer.put((byte) 109); // BIN_EXT
+        put((byte) 109); // BIN_EXT
         putInt(bytes.length);
-        buffer.put(bytes);
+        put(bytes);
         size += bytes.length + 5;
     }
 
@@ -155,9 +156,9 @@ public final class EiBuffer {
         ensureCapacity(bytes.length);
 
         // String header: 1 byte type + 2 byte length + string data
-        buffer.put((byte) 107); // STRING_EXT
-        putShort(bytes.length);
-        buffer.put(bytes);
+        put((byte) 107); // STRING_EXT
+        putShort((short) bytes.length);
+        put(bytes);
         size += bytes.length + 3;
     }
 
@@ -179,7 +180,7 @@ public final class EiBuffer {
      */
     public void encodeListHeader(int length) throws IOException {
         ensureCapacity(length * 2 + 1);
-        buffer.put((byte) 108); // LIST_EXT
+        put((byte) 108); // LIST_EXT
         putInt(length);
         size += 5;
     }
@@ -245,6 +246,64 @@ public final class EiBuffer {
     }
 
     /**
+     * Puts a byte value into the buffer.
+     *
+     * @param b The byte value
+     */
+    public void put(byte b) throws IOException {
+        ensureCapacity(1);
+        bufferArray[size++] = b;
+    }
+
+    /**
+     * Puts the given byte array into the buffer.
+     *
+     * @param bytes The byte array
+     * @throws IOException if buffer capacity exceeded
+     */
+    public void put(byte[] bytes) throws IOException {
+        ensureCapacity(bytes.length);
+        System.arraycopy(bytes, 0, bufferArray, size, bytes.length);
+        size += bytes.length;
+    }
+
+    /**
+     * Puts a short value into the buffer.
+     *
+     * @param s The short value
+     * @throws IOException if buffer capacity exceeded
+     */
+    public void putShort(short s) throws IOException {
+        ensureCapacity(2);
+        buffer.putShort(s);
+        size += 2;
+    }
+
+    /**
+     * Puts an int value into the buffer.
+     *
+     * @param i The int value
+     * @throws IOException if buffer capacity exceeded
+     */
+    public void putInt(int i) throws IOException {
+        ensureCapacity(4);
+        buffer.putInt(i);
+        size += 4;
+    }
+
+    /**
+     * Puts a long value into the buffer.
+     *
+     * @param l The long value
+     * @throws IOException if buffer capacity exceeded
+     */
+    public void putLong(long l) throws IOException {
+        ensureCapacity(8);
+        buffer.putLong(l);
+        size += 8;
+    }
+
+    /**
      * Expands the buffer if needed.
      *
      * @param required The required additional space
@@ -275,7 +334,7 @@ public final class EiBuffer {
      *
      * @param value The int value
      */
-    private void putInt(int value) {
+    private void putIntInternal(int value) {
         buffer.put((byte) ((value >> 24) & 0xFF));
         buffer.put((byte) ((value >> 16) & 0xFF));
         buffer.put((byte) ((value >> 8) & 0xFF));
@@ -312,5 +371,61 @@ public final class EiBuffer {
         }
 
         size += digits + 3;
+    }
+
+    /**
+     * Encodes an Erlang double (64-bit float).
+     *
+     * @param value The double value
+     * @throws IOException if encoding fails
+     */
+    public void encodeDouble(double value) throws IOException {
+        ensureCapacity(9);
+        buffer.put((byte) 70); // NEW_FLOAT_EXT
+        putLong(Double.doubleToLongBits(value));
+        size += 9;
+    }
+
+    /**
+     * Encodes an Erlang map.
+     *
+     * @param keys The map keys
+     * @param values The map values
+     * @throws IOException if encoding fails
+     */
+    public void encodeMap(java.util.List<ErlTerm> keys, java.util.List<ErlTerm> values) throws IOException {
+        int arity = keys.size();
+        ensureCapacity(5 + (arity * 2));
+
+        // Map header: 131 (MAP_EXT) + 4 (size)
+        buffer.put((byte) 131);
+        buffer.putInt(arity);
+        size += 5;
+
+        // Encode key-value pairs
+        for (int i = 0; i < arity; i++) {
+            try {
+                keys.get(i).encodeToEiBuffer(this);
+                values.get(i).encodeToEiBuffer(this);
+            } catch (ErlangException e) {
+                throw new IOException("Failed to encode map element", e);
+            }
+        }
+    }
+
+    /**
+     * Puts a long value in big-endian order.
+     *
+     * @param value The long value
+     */
+    private void putLongInternal(long value) {
+        buffer.put((byte) ((value >> 56) & 0xFF));
+        buffer.put((byte) ((value >> 48) & 0xFF));
+        buffer.put((byte) ((value >> 40) & 0xFF));
+        buffer.put((byte) ((value >> 32) & 0xFF));
+        buffer.put((byte) ((value >> 24) & 0xFF));
+        buffer.put((byte) ((value >> 16) & 0xFF));
+        buffer.put((byte) ((value >> 8) & 0xFF));
+        buffer.put((byte) (value & 0xFF));
     }
 }

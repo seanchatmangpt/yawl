@@ -120,6 +120,44 @@ public final class ErlList implements ErlTerm {
     }
 
     @Override
+    public byte[] encodeETF() throws ErlangException {
+        try {
+            EiBuffer buffer = new EiBuffer();
+            // Add external term tag
+            buffer.put((byte) 131); // EXTERNAL_TERM_TAG
+
+            if (isEmpty()) {
+                buffer.put((byte) 106); // NIL_EXT
+            } else {
+                // Use LIST_EXT for proper lists
+                if (isProper) {
+                    buffer.put((byte) 108); // LIST_EXT
+                    buffer.putInt(elements.size());
+                    for (ErlTerm element : elements) {
+                        element.encodeToEiBuffer(buffer);
+                    }
+                    buffer.put((byte) 106); // NIL_EXT terminator
+                } else {
+                    // Encode improper list as tuple with tail
+                    ErlTerm[] elementsArray = elements.toArray(new ErlTerm[0]);
+                    if (elementsArray.length == 0) {
+                        buffer.put((byte) 106); // NIL_EXT
+                    } else {
+                        buffer.put((byte) 104); // SMALL_TUPLE_EXT
+                        buffer.put((byte) elementsArray.length);
+                        for (ErlTerm element : elementsArray) {
+                            element.encodeToEiBuffer(buffer);
+                        }
+                    }
+                }
+            }
+            return buffer.toArray();
+        } catch (IOException e) {
+            throw new ErlangException("Failed to encode list to ETF", e);
+        }
+    }
+
+    @Override
     public String asString() {
         if (isEmpty()) {
             return "[]";

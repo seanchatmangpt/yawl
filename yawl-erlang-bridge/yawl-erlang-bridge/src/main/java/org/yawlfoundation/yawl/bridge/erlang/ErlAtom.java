@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.bridge.erlang;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Represents an Erlang atom in the YAWL Erlang bridge.
@@ -52,6 +53,30 @@ public final class ErlAtom implements ErlTerm {
             buffer.encodeAtom(value);
         } catch (IOException e) {
             throw new ErlangException("Failed to encode atom: " + value, e);
+        }
+    }
+
+    @Override
+    public byte[] encodeETF() throws ErlangException {
+        try {
+            EiBuffer buffer = new EiBuffer();
+            // Add external term tag
+            buffer.put((byte) 131); // EXTERNAL_TERM_TAG
+
+            // Use small atom extension for atoms <= 255 bytes
+            byte[] bytes = value.getBytes(StandardCharsets.ISO_8859_1);
+            if (bytes.length <= 255) {
+                buffer.put((byte) 119); // SMALL_ATOM_EXT
+                buffer.put((byte) bytes.length);
+                buffer.put(bytes);
+            } else {
+                buffer.put((byte) 100); // ATOM_EXT
+                buffer.putShort((short) bytes.length);
+                buffer.put(bytes);
+            }
+            return buffer.toArray();
+        } catch (IOException e) {
+            throw new ErlangException("Failed to encode atom to ETF: " + value, e);
         }
     }
 

@@ -42,6 +42,37 @@ public final class ErlLong implements ErlTerm {
     }
 
     @Override
+    public byte[] encodeETF() throws ErlangException {
+        try {
+            EiBuffer buffer = new EiBuffer();
+            // Add external term tag
+            buffer.put((byte) 131); // EXTERNAL_TERM_TAG
+
+            if (value >= 0 && value <= 255) {
+                // SMALL_INTEGER_EXT
+                buffer.put((byte) 97);
+                buffer.put((byte) value);
+            } else if (value >= -2147483648 && value <= 2147483647) {
+                // INTEGER_EXT
+                buffer.put((byte) 98);
+                buffer.putInt((int) value);
+            } else {
+                // BIG_INTEGER_EXT (simplified - use ei buffer's encodeBigInt)
+                return encodeToEiBufferAndReturn();
+            }
+            return buffer.toArray();
+        } catch (IOException e) {
+            throw new ErlangException("Failed to encode long to ETF: " + value, e);
+        }
+    }
+
+    private byte[] encodeToEiBufferAndReturn() throws ErlangException {
+        EiBuffer buffer = new EiBuffer();
+        encodeToEiBuffer(buffer);
+        return buffer.toArray();
+    }
+
+    @Override
     public String asString() {
         return String.valueOf(value);
     }

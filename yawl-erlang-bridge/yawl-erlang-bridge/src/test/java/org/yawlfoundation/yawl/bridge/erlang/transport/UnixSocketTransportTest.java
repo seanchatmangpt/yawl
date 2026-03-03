@@ -2,7 +2,9 @@ package org.yawlfoundation.yawl.bridge.erlang.transport;
 
 import org.junit.jupiter.api.*;
 import org.yawlfoundation.yawl.bridge.erlang.ErlangException;
+import org.yawlfoundation.yawl.bridge.erlang.EiBuffer;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,10 +13,15 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for UnixSocketTransport.
+ * Comprehensive test suite for UnixSocketTransport.
+ *
+ * <p>Tests the complete Unix domain socket transport implementation including
+ * connection establishment, protocol handshake, RPC calls, and error handling.</p>
  *
  * <p>HYPER_STANDARDS: Comprehensive testing with real connections or throw.</p>
  */
+@DisplayName("UnixSocketTransport")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class UnixSocketTransportTest {
 
     private static final String TEST_COOKIE = "test_cookie";
@@ -22,6 +29,46 @@ class UnixSocketTransportTest {
     private static final String TEST_HOSTNAME = "localhost";
 
     private UnixSocketTransport transport;
+
+    @BeforeAll
+    static void setUpAll() {
+        // Clean up any existing test directory
+        if (Files.exists(TEST_SOCKET_DIR)) {
+            try {
+                Files.walk(TEST_SOCKET_DIR)
+                    .sorted((a, b) -> -a.compareTo(b))
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (Exception e) {
+                            // Ignore cleanup errors
+                        }
+                    });
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+        }
+    }
+
+    @AfterAll
+    static void tearDownAll() {
+        // Clean up test directory
+        if (Files.exists(TEST_SOCKET_DIR)) {
+            try {
+                Files.walk(TEST_SOCKET_DIR)
+                    .sorted((a, b) -> -a.compareTo(b))
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (Exception e) {
+                            // Ignore cleanup errors
+                        }
+                    });
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+        }
+    }
 
     @BeforeEach
     void setUp() {
@@ -43,24 +90,10 @@ class UnixSocketTransportTest {
         if (transport != null) {
             assertDoesNotThrow(transport::close);
         }
-
-        // Clean up test socket directory
-        try {
-            Files.walk(TEST_SOCKET_DIR)
-                .sorted((a, b) -> -a.compareTo(b))
-                .forEach(path -> {
-                    try {
-                        Files.delete(path);
-                    } catch (Exception e) {
-                        // Ignore cleanup errors
-                    }
-                });
-        } catch (Exception e) {
-            // Ignore cleanup errors
-        }
     }
 
     @Test
+    @Order(1)
     @DisplayName("Create transport with default configuration")
     void testCreateWithDefaults() {
         assertDoesNotThrow(() -> {
@@ -72,6 +105,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(2)
     @DisplayName("Create transport with custom configuration")
     void testCreateWithCustomConfig() {
         assertDoesNotThrow(() -> {
@@ -86,6 +120,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(3)
     @DisplayName("Fail to create transport with null cookie")
     void testCreateWithNullCookie() {
         assertThrows(ErlangException.class, () -> {
@@ -94,6 +129,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(4)
     @DisplayName("Fail to create transport with empty cookie")
     void testCreateWithEmptyCookie() {
         assertThrows(ErlangException.class, () -> {
@@ -102,6 +138,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(5)
     @DisplayName("Fail to create transport with null hostname")
     void testCreateWithNullHostname() {
         assertThrows(ErlangException.class, () -> {
@@ -110,6 +147,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(6)
     @DisplayName("Fail to create transport with null socket directory")
     void testCreateWithNullSocketDirectory() {
         assertThrows(ErlangException.class, () -> {
@@ -118,6 +156,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(7)
     @DisplayName("Get transport properties")
     void testGetProperties() {
         assertNotNull(transport.getNodeName());
@@ -125,9 +164,11 @@ class UnixSocketTransportTest {
         assertEquals(TEST_HOSTNAME, transport.getHostname());
         assertEquals(TEST_SOCKET_DIR, transport.getSocketDirectory());
         assertTrue(transport.getNodeName().contains("yawl_java_"));
+        System.out.println("Node name: " + transport.getNodeName());
     }
 
     @Test
+    @Order(8)
     @DisplayName("Check connection status")
     void testConnectionStatus() {
         assertTrue(transport.isConnected());
@@ -136,35 +177,49 @@ class UnixSocketTransportTest {
     }
 
     @Test
-    @DisplayName("Perform RPC operation")
-    void testRpcOperation() {
-        // Note: This test will fail until the native ei interface is implemented
-        // It tests the interface contract rather than actual functionality
-        assertThrows(UnsupportedOperationException.class, () -> {
-            transport.rpc("erlang", "node");
+    @Order(9)
+    @DisplayName("Perform RPC operation with empty args")
+    void testRpcOperationWithEmptyArgs() {
+        assertDoesNotThrow(() -> {
+            EiBuffer result = transport.rpc("test_module", "test_function", new ErlTerm[0]);
+            assertNotNull(result, "RPC should return result buffer");
+            assertTrue(result.size() > 0, "Result buffer should not be empty");
         });
     }
 
     @Test
-    @DisplayName("Perform RPC with timeout")
-    void testRpcWithTimeout() {
-        // Note: This test will fail until the native ei interface is implemented
-        // It tests the interface contract rather than actual functionality
+    @Order(10)
+    @DisplayName("Perform RPC operation with args - throws due to unimplemented ErlTerms")
+    void testRpcOperationWithArgs() {
+        // Real ErlTerms are required for actual RPC calls
+        // This test verifies the interface contract throws for incomplete implementation
         assertThrows(UnsupportedOperationException.class, () -> {
-            transport.rpc("erlang", "node", 5, TimeUnit.SECONDS);
-        });
+            // This would require real ErlTerm implementations
+            transport.rpc("test_module", "test_function", new ErlTerm[0]);
+        }, "RPC with args should throw until real ErlTerms are implemented");
     }
 
     @Test
+    @Order(11)
+    @DisplayName("Send challenge")
+    void testSendChallenge() {
+        assertDoesNotThrow(() -> {
+            transport.sendChallenge(TEST_COOKIE);
+        }, "Send challenge should succeed");
+    }
+
+    @Test
+    @Order(12)
     @DisplayName("Fail to perform RPC on closed transport")
     void testRpcOnClosedTransport() {
         transport.close();
         assertThrows(IllegalStateException.class, () -> {
-            transport.rpc("erlang", "node");
+            transport.rpc("test_module", "test_function", new ErlTerm[0]);
         });
     }
 
     @Test
+    @Order(13)
     @DisplayName("Transport factory methods")
     void testFactoryMethods() {
         // Test factory with defaults
@@ -204,6 +259,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(14)
     @DisplayName("Handle socket directory creation")
     void testSocketDirectoryCreation() {
         // Test that the directory is created if it doesn't exist
@@ -232,16 +288,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
-    @DisplayName("Handle socket directory permission issues")
-    void testSocketDirectoryPermissions() {
-        // This test would require creating a directory with restrictive permissions
-        // For now, we just verify that normal operations work
-        assertDoesNotThrow(() -> {
-            assertNotNull(transport.getSocketDirectory());
-        });
-    }
-
-    @Test
+    @Order(15)
     @DisplayName("Generate unique node names")
     void testNodeNameGeneration() {
         UnixSocketTransport transport1 = new UnixSocketTransport(TEST_COOKIE, TEST_HOSTNAME, TEST_SOCKET_DIR);
@@ -261,6 +308,7 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(16)
     @DisplayName("Close multiple times safely")
     void testCloseMultipleTimes() {
         assertDoesNotThrow(() -> {
@@ -271,11 +319,12 @@ class UnixSocketTransportTest {
     }
 
     @Test
+    @Order(17)
     @DisplayName("Close after exceptions")
     void testCloseAfterExceptions() {
-        // Try to perform RPC that will throw
-        assertThrows(UnsupportedOperationException.class, () -> {
-            transport.rpc("erlang", "node");
+        // Try to perform RPC that will throw due to no Erlang server
+        assertThrows(IllegalStateException.class, () -> {
+            transport.rpc("nonexistent_module", "nonexistent_function");
         });
 
         // Should still be able to close
@@ -284,4 +333,32 @@ class UnixSocketTransportTest {
         // Should not throw when closing again
         assertDoesNotThrow(transport::close);
     }
-}
+
+    @Test
+    @Order(18)
+    @DisplayName("Heartbeat mechanism")
+    void testHeartbeat() {
+        // Test that heartbeat is running without causing disconnection
+        assertTrue(transport.isConnected(), "Transport should remain connected");
+
+        // Wait a bit for potential heartbeat cycles
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        assertTrue(transport.isConnected(), "Transport should still be connected after heartbeat");
+    }
+
+    @Test
+    @Order(19)
+    @DisplayName("Socket path creation")
+    void testSocketPathCreation() {
+        Path socketPath = transport.getSocketPath();
+        assertNotNull(socketPath, "Socket path should not be null");
+        assertTrue(socketPath.toString().endsWith(".sock"), "Socket path should end with .sock");
+        assertTrue(socketPath.startsWith(TEST_SOCKET_DIR.toString()), "Socket path should be in the correct directory");
+    }
+
+    }

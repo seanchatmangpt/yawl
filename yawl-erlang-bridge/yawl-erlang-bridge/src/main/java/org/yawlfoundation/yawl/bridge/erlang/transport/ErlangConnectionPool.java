@@ -14,6 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.yawlfoundation.yawl.bridge.erlang.ErlangException;
 import org.yawlfoundation.yawl.bridge.erlang.ErlTerm;
+import org.yawlfoundation.yawl.bridge.erlang.EiBuffer;
 
 /**
  * Connection pool for managing multiple Erlang node connections.
@@ -117,11 +118,11 @@ public final class ErlangConnectionPool implements AutoCloseable {
      * @param module The Erlang module name
      * @param function The Erlang function name
      * @param args The function arguments
-     * @return The result as an ErlTerm
+     * @return The result as an EiBuffer
      * @throws ErlangException if RPC call fails after all retries
      * @throws IllegalStateException if pool is closed
      */
-    public ErlTerm rpc(String module, String function, ErlTerm... args) throws ErlangException {
+    public EiBuffer rpc(String module, String function, ErlTerm... args) throws ErlangException {
         checkClosed();
         return executeRpcWithRetry(module, function, args, poolSize);
     }
@@ -134,11 +135,11 @@ public final class ErlangConnectionPool implements AutoCloseable {
      * @param timeout The timeout value
      * @param unit The timeout unit
      * @param args The function arguments
-     * @return The result as an ErlTerm
+     * @return The result as an EiBuffer
      * @throws ErlangException if RPC call fails after all retries
      * @throws IllegalStateException if pool is closed
      */
-    public ErlTerm rpc(String module, String function,
+    public EiBuffer rpc(String module, String function,
                      long timeout, TimeUnit unit,
                      ErlTerm... args) throws ErlangException {
         checkClosed();
@@ -152,10 +153,10 @@ public final class ErlangConnectionPool implements AutoCloseable {
      * @param function The Erlang function name
      * @param args The function arguments
      * @param remainingRetries Number of retries remaining
-     * @return The result as an ErlTerm
+     * @return The result as an EiBuffer
      * @throws ErlangException if all retries fail
      */
-    private ErlTerm executeRpcWithRetry(String module, String function,
+    private EiBuffer executeRpcWithRetry(String module, String function,
                                      ErlTerm[] args, int remainingRetries) throws ErlangException {
         ConnectionWrapper wrapper = getConnectionWrapper();
 
@@ -185,10 +186,10 @@ public final class ErlangConnectionPool implements AutoCloseable {
      * @param unit The timeout unit
      * @param args The function arguments
      * @param remainingRetries Number of retries remaining
-     * @return The result as an ErlTerm
+     * @return The result as an EiBuffer
      * @throws ErlangException if all retries fail
      */
-    private ErlTerm executeRpcWithRetry(String module, String function,
+    private EiBuffer executeRpcWithRetry(String module, String function,
                                      long timeout, TimeUnit unit,
                                      ErlTerm[] args, int remainingRetries) throws ErlangException {
         ConnectionWrapper wrapper = getConnectionWrapper();

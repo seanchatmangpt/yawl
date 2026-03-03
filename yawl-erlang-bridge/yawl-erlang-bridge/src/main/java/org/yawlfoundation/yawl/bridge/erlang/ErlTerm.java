@@ -6,9 +6,13 @@ package org.yawlfoundation.yawl.bridge.erlang;
  * <p>This interface forms the foundation of typed Erlang term representation,
  * allowing safe encoding and decoding between Java and Erlang data types.</p>
  *
+ * <p>Each Erlang term can be encoded to Erlang External Term Format (ETF)
+ * and decoded from ETF byte arrays for crossing the JVM ↔ BEAM boundary.</p>
+ *
  * @since 1.0.0
  */
-public sealed interface ErlTerm permits ErlAtom, ErlList, ErlTuple, ErlBinary, ErlLong {
+public sealed interface ErlTerm
+    permits ErlAtom, ErlList, ErlTuple, ErlBinary, ErlLong, ErlDouble, ErlMap, ErlNil {
 
     /**
      * Encodes this Erlang term to an ei buffer for transmission.
@@ -17,6 +21,18 @@ public sealed interface ErlTerm permits ErlAtom, ErlList, ErlTuple, ErlBinary, E
      * @throws ErlangException if encoding fails
      */
     void encodeToEiBuffer(EiBuffer buffer) throws ErlangException;
+
+    /**
+     * Encodes this Erlang term to Erlang External Term Format (ETF).
+     *
+     * @return The ETF encoded byte array
+     * @throws ErlangException if encoding fails
+     */
+    default byte[] encodeETF() throws ErlangException {
+        EiBuffer buffer = new EiBuffer();
+        encodeToEiBuffer(buffer);
+        return buffer.toArray();
+    }
 
     /**
      * Returns the string representation of this Erlang term.
@@ -44,5 +60,24 @@ public sealed interface ErlTerm permits ErlAtom, ErlList, ErlTuple, ErlBinary, E
      */
     default boolean hasArity(int minArity) {
         throw new UnsupportedOperationException("Arity check not supported for this term type");
+    }
+
+    /**
+     * Decodes an Erlang term from Erlang External Term Format (ETF).
+     *
+     * <p>This is a static factory method that decodes ETF byte arrays
+     * into the appropriate ErlTerm implementation.</p>
+     *
+     * @param data The ETF encoded byte array
+     * @return The decoded ErlTerm
+     * @throws ErlangException if decoding fails
+     */
+    static ErlTerm decodeETF(byte[] data) throws ErlangException {
+        if (data == null || data.length == 0) {
+            throw new ErlangException("ETF data cannot be null or empty");
+        }
+
+        EtDecoder decoder = new EtDecoder(data);
+        return decoder.decode();
     }
 }

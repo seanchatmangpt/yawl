@@ -7,10 +7,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 /**
  * Implementation of the ProcessMiningClient that delegates to Erlang nodes.
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 public final class ProcessMiningClientImpl implements ProcessMiningClient {
 
     private final ErlangNode erlangNode;
-    private final ConnectionInfo connectionInfo;
     private volatile boolean closed = false;
 
     /**
@@ -32,12 +30,6 @@ public final class ProcessMiningClientImpl implements ProcessMiningClient {
      */
     public ProcessMiningClientImpl(String nodeName, String cookie, Path socketPath) {
         this.erlangNode = new ErlangNode(nodeName, cookie, socketPath);
-        this.connectionInfo = new ConnectionInfo(
-            nodeName,
-            "local",  // Unix domain socket protocol
-            socketPath,
-            System.currentTimeMillis()
-        );
     }
 
     /**
@@ -51,128 +43,176 @@ public final class ProcessMiningClientImpl implements ProcessMiningClient {
     }
 
     @Override
-    public ImportResult importOcel(Path ocelPath) throws ProcessMiningException {
+    public OcelId importOcel(Path path) throws ErlangException {
         checkClosed();
-        validatePath(ocelPath, "OCEL file");
+        validatePath(path, "OCEL file");
 
         try {
             // Build import request
-            ErlTerm[] request = buildImportRequest(ocelPath);
+            ErlTerm[] request = buildImportRequest(path);
 
             // Execute import
-            ErlTerm response = erlangNode.rpc("pm_ocel", "import", request);
+            ErlTerm response = erlangNode.rpc("pm_ocel", "import_ocel", request);
 
             // Parse response
-            return parseImportResponse(response);
+            return parseOcelIdResponse(response);
 
         } catch (ErlangException e) {
-            throw new ProcessMiningException(
-                "Failed to import OCEL file: " + e.getMessage(),
-                "importOcel", "pm_ocel", "import", e);
+            throw new ErlangException("Failed to import OCEL file: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public DiscoveryResult slimLink(Map<String, ErlTerm> parameters) throws ProcessMiningException {
+    public SlimOcelId slimLink(OcelId id) throws ErlangException {
         checkClosed();
-        validateParameters(parameters, "slimLink parameters");
+        if (id == null) {
+            throw new IllegalArgumentException("OCEL ID cannot be null");
+        }
 
         try {
-            // Build discovery request
-            ErlTerm[] request = buildDiscoveryRequest(parameters);
+            // Build slim link request
+            ErlTerm[] request = buildSlimLinkRequest(id);
 
             // Execute discovery
             ErlTerm response = erlangNode.rpc("pm_discovery", "slim_link", request);
 
             // Parse response
-            return parseDiscoveryResponse(response);
+            return parseSlimOcelIdResponse(response);
 
         } catch (ErlangException e) {
-            throw new ProcessMiningException(
-                "Failed to perform slim link discovery: " + e.getMessage(),
-                "slimLink", "pm_discovery", "slim_link", e);
+            throw new ErlangException("Failed to perform slim link discovery: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public DeclareDiscoveryResult discoverOcDeclare(DiscoveryType discoveryType,
-                                                 Map<String, ErlTerm> constraints) throws ProcessMiningException {
+    public List<Constraint> discoverOcDeclare(SlimOcelId id) throws ErlangException {
         checkClosed();
-        validateDiscoveryType(discoveryType);
-        validateParameters(constraints, "DECLARE discovery constraints");
+        if (id == null) {
+            throw new IllegalArgumentException("Slim OCEL ID cannot be null");
+        }
 
         try {
             // Build discovery request
-            ErlTerm[] request = buildDeclareDiscoveryRequest(discoveryType, constraints);
+            ErlTerm[] request = buildDiscoverOcDeclareRequest(id);
 
             // Execute discovery
             ErlTerm response = erlangNode.rpc("pm_declare", "discover_oc_declare", request);
 
             // Parse response
-            return parseDeclareDiscoveryResponse(response);
+            return parseDiscoverOcDeclareResponse(response);
 
         } catch (ErlangException e) {
-            throw new ProcessMiningException(
-                "Failed to perform DECLARE discovery: " + e.getMessage(),
-                "discoverOcDeclare", "pm_declare", "discover_oc_declare", e);
+            throw new ErlangException("Failed to perform DECLARE discovery: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public ReplayResult tokenReplay(String logId, String modelId,
-                                  ReplayParameters replayParameters) throws ProcessMiningException {
+    public ConformanceResult tokenReplay(OcelId ocel, PetriNetId pn) throws ErlangException {
         checkClosed();
-        validateNotBlank(logId, "log ID");
-        validateNotBlank(modelId, "model ID");
-        validateParameters(replayParameters, "replay parameters");
+        if (ocel == null) {
+            throw new IllegalArgumentException("OCEL ID cannot be null");
+        }
+        if (pn == null) {
+            throw new IllegalArgumentException("Petri net ID cannot be null");
+        }
 
         try {
             // Build replay request
-            ErlTerm[] request = buildReplayRequest(logId, modelId, replayParameters);
+            ErlTerm[] request = buildTokenReplayRequest(ocel, pn);
 
             // Execute replay
             ErlTerm response = erlangNode.rpc("pm_replay", "token_replay", request);
 
             // Parse response
-            return parseReplayResponse(response);
+            return parseTokenReplayResponse(response);
 
         } catch (ErlangException e) {
-            throw new ProcessMiningException(
-                "Failed to perform token replay: " + e.getMessage(),
-                "tokenReplay", "pm_replay", "token_replay", e);
+            throw new ErlangException("Failed to perform token replay: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public ErlTerm executeMiningQuery(String moduleName, String functionName,
-                                    List<ErlTerm> arguments) throws ProcessMiningException {
+    public DirectlyFollowsGraph discoverDfg(SlimOcelId id) throws ErlangException {
         checkClosed();
-        validateNotBlank(moduleName, "module name");
-        validateNotBlank(functionName, "function name");
-        validateNotNull(arguments, "arguments");
+        if (id == null) {
+            throw new IllegalArgumentException("Slim OCEL ID cannot be null");
+        }
 
         try {
-            // Convert arguments to array
-            ErlTerm[] argsArray = arguments.toArray(new ErlTerm[0]);
+            // Build DFG discovery request
+            ErlTerm[] request = buildDiscoverDfgRequest(id);
 
-            // Execute query
-            return erlangNode.rpc(moduleName, functionName, argsArray);
+            // Execute discovery
+            ErlTerm response = erlangNode.rpc("pm_discovery", "discover_dfg", request);
+
+            // Parse response
+            return parseDiscoverDfgResponse(response);
 
         } catch (ErlangException e) {
-            throw new ProcessMiningException(
-                "Failed to execute mining query: " + e.getMessage(),
-                "executeMiningQuery", moduleName, functionName, e);
+            throw new ErlangException("Failed to discover directly follows graph: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public PetriNet mineAlphaPlusPlus(SlimOcelId id) throws ErlangException {
+        checkClosed();
+        if (id == null) {
+            throw new IllegalArgumentException("Slim OCEL ID cannot be null");
+        }
+
+        try {
+            // Build mining request
+            ErlTerm[] request = buildMineAlphaPlusPlusRequest(id);
+
+            // Execute mining
+            ErlTerm response = erlangNode.rpc("pm_mining", "mine_alpha_plus", request);
+
+            // Parse response
+            return parseMineAlphaPlusPlusResponse(response);
+
+        } catch (ErlangException e) {
+            throw new ErlangException("Failed to mine Petri net: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void freeOcel(OcelId id) throws ErlangException {
+        checkClosed();
+        if (id == null) {
+            throw new IllegalArgumentException("OCEL ID cannot be null");
+        }
+
+        try {
+            // Build free request
+            ErlTerm[] request = buildFreeOcelRequest(id);
+
+            // Execute free operation
+            ErlTerm response = erlangNode.rpc("pm_ocel", "free_ocel", request);
+
+            // Verify successful response
+            if (!(response instanceof ErlAtom) || !("ok".equals(((ErlAtom) response).getValue()))) {
+                throw new ErlangException("Failed to free OCEL resources");
+            }
+
+        } catch (ErlangException e) {
+            throw new ErlangException("Failed to free OCEL resources: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Creates a new ProcessMiningClient with default configuration.
+     *
+     * @return A new ProcessMiningClient instance
+     */
+    public static ProcessMiningClient create() {
+        String nodeName = "yawl_process_mining@localhost";
+        String cookie = "yawl";
+        return new ProcessMiningClientImpl(nodeName, cookie);
     }
 
     @Override
     public boolean isConnected() {
         return !closed && erlangNode.isConnected();
-    }
-
-    @Override
-    public ConnectionInfo getConnectionInfo() {
-        return connectionInfo;
     }
 
     @Override
@@ -186,8 +226,8 @@ public final class ProcessMiningClientImpl implements ProcessMiningClient {
     /**
      * Builds an import request for an OCEL file.
      */
-    private ErlTerm[] buildImportRequest(Path ocelPath) {
-        ErlTerm pathTerm = ErlAtom.of(ocelPath.toString());
+    private ErlTerm[] buildImportRequest(Path path) {
+        ErlTerm pathTerm = ErlAtom.of(path.toString());
 
         return new ErlTerm[]{
             ErlAtom.of("import_ocel"),
@@ -196,205 +236,261 @@ public final class ProcessMiningClientImpl implements ProcessMiningClient {
     }
 
     /**
-     * Builds a discovery request for slim link discovery.
+     * Builds a slim link discovery request.
      */
-    private ErlTerm[] buildDiscoveryRequest(Map<String, ErlTerm> parameters) {
+    private ErlTerm[] buildSlimLinkRequest(OcelId id) {
         ErlAtom opTerm = ErlAtom.of("slim_link");
+        ErlTerm idTerm = ErlAtom.of(id.value().toString());
 
-        // Convert parameters to Erlang list of tuples
-        List<ErlTerm> paramList = parameters.entrySet().stream()
-            .map(entry -> ErlTuple.of(
-                ErlAtom.of(entry.getKey()),
-                entry.getValue()
-            ))
-            .collect(Collectors.toList());
-
-        ErlTerm paramsTerm = ErlList.of(paramList);
-
-        return new ErlTerm[]{opTerm, paramsTerm};
+        return new ErlTerm[]{opTerm, ErlList.of(idTerm)};
     }
 
     /**
      * Builds a DECLARE discovery request.
      */
-    private ErlTerm[] buildDeclareDiscoveryRequest(DiscoveryType discoveryType,
-                                                 Map<String, ErlTerm> constraints) {
+    private ErlTerm[] buildDiscoverOcDeclareRequest(SlimOcelId id) {
         ErlAtom opTerm = ErlAtom.of("discover_oc_declare");
-        ErlAtom typeTerm = ErlAtom.of(discoveryType.name().toLowerCase());
+        ErlTerm idTerm = ErlAtom.of(id.value().toString());
 
-        // Convert constraints to Erlang list of tuples
-        List<ErlTerm> constraintList = constraints.entrySet().stream()
-            .map(entry -> ErlTuple.of(
-                ErlAtom.of(entry.getKey()),
-                entry.getValue()
-            ))
-            .collect(Collectors.toList());
-
-        ErlTerm constraintsTerm = ErlList.of(constraintList);
-
-        return new ErlTerm[]{opTerm, typeTerm, constraintsTerm};
+        return new ErlTerm[]{opTerm, ErlList.of(idTerm)};
     }
 
     /**
      * Builds a token replay request.
      */
-    private ErlTerm[] buildReplayRequest(String logId, String modelId,
-                                       ReplayParameters replayParameters) {
+    private ErlTerm[] buildTokenReplayRequest(OcelId ocel, PetriNetId pn) {
         ErlAtom opTerm = ErlAtom.of("token_replay");
-        ErlAtom logIdTerm = ErlAtom.of(logId);
-        ErlAtom modelIdTerm = ErlAtom.of(modelId);
+        ErlTerm ocelTerm = ErlAtom.of(ocel.value().toString());
+        ErlTerm pnTerm = ErlAtom.of(pn.value().toString());
 
-        // Build replay parameters
-        ErlTerm[] paramPairs = {
-            ErlTuple.of(ErlAtom.of("alignment_method"), ErlAtom.of(replayParameters.getAlignmentMethod())),
-            ErlTuple.of(ErlAtom.of("fitness_threshold"), ErlLong.of((long) (replayParameters.getFitnessThreshold() * 1000)))
-        };
-
-        ErlTerm paramsTerm = ErlList.of(paramPairs);
-
-        return new ErlTerm[]{opTerm, logIdTerm, modelIdTerm, paramsTerm};
+        return new ErlTerm[]{opTerm, ErlList.of(ocelTerm, pnTerm)};
     }
 
     /**
-     * Parses an import response.
+     * Builds a DFG discovery request.
      */
-    private ImportResult parseImportResponse(ErlTerm response) throws ProcessMiningException {
-        // Expected format: {ok, LogId, EventCount, ObjectCount, Metadata}
+    private ErlTerm[] buildDiscoverDfgRequest(SlimOcelId id) {
+        ErlAtom opTerm = ErlAtom.of("discover_dfg");
+        ErlTerm idTerm = ErlAtom.of(id.value().toString());
+
+        return new ErlTerm[]{opTerm, ErlList.of(idTerm)};
+    }
+
+    /**
+     * Builds an Alpha++ mining request.
+     */
+    private ErlTerm[] buildMineAlphaPlusPlusRequest(SlimOcelId id) {
+        ErlAtom opTerm = ErlAtom.of("mine_alpha_plus");
+        ErlTerm idTerm = ErlAtom.of(id.value().toString());
+
+        return new ErlTerm[]{opTerm, ErlList.of(idTerm)};
+    }
+
+    /**
+     * Builds a free OCEL request.
+     */
+    private ErlTerm[] buildFreeOcelRequest(OcelId id) {
+        ErlTerm idTerm = ErlAtom.of(id.value().toString());
+
+        return new ErlTerm[]{ErlAtom.of("free_ocel"), ErlList.of(idTerm)};
+    }
+
+    /**
+     * Parses an OCEL ID response from Erlang.
+     */
+    private OcelId parseOcelIdResponse(ErlTerm response) throws ErlangException {
+        // Expected format: {ok, UUID}
+        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(2)) {
+            ErlTuple tuple = (ErlTuple) response;
+            ErlTerm okTag = tuple.get(0);
+
+            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
+                ErlTerm uuidTerm = tuple.get(1);
+                if (uuidTerm instanceof ErlAtom) {
+                    String uuidStr = ((ErlAtom) uuidTerm).getValue();
+                    return OcelId.fromString(uuidStr);
+                }
+            }
+        }
+
+        throw new ErlangException("Invalid OCEL ID response format");
+    }
+
+    /**
+     * Parses a SlimOcelId response from Erlang.
+     */
+    private SlimOcelId parseSlimOcelIdResponse(ErlTerm response) throws ErlangException {
+        // Expected format: {ok, UUID}
+        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(2)) {
+            ErlTuple tuple = (ErlTuple) response;
+            ErlTerm okTag = tuple.get(0);
+
+            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
+                ErlTerm uuidTerm = tuple.get(1);
+                if (uuidTerm instanceof ErlAtom) {
+                    String uuidStr = ((ErlAtom) uuidTerm).getValue();
+                    return SlimOcelId.fromString(uuidStr);
+                }
+            }
+        }
+
+        throw new ErlangException("Invalid Slim OCEL ID response format");
+    }
+
+    /**
+     * Parses a DECLARE discovery response from Erlang.
+     */
+    private List<Constraint> parseDiscoverOcDeclareResponse(ErlTerm response) throws ErlangException {
+        // Expected format: {ok, Constraints}
+        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(2)) {
+            ErlTuple tuple = (ErlTuple) response;
+            ErlTerm okTag = tuple.get(0);
+
+            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
+                ErlTerm constraintsTerm = tuple.get(1);
+                if (constraintsTerm instanceof ErlList) {
+                    List<ErlTerm> constraintTerms = ((ErlList) constraintsTerm).getElements();
+                    List<Constraint> constraints = new ArrayList<>();
+
+                    for (ErlTerm constraintTerm : constraintTerms) {
+                        if (constraintTerm instanceof ErlTuple && ((ErlTuple) constraintTerm).hasArity(3)) {
+                            ErlTuple constraintTuple = (ErlTuple) constraintTerm;
+                            ErlTerm templateTerm = constraintTuple.get(0);
+                            ErlTerm paramsTerm = constraintTuple.get(1);
+                            ErlTerm supportTerm = constraintTuple.get(2);
+
+                            String template = extractString(templateTerm);
+                            Map<String, Object> params = parseParams(paramsTerm);
+                            double support = extractDouble(supportTerm);
+
+                            constraints.add(new Constraint(template, params, support));
+                        }
+                    }
+
+                    return constraints;
+                }
+            }
+        }
+
+        throw new ErlangException("Invalid DECLARE discovery response format");
+    }
+
+    /**
+     * Parses a token replay response from Erlang.
+     */
+    private ConformanceResult parseTokenReplayResponse(ErlTerm response) throws ErlangException {
+        // Expected format: {ok, Fitness, Missing, Remaining, Consumed}
         if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(5)) {
             ErlTuple tuple = (ErlTuple) response;
             ErlTerm okTag = tuple.get(0);
 
             if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
-                ErlTerm logIdTerm = tuple.get(1);
-                ErlTerm eventCountTerm = tuple.get(2);
-                ErlTerm objectCountTerm = tuple.get(3);
-                ErlTerm metadataTerm = tuple.get(4);
+                ErlTerm fitnessTerm = tuple.get(1);
+                ErlTerm missingTerm = tuple.get(2);
+                ErlTerm remainingTerm = tuple.get(3);
+                ErlTerm consumedTerm = tuple.get(4);
 
-                String logId = extractString(logIdTerm);
-                int eventCount = extractInt(eventCountTerm);
-                int objectCount = extractInt(objectCountTerm);
-                Map<String, ErlTerm> metadata = extractMap(metadataTerm);
-
-                return new ImportResult(logId, eventCount, objectCount, metadata);
-            }
-        }
-
-        throw new ProcessMiningException("Invalid import response format", "parseImportResponse");
-    }
-
-    /**
-     * Parses a discovery response.
-     */
-    private DiscoveryResult parseDiscoveryResponse(ErlTerm response) throws ProcessMiningException {
-        // Expected format: {ok, ModelId, Patterns, Metrics, Transitions}
-        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(5)) {
-            ErlTuple tuple = (ErlTuple) response;
-            ErlTerm okTag = tuple.get(0);
-
-            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
-                ErlTerm modelIdTerm = tuple.get(1);
-                ErlTerm patternsTerm = tuple.get(2);
-                ErlTerm metricsTerm = tuple.get(3);
-                ErlTerm transitionsTerm = tuple.get(4);
-
-                String modelId = extractString(modelIdTerm);
-                List<ErlTerm> patterns = extractList(patternsTerm);
-                Map<String, ErlTerm> metrics = extractMap(metricsTerm);
-                List<ErlTerm> transitions = extractList(transitionsTerm);
-
-                return new DiscoveryResult(modelId, patterns, metrics, transitions);
-            }
-        }
-
-        throw new ProcessMiningException("Invalid discovery response format", "parseDiscoveryResponse");
-    }
-
-    /**
-     * Parses a DECLARE discovery response.
-     */
-    private DeclareDiscoveryResult parseDeclareDiscoveryResponse(ErlTerm response) throws ProcessMiningException {
-        // Expected format: {ok, DiscoveryId, Patterns, Violations, Coverage}
-        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(5)) {
-            ErlTuple tuple = (ErlTuple) response;
-            ErlTerm okTag = tuple.get(0);
-
-            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
-                ErlTerm discoveryIdTerm = tuple.get(1);
-                ErlTerm patternsTerm = tuple.get(2);
-                ErlTerm violationsTerm = tuple.get(3);
-                ErlTerm coverageTerm = tuple.get(4);
-
-                String discoveryId = extractString(discoveryIdTerm);
-                List<ErlTerm> patterns = extractList(patternsTerm);
-                Map<String, ErlTerm> violations = extractMap(violationsTerm);
-                double coverage = extractDouble(coverageTerm);
-
-                return new DeclareDiscoveryResult(discoveryId, patterns, violations, coverage);
-            }
-        }
-
-        throw new ProcessMiningException("Invalid DECLARE discovery response format", "parseDeclareDiscoveryResponse");
-    }
-
-    /**
-     * Parses a token replay response.
-     */
-    private ReplayResult parseReplayResponse(ErlTerm response) throws ProcessMiningException {
-        // Expected format: {ok, ReplayId, AlignedEvents, MisalignedEvents, Fitness, Details}
-        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(6)) {
-            ErlTuple tuple = (ErlTuple) response;
-            ErlTerm okTag = tuple.get(0);
-
-            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
-                ErlTerm replayIdTerm = tuple.get(1);
-                ErlTerm alignedTerm = tuple.get(2);
-                ErlTerm misalignedTerm = tuple.get(3);
-                ErlTerm fitnessTerm = tuple.get(4);
-                ErlTerm detailsTerm = tuple.get(5);
-
-                String replayId = extractString(replayIdTerm);
-                int alignedEvents = extractInt(alignedTerm);
-                int misalignedEvents = extractInt(misalignedTerm);
                 double fitness = extractDouble(fitnessTerm);
-                Map<String, ErlTerm> details = extractMap(detailsTerm);
+                int missing = extractInt(missingTerm);
+                int remaining = extractInt(remainingTerm);
+                int consumed = extractInt(consumedTerm);
 
-                return new ReplayResult(replayId, alignedEvents, misalignedEvents, fitness, details);
+                return new ConformanceResult(fitness, missing, remaining, consumed);
             }
         }
 
-        throw new ProcessMiningException("Invalid token replay response format", "parseReplayResponse");
+        throw new ErlangException("Invalid token replay response format");
+    }
+
+    /**
+     * Parses a DFG response from Erlang.
+     */
+    private DirectlyFollowsGraph parseDiscoverDfgResponse(ErlTerm response) throws ErlangException {
+        // Expected format: {ok, Edges}
+        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(2)) {
+            ErlTuple tuple = (ErlTuple) response;
+            ErlTerm okTag = tuple.get(0);
+
+            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
+                ErlTerm edgesTerm = tuple.get(1);
+                if (edgesTerm instanceof ErlList) {
+                    Map<String, Map<String, Integer>> edges = new HashMap<>();
+
+                    for (ErlTerm edgeTerm : ((ErlList) edgesTerm).getElements()) {
+                        if (edgeTerm instanceof ErlTuple && ((ErlTuple) edgeTerm).hasArity(3)) {
+                            ErlTuple edgeTuple = (ErlTuple) edgeTerm;
+                            ErlTerm sourceTerm = edgeTuple.get(0);
+                            ErlTerm targetTerm = edgeTuple.get(1);
+                            ErlTerm countTerm = edgeTuple.get(2);
+
+                            String source = extractString(sourceTerm);
+                            String target = extractString(targetTerm);
+                            int count = extractInt(countTerm);
+
+                            edges.computeIfAbsent(source, k -> new HashMap<>())
+                                 .put(target, count);
+                        }
+                    }
+
+                    return new DirectlyFollowsGraph(edges);
+                }
+            }
+        }
+
+        throw new ErlangException("Invalid DFG response format");
+    }
+
+    /**
+     * Parses a Petri net response from Erlang.
+     */
+    private PetriNet parseMineAlphaPlusPlusResponse(ErlTerm response) throws ErlangException {
+        // Expected format: {ok, PNML_XML}
+        if (response instanceof ErlTuple && ((ErlTuple) response).hasArity(2)) {
+            ErlTuple tuple = (ErlTuple) response;
+            ErlTerm okTag = tuple.get(0);
+
+            if (okTag instanceof ErlAtom && "ok".equals(((ErlAtom) okTag).getValue())) {
+                ErlTerm xmlTerm = tuple.get(1);
+                String pnmlXml = extractString(xmlTerm);
+                return new PetriNet(pnmlXml);
+            }
+        }
+
+        throw new ErlangException("Invalid Petri net mining response format");
     }
 
     // Helper methods for extracting values from ErlTerms
-    private String extractString(ErlTerm term) throws ProcessMiningException {
+    private String extractString(ErlTerm term) throws ErlangException {
         if (term instanceof ErlAtom) {
             return ((ErlAtom) term).getValue();
         }
-        throw new ProcessMiningException("Expected atom, got: " + term.type(), "extractString");
+        throw new ErlangException("Expected atom, got: " + term.type());
     }
 
-    private int extractInt(ErlTerm term) throws ProcessMiningException {
+    private int extractInt(ErlTerm term) throws ErlangException {
         if (term instanceof ErlLong) {
             return (int) ((ErlLong) term).getValue();
         }
-        throw new ProcessMiningException("Expected integer, got: " + term.type(), "extractInt");
+        throw new ErlangException("Expected integer, got: " + term.type());
     }
 
-    private double extractDouble(ErlTerm term) throws ProcessMiningException {
+    private double extractDouble(ErlTerm term) throws ErlangException {
         if (term instanceof ErlLong) {
             return ((ErlLong) term).getValue();
+        } else if (term instanceof ErlDouble) {
+            return ((ErlDouble) term).getValue();
         }
-        throw new ProcessMiningException("Expected number, got: " + term.type(), "extractDouble");
+        throw new ErlangException("Expected number, got: " + term.type());
     }
 
-    private List<ErlTerm> extractList(ErlTerm term) throws ProcessMiningException {
+    private List<ErlTerm> extractList(ErlTerm term) throws ErlangException {
         if (term instanceof ErlList) {
             return ((ErlList) term).getElements();
         }
-        throw new ProcessMiningException("Expected list, got: " + term.type(), "extractList");
+        throw new ErlangException("Expected list, got: " + term.type());
     }
 
-    private Map<String, ErlTerm> extractMap(ErlTerm term) throws ProcessMiningException {
+    private Map<String, ErlTerm> extractMap(ErlTerm term) throws ErlangException {
         if (term instanceof ErlList) {
             ErlList list = (ErlList) term;
             Map<String, ErlTerm> map = new HashMap<>();
@@ -413,7 +509,55 @@ public final class ProcessMiningClientImpl implements ProcessMiningClient {
 
             return map;
         }
-        throw new ProcessMiningException("Expected map/list of tuples, got: " + term.type(), "extractMap");
+        throw new ErlangException("Expected map/list of tuples, got: " + term.type());
+    }
+
+    /**
+     * Parses constraint parameters from Erlang to Java Map.
+     */
+    private Map<String, Object> parseParams(ErlTerm term) throws ErlangException {
+        if (term instanceof ErlList) {
+            Map<String, Object> params = new HashMap<>();
+            ErlList list = (ErlList) term;
+
+            for (ErlTerm element : list.getElements()) {
+                if (element instanceof ErlTuple && ((ErlTuple) element).hasArity(2)) {
+                    ErlTuple tuple = (ErlTuple) element;
+                    ErlTerm key = tuple.get(0);
+                    ErlTerm value = tuple.get(1);
+
+                    if (key instanceof ErlAtom) {
+                        String keyStr = ((ErlAtom) key).getValue();
+                        Object valueObj = convertErlTermToJava(value);
+                        params.put(keyStr, valueObj);
+                    }
+                }
+            }
+
+            return params;
+        }
+        throw new ErlangException("Expected parameter list, got: " + term.type());
+    }
+
+    /**
+     * Converts an ErlTerm to a Java object.
+     */
+    private Object convertErlTermToJava(ErlTerm term) throws ErlangException {
+        if (term instanceof ErlAtom) {
+            return ((ErlAtom) term).getValue();
+        } else if (term instanceof ErlLong) {
+            return ((ErlLong) term).getValue();
+        } else if (term instanceof ErlDouble) {
+            return ((ErlDouble) term).getValue();
+        } else if (term instanceof ErlString) {
+            return ((ErlString) term).getValue();
+        } else if (term instanceof ErlList) {
+            return ((ErlList) term).getElements();
+        } else if (term instanceof ErlTuple) {
+            return ((ErlTuple) term).getElements();
+        } else {
+            return term.toString();
+        }
     }
 
     // Validation methods
@@ -427,47 +571,15 @@ public final class ProcessMiningClientImpl implements ProcessMiningClient {
         if (path == null) {
             throw new IllegalArgumentException(fieldName + " cannot be null");
         }
-        if (!Files.exists(path)) {
-            throw new IllegalArgumentException(fieldName + " does not exist: " + path);
-        }
-        if (!Files.isReadable(path)) {
-            throw new IllegalArgumentException(fieldName + " is not readable: " + path);
-        }
-    }
-
-    private void validateParameters(ReplayParameters parameters, String fieldName) {
-        if (parameters == null) {
-            throw new IllegalArgumentException(fieldName + " cannot be null");
-        }
-        validateNotNull(parameters.getAdditionalParams(), "additional params");
-    }
-
-    private void validateParameters(Map<String, ErlTerm> parameters, String fieldName) {
-        if (parameters == null) {
-            throw new IllegalArgumentException(fieldName + " cannot be null");
-        }
-        for (Map.Entry<String, ErlTerm> entry : parameters.entrySet()) {
-            if (entry.getKey() == null || entry.getValue() == null) {
-                throw new IllegalArgumentException(fieldName + " cannot contain null values");
+        try {
+            if (!Files.exists(path)) {
+                throw new IllegalArgumentException(fieldName + " does not exist: " + path);
             }
-        }
-    }
-
-    private void validateDiscoveryType(DiscoveryType type) {
-        if (type == null) {
-            throw new IllegalArgumentException("Discovery type cannot be null");
-        }
-    }
-
-    private void validateNotBlank(String value, String fieldName) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException(fieldName + " cannot be blank");
-        }
-    }
-
-    private void validateNotNull(Object value, String fieldName) {
-        if (value == null) {
-            throw new IllegalArgumentException(fieldName + " cannot be null");
+            if (!Files.isReadable(path)) {
+                throw new IllegalArgumentException(fieldName + " is not readable: " + path);
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException(fieldName + " is not accessible: " + path, e);
         }
     }
 

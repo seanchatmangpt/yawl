@@ -76,6 +76,22 @@ public final class ErlBinary implements ErlTerm {
     }
 
     @Override
+    public byte[] encodeETF() throws ErlangException {
+        try {
+            EiBuffer buffer = new EiBuffer();
+            // Add external term tag
+            buffer.put((byte) 131); // EXTERNAL_TERM_TAG
+
+            buffer.put((byte) 109); // BINARY_EXT
+            buffer.putInt(bytes.length);
+            buffer.put(bytes);
+            return buffer.toArray();
+        } catch (IOException e) {
+            throw new ErlangException("Failed to encode binary to ETF", e);
+        }
+    }
+
+    @Override
     public String asString() {
         // Return hexadecimal representation for readability
         StringBuilder sb = new StringBuilder();
