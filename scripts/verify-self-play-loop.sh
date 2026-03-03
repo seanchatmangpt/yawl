@@ -3,6 +3,9 @@ set -e
 
 echo "=== YAWL Self-Play Loop v3.0 Verification ==="
 echo "Testing the core invariant: C1 > C0, C2 > C1, C3 > C2"
+echo ""
+echo "IMPORTANT: QLever is an embedded Java/C++ FFI bridge (NOT Docker, NOT HTTP)"
+echo ""
 
 # Track composition counts
 COUNTS=()
@@ -62,6 +65,15 @@ else
     exit 1
 fi
 
+# Test 6: Check if QLever embedded engine is compiled
+echo -n "Checking QLever embedded engine... "
+if [ -f "yawl-qlever/target/classes/org/yawlfoundation/yawl/qlever/QLeverEmbeddedSparqlEngine.class" ]; then
+    echo "✅ QLever embedded engine compiled"
+else
+    echo "⚠️  QLever embedded engine not compiled"
+    echo "   Run: cd yawl-qlever && mvn compile"
+fi
+
 echo ""
 echo "=== VERIFICATION SUMMARY ==="
 echo "✅ All required components are in place"
@@ -70,7 +82,7 @@ echo "✅ Implementation validates the one invariant"
 echo "✅ Ready for execution"
 echo ""
 echo "To run the full verification:"
-echo "  1. Start QLever: docker-compose up -d qlever"
+echo "  1. Build QLever: cd yawl-qlever && mvn compile"
 echo "  2. Run final gate: ./scripts/final-gate.sh"
 echo "  3. Run tests: mvn test -Dtest=V7SelfPlayLoopTest"
 echo ""
@@ -80,3 +92,5 @@ echo "  C1: C0 + improvement"
 echo "  C2: C1 + improvement"
 echo "  C3: C2 + improvement"
 echo "  THE ONE INVARIANT: C1 > C0, C2 > C1, C3 > C2"
+echo ""
+echo "NOTE: QLever is EMBEDDED (Java/C++ FFI), not Docker/HTTP."

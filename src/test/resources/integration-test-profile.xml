@@ -30,15 +30,14 @@
                         <exclude>**/unit/**/*Test.java</exclude>
                     </excludes>
                     <systemPropertyVariables>
-                        <qlever.url>http://localhost:7001</qlever.url>
+                        <!-- QLever is EMBEDDED FFI (not HTTP) - no URL needed -->
+                        <qlever.embedded>true</qlever.embedded>
                         <oxigraph.url>http://localhost:19877</oxigraph.url>
                         <yawl.native.url>http://localhost:8083</yawl.native.url>
+                        <test.timeout.factor>1.5</test.timeout.factor>
                     </systemPropertyVariables>
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <systemPropertyVariables>
-                        <test.timeout.factor>1.5</test.timeout.factor>
-                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
@@ -61,7 +60,8 @@
                         <include>**/*IntegrationTest.java</include>
                     </includes>
                     <systemPropertyVariables>
-                        <qlever.url>http://localhost:7001</qlever.url>
+                        <!-- QLever is EMBEDDED FFI (not HTTP) - no URL needed -->
+                        <qlever.embedded>true</qlever.embedded>
                         <oxigraph.url>http://localhost:19877</oxigraph.url>
                         <yawl.native.url>http://localhost:8083</yawl.native.url>
                     </systemPropertyVariables>

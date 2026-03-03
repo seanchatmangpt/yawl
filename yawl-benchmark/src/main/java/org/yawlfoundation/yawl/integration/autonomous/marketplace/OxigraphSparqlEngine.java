@@ -29,7 +29,7 @@ import java.util.Objects;
  *
  * <p>Delegates all SPARQL operations to {@link YawlNativeClient}, which targets
  * the {@code /sparql/*} endpoints of the yawl-native service (default port 8083).
- * Unlike {@link QLeverSparqlEngine}, this engine supports mutable operations:
+ * Unlike {@link QLeverEmbeddedSparqlEngine}, this engine supports mutable operations:
  * {@link #loadTurtle(String)} and {@link #sparqlUpdate(String)}.</p>
  *
  * <p>The {@link #isAvailable()} check hits {@code GET /sparql/health} and returns

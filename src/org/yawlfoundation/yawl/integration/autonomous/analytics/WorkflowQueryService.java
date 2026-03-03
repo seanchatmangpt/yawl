@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.integration.autonomous.analytics;
 
-import org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverSparqlEngine;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngine;
 import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngineException;
 import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngineUnavailableException;
 
@@ -30,6 +30,10 @@ import static org.yawlfoundation.yawl.integration.autonomous.analytics.WorkflowE
 
 /**
  * Pre-built SPARQL analytics queries over workflow execution data stored in QLever.
+ *
+ * <p><strong>IMPORTANT:</strong> QLever is an embedded Java/C++ FFI bridge (NOT Docker/HTTP).
+ * Use {@link QLeverEmbeddedEngineAdapter} to wrap {@code QLeverEmbeddedSparqlEngine}
+ * for use with this service.</p>
  *
  * <p>All query methods return raw SPARQL query strings via {@link #queryString()} accessors
  * on the inner {@link Query} builders, or — via the {@code run*()} methods — execute the
@@ -45,6 +49,7 @@ import static org.yawlfoundation.yawl.integration.autonomous.analytics.WorkflowE
  * @since YAWL 6.0
  * @see WorkflowEventPublisher
  * @see WorkflowAnalytics
+ * @see org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverEmbeddedEngineAdapter
  */
 public final class WorkflowQueryService {
 
@@ -53,14 +58,15 @@ public final class WorkflowQueryService {
             "PREFIX wf: <" + WF_NS + ">\n" +
             "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\n";
 
-    private final QLeverSparqlEngine engine;
+    private final SparqlEngine engine;
 
     /**
-     * Creates a query service targeting the given QLever engine.
+     * Creates a query service targeting the given SPARQL engine.
      *
-     * @param engine the QLever engine to query; must not be {@code null}
+     * @param engine the SPARQL engine to query; must not be {@code null}.
+     *               Use {@link QLeverEmbeddedEngineAdapter} for embedded QLever.
      */
-    public WorkflowQueryService(QLeverSparqlEngine engine) {
+    public WorkflowQueryService(SparqlEngine engine) {
         this.engine = Objects.requireNonNull(engine, "engine must not be null");
     }
 

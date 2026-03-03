@@ -1,27 +1,30 @@
 #!/bin/bash
 
-# Simple test runner for SPARQL engine security tests
-# This script demonstrates the self-skip pattern when dependencies are not available
+# Test runner for SPARQL engine security tests
+# IMPORTANT: QLever is an embedded Java/C++ FFI bridge, NOT Docker/HTTP
+# Security tests use QLeverEmbeddedSparqlEngine directly
 
 echo "=== Running SparqlEngineSecurityIntegrationTest ==="
+echo ""
 
-# Check if QLever is available
-if ! curl -s "http://localhost:7001/api/" >/dev/null 2>&1; then
-    echo "QLever instance not available at localhost:7001"
-    echo "This is expected in CI/test environments"
-    echo ""
-    echo "Test would self-skip when SPARQL engine is unavailable"
-    echo "To run this test, start QLever with authentication on port 7001:"
-    echo "  docker run -p 7001:7001 qlever/yawl-qlever"
-    echo ""
-    exit 0
-fi
+# QLever is embedded - no Docker/HTTP check needed
+echo "QLever: Using embedded FFI engine (in-process)"
+echo ""
 
-# Try to run the test with Maven
-if mvn -pl yawl-integration -Dtest=SparqlEngineSecurityIntegrationTest test; then
+# Run the security test with Maven
+# Tests will use QLeverEmbeddedSparqlEngine directly
+if mvn -pl yawl-qlever -Dtest=SparqlEngineSecurityIntegrationTest test 2>&1; then
+    echo ""
     echo "✓ Security test completed successfully"
 else
-    echo "✗ Security test failed - but this is expected without proper auth setup"
+    echo ""
+    echo "✗ Security test failed"
+    echo ""
+    echo "NOTE: QLever is an embedded FFI engine, not a Docker HTTP service."
+    echo "If tests fail due to missing native library:"
+    echo "  1. Build native library: cd yawl-qlever && mvn compile"
+    echo "  2. Ensure qlever_java.dylib/dll is in java.library.path"
+    exit 1
 fi
 
 echo ""

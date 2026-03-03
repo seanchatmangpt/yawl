@@ -179,6 +179,12 @@
             <version>4.10.0</version>
         </dependency>
 
+        <!-- MCP SDK for BuriedEngineMcpAdapter (embedded MCP server) -->
+        <dependency>
+            <groupId>io.modelcontextprotocol.sdk</groupId>
+            <artifactId>mcp-core</artifactId>
+        </dependency>
+
         <!-- OpenTelemetry for observability -->
         <dependency>
             <groupId>io.opentelemetry</groupId>

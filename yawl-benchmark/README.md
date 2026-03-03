@@ -1,9 +1,16 @@
 # YAWL SPARQL Engine Benchmark Suite
 
 This benchmark suite compares different SPARQL engine implementations used in YAWL:
-- QLever HTTP (remote)
-- QLever Embedded (FFI)
-- Oxigraph (Rust FFI)
+- **QLever Embedded (FFI)** - In-process Java/C++ FFI bridge (PRIMARY)
+- **Oxigraph (Rust FFI)** - HTTP service via yawl-native
+
+## IMPORTANT: QLever Architecture
+
+**QLever is an embedded Java/C++ FFI bridge - NOT a Docker HTTP service.**
+
+All QLever benchmarks use `QLeverEmbeddedSparqlEngine` which runs SPARQL queries
+in-process via native FFI bindings. There is no HTTP endpoint, no Docker container,
+and no `localhost:7001`.
 
 ## Quick Start
 
@@ -12,7 +19,7 @@ This benchmark suite compares different SPARQL engine implementations used in YA
 1. Java 25+
 2. Maven 3.9+
 3. One of the following SPARQL engines:
-   - QLever (HTTP mode) - running on port 7001
+   - QLever Embedded - compile native library first
    - Oxigraph/Yawl-Native - running on port 8083
 
 ### Running Benchmarks
@@ -22,7 +29,6 @@ This benchmark suite compares different SPARQL engine implementations used in YA
 ./scripts/benchmark-qlever.sh
 
 # Run specific engine
-./scripts/benchmark-qlever.sh qlever-http
 ./scripts/benchmark-qlever.sh qlever-embedded
 ./scripts/benchmark-qlever.sh oxigraph
 
@@ -76,7 +82,6 @@ The benchmarks use the following JMH settings:
 ## Output
 
 Results are saved in `benchmark-results/` directory:
-- `qlever-http-results.json`
 - `qlever-embedded-results.json`
 - `oxigraph-results.json`
 
@@ -91,12 +96,15 @@ Each result file contains:
 
 ### Engine Not Available
 
-If engines are not running:
-
-1. **QLever HTTP**:
+1. **QLever Embedded**:
    ```bash
-   # Start QLever on port 7001
-   docker run -p 7001:7001 qlever/qlever:latest
+   # Build native library first
+   cd yawl-qlever && mvn compile
+
+   # Requires native libraries:
+   # - qlever_java.dylib (macOS)
+   # - qlever_java.dll (Windows)
+   # - qlever_java.so (Linux)
    ```
 
 2. **Oxigraph**:
@@ -104,10 +112,6 @@ If engines are not running:
    # Start yawl-native service with Oxigraph
    ./scripts/start-yawl-native.sh
    ```
-
-3. **QLever Embedded**:
-   - Requires native libraries: `qlever_java.dylib` (macOS) or `qlever_java.dll` (Windows)
-   - Build from source: `cmake -DCMAKE_BUILD_TYPE=Release && make`
 
 ### Build Issues
 

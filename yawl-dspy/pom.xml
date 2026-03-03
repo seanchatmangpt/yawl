@@ -150,9 +150,6 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>../src</sourceDirectory>
-        <testSourceDirectory>../test</testSourceDirectory>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -161,12 +158,6 @@
                     <compilerArgs>
                         <arg>--enable-preview</arg>
                     </compilerArgs>
-                    <includes>
-                        <include>**/org/yawlfoundation/yawl/dspy/**</include>
-                    </includes>
-                    <testIncludes>
-                        <testInclude>**/org/yawlfoundation/yawl/dspy/**</testInclude>
-                    </testIncludes>
                 </configuration>
             </plugin>
 

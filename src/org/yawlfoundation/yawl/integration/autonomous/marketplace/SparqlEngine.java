@@ -12,7 +12,7 @@
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
  * License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
+ * You should have received a copy of the GNU Lesser General
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -21,12 +21,18 @@ package org.yawlfoundation.yawl.integration.autonomous.marketplace;
 /**
  * Abstraction over a SPARQL 1.1 engine capable of executing CONSTRUCT queries.
  *
- * <p>Two implementations are provided:</p>
+ * <p>Implementations:</p>
  * <ul>
  *   <li>{@link OxigraphSparqlEngine} — delegates to the {@code yawl-native} Rust service
- *       (Oxigraph embedded; supports load and update operations)</li>
- *   <li>{@link QLeverSparqlEngine} — read-only wrapper for a remote QLever endpoint</li>
+ *       (Oxigraph embedded; supports load and update operations via HTTP)</li>
+ *   <li>{@link QLeverEmbeddedEngineAdapter} — wraps the embedded QLever FFI engine
+ *       (in-process Java/C++ FFI bridge; NOT Docker, NOT HTTP)</li>
  * </ul>
+ *
+ * <p><strong>IMPORTANT:</strong> QLever is an embedded Java/C++ FFI bridge.
+ * It does NOT run as a Docker container or HTTP service on localhost:7001.
+ * Use {@link QLeverEmbeddedEngineAdapter} to wrap {@code QLeverEmbeddedSparqlEngine}
+ * for use with this interface.</p>
  *
  * <p>The marketplace never requires a {@code SparqlEngine}. All binding classes
  * ({@link MarketplaceMcpBinding}, {@link MarketplaceA2ABinding}) accept a
@@ -54,7 +60,7 @@ public interface SparqlEngine extends AutoCloseable {
     boolean isAvailable();
 
     /**
-     * A short identifier for this engine type, e.g. {@code "oxigraph"} or {@code "qlever"}.
+     * A short identifier for this engine type, e.g. {@code "oxigraph"} or {@code "qlever-embedded"}.
      */
     String engineType();
 

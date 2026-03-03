@@ -72,5 +72,5 @@ check:
 	@echo "Checking prerequisites..."
 	@command -v mvn >/dev/null 2>&1 && echo "✓ Maven" || echo "✗ Maven not found"
 	@command -v java >/dev/null 2>&1 && echo "✓ Java" || echo "✗ Java not found"
-	@curl -s -f http://localhost:7001/api/ >/dev/null 2>&1 && echo "✓ QLever HTTP" || echo "✗ QLever HTTP not available"
+	@test -f yawl-qlever/target/classes/org/yawlfoundation/yawl/qlever/QLeverEmbeddedSparqlEngine.class && echo "✓ QLever Embedded" || echo "✗ QLever Embedded not compiled (run: cd yawl-qlever && mvn compile)"
 	@curl -s -f http://localhost:8083/sparql/health >/dev/null 2>&1 && echo "✓ Oxigraph" || echo "✗ Oxigraph not available"

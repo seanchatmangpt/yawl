@@ -21,11 +21,10 @@ package org.yawlfoundation.yawl.integration.autonomous.marketplace;
 /**
  * Abstraction over a SPARQL 1.1 engine capable of executing CONSTRUCT queries.
  *
- * <p>Three implementations are provided:</p>
+ * <p>Two implementations are provided:</p>
  * <ul>
  *   <li>{@link OxigraphSparqlEngine} — delegates to the {@code yawl-native} Rust service
  *       (Oxigraph embedded; supports load and update operations)</li>
- *   <li>{@link QLeverSparqlEngine} — read-only wrapper for a remote QLever endpoint</li>
  *   <li>{@link QLeverEmbeddedSparqlEngine} — embedded QLever implementation (supports load and update)</li>
  * </ul>
  *

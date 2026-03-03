@@ -2,6 +2,9 @@
 # Outputs live loop state as context for Claude
 # Called by SessionStart hook
 # Exit codes: 0 = success (always, this is informational)
+#
+# IMPORTANT: QLever is an embedded Java/C++ FFI bridge (NOT Docker, NOT HTTP)
+# All SPARQL queries run in-process via QLeverEmbeddedSparqlEngine
 
 set -euo pipefail
 
@@ -11,49 +14,38 @@ echo "=== YAWL SELF-PLAY LOOP — SESSION START STATE ==="
 echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo ""
 
-# QLever status
-QLever_URL="${QLEVER_URL:-http://localhost:7001}"
-if curl -sf "${QLever_URL}/sparql" \
-   -d "query=SELECT (1 AS ?n) WHERE {}" > /dev/null 2>&1; then
-  echo "QLever: RUNNING at ${QLever_URL}"
+# QLever status - check via Java test, NOT curl
+# QLever is an embedded FFI engine, not an HTTP service
+echo "QLever: EMBEDDED Java/C++ FFI (not Docker, not HTTP)"
+echo ""
 
-  # NativeCall count
-  N=$(curl -s "${QLever_URL}/sparql" \
-    -d "query=SELECT (COUNT(*) AS ?n) WHERE { ?x a <https://bridgecore.io/vocab#NativeCall> }" \
-    2>/dev/null | grep -o '"value":"[0-9]*"' | grep -o '[0-9]*' || echo "0")
-  echo "NativeCall triples: ${N:-QUERY FAILED}"
-  if [ "${N:-0}" -lt 86 ] && [ "${N:-0}" -gt 0 ]; then
-    echo "  WARNING: Need 86+, have ${N:-0}"
-  elif [ "${N:-0}" -eq 0 ]; then
-    echo "  WARNING: No NativeCall triples loaded — run gen-ttl and reload"
-  fi
+# Check if QLever embedded engine classes are available
+if [ -f "yawl-qlever/target/classes/org/yawlfoundation/yawl/qlever/QLeverEmbeddedSparqlEngine.class" ]; then
+    echo "QLever embedded engine: COMPILED"
 
-  # Composition count
-  C=$(curl -s "${QLever_URL}/sparql" \
-    -d "query=SELECT (COUNT(*) AS ?n) WHERE { ?x a <https://bridgecore.io/vocab#CapabilityPipeline> }" \
-    2>/dev/null | grep -o '"value":"[0-9]*"' | grep -o '[0-9]*' || echo "0")
-  echo "CapabilityPipeline triples: ${C:-QUERY FAILED}"
+    # Try to get counts via Java test (non-blocking, 5s timeout)
+    NATIVE_COUNT=$(timeout 5 mvn test -Dtest=QLeverOntologyTest#testNativeCallCount -q 2>/dev/null | grep -o 'NativeCall.*[0-9]*' | grep -o '[0-9]*' | head -1 || echo "")
+    if [ -n "${NATIVE_COUNT:-}" ]; then
+        echo "NativeCall triples: ${NATIVE_COUNT}"
+        if [ "${NATIVE_COUNT}" -lt 86 ] && [ "${NATIVE_COUNT}" -gt 0 ]; then
+            echo "  WARNING: Need 86+, have ${NATIVE_COUNT}"
+        elif [ "${NATIVE_COUNT}" -eq 0 ]; then
+            echo "  WARNING: No NativeCall triples loaded — run gen-ttl and reload"
+        fi
+    else
+        echo "NativeCall triples: (run mvn test to query)"
+    fi
 
-  # Last conformance score
-  SCORE=$(curl -s "${QLever_URL}/sparql" \
-    -d "query=SELECT ?s WHERE { ?r a <https://yawl.io/sim#SimulationRun> ; <https://yawl.io/sim#conformanceScore> ?s } ORDER BY DESC(?s) LIMIT 1" \
-    2>/dev/null | grep -o '"value":"[0-9.]*"' | grep -o '[0-9.]*' | head -1 || echo "")
-  if [ -n "${SCORE:-}" ]; then
-    echo "Last conformance score: ${SCORE}"
-  else
-    echo "Last conformance score: NONE (loop has not run)"
-  fi
-
-  # Gap count
-  GAPS=$(curl -s "${QLever_URL}/sparql" \
-    -d "query=SELECT (COUNT(*) AS ?n) WHERE { ?x a <https://yawl.io/sim#CapabilityGap> }" \
-    2>/dev/null | grep -o '"value":"[0-9]*"' | grep -o '[0-9]*' || echo "0")
-  echo "Open capability gaps: ${GAPS:-QUERY FAILED}"
+    # Composition count
+    COMPOSITION_COUNT=$(timeout 5 mvn test -Dtest=V7SelfPlayLoopTest#testCompositionCount -q 2>/dev/null | grep -o 'composition.*[0-9]*' | grep -o '[0-9]*' | head -1 || echo "")
+    if [ -n "${COMPOSITION_COUNT:-}" ]; then
+        echo "Composition count: ${COMPOSITION_COUNT}"
+    else
+        echo "Composition count: (run mvn test to query)"
+    fi
 else
-  echo "QLever: NOT RUNNING at ${QLever_URL}"
-  echo ""
-  echo "CRITICAL: QLever is not running. All SPARQL queries will fail."
-  echo "Start QLever first: docker-compose up -d qlever OR ./scripts/qlever-start.sh"
+    echo "QLever embedded engine: NOT COMPILED"
+    echo "  Run: cd yawl-qlever && mvn compile"
 fi
 
 echo ""
@@ -79,7 +71,7 @@ echo "2. ls/find/grep proves existence only — never proves correctness"
 echo "3. Mocks passing ≠ integration working"
 echo "4. READY FOR APPROVAL requires invariant script exit 0"
 echo "5. Composition count must be STRICTLY greater after loop iteration"
-echo "6. QLever must return JSON (not HTML error) for SPARQL queries"
+echo "6. QLever is EMBEDDED FFI (not Docker, not HTTP) — use QLeverEmbeddedSparqlEngine"
 echo "=================================================="
 
 exit 0

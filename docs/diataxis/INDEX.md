@@ -87,6 +87,7 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 |---|----------|----------------|
 | SC-01 | [Data Modelling Getting Started](../tutorials/11-data-modelling-bridge.md) | Import schemas, validate domains, manage ADRs |
 | SC-02 | [DMN Decision Evaluation](../tutorials/14-dmn-decision-service.md) | Evaluate DMN tables with schema validation |
+| SC-03 | [Data Modelling SDK Complete Tutorial](../tutorials/data-modelling-sdk-getting-started.md) | Full SDK capabilities: 10+ format imports, LLM refinement, domain management, validation |
 
 ---
 
@@ -273,6 +274,7 @@ Every documentation file belongs to exactly one of these four quadrants. Find wh
 | [Evaluate DMN Decisions](../how-to/evaluate-dmn-decisions.md) | Parse DMN XML, build DataModel schema, evaluate with COLLECT aggregation |
 | [Data Modelling Schema Validation](../how-to/data-modelling-schema-validation.md) | Import SQL, create ODCS domains, manage ADRs, validate against schema in workflows |
 | [Write Tera Templates for Code Generation](../how-to/ggen-tera-templates.md) | Create YAWL specs, service stubs, and config files from RDF via Tera templates |
+| [Data Modelling SDK How-To Guide](../how-to/data-modelling-sdk-how-to.md) | Complete task-focused guide for all 55+ SDK capabilities |
 
 ### Export & Pipeline
 | Guide | Task |
