@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-03-02T00:00:00Z",
+  "capabilities": {
+    "ProcessMining": {
+      "id": "PM-001",
+      "category": "ANALYSIS",
+      "description": "Process mining capabilities for workflow analysis",
+      "demands": ["conformance_analysis", "performance_optimization", "discovery"],
+      "implementation": "ProcessMiningL3",
+      "criticality": "HIGH"
+    },
+    "ConformanceChecking": {
+      "id": "CC-002",
+      "category": "VALIDATION",
+      "description": "Token-based replay conformance checking",
+      "demands": ["fitness_scoring", "precision_measurement", "trace_alignment"],
+      "implementation": "TokenReplayEngine",
+      "criticality": "CRITICAL"
+    },
+    "DFGDiscovery": {
+      "id": "DFG-003",
+      "category": "DISCOVERY",
+      "description": "Directly-follows graph discovery from event logs",
+      "demands": ["edge_frequency", "activity_predecessors", "activity_successors"],
+      "implementation": "AlphaMiner",
+      "criticality": "HIGH"
+    },
+    "GapAnalysis": {
+      "id": "GA-004",
+      "category": "OPTIMIZATION",
+      "description": "Capability gap identification and analysis",
+      "demands": ["conformance_thresholds", "capability_mapping", "delta_analysis"],
+      "implementation": "GapAnalysisEngine",
+      "criticality": "HIGH"
+    },
+    "WSJFPrioritization": {
+      "id": "WSJF-005",
+      "category": "PLANNING",
+      "description": "Weighted Shortest Job First gap prioritization",
+      "demands": ["business_value", "time_criticality", "risk_reduction", "job_size"],
+      "implementation": "GapAnalysisEngine",
+      "criticality": "MEDIUM"
+    },
+    "SelfOptimization": {
+      "id": "SO-006",
+      "category": "EVOLUTION",
+      "description": "Self-optimization proposal generation",
+      "demands": ["design_patterns", "workflow_synthesis", "constraint_satisfaction"],
+      "implementation": "V7DesignAgent",
+      "criticality": "CRITICAL"
+    },
+    "OCEL2Export": {
+      "id": "OCEL-007",
+      "category": "EXPORT",
+      "description": "OCEL 2.0 compliant event log export",
+      "demands": ["object_centric", "relationship_mapping", "type_system"],
+      "implementation": "Ocel2Exporter",
+      "criticality": "MEDIUM"
+    },
+    "MetaAnalysis": {
+      "id": "MA-008",
+      "category": "ANALYSIS",
+      "description": "Meta-analysis of self-assessment convergence trends",
+      "demands": ["statistical_analysis", "trend_detection", "convergence_scoring"],
+      "implementation": "MetaAnalysisEngine",
+      "criticality": "LOW"
+    }
+  },
+  "referenceModel": {
+    "name": "Self-Assessment Reference Model",
+    "pnml": "self_assessment_reference.pnml",
+    "version": "2.0.0",
+    "conformanceThresholds": {
+      "fitness": 0.85,
+      "precision": 0.85,
+      "recall": 0.90
+    }
+  },
+  "assessmentCriteria": {
+    "convergence": {
+      "threshold": 0.95,
+      "windowSize": 7,
+      "metric": "fitness_trend"
+    },
+    "optimization": {
+      "targetImprovement": 0.10,
+      "maxIterations": 10,
+      "stagnationLimit": 3
+    },
+    "quality": {
+      "codeCoverage": 0.80,
+      "performanceLatencyMs": 5000,
+      "errorRate": 0.01
+    }
+  }
+}

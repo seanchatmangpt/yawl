@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PortfolioSync.yawl — SAFe Portfolio Synchronization Workflow
+  Self-Play Simulation Loop v3.0
+
+  PURPOSE: Simulate portfolio-level planning and prioritization.
+  Uses WSJF (Weighted Shortest Job First) for backlog prioritization.
+
+  WORKFLOW STEPS:
+  1. LoadPortfolio - Load portfolio epics and features from data store
+  2. WSJFCalculation - Calculate WSJF scores for all portfolio items
+  3. PrioritizeBacklog - Sort items by WSJF score descending
+  4. AllocateToARTs - Assign work items to Agile Release Trains
+  5. ExportPortfolio - Export prioritized portfolio as OCEL2 format
+
+  DATA STRUCTURES:
+  - PortfolioItem: Epic/Feature with business value, time criticality, risk reduction, and job size
+  - WSJFScore: Calculated score using formula: (businessValue + timeCriticality + riskReduction) / jobSize
+  - ARTAllocation: Assignment of portfolio items to specific ARTs with capacity constraints
+
+  BRIDGE CALLS:
+  - portfolioBridge.loadPortfolio(portfolioId) → portfolioItems
+  - wsjfBridge.calculateScores(portfolioItems) → rankedItems
+  - allocationEngine.allocateToARTs(rankedItems) → artAllocations
+  - ocelBridge.exportAsOCEL2(allocations) → ocelFilePath
+-->
+<specification xmlns="http://yawlfoundation.org/yawl/specification/3.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://yawlfoundation.org/yawl/specification/3.0
+                                   http://yawlfoundation.org/yawl/schemas/YAWL_Specification3.0.xsd">
+
+  <metaData>
+    <title>Portfolio Synchronization Workflow</title>
+    <creator>YAWL Self-Play Loop v3.0</creator>
+    <version>2.0.0</version>
+    <description>
+      Simulates SAFe portfolio synchronization with WSJF prioritization.
+      Loads portfolio items, calculates WSJF scores, prioritizes backlog,
+      allocates to ARTs, and exports as OCEL2 event log.
+    </description>
+    <persistent>false</persistent>
+    <identifier>PortfolioSync_2.0.0</identifier>
+  </metaData>
+
+  <schema xmlns="http://www.yawlfoundation.org/yawl/specification/3.0">
+    <!-- Basic input/output types -->
+    <type definition="string" name="portfolioId"/>
+    <type definition="string" name="portfolioName"/>
+
+    <!-- Portfolio item structure -->
+    <type definition="string" name="portfolioItems"/>
+    <type definition="string" name="epics"/>
+    <type definition="string" name="features"/>
+
+    <!-- WSJF calculation inputs and outputs -->
+    <type definition="string" name="wsjfScores"/>
+    <type definition="string" name="prioritizedBacklog"/>
+
+    <!-- ART allocation types -->
+    <type definition="string" name="artNames"/>
+    <type definition="string" name="artCapacities"/>
+    <type definition="string" name="artAllocations"/>
+    <type definition="string" name="allocationReport"/>
+
+    <!-- OCEL2 export -->
+    <type definition="string" name="ocelPath"/>
+
+    <!-- Metadata for tracking -->
+    <type definition="int" name="totalItems"/>
+    <type definition="double" name="avgWSJF"/>
+    <type definition="string" name="timestamp"/>
+  </schema>
+
+  <decomposition id="PortfolioSync" isRootNet="true">
+    <processControlElements>
+      <inputCondition id="Start"/>
+
+      <!-- Task 1: Load Portfolio -->
+      <task id="LoadPortfolio">
+        <description>Load portfolio epics and features from data store</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="portfolioId" type="string"/>
+        <outputVar type="string" name="portfolioName"/>
+        <outputVar type="string" name="portfolioItems"/>
+        <outputVar type="string" name="epics"/>
+        <outputVar type="string" name="features"/>
+        <outputVar type="string" name="timestamp"/>
+        <extension code="LoadPortfolio">
+          <parameter name="bridge">PortfolioBridge.loadPortfolio</parameter>
+          <parameter name="dataStore">portfolioDB</parameter>
+        </extension>
+      </task>
+
+      <!-- Task 2: WSJF Calculation -->
+      <task id="WSJFCalculation">
+        <description>Calculate WSJF scores for all portfolio items using formula: (businessValue + timeCriticality + riskReduction) / jobSize</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="portfolioItems" type="string"/>
+        <inputVar query="portfolioName" type="string"/>
+        <outputVar type="string" name="wsjfScores"/>
+        <outputVar type="int" name="totalItems"/>
+        <outputVar type="double" name="avgWSJF"/>
+        <extension code="WSJFCalculation">
+          <parameter name="bridge">WSJFBridge.calculateScores</parameter>
+          <parameter name="formula">(businessValue + timeCriticality + riskReduction) / jobSize</parameter>
+          <parameter name="normalization">true</parameter>
+        </extension>
+      </task>
+
+      <!-- Task 3: Prioritize Backlog -->
+      <task id="PrioritizeBacklog">
+        <description>Sort portfolio items by WSJF score descending to create prioritized backlog</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="wsjfScores" type="string"/>
+        <outputVar type="string" name="prioritizedBacklog"/>
+        <outputVar type="string" name="epics"/>
+        <outputVar type="string" name="features"/>
+        <extension code="SortByWSJF">
+          <parameter name="sortOrder">descending</parameter>
+          <parameter name="sortBy">wsjfScore</parameter>
+          <parameter name="limit">50</parameter>
+        </extension>
+      </task>
+
+      <!-- Task 4: Get ART Information -->
+      <task id="GetARTInformation">
+        <description>Retrieve ART names and available capacities for allocation</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="portfolioName" type="string"/>
+        <outputVar type="string" name="artNames"/>
+        <outputVar type="string" name="artCapacities"/>
+        <extension code="GetARTInfo">
+          <parameter name="bridge">ARTBridge.getARTInformation</parameter>
+          <parameter name="includeCapacity">true</parameter>
+        </extension>
+      </task>
+
+      <!-- Task 5: Allocate to ARTs -->
+      <task id="AllocateToARTs">
+        <description>Assign prioritized work items to Agile Release Trains based on capacity and dependencies</description>
+        <inputGate><split code="AND">true</split></inputGate>
+        <outputGate><join code="AND">true</join></outputGate>
+        <inputVar query="prioritizedBacklog" type="string"/>
+        <inputVar query="artNames" type="string"/>
+        <inputVar query="artCapacities" type="string"/>
+        <outputVar type="string" name="artAllocations"/>
+        <outputVar type="string" name="allocationReport"/>
+        <extension code="ARTAllocation">
+          <parameter name="bridge">AllocationEngine.allocateToARTs</parameter>
+          <parameter name="strategy">capacityBased</parameter>
+          <parameter name="respectDependencies">true</parameter>
+          <parameter name="optimizeFlow">true</parameter>
+        </extension>
+      </task>
+
+      <!-- Task 6: Export as OCEL2 -->
+      <task id="ExportPortfolio">
+        <description>Export prioritized portfolio as OCEL2 event log for process mining analysis</description>
+        <inputGate><split code="AND">true</split></inputGate>
+        <outputGate><join code="AND">true</join></outputGate>
+        <inputVar query="artAllocations" type="string"/>
+        <inputVar query="portfolioName" type="string"/>
+        <inputVar query="timestamp" type="string"/>
+        <outputVar type="string" name="ocelPath"/>
+        <extension code="OCEL2Export">
+          <parameter name="bridge">OCELBridge.exportAsOCEL2</parameter>
+          <parameter name="includeItemMetadata">true</parameter>
+          <parameter name="includeARTAssignments">true</parameter>
+          <parameter name="includeWSJFScores">true</parameter>
+        </extension>
+      </task>
+
+      <!-- Task 7: Generate Portfolio Report -->
+      <task id="GeneratePortfolioReport">
+        <description>Generate comprehensive portfolio synchronization report</description>
+        <inputGate><split code="AND">true</split></inputGate>
+        <outputGate><join code="AND">true</join></outputGate>
+        <inputVar query="artAllocations" type="string"/>
+        <inputVar query="allocationReport" type="string"/>
+        <inputVar query="ocelPath" type="string"/>
+        <inputVar query="totalItems" type="int"/>
+        <inputVar query="avgWSJF" type="double"/>
+        <outputVar type="string" name="portfolioReport"/>
+        <extension code="GenerateReport">
+          <parameter name="format">html</parameter>
+          <parameter name="includeVisualizations">true</parameter>
+          <parameter name="includeRecommendations">true</parameter>
+        </extension>
+      </task>
+
+      <outputCondition id="End"/>
+
+      <!-- Workflow flow logic -->
+      <flowsInto>
+        <source>Start</source>
+        <destination>LoadPortfolio</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>LoadPortfolio</source>
+        <destination>WSJFCalculation</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>WSJFCalculation</source>
+        <destination>PrioritizeBacklog</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>WSJFCalculation</source>
+        <destination>GetARTInformation</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>PrioritizeBacklog</source>
+        <destination>AllocateToARTs</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>GetARTInformation</source>
+        <destination>AllocateToARTs</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>AllocateToARTs</source>
+        <destination>ExportPortfolio</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>AllocateToARTs</source>
+        <destination>GeneratePortfolioReport</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>ExportPortfolio</source>
+        <destination>GeneratePortfolioReport</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>GeneratePortfolioReport</source>
+        <destination>End</destination>
+      </flowsInto>
+    </processControlElements>
+  </decomposition>
+</specification>

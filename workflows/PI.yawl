@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PI.yawl — SAFe Program Increment Simulation Workflow
+  Self-Play Simulation Loop v3.0
+
+  PURPOSE: Execute a complete PI simulation (4 sprints + IP iteration).
+  Generates consolidated OCEL2 event log for portfolio analysis.
+
+  PI CADENCE (8-12 weeks):
+  1. Sprint 1-4: Feature development (see Sprint.yawl)
+  2. Inspect & Adapt: Retrospective and gap analysis
+  3. System Demo: Stakeholder validation
+
+  BRIDGE CALLS:
+  - processMiningBridge.checkConformance(log, referencePI) → fitness, precision
+  - gapAnalysisEngine.discoverGaps(log, capabilities) → WSJF-ranked gaps
+-->
+<specification xmlns="http://yawlfoundation.org/yawl/specification/3.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://yawlfoundation.org/yawl/specification/3.0
+                                   http://yawlfoundation.org/yawl/schemas/YAWL_Specification3.0.xsd">
+
+  <metaData>
+    <title>Program Increment Simulation Workflow</title>
+    <creator>YAWL Self-Play Loop v3.0</creator>
+    <version>1.0.0</version>
+    <description>
+      Simulates a complete SAFe Program Increment with 4 sprints plus
+      Inspect &amp; Adapt iteration. Aggregates sprint OCEL logs into
+      PI-level event log for portfolio process mining.
+    </description>
+    <persistent>false</persistent>
+    <identifier>PI_1.0.0</identifier>
+  </metaData>
+
+  <schema xmlns="http://www.yawlfoundation.org/yawl/specification/3.0">
+    <type definition="int" name="piId"/>
+    <type definition="string" name="piObjectives"/>
+    <type definition="string" name="teamIds"/>
+    <type definition="string" name="sprintOcelPaths"/>
+    <type definition="string" name="piOcelPath"/>
+    <type definition="double" name="piFitness"/>
+    <type definition="string" name="discoveredGaps"/>
+    <type definition="int" name="velocity"/>
+  </schema>
+
+  <decomposition id="PI" isRootNet="true">
+    <processControlElements>
+      <inputCondition id="PI_Start"/>
+
+      <task id="PI_Planning">
+        <description>PI Planning - Define objectives and assign features</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="piId" type="int"/>
+        <outputVar type="string" name="piObjectives"/>
+        <outputVar type="string" name="teamIds"/>
+      </task>
+
+      <task id="Sprint1">
+        <description>Sprint 1 - Feature development iteration 1</description>
+        <inputGate><split code="AND">true</split></inputGate>
+        <outputGate><join code="AND">true</join></outputGate>
+        <decomposesTo>Sprint</decomposesTo>
+        <inputVar query="piObjectives" type="string"/>
+        <inputVar query="teamIds" type="string"/>
+        <outputVar type="string" name="sprint1Ocel"/>
+        <outputVar type="int" name="velocity1"/>
+      </task>
+
+      <task id="Sprint2">
+        <description>Sprint 2 - Feature development iteration 2</description>
+        <inputGate><split code="AND">true</split></inputGate>
+        <outputGate><join code="AND">true</join></outputGate>
+        <decomposesTo>Sprint</decomposesTo>
+        <inputVar query="piObjectives" type="string"/>
+        <inputVar query="teamIds" type="string"/>
+        <outputVar type="string" name="sprint2Ocel"/>
+        <outputVar type="int" name="velocity2"/>
+      </task>
+
+      <task id="Sprint3">
+        <description>Sprint 3 - Feature development iteration 3</description>
+        <inputGate><split code="AND">true</split></inputGate>
+        <outputGate><join code="AND">true</join></outputGate>
+        <decomposesTo>Sprint</decomposesTo>
+        <inputVar query="piObjectives" type="string"/>
+        <inputVar query="teamIds" type="string"/>
+        <outputVar type="string" name="sprint3Ocel"/>
+        <outputVar type="int" name="velocity3"/>
+      </task>
+
+      <task id="Sprint4">
+        <description>Sprint 4 - Feature development iteration 4</description>
+        <inputGate><split code="AND">true</split></inputGate>
+        <outputGate><join code="AND">true</join></outputGate>
+        <decomposesTo>Sprint</decomposesTo>
+        <inputVar query="piObjectives" type="string"/>
+        <inputVar query="teamIds" type="string"/>
+        <outputVar type="string" name="sprint4Ocel"/>
+        <outputVar type="int" name="velocity4"/>
+      </task>
+
+      <task id="AggregateOcel">
+        <description>Merge sprint OCEL logs into PI-level log</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="sprint1Ocel" type="string"/>
+        <inputVar query="sprint2Ocel" type="string"/>
+        <inputVar query="sprint3Ocel" type="string"/>
+        <inputVar query="sprint4Ocel" type="string"/>
+        <outputVar type="string" name="piOcelPath"/>
+        <extension code="OcelAggregation">
+          <parameter name="bridge">ProcessMiningL3.aggregateOcel</parameter>
+        </extension>
+      </task>
+
+      <task id="InspectAdapt">
+        <description>Inspect &amp; Adapt - Retrospective and problem solving</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="piOcelPath" type="string"/>
+        <outputVar type="string" name="improvementBacklog"/>
+        <extension code="GapAnalysis">
+          <parameter name="bridge">GapAnalysisEngine.discoverGaps</parameter>
+          <parameter name="ranking">WSJF</parameter>
+        </extension>
+      </task>
+
+      <task id="SystemDemo">
+        <description>System Demo - Stakeholder validation</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="piOcelPath" type="string"/>
+        <outputVar type="double" name="piFitness"/>
+        <extension code="ConformanceCheck">
+          <parameter name="bridge">ProcessMiningL3.checkConformance</parameter>
+          <parameter name="referenceModel">pi_reference.pnml</parameter>
+        </extension>
+      </task>
+
+      <task id="GapResolution">
+        <description>Prioritize and schedule gap resolution</description>
+        <inputGate><split code="XOR">true</split></inputGate>
+        <outputGate><join code="XOR">true</join></outputGate>
+        <inputVar query="improvementBacklog" type="string"/>
+        <inputVar query="piFitness" type="double"/>
+        <outputVar type="string" name="discoveredGaps"/>
+      </task>
+
+      <outputCondition id="PI_End"/>
+
+      <flowsInto>
+        <source>PI_Start</source>
+        <destination>PI_Planning</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>PI_Planning</source>
+        <destination>Sprint1</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>Sprint1</source>
+        <destination>Sprint2</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>Sprint2</source>
+        <destination>Sprint3</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>Sprint3</source>
+        <destination>Sprint4</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>Sprint4</source>
+        <destination>AggregateOcel</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>AggregateOcel</source>
+        <destination>InspectAdapt</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>InspectAdapt</source>
+        <destination>SystemDemo</destination>
+      </flowsInto>
+      <flowsInto>
+        <source>SystemDemo</source>
+        <destination>GapResolution</destination>
+        <predicate>piFitness >= 0.85</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>SystemDemo</source>
+        <destination>PI_Planning</destination>
+        <predicate>piFitness &lt; 0.85</predicate>
+      </flowsInto>
+      <flowsInto>
+        <source>GapResolution</source>
+        <destination>PI_End</destination>
+      </flowsInto>
+    </processControlElements>
+  </decomposition>
+</specification>

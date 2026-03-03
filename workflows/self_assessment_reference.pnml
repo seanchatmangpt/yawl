@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnml xmlns="http://www.pnml.org">
+  <net id="self_assessment_reference" type="http://www.yawlfoundation.org/yawl">
+    <page id="page1">
+
+      <!-- Places -->
+      <place id="p0">
+        <name>Start</name>
+        <initialMarking>1</initialMarking>
+      </place>
+
+      <place id="p1">
+        <name>OCELDataLoaded</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <place id="p2">
+        <name>DFGDiscovered</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <place id="p3">
+        <name>ConformanceChecked</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <place id="p4">
+        <name>GapsIdentified</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <place id="p5">
+        <name>GapsRanked</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <place id="p6">
+        <name>ProposalsGenerated</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <place id="p7">
+        <name>ResultsExported</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <place id="p8">
+        <name>Complete</name>
+        <initialMarking>0</initialMarking>
+      </place>
+
+      <!-- Transitions -->
+      <transition id="t_load_ocel" type="task">
+        <name>LoadHistory</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="LoadHistory"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_discover_dfg" type="task">
+        <name>DiscoverDFG</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="DiscoverDFG"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_check_conformance" type="task">
+        <name>CheckConformance</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="CheckConformance"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_identify_gaps" type="task">
+        <name>IdentifyGaps</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="IdentifyGaps"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_rank_gaps" type="task">
+        <name>RankByWSJF</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="RankByWSJF"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_generate_proposals" type="task">
+        <name>GenerateProposals</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="GenerateProposals"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_export_results" type="task">
+        <name>ExportOCEL2</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="ExportOCEL2"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_meta_analysis" type="task">
+        <name>MetaAnalysis</name>
+        <toolspecific tool="YAWL" version="3.0">
+          <task name="MetaAnalysis"/>
+        </toolspecific>
+      </transition>
+
+      <transition id="t_complete" type="silent">
+        <name>Complete</name>
+      </transition>
+
+      <!-- Arcs -->
+      <arc id="a0" source="p0" target="t_load_ocel"/>
+      <arc id="a1" source="t_load_ocel" target="p1"/>
+      <arc id="a2" source="p1" target="t_discover_dfg"/>
+      <arc id="a3" source="t_discover_dfg" target="p2"/>
+      <arc id="a4" source="p2" target="t_check_conformance"/>
+      <arc id="a5" source="t_check_conformance" target="p3"/>
+      <arc id="a6" source="p3" target="t_identify_gaps" kind="test">
+        <inscription>fitness < 0.85 || precision < 0.85</inscription>
+      </arc>
+      <arc id="a7" source="t_identify_gaps" target="p4"/>
+      <arc id="a8" source="p4" target="t_rank_gaps"/>
+      <arc id="a9" source="t_rank_gaps" target="p5"/>
+      <arc id="a10" source="p5" target="t_generate_proposals"/>
+      <arc id="a11" source="t_generate_proposals" target="p6"/>
+      <arc id="a12" source="p6" target="t_export_results"/>
+      <arc id="a13" source="t_export_results" target="p7"/>
+      <arc id="a14" source="p7" target="t_meta_analysis"/>
+      <arc id="a15" source="t_meta_analysis" target="p8"/>
+      <arc id="a16" source="p8" target="t_complete"/>
+      <arc id="a17" source="p3" target="t_export_results" kind="test">
+        <inscription>fitness >= 0.85 && precision >= 0.85</inscription>
+      </arc>
+      <arc id="a18" source="t_export_results" target="p8" kind="test">
+        <inscription>fitness >= 0.85 && precision >= 0.85</inscription>
+      </arc>
+      <arc id="a19" source="t_complete" target="p8"/>
+
+    </page>
+  </net>
+</pnml>

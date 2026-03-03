@@ -1,0 +1,64 @@
+# =============================================================================
+# valid-compositions.sparql — Discover Type-Correct 2-Hop Capability Pipelines
+# Self-Play Simulation Loop v3.0
+#
+# PURPOSE: Find all valid 2-hop capability pipelines where:
+#   - step1 returns type T
+#   - step2 accepts type T
+#   - Both are NativeCall capabilities
+#
+# OUTPUT: CapabilityPipeline instances for simulation optimization
+# =============================================================================
+
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+PREFIX sim:         <http://yawlfoundation.org/yawl/simulation#>
+PREFIX rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:        <http://www.w3.org/2000/01/rdf-schema#>
+
+CONSTRUCT {
+  ?pipeline a sim:OptimalPipeline ;
+    sim:step1 ?cap1 ;
+    sim:step2 ?cap2 ;
+    sim:bridgeType ?type ;
+    rdfs:label ?pipelineLabel .
+}
+WHERE {
+  # Find first capability that returns a type
+  ?cap1 a yawl-bridge:BridgeCapability ;
+        yawl-bridge:nativeTarget ?nativeTarget1 ;
+        yawl-bridge:capabilityName ?name1 .
+
+  # Find the native function for cap1
+  ?fn1 a yawl-bridge:NativeFunction ;
+       yawl-bridge:forCapability ?cap1 ;
+       yawl-bridge:fnReturnType ?returnType1 .
+
+  # Extract the bridge type from the return type
+  # Types are encoded as: "RegistryKind:TypeName" or just "TypeName"
+  FILTER(CONTAINS(?returnType1, ":") || STRLEN(?returnType1) > 0)
+
+  # Find second capability that accepts the same type
+  ?cap2 a yawl-bridge:BridgeCapability ;
+        yawl-bridge:nativeTarget ?nativeTarget2 ;
+        yawl-bridge:capabilityName ?name2 .
+
+  # Find the native function for cap2 with a parameter
+  ?fn2 a yawl-bridge:NativeFunction ;
+       yawl-bridge:forCapability ?cap2 ;
+       yawl-bridge:fnDescriptor ?descriptor2 .
+
+  # The descriptor must accept the type that cap1 returns
+  # This is a simplified type check - in production would parse FunctionDescriptor
+  FILTER(CONTAINS(?descriptor2, ?returnType1) ||
+         CONTAINS(?descriptor2, "ADDRESS") ||
+         CONTAINS(?descriptor2, "JAVA_LONG"))
+
+  # Ensure we're not composing a capability with itself
+  FILTER(?cap1 != ?cap2)
+
+  # Create the pipeline URI and label
+  BIND(IRI(CONCAT("http://yawlfoundation.org/yawl/simulation#Pipeline_",
+                  STRUUID())) AS ?pipeline)
+  BIND(CONCAT(?name1, " → ", ?name2) AS ?pipelineLabel)
+  BIND(?returnType1 AS ?type)
+}
