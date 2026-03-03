@@ -27,7 +27,8 @@
     "environment": "Dual-track: Docker/DevContainer (local) + Claude Code Web (remote)",
     "hooks": "Omnipresent Rust hook system: Ψ facts injected at every prompt (65ms)",
     "webSessions": "Supported via SessionStart hook (Maven proxy + H2 database)",
-    "hookArchitecture": "yawl-hooks binary handles UserPromptSubmit/PreToolUse/PostToolUse/Stop/PreCompact"
+    "hookArchitecture": "yawl-hooks binary handles UserPromptSubmit/PreToolUse/PostToolUse/Stop/PreCompact",
+    "selfPlayLoop": "Enforcement hooks prevent false completion reports"
   },
   "hooks": {
     "SessionStart": [
@@ -38,6 +39,18 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh",
             "timeout": 120,
             "statusMessage": "Setting up YAWL environment..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/yawl-state.sh",
+            "timeout": 15,
+            "statusMessage": "Loading YAWL build state..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/self-play-state.sh",
+            "timeout": 30,
+            "statusMessage": "Loading self-play loop state..."
           }
         ]
       }

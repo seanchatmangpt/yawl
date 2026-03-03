@@ -57,8 +57,8 @@ public final class SAFeAgentBootstrap {
         try {
             // Read environment configuration
             String engineUrl = getEnv("YAWL_ENGINE_URL", "http://localhost:8080/yawl");
-            String username = getEnv("YAWL_USERNAME", "admin");
-            String password = getEnv("YAWL_PASSWORD", "YAWL");
+            String username = getEnv("YAWL_USERNAME");
+            String password = getEnv("YAWL_PASSWORD");
             int basePort = getIntEnv("SAFE_BASE_PORT", 8090);
 
             logger.info("Initializing SAFe agent team");

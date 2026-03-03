@@ -1,0 +1,461 @@
+# =============================================================================
+# pm-bridge.ttl — Process Mining Bridge Ontology
+# rust4pm v1.0.0: Native FFM Bridge definition
+#
+# Vocabulary: yawl-bridge: (from .specify/patterns/native-bridge.ttl)
+# Bridge: ProcessMining — 30 capabilities, uniform char*→char* C ABI
+#
+# Generated from: rust/rust4pm/src/lib.rs
+# Compile invariant: edit this file → ggen sync → 7 Java artifacts regenerated
+# =============================================================================
+
+@prefix rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:        <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:         <http://www.w3.org/2001/XMLSchema#> .
+@prefix yawl-bridge: <http://yawlfoundation.org/yawl/bridge#> .
+@prefix pm:          <http://yawlfoundation.org/yawl/processmining/bridge#> .
+
+# =============================================================================
+# BRIDGE INSTANCE
+# =============================================================================
+
+pm:ProcessMiningBridge
+    a yawl-bridge:NativeBridge ;
+    yawl-bridge:bridgeName      "ProcessMining" ;
+    yawl-bridge:packageName     "org.yawlfoundation.yawl.processmining.bridge" ;
+    yawl-bridge:nativeLibrary   "libyawl_rust4pm.so" ;
+    yawl-bridge:libraryPathProp "yawl.rust4pm.lib" ;
+    yawl-bridge:l2Class         "ProcessMiningL2" ;
+    yawl-bridge:l3Class         "ProcessMiningL3" ;
+    yawl-bridge:testClass       "ProcessMiningIntegrationTest" ;
+    yawl-bridge:hasCapability   pm:Cap_PARSE_OCEL2_JSON
+                            ,   pm:Cap_LOG_EVENT_COUNT
+                            ,   pm:Cap_LOG_OBJECT_COUNT
+                            ,   pm:Cap_LOG_GET_EVENTS
+                            ,   pm:Cap_LOG_GET_OBJECTS
+                            ,   pm:Cap_DISCOVER_DFG
+                            ,   pm:Cap_CHECK_CONFORMANCE
+                            ,   pm:Cap_LOG_FREE
+                            ,   pm:Cap_EVENTS_FREE
+                            ,   pm:Cap_OBJECTS_FREE
+                            ,   pm:Cap_DFG_FREE
+                            ,   pm:Cap_ERROR_FREE
+                            ,   pm:Cap_SIZEOF_OCEL_LOG_HANDLE
+                            ,   pm:Cap_SIZEOF_PARSE_RESULT
+                            ,   pm:Cap_SIZEOF_OCEL_EVENT_C
+                            ,   pm:Cap_SIZEOF_OCEL_EVENTS_RESULT
+                            ,   pm:Cap_SIZEOF_OCEL_OBJECT_C
+                            ,   pm:Cap_SIZEOF_OCEL_OBJECTS_RESULT
+                            ,   pm:Cap_SIZEOF_DFG_RESULT_C
+                            ,   pm:Cap_SIZEOF_CONFORMANCE_RESULT_C
+                            ,   pm:Cap_OFFSETOF_OCEL_LOG_HANDLE_PTR
+                            ,   pm:Cap_OFFSETOF_PARSE_RESULT_HANDLE
+                            ,   pm:Cap_OFFSETOF_PARSE_RESULT_ERROR
+                            ,   pm:Cap_OFFSETOF_OCEL_EVENT_C_EVENT_ID
+                            ,   pm:Cap_OFFSETOF_OCEL_EVENT_C_EVENT_TYPE
+                            ,   pm:Cap_OFFSETOF_OCEL_EVENT_C_TIMESTAMP_MS
+                            ,   pm:Cap_OFFSETOF_OCEL_EVENT_C_ATTR_COUNT
+                            ,   pm:Cap_OFFSETOF_DFG_RESULT_C_JSON
+                            ,   pm:Cap_OFFSETOF_DFG_RESULT_C_ERROR
+                            ,   pm:Cap_OFFSETOF_CONFORMANCE_RESULT_C_FITNESS ;
+    yawl-bridge:hasFunction     pm:Fn_parse_ocel2_json
+                            ,   pm:Fn_log_event_count
+                            ,   pm:Fn_log_object_count
+                            ,   pm:Fn_log_get_events
+                            ,   pm:Fn_log_get_objects
+                            ,   pm:Fn_discover_dfg
+                            ,   pm:Fn_check_conformance
+                            ,   pm:Fn_log_free
+                            ,   pm:Fn_events_free
+                            ,   pm:Fn_objects_free
+                            ,   pm:Fn_dfg_free
+                            ,   pm:Fn_error_free ;
+    yawl-bridge:hasDomainOperation pm:Op_parseOcel2Json
+                            ,   pm:Op_logEventCount
+                            ,   pm:Op_logObjectCount
+                            ,   pm:Op_logGetEvents
+                            ,   pm:Op_logGetObjects
+                            ,   pm:Op_discoverDfg
+                            ,   pm:Op_checkConformance
+                            ,   pm:Op_logFree .
+
+# =============================================================================
+# BRIDGE CAPABILITIES (30)
+# Groups: PARSE(1) QUERY(4) DISCOVER(1) CONFORMANCE(1) MEMORY(5) PROBES(18)
+# =============================================================================
+
+# --- PARSE ---
+
+pm:Cap_PARSE_OCEL2_JSON
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "PARSE_OCEL2_JSON" ;
+    yawl-bridge:capabilityDescription "Parse OCEL2 JSON log into native handle" ;
+    yawl-bridge:nativeTarget          "rust4pm_parse_ocel2_json" .
+
+# --- QUERY ---
+
+pm:Cap_LOG_EVENT_COUNT
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "LOG_EVENT_COUNT" ;
+    yawl-bridge:capabilityDescription "Get number of events in parsed log" ;
+    yawl-bridge:nativeTarget          "rust4pm_log_event_count" .
+
+pm:Cap_LOG_OBJECT_COUNT
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "LOG_OBJECT_COUNT" ;
+    yawl-bridge:capabilityDescription "Get number of objects in parsed log" ;
+    yawl-bridge:nativeTarget          "rust4pm_log_object_count" .
+
+pm:Cap_LOG_GET_EVENTS
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "LOG_GET_EVENTS" ;
+    yawl-bridge:capabilityDescription "Get events array from parsed log" ;
+    yawl-bridge:nativeTarget          "rust4pm_log_get_events" .
+
+pm:Cap_LOG_GET_OBJECTS
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "LOG_GET_OBJECTS" ;
+    yawl-bridge:capabilityDescription "Get objects array from parsed log" ;
+    yawl-bridge:nativeTarget          "rust4pm_log_get_objects" .
+
+# --- DISCOVER ---
+
+pm:Cap_DISCOVER_DFG
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "DISCOVER_DFG" ;
+    yawl-bridge:capabilityDescription "Discover Directly-Follows Graph from log" ;
+    yawl-bridge:nativeTarget          "rust4pm_discover_dfg" .
+
+# --- CONFORMANCE ---
+
+pm:Cap_CHECK_CONFORMANCE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "CHECK_CONFORMANCE" ;
+    yawl-bridge:capabilityDescription "Check conformance via token replay against Petri net" ;
+    yawl-bridge:nativeTarget          "rust4pm_check_conformance" .
+
+# --- MEMORY MANAGEMENT ---
+
+pm:Cap_LOG_FREE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "LOG_FREE" ;
+    yawl-bridge:capabilityDescription "Free parsed log handle" ;
+    yawl-bridge:nativeTarget          "rust4pm_log_free" .
+
+pm:Cap_EVENTS_FREE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "EVENTS_FREE" ;
+    yawl-bridge:capabilityDescription "Free events result (no-op, borrowed pointer)" ;
+    yawl-bridge:nativeTarget          "rust4pm_events_free" .
+
+pm:Cap_OBJECTS_FREE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OBJECTS_FREE" ;
+    yawl-bridge:capabilityDescription "Free objects result (no-op, borrowed pointer)" ;
+    yawl-bridge:nativeTarget          "rust4pm_objects_free" .
+
+pm:Cap_DFG_FREE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "DFG_FREE" ;
+    yawl-bridge:capabilityDescription "Free DFG result JSON string" ;
+    yawl-bridge:nativeTarget          "rust4pm_dfg_free" .
+
+pm:Cap_ERROR_FREE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "ERROR_FREE" ;
+    yawl-bridge:capabilityDescription "Free error message string" ;
+    yawl-bridge:nativeTarget          "rust4pm_error_free" .
+
+# --- SIZEOF PROBES (8) ---
+
+pm:Cap_SIZEOF_OCEL_LOG_HANDLE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_OCEL_LOG_HANDLE" ;
+    yawl-bridge:capabilityDescription "sizeof(OcelLogHandle) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_ocel_log_handle" .
+
+pm:Cap_SIZEOF_PARSE_RESULT
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_PARSE_RESULT" ;
+    yawl-bridge:capabilityDescription "sizeof(ParseResult) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_parse_result" .
+
+pm:Cap_SIZEOF_OCEL_EVENT_C
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_OCEL_EVENT_C" ;
+    yawl-bridge:capabilityDescription "sizeof(OcelEventC) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_ocel_event_c" .
+
+pm:Cap_SIZEOF_OCEL_EVENTS_RESULT
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_OCEL_EVENTS_RESULT" ;
+    yawl-bridge:capabilityDescription "sizeof(OcelEventsResult) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_ocel_events_result" .
+
+pm:Cap_SIZEOF_OCEL_OBJECT_C
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_OCEL_OBJECT_C" ;
+    yawl-bridge:capabilityDescription "sizeof(OcelObjectC) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_ocel_object_c" .
+
+pm:Cap_SIZEOF_OCEL_OBJECTS_RESULT
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_OCEL_OBJECTS_RESULT" ;
+    yawl-bridge:capabilityDescription "sizeof(OcelObjectsResult) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_ocel_objects_result" .
+
+pm:Cap_SIZEOF_DFG_RESULT_C
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_DFG_RESULT_C" ;
+    yawl-bridge:capabilityDescription "sizeof(DfgResultC) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_dfg_result_c" .
+
+pm:Cap_SIZEOF_CONFORMANCE_RESULT_C
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "SIZEOF_CONFORMANCE_RESULT_C" ;
+    yawl-bridge:capabilityDescription "sizeof(ConformanceResultC) for L1 layout verification" ;
+    yawl-bridge:nativeTarget          "rust4pm_sizeof_conformance_result_c" .
+
+# --- OFFSETOF PROBES (10) ---
+
+pm:Cap_OFFSETOF_OCEL_LOG_HANDLE_PTR
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_OCEL_LOG_HANDLE_PTR" ;
+    yawl-bridge:capabilityDescription "offsetof(OcelLogHandle, ptr)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_ocel_log_handle_ptr" .
+
+pm:Cap_OFFSETOF_PARSE_RESULT_HANDLE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_PARSE_RESULT_HANDLE" ;
+    yawl-bridge:capabilityDescription "offsetof(ParseResult, handle)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_parse_result_handle" .
+
+pm:Cap_OFFSETOF_PARSE_RESULT_ERROR
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_PARSE_RESULT_ERROR" ;
+    yawl-bridge:capabilityDescription "offsetof(ParseResult, error)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_parse_result_error" .
+
+pm:Cap_OFFSETOF_OCEL_EVENT_C_EVENT_ID
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_OCEL_EVENT_C_EVENT_ID" ;
+    yawl-bridge:capabilityDescription "offsetof(OcelEventC, event_id)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_ocel_event_c_event_id" .
+
+pm:Cap_OFFSETOF_OCEL_EVENT_C_EVENT_TYPE
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_OCEL_EVENT_C_EVENT_TYPE" ;
+    yawl-bridge:capabilityDescription "offsetof(OcelEventC, event_type)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_ocel_event_c_event_type" .
+
+pm:Cap_OFFSETOF_OCEL_EVENT_C_TIMESTAMP_MS
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_OCEL_EVENT_C_TIMESTAMP_MS" ;
+    yawl-bridge:capabilityDescription "offsetof(OcelEventC, timestamp_ms)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_ocel_event_c_timestamp_ms" .
+
+pm:Cap_OFFSETOF_OCEL_EVENT_C_ATTR_COUNT
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_OCEL_EVENT_C_ATTR_COUNT" ;
+    yawl-bridge:capabilityDescription "offsetof(OcelEventC, attr_count)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_ocel_event_c_attr_count" .
+
+pm:Cap_OFFSETOF_DFG_RESULT_C_JSON
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_DFG_RESULT_C_JSON" ;
+    yawl-bridge:capabilityDescription "offsetof(DfgResultC, json)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_dfg_result_c_json" .
+
+pm:Cap_OFFSETOF_DFG_RESULT_C_ERROR
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_DFG_RESULT_C_ERROR" ;
+    yawl-bridge:capabilityDescription "offsetof(DfgResultC, error)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_dfg_result_c_error" .
+
+pm:Cap_OFFSETOF_CONFORMANCE_RESULT_C_FITNESS
+    a yawl-bridge:BridgeCapability ;
+    yawl-bridge:capabilityName        "OFFSETOF_CONFORMANCE_RESULT_C_FITNESS" ;
+    yawl-bridge:capabilityDescription "offsetof(ConformanceResultC, fitness)" ;
+    yawl-bridge:nativeTarget          "rust4pm_offsetof_conformance_result_c_fitness" .
+
+# =============================================================================
+# NATIVE FUNCTIONS (12)
+# Core operations: char* → char* (uniform JSON-in JSON-out C ABI)
+# =============================================================================
+
+pm:Fn_parse_ocel2_json
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$parse_ocel2_json" ;
+    yawl-bridge:fnJavaName     "parseOcel2Json" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_parse_ocel2_json" ;
+    yawl-bridge:fnReturnType   "MemorySegment" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG)" ;
+    yawl-bridge:forCapability  pm:Cap_PARSE_OCEL2_JSON .
+
+pm:Fn_log_event_count
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$log_event_count" ;
+    yawl-bridge:fnJavaName     "logEventCount" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_log_event_count" ;
+    yawl-bridge:fnReturnType   "long" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_LOG_EVENT_COUNT .
+
+pm:Fn_log_object_count
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$log_object_count" ;
+    yawl-bridge:fnJavaName     "logObjectCount" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_log_object_count" ;
+    yawl-bridge:fnReturnType   "long" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_LOG_OBJECT_COUNT .
+
+pm:Fn_log_get_events
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$log_get_events" ;
+    yawl-bridge:fnJavaName     "logGetEvents" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_log_get_events" ;
+    yawl-bridge:fnReturnType   "MemorySegment" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_LOG_GET_EVENTS .
+
+pm:Fn_log_get_objects
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$log_get_objects" ;
+    yawl-bridge:fnJavaName     "logGetObjects" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_log_get_objects" ;
+    yawl-bridge:fnReturnType   "MemorySegment" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_LOG_GET_OBJECTS .
+
+pm:Fn_discover_dfg
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$discover_dfg" ;
+    yawl-bridge:fnJavaName     "discoverDfg" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_discover_dfg" ;
+    yawl-bridge:fnReturnType   "MemorySegment" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_DISCOVER_DFG .
+
+pm:Fn_check_conformance
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$check_conformance" ;
+    yawl-bridge:fnJavaName     "checkConformance" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_check_conformance" ;
+    yawl-bridge:fnReturnType   "MemorySegment" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG)" ;
+    yawl-bridge:forCapability  pm:Cap_CHECK_CONFORMANCE .
+
+pm:Fn_log_free
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$log_free" ;
+    yawl-bridge:fnJavaName     "logFree" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_log_free" ;
+    yawl-bridge:fnReturnType   "void" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_LOG_FREE .
+
+pm:Fn_events_free
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$events_free" ;
+    yawl-bridge:fnJavaName     "eventsFree" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_events_free" ;
+    yawl-bridge:fnReturnType   "void" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_EVENTS_FREE .
+
+pm:Fn_objects_free
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$objects_free" ;
+    yawl-bridge:fnJavaName     "objectsFree" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_objects_free" ;
+    yawl-bridge:fnReturnType   "void" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_OBJECTS_FREE .
+
+pm:Fn_dfg_free
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$dfg_free" ;
+    yawl-bridge:fnJavaName     "dfgFree" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_dfg_free" ;
+    yawl-bridge:fnReturnType   "void" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_DFG_FREE .
+
+pm:Fn_error_free
+    a yawl-bridge:NativeFunction ;
+    yawl-bridge:fnHandleName   "mh$error_free" ;
+    yawl-bridge:fnJavaName     "errorFree" ;
+    yawl-bridge:fnNativeSymbol "rust4pm_error_free" ;
+    yawl-bridge:fnReturnType   "void" ;
+    yawl-bridge:fnDescriptor   "FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)" ;
+    yawl-bridge:forCapability  pm:Cap_ERROR_FREE .
+
+# =============================================================================
+# DOMAIN OPERATIONS (8)
+# All operations: String request → String response (no FFM types at call site)
+# =============================================================================
+
+pm:Op_parseOcel2Json
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "parseOcel2Json" ;
+    yawl-bridge:opL2JavaName  "parseOcel2Json" ;
+    yawl-bridge:opDescription "Parse OCEL2 JSON log and return handle as JSON" ;
+    yawl-bridge:testFixture   "ocel2-sample" ;
+    yawl-bridge:forCapability pm:Cap_PARSE_OCEL2_JSON .
+
+pm:Op_logEventCount
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "logEventCount" ;
+    yawl-bridge:opL2JavaName  "logEventCount" ;
+    yawl-bridge:opDescription "Get event count from parsed log" ;
+    yawl-bridge:testFixture   "ocel2-sample" ;
+    yawl-bridge:forCapability pm:Cap_LOG_EVENT_COUNT .
+
+pm:Op_logObjectCount
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "logObjectCount" ;
+    yawl-bridge:opL2JavaName  "logObjectCount" ;
+    yawl-bridge:opDescription "Get object count from parsed log" ;
+    yawl-bridge:testFixture   "ocel2-sample" ;
+    yawl-bridge:forCapability pm:Cap_LOG_OBJECT_COUNT .
+
+pm:Op_logGetEvents
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "logGetEvents" ;
+    yawl-bridge:opL2JavaName  "logGetEvents" ;
+    yawl-bridge:opDescription "Get events array as JSON from parsed log" ;
+    yawl-bridge:testFixture   "ocel2-sample" ;
+    yawl-bridge:forCapability pm:Cap_LOG_GET_EVENTS .
+
+pm:Op_logGetObjects
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "logGetObjects" ;
+    yawl-bridge:opL2JavaName  "logGetObjects" ;
+    yawl-bridge:opDescription "Get objects array as JSON from parsed log" ;
+    yawl-bridge:testFixture   "ocel2-sample" ;
+    yawl-bridge:forCapability pm:Cap_LOG_GET_OBJECTS .
+
+pm:Op_discoverDfg
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "discoverDfg" ;
+    yawl-bridge:opL2JavaName  "discoverDfg" ;
+    yawl-bridge:opDescription "Discover Directly-Follows Graph from log events" ;
+    yawl-bridge:testFixture   "ocel2-sample" ;
+    yawl-bridge:forCapability pm:Cap_DISCOVER_DFG .
+
+pm:Op_checkConformance
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "checkConformance" ;
+    yawl-bridge:opL2JavaName  "checkConformance" ;
+    yawl-bridge:opDescription "Check conformance via token replay against PNML Petri net" ;
+    yawl-bridge:testFixture   "ocel2-conformance" ;
+    yawl-bridge:forCapability pm:Cap_CHECK_CONFORMANCE .
+
+pm:Op_logFree
+    a yawl-bridge:DomainOperation ;
+    yawl-bridge:opName        "logFree" ;
+    yawl-bridge:opL2JavaName  "logFree" ;
+    yawl-bridge:opDescription "Free parsed log handle resources" ;
+    yawl-bridge:testFixture   "ocel2-sample" ;
+    yawl-bridge:forCapability pm:Cap_LOG_FREE .

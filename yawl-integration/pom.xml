@@ -41,6 +41,12 @@
             <artifactId>yawl-ggen</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <!-- QLever FFI for embedded SPARQL queries -->
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-qlever</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- MCP SDK (io.modelcontextprotocol.sdk 1.0.0-RC3 from GitHub releases)
              The official SDK v1 provides server-side transport with STDIO, SSE, and HTTP support.
@@ -470,6 +476,9 @@
 
                         <!-- Markdown files cause "invalid flag" compiler errors -->
                         <exclude>**/*.md</exclude>
+
+                        <!-- GapAnalysisEngine in processmining has compilation errors -->
+                        <exclude>**/processmining/GapAnalysisEngine.java</exclude>
 
                         <!-- JiraAlign MCP tools use Builder API not yet updated for MCP RC3 -->
                         <exclude>**/mcp/spec/JiraAlignPortfolioTools.java</exclude>

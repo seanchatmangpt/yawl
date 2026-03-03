@@ -18,9 +18,11 @@ package org.yawlfoundation.yawl.mcp.a2a.demo;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.yawlfoundation.yawl.mcp.a2a.demo.config.DemoConfig;
+import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternDemoConfig;
 import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternCategory;
 import org.yawlfoundation.yawl.mcp.a2a.demo.config.PatternRegistry;
+import org.yawlfoundation.yawl.mcp.a2a.demo.PatternDemoRunner;
+import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.PatternInfo;
 
 import java.util.List;
@@ -39,7 +41,7 @@ class PatternDemoRunnerTest {
     @Test
     @DisplayName("PatternDemoRunner can be created with default config")
     void testPatternDemoRunnerCreationWithDefaultConfig() {
-        DemoConfig config = DemoConfig.defaults();
+        PatternDemoConfig config = PatternDemoConfig.defaults();
         PatternDemoRunner runner = new PatternDemoRunner(config);
 
         assertNotNull(runner, "PatternDemoRunner should be instantiated");
@@ -48,8 +50,8 @@ class PatternDemoRunnerTest {
     @Test
     @DisplayName("PatternDemoRunner can be created with builder config")
     void testPatternDemoRunnerCreationWithBuilderConfig() {
-        DemoConfig config = DemoConfig.builder()
-            .outputFormat(DemoConfig.OutputFormat.JSON)
+        PatternDemoConfig config = PatternDemoConfig.builder()
+            .outputFormat(PatternDemoConfig.OutputFormat.JSON)
             .timeoutSeconds(60)
             .parallelExecution(false)
             .build();
@@ -124,13 +126,13 @@ class PatternDemoRunnerTest {
     }
 
     @Test
-    @DisplayName("DemoConfig defaults are valid")
-    void testDemoConfigDefaults() {
-        DemoConfig config = DemoConfig.defaults();
+    @DisplayName("PatternDemoConfig defaults are valid")
+    void testPatternDemoConfigDefaults() {
+        PatternDemoConfig config = PatternDemoConfig.defaults();
 
-        assertNotNull(config, "DemoConfig.defaults() should return non-null config");
-        assertEquals(DemoConfig.OutputFormat.CONSOLE, config.outputFormat(), "Default output format should be CONSOLE");
-        assertEquals(DemoConfig.DEFAULT_TIMEOUT_SECONDS, config.timeoutSeconds(), "Default timeout should be 300 seconds");
+        assertNotNull(config, "PatternDemoConfig.defaults() should return non-null config");
+        assertEquals(PatternDemoConfig.OutputFormat.CONSOLE, config.outputFormat(), "Default output format should be CONSOLE");
+        assertEquals(PatternDemoConfig.DEFAULT_TIMEOUT_SECONDS, config.timeoutSeconds(), "Default timeout should be 300 seconds");
         assertTrue(config.enableTracing(), "Tracing should be enabled by default");
         assertTrue(config.enableMetrics(), "Metrics should be enabled by default");
         assertTrue(config.parallelExecution(), "Parallel execution should be enabled by default");
@@ -139,7 +141,7 @@ class PatternDemoRunnerTest {
     @Test
     @DisplayName("Help text can be displayed")
     void testHelpTextAvailable() {
-        String helpText = DemoConfig.CommandLineParser.getHelpText();
+        String helpText = PatternDemoConfig.CommandLineParser.getHelpText();
 
         assertNotNull(helpText, "Help text should not be null");
         assertFalse(helpText.isBlank(), "Help text should not be blank");
@@ -149,12 +151,12 @@ class PatternDemoRunnerTest {
     }
 
     @Test
-    @DisplayName("DemoConfig can parse command line arguments")
-    void testDemoConfigFromCommandLine() {
+    @DisplayName("PatternDemoConfig can parse command line arguments")
+    void testPatternDemoConfigFromCommandLine() {
         String[] args = {"--format", "json", "--timeout", "60"};
-        DemoConfig config = DemoConfig.fromCommandLine(args);
+        PatternDemoConfig config = PatternDemoConfig.fromCommandLine(args);
 
-        assertEquals(DemoConfig.OutputFormat.JSON, config.outputFormat(), "Format should be JSON");
+        assertEquals(PatternDemoConfig.OutputFormat.JSON, config.outputFormat(), "Format should be JSON");
         assertEquals(60, config.timeoutSeconds(), "Timeout should be 60 seconds");
     }
 

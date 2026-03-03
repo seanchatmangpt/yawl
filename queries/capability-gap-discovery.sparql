@@ -1,0 +1,74 @@
+# =============================================================================
+# capability-gap-discovery.sparql — Discover Missing Capabilities
+# Self-Play Simulation Loop v3.0
+#
+# PURPOSE: Find demanded types that have no producer capability
+#   - Identifies gaps where simulation needs a capability that doesn't exist
+#   - Used by A4 agent for gap analysis and WSJF prioritization
+#
+# OUTPUT: CapabilityGap instances for inner loop optimization
+# =============================================================================
+
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+PREFIX sim:         <http://yawlfoundation.org/yawl/simulation#>
+PREFIX safe:        <http://yawlfoundation.org/yawl/safe#>
+PREFIX rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:        <http://www.w3.org/2000/01/rdf-schema#>
+
+CONSTRUCT {
+  ?gap a sim:CapabilityGap ;
+    rdfs:label ?gapLabel ;
+    sim:requiresCapability ?requiredType ;
+    sim:demandScore ?demand ;
+    sim:complexity ?complexity ;
+    rdfs:comment ?description .
+}
+WHERE {
+  # Find all capabilities that REQUIRE a specific input type
+  ?consumerCap a yawl-bridge:BridgeCapability ;
+               yawl-bridge:capabilityName ?consumerName ;
+               yawl-bridge:nativeTarget ?consumerTarget .
+
+  ?consumerFn a yawl-bridge:NativeFunction ;
+              yawl-bridge:forCapability ?consumerCap ;
+              yawl-bridge:fnDescriptor ?consumerDesc .
+
+  # Extract the required input type from the descriptor
+  # In a real implementation, this would parse the FunctionDescriptor
+  # For now, we identify types by parameter patterns
+  FILTER(CONTAINS(?consumerDesc, "ADDRESS") || CONTAINS(?consumerDesc, "JAVA_LONG"))
+
+  # Check if there's NO producer for this type
+  # A producer is a capability whose return type matches the required input
+  {
+    SELECT DISTINCT ?requiredType (COUNT(?consumerCap) AS ?demand)
+    WHERE {
+      ?c a yawl-bridge:BridgeCapability ;
+         yawl-bridge:nativeTarget ?t .
+      ?f a yawl-bridge:NativeFunction ;
+         yawl-bridge:forCapability ?c ;
+         yawl-bridge:fnDescriptor ?d .
+      BIND(
+        IF(CONTAINS(?d, "ADDRESS"), "MemorySegment",
+        IF(CONTAINS(?d, "JAVA_LONG"), "long",
+        "unknown")) AS ?requiredType
+      )
+    }
+    GROUP BY ?requiredType
+  }
+
+  # Check for missing producers - types that are consumed but not produced
+  FILTER NOT EXISTS {
+    ?producerFn a yawl-bridge:NativeFunction ;
+                yawl-bridge:fnReturnType ?requiredType .
+    ?producerCap a yawl-bridge:BridgeCapability ;
+                 yawl-bridge:hasFunction ?producerFn .
+  }
+
+  # Create gap URI and metadata
+  BIND(IRI(CONCAT("http://yawlfoundation.org/yawl/simulation#Gap_",
+                  ENCODE_FOR_URI(?requiredType))) AS ?gap)
+  BIND(CONCAT("Missing: ", ?requiredType) AS ?gapLabel)
+  BIND(1.0 AS ?complexity)  # Default complexity, would be estimated
+  BIND(CONCAT("No capability produces type: ", ?requiredType) AS ?description)
+}

@@ -141,7 +141,6 @@ token_replay_fitness([]) ->
 token_replay_fitness(Log) ->
     Model = derive_linear_model(Log),
     ModelSet = sets:from_list(Model),
-    AllActivities = lists:flatten(Log),
 
     %% Count tokens produced (initial tokens + enabled transitions)
     TraceCount = length(Log),

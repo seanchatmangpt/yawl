@@ -348,50 +348,50 @@ public class WorkflowEventSubscriber extends Thread {
 
     private void logToExternalSystem(String action, String caseId, String details) {
         log.info("External log: " + action + " - " + caseId + " - " + details);
-        // TODO: Implement actual logging to external system (data warehouse, audit log, etc.)
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your external logging system (data warehouse, audit log, etc.)");
     }
 
     private void sendNotification(String message) {
         log.info("Sending notification: " + message);
-        // TODO: Implement notification delivery (email, Slack, SMS, etc.)
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your notification system (email, Slack, SMS, etc.)");
     }
 
     private void storeMetrics(String metric, WorkflowEvent event) {
         log.info("Storing metric: " + metric);
-        // TODO: Send metrics to monitoring system (Prometheus, Grafana, etc.)
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your monitoring system (Prometheus, Grafana, etc.)");
     }
 
     private void updateCaseStatus(String caseId, String status) {
         log.info("Updating case status: " + caseId + " -> " + status);
-        // TODO: Update database
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your case management database");
     }
 
     private void analyzeSLA(String caseId, long durationSeconds) {
         final long SLA_THRESHOLD = 24 * 60 * 60;  // 24 hours
         if (durationSeconds > SLA_THRESHOLD) {
             log.warning("SLA violation detected: " + caseId + " took " + durationSeconds + "s");
-            // TODO: Send SLA violation alert
+            throw new UnsupportedOperationException("Template method - implement in subclass: send SLA violation alert to your monitoring system");
         }
     }
 
     private void rollbackCaseChanges(String caseId) {
         log.info("Rolling back case: " + caseId);
-        // TODO: Implement rollback logic
+        throw new UnsupportedOperationException("Template method - implement in subclass: implement case rollback logic for your systems");
     }
 
     private void assignTaskToResource(String caseId, String taskId, String taskName) {
         log.info("Assigning task: " + taskId + " in case " + caseId);
-        // TODO: Call resource allocation system
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your resource allocation system");
     }
 
     private void notifyAssignedUsers(String taskId) {
         log.info("Notifying assigned users for task: " + taskId);
-        // TODO: Send notifications to assigned users
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your user notification system");
     }
 
     private void startDeadlineTimer(String taskId, long durationSeconds) {
         log.info("Starting deadline timer for task: " + taskId);
-        // TODO: Set up task deadline timer
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your timer/reminder system");
     }
 
     private void logUserInteraction(String userId, String taskId, String action) {
@@ -400,52 +400,52 @@ public class WorkflowEventSubscriber extends Thread {
 
     private void logUserInteraction(String userId, String taskId, String action, long durationMs) {
         log.info("User interaction: " + userId + " - " + action + " - " + taskId);
-        // TODO: Log to audit trail
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your audit logging system");
     }
 
     private void updateSLATimer(String taskId, long startedAt) {
         log.info("Updating SLA timer for task: " + taskId);
-        // TODO: Update SLA tracking
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your SLA tracking system");
     }
 
     private void scheduleIdleReminder(String taskId, long delaySeconds) {
         log.info("Scheduling idle reminder for task: " + taskId);
-        // TODO: Schedule reminder
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your reminder system");
     }
 
     private void recordTaskDuration(String taskName, long durationMs) {
         log.info("Recording task duration: " + taskName + " - " + durationMs + "ms");
-        // TODO: Update task metrics
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your task metrics system");
     }
 
     private void processTaskOutput(String taskId, String outputData) {
         log.info("Processing output from task: " + taskId);
-        // TODO: Process task output data
+        throw new UnsupportedOperationException("Template method - implement in subclass: process and store task output data according to your business requirements");
     }
 
     private void notifyNextTasks(String caseId) {
         log.info("Notifying next tasks in case: " + caseId);
-        // TODO: Send notifications to next task assignees
+        throw new UnsupportedOperationException("Template method - implement in subclass: notify next task assignees according to your workflow rules");
     }
 
     private void releaseAllocatedResources(String taskId) {
         log.info("Releasing resources for task: " + taskId);
-        // TODO: Release allocated resources
+        throw new UnsupportedOperationException("Template method - implement in subclass: release allocated resources for your system");
     }
 
     private void alertOpsTeam(String title, String message) {
         log.severe("ALERT: " + title + " - " + message);
-        // TODO: Send alert to ops team (PagerDuty, OpsGenie, etc.)
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your ops team alerting system (PagerDuty, OpsGenie, etc.)");
     }
 
     private void escalateCase(String caseId, String reason, String details) {
         log.warning("Escalating case: " + caseId + " - " + reason);
-        // TODO: Create support ticket or escalate
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your case escalation/support ticket system");
     }
 
     private void logErrorToTracking(WorkflowEvent event) {
         log.severe("Logging error to tracking system: " + event.errorMessage);
-        // TODO: Send to error tracking service (Sentry, DataDog, etc.)
+        throw new UnsupportedOperationException("Template method - implement in subclass: integrate with your error tracking service (Sentry, DataDog, etc.)");
     }
 
     private void logMetrics() {

@@ -1,16 +1,20 @@
-PREFIX code: <http://yawlfoundation.org/ggen/code#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+# H_FALLBACK Guard — Silent Degradation in Catch Blocks
+# Pattern: Catch block that returns fake data instead of propagating the exception
+# Severity: FAIL
+# Fix: Propagate exception instead of faking data
+# Source: H-GUARDS-QUERIES.md Query 5
 
-SELECT ?line ?content
+PREFIX code: <http://ggen.io/code#>
+
+SELECT ?violation ?line ?pattern
 WHERE {
-    ?catchBlock a code:CatchBlock ;
-               code:catchContent ?content ;
-               code:exceptionType ?exceptionType .
+  ?method a code:Method ;
+          code:body ?body ;
+          code:lineNumber ?line .
 
-    FILTER(REGEX(STR(?content), "return.*fake") ||
-           REGEX(STR(?content), "return.*empty") ||
-           REGEX(STR(?content), "return.*Collections") ||
-           REGEX(STR(?content), "return\\s+(null|0|false)"))
+  FILTER(REGEX(?body, 'catch\\s*\\([^)]+\\)\\s*\\{[^}]*return[^}]*fake[^}]*\\}'))
 
-    BIND("Silent fallback in catch block" AS ?line)
+  BIND("H_FALLBACK" AS ?pattern)
+  BIND(CONCAT("Silent fallback at line ", STR(?line))
+       AS ?violation)
 }

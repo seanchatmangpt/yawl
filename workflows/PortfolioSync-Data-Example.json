@@ -1,0 +1,79 @@
+{
+  "portfolioId": "PORTFOLIO-2024-Q1",
+  "portfolioName": "Enterprise Digital Transformation",
+  "timestamp": "2026-03-02T17:20:00Z",
+  "portfolioItems": [
+    {
+      "id": "EPI-001",
+      "type": "EPIC",
+      "name": "Customer 360 Platform",
+      "businessValue": 9.5,
+      "timeCriticality": 8.0,
+      "riskReduction": 7.5,
+      "jobSize": 120,
+      "description": "Unified customer view across all touchpoints",
+      "dependencies": ["EPI-003"],
+      "estimatedDuration": "12 weeks"
+    },
+    {
+      "id": "EPI-002",
+      "type": "EPIC",
+      "name": "AI-Powered Analytics",
+      "businessValue": 8.0,
+      "timeCriticality": 7.0,
+      "riskReduction": 9.0,
+      "jobSize": 80,
+      "description": "Machine learning insights for business decisions",
+      "dependencies": [],
+      "estimatedDuration": "8 weeks"
+    },
+    {
+      "id": "FTR-001",
+      "type": "FEATURE",
+      "name": "Mobile App Redesign",
+      "businessValue": 7.5,
+      "timeCriticality": 9.0,
+      "riskReduction": 6.0,
+      "jobSize": 40,
+      "description": "Complete mobile user experience overhaul",
+      "dependencies": ["EPI-001"],
+      "estimatedDuration": "4 weeks"
+    },
+    {
+      "id": "FTR-002",
+      "type": "FEATURE",
+      "name": "Real-time Notifications",
+      "businessValue": 6.0,
+      "timeCriticality": 8.5,
+      "riskReduction": 7.0,
+      "jobSize": 30,
+      "description": "Push notifications for critical events",
+      "dependencies": ["FTR-001"],
+      "estimatedDuration": "3 weeks"
+    },
+    {
+      "id": "FTR-003",
+      "type": "FEATURE",
+      "name": "API Security Gateway",
+      "businessValue": 8.5,
+      "timeCriticality": 6.0,
+      "riskReduction": 9.5,
+      "jobSize": 60,
+      "description": "Centralized API security and monitoring",
+      "dependencies": [],
+      "estimatedDuration": "6 weeks"
+    }
+  ],
+  "artNames": [
+    "ART-Commerce",
+    "ART-Platform",
+    "ART-Infrastructure",
+    "ART-Data"
+  ],
+  "artCapacities": {
+    "ART-Commerce": 200,
+    "ART-Platform": 180,
+    "ART-Infrastructure": 150,
+    "ART-Data": 120
+  }
+}

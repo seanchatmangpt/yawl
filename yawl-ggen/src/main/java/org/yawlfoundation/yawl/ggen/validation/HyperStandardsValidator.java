@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -56,13 +57,42 @@ public class HyperStandardsValidator {
     private static final Logger LOGGER = LoggerFactory.getLogger(HyperStandardsValidator.class);
 
     private final List<GuardChecker> checkers;
+    private final List<String> exclusionPatterns;
     private GuardReceipt receipt;
+
+    // Default exclusion patterns
+    private static final List<String> DEFAULT_EXCLUSIONS = List.of(
+        "**/test/fixtures/**",
+        "**/fixtures/**",
+        "**/*fixture*/**",
+        "**/src/test/**",
+        "**/*Test.java",
+        "**/*Tests.java",
+        "**/target/**",
+        "**/build/**",
+        "**/node_modules/**"
+    );
 
     /**
      * Create a new HyperStandardsValidator with all 9 guard checkers registered.
+     * Uses default exclusion patterns.
      */
     public HyperStandardsValidator() {
         this.checkers = new ArrayList<>();
+        this.exclusionPatterns = DEFAULT_EXCLUSIONS;
+        registerDefaultCheckers();
+    }
+
+    /**
+     * Create a new HyperStandardsValidator with custom checkers and exclusion patterns.
+     * Useful for testing or custom guard pattern implementations.
+     *
+     * @param customCheckers list of GuardChecker implementations to use
+     * @param exclusionPatterns list of glob patterns to exclude from validation
+     */
+    public HyperStandardsValidator(List<GuardChecker> customCheckers, List<String> exclusionPatterns) {
+        this.checkers = Objects.requireNonNull(customCheckers, "customCheckers must not be null");
+        this.exclusionPatterns = Objects.requireNonNull(exclusionPatterns, "exclusionPatterns must not be null");
         registerDefaultCheckers();
     }
 
@@ -74,6 +104,7 @@ public class HyperStandardsValidator {
      */
     public HyperStandardsValidator(List<GuardChecker> customCheckers) {
         this.checkers = Objects.requireNonNull(customCheckers, "customCheckers must not be null");
+        this.exclusionPatterns = DEFAULT_EXCLUSIONS;
     }
 
     /**
@@ -171,6 +202,30 @@ public class HyperStandardsValidator {
     }
 
     /**
+     * Check if a path matches a glob pattern.
+     * Supports ** for recursive matching, * for single segment, ? for single character.
+     *
+     * @param path the file path to check
+     * @param pattern the glob pattern
+     * @return true if the path matches the pattern
+     */
+    private boolean matchesPattern(String path, String pattern) {
+        // Convert glob pattern to regex
+        String regex = pattern.replace("**/", ".*")
+                            .replace("/**", "(?:/.*)?")
+                            .replace("*", "[^/]*")
+                            .replace("?", ".");
+
+        // Handle ** at the end
+        if (pattern.endsWith("**")) {
+            regex = ".*";
+        }
+
+        // Compile and match
+        return path.matches(regex);
+    }
+
+    /**
      * Load a SPARQL query from classpath resources.
      * Throws exception if resource not found.
      *
@@ -215,11 +270,33 @@ public class HyperStandardsValidator {
         receipt = new GuardReceipt();
         receipt.setPhase("guards");
 
-        // Collect all Java source files up-front
+      // Collect all Java source files up-front
         List<Path> javaFiles = new ArrayList<>();
         try (var stream = Files.walk(emitDir)) {
-            stream.filter(p -> p.toString().endsWith(".java"))
-                  .forEach(javaFiles::add);
+            stream.filter(p -> {
+                String path = p.toString();
+
+                // Include only .java files
+                if (!path.endsWith(".java")) {
+                    return false;
+                }
+
+                // Convert to relative path for pattern matching
+                String relativePath = emitDir.relativize(p).toString().replace('\\', '/');
+
+                // Check against exclusion patterns
+                for (String pattern : exclusionPatterns) {
+                    if (matchesPattern(relativePath, pattern)) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Excluding file: {} (matches pattern: {})", path, pattern);
+                        }
+                        return false;
+                    }
+                }
+
+                return true;
+            })
+            .forEach(javaFiles::add);
         }
 
         receipt.setFilesScanned(javaFiles.size());
@@ -318,6 +395,36 @@ public class HyperStandardsValidator {
      */
     public List<GuardChecker> getCheckers() {
         return List.copyOf(checkers);
+    }
+
+    /**
+     * Get the exclusion patterns used for filtering files.
+     *
+     * @return an unmodifiable list of exclusion patterns
+     */
+    public List<String> getExclusionPatterns() {
+        return List.copyOf(exclusionPatterns);
+    }
+
+    /**
+     * Add an exclusion pattern dynamically.
+     *
+     * @param pattern the glob pattern to add
+     */
+    public void addExclusionPattern(String pattern) {
+        Objects.requireNonNull(pattern, "pattern must not be null");
+        if (!exclusionPatterns.contains(pattern)) {
+            exclusionPatterns.add(pattern);
+        }
+    }
+
+    /**
+     * Remove an exclusion pattern.
+     *
+     * @param pattern the glob pattern to remove
+     */
+    public void removeExclusionPattern(String pattern) {
+        exclusionPatterns.remove(Objects.requireNonNull(pattern, "pattern must not be null"));
     }
 
     /**

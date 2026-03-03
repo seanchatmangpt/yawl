@@ -1,7 +1,10 @@
 package org.yawlfoundation.yawl.integration.autonomous.marketplace;
 
-import junit.framework.TestCase;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Chicago TDD tests for {@link OxigraphSparqlEngine}.
@@ -14,10 +17,35 @@ import org.junit.jupiter.api.Tag;
  *       automatically when {@code yawl-native} is not reachable.</li>
  * </ol>
  *
+ * <p>This test class extends {@link SparqlEngineContractTest} to verify the SPARQL engine contract
+ * and adds Oxigraph-specific behaviors.</p>
+ *
  * @since YAWL 6.0
  */
 @Tag("unit")
-public class OxigraphSparqlEngineTest extends TestCase {
+public class OxigraphSparqlEngineTest extends SparqlEngineContractTest {
+
+    private OxigraphSparqlEngine engine;
+    private OxigraphSparqlEngine customEngine;
+
+    @Override
+    protected SparqlEngine createEngine() {
+        // Return the default engine for base class tests
+        return new OxigraphSparqlEngine();
+    }
+
+    @BeforeEach
+    void setUp() {
+        // Create fresh instances for each test
+        engine = new OxigraphSparqlEngine();
+        customEngine = new OxigraphSparqlEngine("http://localhost:8084");
+    }
+
+    @AfterEach
+    void tearDown() {
+        engine = null;
+        customEngine = null;
+    }
 
     // -------------------------------------------------------------------------
     // Always-run: graceful unavailability
@@ -108,5 +136,68 @@ public class OxigraphSparqlEngineTest extends TestCase {
         assertNotNull(result);
         assertTrue("CONSTRUCT result must reflect inserted triple",
                 result.contains("hello") || !result.isBlank());
+    }
+
+    // -------------------------------------------------------------------------
+    // Oxigraph-specific contract tests
+    // -------------------------------------------------------------------------
+
+    public void testConstructorWithCustomBaseUrl() {
+        assertNotNull(customEngine);
+        assertEquals("oxigraph", customEngine.engineType());
+    }
+
+    public void testConstructorThrowsOnNullBaseUrl() {
+        try {
+            new OxigraphSparqlEngine(null);
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertEquals("baseUrl must not be null", e.getMessage());
+        }
+    }
+
+    public void testLoadTurtleMethodExists() {
+        assertNotNull(customEngine);
+        // Test that method exists - will throw if yawl-native unavailable
+        try {
+            customEngine.loadTurtle("<test> <test> <test> .");
+            fail("Expected SparqlEngineUnavailableException");
+        } catch (SparqlEngineUnavailableException e) {
+            // Expected when yawl-native not running
+        }
+    }
+
+    public void testLoadTurtleThrowsOnNullInput() {
+        try {
+            customEngine.loadTurtle(null);
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertEquals("turtle must not be null", e.getMessage());
+        }
+    }
+
+    public void testLoadTurtleWithGraphName() {
+        try {
+            customEngine.loadTurtle("<test> <test> <test> .", "http://example.org/graph");
+            fail("Expected SparqlEngineUnavailableException");
+        } catch (SparqlEngineUnavailableException e) {
+            // Expected when yawl-native not running
+        }
+    }
+
+    public void testSparqlUpdateThrowsOnNullQuery() {
+        try {
+            customEngine.sparqlUpdate(null);
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertEquals("updateQuery must not be null", e.getMessage());
+        }
+    }
+
+    public void testDifferentInstancesAreIndependent() {
+        OxigraphSparqlEngine engine1 = new OxigraphSparqlEngine();
+        OxigraphSparqlEngine engine2 = new OxigraphSparqlEngine();
+
+        assertNotSame(engine1, engine2);
     }
 }

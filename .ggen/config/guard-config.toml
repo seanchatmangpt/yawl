@@ -1,0 +1,215 @@
+# YAWL Guard Configuration
+# Defines exclusion patterns for guard validation
+# Guards should only validate PRODUCTION code, not test fixtures or documentation examples
+
+[guards]
+enabled = true
+phase = "H"
+scan_emit_dir = true  # When true, scan emit directory for generated code
+
+# Directories to exclude from guard validation
+exclusions = [
+    # Test fixtures - these contain intentional violations for testing
+    "test/fixtures/**",
+    "tests/fixtures/**",
+
+    # Test code - may use mocks for testing purposes
+    "**/src/test/**",
+    "**/test/**",
+    "**/*Test.java",
+    "**/*Tests.java",
+    "**/*Test*.java",
+    "**/*Spec.java",
+    "**/*Specs.java",
+
+    # Documentation templates - contain intentional TODOs and examples
+    "docs/templates/**",
+    "docs/examples/**",
+    "docs/guides/**/code/**",
+    "docs/**/*.java",
+
+    # Demo/example code
+    "**/demo/**",
+    "**/examples/**",
+
+    # Legacy/deprecated code
+    "**/deprecated/**",
+    "**/legacy/**",
+    "**/old/**",
+
+    # Work in progress directories
+    "**/wip/**",
+    "**/work-in-progress/**",
+    "**/scratch/**",
+
+    # Third-party or generated code
+    "**/target/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/venv/**",
+    "**/env/**",
+    "**/.venv/**",
+
+    # Migration code
+    "**/migration/**",
+    "**/migrations/**",
+
+    # IDE and editor directories
+    "**/.idea/**",
+    "**/.vscode/**",
+    "**/eclipse/**",
+
+    # Generated files
+    "**/generated/**",
+    "**/build-generated/**",
+
+    # Temporary directories
+    "**/tmp/**",
+    "**/temp/**",
+    "**/.tmp/**"
+]
+
+# Patterns for file inclusion (only scan these in production directories)
+inclusion_patterns = [
+    # Source code files only
+    "src/**/*.java",
+
+    # Main application code
+    "**/src/main/**/*.java",
+
+    # Domain model and business logic (critical code that must be clean)
+    "**/org/yawlfoundation/yawl/elements/**",
+    "**/org/yawlfoundation/yawl/engine/**",
+    "**/org/yawlfoundation/yawl/stateless/**",
+    "**/org/yawlfoundation/yawl/resourcing/**",
+    "**/org/yawlfoundation/yawl/schema/**",
+
+    # Core application code
+    "**/org/yawlfoundation/yawl/cli/**",
+    "**/org/yawlfoundation/yawl/authorization/**",
+    "**/org/yawlfoundation/yawl/util/**"
+]
+
+# Specific files to always exclude (absolute paths or relative to repo root)
+always_exclude = [
+    # Specific test fixture files
+    "test/fixtures/h-guards/violation-h-todo.java",
+    "test/fixtures/h-guards/violation-h-mock.java",
+    "test/fixtures/q-invariants/violation-q1.java",
+    "test/fixtures/q-invariants/violation-q2.java",
+
+    # Documentation examples
+    "docs/templates/code/event-subscribers/WorkflowEventSubscriber.java"
+]
+
+# Custom patterns for specific guard checks
+[custom_patterns]
+# More specific TODO pattern that excludes documentation comments
+h_todo_exclude_docs = '''//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|@incomplete|@stub|placeholder)'''
+
+# Mock pattern that excludes test-related prefixes
+h_mock_exclude_test = '''(mock|stub|fake|demo)(?![A-Z]*Test|Test[A-Z])'''
+
+# Silent logging pattern that excludes documentation examples
+h_silent_exclude_docs = '''log\.(warn|error)\([^)]*"[^"]*not\s+implemented[^"]*"'''
+
+# Pattern to exclude "real implementation needed" comments from docs
+h_todo_impl_needed = '''//\s*real\s+implementation\s+(needed|required)'''
+
+# Pattern to exclude placeholder code in examples
+h_placeholder_code = '''(//\s*@placeholder|//\s*PLACEHOLDER|//\s*example\s+only)'''
+
+# Pattern to exclude intentional stubs in examples
+h_intentional_stub = '''//\s*(intentional|deliberate)\s+stub'''
+
+# Pattern to exclude unfinished demo code
+h_demo_unfinished = '''(//\s*demo\s+unfinished|//\s*quick\s+demo)'''
+
+# Test and documentation specific patterns that should not trigger guards
+[test_and_doc_patterns]
+# Patterns commonly found in test code
+test_code_patterns = [
+    "Mockito\\.when\\(",
+    "PowerMockito\\.when\\(",
+    "doNothing\\(\\)",
+    "doReturn\\(",
+    "Mockito\\.mock\\(",
+    "mock\\(",
+    "@Mock",
+    "@InjectMocks"
+]
+
+# Patterns commonly found in documentation examples
+doc_code_patterns = [
+    "// TODO: implement",
+    "FIXME:",
+    "not implemented",
+    "placeholder implementation",
+    "quick example",
+    "simplified for demo"
+]
+
+# Logging patterns that are acceptable in test/doc contexts
+acceptable_logging = [
+    "log\\.(debug|info|warn|error)\\([^)]*test[^)]*\\)",
+    "log\\.(debug|info|warn|error)\\([^)]*example[^)]*\\)",
+    "log\\.(debug|info|warn|error)\\([^)]*demo[^)]*\\)"
+]
+
+[logging]
+level = "INFO"
+file = ".claude/logs/guard-validation.log"
+
+# Log files to skip validation
+skip_log_validation = [
+    "**/*.log",
+    "**/*.log.*",
+    "**/logs/**"
+]
+
+[receipt]
+format = "json"
+path = ".claude/receipts/guard-receipt.json"
+include_violations = true
+include_summary = true
+include_file_list = false
+
+[validation]
+# Exit codes
+success = 0
+transient_error = 1
+fatal_error = 2
+
+# Performance settings
+max_file_size_mb = 10
+timeout_seconds = 30
+parallel_workers = 4
+
+# Optimization for large codebases
+[optimization]
+# Skip large directories that are known to be clean
+skip_directories_size_mb = 100
+# Use file caching to avoid re-parsing same files
+enable_file_cache = true
+# Cache expiration time in minutes
+cache_expiration_minutes = 60
+# Parallel processing batch size
+batch_size = 50
+
+# Memory optimization
+[memory]
+# Maximum number of AST trees to keep in memory
+max_ast_cache_size = 1000
+# Clear cache when memory usage exceeds (MB)
+clear_cache_if_above_mb = 512
+
+# Skip these guard patterns for excluded directories
+[skip_patterns_for_excluded]
+test/fixtures = ["H_TODO", "H_MOCK", "H_MOCK_CLASS", "H_STUB", "H_EMPTY", "H_FALLBACK", "H_LIE", "H_SILENT"]
+tests/fixtures = ["H_TODO", "H_MOCK", "H_MOCK_CLASS", "H_STUB", "H_EMPTY", "H_FALLBACK", "H_LIE", "H_SILENT"]
+docs/templates = ["H_TODO", "H_MOCK", "H_SILENT"]
+docs/examples = ["H_TODO", "H_MOCK", "H_STUB", "H_EMPTY", "H_FALLBACK", "H_SILENT"]
+**/src/test/** = ["H_TODO", "H_MOCK", "H_MOCK_CLASS", "H_STUB", "H_EMPTY", "H_FALLBACK", "H_LIE", "H_SILENT"]
+**/test/** = ["H_TODO", "H_MOCK", "H_MOCK_CLASS", "H_STUB", "H_EMPTY", "H_FALLBACK", "H_LIE", "H_SILENT"]
+**/*Test*.java = ["H_TODO", "H_MOCK", "H_MOCK_CLASS", "H_STUB", "H_EMPTY", "H_FALLBACK", "H_LIE", "H_SILENT"]

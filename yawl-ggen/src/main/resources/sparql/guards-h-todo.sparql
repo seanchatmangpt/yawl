@@ -1,0 +1,23 @@
+# H_TODO Guard — Deferred Work Markers
+# Pattern: //\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|@incomplete|@stub|placeholder)
+# Severity: FAIL
+# Fix: Implement real logic or throw UnsupportedOperationException
+# Source: H-GUARDS-QUERIES.md Query 1
+
+PREFIX code: <http://ggen.io/code#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?violation ?line ?pattern
+WHERE {
+  ?method a code:Method ;
+          code:hasComment ?comment ;
+          code:lineNumber ?line .
+
+  ?comment code:text ?text .
+
+  FILTER(REGEX(?text, "//\\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|@incomplete|@stub|placeholder)"))
+
+  BIND("H_TODO" AS ?pattern)
+  BIND(CONCAT("Deferred work marker at line ", STR(?line), ": ", ?text)
+       AS ?violation)
+}
