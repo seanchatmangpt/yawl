@@ -134,30 +134,18 @@ should_exclude_file() {
 
     # Check exclusions with proper glob pattern matching
     for pattern in $GUARD_EXCLUSIONS; do
-        # Convert glob to regex for matching
-        local regex_pattern="${pattern//\*/\**}"
-        regex_pattern="${regex_pattern//\?/\.}"
-        if [[ "$file" == $pattern ]] || [[ "$file" == $regex_pattern ]]; then
+        # Use bash extended pattern matching for accurate glob behavior
+        shopt -s extglob
+
+        if [[ "$file" == $pattern ]]; then
             if [ "${VERBOSE:-0}" -eq 1 ]; then
                 echo "[DEBUG] Excluded file '$file' matches pattern '$pattern'" >&2
             fi
+            shopt -u extglob
             return 0
         fi
 
-        # Handle ** patterns recursively
-        if [[ "$pattern" == "**" ]]; then
-            if [[ "$file" =~ ^[A-Za-z0-9_\./-]+$ ]]; then
-                return 0
-            fi
-        elif [[ "$pattern" == "**/"* ]]; then
-            local prefix="${pattern#**/}"
-            if [[ "$file" == *"$prefix"* ]]; then
-                if [ "${VERBOSE:-0}" -eq 1 ]; then
-                    echo "[DEBUG] Excluded file '$file' matches recursive pattern '$pattern'" >&2
-                fi
-                return 0
-            fi
-        fi
+        shopt -u extglob
     done
 
     # Check always exclude
