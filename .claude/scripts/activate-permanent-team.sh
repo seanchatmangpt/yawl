@@ -170,7 +170,7 @@ init_team_state() {
     # Create team metadata
     cat > "${team_dir}/metadata.json" <<EOF
 {
-  "team_id": "$(uuidgen | tr -d '-' | head -c 12)",
+  "team_id": "$(date +%s | md5sum | cut -c1-12)",
   "team_name": "${team_name}",
   "agent_count": ${agent_count},
   "status": "active",
@@ -178,6 +178,9 @@ init_team_state() {
   "agents": []
 }
 EOF
+
+    # Clear agents file (idempotent: overwrite instead of append)
+    > "${team_dir}/agents.jsonl"
 
     # Create agent roster
     for i in $(seq 1 ${agent_count}); do
