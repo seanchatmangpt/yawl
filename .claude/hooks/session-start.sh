@@ -21,6 +21,27 @@ fi
 
 echo "🔧 Setting up YAWL for Claude Code Web..."
 
+# ============================================================================
+# RALPH LOOP STATE INITIALIZATION
+# ============================================================================
+#
+# Initialize .claude/.ralph-state/ directory for ralph-loop command.
+# This enables the self-referential loop mechanism used by /ralph-loop.
+#
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+RALPH_STATE_DIR="${REPO_ROOT}/.claude/.ralph-state"
+
+# Create state directory (idempotent - won't fail if exists)
+mkdir -p "${RALPH_STATE_DIR}"
+
+# Initialize stop-hook handler (used by ralph-loop)
+# The stop-hook intercepts session exits to re-inject prompts
+export RALPH_LOOP_ACTIVE=false
+export RALPH_STATE_DIR="${RALPH_STATE_DIR}"
+
+# ============================================================================
+
 # Verify Maven is available (should be pre-installed in environment)
 if ! command -v mvn &> /dev/null; then
   echo "⚠️  Maven not found in PATH"

@@ -1,0 +1,192 @@
+# Autonomous Decision Rules
+# Maps observable signals to autonomous decisions (no prompts)
+
+# ============================================================================
+# AGENT SELECTION RULES
+# ============================================================================
+[agent_selection]
+# Task keywords → Agent type mapping with confidence scores
+
+# YAWL-specific agents
+yawl-engineer = ["engine", "ynet", "workflow", "pattern", "ynetrunner", "runner", "net", "fix", "debug", "task"]
+yawl-engineer_confidence = 0.98
+
+yawl-validator = ["valid", "schema", "xsd", "specification", "spec", "test", "junit", "coverage"]
+yawl-validator_confidence = 0.93
+
+yawl-architect = ["architect", "design", "interface", "system", "schema", "protocol", "api", "refactor"]
+yawl-architect_confidence = 0.95
+
+yawl-integrator = ["mcp", "a2a", "integration", "z.ai", "endpoint", "protocol", "client", "service"]
+yawl-integrator_confidence = 0.92
+
+yawl-tester = ["test", "junit", "coverage", "testcase", "assert", "unit", "integration"]
+yawl-tester_confidence = 0.90
+
+yawl-reviewer = ["review", "standard", "hyper", "quality", "code", "standards", "convention"]
+yawl-reviewer_confidence = 0.88
+
+yawl-prod-validator = ["deploy", "production", "config", "tomcat", "environment", "monitoring", "metrics"]
+yawl-prod-validator_confidence = 0.91
+
+yawl-performance-benchmarker = ["performance", "benchmark", "optim", "profile", "throughput", "latency", "scale"]
+yawl-performance-benchmarker_confidence = 0.89
+
+# Fallback (unknown task type)
+[agent_selection.fallback]
+default_agent = "yawl-engineer"
+confidence = 0.70
+reason = "Default to engineer for unknown task types"
+
+# ============================================================================
+# VIOLATION REMEDIATION RULES
+# ============================================================================
+[violation_remediation]
+# Pattern → Auto-fix action mapping
+
+# H (Guards) violations - Forbidden patterns
+H_TODO_action = "remove_comment"
+H_TODO_confidence = 1.0
+H_TODO_requires_review = false
+
+H_MOCK_action = "delete_mock_class"
+H_MOCK_confidence = 0.95
+H_MOCK_requires_review = false
+
+H_STUB_action = "replace_with_throw"
+H_STUB_confidence = 0.98
+H_STUB_requires_review = false
+
+H_EMPTY_action = "add_throw_exception"
+H_EMPTY_confidence = 1.0
+H_EMPTY_requires_review = false
+
+H_FALLBACK_action = "rethrow_exception"
+H_FALLBACK_confidence = 0.90
+H_FALLBACK_requires_review = false
+
+H_SILENT_action = "convert_to_throw"
+H_SILENT_confidence = 0.95
+H_SILENT_requires_review = false
+
+H_LIE_action = "escalate_to_user"
+H_LIE_confidence = 0.50
+H_LIE_requires_review = true
+
+# Q (Invariants) violations - Real impl ∨ throw
+Q_EMPTY_action = "add_throw_exception"
+Q_EMPTY_confidence = 1.0
+Q_EMPTY_requires_review = false
+
+Q_FAKE_RETURN_action = "replace_with_throw"
+Q_FAKE_RETURN_confidence = 0.95
+Q_FAKE_RETURN_requires_review = false
+
+Q_SILENT_CATCH_action = "rethrow_exception"
+Q_SILENT_CATCH_confidence = 0.92
+Q_SILENT_CATCH_requires_review = false
+
+# ============================================================================
+# LOOP CONTINUATION RULES
+# ============================================================================
+[loop_continuation]
+# Determine when to exit vs continue the ralph-loop
+
+exit_priority_1 = "completion_promise_found && validation_green"
+exit_priority_1_confidence = 1.0
+
+exit_priority_2 = "iterations >= max_iterations"
+exit_priority_2_confidence = 0.99
+
+exit_priority_3 = "implicit_success && validation_green && no_uncommitted_changes"
+exit_priority_3_confidence = 0.98
+
+continue_condition_1 = "promise_found && validation_red"
+continue_reason_1 = "Promise found but validation failed, attempt remediation"
+
+continue_condition_2 = "!promise_found && iterations < max_iterations"
+continue_reason_2 = "Continue iteration, no completion promise yet"
+
+continue_condition_3 = "stalled && iterations < max_stalled_threshold"
+continue_reason_3 = "No progress but under stalled threshold"
+
+# ============================================================================
+# ERROR ANALYSIS RULES
+# ============================================================================
+[error_analysis]
+# Patterns for extracting root cause from different error types
+
+# Compilation errors
+syntax_error_pattern = "error:.*:.*:"
+type_mismatch_pattern = "cannot find symbol|incompatible types"
+missing_import_pattern = "cannot find symbol.*import"
+reference_error_pattern = "symbol not found"
+
+# Test failures
+assertion_failure_pattern = "AssertionError|expected.*but was"
+timeout_pattern = "Timeout|timeout expired"
+resource_leak_pattern = "ResourceLeakDetector|leak detected"
+exception_pattern = "Exception|Error|Throwable"
+
+# Validation violations
+h_violation_pattern = "violation.*H_"
+q_violation_pattern = "violation.*Q_"
+high_severity_pattern = "HIGH|CRITICAL"
+
+# ============================================================================
+# ARCHITECTURE SELECTION RULES
+# ============================================================================
+[architecture_selection]
+# Scoring criteria for competing architecture proposals
+
+mocks_penalty = -1000.0
+empty_return_penalty = -500.0
+silent_fallback_penalty = -800.0
+test_coverage_bonus = 50.0
+dependencies_penalty = -10.0
+complexity_penalty = -5.0
+
+confidence_threshold_for_selection = 0.75
+tie_breaking_rule = "prefer_simpler_implementation"
+
+# ============================================================================
+# REMEDIATION STRATEGY
+# ============================================================================
+[remediation_strategy]
+max_attempts_per_violation = 3
+verify_after_each_attempt = true
+create_git_checkpoint_per_violation = false
+batch_similar_violations = true
+priority_order = ["H", "Q"]
+
+# H violations are hard blocks
+h_violation_severity = "BLOCK"
+h_violation_auto_fix = true
+
+# Q violations are assertions
+q_violation_severity = "ASSERT"
+q_violation_auto_fix = true
+
+# ============================================================================
+# IMPLICIT SUCCESS CRITERIA
+# ============================================================================
+[implicit_success]
+# Allow exit even without explicit completion promise if criteria met
+
+criterion_all_tests_pass = true
+criterion_no_violations = true
+criterion_files_committed = true
+criterion_git_clean = true
+
+all_criteria_required = true
+
+# ============================================================================
+# DECISION LOGGING
+# ============================================================================
+[decision_logging]
+format = "json"
+include_timestamp = true
+include_confidence = true
+include_reasoning = true
+include_context = true
+audit_trail_enabled = true

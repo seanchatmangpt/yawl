@@ -1,0 +1,20 @@
+{
+  "explore_to_plan": {
+    "from": "explore",
+    "to": "plan",
+    "topic": "findings",
+    "priority": "high"
+  },
+  "plan_to_implement": {
+    "from": "plan",
+    "to": "implement",
+    "topic": "tasks",
+    "priority": "high"
+  },
+  "implement_to_explore": {
+    "from": "implement",
+    "to": "explore",
+    "topic": "blockers",
+    "priority": "medium"
+  }
+}

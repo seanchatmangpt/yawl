@@ -1,0 +1,7 @@
+{
+  "frequency_minutes": 5,
+  "enabled": true,
+  "scope": ["all_teams"],
+  "auto_sync": true,
+  "git_persist": true
+}
