@@ -1,0 +1,108 @@
+@startuml C4_Dependency_Graph
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL v6.0.0 - Module Dependency Graph (6 Layers)
+
+Component_Boundary(layer0, "LAYER 0: Foundation (No YAWL deps, parallel build)") {
+    Component(utilities, "yawl-utilities", "Common utils")
+    Component(security, "yawl-security", "Crypto, TLS")
+    Component(erlang, "yawl-erlang", "Distributed msgs")
+    Component(graalpy, "yawl-graalpy", "Python runtime")
+    Component(graaljs, "yawl-graaljs", "JavaScript runtime")
+    Component(rust4pm, "yawl-rust4pm", "Performance")
+}
+
+Component_Boundary(layer1, "LAYER 1: First Consumers (parallel build)") {
+    Component(elements, "yawl-elements", "Domain model")
+    Component(ggen, "yawl-ggen", "Code generation")
+    Component(graalwasm, "yawl-graalwasm", "WASM runtime")
+    Component(dmn, "yawl-dmn", "Decision engine")
+    Component(data_mod, "yawl-data-modelling", "Data schemas")
+}
+
+Component_Boundary(layer2, "LAYER 2: Core Engine (blocking)") {
+    Component(engine, "yawl-engine", "Orchestration")
+}
+
+Component_Boundary(layer3, "LAYER 3: Engine Extension (blocking)") {
+    Component(stateless, "yawl-stateless", "Stateless variant")
+}
+
+Component_Boundary(layer4, "LAYER 4: Services (parallel build)") {
+    Component(auth, "yawl-authentication", "Auth services")
+    Component(scheduling, "yawl-scheduling", "Task scheduling")
+    Component(monitoring, "yawl-monitoring", "Observability")
+    Component(worklet, "yawl-worklet", "Dynamic tasks")
+    Component(panel, "yawl-control-panel", "Admin UI")
+    Component(integration, "yawl-integration", "MCP/A2A")
+    Component(benchmark, "yawl-benchmark", "Performance tests")
+    Component(webapps, "yawl-webapps", "Web applications")
+}
+
+Component_Boundary(layer5, "LAYER 5: Advanced Services (parallel build)") {
+    Component(pi, "yawl-pi", "Portfolio mgmt")
+    Component(resourcing, "yawl-resourcing", "Resource allocation")
+    Component(qlever, "yawl-qlever", "Query engine")
+}
+
+Component_Boundary(layer6, "LAYER 6: Top-Level (blocking)") {
+    Component(mcp_app, "yawl-mcp-a2a-app", "Main application")
+}
+
+%% Layer 0 dependencies (none)
+
+%% Layer 1 → Layer 0
+Rel(elements, utilities, "depends on", "")
+Rel(elements, security, "depends on", "")
+Rel(ggen, utilities, "depends on", "")
+Rel(ggen, graalpy, "depends on", "")
+Rel(ggen, graaljs, "depends on", "")
+Rel(graalwasm, utilities, "depends on", "")
+Rel(dmn, utilities, "depends on", "")
+Rel(data_mod, utilities, "depends on", "")
+
+%% Layer 2 → Layer 1
+Rel(engine, elements, "depends on", "")
+Rel(engine, utilities, "depends on", "")
+Rel(engine, security, "depends on", "")
+Rel(engine, erlang, "depends on", "distribution")
+Rel(engine, rust4pm, "depends on", "perf")
+
+%% Layer 3 → Layer 2
+Rel(stateless, engine, "depends on", "")
+Rel(stateless, utilities, "depends on", "")
+
+%% Layer 4 → Layers 1,2,3
+Rel(auth, security, "depends on", "")
+Rel(auth, utilities, "depends on", "")
+Rel(scheduling, engine, "depends on", "")
+Rel(monitoring, engine, "depends on", "")
+Rel(worklet, engine, "depends on", "")
+Rel(worklet, ggen, "depends on", "")
+Rel(panel, engine, "depends on", "")
+Rel(integration, engine, "depends on", "")
+Rel(integration, elements, "depends on", "")
+Rel(benchmark, engine, "depends on", "")
+Rel(benchmark, utilities, "depends on", "")
+Rel(webapps, engine, "depends on", "")
+Rel(webapps, auth, "depends on", "")
+
+%% Layer 5 → Layers 2,3,4
+Rel(pi, engine, "depends on", "")
+Rel(pi, elements, "depends on", "")
+Rel(resourcing, engine, "depends on", "")
+Rel(resourcing, scheduling, "depends on", "")
+Rel(resourcing, rust4pm, "depends on", "FFI")
+Rel(qlever, engine, "depends on", "")
+Rel(qlever, utilities, "depends on", "")
+
+%% Layer 6 → All
+Rel(mcp_app, engine, "depends on", "")
+Rel(mcp_app, integration, "depends on", "")
+Rel(mcp_app, auth, "depends on", "")
+Rel(mcp_app, monitoring, "depends on", "")
+Rel(mcp_app, resourcing, "depends on", "")
+Rel(mcp_app, pi, "depends on", "")
+
+SHOW_LEGEND()
+@enduml

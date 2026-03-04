@@ -1,0 +1,87 @@
+@startuml C3_Core_Engine_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Engine - Internal Components (Layer 2 Deep Dive)
+
+Container_Boundary(yawl_engine, "yawl-engine") {
+
+    Component_Boundary(net_execution, "Net Execution") {
+        Component(ynet_runner, "YNetRunner", "Core workflow orchestrator", "Manages net lifecycle, transitions, task queuing")
+        Component(ywork_item, "YWorkItem", "Work item model", "Represents a task instance with state")
+        Component(yparam_factory, "YParameterFactory", "Parameter handling", "Converts data types, validates inputs")
+        Component(yexecution_observer, "YExecutionObserver", "Event publisher", "Publishes execution events (task started, completed, etc.)")
+    }
+
+    Component_Boundary(task_mgmt, "Task Management") {
+        Component(task_queue, "TaskQueue", "Virtual Thread Pool", "VirtualThreadPerTaskExecutor (Java 25)")
+        Component(task_allocator, "TaskAllocator", "Work distribution", "Routes tasks to participants")
+        Component(task_controller, "TaskController", "Task state machine", "Enabled → Fired → Executing → Completed")
+        Component(manual_task, "ManualTask", "Participant interaction", "Human task handling")
+        Component(auto_task, "AutomaticTask", "Service invocation", "External system calls")
+    }
+
+    Component_Boundary(data_mgmt, "Data Management") {
+        Component(state_store, "StateStore", "In-memory cache", "YNet state snapshots")
+        Component(param_data, "ParameterData", "Instance variables", "Workflow data context")
+        Component(data_logger, "DataLogger", "Audit trail", "Records all data changes")
+    }
+
+    Component_Boundary(control_flow, "Control Flow") {
+        Component(gateway_logic, "GatewayLogic", "AND/OR/XOR decisions", "Routes execution based on predicates")
+        Component(condition_parser, "ConditionParser", "Expression evaluation", "Parses YAWL conditions")
+        Component(loop_handler, "LoopHandler", "Iteration management", "Handles for-each and while loops")
+    }
+
+    Component_Boundary(exception_handling, "Exception Handling") {
+        Component(exception_handler, "ExceptionHandler", "Error recovery", "Catches and routes exceptions")
+        Component(timeout_mgr, "TimeoutManager", "Deadline enforcement", "Task timeouts, SLA violations")
+        Component(cancellation_handler, "CancellationHandler", "Task cancellation", "Graceful task termination")
+    }
+
+    Component_Boundary(persistence, "Persistence") {
+        Component(ynet_persistence, "YNetPersistence", "Database layer", "JDBC ORM wrapper")
+        Component(checkpoint, "CheckpointManager", "Savepoints", "Workflow checkpoints")
+        Component(recovery, "RecoveryManager", "Fault tolerance", "Restart from checkpoint")
+    }
+
+    Component_Boundary(concurrency, "Concurrency Control") {
+        Component(lock_mgr, "LockManager", "Distributed locking", "Prevents race conditions")
+        Component(event_bus, "EventBus", "Async event dispatch", "Virtual thread-safe event publication")
+        Component(structured_concurrency, "StructuredConcurrency", "Task scope management", "Java 25 scoped values")
+    }
+
+    Component_Boundary(observability, "Observability") {
+        Component(metrics_exporter, "MetricsExporter", "Prometheus exporter", "CPU, memory, throughput")
+        Component(trace_exporter, "TraceExporter", "OpenTelemetry", "Distributed tracing")
+        Component(audit_logger, "AuditLogger", "Compliance logging", "Immutable audit trail")
+    }
+}
+
+Rel(ynet_runner, task_queue, "Queues tasks to", "")
+Rel(ynet_runner, gateway_logic, "Evaluates", "")
+Rel(ynet_runner, exception_handler, "Uses for recovery", "")
+
+Rel(task_queue, task_controller, "Manages state of", "")
+Rel(task_controller, ywork_item, "Updates", "")
+Rel(ywork_item, param_data, "Contains", "")
+
+Rel(condition_parser, param_data, "Evaluates against", "")
+Rel(gateway_logic, condition_parser, "Uses", "")
+Rel(loop_handler, gateway_logic, "Extends", "")
+
+Rel(ynet_runner, state_store, "Snapshots to", "")
+Rel(state_store, ynet_persistence, "Persists to DB", "")
+Rel(checkpoint, ynet_persistence, "Saves checkpoint", "")
+Rel(recovery, checkpoint, "Restores from", "")
+
+Rel(task_controller, lock_mgr, "Acquires lock", "")
+Rel(ynet_runner, event_bus, "Publishes events to", "")
+Rel(yexecution_observer, event_bus, "Observes from", "")
+
+Rel(ynet_runner, metrics_exporter, "Reports metrics", "")
+Rel(task_queue, metrics_exporter, "Reports queue depth", "")
+Rel(ynet_runner, trace_exporter, "Traces execution", "")
+Rel(exception_handler, audit_logger, "Logs exceptions", "")
+
+SHOW_LEGEND()
+@enduml

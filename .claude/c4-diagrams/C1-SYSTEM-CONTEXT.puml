@@ -1,0 +1,27 @@
+@startuml C1_System_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title YAWL v6.0.0 - System Context Diagram
+
+Person(end_user, "End User", "Runs workflows and tasks")
+Person(admin, "Administrator", "Manages configuration and resources")
+Person(developer, "Workflow Developer", "Designs and deploys workflows")
+
+System(yawl_core, "YAWL Workflow Engine", "Core workflow orchestration platform\nJava 25 + Maven + Virtual Threads")
+
+System_Ext(external_systems, "External Systems", "SAP, Salesforce, Jira, etc.\nIntegrated via MCP/A2A")
+System_Ext(monitoring, "Monitoring & Observability", "Prometheus, Grafana, ELK Stack")
+System_Ext(auth_external, "Authentication", "OAuth, LDAP, SSO providers")
+System_Ext(database, "Data Store", "H2 (dev), PostgreSQL (prod)")
+
+Rel(end_user, yawl_core, "Execute workflows", "Web UI, REST API")
+Rel(admin, yawl_core, "Configure", "Admin Console")
+Rel(developer, yawl_core, "Deploy", "YAWL Editor, REST API")
+
+Rel(yawl_core, external_systems, "Integrate", "MCP / A2A Protocol")
+Rel(yawl_core, monitoring, "Send metrics", "OpenTelemetry")
+Rel(yawl_core, auth_external, "Authenticate", "Standard protocols")
+Rel(yawl_core, database, "Persist", "JDBC")
+
+SHOW_LEGEND()
+@enduml

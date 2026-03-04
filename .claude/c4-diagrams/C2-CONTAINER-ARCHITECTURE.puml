@@ -1,0 +1,90 @@
+@startuml C2_Container_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Container Architecture (6-Layer)
+
+Person(user, "User", "")
+Person(developer, "Developer", "")
+
+System_Boundary(yawl_system, "YAWL v6.0.0") {
+
+    Container(web_ui, "Web UI", "React/TypeScript", "Web interface for workflow execution and monitoring")
+    Container(rest_api, "REST API Gateway", "Spring Boot", "API endpoints for all client access")
+
+    Container_Boundary(layer0_foundation, "LAYER 0: Foundation") {
+        Container(utilities, "yawl-utilities", "Java 25", "Common utilities (logging, config, validation)")
+        Container(security, "yawl-security", "Java 25", "Cryptography, TLS, auth modules")
+        Container(erlang, "yawl-erlang", "Erlang/OTP 28", "Distributed messaging backend")
+        Container(graalpy, "yawl-graalpy", "GraalVM Python", "Python polyglot support")
+        Container(graaljs, "yawl-graaljs", "GraalVM JS", "JavaScript polyglot support")
+        Container(rust4pm, "yawl-rust4pm", "Rust", "Performance-critical modules (FFI)")
+    }
+
+    Container_Boundary(layer1_consumers, "LAYER 1: First Consumers") {
+        Container(elements, "yawl-elements", "Java 25", "YAWL domain model (tasks, gateways, nets)")
+        Container(ggen, "yawl-ggen", "Java 25", "Code generation framework (guards, invariants)")
+        Container(graalwasm, "yawl-graalwasm", "GraalVM WASM", "WebAssembly support")
+        Container(dmn, "yawl-dmn", "Java 25", "Decision Model & Notation integration")
+        Container(data_mod, "yawl-data-modelling", "Java 25", "Data schema definitions")
+    }
+
+    Container_Boundary(layer2_core, "LAYER 2: Core Engine") {
+        Container(engine, "yawl-engine", "Java 25 Virtual Threads", "YNetRunner, YWorkItem, state management")
+    }
+
+    Container_Boundary(layer3_extension, "LAYER 3: Engine Extension") {
+        Container(stateless, "yawl-stateless", "Java 25", "Stateless orchestration engine")
+    }
+
+    Container_Boundary(layer4_services, "LAYER 4: Services") {
+        Container(auth, "yawl-authentication", "Java 25", "User auth, token management")
+        Container(scheduling, "yawl-scheduling", "Java 25", "Task scheduling, timers")
+        Container(monitoring, "yawl-monitoring", "Java 25", "Metrics, tracing, health checks")
+        Container(worklet, "yawl-worklet", "Java 25", "Worklet service (dynamic invocation)")
+        Container(panel, "yawl-control-panel", "React + Java", "Admin dashboard")
+        Container(integration, "yawl-integration", "Java 25", "MCP/A2A protocol handlers")
+        Container(benchmark, "yawl-benchmark", "Java 25", "Performance testing suite")
+        Container(webapps, "yawl-webapps", "React + Spring", "Web applications")
+    }
+
+    Container_Boundary(layer5_advanced, "LAYER 5: Advanced Services") {
+        Container(pi, "yawl-pi", "Java 25", "Portfolio & Program management")
+        Container(resourcing, "yawl-resourcing", "Java 25", "Resource allocation, work distribution")
+        Container(qlever, "yawl-qlever", "Java 25 + Rust", "Query engine for workflow analytics")
+    }
+
+    Container_Boundary(layer6_app, "LAYER 6: Top-Level Application") {
+        Container(mcp_app, "yawl-mcp-a2a-app", "Java 25", "MCP/A2A server, orchestrator")
+    }
+
+    ContainerDb(h2_db, "H2 Database", "Java", "In-memory (dev) or persisted")
+}
+
+Rel(user, web_ui, "Uses", "HTTPS")
+Rel(user, rest_api, "Calls", "REST")
+Rel(developer, rest_api, "Deploys via", "REST")
+
+Rel(web_ui, rest_api, "Calls", "")
+Rel(rest_api, engine, "Orchestrates", "")
+Rel(rest_api, auth, "Validates", "")
+
+Rel(ggen, elements, "Generates code for", "")
+Rel(engine, elements, "Executes", "")
+Rel(stateless, engine, "Extends", "")
+
+Rel(resourcing, engine, "Allocates work to", "")
+Rel(monitoring, engine, "Observes", "")
+Rel(integration, mcp_app, "Implements protocol for", "")
+Rel(pi, engine, "Plans portfolio via", "")
+
+Rel(engine, h2_db, "Persists to", "JDBC")
+Rel(security, utilities, "Provides", "")
+Rel(utilities, engine, "Used by", "")
+
+Rel_R(erlang, engine, "Distributes", "")
+Rel_R(graalpy, ggen, "Executes", "Python DSL")
+Rel_R(graaljs, ggen, "Executes", "JavaScript DSL")
+Rel_R(rust4pm, resourcing, "Optimizes", "Performance")
+
+SHOW_LEGEND()
+@enduml

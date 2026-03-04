@@ -1,0 +1,131 @@
+@startuml C4_Work_In_Flight
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL v6.0.0 - Current Work In Flight (WIP Status)
+
+Component_Boundary(wip_tracking, "ACTIVE WIP INITIATIVES") {
+
+    Component_Boundary(phase_h_guards, "PHASE H: Guards Validation") {
+        Component(h_todo_detector, "H_TODO Detector", "Regex pattern", "Scans for TODO/FIXME markers")
+        Component(h_mock_detector, "H_MOCK Detector", "Regex + SPARQL", "Detects mock implementations")
+        Component(h_stub_detector, "H_STUB Detector", "SPARQL queries", "Finds empty/placeholder returns")
+        Component(h_empty_detector, "H_EMPTY Detector", "SPARQL queries", "Identifies no-op methods")
+        Component(h_fallback_detector, "H_FALLBACK Detector", "SPARQL queries", "Catches silent degradation")
+        Component(h_lie_detector, "H_LIE Detector", "Semantic SPARQL", "Mismatches: code ≠ docs")
+        Component(h_silent_detector, "H_SILENT Detector", "Regex", "Log instead of throw")
+        Component(hyperstd_validator, "HyperStandardsValidator", "Orchestrator", "Runs 7 guards, emits receipt")
+
+        Note as H_STATUS
+            **Status**: DESIGN READY
+            **Owner**: yawl-ggen module
+            **Gate**: Pre-Q validation
+            **Success**: Zero H violations
+            **Next**: Implementation sprint
+        End note
+    }
+
+    Component_Boundary(phase_fortune5_test, "PHASE FORTUNE5: Enterprise Scale Testing") {
+        Component(main_test_suite, "FortuneFiveScaleTest", "13 tests + chaos", "SAFe enterprise scale (30 ARTs)")
+        Component(cross_art_tests, "CrossARTCoordinationTest", "10 tests", "Dependency negotiation patterns")
+        Component(test_orchestrator, "FortuneScaleOrchestrator", "Real YAWL engine", "PI planning, workflows, M&A")
+        Component(test_data_factory, "FortuneScaleDataFactory", "Data generation", "5,000+ dependencies")
+        Component(sla_enforcement, "SLA Validation", "Strict gates", "4h PI, 30m deps, 15m portfolio")
+
+        Note as F5_STATUS
+            **Status**: DELIVERED (2026-02-28)
+            **Lines**: 4,600+ code + docs
+            **Tests**: 65+ combinations
+            **Coverage**: 80%+ line, 70%+ branch
+            **Next**: Production integration
+        End note
+    }
+
+    Component_Boundary(c4_diagrams_wip, "THIS BRANCH: C4 Architecture Diagrams") {
+        Component(c1_context, "C1: System Context", "PlantUML", "External system interactions")
+        Component(c2_container, "C2: Container Architecture", "PlantUML", "6-layer module organization")
+        Component(c3_core_engine, "C3: Core Engine Components", "PlantUML", "YNetRunner deep dive")
+        Component(c4_wip_tracking, "C4: WIP Tracking", "PlantUML (this diagram)", "Current initiatives")
+        Component(c4_integration_flows, "C4: Integration Flows", "PlantUML", "MCP/A2A patterns")
+        Component(c4_dependency_graph, "C4: Module Dependencies", "PlantUML", "Build order, layer graph")
+
+        Note as C4_STATUS
+            **Status**: IN PROGRESS
+            **Branch**: claude/c4-diagrams-wip-1tk3Y
+            **Deliverable**: Organization diagrams
+            **Purpose**: Visualize WIP + roadmap
+            **Target**: Complete narrative arc
+        End note
+    }
+
+    Component_Boundary(phase_integration, "PHASE INTEGRATION: MCP/A2A") {
+        Component(mcp_server, "YawlMcpServer", "Claude MCP endpoint", "Model Context Protocol")
+        Component(a2a_server, "YawlA2AServer", "Z.AI A2A endpoint", "Autonomous agent protocol")
+        Component(protocol_handlers, "Protocol Handlers", "Message routing", "Transforms MCP ↔ YAWL")
+        Component(agent_executor, "AgentExecutor", "Workflow invoker", "Runs agents as YAWL tasks")
+
+        Note as INT_STATUS
+            **Status**: ACTIVE DEVELOPMENT
+            **Owner**: yawl-integration module
+            **Gate**: Protocol compliance
+            **Success**: <100ms roundtrip
+            **Next**: Agent tests + docs
+        End note
+    }
+
+    Component_Boundary(phase_java25_migration, "PHASE JAVA25: Virtual Thread Migration") {
+        Component(vt_executor, "VirtualThreadExecutor", "Java 25 feature", "Per-task virtual threads")
+        Component(structured_task_scope, "StructuredTaskScope", "Java 25 feature", "Scoped value propagation")
+        Component(carrier_scheduler, "CarrierScheduler", "Tuning", "Pin carrier threads for I/O")
+        Component(backpressure_queue, "BackpressureQueue", "Flow control", "queue.take() for carrier parking")
+
+        Note as VT_STATUS
+            **Status**: OPTIMIZATION PHASE
+            **Owner**: yawl-engine module
+            **Gate**: >100 agents without starvation
+            **Success**: <1ms task latency
+            **Next**: Load testing, tuning
+        End note
+    }
+
+    Component_Boundary(phase_observability, "PHASE OBSERVABILITY: Monitoring") {
+        Component(prometheus_metrics, "PrometheusExporter", "Metrics output", "CPU, memory, task throughput")
+        Component(otel_tracing, "OpenTelemetryExporter", "Distributed traces", "Request flow visualization")
+        Component(audit_trail, "ImmutableAuditTrail", "Compliance logging", "SOX 404 compliance")
+        Component(health_checks, "HealthChecks", "Liveness probes", "gRPC health endpoint")
+
+        Note as OBS_STATUS
+            **Status**: ACTIVE DEVELOPMENT
+            **Owner**: yawl-monitoring module
+            **Gate**: <2ms overhead
+            **Success**: Full observability stack
+            **Next**: Grafana dashboards
+        End note
+    }
+}
+
+Rel(hyperstd_validator, h_todo_detector, "Orchestrates", "")
+Rel(hyperstd_validator, h_mock_detector, "Orchestrates", "")
+Rel(hyperstd_validator, h_stub_detector, "Orchestrates", "")
+Rel(hyperstd_validator, h_empty_detector, "Orchestrates", "")
+Rel(hyperstd_validator, h_fallback_detector, "Orchestrates", "")
+Rel(hyperstd_validator, h_lie_detector, "Orchestrates", "")
+Rel(hyperstd_validator, h_silent_detector, "Orchestrates", "")
+
+Rel(test_orchestrator, main_test_suite, "Executes", "")
+Rel(test_orchestrator, cross_art_tests, "Executes", "")
+Rel(test_data_factory, test_orchestrator, "Provides data", "")
+Rel(sla_enforcement, main_test_suite, "Validates", "")
+
+Rel(mcp_server, protocol_handlers, "Uses", "")
+Rel(a2a_server, protocol_handlers, "Uses", "")
+Rel(protocol_handlers, agent_executor, "Routes to", "")
+
+Rel(vt_executor, structured_task_scope, "Uses", "")
+Rel(carrier_scheduler, backpressure_queue, "Tunes", "")
+
+Rel(prometheus_metrics, otel_tracing, "Feeds", "")
+Rel(audit_trail, prometheus_metrics, "Observes", "")
+Rel(health_checks, prometheus_metrics, "Reports to", "")
+
+SHOW_LEGEND()
+@enduml

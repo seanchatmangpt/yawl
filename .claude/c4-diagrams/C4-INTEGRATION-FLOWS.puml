@@ -1,0 +1,79 @@
+@startuml C4_Integration_Flows
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL v6.0.0 - Integration Flows (MCP / A2A)
+
+Container_Boundary(external_agents, "External World") {
+    Component(claude_agent, "Claude Agent", "Claude Code", "Autonomous workflow agent")
+    Component(z_ai_agent, "Z.AI Agent", "Z.AI Framework", "Third-party autonomous agent")
+    Component(external_service, "External Service", "SAP/Salesforce", "Legacy system integration")
+}
+
+Container_Boundary(yawl_integration, "YAWL Integration Layer") {
+
+    Component_Boundary(mcp_protocol, "MCP Protocol Handler") {
+        Component(mcp_server_impl, "YawlMcpServer", "Claude MCP server", "Listens on stdio/socket")
+        Component(mcp_resource_handler, "ResourceHandler", "MCP resources", "Workflow/task definitions")
+        Component(mcp_tool_handler, "ToolHandler", "MCP tools", "Execute workflow operations")
+        Component(mcp_prompt_handler, "PromptHandler", "MCP prompts", "Workflow guidance")
+    }
+
+    Component_Boundary(a2a_protocol, "A2A Protocol Handler") {
+        Component(a2a_server_impl, "YawlA2AServer", "Z.AI A2A server", "Listens on TCP")
+        Component(a2a_message_codec, "MessageCodec", "Serialization", "Protocol buffers / JSON")
+        Component(a2a_state_sync, "StateSynchronizer", "State updates", "Push/pull mechanisms")
+        Component(a2a_flow_orchestrator, "FlowOrchestrator", "Choreography", "Multi-agent workflows")
+    }
+
+    Component_Boundary(protocol_bridge, "Protocol Bridge") {
+        Component(message_translator, "MessageTranslator", "Format conversion", "MCP ↔ A2A ↔ YAWL")
+        Component(capability_mapper, "CapabilityMapper", "Feature matching", "Maps agent → YAWL capabilities")
+        Component(error_converter, "ErrorConverter", "Exception mapping", "Standard error format")
+    }
+
+    Component_Boundary(execution_runtime, "Execution Runtime") {
+        Component(agent_executor, "AgentExecutor", "Task invoker", "Runs agents as workflow tasks")
+        Component(context_manager, "ContextManager", "Agent state", "Manages agent lifecycle")
+        Component(result_collector, "ResultCollector", "Outcome tracking", "Captures agent results")
+        Component(audit_recorder, "AuditRecorder", "Compliance", "Records all agent actions")
+    }
+}
+
+Container_Boundary(yawl_core, "YAWL Core") {
+    Component(workflow_engine, "YNetRunner", "Core engine", "Executes workflows")
+    Component(task_allocator, "TaskAllocator", "Work distribution", "Routes to agents")
+    Component(state_persistence, "StatePersistence", "Data layer", "YAWL state storage")
+}
+
+Rel(claude_agent, mcp_server_impl, "Calls", "MCP protocol")
+Rel(z_ai_agent, a2a_server_impl, "Calls", "A2A protocol")
+Rel(external_service, message_translator, "Integrates via", "REST/SOAP")
+
+Rel(mcp_server_impl, mcp_resource_handler, "Routes requests", "")
+Rel(mcp_server_impl, mcp_tool_handler, "Routes requests", "")
+Rel(mcp_server_impl, mcp_prompt_handler, "Routes requests", "")
+
+Rel(a2a_server_impl, a2a_message_codec, "Decodes", "")
+Rel(a2a_server_impl, a2a_state_sync, "Syncs", "")
+Rel(a2a_server_impl, a2a_flow_orchestrator, "Orchestrates", "")
+
+Rel(mcp_tool_handler, message_translator, "Transforms to", "YAWL format")
+Rel(a2a_flow_orchestrator, message_translator, "Transforms to", "YAWL format")
+Rel(message_translator, capability_mapper, "Validates", "")
+
+Rel(capability_mapper, agent_executor, "Routes to", "")
+Rel(agent_executor, context_manager, "Manages", "")
+Rel(agent_executor, result_collector, "Collects from", "")
+Rel(result_collector, audit_recorder, "Records", "")
+
+Rel(agent_executor, workflow_engine, "Invokes", "As task")
+Rel(workflow_engine, task_allocator, "Delegates to", "")
+Rel(task_allocator, agent_executor, "Allocates work to", "")
+
+Rel(state_persistence, workflow_engine, "Persists", "")
+Rel(audit_recorder, state_persistence, "Writes to", "")
+
+Rel(error_converter, message_translator, "Handles errors", "")
+
+SHOW_LEGEND()
+@enduml
