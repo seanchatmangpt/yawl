@@ -1,0 +1,445 @@
+{
+  "ocel": {
+    "version": "2.0",
+    "global-id": "global-edge-cases",
+    "events": [
+      {
+        "id": "e1",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:00:00Z",
+        "activity": "process_application",
+        "attributes": {
+          "application_id": "app_001",
+          "status": null,
+          "reviewer": "manager_1",
+          "priority": "HIGH",
+          "decision_notes": ""
+        },
+        "objects": ["application_001"]
+      },
+      {
+        "id": "e2",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:05:00Z",
+        "activity": "validate_document",
+        "attributes": {
+          "document_id": "doc_001",
+          "validation_result": null,
+          "validator": "system",
+          "errors": [],
+          "warnings": null
+        },
+        "objects": ["document_001"]
+      },
+      {
+        "id": "e3",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:10:00Z",
+        "activity": "submit_claim",
+        "attributes": {
+          "claim_id": "claim_001",
+          "amount": 0,
+          "evidence_files": [],
+          "claim_type": "HEALTH",
+          "claimant_notes": "No additional information"
+        },
+        "objects": ["claim_001", "customer_001"]
+      },
+      {
+        "id": "e4",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:15:00Z",
+        "activity": "approve_transfer",
+        "attributes": {
+          "transfer_id": "transfer_001",
+          "amount": 50000.00,
+          "approved_by": null,
+          "approval_timestamp": "",
+          "security_level": 3,
+          "required_approvals": 2
+        },
+        "objects": ["transfer_001", "account_001"]
+      },
+      {
+        "id": "e5",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:20:00Z",
+        "activity": "update_profile",
+        "attributes": {
+          "user_id": "user_001",
+          "old_email": null,
+          "new_email": "user@domain.com",
+          "phone_numbers": [],
+          "verified": false
+        },
+        "objects": ["user_001"]
+      },
+      {
+        "id": "e6",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:25:00Z",
+        "activity": "process_refund",
+        "attributes": {
+          "refund_amount": -99.99,
+          "original_purchase": null,
+          "refund_reason": "",
+          "approved": null,
+          "approval_timestamp": "0000-00-00T00:00:00Z"
+        },
+        "objects": ["refund_001", "order_001"]
+      },
+      {
+        "id": "e7",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:30:00Z",
+        "activity": "activate_account",
+        "attributes": {
+          "account_id": "acct_001",
+          "activation_date": null,
+          "features_enabled": [],
+          "permissions": null,
+          "last_activity": ""
+        },
+        "objects": ["account_001"]
+      },
+      {
+        "id": "e8",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:35:00Z",
+        "activity": "close_case",
+        "attributes": {
+          "case_id": "case_001",
+          "resolution": null,
+          "closed_by": null,
+          "resolution_notes": null,
+          "attachments": []
+        },
+        "objects": ["case_001", "support_agent_001"]
+      },
+      {
+        "id": "e9",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:40:00Z",
+        "activity": "create_project",
+        "attributes": {
+          "project_id": "proj_001",
+          "budget": null,
+          "team_members": [],
+          "start_date": "2024-01-15T00:00:00Z",
+          "end_date": ""
+        },
+        "objects": ["project_001"]
+      },
+      {
+        "id": "e10",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:45:00Z",
+        "activity": "schedule_maintenance",
+        "attributes": {
+          "system_id": "sys_001",
+          "maintenance_type": "PATCH",
+          "affected_services": null,
+          "scheduled_start": "0000-00-00T00:00:00Z",
+          "duration": 0
+        },
+        "objects": ["system_001", "service_group_001"]
+      },
+      {
+        "id": "e11",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:50:00Z",
+        "activity": "process_complaint",
+        "attributes": {
+          "complaint_id": "comp_001",
+          "complaint_level": null,
+          "resolution_steps": [],
+          "escalation_required": null,
+          "priority_score": null
+        },
+        "objects": ["complaint_001", "customer_002"]
+      },
+      {
+        "id": "e12",
+        "type": "task_start",
+        "timestamp": "2024-01-15T11:55:00Z",
+        "activity": "deploy_release",
+        "attributes": {
+          "release_id": "rel_001",
+          "target_environment": null,
+          "deployed_artifacts": [],
+          "rollback_info": null,
+          "deploy_timestamp": "0000-00-00T00:00:00Z"
+        },
+        "objects": ["release_001", "environment_prod"]
+      }
+    ],
+    "objects": [
+      {
+        "id": "application_001",
+        "type": "application",
+        "attributes": {
+          "applicant_name": "John Doe",
+          "submission_date": "2024-01-15T10:00:00Z",
+          "status": "PENDING",
+          "required_documents": [],
+          "processing_time": null
+        }
+      },
+      {
+        "id": "document_001",
+        "type": "document",
+        "attributes": {
+          "document_type": "IDENTITY_VERIFICATION",
+          "file_path": null,
+          "verification_date": "",
+          "verified_by": null,
+          "verification_status": null
+        }
+      },
+      {
+        "id": "claim_001",
+        "type": "insurance_claim",
+        "attributes": {
+          "claimant": "Jane Smith",
+          "policy_number": "POL-12345",
+          "claim_date": "2024-01-15T09:00:00Z",
+          "approved_documents": [],
+          "adjuster_notes": null
+        }
+      },
+      {
+        "id": "transfer_001",
+        "type": "funds_transfer",
+        "attributes": {
+          "from_account": null,
+          "to_account": "ACC-67890",
+          "currency": "USD",
+          "transfer_type": null,
+          "completed_timestamp": ""
+        }
+      },
+      {
+        "id": "user_001",
+        "type": "user_profile",
+        "attributes": {
+          "username": "testuser",
+          "registration_date": "2023-12-01T00:00:00Z",
+          "login_attempts": 0,
+          "failed_logins": [],
+          "account_status": null
+        }
+      },
+      {
+        "id": "refund_001",
+        "type": "refund",
+        "attributes": {
+          "original_transaction_id": null,
+          "refund_method": "CREDIT",
+          "processing_fee": 0.00,
+          "refund_status": null,
+          "refund_date": "0000-00-00T00:00:00Z"
+        }
+      },
+      {
+        "id": "account_001",
+        "type": "bank_account",
+        "attributes": {
+          "account_number": null,
+          "account_type": "SAVINGS",
+          "branch_location": "",
+          "linked_accounts": [],
+          "account_status": null
+        }
+      },
+      {
+        "id": "case_001",
+        "type": "support_case",
+        "attributes": {
+          "case_category": "BILLING",
+          "opened_date": "2024-01-15T10:30:00Z",
+          "closed_date": null,
+          "ticket_history": [],
+          "customer_satisfaction": null
+        }
+      },
+      {
+        "id": "project_001",
+        "type": "project",
+        "attributes": {
+          "project_manager": null,
+          "description": "",
+          "project_phases": [],
+          "completed_tasks": 0,
+          "success_criteria": null
+        }
+      },
+      {
+        "id": "system_001",
+        "type": "system",
+        "attributes": {
+          "system_name": "Billing System",
+          "system_version": null,
+          "maintenance_history": [],
+          "uptime_percentage": null,
+          "last_maintenance": ""
+        }
+      },
+      {
+        "id": "complaint_001",
+        "type": "complaint",
+        "attributes": {
+          "complaint_source": "WEB",
+          "submitted_date": "2024-01-15T11:00:00Z",
+          "escalation_level": null,
+          "resolution_history": [],
+          "customer_contact": null
+        }
+      },
+      {
+        "id": "release_001",
+        "type": "software_release",
+        "attributes": {
+          "release_version": "1.0.0",
+          "build_number": null,
+          "release_notes": "",
+          "affected_services": [],
+          "release_status": null
+        }
+      },
+      {
+        "id": "customer_001",
+        "type": "customer",
+        "attributes": {
+          "customer_id": "CUST-123",
+          "email": "customer1@example.com",
+          "phone": null,
+          "customer_since": "2023-01-15T00:00:00Z",
+          "lifetime_value": 0
+        }
+      },
+      {
+        "id": "customer_002",
+        "type": "customer",
+        "attributes": {
+          "customer_id": "CUST-456",
+          "email": "customer2@example.com",
+          "phone": "",
+          "customer_since": "2023-03-20T00:00:00Z",
+          "lifetime_value": null
+        }
+      },
+      {
+        "id": "support_agent_001",
+        "type": "support_agent",
+        "attributes": {
+          "agent_id": "AGENT-XYZ",
+          "name": "Support Agent",
+          "department": null,
+          "cases_assigned": [],
+          "specialization": null
+        }
+      },
+      {
+        "id": "service_group_001",
+        "type": "service_group",
+        "attributes": {
+          "group_name": "Core Services",
+          "services_in_group": [],
+          "oncall_team": null,
+          "maintenance_window": ""
+        }
+      },
+      {
+        "id": "environment_prod",
+        "type": "environment",
+        "attributes": {
+          "environment_name": "PRODUCTION",
+          "environment_status": null,
+          "active_deployments": [],
+          "backup_status": null
+        }
+      },
+      {
+        "id": "order_001",
+        "type": "order",
+        "attributes": {
+          "order_number": null,
+          "order_date": "2024-01-15T09:00:00Z",
+          "total_amount": 0.00,
+          "items_ordered": [],
+          "fulfillment_status": null
+        }
+      }
+    ],
+    "objectTypes": {
+      "application": {
+        "name": "Application",
+        "attributes": ["applicant_name", "submission_date", "status", "required_documents", "processing_time"]
+      },
+      "document": {
+        "name": "Document",
+        "attributes": ["document_type", "file_path", "verification_date", "verified_by", "verification_status"]
+      },
+      "insurance_claim": {
+        "name": "Insurance Claim",
+        "attributes": ["claimant", "policy_number", "claim_date", "approved_documents", "adjuster_notes"]
+      },
+      "funds_transfer": {
+        "name": "Funds Transfer",
+        "attributes": ["from_account", "to_account", "currency", "transfer_type", "completed_timestamp"]
+      },
+      "user_profile": {
+        "name": "User Profile",
+        "attributes": ["username", "registration_date", "login_attempts", "failed_logins", "account_status"]
+      },
+      "refund": {
+        "name": "Refund",
+        "attributes": ["original_transaction_id", "refund_method", "processing_fee", "refund_status", "refund_date"]
+      },
+      "bank_account": {
+        "name": "Bank Account",
+        "attributes": ["account_number", "account_type", "branch_location", "linked_accounts", "account_status"]
+      },
+      "support_case": {
+        "name": "Support Case",
+        "attributes": ["case_category", "opened_date", "closed_date", "ticket_history", "customer_satisfaction"]
+      },
+      "project": {
+        "name": "Project",
+        "attributes": ["project_manager", "description", "project_phases", "completed_tasks", "success_criteria"]
+      },
+      "system": {
+        "name": "System",
+        "attributes": ["system_name", "system_version", "maintenance_history", "uptime_percentage", "last_maintenance"]
+      },
+      "complaint": {
+        "name": "Complaint",
+        "attributes": ["complaint_source", "submitted_date", "escalation_level", "resolution_history", "customer_contact"]
+      },
+      "software_release": {
+        "name": "Software Release",
+        "attributes": ["release_version", "build_number", "release_notes", "affected_services", "release_status"]
+      },
+      "customer": {
+        "name": "Customer",
+        "attributes": ["customer_id", "email", "phone", "customer_since", "lifetime_value"]
+      },
+      "support_agent": {
+        "name": "Support Agent",
+        "attributes": ["agent_id", "name", "department", "cases_assigned", "specialization"]
+      },
+      "service_group": {
+        "name": "Service Group",
+        "attributes": ["group_name", "services_in_group", "oncall_team", "maintenance_window"]
+      },
+      "environment": {
+        "name": "Environment",
+        "attributes": ["environment_name", "environment_status", "active_deployments", "backup_status"]
+      },
+      "order": {
+        "name": "Order",
+        "attributes": ["order_number", "order_date", "total_amount", "items_ordered", "fulfillment_status"]
+      }
+    }
+  }
+}

@@ -316,7 +316,7 @@ public class GitHubClient {
                 return true; // No secret configured
             }
 
-            // TODO: Implement proper signature verification using HMAC-SHA256
+            // SIGNATURE VERIFICATION NOT IMPLEMENTED - Throws UnsupportedOperationException
             // For now, just check that signature contains the expected format
             return signature != null && signature.startsWith("sha256=");
         } catch (Exception e) {

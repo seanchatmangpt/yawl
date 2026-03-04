@@ -45,9 +45,9 @@
         "concept:description": "Order created during high volume stress test",
         "customer_id": "stress_customer_300",
         "customer_name": "Stress Test User",
-        "order_value": Math.floor(Math.random() * 500) + 10,
-        "items_count": Math.floor(Math.random() * 10) + 1,
-        "payment_method": ["credit_card", "paypal", "apple_pay"][Math.floor(Math.random() * 3)],
+        "order_value": 147.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
         "priority": "normal",
         "stress_test": true,
         "test_batch": 1,
@@ -75,7 +75,7 @@
             "customer_id": "stress_customer_300",
             "email": "stress_user_300@example.com",
             "status": "active",
-            "loyalty_points": Math.floor(Math.random() * 10000),
+            "loyalty_points": 5000,
             "stress_customer": true
           }
         }
@@ -91,9 +91,9 @@
         "concept:description": "Concurrent order during stress test",
         "customer_id": "stress_customer_301",
         "customer_name": "Stress Test User",
-        "order_value": Math.floor(Math.random() * 500) + 10,
-        "items_count": Math.floor(Math.random() * 10) + 1,
-        "payment_method": ["credit_card", "paypal", "apple_pay"][Math.floor(Math.random() * 3)],
+        "order_value": 147.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
         "priority": "express",
         "stress_test": true,
         "test_batch": 1,
@@ -121,7 +121,7 @@
             "customer_id": "stress_customer_301",
             "email": "stress_user_301@example.com",
             "status": "active",
-            "loyalty_points": Math.floor(Math.random() * 10000),
+            "loyalty_points": 5000,
             "stress_customer": true
           }
         }
@@ -137,9 +137,9 @@
         "concept:description": "Third concurrent order during stress test",
         "customer_id": "stress_customer_302",
         "customer_name": "Stress Test User",
-        "order_value": Math.floor(Math.random() * 500) + 10,
-        "items_count": Math.floor(Math.random() * 10) + 1,
-        "payment_method": ["credit_card", "paypal", "apple_pay"][Math.floor(Math.random() * 3)],
+        "order_value": 147.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
         "priority": "normal",
         "stress_test": true,
         "test_batch": 1,
@@ -167,7 +167,7 @@
             "customer_id": "stress_customer_302",
             "email": "stress_user_302@example.com",
             "status": "active",
-            "loyalty_points": Math.floor(Math.random() * 10000),
+            "loyalty_points": 5000,
             "stress_customer": true
           }
         }

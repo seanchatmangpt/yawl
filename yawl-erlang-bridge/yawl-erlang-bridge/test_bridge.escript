@@ -13,7 +13,7 @@ main(_) ->
 
             %% Test NIF status
             io:format("Testing NIF status...~n"),
-            case process_mining_bridge:gen_server_call(process_mining_bridge, {get_nif_status, []}) of
+            case process_mining_bridge:get_nif_status() of
                 {ok, {nif_status, true}} ->
                     io:format("✓ NIF library file exists~n");
                 {ok, {nif_status, false}} ->
@@ -22,7 +22,7 @@ main(_) ->
 
             %% Test ping
             io:format("Testing ping...~n"),
-            case process_mining_bridge:gen_server_call(process_mining_bridge, {ping, []}) of
+            case process_mining_bridge:ping() of
                 {ok, {pong, true}} ->
                     io:format("✓ NIF loaded~n");
                 {ok, {pong, false}} ->

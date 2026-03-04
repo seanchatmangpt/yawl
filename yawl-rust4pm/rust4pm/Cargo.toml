@@ -21,3 +21,4 @@ tempfile = "3.8"          # For temporary file creation in tests
 default = ["nif"]
 nif = []
 jni = []  # Keep JNI for compatibility but don't build by default
+python = []  # Python bindings support

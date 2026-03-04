@@ -12,6 +12,8 @@ pub use process_mining::*;
 #[cfg(feature = "jni")]
 pub mod jni;      // Java JNI bindings
 
+#[cfg(feature = "python")]
+pub mod python;   // Python bindings
 
 #[cfg(feature = "nif")]
 pub mod nif;

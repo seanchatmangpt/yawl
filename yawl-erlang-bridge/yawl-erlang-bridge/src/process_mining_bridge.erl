@@ -105,6 +105,7 @@
 -export([
     nop/0,
     int_passthrough/1,
+    atom_passthrough/1,
     echo_json/1,
     import_ocel_json_path/1
 ]).
@@ -122,7 +123,7 @@
 -on_load(init_nif/0).
 
 -define(SERVER, ?MODULE).
--define(NIF_LIB, "yawl_process_mining").
+-define(NIF_LIB, "libyawl_process_mining").
 
 -record(state, {
     registry :: map()
@@ -257,19 +258,55 @@ export_xes_nif(Handle, Path) ->
 %% @doc Direct NIF call to import OCEL JSON (for internal use)
 -spec import_ocel_json_nif(string()) -> {ok, reference()} | {error, term()}.
 import_ocel_json_nif(Path) ->
-    import_ocel_json(Path).
+    erlang:nif_error(nif_not_loaded).
 
 %% @private
 %% @doc Direct NIF call to export OCEL JSON (for internal use)
 -spec export_ocel_json_nif(reference(), string()) -> ok | {error, term()}.
 export_ocel_json_nif(Handle, Path) ->
-    export_ocel_json(Handle, Path).
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import OCEL XML (for internal use)
+-spec import_ocel_xml_nif(string()) -> {ok, reference()} | {error, term()}.
+import_ocel_xml_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import OCEL SQLite (for internal use)
+-spec import_ocel_sqlite_nif(string()) -> {ok, reference()} | {error, term()}.
+import_ocel_sqlite_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import PNML (for internal use)
+-spec import_pnml_nif(string()) -> {ok, reference()} | {error, term()}.
+import_pnml_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to run token replay (for internal use)
+-spec token_replay_nif(reference(), reference()) -> {ok, map()} | {error, term()}.
+token_replay_nif(LogHandle, NetHandle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to calculate performance metrics (for internal use)
+-spec calculate_performance_metrics_nif(reference()) -> {ok, map()} | {error, term()}.
+calculate_performance_metrics_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to find longest traces (for internal use)
+-spec find_longest_traces_nif(reference(), integer()) -> {ok, binary()} | {error, term()}.
+find_longest_traces_nif(Handle, TopN) ->
+    erlang:nif_error(nif_not_loaded).
 
 %% @private
 %% @doc Direct NIF call to discover DFG (for internal use)
 -spec discover_dfg_nif(reference()) -> {ok, binary()} | {error, term()}.
 discover_dfg_nif(Handle) ->
-    discover_dfg(Handle).
+    erlang:nif_error(nif_not_loaded).
 
 %%===================================================================
 %%% Benchmark NIF Functions
@@ -285,6 +322,11 @@ nop() ->
 int_passthrough(N) ->
     erlang:nif_error(nif_not_loaded).
 
+%% @doc Atom passthrough benchmark
+-spec atom_passthrough(atom()) -> {ok, atom()} | {error, term()}.
+atom_passthrough(Atom) ->
+    erlang:nif_error(nif_not_loaded).
+
 %% @doc JSON echo benchmark
 -spec echo_json(binary() | string()) -> {ok, binary() | string()} | {error, term()}.
 echo_json(Json) ->
@@ -295,25 +337,85 @@ echo_json(Json) ->
 %% @doc Direct NIF call to export PNML (for internal use)
 -spec export_pnml_nif(reference()) -> {ok, binary()} | {error, term()}.
 export_pnml_nif(Handle) ->
-    export_pnml(Handle).
+    erlang:nif_error(nif_not_loaded).
 
 %% @private
 %% @doc Direct NIF call to get event log stats (for internal use)
 -spec event_log_stats_nif(reference()) -> {ok, map()} | {error, term()}.
 event_log_stats_nif(Handle) ->
-    event_log_stats(Handle).
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import PNML (for internal use)
+-spec import_pnml_nif(string()) -> {ok, reference()} | {error, term()}.
+import_pnml_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to run token replay (for internal use)
+-spec token_replay_nif(reference(), reference()) -> {ok, map()} | {error, term()}.
+token_replay_nif(LogHandle, NetHandle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to calculate performance metrics (for internal use)
+-spec calculate_performance_metrics_nif(reference()) -> {ok, map()} | {error, term()}.
+calculate_performance_metrics_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to get activity frequency (for internal use)
+-spec get_activity_frequency_nif(reference()) -> {ok, binary()} | {error, term()}.
+get_activity_frequency_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import OCEL SQLite (for internal use)
+-spec import_ocel_sqlite_nif(string()) -> {ok, reference()} | {error, term()}.
+import_ocel_sqlite_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import PNML (for internal use)
+-spec import_pnml_nif(string()) -> {ok, reference()} | {error, term()}.
+import_pnml_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to run token replay (for internal use)
+-spec token_replay_nif(reference(), reference()) -> {ok, map()} | {error, term()}.
+token_replay_nif(LogHandle, NetHandle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to calculate performance metrics (for internal use)
+-spec calculate_performance_metrics_nif(reference()) -> {ok, map()} | {error, term()}.
+calculate_performance_metrics_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to find longest traces (for internal use)
+-spec find_longest_traces_nif(reference(), integer()) -> {ok, binary()} | {error, term()}.
+find_longest_traces_nif(Handle, TopN) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to discover Alpha++ (for internal use)
+-spec discover_alpha_nif(reference()) -> {ok, #{handle => reference(), pnml => binary()}} | {error, term()}.
+discover_alpha_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
 
 %% @doc Discover a Directly-Follows Graph from an event log.
 %% Returns {ok, DfgJson} where DfgJson is a JSON string.
 -spec discover_dfg(reference()) -> {ok, binary()} | {error, term()}.
 discover_dfg(Handle) ->
-    gen_server:call(?SERVER, {discover_dfg, Handle}).
+    discover_dfg_nif(Handle).
 
 %% @doc Discover a Petri net using Alpha+++ algorithm.
 %% Returns {ok, #{handle => NetHandle, pnml => PnmlXml}}.
 -spec discover_alpha(reference()) -> {ok, #{handle => reference(), pnml => binary()}} | {error, term()}.
 discover_alpha(Handle) ->
-    gen_server:call(?SERVER, {discover_alpha, Handle}).
+    discover_alpha_nif(Handle).
 
 %% @doc Discover an Object-Centric DFG from OCEL.
 -spec discover_oc_dfg(reference()) -> {ok, binary()} | {error, term()}.
@@ -328,25 +430,25 @@ discover_oc_declare(Handle) ->
 %% @doc Import a Petri net from PNML file.
 -spec import_pnml(string()) -> {ok, reference()} | {error, term()}.
 import_pnml(Path) ->
-    gen_server:call(?SERVER, {import_pnml, Path}).
+    import_pnml_nif(Path).
 
 %% @doc Export a Petri net to PNML format.
 %% Returns {ok, PnmlXml} where PnmlXml is an XML string.
 -spec export_pnml(reference()) -> {ok, binary()} | {error, term()}.
 export_pnml(Handle) ->
-    gen_server:call(?SERVER, {export_pnml, Handle}).
+    export_pnml_nif(Handle).
 
 %% @doc Run token replay conformance checking.
 %% Returns {ok, ConformanceMetrics} with fitness, precision, etc.
 -spec token_replay(reference(), reference()) -> {ok, map()} | {error, term()}.
 token_replay(LogHandle, NetHandle) ->
-    gen_server:call(?SERVER, {token_replay, LogHandle, NetHandle}).
+    token_replay_nif(LogHandle, NetHandle).
 
 %% @doc Get statistics about an event log.
 %% Returns {ok, #{traces => N, events => N, activities => N, avg_events_per_trace => F}}.
 -spec event_log_stats(reference()) -> {ok, map()} | {error, term()}.
 event_log_stats(Handle) ->
-    gen_server:call(?SERVER, {event_log_stats, Handle}).
+    event_log_stats_nif(Handle).
 
 %% @doc Free a resource handle (no-op, automatic GC via ResourceArc).
 -spec free_handle(reference()) -> ok.
@@ -427,7 +529,7 @@ handle_call({import_ocel_json, Path}, _From, State) ->
 
 handle_call({import_ocel_xml, Path}, _From, State) ->
     try
-        case import_ocel_xml(Path) of
+        case import_ocel_xml_nif(Path) of
             {ok, Handle} ->
                 Registry = maps:put(Handle, #{type => ocel, created => erlang:system_time(millisecond)}, State#state.registry),
                 {reply, {ok, Handle}, State#state{registry = Registry}};
@@ -441,7 +543,7 @@ handle_call({import_ocel_xml, Path}, _From, State) ->
 
 handle_call({import_ocel_sqlite, Path}, _From, State) ->
     try
-        case import_ocel_sqlite(Path) of
+        case import_ocel_sqlite_nif(Path) of
             {ok, Handle} ->
                 Registry = maps:put(Handle, #{type => ocel, created => erlang:system_time(millisecond)}, State#state.registry),
                 {reply, {ok, Handle}, State#state{registry = Registry}};
@@ -481,7 +583,7 @@ handle_call({discover_dfg, Handle}, _From, State) ->
 
 handle_call({discover_alpha, Handle}, _From, State) ->
     try
-        case discover_alpha(Handle) of
+        case discover_alpha_nif(Handle) of
             {ok, Result} ->
                 {reply, {ok, Result}, State};
             {error, Reason} ->
@@ -506,17 +608,16 @@ handle_call({discover_oc_dfg, Handle}, _From, State) ->
     end;
 
 handle_call({discover_oc_declare, Handle}, _From, State) ->
-    try
-        %% For now, return empty list as constraint discovery is not implemented
-        {reply, {ok, []}, State}
-    catch
-        throw:{'UnsupportedOperationException', Msg} ->
-            {reply, {error, Msg}, State}
-    end;
+    %% Declare constraint discovery requires real implementation
+    %% See: https://www.researchgate.net/publication/220716205_Declare_A_Declarative_Process_Mining_After_Life
+    {reply, {error, {unsupported_operation,
+        <<"discover_oc_declare requires Declare constraint discovery algorithm. "
+          "Implement temporal constraint mining (Existence, Absence, Choice, etc.). "
+          "See DECLARE specification at declare.cs.ut.ee">>}}, State};
 
 handle_call({import_pnml, Path}, _From, State) ->
     try
-        case import_pnml(Path) of
+        case import_pnml_nif(Path) of
             {ok, Handle} ->
                 Registry = maps:put(Handle, #{type => petri_net, created => erlang:system_time(millisecond)}, State#state.registry),
                 {reply, {ok, Handle}, State#state{registry = Registry}};
@@ -530,7 +631,7 @@ handle_call({import_pnml, Path}, _From, State) ->
 
 handle_call({export_pnml, Handle}, _From, State) ->
     try
-        case export_pnml(Handle) of
+        case export_pnml_nif(Handle) of
             {ok, PnmlXml} ->
                 {reply, {ok, PnmlXml}, State};
             {error, Reason} ->
@@ -543,7 +644,7 @@ handle_call({export_pnml, Handle}, _From, State) ->
 
 handle_call({token_replay, LogHandle, NetHandle}, _From, State) ->
     try
-        case token_replay(LogHandle, NetHandle) of
+        case token_replay_nif(LogHandle, NetHandle) of
             {ok, Metrics} ->
                 {reply, {ok, Metrics}, State};
             {error, Reason} ->
@@ -556,7 +657,7 @@ handle_call({token_replay, LogHandle, NetHandle}, _From, State) ->
 
 handle_call({event_log_stats, Handle}, _From, State) ->
     try
-        case event_log_stats(Handle) of
+        case event_log_stats_nif(Handle) of
             {ok, Stats} ->
                 {reply, {ok, Stats}, State};
             {error, Reason} ->
@@ -569,7 +670,7 @@ handle_call({event_log_stats, Handle}, _From, State) ->
 
 handle_call({calculate_performance_metrics, Handle}, _From, State) ->
     try
-        case calculate_performance_metrics(Handle) of
+        case calculate_performance_metrics_nif(Handle) of
             {ok, Metrics} ->
                 {reply, {ok, Metrics}, State};
             {error, Reason} ->
@@ -582,7 +683,7 @@ handle_call({calculate_performance_metrics, Handle}, _From, State) ->
 
 handle_call({get_activity_frequency, Handle}, _From, State) ->
     try
-        case get_activity_frequency(Handle) of
+        case get_activity_frequency_nif(Handle) of
             {ok, Frequency} ->
                 {reply, {ok, Frequency}, State};
             {error, Reason} ->
@@ -595,7 +696,7 @@ handle_call({get_activity_frequency, Handle}, _From, State) ->
 
 handle_call({find_longest_traces, Handle, TopN}, _From, State) ->
     try
-        case find_longest_traces(Handle, TopN) of
+        case find_longest_traces_nif(Handle, TopN) of
             {ok, LongestTraces} ->
                 {reply, {ok, LongestTraces}, State};
             {error, Reason} ->
@@ -764,19 +865,19 @@ unsupported_operation(Message) ->
 %% Returns {ok, Metrics} where Metrics contains throughput, average duration, etc.
 -spec calculate_performance_metrics(reference()) -> {ok, binary()} | {error, term()}.
 calculate_performance_metrics(Handle) ->
-    gen_server:call(?SERVER, {calculate_performance_metrics, Handle}).
+    calculate_performance_metrics_nif(Handle).
 
 %% @doc Get activity frequency from a log
 %% Returns {ok, ActivityFreqJson} with activity counts
 -spec get_activity_frequency(reference()) -> {ok, binary()} | {error, term()}.
 get_activity_frequency(Handle) ->
-    gen_server:call(?SERVER, {get_activity_frequency, Handle}).
+    get_activity_frequency_nif(Handle).
 
 %% @doc Find longest N traces in a log
 %% Returns {ok, LongestTracesJson} with trace IDs and their lengths
 -spec find_longest_traces(reference(), integer()) -> {ok, binary()} | {error, term()}.
 find_longest_traces(Handle, TopN) ->
-    gen_server:call(?SERVER, {find_longest_traces, Handle, TopN}).
+    find_longest_traces_nif(Handle, TopN).
 
 %% @doc Get event count from log (stub implementation)
 -spec log_event_count(map()) -> {ok, integer()} | {error, term()}.
@@ -848,48 +949,33 @@ import_ocel_json_path(Path) ->
 %% Returns {ok, PnmlJson} where PnmlJson is the PNML XML string.
 -spec discover_petri_net(reference()) -> {ok, binary()} | {error, term()}.
 discover_petri_net(Handle) ->
-    gen_server:call(?SERVER, {discover_petri_net, Handle}).
+    discover_petri_net_nif(Handle).
 
 %% @doc Compute DFG directly from events.
 %% Returns {ok, DfgJson} where DfgJson is a JSON string.
 -spec compute_dfg_from_events(binary()) -> {ok, binary()} | {error, term()}.
 compute_dfg_from_events(Events) ->
-    gen_server:call(?SERVER, {compute_dfg_from_events, Events}).
+    compute_dfg_from_events_nif(Events).
 
 %% @doc Align trace to Petri net.
 %% Returns {ok, AlignmentResult} where AlignmentResult is a JSON string.
 -spec align_trace(reference(), binary(), integer()) -> {ok, binary()} | {error, term()}.
 align_trace(TraceHandle, PetriNetJson, Timeout) ->
-    gen_server:call(?SERVER, {align_trace, TraceHandle, PetriNetJson, Timeout}).
+    align_trace_nif(TraceHandle, PetriNetJson, Timeout).
 
 %% @doc Get type of registered item.
 -spec registry_get_type(string()) -> {ok, string()} | {error, term()}.
 registry_get_type(Id) ->
-    erlang:nif_error(nif_not_loaded).
+    registry_get_type_nif(Id).
 
 %% @doc Free registry item.
 -spec registry_free(string()) -> ok | {error, term()}.
 registry_free(Id) ->
-    erlang:nif_error(nif_not_loaded).
+    registry_free_nif(Id).
 
 %% @doc List all registry items.
 -spec registry_list() -> list() | {error, term()}.
 registry_list() ->
-    erlang:nif_error(nif_not_loaded).
+    registry_list_nif().
 
 %%===================================================================
-%%% gen_server handlers for new functions
-%%===================================================================
-
-handle_call({registry_list, _}, _From, State) ->
-    try
-        case registry_list_nif() of
-            {ok, Items} ->
-                {reply, {ok, Items}, State};
-            {error, Reason} ->
-                {reply, {error, Reason}, State}
-        end
-    catch
-        throw:{'UnsupportedOperationException', Msg} ->
-            {reply, {error, Msg}, State}
-    end.

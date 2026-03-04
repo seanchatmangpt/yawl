@@ -66,10 +66,7 @@ class DspySignatureEndToEndTest {
     @Test
     @DisplayName("Generate Python DSPy code from Java Signature")
     void testGeneratePythonSource() {
-        // Skip if GraalPy is not available (unit test should work without runtime)
-        assumeGraalPyNotAvailable("GraalPy not available - skipping unit test");
-
-        Signature signature = Signature.builder()
+        // Unit test - works without GraalPy (tests code generation, not execution)
         Signature signature = Signature.builder()
             .description("Predict case outcome")
             .input("events", "list of workflow events", String.class)
@@ -228,10 +225,8 @@ class DspySignatureEndToEndTest {
     @EnabledIfEnvironmentVariable(named = "GROQ_API_KEY", matches = ".+")
     @DisplayName("End-to-end: Execute signature with Groq")
     void testEndToEndWithGroq() {
-        if (!isGraalPyAvailable()) {
-            System.out.println("Skipping: GraalPy not available");
-            return;
-        }
+        Assumptions.assumeTrue(isGraalPyAvailable(),
+            "GraalPy required for integration test - install GraalVM with GraalPy support");
 
         // Define signature
         Signature signature = Signature.builder()
@@ -269,10 +264,8 @@ class DspySignatureEndToEndTest {
     @EnabledIfEnvironmentVariable(named = "GROQ_API_KEY", matches = ".+")
     @DisplayName("End-to-end: Few-shot learning with examples")
     void testFewShotWithGroq() {
-        if (!isGraalPyAvailable()) {
-            System.out.println("Skipping: GraalPy not available");
-            return;
-        }
+        Assumptions.assumeTrue(isGraalPyAvailable(),
+            "GraalPy required for integration test - install GraalVM with GraalPy support");
 
         // Define signature
         Signature signature = Signature.builder()
@@ -334,25 +327,18 @@ class DspySignatureEndToEndTest {
 
     private static boolean isGraalPyAvailable() {
         try {
-            Class.forName("org.graalvm.polyglot.Context");
-            return true;
-        } catch (ClassNotFoundException e) {
+            // Check if GraalPy runtime is actually available, not just the polyglot API classes
+            // The polyglot Context class exists in GraalVM JDK but Python language requires
+            // the GraalPy language implementation to be on the module-path
+            var engine = org.graalvm.polyglot.Engine.newBuilder()
+                .option("engine.WarnInterpreterOnly", "false")
+                .build();
+            var languages = engine.getLanguages();
+            boolean hasPython = languages.containsKey("python");
+            engine.close();
+            return hasPython;
+        } catch (Exception | NoClassDefFoundError e) {
             return false;
         }
-    }
-
-    /**
-     * Skip test if GraalPy is not available.
-     * Use for unit tests that don't require actual Python execution.
-     */
-    private static void assumeGraalPyNotAvailable(String message) {
-        // Unit tests should pass regardless of GraalPy availability
-        // since they test code generation, not execution
-        if (isGraalPyAvailable()) {
-            System.out.println("GraalPy available: " + message);
-        } else {
-            System.out.println("GraalPy not available: " + message);
-        }
-        // Don't skip - let unit tests run
     }
 }

@@ -18,6 +18,7 @@
 
 package org.yawlfoundation.yawl.engine;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -96,6 +97,9 @@ public class BuriedEngine {
     private BuriedEngineMcpAdapter mcpAdapter;
     private final boolean mcpEnabled;
 
+    // Runner tracking for async operations
+    private volatile YNetRunner runner;
+
     // Engine configuration
     private final String engineName;
     private final Instant createdAt;
@@ -146,7 +150,7 @@ public class BuriedEngine {
      * @param caseID Case identifier (null for auto-generation)
      * @param caseParams Case parameters XML string
      * @param logData Initial log data items
-     * @return YNetRunner for the launched case
+     * @return YNetRunner for the launched case (after async creation)
      * @throws YStateException if there's a state error
      * @throws YDataStateException if there's a data state error
      * @throws YEngineStateException if there's an engine state error
@@ -168,7 +172,7 @@ public class BuriedEngine {
             // Create workflow context for this case
             WorkflowContext workflowContext = WorkflowContext.of(
                 caseID,
-                spec.getSpecificationID().toKeyString(),
+                spec.getID(),
                 engineId
             );
 
@@ -178,25 +182,47 @@ public class BuriedEngine {
                 .start(() -> {
                     try {
                         // Launch case in virtual thread context
-                        YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData);
+                        String launchedCaseID = yEngine.launchCase(spec.getSpecificationID(), caseParams, null, logData);
 
-                        // YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData); // TODO: Fix type conversion
-                        logger.info("Case launched: {} in engine {}",
-                            workflowContext.toLogString(), engineName);
+                        // Get the case ID identifier
+                        YIdentifier caseIdentifier = yEngine.getCaseID(launchedCaseID);
+
+                        // Get the runner from the engine's case registry
+                        YNetRunner runner = yEngine.getNetRunner(caseIdentifier);
 
                         // Store runner for future access
                         this.runner = runner;
+
+                        logger.info("Case launched: {} in engine {}",
+                            workflowContext.toLogString(), engineName);
                     } catch (Exception e) {
                         logger.error("Failed to launch case {}: {}", caseID, e.getMessage(), e);
                         throw new RuntimeException(e);
                     }
                 });
 
-            // Return the case ID for async tracking
-            // The actual runner will be accessible through the engine's case registry
-            return caseID;
-                        // YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData); // TODO: Fix type conversion
-        } finally {
+            // For now, create a placeholder that will be updated when the case is fully created
+            // In production, you might want to use a CompletableFuture or similar async pattern
+            try {
+                // Wait briefly for case creation (not ideal, but works for now)
+                Thread.sleep(100);
+
+                // Get the case ID identifier
+                YIdentifier caseIdentifier = yEngine.getCaseID(caseID);
+                if (caseIdentifier != null) {
+                    // Get the runner from the engine's case registry
+                    YNetRunner runner = yEngine.getNetRunner(caseIdentifier);
+                    if (runner != null) {
+                        this.runner = runner;
+                        return runner;
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Could not get runner immediately for case {}: {}", caseID, e.getMessage());
+            }
+
+            throw new YEngineStateException("Case created but runner not available immediately");
+          } finally {
             lifecycleLock.unlock();
         }
     }
@@ -215,12 +241,13 @@ public class BuriedEngine {
             // Cancel in virtual thread for consistency
             Thread.ofVirtual()
                 .name(engineName + "-cancel-" + runner.getCaseID())
-                .virtualThreadGroup(virtualThreadGroup)
                 .start(() -> {
                     try {
-                        // yEngine.cancelCase(runner); // TODO: Fix after runner is created
-                        // YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData); // TODO: Fix type conversion
-                        // runner.getCaseID(), engineName); // TODO: Fix after runner is created
+                        // Get the case ID and cancel it
+                        // String caseIdStr = runner.getCaseID();
+                        // YIdentifier caseIdentifier = yEngine.getCaseID(caseIdStr);
+                        // yEngine.cancelCase(caseIdentifier);
+                        throw new UnsupportedOperationException("Case cancellation requires proper YIdentifier handling");
                     } catch (Exception e) {
                         logger.error("Failed to cancel case {}: {}",
                             runner.getCaseID(), e.getMessage(), e);
@@ -363,6 +390,15 @@ public class BuriedEngine {
 
     public int getVirtualThreadCount() {
         return virtualThreadGroup.activeCount();
+    }
+
+    /**
+     * Gets the runner for the currently launched case.
+     *
+     * @return YNetRunner for the current case
+     */
+    public YNetRunner getRunner() {
+        return runner;
     }
 
     /**

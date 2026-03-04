@@ -1,4 +1,5 @@
 #!/usr/bin/env escript
+%%! -pa ebin
 
 main(_) ->
     %% Add ebin to path

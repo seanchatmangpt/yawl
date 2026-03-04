@@ -382,7 +382,7 @@ handle_call({import_ocel_json, Path}, _From, State) ->
 
 handle_call({import_ocel_xml, Path}, _From, State) ->
     try
-        case import_ocel_xml(Path) of
+        case import_ocel_xml_nif(Path) of
             {ok, Handle} ->
                 Registry = maps:put(Handle, #{type => ocel, created => erlang:system_time(millisecond)}, State#state.registry),
                 {reply, {ok, Handle}, State#state{registry = Registry}};
@@ -396,7 +396,7 @@ handle_call({import_ocel_xml, Path}, _From, State) ->
 
 handle_call({import_ocel_sqlite, Path}, _From, State) ->
     try
-        case import_ocel_sqlite(Path) of
+        case import_ocel_sqlite_nif(Path) of
             {ok, Handle} ->
                 Registry = maps:put(Handle, #{type => ocel, created => erlang:system_time(millisecond)}, State#state.registry),
                 {reply, {ok, Handle}, State#state{registry = Registry}};
@@ -423,7 +423,7 @@ handle_call({export_ocel_json, Handle, Path}, _From, State) ->
 
 handle_call({discover_dfg, Handle}, _From, State) ->
     try
-        case discover_dfg(Handle) of
+        case discover_dfg_nif(Handle) of
             {ok, DfgJson} ->
                 {reply, {ok, DfgJson}, State};
             {error, Reason} ->
@@ -436,7 +436,7 @@ handle_call({discover_dfg, Handle}, _From, State) ->
 
 handle_call({discover_alpha, Handle}, _From, State) ->
     try
-        case discover_alpha(Handle) of
+        case discover_alpha_nif(Handle) of
             {ok, Result} ->
                 {reply, {ok, Result}, State};
             {error, Reason} ->
@@ -449,7 +449,7 @@ handle_call({discover_alpha, Handle}, _From, State) ->
 
 handle_call({discover_oc_dfg, Handle}, _From, State) ->
     try
-        case discover_oc_dfg(Handle) of
+        case discover_dfg_nif(Handle) of
             {ok, DfgJson} ->
                 {reply, {ok, DfgJson}, State};
             {error, Reason} ->
@@ -462,7 +462,7 @@ handle_call({discover_oc_dfg, Handle}, _From, State) ->
 
 handle_call({import_pnml, Path}, _From, State) ->
     try
-        case import_pnml(Path) of
+        case import_pnml_nif(Path) of
             {ok, Handle} ->
                 Registry = maps:put(Handle, #{type => petri_net, created => erlang:system_time(millisecond)}, State#state.registry),
                 {reply, {ok, Handle}, State#state{registry = Registry}};
@@ -476,7 +476,7 @@ handle_call({import_pnml, Path}, _From, State) ->
 
 handle_call({export_pnml, Handle}, _From, State) ->
     try
-        case export_pnml(Handle) of
+        case export_pnml_nif(Handle) of
             {ok, PnmlXml} ->
                 {reply, {ok, PnmlXml}, State};
             {error, Reason} ->
@@ -489,7 +489,7 @@ handle_call({export_pnml, Handle}, _From, State) ->
 
 handle_call({token_replay, LogHandle, NetHandle}, _From, State) ->
     try
-        case token_replay(LogHandle, NetHandle) of
+        case token_replay_nif(LogHandle, NetHandle) of
             {ok, Metrics} ->
                 {reply, {ok, Metrics}, State};
             {error, Reason} ->
@@ -502,7 +502,7 @@ handle_call({token_replay, LogHandle, NetHandle}, _From, State) ->
 
 handle_call({event_log_stats, Handle}, _From, State) ->
     try
-        case event_log_stats(Handle) of
+        case event_log_stats_nif(Handle) of
             {ok, Stats} ->
                 {reply, {ok, Stats}, State};
             {error, Reason} ->
@@ -515,7 +515,7 @@ handle_call({event_log_stats, Handle}, _From, State) ->
 
 handle_call({calculate_performance_metrics, Handle}, _From, State) ->
     try
-        case calculate_performance_metrics(Handle) of
+        case calculate_performance_metrics_nif(Handle) of
             {ok, Metrics} ->
                 {reply, {ok, Metrics}, State};
             {error, Reason} ->
@@ -528,7 +528,7 @@ handle_call({calculate_performance_metrics, Handle}, _From, State) ->
 
 handle_call({get_activity_frequency, Handle}, _From, State) ->
     try
-        case get_activity_frequency(Handle) of
+        case get_activity_frequency_nif(Handle) of
             {ok, Frequency} ->
                 {reply, {ok, Frequency}, State};
             {error, Reason} ->
@@ -541,7 +541,7 @@ handle_call({get_activity_frequency, Handle}, _From, State) ->
 
 handle_call({find_longest_traces, Handle, TopN}, _From, State) ->
     try
-        case find_longest_traces(Handle, TopN) of
+        case find_longest_traces_nif(Handle, TopN) of
             {ok, LongestTraces} ->
                 {reply, {ok, LongestTraces}, State};
             {error, Reason} ->
@@ -705,3 +705,45 @@ objects_free(Params) ->
         _ ->
             erlang:nif_error(nif_not_loaded)
     end.
+
+%% @private
+%% @doc Direct NIF call to import OCEL XML (for internal use)
+-spec import_ocel_xml_nif(string()) -> {ok, reference()} | {error, term()}.
+import_ocel_xml_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import OCEL SQLite (for internal use)
+-spec import_ocel_sqlite_nif(string()) -> {ok, reference()} | {error, term()}.
+import_ocel_sqlite_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to import PNML (for internal use)
+-spec import_pnml_nif(string()) -> {ok, reference()} | {error, term()}.
+import_pnml_nif(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to run token replay (for internal use)
+-spec token_replay_nif(reference(), reference()) -> {ok, map()} | {error, term()}.
+token_replay_nif(LogHandle, NetHandle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to calculate performance metrics (for internal use)
+-spec calculate_performance_metrics_nif(reference()) -> {ok, map()} | {error, term()}.
+calculate_performance_metrics_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to find longest traces (for internal use)
+-spec find_longest_traces_nif(reference(), integer()) -> {ok, binary()} | {error, term()}.
+find_longest_traces_nif(Handle, TopN) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to get activity frequency (for internal use)
+-spec get_activity_frequency_nif(reference()) -> {ok, binary()} | {error, term()}.
+get_activity_frequency_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).

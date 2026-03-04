@@ -2,13 +2,15 @@
 //!
 //! Library docs: https://docs.rs/process_mining/latest/process_mining/
 
-use rustler::{atoms, Encoder, Env, NifResult, Term};
+use rustler::{atoms, Atom, Encoder, Env, NifResult, Term};
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 use std::path::Path;
 use uuid::Uuid;
 use lazy_static::lazy_static;
 use serde_json::Value;
+
+use rustler::atoms::ok;
 
 // Import the process_mining library
 use process_mining::{
@@ -62,6 +64,11 @@ pub fn nop(env: Env<'_>) -> NifResult<Term<'_>> { Ok(ok().encode(env)) }
 #[rustler::nif]
 pub fn int_passthrough(env: Env<'_>, n: i64) -> NifResult<Term<'_>> {
     Ok((ok(), n).encode(env))
+}
+
+#[rustler::nif]
+pub fn atom_passthrough(env: Env<'_>, atom: Atom) -> NifResult<Term<'_>> {
+    Ok((ok(), atom).encode(env))
 }
 
 #[rustler::nif]
@@ -626,11 +633,418 @@ pub fn align_trace(trace: Vec<String>, petri_net: String) -> NifResult<String> {
 
 fn load(_env: Env<'_>, _term: Term<'_>) -> bool { true }
 
+// ============================================================================
+// NIF SUFFIX WRAPPERS - Erlang expects functions with _nif suffix
+// These wrappers delegate to the actual implementations
+// ============================================================================
+
+#[rustler::nif]
+pub fn import_xes_nif(path: String) -> NifResult<String> {
+    import_xes_path(path)
+}
+
+#[rustler::nif]
+pub fn import_ocel_json_nif(path: String) -> NifResult<String> {
+    import_ocel_json_path(path)
+}
+
+#[rustler::nif]
+pub fn discover_dfg_nif(id: String) -> NifResult<String> {
+    discover_dfg(id)
+}
+
+#[rustler::nif]
+pub fn discover_alpha_nif(id: String) -> NifResult<String> {
+    discover_alpha(id)
+}
+
+#[rustler::nif]
+pub fn discover_petri_net_nif(id: String) -> NifResult<String> {
+    discover_petri_net(id)
+}
+
+#[rustler::nif]
+pub fn compute_dfg_from_events_nif(events: Vec<String>) -> NifResult<String> {
+    compute_dfg_from_events(events)
+}
+
+#[rustler::nif]
+pub fn token_replay_nif<'a>(env: Env<'a>, ocel_id: String, pn_id: String) -> NifResult<Term<'a>> {
+    token_replay(env, ocel_id, pn_id)
+}
+
+#[rustler::nif]
+pub fn registry_get_type_nif(id: String) -> NifResult<String> {
+    registry_get_type(id)
+}
+
+#[rustler::nif]
+pub fn registry_free_nif(id: String) -> NifResult<rustler::Atom> {
+    registry_free(id)
+}
+
+#[rustler::nif]
+pub fn registry_list_nif() -> Vec<(String, String)> {
+    registry_list()
+}
+
+#[rustler::nif]
+pub fn event_log_stats_nif(id: String) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", id))))?;
+
+    match item {
+        RegistryItem::OCEL(ocel) => {
+            let num_events = ocel.events.len();
+            let num_objects = ocel.objects.len();
+            let num_traces: usize = ocel.events.iter()
+                .flat_map(|e| e.omap.iter().map(|o| o.object_id.clone()))
+                .collect::<std::collections::HashSet<_>>()
+                .len();
+
+            Ok(serde_json::json!({
+                "traces": num_traces,
+                "events": num_events,
+                "objects": num_objects,
+                "activities": ocel.events.iter().map(|e| e.activity.clone()).collect::<std::collections::HashSet<_>>().len()
+            }).to_string())
+        },
+        RegistryItem::EventLog(log) => {
+            let num_traces = log.traces.len();
+            let activities: HashSet<String> = log.traces.iter()
+                .flat_map(|t| t.split("->").map(|s| s.trim().to_string()))
+                .collect();
+
+            Ok(serde_json::json!({
+                "traces": num_traces,
+                "events": activities.len(),
+                "activities": activities.len()
+            }).to_string())
+        },
+        _ => Err(rustler::Error::Term(Box::new("Unsupported type for stats")))
+    }
+}
+
+#[rustler::nif]
+pub fn align_trace_nif<'a>(env: Env<'a>, trace: Vec<String>, petri_net: String, _timeout: i64) -> NifResult<Term<'a>> {
+    let result = align_trace(trace, petri_net)?;
+    Ok((ok(), result).encode(env))
+}
+
+#[rustler::nif]
+pub fn num_events_nif(id: String) -> NifResult<usize> {
+    num_events(id)
+}
+
+#[rustler::nif]
+pub fn num_objects_nif(id: String) -> NifResult<usize> {
+    num_objects(id)
+}
+
+#[rustler::nif]
+pub fn discover_dfg_ocel_nif(id: String) -> NifResult<String> {
+    discover_dfg_ocel(id)
+}
+
+// ============================================================================
+// Additional NIF Functions Required by Erlang Bridge
+// ============================================================================
+
+/// Log event count - returns number of events in OCEL
+#[rustler::nif]
+pub fn log_event_count(ocel_id: String) -> NifResult<usize> {
+    num_events(ocel_id)
+}
+
+/// Log object count - returns number of objects in OCEL
+#[rustler::nif]
+pub fn log_object_count(ocel_id: String) -> NifResult<usize> {
+    num_objects(ocel_id)
+}
+
+/// Get events from OCEL as JSON
+#[rustler::nif]
+pub fn log_get_events(ocel_id: String) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&ocel_id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", ocel_id))))?;
+
+    match item {
+        RegistryItem::OCEL(ocel) => {
+            let events: Vec<_> = ocel.events.iter().map(|e| serde_json::json!({
+                "id": e.id,
+                "activity": e.activity,
+                "timestamp": e.timestamp,
+                "omap": e.omap.iter().map(|o| serde_json::json!({
+                    "object_id": o.object_id,
+                    "type": o.type_name
+                })).collect::<Vec<_>>()
+            })).collect();
+            Ok(serde_json::to_string(&events).unwrap_or_else(|_| "[]".to_string()))
+        },
+        _ => Err(rustler::Error::Term(Box::new("Not an OCEL")))
+    }
+}
+
+/// Get objects from OCEL as JSON
+#[rustler::nif]
+pub fn log_get_objects(ocel_id: String) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&ocel_id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", ocel_id))))?;
+
+    match item {
+        RegistryItem::OCEL(ocel) => {
+            let objects: Vec<_> = ocel.objects.iter().map(|o| serde_json::json!({
+                "id": o.id,
+                "type": o.type_name,
+                "ovmap": o.ovmap
+            })).collect();
+            Ok(serde_json::to_string(&objects).unwrap_or_else(|_| "[]".to_string()))
+        },
+        _ => Err(rustler::Error::Term(Box::new("Not an OCEL")))
+    }
+}
+
+/// Free events handle - no-op since we use registry IDs
+#[rustler::nif]
+pub fn events_free(_handle: String) -> NifResult<rustler::Atom> {
+    Ok(ok())
+}
+
+/// Free objects handle - no-op since we use registry IDs
+#[rustler::nif]
+pub fn objects_free(_handle: String) -> NifResult<rustler::Atom> {
+    Ok(ok())
+}
+
+/// Calculate performance metrics from OCEL
+#[rustler::nif]
+pub fn calculate_performance_metrics_nif(ocel_id: String) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&ocel_id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", ocel_id))))?;
+
+    match item {
+        RegistryItem::OCEL(ocel) => {
+            // Calculate real performance metrics from timestamps
+            let mut durations: Vec<i64> = Vec::new();
+            let mut traces: HashMap<String, Vec<_>> = HashMap::new();
+
+            for e in &ocel.events {
+                for o in &e.omap {
+                    traces.entry(o.object_id.clone()).or_default().push(e);
+                }
+            }
+
+            for (_, mut evs) in traces {
+                if evs.len() >= 2 {
+                    evs.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+                    let start = evs.first().unwrap().timestamp;
+                    let end = evs.last().unwrap().timestamp;
+                    durations.push(end - start);
+                }
+            }
+
+            let avg_duration = if !durations.is_empty() {
+                durations.iter().sum::<i64>() as f64 / durations.len() as f64
+            } else {
+                0.0
+            };
+
+            let min_duration = durations.iter().min().copied().unwrap_or(0);
+            let max_duration = durations.iter().max().copied().unwrap_or(0);
+
+            Ok(serde_json::json!({
+                "avg_duration_ms": avg_duration,
+                "min_duration_ms": min_duration,
+                "max_duration_ms": max_duration,
+                "throughput_per_hour": if avg_duration > 0.0 { 3600000.0 / avg_duration } else { 0.0 },
+                "trace_count": durations.len()
+            }).to_string())
+        },
+        _ => Err(rustler::Error::Term(Box::new("Not an OCEL")))
+    }
+}
+
+/// Get activity frequency from OCEL
+#[rustler::nif]
+pub fn get_activity_frequency_nif(ocel_id: String) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&ocel_id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", ocel_id))))?;
+
+    match item {
+        RegistryItem::OCEL(ocel) => {
+            let mut freq: HashMap<String, usize> = HashMap::new();
+            for e in &ocel.events {
+                *freq.entry(e.activity.clone()).or_insert(0) += 1;
+            }
+            Ok(serde_json::to_string(&freq).unwrap_or_else(|_| "{}".to_string()))
+        },
+        _ => Err(rustler::Error::Term(Box::new("Not an OCEL")))
+    }
+}
+
+/// Find longest traces in OCEL
+#[rustler::nif]
+pub fn find_longest_traces_nif(ocel_id: String, top_n: usize) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&ocel_id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", ocel_id))))?;
+
+    match item {
+        RegistryItem::OCEL(ocel) => {
+            let mut traces: HashMap<String, Vec<_>> = HashMap::new();
+            for e in &ocel.events {
+                for o in &e.omap {
+                    traces.entry(o.object_id.clone()).or_default().push(e);
+                }
+            }
+
+            let mut trace_lengths: Vec<_> = traces.iter()
+                .map(|(id, evs)| (id.clone(), evs.len()))
+                .collect();
+            trace_lengths.sort_by(|a, b| b.1.cmp(&a.1));
+
+            let result: Vec<_> = trace_lengths.iter()
+                .take(top_n)
+                .map(|(id, len)| serde_json::json!({
+                    "trace_id": id,
+                    "event_count": len
+                }))
+                .collect();
+
+            Ok(serde_json::to_string(&result).unwrap_or_else(|_| "[]".to_string()))
+        },
+        _ => Err(rustler::Error::Term(Box::new("Not an OCEL")))
+    }
+}
+
+/// Export XES - not yet implemented, throw proper error
+#[rustler::nif]
+pub fn export_xes_nif(_id: String, _path: String) -> NifResult<String> {
+    Err(rustler::Error::Term(Box::new(
+        "export_xes requires XES export implementation. Use OCEL JSON export instead."
+    )))
+}
+
+/// Export OCEL JSON
+#[rustler::nif]
+pub fn export_ocel_json_nif(ocel_id: String, path: String) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&ocel_id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", ocel_id))))?;
+
+    match item {
+        RegistryItem::OCEL(ocel) => {
+            let json = serde_json::to_string(&**ocel)
+                .map_err(|e| rustler::Error::Term(Box::new(format!("JSON error: {}", e))))?;
+            std::fs::write(&path, &json)
+                .map_err(|e| rustler::Error::Term(Box::new(format!("Write error: {}", e))))?;
+            Ok(path)
+        },
+        _ => Err(rustler::Error::Term(Box::new("Not an OCEL")))
+    }
+}
+
+/// Import OCEL XML - not yet implemented
+#[rustler::nif]
+pub fn import_ocel_xml_nif(_path: String) -> NifResult<String> {
+    Err(rustler::Error::Term(Box::new(
+        "import_ocel_xml requires OCEL XML parsing. Use JSON format instead."
+    )))
+}
+
+/// Import OCEL SQLite - not yet implemented
+#[rustler::nif]
+pub fn import_ocel_sqlite_nif(_path: String) -> NifResult<String> {
+    Err(rustler::Error::Term(Box::new(
+        "import_ocel_sqlite requires SQLite OCEL support. Use JSON format instead."
+    )))
+}
+
+/// Import PNML - not yet implemented
+#[rustler::nif]
+pub fn import_pnml_nif(_path: String) -> NifResult<String> {
+    Err(rustler::Error::Term(Box::new(
+        "import_pnml requires PNML parsing. Use discover_petri_net to create Petri nets from logs."
+    )))
+}
+
+/// Export PNML
+#[rustler::nif]
+pub fn export_pnml_nif(pn_id: String) -> NifResult<String> {
+    let registry = REGISTRY.lock().unwrap();
+    let item = registry.get(&pn_id)
+        .ok_or_else(|| rustler::Error::Term(Box::new(format!("Not found: {}", pn_id))))?;
+
+    match item {
+        RegistryItem::PetriNetJson(json) => {
+            // Convert JSON to basic PNML format
+            let pn: Value = serde_json::from_str(json)
+                .map_err(|e| rustler::Error::Term(Box::new(format!("Parse error: {}", e))))?;
+
+            let places = pn.get("places").and_then(|p| p.as_array()).unwrap_or(&Vec::new());
+            let transitions = pn.get("transitions").and_then(|t| t.as_array()).unwrap_or(&Vec::new());
+            let arcs = pn.get("arcs").and_then(|a| a.as_array()).unwrap_or(&Vec::new());
+
+            let mut pnml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<pnml>\n  <net>\n");
+
+            for p in places {
+                if let Some(id) = p.get("id").and_then(|v| v.as_str()) {
+                    pnml.push_str(&format!("    <place id=\"{}\"/>\n", id));
+                }
+            }
+
+            for t in transitions {
+                if let (Some(id), Some(name)) = (t.get("id").and_then(|v| v.as_str()), t.get("name").and_then(|v| v.as_str())) {
+                    pnml.push_str(&format!("    <transition id=\"{}\"><name><text>{}</text></name></transition>\n", id, name));
+                }
+            }
+
+            for a in arcs {
+                if let (Some(id), Some(src), Some(tgt)) = (
+                    a.get("id").and_then(|v| v.as_str()),
+                    a.get("source").and_then(|v| v.as_str()),
+                    a.get("target").and_then(|v| v.as_str())
+                ) {
+                    pnml.push_str(&format!("    <arc id=\"{}\" source=\"{}\" target=\"{}\"/>\n", id, src, tgt));
+                }
+            }
+
+            pnml.push_str("  </net>\n</pnml>");
+            Ok(pnml)
+        },
+        _ => Err(rustler::Error::Term(Box::new("Not a PetriNet")))
+    }
+}
+
 rustler::init!("process_mining_bridge", [
-    nop, int_passthrough,
+    // Benchmark functions
+    nop, int_passthrough, atom_passthrough,
     echo_json, echo_term, echo_binary, echo_ocel_event, large_list_transfer,
-    import_ocel_json_path, import_xes_path, num_events, num_objects,
-    index_link_ocel, slim_link_ocel, ocel_type_stats,
-    compute_dfg, discover_dfg, compute_dfg_from_events, align_trace, discover_dfg_ocel, discover_alpha, discover_petri_net, token_replay,
+    // Core import functions
+    import_ocel_json_path, import_xes_path,
+    // Core analysis functions
+    num_events, num_objects, index_link_ocel, slim_link_ocel, ocel_type_stats,
+    compute_dfg, discover_dfg, compute_dfg_from_events, align_trace,
+    discover_dfg_ocel, discover_alpha, discover_petri_net, token_replay,
+    // Registry management
     registry_get_type, registry_free, registry_list,
+    // NIF suffix wrappers (for Erlang compatibility)
+    import_xes_nif, import_ocel_json_nif,
+    discover_dfg_nif, discover_alpha_nif, discover_petri_net_nif,
+    compute_dfg_from_events_nif, token_replay_nif,
+    registry_get_type_nif, registry_free_nif, registry_list_nif,
+    event_log_stats_nif, align_trace_nif,
+    num_events_nif, num_objects_nif, discover_dfg_ocel_nif,
+    // Additional NIFs for Erlang compatibility
+    log_event_count, log_object_count, log_get_events, log_get_objects,
+    events_free, objects_free,
+    calculate_performance_metrics_nif, get_activity_frequency_nif, find_longest_traces_nif,
+    export_xes_nif, export_ocel_json_nif,
+    import_ocel_xml_nif, import_ocel_sqlite_nif,
+    import_pnml_nif, export_pnml_nif,
 ], load = load);

@@ -1,0 +1,239 @@
+{
+  "ocel": {
+    "version": "2.0",
+    "global-id": "global-test-failures",
+    "events": [
+      {
+        "id": "e1",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:00:00Z",
+        "activity": "process_payment",
+        "attributes": {
+          "amount": 150.00,
+          "currency": "USD",
+          "processor": "payment-gateway-1",
+          "attempt": 1,
+          "status": "SUCCESS"
+        },
+        "objects": ["order_001", "customer_A"]
+      },
+      {
+        "id": "e2",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:02:30Z",
+        "activity": "process_payment",
+        "attributes": {
+          "amount": 250.00,
+          "currency": "USD",
+          "processor": "payment-gateway-1",
+          "attempt": 1,
+          "error_message": "Insufficient funds",
+          "status": "FAILED"
+        },
+        "objects": ["order_002", "customer_B"]
+      },
+      {
+        "id": "e3",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:05:00Z",
+        "activity": "process_payment",
+        "attributes": {
+          "amount": 89.99,
+          "currency": "USD",
+          "processor": "payment-gateway-2",
+          "attempt": 1,
+          "status": "SUCCESS"
+        },
+        "objects": ["order_003", "customer_C"]
+      },
+      {
+        "id": "e4",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:07:15Z",
+        "activity": "fulfill_order",
+        "attributes": {
+          "order_id": "order_001",
+          "warehouse": "WH-NYC",
+          "carrier": "UPS",
+          "tracking_number": null,
+          "status": "CANCELLED",
+          "cancelled_reason": "Payment fraud detected"
+        },
+        "objects": ["order_001"]
+      },
+      {
+        "id": "e5",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:10:00Z",
+        "activity": "approve_document",
+        "attributes": {
+          "document_id": "doc_456",
+          "reviewer": "manager_1",
+          "decision": "REJECTED",
+          "comments": "Missing signature",
+          "urgency": "HIGH"
+        },
+        "objects": ["document_456"]
+      },
+      {
+        "id": "e6",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:12:45Z",
+        "activity": "process_payment",
+        "attributes": {
+          "amount": 500.00,
+          "currency": "USD",
+          "processor": "payment-gateway-1",
+          "attempt": 2,
+          "status": "FAILED",
+          "error_message": "Gateway timeout after 30s",
+          "retry_attempt": true
+        },
+        "objects": ["order_004", "customer_D"]
+      },
+      {
+        "id": "e7",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:15:00Z",
+        "activity": "ship_package",
+        "attributes": {
+          "package_id": "pkg_789",
+          "destination": "123 Main St",
+          "weight": 2.5,
+          "service_type": "express",
+          "status": "FAILED",
+          "failure_reason": "Address validation failed"
+        },
+        "objects": ["order_003"]
+      },
+      {
+        "id": "e8",
+        "type": "task_start",
+        "timestamp": "2024-01-15T09:20:00Z",
+        "activity": "process_refund",
+        "attributes": {
+          "refund_amount": 150.00,
+          "original_order": "order_001",
+          "processor": "refund-system-1",
+          "status": "SUCCESS"
+        },
+        "objects": ["order_001", "refund_123"]
+      }
+    ],
+    "objects": [
+      {
+        "id": "order_001",
+        "type": "order",
+        "attributes": {
+          "customer_id": "customer_A",
+          "total_amount": 150.00,
+          "status": "CANCELLED",
+          "created_at": "2024-01-15T08:30:00Z",
+          "fraud_score": 8.5
+        }
+      },
+      {
+        "id": "order_002",
+        "type": "order",
+        "attributes": {
+          "customer_id": "customer_B",
+          "total_amount": 250.00,
+          "status": "PENDING",
+          "created_at": "2024-01-15T08:45:00Z",
+          "fraud_score": 3.2
+        }
+      },
+      {
+        "id": "order_003",
+        "type": "order",
+        "attributes": {
+          "customer_id": "customer_C",
+          "total_amount": 89.99,
+          "status": "SHIPPED",
+          "created_at": "2024-01-15T08:55:00Z",
+          "fraud_score": 1.1
+        }
+      },
+      {
+        "id": "order_004",
+        "type": "order",
+        "attributes": {
+          "customer_id": "customer_D",
+          "total_amount": 500.00,
+          "status": "PENDING",
+          "created_at": "2024-01-15T09:00:00Z",
+          "fraud_score": 7.8
+        }
+      },
+      {
+        "id": "customer_A",
+        "type": "customer",
+        "attributes": {
+          "name": "John Doe",
+          "email": "john.doe@example.com",
+          "risk_level": "HIGH",
+          "total_orders": 12,
+          "total_spent": 2450.00
+        }
+      },
+      {
+        "id": "customer_B",
+        "type": "customer",
+        "attributes": {
+          "name": "Jane Smith",
+          "email": "jane.smith@example.com",
+          "risk_level": "MEDIUM",
+          "total_orders": 8,
+          "total_spent": 1250.00
+        }
+      },
+      {
+        "id": "customer_C",
+        "type": "customer",
+        "attributes": {
+          "name": "Bob Johnson",
+          "email": "bob.johnson@example.com",
+          "risk_level": "LOW",
+          "total_orders": 5,
+          "total_spent": 425.00
+        }
+      },
+      {
+        "id": "customer_D",
+        "type": "customer",
+        "attributes": {
+          "name": "Alice Brown",
+          "email": "alice.brown@example.com",
+          "risk_level": "HIGH",
+          "total_orders": 3,
+          "total_spent": 750.00
+        }
+      },
+      {
+        "id": "document_456",
+        "type": "document",
+        "attributes": {
+          "title": "Contract Agreement",
+          "status": "REJECTED",
+          "submitter": "legal_team",
+          "department": "Sales",
+          "review_date": "2024-01-15T09:10:00Z"
+        }
+      }
+    ],
+    "objectTypes": {
+      "order": {
+        "name": "Order",
+        "attributes": ["customer_id", "total_amount", "status", "created_at", "fraud_score"]
+      },
+      "customer": {
+        "name": "Customer",
+        "attributes": ["name", "email", "risk_level", "total_orders", "total_spent"]
+      },
+      "document": {
+        "name": "Document",
+        "attributes": ["title", "status", "submitter", "department", "review_date"]
+      }
+    }
+  }
+}

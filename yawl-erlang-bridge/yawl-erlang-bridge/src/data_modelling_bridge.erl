@@ -9,6 +9,16 @@
     stats :: map()
 }).
 
+-record(capability_registry, {
+    id :: binary(),
+    name :: atom(),
+    type :: string(),
+    status :: string(),
+    metadata :: map(),
+    created :: integer(),
+    updated :: integer()
+}).
+
 start_link() ->
     gen_server:start_link({local, data_modelling_bridge}, ?MODULE, [], []).
 
@@ -48,7 +58,7 @@ handle_call(get_schema, {Pid, _Ref}, State) ->
 
     {reply, Schema, State};
 
-handle_call(validate_data, {Pid, _Ref}, Data, State) ->
+handle_call({validate_data, {Pid, _Ref}, Data}, _From, State) ->
     %% Add validation to queue
     ValidationId = erlang:ref_to_list(make_ref()),
     Validation = #{
@@ -116,11 +126,11 @@ handle_info(process_validation, State) ->
             case process_validation(Validation) of
                 {ok, Result} ->
                     %% Notify validator
-                    gen_server:cast(Validation#{validator}, {validation_result, Validation#{id}, Result}),
+                    gen_server:cast(Validation#{validator => validator}, {validation_result, Validation#{id => id}, Result}),
                     {noreply, State#state{validation_queue = RestQueue}};
                 {error, Reason} ->
                     %% Notify validator of error
-                    gen_server:cast(Validation#{validator}, {validation_error, Validation#{id}, Reason}),
+                    gen_server:cast(Validation#{validator => validator}, {validation_error, Validation#{id => id}, Reason}),
                     {noreply, State#state{validation_queue = RestQueue}}
             end;
         {empty, _} ->
@@ -188,8 +198,8 @@ process_validation(Validation) ->
                 {error, Reason}
         end
     catch
-        _:Reason ->
-            {error, {validation_failed, Reason}}
+        Error ->
+            {error, {validation_failed, Error}}
     end.
 
 get_validation_rules(SchemaType) ->
