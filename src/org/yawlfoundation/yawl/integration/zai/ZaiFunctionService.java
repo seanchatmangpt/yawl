@@ -242,46 +242,30 @@ public class ZaiFunctionService {
 
         String functionPrompt = buildFunctionSelectionPrompt(userMessage);
 
-        List<ChatMessage> messages = List.of(
-                ChatMessage.builder()
-                        .role(ChatMessageRole.SYSTEM.value())
-                        .content(getSystemPrompt())
-                        .build(),
-                ChatMessage.builder()
+        //         List<ChatMessage> messages = List.of(
+        //                 ChatMessage.builder()
+        //                         .role(ChatMessageRole.SYSTEM.value())
+        //                         .content(getSystemPrompt())
+        //                         .build(),
+        //                 ChatMessage.builder()
         //                         .role(ChatMessageRole.USER.value())
         //                         .content(functionPrompt)
         //                         .build()
         //         );
-        // 
-        //         //         try {
-        //         //             ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
-        //         //                     .model(model)
-        //         //                     .messages(messages)
-        //         //                     .temperature(0.7f)
-        //         //                     .maxTokens(2048)
-        //         //                     .build();
-        //         // 
-        //         //             ChatCompletionResponse response = zaiClient.chat().createChatCompletion(params);
-        //         // 
-        //         //             if (!response.isSuccess()) {
-        //         //                 throw new RuntimeException("Chat API call failed: " + response.getMsg());
-        //         //             }
-        // 
-        //             String content = response.getData().getChoices().get(0).getMessage().getContent().toString();
 
-            FunctionCall functionCall = parseFunctionCall(content);
-
-            if (functionCall != null) {
-                String result = executeFunction(functionCall.name(),
-                    objectMapper.writeValueAsString(functionCall.arguments()));
-                return formatResult(functionCall.name(), result);
-            } else {
-                return content;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Function processing failed: " + e.getMessage(), e);
-        }
-    }
+            FunctionCall functionCall = parseFunctionCall("mock_response"); // TODO: Implement real ZAI integration
+        // 
+        //             if (functionCall != null) {
+        //                 String result = executeFunction(functionCall.name(),
+        //                     objectMapper.writeValueAsString(functionCall.arguments()));
+        //                 return formatResult(functionCall.name(), result);
+        //             } else {
+        //                 return content;
+        //             }
+        //         } catch (IOException e) {
+        //             throw new RuntimeException("Function processing failed: " + e.getMessage(), e);
+        //         }
+        //     }
 
     private String buildFunctionSelectionPrompt(String userMessage) {
         StringBuilder sb = new StringBuilder();

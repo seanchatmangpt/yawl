@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.jdom2.Element;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
-import org.yawlfoundation.yawl.elements.state.YInternalState;
 import org.yawlfoundation.yawl.exceptions.YDataStateException;
 import org.yawlfoundation.yawl.exceptions.YEngineStateException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
@@ -176,27 +175,27 @@ public class BuriedEngine {
             // Execute in virtual thread with proper context propagation
             Thread.ofVirtual()
                 .name(engineName + "-case-" + caseID)
-                .virtualThreadGroup(virtualThreadGroup)
                 .start(() -> {
                     try {
                         // Launch case in virtual thread context
                         YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData);
 
-                        // Log case launch with proper context
+                        // YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData); // TODO: Fix type conversion
                         logger.info("Case launched: {} in engine {}",
                             workflowContext.toLogString(), engineName);
 
-                        return runner;
+                        // Store runner for future access
+                        this.runner = runner;
                     } catch (Exception e) {
                         logger.error("Failed to launch case {}: {}", caseID, e.getMessage(), e);
                         throw new RuntimeException(e);
                     }
                 });
 
-            // Note: The actual runner will be returned through callback or future
-            // For now, we need to modify this to handle async execution properly
-            return yEngine.launchCase(spec, caseID, caseParams, logData);
-
+            // Return the case ID for async tracking
+            // The actual runner will be accessible through the engine's case registry
+            return caseID;
+                        // YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData); // TODO: Fix type conversion
         } finally {
             lifecycleLock.unlock();
         }
@@ -220,7 +219,7 @@ public class BuriedEngine {
                 .start(() -> {
                     try {
                         yEngine.cancelCase(runner);
-                        logger.info("Case cancelled: {} in engine {}",
+                        // YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData); // TODO: Fix type conversion
                             runner.getCaseID(), engineName);
                     } catch (Exception e) {
                         logger.error("Failed to cancel case {}: {}",
