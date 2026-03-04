@@ -34,14 +34,14 @@ public final class DspyProgram {
     private final String provider;
     private final String model;
     private final List<Example> examples;
-    private final MlBridgeClient client;
+    private MlBridgeClient client; // Lazy initialization
 
     private DspyProgram(Builder builder) {
         this.signature = Objects.requireNonNull(builder.signature, "Signature required");
         this.provider = Objects.requireNonNull(builder.provider, "Provider required");
         this.model = Objects.requireNonNull(builder.model, "Model required");
         this.examples = Collections.unmodifiableList(new ArrayList<>(builder.examples));
-        this.client = builder.client != null ? builder.client : createDefaultClient();
+        this.client = builder.client; // May be null - lazy init on predict()
     }
 
     /**
@@ -62,6 +62,9 @@ public final class DspyProgram {
      * @throws DspyException if prediction fails
      */
     public Map<String, Object> predict(Map<String, Object> inputs) throws DspyException {
+        if (client == null) {
+            client = createDefaultClient();
+        }
         return client.predict(signature, inputs, examples);
     }
 

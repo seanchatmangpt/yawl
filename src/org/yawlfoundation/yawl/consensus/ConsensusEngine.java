@@ -64,4 +64,11 @@ public interface ConsensusEngine {
      * @return true if quorum is possible (2f+1 nodes)
      */
     boolean hasQuorum();
+
+    /**
+     * Get current consensus strategy
+     *
+     * @return ConsensusStrategy being used
+     */
+    ConsensusStrategy getStrategy();
 }

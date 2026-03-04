@@ -94,6 +94,27 @@ public final class QLeverEmbeddedEngineAdapter implements SparqlEngine {
     }
 
     @Override
+    public void sparqlUpdate(String updateQuery) throws SparqlEngineException {
+        Objects.requireNonNull(updateQuery, "updateQuery must not be null");
+
+        if (!isAvailable()) {
+            throw new SparqlEngineUnavailableException(engineType(), "Embedded engine not initialized");
+        }
+
+        try {
+            QLeverResult result = embeddedEngine.executeUpdate(updateQuery);
+
+            // QLeverResult must contain data - if null, this is an error
+            if (result == null) {
+                throw new SparqlEngineException("QLever returned null result for update");
+            }
+
+        } catch (QLeverFfiException e) {
+            throw new SparqlEngineException("QLever update failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void close() {
         try {
             embeddedEngine.shutdown();

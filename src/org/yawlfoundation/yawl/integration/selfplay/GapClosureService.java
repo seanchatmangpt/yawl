@@ -1,6 +1,7 @@
 package org.yawlfoundation.yawl.integration.selfplay;
 
 import org.yawlfoundation.yawl.integration.selfplay.model.V7DesignState;
+import org.yawlfoundation.yawl.integration.selfplay.model.V7Gap;
 import org.yawlfoundation.yawl.integration.selfplay.GapAnalysisEngine.CapabilityGap;
 import org.yawlfoundation.yawl.integration.selfplay.model.V7SimulationReport;
 import org.yawlfoundation.yawl.qlever.QLeverEmbeddedSparqlEngine;
@@ -216,7 +217,7 @@ public final class GapClosureService {
      * @throws QLeverFfiException if enhancement fails
      */
     private String applyCapabilityEnhancement(GapAnalysisEngine.CapabilityGap gap) throws QLeverFfiException {
-        String enhancementUri = "http://yawlfoundation.org/yawl/simulation/enhancement/" + gap.name();
+        String enhancementUri = "http://yawlfoundation.org/yawl/simulation/enhancement/" + gap.gapId();
         String enhancementQuery = String.format("""
             PREFIX sim:   <http://yawlfoundation.org/yawl/simulation#>
             PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
@@ -230,7 +231,7 @@ public final class GapClosureService {
             }
             """,
             enhancementUri,
-            gap.name(),
+            gap.gapId(),
             Instant.now().toString(),
             gap.description()
         );
@@ -257,7 +258,7 @@ public final class GapClosureService {
                          sim:appliedAt ?time .
             }
             """,
-            gap.name()
+            gap.gapId()
         );
 
         QLeverResult result = qleverEngine.executeQuery(validationQuery);
@@ -303,9 +304,9 @@ public final class GapClosureService {
      * @param gap The gap to get records for
      * @return List of closure records for the gap
      */
-    public synchronized List<GapClosureRecord> getGapClosureRecords(V7Gap gap) {
+    public synchronized List<GapClosureRecord> getGapClosureRecords(CapabilityGap gap) {
         return closureRecords.values().stream()
-            .filter(record -> record.gap() == gap)
+            .filter(record -> record.gap().equals(gap))
             .toList();
     }
 

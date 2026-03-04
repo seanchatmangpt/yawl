@@ -20,14 +20,22 @@ package org.yawlfoundation.yawl.engine.interfce.interfaceB;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jdom2.Document;
@@ -39,14 +47,13 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
 import org.yawlfoundation.yawl.util.PasswordEncryptor;
 
 import static org.junit.jupiter.api.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Comprehensive test suite for InterfaceB_EnvironmentBasedClient
  * Tests all public methods, error scenarios, and edge cases
- * Following Chicago TDD principles with real YAWL objects
+ * Following Chicago TDD principles with real HTTP server and TestContainers
  */
-@ExtendWith(MockitoExtension.class)
+@Testcontainers
 @TestMethodOrder(OrderAnnotation.class)
 public class InterfaceB_EnvironmentBasedClientTest {
 
@@ -55,14 +62,24 @@ public class InterfaceB_EnvironmentBasedClientTest {
     private static final String TEST_PASSWORD = "password123";
     private static final String TEST_SESSION_HANDLE = "session123";
 
-    private InterfaceB_EnvironmentBasedClient client;
+    private static final int HTTP_SERVER_PORT = 8080;
 
-    @Mock
-    private PasswordEncryptor mockPasswordEncryptor;
+    private InterfaceB_EnvironmentBasedClient client;
+    private HttpTestServer testServer;
 
     @BeforeEach
-    void setUp() {
-        client = new InterfaceB_EnvironmentBasedClient(DEFAULT_BACKEND_URI);
+    void setUp() throws IOException {
+        testServer = new HttpTestServer(HTTP_SERVER_PORT);
+        testServer.start();
+        client = new InterfaceB_EnvironmentBasedClient("http://localhost:" + HTTP_SERVER_PORT + "/yawl/ib");
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        if (testServer != null) {
+            testServer.stop();
+        }
+        client = null;
     }
 
     @Test
@@ -70,11 +87,12 @@ public class InterfaceB_EnvironmentBasedClientTest {
     @Order(1)
     void constructor_withBackendURI_createsClient() {
         // Arrange & Act
-        InterfaceB_EnvironmentBasedClient newClient = new InterfaceB_EnvironmentBasedClient("http://test:8080/yawl/ib");
+        String testUri = "http://test:8080/yawl/ib";
+        InterfaceB_EnvironmentBasedClient newClient = new InterfaceB_EnvironmentBasedClient(testUri);
 
         // Assert
         assertNotNull(newClient);
-        assertEquals("http://test:8080/yawl/ib", newClient.getBackEndURI());
+        assertEquals(testUri, newClient.getBackEndURI());
     }
 
     @Test
@@ -85,51 +103,61 @@ public class InterfaceB_EnvironmentBasedClientTest {
         String uri = client.getBackEndURI();
 
         // Assert
-        assertEquals(DEFAULT_BACKEND_URI, uri);
+        assertEquals("http://localhost:" + HTTP_SERVER_PORT + "/yawl/ib", uri);
     }
 
     @Test
     @DisplayName("connect with valid credentials returns session handle")
     @Order(3)
     void connect_withValidCredentials_returnsSessionHandle() throws Exception {
-        // Arrange
-        String expectedSessionHandle = "session123";
-        when(client.executePost(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(expectedSessionHandle);
+        // Arrange: Configure server to return session handle
+        testServer.setConnectResponse(TEST_SESSION_HANDLE);
 
         // Act
         String result = client.connect(TEST_USER_ID, TEST_PASSWORD);
 
         // Assert
         assertNotNull(result);
-        assertEquals(expectedSessionHandle, result);
+        assertEquals(TEST_SESSION_HANDLE, result);
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("POST", recordedRequest.method);
+        assertEquals("/yawl/ib", recordedRequest.path);
+        assertTrue(recordedRequest.parameters.containsKey("userid"));
+        assertTrue(recordedRequest.parameters.containsKey("password"));
+        assertEquals(TEST_USER_ID, recordedRequest.parameters.get("userid"));
     }
 
     @Test
     @DisplayName("connect encrypts password before sending")
     @Order(4)
     void connect_encryptsPasswordBeforeSending() throws Exception {
-        // Arrange
-        String encryptedPassword = "encrypted123";
-        when(mockPasswordEncryptor.encrypt(TEST_PASSWORD, null))
-            .thenReturn(encryptedPassword);
+        // Arrange: Configure server to capture and return encrypted password
+        testServer.setConnectResponse(TEST_SESSION_HANDLE);
 
         // Act
         client.connect(TEST_USER_ID, TEST_PASSWORD);
 
-        // Verify that executePost was called with encrypted password
-        verify(client).executePost(eq(DEFAULT_BACKEND_URI), argThat(map ->
-            map.get("password").equals(encryptedPassword)
-        ));
+        // Assert that the encrypted password was sent
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        String sentPassword = recordedRequest.parameters.get("password");
+        assertNotNull(sentPassword);
+        assertNotEquals(TEST_PASSWORD, sentPassword); // Should be encrypted
+
+        // Verify it's a valid encryption (not empty, different from original)
+        assertFalse(sentPassword.isEmpty());
+        assertFalse(sentPassword.equals(TEST_PASSWORD));
     }
 
     @Test
     @DisplayName("connect throws IOException on connection failure")
     @Order(5)
     void connect_throwsIOExceptionOnConnectionFailure() throws Exception {
-        // Arrange
-        when(client.executePost(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenThrow(new IOException("Connection refused"));
+        // Arrange: Stop server to simulate connection failure
+        testServer.stop();
 
         // Act & Assert
         assertThrows(IOException.class, () -> {
@@ -141,25 +169,29 @@ public class InterfaceB_EnvironmentBasedClientTest {
     @DisplayName("disconnect returns success message")
     @Order(6)
     void disconnect_returnsSuccessMessage() throws Exception {
-        // Arrange
-        String expectedResponse = "Disconnected successfully";
-        when(client.executePost(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(expectedResponse);
+        // Arrange: Configure server with disconnect response
+        testServer.setDisconnectResponse("Disconnected successfully");
 
         // Act
         String result = client.disconnect(TEST_SESSION_HANDLE);
 
         // Assert
-        assertEquals(expectedResponse, result);
+        assertEquals("Disconnected successfully", result);
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("POST", recordedRequest.method);
+        assertEquals("/yawl/ib", recordedRequest.path);
+        assertEquals("disconnect", recordedRequest.parameters.get("action"));
     }
 
     @Test
     @DisplayName("disconnect throws IOException on failure")
     @Order(7)
     void disconnect_throwsIOExceptionOnFailure() throws Exception {
-        // Arrange
-        when(client.executePost(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenThrow(new IOException("Connection failed"));
+        // Arrange: Stop server to simulate connection failure
+        testServer.stop();
 
         // Act & Assert
         assertThrows(IOException.class, () -> {
@@ -171,10 +203,8 @@ public class InterfaceB_EnvironmentBasedClientTest {
     @DisplayName("getCompleteListOfLiveWorkItems returns empty list when no work items")
     @Order(8)
     void getCompleteListOfLiveWorkItems_returnsEmptyList() throws Exception {
-        // Arrange
-        String emptyXmlResponse = "<workItemList/>";
-        when(client.getCompleteListOfLiveWorkItemsAsXML(TEST_SESSION_HANDLE))
-            .thenReturn(emptyXmlResponse);
+        // Arrange: Configure server with empty work item list
+        testServer.setWorkItemsResponse("<workItemList/>");
 
         // Act
         List<WorkItemRecord> result = client.getCompleteListOfLiveWorkItems(TEST_SESSION_HANDLE);
@@ -182,15 +212,19 @@ public class InterfaceB_EnvironmentBasedClientTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isEmpty());
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("getCompleteListOfLiveWorkItems", recordedRequest.parameters.get("action"));
     }
 
     @Test
     @DisplayName("getCompleteListOfLiveWorkItems throws IOException on connection failure")
     @Order(9)
     void getCompleteListOfLiveWorkItems_throwsIOExceptionOnConnectionFailure() throws Exception {
-        // Arrange
-        when(client.getCompleteListOfLiveWorkItemsAsXML(TEST_SESSION_HANDLE))
-            .thenThrow(new IOException("Connection failed"));
+        // Arrange: Stop server to simulate connection failure
+        testServer.stop();
 
         // Act & Assert
         assertThrows(IOException.class, () -> {
@@ -202,10 +236,9 @@ public class InterfaceB_EnvironmentBasedClientTest {
     @DisplayName("getCompleteListOfLiveWorkItemsAsXML returns XML string")
     @Order(10)
     void getCompleteListOfLiveWorkItemsAsXML_returnsXmlString() throws Exception {
-        // Arrange
+        // Arrange: Configure server with work items XML
         String expectedXml = "<workItemList><workItem id=\"item1\"/></workItemList>";
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(expectedXml);
+        testServer.setWorkItemsResponse(expectedXml);
 
         // Act
         String result = client.getCompleteListOfLiveWorkItemsAsXML(TEST_SESSION_HANDLE);
@@ -213,17 +246,21 @@ public class InterfaceB_EnvironmentBasedClientTest {
         // Assert
         assertNotNull(result);
         assertEquals(expectedXml, result);
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("getCompleteListOfLiveWorkItems", recordedRequest.parameters.get("action"));
     }
 
     @Test
     @DisplayName("getWorkItem returns work item XML")
     @Order(11)
     void getWorkItem_returnsWorkItemXml() throws Exception {
-        // Arrange
+        // Arrange: Configure server with specific work item
         String workItemId = "workItem123";
         String expectedXml = "<workItem id=\"" + workItemId + "\"/>";
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(expectedXml);
+        testServer.setWorkItemResponse(workItemId, expectedXml);
 
         // Act
         String result = client.getWorkItem(workItemId, TEST_SESSION_HANDLE);
@@ -232,43 +269,42 @@ public class InterfaceB_EnvironmentBasedClientTest {
         assertNotNull(result);
         assertEquals(expectedXml, result);
 
-        // Verify correct parameters were used
-        verify(client).executeGet(eq(DEFAULT_BACKEND_URI), argThat(map ->
-            map.get("action").equals("getWorkItem") &&
-            map.get("sessionHandle").equals(TEST_SESSION_HANDLE) &&
-            map.get("workItemID").equals(workItemId)
-        ));
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("getWorkItem", recordedRequest.parameters.get("action"));
+        assertEquals(workItemId, recordedRequest.parameters.get("workItemID"));
     }
 
     @Test
     @DisplayName("getWorkItemExpiryTime returns expiry time")
     @Order(12)
     void getWorkItemExpiryTime_returnsExpiryTime() throws Exception {
-        // Arrange
+        // Arrange: Configure server with expiry time response
         String workItemId = "workItem123";
-        long expectedExpiry = System.currentTimeMillis() + 3600000; // 1 hour from now
-        String expiryXml = String.valueOf(expectedExpiry);
-
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(expiryXml);
+        long expectedExpiry = System.currentTimeMillis() + 3600000; // 1 hour from now;
+        testServer.setExpiryTimeResponse(workItemId, String.valueOf(expectedExpiry));
 
         // Act
         long result = client.getWorkItemExpiryTime(workItemId, TEST_SESSION_HANDLE);
 
         // Assert
         assertEquals(expectedExpiry, result);
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("getWorkItemExpiryTime", recordedRequest.parameters.get("action"));
+        assertEquals(workItemId, recordedRequest.parameters.get("workItemID"));
     }
 
     @Test
     @DisplayName("getWorkItemExpiryTime returns 0 when work item not found")
     @Order(13)
     void getWorkItemExpiryTime_returnsZeroWhenNotFound() throws Exception {
-        // Arrange
+        // Arrange: Configure server with not found response
         String workItemId = "nonexistentItem";
-        String expiryXml = "null"; // Simulate not found response
-
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(expiryXml);
+        testServer.setExpiryTimeResponse(workItemId, "null");
 
         // Act
         long result = client.getWorkItemExpiryTime(workItemId, TEST_SESSION_HANDLE);
@@ -281,109 +317,97 @@ public class InterfaceB_EnvironmentBasedClientTest {
     @DisplayName("getWorkItemsForCase returns work items for specific case")
     @Order(14)
     void getWorkItemsForCase_returnsWorkItemsForCase() throws Exception {
-        // Arrange
+        // Arrange: Configure server with case-specific work items
         String caseId = "case123";
         String xmlResponse = "<workItemList><workItem id=\"item1\" caseId=\"" + caseId + "\"/></workItemList>";
-
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(xmlResponse);
+        testServer.setWorkItemsForCaseResponse(caseId, xmlResponse);
 
         // Act
         List<WorkItemRecord> result = client.getWorkItemsForCase(caseId, TEST_SESSION_HANDLE);
 
         // Assert
         assertNotNull(result);
-        // Verify parameters were correct
-        verify(client).executeGet(eq(DEFAULT_BACKEND_URI), argThat(map ->
-            map.get("action").equals("getWorkItemsWithIdentifier") &&
-            map.get("sessionHandle").equals(TEST_SESSION_HANDLE) &&
-            map.get("id").equals(caseId) &&
-            map.get("idType").equals("case")
-        ));
+        assertFalse(result.isEmpty());
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("getWorkItemsWithIdentifier", recordedRequest.parameters.get("action"));
+        assertEquals(caseId, recordedRequest.parameters.get("id"));
+        assertEquals("case", recordedRequest.parameters.get("idType"));
     }
 
     @Test
     @DisplayName("getWorkItemsForSpecification returns work items for specification")
     @Order(15)
     void getWorkItemsForSpecification_returnsWorkItemsForSpecification() throws Exception {
-        // Arrange
+        // Arrange: Configure server with specification-specific work items
         String specName = "TestSpecification";
         String xmlResponse = "<workItemList><workItem id=\"item1\" specName=\"" + specName + "\"/></workItemList>";
-
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(xmlResponse);
+        testServer.setWorkItemsForSpecificationResponse(specName, xmlResponse);
 
         // Act
         List<WorkItemRecord> result = client.getWorkItemsForSpecification(specName, TEST_SESSION_HANDLE);
 
         // Assert
         assertNotNull(result);
-        // Verify parameters were correct
-        verify(client).executeGet(eq(DEFAULT_BACKEND_URI), argThat(map ->
-            map.get("action").equals("getWorkItemsWithIdentifier") &&
-            map.get("sessionHandle").equals(TEST_SESSION_HANDLE) &&
-            map.get("id").equals(specName) &&
-            map.get("idType").equals("spec")
-        ));
+        assertFalse(result.isEmpty());
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("getWorkItemsWithIdentifier", recordedRequest.parameters.get("action"));
+        assertEquals(specName, recordedRequest.parameters.get("id"));
+        assertEquals("spec", recordedRequest.parameters.get("idType"));
     }
 
     @Test
     @DisplayName("getWorkItemsForTask returns work items for task")
     @Order(16)
     void getWorkItemsForTask_returnsWorkItemsForTask() throws Exception {
-        // Arrange
+        // Arrange: Configure server with task-specific work items
         String taskId = "task123";
         String xmlResponse = "<workItemList><workItem id=\"item1\" taskId=\"" + taskId + "\"/></workItemList>";
-
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn(xmlResponse);
+        testServer.setWorkItemsForTaskResponse(taskId, xmlResponse);
 
         // Act
         List<WorkItemRecord> result = client.getWorkItemsForTask(taskId, TEST_SESSION_HANDLE);
 
         // Assert
         assertNotNull(result);
-        // Verify parameters were correct
-        verify(client).executeGet(eq(DEFAULT_BACKEND_URI), argThat(map ->
-            map.get("action").equals("getWorkItemsWithIdentifier") &&
-            map.get("sessionHandle").equals(TEST_SESSION_HANDLE) &&
-            map.get("id").equals(taskId) &&
-            map.get("idType").equals("task")
-        ));
+        assertFalse(result.isEmpty());
+
+        // Verify request was properly formed
+        HttpTestServer.HttpRequestRecord recordedRequest = testServer.getRecordedRequest();
+        assertNotNull(recordedRequest);
+        assertEquals("getWorkItemsWithIdentifier", recordedRequest.parameters.get("action"));
+        assertEquals(taskId, recordedRequest.parameters.get("id"));
+        assertEquals("task", recordedRequest.parameters.get("idType"));
     }
 
     @Test
     @DisplayName("handleIOException converts IO exception correctly")
     @Order(17)
-    void handleIOException convertsIoExceptionCorrectly() throws Exception {
-        // Test exception handling patterns
-        IOException ioException = new IOException("Test IO exception");
-
-        // Simulate the scenario where executeGet throws IOException
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenThrow(ioException);
+    void handleIOException_convertsIoExceptionCorrectly() throws Exception {
+        // Arrange: Stop server to simulate IO exception
+        testServer.stop();
 
         // Act & Assert
         assertThrows(IOException.class, () -> {
             client.getWorkItem("test", TEST_SESSION_HANDLE);
         });
-
-        // Verify the exception was properly handled
-        verify(client, times(1)).executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class));
     }
 
     @Test
     @DisplayName("concurrentConnectionsHandleMultipleRequests")
     @Order(18)
     void concurrentConnectionsHandleMultipleRequests() throws Exception {
-        // Arrange
-        int requestCount = 10;
-        ExecutorService executor = Executors.newFixedThreadPool(requestCount);
-        List<CompletableFuture<String>> futures = new ArrayList<>();
+        // Arrange: Configure server to handle multiple connections
+        testServer.setConnectResponse("session123");
 
-        // Mock executePost to return unique session handles
-        when(client.executePost(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenAnswer(invocation -> "session-" + invocation.getArgument(1).hashCode());
+        int requestCount = 10;
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        List<CompletableFuture<String>> futures = new ArrayList<>();
 
         // Act - create concurrent connections
         for (int i = 0; i < requestCount; i++) {
@@ -409,8 +433,7 @@ public class InterfaceB_EnvironmentBasedClientTest {
 
         // Assert
         assertEquals(requestCount, results.size());
-        assertTrue(results.stream().distinct().count() > 0,
-            "Should have unique session handles");
+        assertTrue(results.stream().allMatch(s -> s.equals("session123")));
 
         executor.shutdown();
     }
@@ -447,20 +470,180 @@ public class InterfaceB_EnvironmentBasedClientTest {
     @Order(20)
     void emptyStringParametersAreHandledCorrectly() throws Exception {
         // Test empty string parameters
-        when(client.executeGet(eq(DEFAULT_BACKEND_URI), any(Map.class)))
-            .thenReturn("<workItemList/>");
+        testServer.setWorkItemsResponse("<workItemList/>");
 
         // Empty work item ID should work (returns empty list)
         List<WorkItemRecord> result = client.getWorkItemsForCase("", TEST_SESSION_HANDLE);
         assertNotNull(result);
 
         // Empty session handle should work
+        testServer.setWorkItemResponse("test", "<workItem id=\"test\"/>");
         String workItemXml = client.getWorkItem("test", "");
         assertNotNull(workItemXml);
     }
+}
 
-    @AfterEach
-    void tearDown() {
-        client = null;
+/**
+ * Real HTTP test server for testing InterfaceB_EnvironmentBasedClient
+ * Implements the YAWL InterfaceB protocol for real HTTP communication
+ * No mocks - actual HTTP server implementation
+ */
+class HttpTestServer {
+    private final int port;
+    private com.sun.net.httpserver.HttpServer server;
+    private volatile boolean running = false;
+    private HttpRequestRecord lastRequest;
+
+    // Response configurations
+    private String connectResponse = "session123";
+    private String disconnectResponse = "Disconnected successfully";
+    private String workItemsResponse = "<workItemList/>";
+    private Map<String, String> workItemResponses = new HashMap<>();
+    private Map<String, String> expiryTimeResponses = new HashMap<>();
+    private Map<String, String> caseResponses = new HashMap<>();
+    private Map<String, String> specResponses = new HashMap<>();
+    private Map<String, String> taskResponses = new HashMap<>();
+
+    public static class HttpRequestRecord {
+        public String method;
+        public String path;
+        public Map<String, String> parameters = new HashMap<>();
+        public String body;
+    }
+
+    public HttpTestServer(int port) {
+        this.port = port;
+    }
+
+    public void start() throws IOException {
+        if (running) return;
+
+        server = com.sun.net.httpserver.HttpServer.create(
+            java.net.InetSocketAddress.createUnresolved("localhost", port), 0);
+
+        server.createContext("/yawl/ib", exchange -> {
+            try {
+                lastRequest = new HttpRequestRecord();
+                lastRequest.method = exchange.getRequestMethod();
+                lastRequest.path = exchange.getRequestURI().getPath();
+
+                // Parse query parameters
+                String query = exchange.getRequestURI().getQuery();
+                if (query != null) {
+                    parseParams(query, lastRequest.parameters);
+                }
+
+                // Parse POST body
+                if ("POST".equals(lastRequest.method)) {
+                    lastRequest.body = new String(exchange.getRequestBody().readAllBytes());
+                    parseParams(lastRequest.body, lastRequest.parameters);
+                }
+
+                // Handle the request
+                String response = handleRequest(lastRequest);
+
+                exchange.getResponseHeaders().add("Content-Type", "text/plain");
+                exchange.sendResponseHeaders(200, response.getBytes().length);
+                exchange.getResponseBody().write(response.getBytes());
+            } catch (Exception e) {
+                exchange.sendResponseHeaders(500, 0);
+                e.printStackTrace();
+            } finally {
+                exchange.close();
+            }
+        });
+
+        server.start();
+        running = true;
+    }
+
+    public void stop() {
+        if (server != null && running) {
+            server.stop(0);
+            running = false;
+        }
+    }
+
+    private String handleRequest(HttpRequestRecord request) {
+        String action = request.parameters.get("action");
+
+        switch (action) {
+            case "connect":
+                return connectResponse;
+            case "disconnect":
+                return disconnectResponse;
+            case "getCompleteListOfLiveWorkItems":
+                return workItemsResponse;
+            case "getWorkItem":
+                String workItemId = request.parameters.get("workItemID");
+                return workItemResponses.getOrDefault(workItemId, "<workItem/>");
+            case "getWorkItemExpiryTime":
+                String expiryItemId = request.parameters.get("workItemID");
+                return expiryTimeResponses.getOrDefault(expiryItemId, "0");
+            case "getWorkItemsWithIdentifier":
+                String id = request.parameters.get("id");
+                String idType = request.parameters.get("idType");
+
+                if ("case".equals(idType)) {
+                    return caseResponses.getOrDefault(id, "<workItemList/>");
+                } else if ("spec".equals(idType)) {
+                    return specResponses.getOrDefault(id, "<workItemList/>");
+                } else if ("task".equals(idType)) {
+                    return taskResponses.getOrDefault(id, "<workItemList/>");
+                }
+                return "<workItemList/>";
+            default:
+                throw new UnsupportedOperationException("Unknown action: " + action);
+        }
+    }
+
+    private void parseParams(String queryString, Map<String, String> params) {
+        if (queryString == null || queryString.isEmpty()) {
+            return;
+        }
+
+        for (String pair : queryString.split("&")) {
+            String[] keyValue = pair.split("=", 2);
+            if (keyValue.length == 2) {
+                params.put(keyValue[0], keyValue[1]);
+            }
+        }
+    }
+
+    // Configuration methods for setting responses
+    public void setConnectResponse(String response) {
+        this.connectResponse = response;
+    }
+
+    public void setDisconnectResponse(String response) {
+        this.disconnectResponse = response;
+    }
+
+    public void setWorkItemsResponse(String response) {
+        this.workItemsResponse = response;
+    }
+
+    public void setWorkItemResponse(String workItemId, String response) {
+        this.workItemResponses.put(workItemId, response);
+    }
+
+    public void setExpiryTimeResponse(String workItemId, String response) {
+        this.expiryTimeResponses.put(workItemId, response);
+    }
+
+    public void setWorkItemsForCaseResponse(String caseId, String response) {
+        this.caseResponses.put(caseId, response);
+    }
+
+    public void setWorkItemsForSpecificationResponse(String specName, String response) {
+        this.specResponses.put(specName, response);
+    }
+
+    public void setWorkItemsForTaskResponse(String taskId, String response) {
+        this.taskResponses.put(taskId, response);
+    }
+
+    public HttpRequestRecord getRecordedRequest() {
+        return lastRequest;
     }
 }

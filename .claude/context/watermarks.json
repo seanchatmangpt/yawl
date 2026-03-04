@@ -11,7 +11,7 @@
     {
       "name": "maven-central-owlrl",
       "url": "https://search.maven.org/solrsearch/select?q=g:net.sourceforge.owlapi+a:owlapi-distribution&rows=1",
-      "fetched_at": "2026-03-04T07:05:04.410448Z",
+      "fetched_at": "2026-03-04T19:13:47.063246Z",
       "content_hash": "5617ac62cf1a7ac81dc9883821630c4e4ee0e2c0d39a0d17bfb1da43d93769db",
       "ttl_hours": 12
     },
