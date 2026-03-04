@@ -1,0 +1,81 @@
+{
+  "version": "1.0",
+  "session_id": "session_unknown",
+  "session_start_time": "2026-03-04T05:44:20Z",
+  "phases": {
+    "ψ": {
+      "name": "Observatory",
+      "status": "PENDING",
+      "timestamp": null,
+      "duration_ms": null,
+      "facts": {
+        "modules": 0,
+        "deps_conflicts": 0,
+        "pom_hash": null,
+        "last_stale_check": null
+      },
+      "next_phase": "λ",
+      "exit_code": null
+    },
+    "λ": {
+      "name": "Build (Compile + Test)",
+      "status": "PENDING",
+      "timestamp": null,
+      "duration_ms": null,
+      "metrics": {
+        "modules_compiled": 0,
+        "tests_run": 0,
+        "tests_passed": 0,
+        "tests_failed": 0,
+        "build_warnings": 0
+      },
+      "next_phase": "h",
+      "exit_code": null
+    },
+    "h": {
+      "name": "Guards (Hyper-Standards)",
+      "status": "GREEN",
+      "timestamp": "2026-03-04T05:53:49Z",
+      "duration_ms": null,
+      "violations": {
+        "h_todo": 0,
+        "h_mock": 0,
+        "h_mock_class": 0,
+        "h_silent": 0,
+        "total": 0
+      },
+      "violations_file": ".claude/receipts/guard-receipt.json",
+      "next_phase": "q",
+      "exit_code": 0,
+      "error": null
+    },
+    "q": {
+      "name": "Invariants",
+      "status": "PENDING",
+      "timestamp": null,
+      "duration_ms": null,
+      "violations": {
+        "q1": 0,
+        "q2": 0,
+        "q3": 0,
+        "q4": 0,
+        "total": 0
+      },
+      "violations_file": ".claude/receipts/invariant-receipt.json",
+      "next_phase": "ω",
+      "exit_code": null,
+      "error": null,
+      "reason": null
+    },
+    "ω": {
+      "name": "Git (Manual)",
+      "status": "PENDING",
+      "timestamp": null,
+      "next_phase": null,
+      "exit_code": null
+    }
+  },
+  "audit_trail": ".claude/state/audit.jsonl",
+  "background_tasks": ".claude/state/tasks.json",
+  "last_update": "2026-03-04T05:53:49Z"
+}
