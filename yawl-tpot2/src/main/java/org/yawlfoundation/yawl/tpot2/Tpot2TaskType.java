@@ -16,10 +16,10 @@
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yawlfoundation.yawl.pi.automl;
+package org.yawlfoundation.yawl.tpot2;
 
 /**
- * Process mining use cases that TPOT2 AutoML can optimise.
+ * Process mining and AutoML use cases that TPOT2 can optimise.
  *
  * <p>Each value determines which sklearn estimator family the Python runner selects:
  * classification ({@link #CASE_OUTCOME}, {@link #NEXT_ACTIVITY}, {@link #ANOMALY_DETECTION})

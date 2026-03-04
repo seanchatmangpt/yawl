@@ -16,7 +16,7 @@
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yawlfoundation.yawl.pi.automl;
+package org.yawlfoundation.yawl.tpot2;
 
 /**
  * Immutable configuration for a TPOT2 AutoML training run.

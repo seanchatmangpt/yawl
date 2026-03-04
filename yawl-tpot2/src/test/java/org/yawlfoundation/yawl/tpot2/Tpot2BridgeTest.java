@@ -16,13 +16,11 @@
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yawlfoundation.yawl.pi.automl;
+package org.yawlfoundation.yawl.tpot2;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.yawlfoundation.yawl.pi.PIException;
-import org.yawlfoundation.yawl.pi.predictive.TrainingDataset;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -272,38 +270,38 @@ public class Tpot2BridgeTest {
     // ── error handling ────────────────────────────────────────────────────────
 
     @Test
-    public void testFitThrowsPIExceptionWhenOnnxFileMissing() {
-        PIException ex = assertThrows(PIException.class, () -> {
+    public void testFitThrowsTpot2ExceptionWhenOnnxFileMissing() {
+        Tpot2Exception ex = assertThrows(Tpot2Exception.class, () -> {
             try (Tpot2Bridge bridge = new Tpot2Bridge(tempDir, noOnnxScriptPath)) {
                 bridge.fit(buildTestDataset(), Tpot2Config.defaults(Tpot2TaskType.CASE_OUTCOME));
             }
         });
-        assertEquals("automl", ex.getConnection());
+        assertEquals("automl", ex.getOperation());
         assertTrue(ex.getMessage().contains("ONNX output"),
             "exception message must mention ONNX output");
     }
 
     @Test
-    public void testFitThrowsPIExceptionOnNonZeroExit() {
-        PIException ex = assertThrows(PIException.class, () -> {
+    public void testFitThrowsTpot2ExceptionOnNonZeroExit() {
+        Tpot2Exception ex = assertThrows(Tpot2Exception.class, () -> {
             try (Tpot2Bridge bridge = new Tpot2Bridge(tempDir, missingTpot2ScriptPath)) {
                 bridge.fit(buildTestDataset(), Tpot2Config.defaults(Tpot2TaskType.CASE_OUTCOME));
             }
         });
-        assertEquals("automl", ex.getConnection());
+        assertEquals("automl", ex.getOperation());
     }
 
     @Test
-    public void testFitThrowsPIExceptionWhenPythonNotFound() {
+    public void testFitThrowsTpot2ExceptionWhenPythonNotFound() {
         Tpot2Config config = new Tpot2Config(
             Tpot2TaskType.CASE_OUTCOME, 5, 50, 60, 5, null, -1, "python_does_not_exist_xyz");
 
-        PIException ex = assertThrows(PIException.class, () -> {
+        Tpot2Exception ex = assertThrows(Tpot2Exception.class, () -> {
             try (Tpot2Bridge bridge = new Tpot2Bridge(tempDir, simulatorScriptPath)) {
                 bridge.fit(buildTestDataset(), config);
             }
         });
-        assertEquals("automl", ex.getConnection());
+        assertEquals("automl", ex.getOperation());
     }
 
     // ── null guards ───────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yawlfoundation.yawl.pi.automl;
+package org.yawlfoundation.yawl.tpot2;
 
 import org.junit.jupiter.api.Test;
 

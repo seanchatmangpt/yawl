@@ -16,14 +16,12 @@
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yawlfoundation.yawl.pi.automl;
+package org.yawlfoundation.yawl.tpot2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.yawlfoundation.yawl.pi.PIException;
-import org.yawlfoundation.yawl.pi.predictive.TrainingDataset;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -53,7 +51,7 @@ import java.util.stream.Stream;
  * </ol>
  *
  * <p><b>Error handling</b>: if Python is not on PATH or tpot2/skl2onnx are not
- * installed, a {@link PIException} with connection {@code "automl"} is thrown.
+ * installed, a {@link Tpot2Exception} with operation {@code "automl"} is thrown.
  * Non-zero subprocess exit codes are treated as fatal errors.
  *
  * <p><b>Thread safety</b>: each {@link #fit} call is independent and creates
@@ -80,10 +78,10 @@ public final class Tpot2Bridge implements AutoCloseable {
     /**
      * Constructs a bridge, extracting {@code tpot2_runner.py} from the classpath to a temp dir.
      *
-     * @throws PIException if the Python script cannot be found on the classpath or
+     * @throws Tpot2Exception if the Python script cannot be found on the classpath or
      *                     if the temp directory cannot be created
      */
-    public Tpot2Bridge() throws PIException {
+    public Tpot2Bridge() throws Tpot2Exception {
         try {
             this.bridgeTempDir = Files.createTempDirectory("yawl-tpot2-");
             this.runnerScript = bridgeTempDir.resolve("tpot2_runner.py");
@@ -91,7 +89,7 @@ public final class Tpot2Bridge implements AutoCloseable {
             extractRunner(runnerScript);
             log.info("Tpot2Bridge initialised at {}", bridgeTempDir);
         } catch (IOException e) {
-            throw new PIException("Failed to initialise Tpot2Bridge temp dir", "automl", e);
+            throw new Tpot2Exception("Failed to initialise Tpot2Bridge temp dir", "automl", e);
         }
     }
 
@@ -114,11 +112,11 @@ public final class Tpot2Bridge implements AutoCloseable {
      * @param dataset training data with feature vectors and labels
      * @param config  TPOT2 run configuration
      * @return result containing the best pipeline's ONNX bytes, score, and description
-     * @throws PIException if Python is unavailable, tpot2/skl2onnx is not installed,
+     * @throws Tpot2Exception if Python is unavailable, tpot2/skl2onnx is not installed,
      *                     the subprocess exits non-zero, or the ONNX output file is missing
      * @throws NullPointerException if dataset or config is null
      */
-    public Tpot2Result fit(TrainingDataset dataset, Tpot2Config config) throws PIException {
+    public Tpot2Result fit(TrainingDataset dataset, Tpot2Config config) throws Tpot2Exception {
         if (dataset == null) throw new NullPointerException("dataset is required");
         if (config == null) throw new NullPointerException("config is required");
 
@@ -140,7 +138,7 @@ public final class Tpot2Bridge implements AutoCloseable {
             long totalTimeMs = System.currentTimeMillis() - startMs;
 
             if (!Files.exists(onnxPath)) {
-                throw new PIException(
+                throw new Tpot2Exception(
                     "TPOT2 runner did not produce ONNX output at: " + onnxPath
                     + " — check that tpot2 and skl2onnx are installed", "automl");
             }
@@ -158,7 +156,7 @@ public final class Tpot2Bridge implements AutoCloseable {
                 config.taskType(), bestScore, pipelineDescription, onnxBytes, totalTimeMs);
 
         } catch (IOException e) {
-            throw new PIException("IO failure during TPOT2 fit", "automl", e);
+            throw new Tpot2Exception("IO failure during TPOT2 fit", "automl", e);
         } finally {
             deleteTempDir(runDir);
         }
@@ -182,7 +180,7 @@ public final class Tpot2Bridge implements AutoCloseable {
             if (is == null) {
                 throw new IOException(
                     "tpot2_runner.py not found on classpath: " + RUNNER_RESOURCE
-                    + " — ensure yawl-pi JAR was built with resources included");
+                    + " — ensure yawl-tpot2 JAR was built with resources included");
             }
             Files.write(target, is.readAllBytes());
         }
@@ -226,7 +224,7 @@ public final class Tpot2Bridge implements AutoCloseable {
 
     private String runSubprocess(String pythonExecutable, Path csvPath,
                                   Path configPath, Path onnxPath,
-                                  long timeoutMins) throws PIException {
+                                  long timeoutMins) throws Tpot2Exception {
         List<String> command = List.of(
             pythonExecutable,
             runnerScript.toString(),
@@ -254,7 +252,7 @@ public final class Tpot2Bridge implements AutoCloseable {
             boolean finished = process.waitFor(timeoutMins, TimeUnit.MINUTES);
             if (!finished) {
                 process.destroyForcibly();
-                throw new PIException(
+                throw new Tpot2Exception(
                     "TPOT2 subprocess timed out after " + timeoutMins + " minutes", "automl");
             }
 
@@ -271,7 +269,7 @@ public final class Tpot2Bridge implements AutoCloseable {
 
             String jsonLine = extractLastJsonLine(stdoutContent);
             if (jsonLine == null || jsonLine.isBlank()) {
-                throw new PIException(
+                throw new Tpot2Exception(
                     "TPOT2 runner produced no JSON metrics on stdout. stdout=["
                     + stdoutContent.substring(0, Math.min(500, stdoutContent.length())) + "]",
                     "automl");
@@ -281,15 +279,15 @@ public final class Tpot2Bridge implements AutoCloseable {
         } catch (IOException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "";
             if (msg.contains("No such file") || msg.contains("error=2")) {
-                throw new PIException(
+                throw new Tpot2Exception(
                     "Python executable not found: '" + pythonExecutable
                     + "'. Ensure Python 3.9+ is on PATH or set pythonExecutable in Tpot2Config.",
                     "automl", e);
             }
-            throw new PIException("Failed to launch TPOT2 subprocess", "automl", e);
+            throw new Tpot2Exception("Failed to launch TPOT2 subprocess", "automl", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new PIException("TPOT2 subprocess was interrupted", "automl", e);
+            throw new Tpot2Exception("TPOT2 subprocess was interrupted", "automl", e);
         }
     }
 
@@ -310,24 +308,24 @@ public final class Tpot2Bridge implements AutoCloseable {
     }
 
     private static String handleNonZeroExit(int exitCode, String pythonExecutable,
-                                             String stderrContent) throws PIException {
+                                             String stderrContent) throws Tpot2Exception {
         if (stderrContent.contains("No module named 'tpot")
                 || stderrContent.contains("tpot2 not installed")) {
-            throw new PIException(
+            throw new Tpot2Exception(
                 "tpot2 Python library is not installed. "
                 + "Install with: pip install tpot2 skl2onnx", "automl");
         }
         if (stderrContent.contains("No module named 'skl2onnx'")) {
-            throw new PIException(
+            throw new Tpot2Exception(
                 "skl2onnx Python library is not installed. "
                 + "Install with: pip install skl2onnx", "automl");
         }
         if (exitCode == 127 || stderrContent.contains("command not found")) {
-            throw new PIException(
+            throw new Tpot2Exception(
                 "Python executable not found: '" + pythonExecutable
                 + "'. Ensure Python 3.9+ is on PATH.", "automl");
         }
-        throw new PIException(
+        throw new Tpot2Exception(
             "TPOT2 subprocess failed (exit=" + exitCode + "): "
             + stderrContent.substring(0, Math.min(1000, stderrContent.length())),
             "automl");

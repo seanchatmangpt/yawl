@@ -32,7 +32,7 @@ import org.yawlfoundation.yawl.engine.announcement.YAnnouncement;
 import org.yawlfoundation.yawl.integration.adaptation.EventSeverity;
 import org.yawlfoundation.yawl.integration.adaptation.ProcessEvent;
 import org.yawlfoundation.yawl.pi.PIException;
-import org.yawlfoundation.yawl.pi.automl.Tpot2TaskType;
+import org.yawlfoundation.yawl.tpot2.Tpot2TaskType;
 import org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry;
 
 import java.time.Instant;

@@ -25,7 +25,11 @@ import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.pi.PIException;
 import org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry;
 import org.yawlfoundation.yawl.pi.predictive.ProcessMiningTrainingDataExtractor;
-import org.yawlfoundation.yawl.pi.predictive.TrainingDataset;
+import org.yawlfoundation.yawl.tpot2.Tpot2Bridge;
+import org.yawlfoundation.yawl.tpot2.Tpot2Config;
+import org.yawlfoundation.yawl.tpot2.Tpot2Result;
+import org.yawlfoundation.yawl.tpot2.Tpot2TaskType;
+import org.yawlfoundation.yawl.tpot2.TrainingDataset;
 
 import java.io.IOException;
 import java.nio.file.Files;

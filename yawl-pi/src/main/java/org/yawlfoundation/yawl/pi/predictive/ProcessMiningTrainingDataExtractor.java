@@ -21,6 +21,7 @@ package org.yawlfoundation.yawl.pi.predictive;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore;
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
+import org.yawlfoundation.yawl.tpot2.TrainingDataset;
 
 import java.util.ArrayList;
 import java.util.Comparator;

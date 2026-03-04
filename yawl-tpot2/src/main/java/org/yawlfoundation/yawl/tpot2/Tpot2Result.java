@@ -16,15 +16,14 @@
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.yawlfoundation.yawl.pi.automl;
+package org.yawlfoundation.yawl.tpot2;
 
 /**
  * Immutable result of a TPOT2 AutoML training run.
  *
  * <p>Contains the best pipeline's cross-validated score, a human-readable
  * description of the pipeline structure, the serialised ONNX model bytes for
- * registration with {@link org.yawlfoundation.yawl.pi.predictive.PredictiveModelRegistry},
- * and timing information.
+ * deployment, and timing information.
  *
  * @param taskType            the process mining use case that was optimised
  * @param bestScore           cross-validated score of the best pipeline (interpretation
