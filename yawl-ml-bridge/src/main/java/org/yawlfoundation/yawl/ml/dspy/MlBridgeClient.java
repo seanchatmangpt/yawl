@@ -226,35 +226,39 @@ public final class MlBridgeClient implements AutoCloseable {
     }
 
     private Object fromErlang(OtpErlangObject obj) {
-        if (obj instanceof OtpErlangString s) {
-            return s.stringValue();
-        } else if (obj instanceof OtpErlangInt i) {
-            return i.intValue();
-        } else if (obj instanceof OtpErlangLong l) {
-            return l.longValue();
-        } else if (obj instanceof OtpErlangDouble d) {
-            return d.doubleValue();
-        } else if (obj instanceof OtpErlangAtom a) {
-            return a.atomValue();
-        } else if (obj instanceof OtpErlangList list) {
-            List<Object> result = new ArrayList<>();
-            for (OtpErlangObject elem : list.elements()) {
-                result.add(fromErlang(elem));
-            }
-            return result;
-        } else if (obj instanceof OtpErlangTuple tuple) {
-            Map<String, Object> result = new HashMap<>();
-            for (int i = 0; i < tuple.arity(); i++) {
-                OtpErlangObject elem = tuple.elementAt(i);
-                if (elem instanceof OtpErlangTuple kv && kv.arity() == 2) {
-                    String key = kv.elementAt(0).toString();
-                    Object value = fromErlang(kv.elementAt(1));
-                    result.put(key, value);
+        try {
+            if (obj instanceof OtpErlangString s) {
+                return s.stringValue();
+            } else if (obj instanceof OtpErlangInt i) {
+                return i.intValue();
+            } else if (obj instanceof OtpErlangLong l) {
+                return l.longValue();
+            } else if (obj instanceof OtpErlangDouble d) {
+                return d.doubleValue();
+            } else if (obj instanceof OtpErlangAtom a) {
+                return a.atomValue();
+            } else if (obj instanceof OtpErlangList list) {
+                List<Object> result = new ArrayList<>();
+                for (OtpErlangObject elem : list.elements()) {
+                    result.add(fromErlang(elem));
                 }
+                return result;
+            } else if (obj instanceof OtpErlangTuple tuple) {
+                Map<String, Object> result = new HashMap<>();
+                for (int i = 0; i < tuple.arity(); i++) {
+                    OtpErlangObject elem = tuple.elementAt(i);
+                    if (elem instanceof OtpErlangTuple kv && kv.arity() == 2) {
+                        String key = kv.elementAt(0).toString();
+                        Object value = fromErlang(kv.elementAt(1));
+                        result.put(key, value);
+                    }
+                }
+                return result;
             }
-            return result;
+            return obj.toString();
+        } catch (OtpErlangRangeException e) {
+            return obj.toString();
         }
-        return obj.toString();
     }
 
     @Override

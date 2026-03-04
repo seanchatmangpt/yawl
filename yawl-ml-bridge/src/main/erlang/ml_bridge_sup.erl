@@ -53,6 +53,15 @@ init([_Options]) ->
     },
 
     ChildSpecs = [
+        % NIF Loader (must start first)
+        #{
+            id => yawl_ml_bridge,
+            start => {yawl_ml_bridge, start_link, []},
+            restart => permanent,
+            shutdown => 5000,
+            type => worker,
+            modules => [yawl_ml_bridge]
+        },
         % DSPy Bridge
         #{
             id => dspy_bridge,

@@ -74,6 +74,7 @@
         <module>yawl-ggen</module>
         <module>yawl-tpot2</module>
         <module>yawl-dspy</module>
+        <module>yawl-ml-bridge</module>
         <!-- Disabled - legacy polyglot execution (2026-03-03)
         <module>yawl-graalwasm</module>
         -->
@@ -232,6 +233,9 @@
 
         <!-- GraalVM Polyglot / GraalPy                                         -->
         <graalvm.version>24.1.2</graalvm.version>
+
+        <!-- Erlang JInterface                                                  -->
+        <jinterface.version>1.14</jinterface.version>
 
         <!-- Misc runtime support                                               -->
         <jspecify.version>1.0.0</jspecify.version>
@@ -567,6 +571,18 @@
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-erlang</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-ml-bridge</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Erlang JInterface for Java-Erlang communication -->
+            <dependency>
+                <groupId>com.ericsson.otp.erlang</groupId>
+                <artifactId>jinterface</artifactId>
+                <version>${jinterface.version}</version>
             </dependency>
 
             <!-- Apache Commons (not fully covered by Spring Boot BOM) -->

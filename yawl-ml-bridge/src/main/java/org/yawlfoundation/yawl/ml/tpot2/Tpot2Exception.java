@@ -7,7 +7,7 @@ package org.yawlfoundation.yawl.ml.tpot2;
 /**
  * Exception thrown when TPOT2 operations fail.
  */
-public final class Tpot2Exception extends Exception {
+public final class Tpot2Exception extends RuntimeException {
 
     private final String errorCode;
 

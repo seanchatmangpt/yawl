@@ -1,5 +1,5 @@
 [package]
-name = "yawl-ml-bridge"
+name = "yawl_ml_bridge"
 version = "0.1.0"
 edition = "2021"
 description = "YAWL ML Bridge - Erlang NIF for DSPy and TPOT2 via PyO3"

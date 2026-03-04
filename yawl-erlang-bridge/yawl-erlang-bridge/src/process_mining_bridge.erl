@@ -123,7 +123,7 @@
 -on_load(init_nif/0).
 
 -define(SERVER, ?MODULE).
--define(NIF_LIB, "libyawl_process_mining").
+-define(NIF_LIB, "process_mining_bridge").
 
 -record(state, {
     registry :: map()
@@ -137,6 +137,7 @@
 %% @doc Load the NIF library on module load.
 %% Falls back to Erlang implementations if NIF not available.
 -spec init_nif() -> ok.
+-export([init_nif/0]).
 init_nif() ->
     PrivDir = case code:priv_dir(?MODULE) of
         {error, _} ->
@@ -339,77 +340,17 @@ echo_json(Json) ->
 export_pnml_nif(Handle) ->
     erlang:nif_error(nif_not_loaded).
 
-%% @private
-%% @doc Direct NIF call to get event log stats (for internal use)
--spec event_log_stats_nif(reference()) -> {ok, map()} | {error, term()}.
-event_log_stats_nif(Handle) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to import PNML (for internal use)
--spec import_pnml_nif(string()) -> {ok, reference()} | {error, term()}.
-import_pnml_nif(Path) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to run token replay (for internal use)
--spec token_replay_nif(reference(), reference()) -> {ok, map()} | {error, term()}.
-token_replay_nif(LogHandle, NetHandle) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to calculate performance metrics (for internal use)
--spec calculate_performance_metrics_nif(reference()) -> {ok, map()} | {error, term()}.
-calculate_performance_metrics_nif(Handle) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to get activity frequency (for internal use)
--spec get_activity_frequency_nif(reference()) -> {ok, binary()} | {error, term()}.
-get_activity_frequency_nif(Handle) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to import OCEL SQLite (for internal use)
--spec import_ocel_sqlite_nif(string()) -> {ok, reference()} | {error, term()}.
-import_ocel_sqlite_nif(Path) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to import PNML (for internal use)
--spec import_pnml_nif(string()) -> {ok, reference()} | {error, term()}.
-import_pnml_nif(Path) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to run token replay (for internal use)
--spec token_replay_nif(reference(), reference()) -> {ok, map()} | {error, term()}.
-token_replay_nif(LogHandle, NetHandle) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to calculate performance metrics (for internal use)
--spec calculate_performance_metrics_nif(reference()) -> {ok, map()} | {error, term()}.
-calculate_performance_metrics_nif(Handle) ->
-    erlang:nif_error(nif_not_loaded).
-
-%% @private
-%% @doc Direct NIF call to find longest traces (for internal use)
--spec find_longest_traces_nif(reference(), integer()) -> {ok, binary()} | {error, term()}.
-find_longest_traces_nif(Handle, TopN) ->
-    erlang:nif_error(nif_not_loaded).
+%% @doc Discover a Directly-Follows Graph from an event log.
+%% Returns {ok, DfgJson} where DfgJson is a JSON string.
+-spec discover_dfg(reference()) -> {ok, binary()} | {error, term()}.
+discover_dfg(Handle) ->
+    discover_dfg_nif(Handle).
 
 %% @private
 %% @doc Direct NIF call to discover Alpha++ (for internal use)
 -spec discover_alpha_nif(reference()) -> {ok, #{handle => reference(), pnml => binary()}} | {error, term()}.
 discover_alpha_nif(Handle) ->
     erlang:nif_error(nif_not_loaded).
-
-%% @doc Discover a Directly-Follows Graph from an event log.
-%% Returns {ok, DfgJson} where DfgJson is a JSON string.
--spec discover_dfg(reference()) -> {ok, binary()} | {error, term()}.
-discover_dfg(Handle) ->
-    discover_dfg_nif(Handle).
 
 %% @doc Discover a Petri net using Alpha+++ algorithm.
 %% Returns {ok, #{handle => NetHandle, pnml => PnmlXml}}.
@@ -449,6 +390,18 @@ token_replay(LogHandle, NetHandle) ->
 -spec event_log_stats(reference()) -> {ok, map()} | {error, term()}.
 event_log_stats(Handle) ->
     event_log_stats_nif(Handle).
+
+%% @private
+%% @doc Direct NIF call to get event log stats (for internal use)
+-spec event_log_stats_nif(reference()) -> {ok, map()} | {error, term()}.
+event_log_stats_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to get activity frequency (for internal use)
+-spec get_activity_frequency_nif(reference()) -> {ok, binary()} | {error, term()}.
+get_activity_frequency_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
 
 %% @doc Free a resource handle (no-op, automatic GC via ResourceArc).
 -spec free_handle(reference()) -> ok.

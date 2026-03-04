@@ -7,7 +7,7 @@ package org.yawlfoundation.yawl.ml.dspy;
 /**
  * Exception thrown when DSPy operations fail.
  */
-public final class DspyException extends Exception {
+public final class DspyException extends RuntimeException {
 
     private final String errorCode;
 

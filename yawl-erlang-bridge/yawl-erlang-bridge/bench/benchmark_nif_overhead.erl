@@ -68,19 +68,19 @@ start(Iterations) ->
 %%====================================================================
 
 empty_call() ->
-    error(nif_not_loaded).
+    process_mining_bridge:nop().
 
-int_passthrough(_N) ->
-    error(nif_not_loaded).
+int_passthrough(N) ->
+    process_mining_bridge:int_passthrough(N).
 
-atom_passthrough(_Atom) ->
-    error(nif_not_loaded).
+atom_passthrough(Atom) ->
+    process_mining_bridge:atom_passthrough(Atom).
 
-small_list_passthrough(_List) ->
-    error(nif_not_loaded).
+small_list_passthrough(List) ->
+    process_mining_bridge:small_list_passthrough(List).
 
-tuple_passthrough(_Tuple) ->
-    error(nif_not_loaded).
+tuple_passthrough(Tuple) ->
+    process_mining_bridge:tuple_passthrough(Tuple).
 
 %%====================================================================
 %% Benchmark Functions

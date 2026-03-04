@@ -1,15 +1,11 @@
 %%%-------------------------------------------------------------------
-%%% @doc DSPy Bridge - Erlang NIF interface to Python DSPy library
+%%% @doc DSPy Bridge - Erlang interface to Python DSPy library
 %%%
 %%% Provides fault-tolerant access to DSPy (dspy==3.1.3) for LLM
-%%% optimization via Rust NIF with PyO3.
+%%% optimization via yawl_ml_bridge NIF.
 %%%
 %%% == Architecture ==
-%%% Java → Erlang → NIF → Rust → PyO3 → Python (dspy)
-%%%
-%%% == Usage ==
-%%%   {ok, _} = dspy_bridge:start_link(),
-%%%   {ok, Result} = dspy_bridge:predict(Signature, Inputs).
+%%% Java -> Erlang -> yawl_ml_bridge (NIF) -> Rust -> PyO3 -> Python (dspy)
 %%%
 %%% @end
 %%%-------------------------------------------------------------------
@@ -31,74 +27,15 @@
 ]).
 
 %% gen_server callbacks
--export([
-    init/1,
-    handle_call/3,
-    handle_cast/2,
-    handle_info/2,
-    terminate/2,
-    code_change/3
-]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE).
--define(NIF_LIB, "yawl_ml_bridge").
+-define(TIMEOUT, 60000).
 
 -record(state, {
     config :: map(),
     examples :: list()
 }).
-
-%%%===================================================================
-%%% NIF Loading
-%%%===================================================================
-
--on_load(init_nif/0).
-
-init_nif() ->
-    PrivDir = case code:priv_dir(?MODULE) of
-        {error, _} ->
-            AppDir = filename:dirname(filename:dirname(code:which(?MODULE))),
-            filename:join(AppDir, "priv");
-        Dir ->
-            Dir
-    end,
-    NifPath = filename:join(PrivDir, ?NIF_LIB),
-    case erlang:load_nif(NifPath, 0) of
-        ok ->
-            ok;
-        {error, {load_failed, Reason}} ->
-            logger:warning("DSPy NIF load failed: ~p, using fallbacks", [Reason]),
-            ok;
-        {error, {reload, _}} ->
-            ok;
-        {error, Reason} ->
-            logger:warning("DSPy NIF load error: ~p, using fallbacks", [Reason]),
-            ok
-    end.
-
-%%%===================================================================
-%%% NIF Stubs - Loaded from Rust
-%%%===================================================================
-
--spec dspy_init(binary()) -> {ok, atom()} | {error, term()}.
-dspy_init(_ConfigJson) ->
-    erlang:nif_error(nif_not_loaded).
-
--spec dspy_predict(binary(), binary(), binary() | none) -> {ok, binary()} | {error, term()}.
-dspy_predict(_SignatureJson, _InputsJson, _ExamplesJson) ->
-    erlang:nif_error(nif_not_loaded).
-
--spec dspy_load_examples(binary()) -> {ok, integer()} | {error, term()}.
-dspy_load_examples(_ExamplesJson) ->
-    erlang:nif_error(nif_not_loaded).
-
--spec ml_bridge_status() -> {ok, binary()} | {error, term()}.
-ml_bridge_status() ->
-    erlang:nif_error(nif_not_loaded).
-
--spec ping() -> {ok, binary()} | {error, term()}.
-ping() ->
-    erlang:nif_error(nif_not_loaded).
 
 %%%===================================================================
 %%% API
@@ -118,20 +55,7 @@ predict(Signature, Inputs) ->
 %% @doc Predict with few-shot examples
 -spec predict(map(), map(), list()) -> {ok, map()} | {error, term()}.
 predict(Signature, Inputs, Examples) ->
-    SignatureJson = jsx:encode(Signature),
-    InputsJson = jsx:encode(Inputs),
-    ExamplesJson = case Examples of
-        [] -> <<"none">>;
-        _ -> jsx:encode(Examples)
-    end,
-
-    case dspy_predict(SignatureJson, InputsJson, ExamplesJson) of
-        {ok, ResultJson} ->
-            Result = jsx:decode(ResultJson, [return_maps]),
-            {ok, Result};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    gen_server:call(?SERVER, {predict, Signature, Inputs, Examples}, ?TIMEOUT).
 
 %% @doc Configure DSPy with custom config
 -spec configure(map()) -> ok | {error, term()}.
@@ -161,13 +85,7 @@ load_examples(Examples) ->
 %% @doc Get bridge status
 -spec status() -> {ok, map()} | {error, term()}.
 status() ->
-    case ml_bridge_status() of
-        {ok, StatusJson} ->
-            Status = jsx:decode(StatusJson, [return_maps]),
-            {ok, Status};
-        {error, Reason} ->
-            {error, Reason}
-    end.
+    yawl_ml_bridge:status().
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -181,28 +99,34 @@ init([]) ->
     {ok, State}.
 
 handle_call({configure, Config}, _From, State) ->
-    ConfigJson = jsx:encode(Config),
-    case dspy_init(ConfigJson) of
+    ConfigJson = iolist_to_binary(json:encode(Config)),
+    case yawl_ml_bridge:dspy_init(ConfigJson) of
         {ok, _} ->
             {reply, ok, State#state{config = Config}};
         {error, Reason} ->
             {reply, {error, Reason}, State}
     end;
 
-handle_call({load_examples, Examples}, _From, State) ->
-    ExamplesJson = jsx:encode(Examples),
-    case dspy_load_examples(ExamplesJson) of
-        {ok, _Count} ->
-            {reply, ok, State#state{examples = Examples}};
+handle_call({predict, Signature, Inputs, Examples}, _From, State) ->
+    SigJson = iolist_to_binary(json:encode(Signature)),
+    InJson = iolist_to_binary(json:encode(Inputs)),
+    ExJson = case Examples of
+        [] -> <<"none">>;
+        _ -> iolist_to_binary(json:encode(Examples))
+    end,
+    case yawl_ml_bridge:dspy_predict(SigJson, InJson, ExJson) of
+        {ok, ResultJson} ->
+            Result = json:decode(ResultJson),
+            {reply, {ok, Result}, State};
         {error, Reason} ->
             {reply, {error, Reason}, State}
     end;
 
-handle_call(status, _From, State) ->
-    case ml_bridge_status() of
-        {ok, StatusJson} ->
-            Status = jsx:decode(StatusJson, [return_maps]),
-            {reply, {ok, Status}, State};
+handle_call({load_examples, Examples}, _From, State) ->
+    ExJson = iolist_to_binary(json:encode(Examples)),
+    case yawl_ml_bridge:dspy_load_examples(ExJson) of
+        {ok, _Count} ->
+            {reply, ok, State#state{examples = Examples}};
         {error, Reason} ->
             {reply, {error, Reason}, State}
     end;
@@ -221,7 +145,3 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
-%%%===================================================================
-%%% Internal Functions
-%%%===================================================================
