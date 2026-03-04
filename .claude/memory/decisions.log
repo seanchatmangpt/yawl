@@ -1,0 +1,5 @@
+{"decision_id":"decision-1772655132","timestamp":"2026-03-04T20:12:12Z","rule_set":"agent_selection","decision":"yawl-engineer","confidence":0.70,"reasoning":"Matched keyword: (default)"}
+{"decision_id":"decision-1772655132","timestamp":"2026-03-04T20:12:12Z","rule_set":"violation_remediation","decision":"remove_comment","confidence":1.0,"reasoning":"Pattern: H_TODO in WorkflowEngine.java:127"}
+{"decision_id":"decision-1772655132","timestamp":"2026-03-04T20:12:12Z","rule_set":"loop_continuation","decision":"continue","confidence":0.85,"reasoning":"Iteration 5/50, no completion promise yet"}
+{"decision_id":"decision-1772655959","timestamp":"2026-03-04T20:25:59Z","rule_set":"agent_selection","decision":"yawl-engineer","confidence":0.70,"reasoning":"Matched keyword: (default)"}
+{"decision_id":"decision-1772655963","timestamp":"2026-03-04T20:26:03Z","rule_set":"violation_remediation","decision":"remove_comment","confidence":1.0,"reasoning":"Pattern: H_TODO in Test.java:42"}
