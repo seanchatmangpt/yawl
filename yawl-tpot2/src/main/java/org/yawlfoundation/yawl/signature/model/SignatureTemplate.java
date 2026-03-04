@@ -16,11 +16,14 @@
 
 package org.yawlfoundation.yawl.signature.model;
 
+import org.yawlfoundation.yawl.signature.compiler.SignatureCompiler;
+import org.yawlfoundation.yawl.signature.model.annotations.SigDef;
+
 /**
  * Marker interface for type-safe signature templates.
  *
- * <p>Extend this interface and use {@link annotations.SigDef},
- * {@link annotations.In}, and {@link annotations.Out} annotations
+ * <p>Extend this interface and use {@link SigDef},
+ * {@link In}, and {@link Out} annotations
  * to define signatures with compile-time type safety:
  *
  * {@snippet :
@@ -60,12 +63,12 @@ public interface SignatureTemplate {
     }
 
     /**
-     * Get the description from the {@link annotations.SigDef} annotation.
+     * Get the description from the {@link SigDef} annotation.
      *
      * @return description or empty string if not annotated
      */
     default String getDescription() {
-        annotations.SigDef def = this.getClass().getAnnotation(annotations.SigDef.class);
+        SigDef def = this.getClass().getAnnotation(SigDef.class);
         return def != null ? def.description() : "";
     }
 }

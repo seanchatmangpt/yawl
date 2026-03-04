@@ -1,0 +1,142 @@
+---
+# YAWL Workflow for Order Processing
+# Simple linear workflow for basic order fulfillment
+
+id: "order-processing-jtbd1"
+name: "Order Processing Workflow"
+version: "1.0"
+namespace: "yawl.tests.fixtures"
+
+# Process flow: Order → Payment → Stock → Shipping → Complete
+startTasks:
+  - "start_order"
+
+tasks:
+  "start_order":
+    name: "Create Order"
+    input: |
+      {
+        "customer_id": "@customer.id",
+        "order_items": "!!seq",
+        "total_amount": 0.0
+      }
+    output: |
+      {
+        "order_id": "@generated.uuid",
+        "created_at": "@timestamp",
+        "status": "pending"
+      }
+    next: "verify_payment"
+
+  "verify_payment":
+    name: "Verify Payment Method"
+    role: "payment_processor"
+    input: |
+      {
+        "order_id": "@order.id",
+        "payment_method": "@order.payment.method",
+        "amount": "@order.total_amount"
+      }
+    output: |
+      {
+        "payment_verified": true,
+        "payment_id": "@generated.uuid",
+        "verified_at": "@timestamp"
+      }
+    next: "check_stock"
+    exception:
+      condition: "payment_invalid"
+      next: "cancel_order"
+      handler: "payment_failed"
+
+  "check_stock":
+    name: "Check Inventory"
+    role: "inventory_system"
+    input: |
+      {
+        "order_id": "@order.id",
+        "items": "@order.items"
+      }
+    output: |
+      {
+        "stock_available": true,
+        "inventory_check_id": "@generated.uuid",
+        "checked_at": "@timestamp"
+      }
+    next: "ship_order"
+    exception:
+      condition: "out_of_stock"
+      next: "backorder"
+      handler: "stock_handler"
+
+  "ship_order":
+    name: "Ship Order"
+    role: "shipping_clerk"
+    input: |
+      {
+        "order_id": "@order.id",
+        "shipping_address": "@order.shipping_address",
+        "items": "@order.items"
+      }
+    output: |
+      {
+        "shipment_id": "@generated.uuid",
+        "shipped_at": "@timestamp",
+        "tracking_number": "@generated.tracking"
+      }
+    next: "complete_order"
+
+  "complete_order":
+    name: "Complete Order"
+    input: |
+      {
+        "order_id": "@order.id",
+        "final_status": "completed"
+      }
+    output: |
+      {
+        "completed_at": "@timestamp",
+        "order_id": "@order.id",
+        "final_status": "completed"
+      }
+    next: "end_order"
+
+  "cancel_order":
+    name: "Cancel Order"
+    input: |
+      {
+        "order_id": "@order.id",
+        "reason": "payment_failed"
+      }
+    output: |
+      {
+        "cancelled_at": "@timestamp",
+        "status": "cancelled"
+      }
+    next: "end_order"
+
+  "backorder":
+    name: "Process Backorder"
+    role: "inventory_system"
+    input: |
+      {
+        "order_id": "@order.id",
+        "backorder_items": "@order.out_of_stock_items"
+      }
+    output: |
+      {
+        "backorder_id": "@generated.uuid",
+        "estimated_ship_date": "@timestamp.plusDays(5)"
+      }
+    next: "ship_order"
+
+  "end_order":
+    name: "End Order"
+    output: |
+      {
+        "workflow_completed": true,
+        "completed_at": "@timestamp"
+      }
+
+endTasks:
+  - "end_order"

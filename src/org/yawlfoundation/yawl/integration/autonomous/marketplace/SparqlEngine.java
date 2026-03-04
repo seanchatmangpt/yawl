@@ -64,6 +64,15 @@ public interface SparqlEngine extends AutoCloseable {
      */
     String engineType();
 
+    /**
+     * Execute a SPARQL 1.1 UPDATE query (INSERT/DELETE/LOAD).
+     *
+     * @param updateQuery a valid SPARQL UPDATE query
+     * @throws SparqlEngineException on engine-level failure (query error, I/O)
+     * @throws SparqlEngineUnavailableException if the engine is not reachable
+     */
+    void sparqlUpdate(String updateQuery) throws SparqlEngineException;
+
     /** No-op by default; override to release resources if needed. */
     @Override
     default void close() {}

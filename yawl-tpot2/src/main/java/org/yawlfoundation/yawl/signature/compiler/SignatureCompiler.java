@@ -17,6 +17,7 @@
 package org.yawlfoundation.yawl.signature.compiler;
 
 import org.yawlfoundation.yawl.signature.model.*;
+import org.yawlfoundation.yawl.signature.model.annotations.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -27,8 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Compiles annotated interfaces into runtime Signatures.
  *
- * <p>Uses reflection to extract field metadata from {@link annotations.In},
- * {@link annotations.Out}, and {@link annotations.SigDef} annotations.
+ * <p>Uses reflection to extract field metadata from {@link In},
+ * {@link Out}, and {@link SigDef} annotations.
  * Results are cached for performance.
  *
  * @author YAWL Foundation
@@ -66,12 +67,12 @@ public final class SignatureCompiler {
         }
 
         // Extract description from @SigDef
-        annotations.SigDef sigDef = templateClass.getAnnotation(annotations.SigDef.class);
+        SigDef sigDef = templateClass.getAnnotation(SigDef.class);
         String description = sigDef != null ? sigDef.description() : templateClass.getSimpleName();
 
         // Extract input and output fields from methods
-        List<InputField> inputs = new ArrayList<>();
-        List<OutputField> outputs = new ArrayList<>();
+        List<Signature.InputField> inputs = new ArrayList<>();
+        List<Signature.OutputField> outputs = new ArrayList<>();
 
         for (Method method : templateClass.getMethods()) {
             // Skip Object methods
@@ -83,53 +84,19 @@ public final class SignatureCompiler {
             Class<?> fieldType = method.getReturnType();
 
             // Check for @In annotation
-            annotations.In inAnnotation = method.getAnnotation(annotations.In.class);
+            In inAnnotation = method.getAnnotation(In.class);
             if (inAnnotation != null) {
-                Class<?> type = inAnnotation.type() != String.class
-                    ? inAnnotation.type()
-                    : fieldType;
-                inputs.add(InputField.of(fieldName, inAnnotation.desc(), type));
+                inputs.add(new Signature.InputField(fieldName, inAnnotation.desc()));
                 continue;
             }
 
             // Check for @Out annotation
-            annotations.Out outAnnotation = method.getAnnotation(annotations.Out.class);
+            Out outAnnotation = method.getAnnotation(Out.class);
             if (outAnnotation != null) {
-                Class<?> type = outAnnotation.type() != String.class
-                    ? outAnnotation.type()
-                    : fieldType;
-                outputs.add(OutputField.of(fieldName, outAnnotation.desc(), type));
+                outputs.add(new Signature.OutputField(fieldName, outAnnotation.desc()));
             }
         }
 
-        // Validate
-        if (inputs.isEmpty()) {
-            throw new IllegalArgumentException(
-                "Signature must have at least one @In field: " + templateClass.getName());
-        }
-        if (outputs.isEmpty()) {
-            throw new IllegalArgumentException(
-                "Signature must have at least one @Out field: " + templateClass.getName());
-        }
-
-        return new Signature.Impl(description, List.copyOf(inputs), List.copyOf(outputs));
-    }
-
-    /**
-     * Check if a class is a valid signature template.
-     */
-    public static boolean isValidTemplate(Class<?> clazz) {
-        if (!clazz.isInterface()) return false;
-        if (clazz.getAnnotation(annotations.SigDef.class) == null) return false;
-
-        boolean hasIn = false;
-        boolean hasOut = false;
-
-        for (Method method : clazz.getMethods()) {
-            if (method.getAnnotation(annotations.In.class) != null) hasIn = true;
-            if (method.getAnnotation(annotations.Out.class) != null) hasOut = true;
-        }
-
-        return hasIn && hasOut;
+        return new Signature(description, inputs, outputs);
     }
 }

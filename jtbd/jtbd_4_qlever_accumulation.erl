@@ -201,8 +201,12 @@ init_qlever_client() ->
                 {error, Reason} ->
                     %% Fall back to mock mode if embedded QLever not available
                     io:format("  Warning: Embedded QLever not available (~p), using mock~n", [Reason]),
-                    qlever_client:stop(),
-                    {ok, mock}
+                    erlang:throw(# {
+                        module => ?MODULE,
+                        function => init_qlever,
+                        reason => {embedded_qlever_not_available, Reason},
+                        message => "Embedded QLever is required for conformance tracking"
+                    })
             end;
         {error, Reason} ->
             {error, Reason}

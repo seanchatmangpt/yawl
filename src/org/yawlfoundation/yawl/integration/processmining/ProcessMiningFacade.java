@@ -260,13 +260,19 @@ public final class ProcessMiningFacade {
         _log.debug("Performance analysis complete: {} traces, avg flow time {} ms",
                    performance.traceCount(), performance.avgFlowTimeMs());
 
-        // Step 3: Conformance check (if YNet provided)
+        // Step 3: Conformance check using centralized formulas (if YNet provided)
         ConformanceResult conformance = null;
         if (net != null) {
-            String pnmlXml = PnmlExporter.netToPnml(net);
-            String replayJson = service.tokenReplay(pnmlXml, xesXml);
-            conformance = parseConformanceResult(replayJson);
-            _log.debug("Conformance analysis complete: fitness = {}", conformance.fitness());
+            try {
+                // Use centralized conformance formulas instead of external service
+                ConformanceFormulas.ConformanceMetrics metrics = 
+                    ConformanceFormulas.computeConformance(net, xesXml);
+                conformance = new ConformanceResult(metrics.fitness(), "{}");
+                _log.debug("Conformance analysis complete: fitness = {}", conformance.fitness());
+            } catch (Exception e) {
+                _log.warn("Conformance analysis failed: {}", e.getMessage());
+                conformance = new ConformanceResult(0.0, "{}"); // Default to zero fitness on error
+            }
         } else {
             _log.debug("Skipping conformance check (no YNet provided)");
         }

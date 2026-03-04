@@ -1,9 +1,9 @@
 //! YAWL Process Mining Bridge
 //!
 //! This crate provides bindings to the `process_mining` crate (v0.5.2)
-//! from RWTH Aachen for YAWL's process mining capabilities.
+//! for YAWL's process mining capabilities.
 //!
-//! See: https://docs.rs/process_mining/0.5.2/process_mining/
+//! See: https://docs.rs/process_mining/latest/process_mining/
 
 // Re-export process_mining for convenience
 pub use process_mining::*;

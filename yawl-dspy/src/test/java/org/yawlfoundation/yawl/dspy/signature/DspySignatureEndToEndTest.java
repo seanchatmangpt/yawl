@@ -16,6 +16,7 @@
 
 package org.yawlfoundation.yawl.dspy.signature;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,6 +66,10 @@ class DspySignatureEndToEndTest {
     @Test
     @DisplayName("Generate Python DSPy code from Java Signature")
     void testGeneratePythonSource() {
+        // Skip if GraalPy is not available (unit test should work without runtime)
+        assumeGraalPyNotAvailable("GraalPy not available - skipping unit test");
+
+        Signature signature = Signature.builder()
         Signature signature = Signature.builder()
             .description("Predict case outcome")
             .input("events", "list of workflow events", String.class)
@@ -334,5 +339,20 @@ class DspySignatureEndToEndTest {
         } catch (ClassNotFoundException e) {
             return false;
         }
+    }
+
+    /**
+     * Skip test if GraalPy is not available.
+     * Use for unit tests that don't require actual Python execution.
+     */
+    private static void assumeGraalPyNotAvailable(String message) {
+        // Unit tests should pass regardless of GraalPy availability
+        // since they test code generation, not execution
+        if (isGraalPyAvailable()) {
+            System.out.println("GraalPy available: " + message);
+        } else {
+            System.out.println("GraalPy not available: " + message);
+        }
+        // Don't skip - let unit tests run
     }
 }

@@ -1,0 +1,79 @@
+{
+  "id": "jtbd3-resource-allocation",
+  "name": "Resource Allocation Workflow",
+  "description": "Complex resource allocation system with conflict resolution, priority scheduling, and shared resource pools",
+  "complexity": "High",
+  "source": "Healthcare Workflow Adaptation",
+  "business_area": "Healthcare Management",
+  "process_flow": "Patient Registration → Resource Allocation → Treatment → Resource Release",
+  "key_features": [
+    "Shared resource pools (doctors, rooms, equipment)",
+    "Priority-based scheduling (emergency vs elective)",
+    "Resource conflict detection and resolution",
+    "Resource availability tracking",
+    "Batch processing of multiple requests",
+    "Dynamic resource reassignment"
+  ],
+  "resource_types": {
+    "human_resources": ["doctor", "nurse", "technician"],
+    "physical_resources": ["operating_room", "examination_room", "lab_equipment"],
+    "temporal_resources": ["time_slot", "appointment_slot"]
+  },
+  "allocation_policies": {
+    "priority": {
+      "emergency": "highest",
+      "urgent": "high",
+      "scheduled": "normal",
+      "elective": "low"
+    },
+    "fairness": {
+      "round_robin": "among equal priority",
+      "first_come_first_served": "within priority group",
+      "skill_matching": "specialization requirement"
+    },
+    "efficiency": {
+      "minimize_downtime": "resource utilization > 80%",
+      "maximize_throughput": "process 20 patients/day",
+      "reduce_waste": "avoid overbooking"
+    }
+  },
+  "entities": {
+    "cases": {
+      "patient_case": "Patient treatment case",
+      "resource_request": "Resource allocation request",
+      "treatment_plan": "Treatment scheduling"
+    },
+    "events": [
+      "RegisterPatient",
+      "ResourceRequest",
+      "ResourceAllocation",
+      "ResourceConflict",
+      "ConflictResolution",
+      "StartTreatment",
+      "EndTreatment",
+      "ReleaseResource",
+      "ResourceMaintenance"
+    ],
+    "resources": {
+      "doctor_oncology": "Oncology specialists",
+      "cardiology_team": "Cardiology department",
+      "operating_room_1": "Main OR",
+      "radiology_equipment": "Imaging machines",
+      "nursing_station": "Nursing staff pool"
+    }
+  },
+  "conflict_resolution": {
+    "strategies": [
+      "priority_override",
+      "resource_splitting",
+      "postponement",
+      "substitution",
+      "escalation"
+    ],
+    "escalation_levels": [
+      "department_head",
+      "hospital_director",
+      "external_referral"
+    ]
+  }
+}

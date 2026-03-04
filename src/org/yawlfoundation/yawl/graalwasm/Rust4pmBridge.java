@@ -287,15 +287,64 @@ public final class Rust4pmBridge implements AutoCloseable {
         try {
             // Delegate to Java TokenReplayEngine implementation
             return jsEngine.getContextPool().execute(ctx -> {
-                // Placeholder: In production, this would call Java TokenReplayEngine
-                // For now, return minimal valid conformance JSON
-                return "{\"fitness\": 0.85, \"produced\": 1000, \"consumed\": 850, " +
-                       "\"missing\": 150, \"remaining\": 0, \"deviatingCases\": []}";
+                // Real conformance computation - use ConformanceFormulas
+                try {
+                    // Parse XML inputs
+                    YNet net = parsePnmlToYNet(pnmlXml);
+
+                    // Compute real conformance metrics
+                    ConformanceFormulas.ConformanceMetrics metrics =
+                        ConformanceFormulas.computeConformance(net, xesXml);
+
+                    // Return JSON with computed metrics
+                    return String.format(
+                        "{\"fitness\": %.3f, \"precision\": %.3f, \"generalization\": %.3f, \"simplicity\": %.3f}",
+                        metrics.fitness(),
+                        metrics.precision(),
+                        metrics.generalization(),
+                        metrics.simplicity()
+                    );
+                } catch (Exception e) {
+                    throw new RuntimeException("Conformance computation failed: " + e.getMessage(), e);
+                }
             });
         } catch (Exception e) {
             throw new WasmException(
                     "Conformance checking failed: " + e.getMessage(),
                     WasmException.ErrorKind.EXECUTION_ERROR, e);
+        }
+    }
+
+    /**
+     * Parses PNML XML to create YNet for conformance checking.
+     *
+     * <p>Validates PNML structure and creates YAWL net model.</p>
+     *
+     * @param pnmlXml PNML-formatted Petri net model (XML string); must not be null
+     * @return YNet instance ready for conformance checking
+     * @throws WasmException if PNML parsing fails
+     */
+    private YNet parsePnmlToYNet(String pnmlXml) throws WasmException {
+        try {
+            // Validate input
+            if (pnmlXml == null || pnmlXml.trim().isEmpty()) {
+                throw new IllegalArgumentException("PNML XML cannot be null or empty");
+            }
+
+            // Parse PNML to YNet using YAWL engine
+            PNMLParser parser = new PNMLParser();
+            YNet net = parser.parsePNMLFromXML(pnmlXml);
+
+            if (net == null) {
+                throw new WasmException("Failed to parse PNML: invalid structure",
+                    WasmException.ErrorKind.PARSE_ERROR);
+            }
+
+            return net;
+        } catch (Exception e) {
+            throw new WasmException(
+                "PNML parsing failed: " + e.getMessage(),
+                WasmException.ErrorKind.PARSE_ERROR, e);
         }
     }
 

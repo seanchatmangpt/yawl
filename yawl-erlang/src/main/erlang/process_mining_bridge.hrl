@@ -21,7 +21,10 @@
     stats :: map(),
 
     %% Process registry for active operations
-    active_ops :: map()
+    active_ops :: map(),
+    
+    %% NIF handle for rust4pm
+    nif_handle :: reference() | undefined
 }).
 
 %% Import OCEL configuration record
@@ -47,7 +50,8 @@
     algorithm :: declare | alpha | inductive,
     threshold :: float(),
     sample_size :: integer(),
-    max_duration :: integer()  %% in milliseconds
+    max_duration :: integer(),  %% in milliseconds
+    table :: atom()  %% Add missing table field
 }).
 
 %% Token replay configuration record
@@ -64,13 +68,13 @@
 
 %% Default values
 -define(DEFAULT_REGISTRY, process_mining_registry).
--DEFAULT_SIMILARITY_THRESHOLD(0.8).
--DEFAULT_FITNESS_THRESHOLD(0.95).
--DEFAULT_PRECISION_THRESHOLD(0.90).
--DEFAULT_COST_THRESHOLD(0.1).
+-define(DEFAULT_SIMILARITY_THRESHOLD, 0.8).
+-define(DEFAULT_FITNESS_THRESHOLD, 0.95).
+-define(DEFAULT_PRECISION_THRESHOLD, 0.90).
+-define(DEFAULT_COST_THRESHOLD, 0.1).
 
 %% Default configurations
--DEFAULT_IMPORT_CONFIG(#import_ocel_config{
+-define(DEFAULT_IMPORT_CONFIG, #import_ocel_config{
     event_key = "event",
     lifecycle_key = "lifecycle",
     object_types = ["activity", "object"],
@@ -78,20 +82,21 @@
     timestamp_format = "RFC3339"
 }).
 
--DEFAULT_SLIM_LINK_CONFIG(#slim_link_config{
+-define(DEFAULT_SLIM_LINK_CONFIG, #slim_link_config{
     strategy = direct,
     similarity_threshold = ?DEFAULT_SIMILARITY_THRESHOLD,
     max_iterations = 100
 }).
 
--DEFAULT_DISCOVER_CONFIG(#discover_config{
+-define(DEFAULT_DISCOVER_CONFIG, #discover_config{
     algorithm = declare,
     threshold = 0.9,
     sample_size = 1000,
-    max_duration = 30000  %% 30 seconds
+    max_duration = 30000,  %% 30 seconds
+    table = default_table
 }).
 
--DEFAULT_REPLAY_CONFIG(#replay_config{
+-define(DEFAULT_REPLAY_CONFIG, #replay_config{
     alignment_mode = optimal,
     fitness_threshold = ?DEFAULT_FITNESS_THRESHOLD,
     precision_threshold = ?DEFAULT_PRECISION_THRESHOLD,

@@ -1,0 +1,83 @@
+{
+  "scenario": "jtbd1-order-processing",
+  "expected_results": {
+    "total_cases": 50,
+    "completed_cases": 48,
+    "cancelled_cases": 2,
+    "success_rate": 0.96,
+    "average_duration": {
+      "total": "15.2 minutes",
+      "payment_verification": "2.1 minutes",
+      "stock_check": "1.8 minutes",
+      "shipping": "3.5 minutes"
+    },
+    "resource_utilization": {
+      "payment_processor": "78%",
+      "inventory_system": "65%",
+      "shipping_clerk": "82%"
+    },
+    "exception_counts": {
+      "payment_failures": 2,
+      "out_of_stock": 0,
+      "shipping_delays": 3
+    },
+    "performance_metrics": {
+      " throughput_per_hour": 8.5,
+      " average_processing_time": 15.2,
+      " p95_processing_time": 22.1,
+      " p99_processing_time": 28.7
+    }
+  },
+  "validation_rules": [
+    {
+      "rule": "order_must_have_payment",
+      "description": "All orders must have successful payment verification",
+      "check": "SELECT COUNT(*) FROM events WHERE activity = 'VerifyPayment' AND success = true",
+      "expected_min": 48
+    },
+    {
+      "rule": "stock_check_required",
+      "description": "All completed orders must pass stock check",
+      "check": "SELECT COUNT(*) FROM events WHERE activity = 'CheckStock' AND available = true",
+      "expected_min": 48
+    },
+    {
+      "rule": "shipping_confirmed",
+      "description": "All completed orders must have shipping confirmed",
+      "check": "SELECT COUNT(*) FROM events WHERE activity = 'ShipOrder'",
+      "expected": 48
+    },
+    {
+      "rule": "no_duplicate_events",
+      "description": "No duplicate events for the same case",
+      "check": "SELECT COUNT(*) FROM (SELECT case, activity, COUNT(*) FROM events GROUP BY case, activity HAVING COUNT(*) > 1)",
+      "expected": 0
+    }
+  ],
+  "edge_cases": [
+    {
+      "scenario": "high_value_order",
+      "conditions": {
+        "total_amount": "> 500",
+        "payment_method": "wire_transfer"
+      },
+      "expected_behavior": "Automatic escalation to manager"
+    },
+    {
+      "scenario": "international_shipping",
+      "conditions": {
+        "shipping_address": "outside_domestic",
+        "weight": "> 5kg"
+      },
+      "expected_behavior": "Customs clearance required"
+    },
+    {
+      "scenario": "express_shipping",
+      "conditions": {
+        "shipping_priority": "express",
+        "order_time": "afternoon"
+      },
+      "expected_behavior": "Same-day processing required"
+    }
+  ]
+}

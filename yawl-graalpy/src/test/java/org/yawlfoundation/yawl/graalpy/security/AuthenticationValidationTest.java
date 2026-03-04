@@ -686,7 +686,7 @@ public class AuthenticationValidationTest {
                 throw new CertificateExpiredException("Certificate is expired");
             }
             @Override
-            public int getVersion() { return 0; }
+            public int getVersion() { throw new UnsupportedOperationException("getVersion not implemented"); }
             @Override
             public BigInteger getSerialNumber() { return BigInteger.ONE; }
             @Override

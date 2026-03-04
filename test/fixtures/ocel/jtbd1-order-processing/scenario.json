@@ -1,0 +1,34 @@
+{
+  "id": "jtbd1-order-processing",
+  "name": "Order Processing Workflow",
+  "description": "Simple linear order processing workflow with basic validation and fulfillment",
+  "complexity": "Low",
+  "source": "BPI Challenge 2019 - Order to Payment",
+  "business_area": "E-commerce",
+  "process_flow": "Order → Payment Verification → Stock Check → Shipping → Completion",
+  "key_features": [
+    "Linear workflow execution",
+    "Simple condition checks",
+    "Basic resource allocation",
+    "No parallel processing",
+    "Basic exception handling"
+  ],
+  "entities": {
+    "cases": {
+      "customer": "Customer placing the order",
+      "order": "Sales order being processed"
+    },
+    "events": {
+      "CreateOrder": "New order created",
+      "VerifyPayment": "Payment method validated",
+      "CheckStock": "Inventory availability check",
+      "ShipOrder": "Order shipped to customer",
+      "CompleteOrder": "Order processing completed"
+    },
+    "resources": {
+      "payment_processor": "Handles payment verification",
+      "inventory_system": "Checks stock availability",
+      "shipping_clerk": "Handles order fulfillment"
+    }
+  }
+}

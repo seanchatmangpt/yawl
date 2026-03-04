@@ -80,6 +80,20 @@
     find_longest_traces/2
 ]).
 
+%% Registry Management
+-export([
+    registry_get_type/1,
+    registry_free/1,
+    registry_list/0
+]).
+
+%% Advanced Process Mining Operations
+-export([
+    discover_petri_net/1,
+    compute_dfg_from_events/1,
+    align_trace/3
+]).
+
 %% Memory Management
 -export([
     free_handle/1,
@@ -190,6 +204,42 @@ import_ocel_json_direct(Path) ->
 %%===================================================================
 %%% Direct NIF Wrappers (bypass gen_server for performance)
 %%===================================================================
+
+%% @private
+%% @doc Direct NIF call to discover Petri net (for internal use)
+-spec discover_petri_net_nif(reference()) -> {ok, binary()} | {error, term()}.
+discover_petri_net_nif(Handle) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to compute DFG from events (for internal use)
+-spec compute_dfg_from_events_nif(binary()) -> {ok, binary()} | {error, term()}.
+compute_dfg_from_events_nif(Events) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to align trace (for internal use)
+-spec align_trace_nif(reference(), binary(), integer()) -> {ok, binary()} | {error, term()}.
+align_trace_nif(TraceHandle, PetriNetJson, Timeout) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to get registry type (for internal use)
+-spec registry_get_type_nif(string()) -> {ok, string()} | {error, term()}.
+registry_get_type_nif(Id) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to free registry item (for internal use)
+-spec registry_free_nif(string()) -> ok | {error, term()}.
+registry_free_nif(Id) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @private
+%% @doc Direct NIF call to list registry items (for internal use)
+-spec registry_list_nif() -> {ok, list()} | {error, term()}.
+registry_list_nif() ->
+    erlang:nif_error(nif_not_loaded).
 
 %% @private
 %% @doc Direct NIF call to import XES (for internal use)
@@ -576,7 +626,7 @@ handle_call({ping, _}, _From, State) ->
                         Dir ->
                             PrivDir = Dir
                     end,
-                    NifPath = filename:join(PrivDir, "yawl_process_mining"),
+                    NifPath = filename:join(PrivDir, "process_mining_bridge"),
                     filelib:is_file(NifPath ++ ".so") orelse filelib:is_file(NifPath ++ ".dylib");
                 false ->
                     false
@@ -602,6 +652,84 @@ handle_call({get_nif_status, _}, _From, State) ->
     end),
     FileExists = filelib:is_file(NifLibFull),
     {reply, {ok, {nif_status, FileExists}}, State};
+
+handle_call({discover_petri_net, Handle}, _From, State) ->
+    try
+        case discover_petri_net_nif(Handle) of
+            {ok, PnmlJson} ->
+                {reply, {ok, PnmlJson}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
+
+handle_call({compute_dfg_from_events, Events}, _From, State) ->
+    try
+        case compute_dfg_from_events_nif(Events) of
+            {ok, DfgJson} ->
+                {reply, {ok, DfgJson}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
+
+handle_call({align_trace, TraceHandle, PetriNetJson, Timeout}, _From, State) ->
+    try
+        case align_trace_nif(TraceHandle, PetriNetJson, Timeout) of
+            {ok, AlignmentResult} ->
+                {reply, {ok, AlignmentResult}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
+
+handle_call({registry_get_type, Id}, _From, State) ->
+    try
+        case registry_get_type_nif(Id) of
+            {ok, Type} ->
+                {reply, {ok, Type}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
+
+handle_call({registry_free, Id}, _From, State) ->
+    try
+        case registry_free_nif(Id) of
+            ok ->
+                {reply, ok, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
+
+handle_call({registry_list, _}, _From, State) ->
+    try
+        case registry_list_nif() of
+            {ok, Items} ->
+                {reply, {ok, Items}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
 
 handle_call(_Request, _From, State) ->
     {reply, {error, unknown_request}, State}.
@@ -714,4 +842,37 @@ objects_free(Params) ->
 %% Returns {ok, UUID} on success, {error, Reason} on failure.
 -spec import_ocel_json_path(string()) -> {ok, string()} | {error, term()}.
 import_ocel_json_path(Path) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @doc Discover Petri net using Alpha++ algorithm.
+%% Returns {ok, PnmlJson} where PnmlJson is the PNML XML string.
+-spec discover_petri_net(reference()) -> {ok, binary()} | {error, term()}.
+discover_petri_net(Handle) ->
+    gen_server:call(?SERVER, {discover_petri_net, Handle}).
+
+%% @doc Compute DFG directly from events.
+%% Returns {ok, DfgJson} where DfgJson is a JSON string.
+-spec compute_dfg_from_events(binary()) -> {ok, binary()} | {error, term()}.
+compute_dfg_from_events(Events) ->
+    gen_server:call(?SERVER, {compute_dfg_from_events, Events}).
+
+%% @doc Align trace to Petri net.
+%% Returns {ok, AlignmentResult} where AlignmentResult is a JSON string.
+-spec align_trace(reference(), binary(), integer()) -> {ok, binary()} | {error, term()}.
+align_trace(TraceHandle, PetriNetJson, Timeout) ->
+    gen_server:call(?SERVER, {align_trace, TraceHandle, PetriNetJson, Timeout}).
+
+%% @doc Get type of registered item.
+-spec registry_get_type(string()) -> {ok, string()} | {error, term()}.
+registry_get_type(Id) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @doc Free registry item.
+-spec registry_free(string()) -> ok | {error, term()}.
+registry_free(Id) ->
+    erlang:nif_error(nif_not_loaded).
+
+%% @doc List all registry items.
+-spec registry_list() -> list() | {error, term()}.
+registry_list() ->
     erlang:nif_error(nif_not_loaded).

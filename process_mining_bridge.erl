@@ -93,6 +93,12 @@
     echo_json/1
 ]).
 
+%% Process Mining Algorithms
+-export([
+    compute_dfg/1,
+    align_trace/2
+]).
+
 %% gen_server callbacks
 -export([
     init/1,
@@ -193,13 +199,13 @@ import_ocel_json_direct(Path) ->
 %% @doc Direct NIF call to import XES (for internal use)
 -spec import_xes_nif(string()) -> {ok, reference()} | {error, term()}.
 import_xes_nif(Path) ->
-    erlang:nif_error(nif_not_loaded).
+    erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"}).
 
 %% @private
 %% @doc Direct NIF call to export XES (for internal use)
 -spec export_xes_nif(reference(), string()) -> ok | {error, term()}.
 export_xes_nif(Handle, Path) ->
-    erlang:nif_error(nif_not_loaded).
+    erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"}).
 
 %% @private
 %% @doc Direct NIF call to import OCEL JSON (for internal use)
@@ -230,17 +236,39 @@ discover_dfg_nif(Handle) ->
 %% @doc No-op benchmark function (tests NIF call overhead)
 -spec nop() -> {ok, ok} | {error, term()}.
 nop() ->
-    erlang:nif_error(nif_not_loaded).
+    erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"}).
 
 %% @doc Integer passthrough benchmark
 -spec int_passthrough(integer()) -> {ok, integer()} | {error, term()}.
 int_passthrough(N) ->
-    erlang:nif_error(nif_not_loaded).
+    erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"}).
 
 %% @doc JSON echo benchmark
 -spec echo_json(binary() | string()) -> {ok, binary() | string()} | {error, term()}.
 echo_json(Json) ->
-    erlang:nif_error(nif_not_loaded).
+    erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"}).
+
+%% @doc Compute Directly-Follows Graph from events
+%% Takes a list of traces (each trace is a string "A->B->C")
+%% Returns {ok, DfgJson} with nodes and edges
+-spec compute_dfg([string()]) -> {ok, binary()} | {error, term()}.
+compute_dfg(Traces) ->
+    erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"}).
+
+%% @doc Compute Directly-Follows Graph from events (NIF direct call)
+%% Takes a list of traces (each trace is a string "A->B->C")
+%% Returns {ok, DfgJson} with nodes and edges
+-spec compute_dfg_from_events([string()]) -> {ok, binary()} | {error, term()}.
+compute_dfg_from_events(Traces) ->
+    gen_server:call(?SERVER, {compute_dfg_from_events, Traces}).
+
+%% @doc Align trace to Petri net model (NIF direct call)
+%% Takes a list of activities and a Petri net JSON string
+%% Returns {ok, AlignmentResult} with alignment log and metrics
+-spec align_trace([string()], string()) -> {ok, binary()} | {error, term()}.
+align_trace(Trace, PetriNet) ->
+    gen_server:call(?SERVER, {align_trace, Trace, PetriNet}).
+
 discover_alpha_nif(Handle) ->
     discover_alpha(Handle).
 
@@ -575,6 +603,32 @@ handle_call({ping, _}, _From, State) ->
     end,
     {reply, {ok, {pong, IsNifLoaded}}, State};
 
+handle_call({compute_dfg_from_events, Traces}, _From, State) ->
+    try
+        case compute_dfg_from_events(Traces) of
+            {ok, DfgJson} ->
+                {reply, {ok, DfgJson}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
+
+handle_call({align_trace, Trace, PetriNet}, _From, State) ->
+    try
+        case align_trace(Trace, PetriNet) of
+            {ok, AlignmentJson} ->
+                {reply, {ok, AlignmentJson}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end;
+
 handle_call({get_nif_status, _}, _From, State) ->
     %% Check NIF library file existence
     PrivDir = case code:priv_dir(?MODULE) of
@@ -646,7 +700,7 @@ log_event_count(Params) ->
         undefined ->
             {error, missing_parameter};
         _ ->
-            erlang:nif_error(nif_not_loaded)
+            erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"})
     end.
 
 %% @doc Get object count from log (stub implementation)
@@ -656,7 +710,7 @@ log_object_count(Params) ->
         undefined ->
             {error, missing_parameter};
         _ ->
-            erlang:nif_error(nif_not_loaded)
+            erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"})
     end.
 
 %% @doc Get events from OCEL log (stub implementation)
@@ -666,7 +720,7 @@ log_get_events(Params) ->
         undefined ->
             {error, missing_parameter};
         _ ->
-            erlang:nif_error(nif_not_loaded)
+            erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"})
     end.
 
 %% @doc Get objects from OCEL log (stub implementation)
@@ -676,7 +730,7 @@ log_get_objects(Params) ->
         undefined ->
             {error, missing_parameter};
         _ ->
-            erlang:nif_error(nif_not_loaded)
+            erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"})
     end.
 
 %% @doc Free events handle (stub implementation)
@@ -686,7 +740,7 @@ events_free(Params) ->
         undefined ->
             {error, missing_parameter};
         _ ->
-            erlang:nif_error(nif_not_loaded)
+            erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"})
     end.
 
 %% @doc Free objects handle (stub implementation)
@@ -696,5 +750,5 @@ objects_free(Params) ->
         undefined ->
             {error, missing_parameter};
         _ ->
-            erlang:nif_error(nif_not_loaded)
+            erlang:throw(#{module => ?MODULE, function => F, reason => nif_not_loaded, message => "NIF library not loaded - please install process_mining NIF"})
     end.

@@ -471,11 +471,186 @@ pub fn registry_list() -> Vec<(String, String)> {
 
 fn load(_env: Env<'_>, _term: Term<'_>) -> bool { true }
 
+// DFG computation from events
+#[rustler::nif]
+pub fn compute_dfg_from_events(env: Env<'_>, events: Vec<String>) -> NifResult<Term<'_>> {
+    // Build DFG from event list
+    let mut edges: HashMap<(String, String), usize> = HashMap::new();
+    let mut freq: HashMap<String, usize> = HashMap::new();
+    let mut starts: HashMap<String, usize> = HashMap::new();
+    let mut ends: HashMap<String, usize> = HashMap::new();
+
+    for trace in events {
+        let activities: Vec<&str> = trace.split("->").collect();
+        if !activities.is_empty() {
+            // Start activity
+            let start = activities[0].to_string();
+            *starts.entry(start.clone()).or_insert(0) += 1;
+
+            // End activity
+            let end = activities[activities.len() - 1].to_string();
+            *ends.entry(end.clone()).or_insert(0) += 1;
+        }
+
+        // Build edges
+        for window in activities.windows(2) {
+            let a1 = window[0].trim().to_string();
+            let a2 = window[1].trim().to_string();
+            *edges.entry((a1.clone(), a2.clone())).or_insert(0) += 1;
+            *freq.entry(a1).or_insert(0) += 1;
+        }
+    }
+
+    let nodes: Vec<_> = freq.iter().map(|(id, &f)| serde_json::json!({"id": id, "frequency": f})).collect();
+    let edge_list: Vec<_> = edges.iter().map(|((s,t), &f)| serde_json::json!({"source": s, "target": t, "frequency": f})).collect();
+
+    let dfg_json = serde_json::json!({"nodes": nodes, "edges": edge_list, "start_activities": starts, "end_activities": ends}).to_string();
+    Ok((ok(), dfg_json).encode(env))
+}
+
+// Trace alignment to Petri net
+#[rustler::nif]
+pub fn align_trace(env: Env<'_>, trace: Vec<String>, petri_net: String) -> NifResult<Term<'_>> {
+    let pn_json: Value = serde_json::from_str(&petri_net)
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Petri net parse error: {}", e))))?;
+
+    let places = pn_json.get("places").and_then(|p| p.as_array()).ok_or_else(|| rustler::Error::Term(Box::new("No places")))?;
+    let transitions = pn_json.get("transitions").and_then(|t| t.as_array()).ok_or_else(|| rustler::Error::Term(Box::new("No transitions")))?;
+    let arcs = pn_json.get("arcs").and_then(|a| a.as_array()).ok_or_else(|| rustler::Error::Term(Box::new("No arcs")))?;
+
+    // Find start place
+    let start_place = places.iter()
+        .filter_map(|p| p.as_object())
+        .find(|p| p.get("is_start").and_then(|v| v.as_bool()).unwrap_or(false))
+        .and_then(|p| p.get("id").and_then(|v| v.as_str()))
+        .unwrap_or("p_start");
+
+    // Create transition mapping
+    let transition_map: HashMap<String, String> = transitions.iter()
+        .filter_map(|t| t.as_object())
+        .filter_map(|t| {
+            let id = t.get("id").and_then(|v| v.as_str())?;
+            let name = t.get("name").and_then(|v| v.as_str())?;
+            Some((format!("t_{}", name), id.to_string()))
+        })
+        .collect();
+
+    let mut alignment_log: Vec<serde_json::Value> = Vec::new();
+    let mut marking: HashMap<String, usize> = HashMap::new();
+    marking.insert(start_place.to_string(), 1);
+
+    let mut produced_tokens = 0;
+    let mut consumed_tokens = 0;
+    let mut missing_tokens = 0;
+
+    for (i, activity) in trace.iter().enumerate() {
+        let transition_id = match transition_map.get(&format!("t_{}", activity)) {
+            Some(id) => id,
+            None => {
+                alignment_log.push(serde_json::json!({
+                    "step": i + 1,
+                    "activity": activity,
+                    "status": "missing",
+                    "message": format!("Transition for activity '{}' not found in Petri net", activity)
+                }));
+                missing_tokens += 1;
+                continue;
+            }
+        };
+
+        // Check if transition can fire (inputs have tokens)
+        let can_fire = arcs.iter()
+            .filter_map(|a| a.as_object())
+            .filter(|a| {
+                if let Some(target) = a.get("target").and_then(|v| v.as_str()) {
+                    target == transition_id.as_str()
+                } else {
+                    false
+                }
+            })
+            .all(|a| {
+                let source = a.get("source").and_then(|v| v.as_str()).unwrap_or("");
+                marking.get(source).copied().unwrap_or(0) > 0
+            });
+
+        if can_fire {
+            alignment_log.push(serde_json::json!({
+                "step": i + 1,
+                "activity": activity,
+                "status": "fired",
+                "message": format!("Transition {} fired successfully", transition_id)
+            }));
+
+            // Consume input tokens
+            for a in arcs.iter()
+                .filter_map(|a| a.as_object())
+                .filter(|a| {
+                    if let Some(target) = a.get("target").and_then(|v| v.as_str()) {
+                        target == transition_id.as_str()
+                    } else {
+                        false
+                    }
+                }) {
+
+                let source = a.get("source").and_then(|v| v.as_str()).unwrap_or("");
+                if let Some(tokens) = marking.get_mut(source) {
+                    if *tokens > 0 {
+                        *tokens -= 1;
+                        consumed_tokens += 1;
+                    }
+                }
+            }
+
+            // Produce output tokens
+            for a in arcs.iter()
+                .filter_map(|a| a.as_object())
+                .filter(|a| {
+                    if let Some(source) = a.get("source").and_then(|v| v.as_str()) {
+                        source == transition_id.as_str()
+                    } else {
+                        false
+                    }
+                }) {
+
+                let target = a.get("target").and_then(|v| v.as_str()).unwrap_or("");
+                *marking.entry(target.to_string()).or_insert(0) += 1;
+                produced_tokens += 1;
+            }
+        } else {
+            alignment_log.push(serde_json::json!({
+                "step": i + 1,
+                "activity": activity,
+                "status": "blocked",
+                "message": format!("Transition {} cannot fire - missing input tokens", transition_id)
+            }));
+            missing_tokens += 1;
+        }
+    }
+
+    let alignment = serde_json::json!({
+        "trace": trace,
+        "alignment_log": alignment_log,
+        "metrics": {
+            "produced_tokens": produced_tokens,
+            "consumed_tokens": consumed_tokens,
+            "missing_tokens": missing_tokens,
+            "fitness": if produced_tokens > 0 {
+                consumed_tokens as f64 / produced_tokens as f64
+            } else {
+                1.0
+            }
+        }
+    });
+
+    Ok((ok(), alignment.to_string()).encode(env))
+}
+
 rustler::init!("process_mining_bridge", [
     nop, int_passthrough, atom_passthrough, small_list_passthrough, tuple_passthrough,
     echo_json, echo_term, echo_binary, echo_ocel_event, large_list_transfer,
     import_ocel_json_path, import_xes_path, num_events, num_objects,
     index_link_ocel, slim_link_ocel, ocel_type_stats,
     discover_dfg, discover_petri_net, token_replay,
+    compute_dfg_from_events, align_trace,
     registry_get_type, registry_free, registry_list,
 ], load = load);

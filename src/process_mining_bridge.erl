@@ -217,7 +217,14 @@ export_ocel_json_nif(Handle, Path) ->
 %% @doc Direct NIF call to discover DFG (for internal use)
 -spec discover_dfg_nif(reference()) -> {ok, binary()} | {error, term()}.
 discover_dfg_nif(Handle) ->
-    discover_dfg(Handle).
+    case erlang:nif_error(nif_not_loaded) of
+        nif_not_loaded ->
+            %% Fallback to gen_server call when NIF not available
+            discover_dfg(Handle);
+        _ ->
+            %% NIF should handle this directly
+            discover_dfg(Handle)
+    end.
 
 %% @private
 %% @doc Direct NIF call to discover Alpha+++ (for internal use)
