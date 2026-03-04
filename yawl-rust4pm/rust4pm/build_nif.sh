@@ -33,7 +33,7 @@ case "$OS" in
 esac
 
 # Path to Erlang app
-ERLANG_APP_PATH="../yawl-erlang-bridge/yawl-erlang-bridge"
+ERLANG_APP_PATH="../../yawl-erlang-bridge/yawl-erlang-bridge"
 
 # Check if Erlang app directory exists
 if [ ! -d "$ERLANG_APP_PATH" ]; then
@@ -45,8 +45,8 @@ fi
 mkdir -p "$ERLANG_APP_PATH/priv"
 
 # Copy the NIF to the Erlang app
-NIF_SOURCE="target/release/$NIF_NAME"
-NIF_DEST="$ERLANG_APP_PATH/priv/$NIF_NAME"
+NIF_SOURCE="target/release/deps/libprocess_mining_bridge.dylib"
+NIF_DEST="$ERLANG_APP_PATH/priv/yawl_process_mining.dylib"
 
 if [ -f "$NIF_SOURCE" ]; then
     echo "Copying NIF to $NIF_DEST"

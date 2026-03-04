@@ -73,6 +73,7 @@
         <module>yawl-elements</module>
         <module>yawl-ggen</module>
         <module>yawl-tpot2</module>
+        <module>yawl-dspy</module>
         <!-- Disabled - legacy polyglot execution (2026-03-03)
         <module>yawl-graalwasm</module>
         -->

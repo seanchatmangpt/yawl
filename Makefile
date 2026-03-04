@@ -1,76 +1,86 @@
-# YAWL SPARQL Benchmark Makefile
+# Makefile for multi-target YAWL Process Mining Rust Library
 
-.PHONY: help benchmark test datasets clean-all clean-results
+.PHONY: all jni nif python clean build-debug test docs
 
 # Default target
-help:
-	@echo "YAWL SPARQL Benchmark Suite"
-	@echo ""
-	@echo "Available targets:"
-	@echo "  benchmark    - Run all SPARQL engine benchmarks"
-	@echo "  benchmark-<engine>  - Run specific engine benchmark"
-	@echo "    (qlever-http, qlever-embedded, oxigraph)"
-	@echo "  datasets     - Generate test RDF datasets"
-	@echo "  test         - Run benchmark tests"
-	@echo "  clean-all    - Clean all generated files"
-	@echo "  clean-results - Clean benchmark results"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make benchmark"
-	@echo "  make benchmark-qlever-http"
-	@echo "  make datasets"
+all: jni nif python
 
-# Run all benchmarks
-benchmark:
-	./scripts/benchmark-qlever.sh
+# Build for Java JNI
+jni:
+	@echo "Building YAWL Process Mining for Java JNI..."
+	cargo build --manifest-path ./Cargo.toml --release --features jni
+	@echo "Generated: target/release/libyawl_process_mining.so"
 
-# Run individual benchmarks
-benchmark-qlever-http:
-	./scripts/benchmark-qlever.sh qlever-http
+# Build for Erlang NIF
+nif:
+	@echo "Building YAWL Process Mining for Erlang NIF..."
+	cargo build --manifest-path ./Cargo.toml --release --features nif
+	@mkdir -p priv
+	@echo "Determining OS for NIF naming..."
+	@uname -s | grep -q Darwin && \
+		cp target/release/libyawl_process_mining.dylib priv/yawl_process_mining.so && \
+		echo "Generated: priv/yawl_process_mining.so (macOS dylib)" || \
+		cp target/release/libyawl_process_mining.so priv/yawl_process_mining.so && \
+		echo "Generated: priv/yawl_process_mining.so (Linux so)"
 
-benchmark-qlever-embedded:
-	./scripts/benchmark-qlever.sh qlever-embedded
+# Install NIF to Erlang bridge
+ERLANG_BRIDGE_PRIV ?= ../yawl-erlang-bridge/yawl-erlang-bridge/priv
 
-benchmark-oxigraph:
-	./scripts/benchmark-qlever.sh oxigraph
+nif-erlang: nif
+	@mkdir -p $(ERLANG_BRIDGE_PRIV)
+	@cp priv/yawl_process_mining.so $(ERLANG_BRIDGE_PRIV)/
+	@echo "NIF installed to $(ERLANG_BRIDGE_PRIV)/"
 
-# Generate test datasets
-datasets:
-	./scripts/generate-test-data.sh
+# Build for Python
+python:
+	@echo "Building YAWL Process Mining for Python..."
+	cargo build --manifest-path ./Cargo.toml --release --features python
+	@echo "Generated: target/release/libyawl_process_mining.so"
+	@echo "Wheel file: target/wheels/yawl_process_mining-*.whl"
+
+# Build Python wheel
+python-wheel:
+	@echo "Building Python wheel..."
+	maturin build --manifest-path ./Cargo.toml --release
+	@echo "Wheel file: target/wheels/yawl_process_mining-*.whl"
+
+# Install Python package
+python-install:
+	@echo "Installing Python package..."
+	maturin develop --manifest-path ./Cargo.toml
+
+# Build in debug mode
+build-debug:
+	@echo "Building YAWL Process Mining in debug mode..."
+	cargo build --manifest-path ./Cargo.toml --features jni,nif,python
 
 # Run tests
 test:
-	mvn test -pl yawl-benchmark
+	@echo "Running tests..."
+	cargo test --manifest-path ./Cargo.toml --lib -- --nocapture
 
-# Clean everything
-clean-all: clean-results
-	mvn clean -pl yawl-benchmark
-	rm -rf datasets/
+# Clean build artifacts
+clean:
+	@echo "Cleaning build artifacts..."
+	cargo clean --manifest-path ./Cargo.toml
+	rm -rf priv/
+	rm -rf target/release/*.dylib
+	rm -rf target/release/*.so
 
-# Clean only results
-clean-results:
-	rm -rf benchmark-results/
-	rm -f *.json *.log
+# Generate documentation
+docs:
+	@echo "Generating documentation..."
+	cargo doc --manifest-path ./Cargo.toml --no-deps --open
 
-# View results
-view-results:
-	@if [ -d "benchmark-results" ]; then \
-		echo "Benchmark Results:"; \
-		echo "=================="; \
-		for file in benchmark-results/*.json; do \
-			echo "$(basename $$file):"; \
-			jq '.benchmarks[0].benchmark, .benchmarks[0].score' $$file 2>/dev/null || \
-			echo "  Raw JSON format"; \
-			echo ""; \
-		done; \
-	else \
-		echo "No benchmark results found. Run 'make benchmark' first."; \
-	fi
-
-# Check prerequisites
-check:
-	@echo "Checking prerequisites..."
-	@command -v mvn >/dev/null 2>&1 && echo "✓ Maven" || echo "✗ Maven not found"
-	@command -v java >/dev/null 2>&1 && echo "✓ Java" || echo "✗ Java not found"
-	@test -f yawl-qlever/target/classes/org/yawlfoundation/yawl/qlever/QLeverEmbeddedSparqlEngine.class && echo "✓ QLever Embedded" || echo "✗ QLever Embedded not compiled (run: cd yawl-qlever && mvn compile)"
-	@curl -s -f http://localhost:8083/sparql/health >/dev/null 2>&1 && echo "✓ Oxigraph" || echo "✗ Oxigraph not available"
+# Help
+help:
+	@echo "Available targets:"
+	@echo "  all          - Build all targets (JNI, NIF, Python)"
+	@echo "  jni          - Build for Java JNI"
+	@echo "  nif          - Build for Erlang NIF"
+	@echo "  python       - Build for Python"
+	@echo "  build-debug  - Build in debug mode"
+	@echo "  test         - Run tests"
+	@echo "  clean        - Clean build artifacts"
+	@echo "  docs         - Generate documentation"
+	@echo "  help         - Show this help"

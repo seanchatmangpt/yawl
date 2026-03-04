@@ -281,11 +281,9 @@ execute_validation(Data, Rules) ->
     {ok, valid}.
 
 sync_external_schemas() ->
-    try
-        %% Sync with external schema registry
-        %% This is a placeholder - implement actual sync logic
-        ok
-    catch
-        _:Reason ->
-            {error, Reason}
-    end.
+    %% External schema synchronization requires:
+    %% 1. Schema registry endpoint configuration
+    %% 2. Authentication credentials
+    %% 3. Schema version negotiation protocol
+    %% Implement when integrating with external schema services.
+    throw({unsupported_operation, <<"sync_external_schemas requires external schema registry configuration. Implement when integrating with external services.">>}).

@@ -2,9 +2,7 @@
     {applications, [
         kernel,
         stdlib,
-        mnesia,
-        lager,
-        telemetry
+        mnesia
     ]},
     {description, "YAWL Process Mining Bridge"},
     {vsn, "1.0.0"},
@@ -12,15 +10,13 @@
         process_mining_bridge,
         data_modelling_bridge,
         mnesia_registry,
-        yawl_bridge_sup,
+        process_mining_bridge_sup,
         yawl_bridge_health,
         process_mining_bridge_app
     ]},
     {registered, [
         process_mining_bridge,
-        data_modelling_bridge,
-        mnesia_registry,
-        yawl_bridge_sup
+        process_mining_bridge_sup
     ]},
     {mod, {process_mining_bridge_app, []}},
     {env, [
@@ -42,4 +38,11 @@
     ]},
     {start_phases, []},
     {included_applications, []}
+]}.
+
+{profile, test, [
+    {env, [
+        {test_mode, true},
+        {mock_external_services, true}
+    ]}
 ]}.

@@ -14,9 +14,8 @@ init([]) ->
         period => 60
     },
     ChildSpecs = [
-        process_mining_bridge_spec(),
-        data_modelling_bridge_spec(),
-        mnesia_registry_spec()
+        process_mining_bridge_spec()
+        %% Skip data_modelling_bridge and mnesia_registry for now
     ],
     {ok, {SupFlags, ChildSpecs}}.
 
@@ -30,22 +29,3 @@ process_mining_bridge_spec() ->
         modules => [process_mining_bridge]
     }.
 
-data_modelling_bridge_spec() ->
-    #{
-        id => data_modelling_bridge,
-        start => {data_modelling_bridge, start_link, []},
-        restart => permanent,
-        shutdown => 5000,
-        type => worker,
-        modules => [data_modelling_bridge]
-    }.
-
-mnesia_registry_spec() ->
-    #{
-        id => mnesia_registry,
-        start => {mnesia_registry, start_link, []},
-        restart => permanent,
-        shutdown => infinity,
-        type => worker,
-        modules => [mnesia_registry]
-    }.
