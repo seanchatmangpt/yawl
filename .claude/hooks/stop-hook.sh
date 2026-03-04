@@ -1,205 +1,213 @@
 #!/bin/bash
-# Stop Hook - Ralph Loop Mechanism & Smart Validation
+# Enhanced Stop-Hook — Ralph Loop Orchestration & Autonomous Control
 #
-# This hook intercepts Claude Code's exit attempts and decides whether to:
-# 1. Allow the exit (no active ralph-loop)
-# 2. Re-inject the prompt with validation errors (YAWL smart validation failed)
-# 3. Check for completion promise and continue loop (not satisfied yet)
-# 4. Exit successfully (promise satisfied or max iterations reached)
+# Purpose:
+#   Intercept exit attempts, detect ralph-loop context, and orchestrate the complete
+#   autonomous workflow: validation → error analysis → remediation → loop continuation.
 #
-# Called by Claude Code when user tries to exit the session.
-# Must return 0 to allow exit, or non-zero to block and re-inject.
+# Workflow:
+#   1. Detect if ralph-loop is active (check .claude/.ralph-state/status)
+#   2. If active: capture exit context, run validations (dx.sh)
+#   3. Analyze any errors detected (analyze-errors.sh)
+#   4. Auto-remediate violations (remediate-violations.sh)
+#   5. Query decision-engine for loop continuation
+#   6. Check implicit success criteria
+#   7. If continue: re-inject prompt to Claude; if exit: allow clean exit
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-RALPH_STATE_DIR="${REPO_ROOT}/.claude/.ralph-state"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+CLAUDE_DIR="${PROJECT_ROOT}/.claude"
+SCRIPTS_DIR="${CLAUDE_DIR}/scripts"
+RECEIPTS_DIR="${CLAUDE_DIR}/receipts"
+STATE_DIR="${CLAUDE_DIR}/.ralph-state"
+LOGS_DIR="${CLAUDE_DIR}/logs"
 
-# ──────────────────────────────────────────────────────────────────────────────
-# HELPER: Check if ralph loop is active
-# ──────────────────────────────────────────────────────────────────────────────
+# Get environment variables (set by ralph-loop.sh or callers)
+RALPH_LOOP_ACTIVE="${RALPH_LOOP_ACTIVE:-false}"
+RALPH_LOOP_ID="${RALPH_LOOP_ID:-}"
+RALPH_LOOP_MAX_ITERATIONS="${RALPH_LOOP_MAX_ITERATIONS:-50}"
+RALPH_LOOP_ITERATION="${RALPH_LOOP_ITERATION:-0}"
 
-is_loop_active() {
-    [[ "${RALPH_LOOP_ACTIVE:-false}" == "true" ]] || [[ -f "${RALPH_STATE_DIR}/loop-state.json" ]]
+# Colors
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+MAGENTA='\033[0;35m'
+NC='\033[0m'
+
+# Create directories
+mkdir -p "${STATE_DIR}" "${RECEIPTS_DIR}" "${LOGS_DIR}"
+
+log_info() {
+    echo -e "${BLUE}[stop-hook]${NC} $*" | tee -a "${LOGS_DIR}/stop-hook.log" 2>/dev/null || echo -e "${BLUE}[stop-hook]${NC} $*"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# HELPER: Parse JSON value from state file
-# ──────────────────────────────────────────────────────────────────────────────
-
-get_json_value() {
-    local file="$1"
-    local key="$2"
-    jq -r ".${key} // \"\"" "${file}" 2>/dev/null || echo ""
+log_warn() {
+    echo -e "${YELLOW}[stop-hook]${NC} $*" | tee -a "${LOGS_DIR}/stop-hook.log" 2>/dev/null || echo -e "${YELLOW}[stop-hook]${NC} $*"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# MAIN LOGIC
-# ──────────────────────────────────────────────────────────────────────────────
+log_error() {
+    echo -e "${RED}[stop-hook]${NC} $*" | tee -a "${LOGS_DIR}/stop-hook.log" 2>/dev/null || echo -e "${RED}[stop-hook]${NC} $*" >&2
+}
 
-# If no active loop, allow normal exit
-if ! is_loop_active; then
-    exit 0
-fi
+log_success() {
+    echo -e "${GREEN}[stop-hook]${NC} $*" | tee -a "${LOGS_DIR}/stop-hook.log" 2>/dev/null || echo -e "${GREEN}[stop-hook]${NC} $*"
+}
 
-STATE_FILE="${RALPH_STATE_DIR}/loop-state.json"
-EDIT_TRACKER="${RALPH_STATE_DIR}/loop-edits.txt"
+log_decision() {
+    echo -e "${MAGENTA}[stop-hook]${NC} DECISION: $*" | tee -a "${LOGS_DIR}/stop-hook.log" 2>/dev/null || echo -e "${MAGENTA}[stop-hook]${NC} DECISION: $*"
+}
 
-if [[ ! -f "${STATE_FILE}" ]]; then
-    exit 0
-fi
+# Detect loop context
+detect_loop_context() {
+    log_info "Detecting loop context..."
 
-# Read loop state
-CURRENT_ITERATION=$(get_json_value "${STATE_FILE}" "current_iteration")
-MAX_ITERATIONS=$(get_json_value "${STATE_FILE}" "max_iterations")
-COMPLETION_PROMISE=$(get_json_value "${STATE_FILE}" "completion_promise")
-TASK_DESCRIPTION=$(get_json_value "${STATE_FILE}" "task_description")
-ENABLE_SMART_VALIDATION=$(get_json_value "${STATE_FILE}" "enable_smart_validation")
-DX_BASELINE_GREEN=$(get_json_value "${STATE_FILE}" "dx_baseline_green")
+    if [[ ! -d "${STATE_DIR}" ]]; then
+        log_info "  No active loop (state directory not found)"
+        RALPH_LOOP_ACTIVE="false"
+        return 0
+    fi
 
-CURRENT_ITERATION=${CURRENT_ITERATION:-1}
-MAX_ITERATIONS=${MAX_ITERATIONS:-50}
+    if [[ -f "${STATE_DIR}/status" ]]; then
+        local status=$(cat "${STATE_DIR}/status")
+        if [[ "${status}" == "active" ]]; then
+            RALPH_LOOP_ACTIVE="true"
+            log_success "  Loop detected: ACTIVE"
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CHECK FOR COMPLETION PROMISE IN RECENT OUTPUT
-# ──────────────────────────────────────────────────────────────────────────────
+            [[ -f "${STATE_DIR}/loop-id" ]] && RALPH_LOOP_ID=$(cat "${STATE_DIR}/loop-id")
+            [[ -f "${STATE_DIR}/iteration" ]] && RALPH_LOOP_ITERATION=$(cat "${STATE_DIR}/iteration")
+            [[ -f "${STATE_DIR}/max-iterations" ]] && RALPH_LOOP_MAX_ITERATIONS=$(cat "${STATE_DIR}/max-iterations")
 
-# TODO: In real implementation, extract promise from stdout/stderr
-# For now, we'll require explicit detection via environment variable
-# This would be populated by Claude Code's output analysis
-PROMISE_FOUND="${RALPH_PROMISE_FOUND:-false}"
-
-# ──────────────────────────────────────────────────────────────────────────────
-# SMART VALIDATION (YAWL CONTEXT)
-# ──────────────────────────────────────────────────────────────────────────────
-
-if [[ "${ENABLE_SMART_VALIDATION}" == "true" ]]; then
-    # Check if this is iteration 1 and baseline was GREEN
-    if [[ "${CURRENT_ITERATION}" == "1" ]] && [[ "${DX_BASELINE_GREEN}" == "true" ]]; then
-        # Skip validation on iteration 1 if already GREEN
-        echo "✅ Iteration 1: Skipping validation (baseline GREEN)"
-    else
-        # Check if files were edited since last iteration
-        FILES_EDITED=false
-        if [[ -f "${EDIT_TRACKER}" ]] && [[ -s "${EDIT_TRACKER}" ]]; then
-            FILES_EDITED=true
-        fi
-
-        if [[ "${FILES_EDITED}" == "true" ]]; then
-            echo "📝 Files edited detected - running validation..."
-
-            # Run dx.sh validation
-            if bash "${REPO_ROOT}/scripts/dx.sh" all > /tmp/ralph-dx-validate.log 2>&1; then
-                echo "✅ Validation GREEN - continuing to completion check"
-                # Clear edit tracker for next iteration
-                > "${EDIT_TRACKER}"
-            else
-                # Validation failed - re-inject prompt with errors
-                echo ""
-                echo "❌ VALIDATION FAILED - Iteration ${CURRENT_ITERATION}/${MAX_ITERATIONS}"
-                echo "───────────────────────────────────────────────────────────────"
-                tail -20 /tmp/ralph-dx-validate.log 2>/dev/null || true
-                echo ""
-                echo "📝 Fix the validation errors above and try again."
-                echo ""
-
-                # Increment iteration counter
-                NEW_ITERATION=$((CURRENT_ITERATION + 1))
-                jq ".current_iteration = ${NEW_ITERATION}" "${STATE_FILE}" > "${STATE_FILE}.tmp"
-                mv "${STATE_FILE}.tmp" "${STATE_FILE}"
-
-                # Re-inject prompt - return 1 to block exit
-                exit 1
-            fi
+            log_info "    Iteration: ${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS}"
+            return 0
         fi
     fi
-fi
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CHECK COMPLETION PROMISE
-# ──────────────────────────────────────────────────────────────────────────────
+    RALPH_LOOP_ACTIVE="false"
+    return 0
+}
 
-if [[ "${PROMISE_FOUND}" == "true" ]]; then
+# Run validation pipeline
+run_validation() {
+    log_info "Running validation pipeline..."
+
+    if [[ "${RALPH_LOOP_ACTIVE}" != "true" ]]; then
+        log_info "  Skipping (loop not active)"
+        return 0
+    fi
+
+    if [[ ! -f "${PROJECT_ROOT}/scripts/dx.sh" ]]; then
+        log_warn "  dx.sh not found, skipping"
+        return 0
+    fi
+
+    cd "${PROJECT_ROOT}"
+    if bash scripts/dx.sh all >"${LOGS_DIR}/validation.log" 2>&1; then
+        log_success "  Validation PASSED"
+        echo "GREEN" > "${STATE_DIR}/validation-status"
+        return 0
+    else
+        log_warn "  Validation FAILED"
+        echo "RED" > "${STATE_DIR}/validation-status"
+        return 1
+    fi
+}
+
+# Analyze errors
+analyze_errors() {
+    log_info "Analyzing errors..."
+
+    if [[ ! -f "${SCRIPTS_DIR}/analyze-errors.sh" ]]; then
+        log_warn "  analyze-errors.sh not found"
+        return 0
+    fi
+
+    bash "${SCRIPTS_DIR}/analyze-errors.sh" >"${LOGS_DIR}/error-analysis.log" 2>&1 || true
+    log_success "  Error analysis complete"
+}
+
+# Auto-remediate
+remediate_errors() {
+    log_info "Attempting auto-remediation..."
+
+    if [[ ! -f "${SCRIPTS_DIR}/remediate-violations.sh" ]]; then
+        log_warn "  remediate-violations.sh not found"
+        return 0
+    fi
+
+    if [[ ! -f "${RECEIPTS_DIR}/error-analysis-receipt.json" ]]; then
+        log_info "  No error analysis found, skipping"
+        return 0
+    fi
+
+    bash "${SCRIPTS_DIR}/remediate-violations.sh" >"${LOGS_DIR}/remediation.log" 2>&1 || true
+    log_success "  Auto-remediation attempt complete"
+}
+
+# Decide continuation
+decide_continuation() {
+    log_info "Deciding loop continuation..."
+
+    # Check max iterations
+    if [[ ${RALPH_LOOP_ITERATION} -ge ${RALPH_LOOP_MAX_ITERATIONS} ]]; then
+        log_decision "MAX ITERATIONS REACHED (${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS})"
+        return 0  # Exit
+    fi
+
+    # Check validation
+    local validation_status="UNKNOWN"
+    if [[ -f "${STATE_DIR}/validation-status" ]]; then
+        validation_status=$(cat "${STATE_DIR}/validation-status")
+    fi
+
+    if [[ "${validation_status}" == "GREEN" ]]; then
+        log_decision "VALIDATION PASSED - may exit"
+        return 0
+    fi
+
+    # Default: continue
+    log_decision "CONTINUING LOOP (iteration $((RALPH_LOOP_ITERATION + 1)))"
+    return 1
+}
+
+# Main
+main() {
     echo ""
-    echo "═══════════════════════════════════════════════════════════════════════════"
-    echo "🎉 Ralph Loop COMPLETE"
-    echo "───────────────────────────────────────────────────────────────────────────"
-    echo "✅ Completion promise found: ${COMPLETION_PROMISE}"
-    echo "✅ Total iterations: ${CURRENT_ITERATION}"
-    echo "═══════════════════════════════════════════════════════════════════════════"
+    echo "╔════════════════════════════════════════════════════════════════════════════╗"
+    echo "║                      STOP-HOOK: AUTONOMOUS CONTROL                        ║"
+    echo "╚════════════════════════════════════════════════════════════════════════════╝"
     echo ""
 
-    # Clean up state
-    rm -f "${STATE_FILE}" "${EDIT_TRACKER}"
-    unset RALPH_LOOP_ACTIVE
-    unset RALPH_STATE_FILE
-    unset RALPH_COMPLETION_PROMISE
+    detect_loop_context
 
-    # Allow exit
-    exit 0
-fi
+    if [[ "${RALPH_LOOP_ACTIVE}" != "true" ]]; then
+        log_info "Exiting (no active loop)"
+        return 0
+    fi
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CHECK MAX ITERATIONS
-# ──────────────────────────────────────────────────────────────────────────────
-
-if (( CURRENT_ITERATION >= MAX_ITERATIONS )); then
     echo ""
-    echo "═══════════════════════════════════════════════════════════════════════════"
-    echo "⚠️  Ralph Loop TIMEOUT"
-    echo "───────────────────────────────────────────────────────────────────────────"
-    echo "🔄 Max iterations (${MAX_ITERATIONS}) reached without completion promise"
-    echo "📋 Task: ${TASK_DESCRIPTION}"
-    echo "🎯 Expected: ${COMPLETION_PROMISE}"
-    echo "═══════════════════════════════════════════════════════════════════════════"
-    echo ""
-    echo "Please review your work and ensure it meets the completion criteria."
-    echo ""
+    run_validation
+    analyze_errors
+    remediate_errors
 
-    # Clean up state
-    rm -f "${STATE_FILE}" "${EDIT_TRACKER}"
-    unset RALPH_LOOP_ACTIVE
+    if decide_continuation; then
+        log_success "Stop-hook complete - allowing normal exit"
+        echo "completed" > "${STATE_DIR}/status"
+        return 0
+    else
+        # Update iteration and reinject
+        echo "$((RALPH_LOOP_ITERATION + 1))" > "${STATE_DIR}/iteration"
 
-    # Allow exit
-    exit 0
-fi
+        echo ""
+        echo "🔄 Continuing iteration $((RALPH_LOOP_ITERATION + 1))/${RALPH_LOOP_MAX_ITERATIONS}"
+        echo ""
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CONTINUE LOOP - RE-INJECT PROMPT
-# ──────────────────────────────────────────────────────────────────────────────
+        # Return code 127 signals loop continuation (handled by ralph-loop)
+        return 127
+    fi
+}
 
-NEXT_ITERATION=$((CURRENT_ITERATION + 1))
-
-# Update iteration counter
-jq ".current_iteration = ${NEXT_ITERATION}" "${STATE_FILE}" > "${STATE_FILE}.tmp"
-mv "${STATE_FILE}.tmp" "${STATE_FILE}"
-
-# Clear edit tracker for next iteration
-> "${EDIT_TRACKER}"
-
-echo ""
-echo "═══════════════════════════════════════════════════════════════════════════"
-echo "🔄 Ralph Loop Iteration ${NEXT_ITERATION}/${MAX_ITERATIONS}"
-echo "───────────────────────────────────────────────────────────────────────────"
-echo ""
-
-# Re-inject the prompt for next iteration
-cat << PROMPT
-
-## Ralph Loop Iteration ${NEXT_ITERATION}
-
-**Task**: ${TASK_DESCRIPTION}
-
-**Completion Promise**: When ready, output:
-\`\`\`
-${COMPLETION_PROMISE}
-\`\`\`
-
-**Progress**: Iteration ${NEXT_ITERATION} of ${MAX_ITERATIONS}
-
-**What to do**: Continue refining your work. The validation system will check your changes and give feedback.
-
-PROMPT
-
-# Return 1 to block exit and re-inject prompt
-exit 1
+# Execute
+main "$@"
