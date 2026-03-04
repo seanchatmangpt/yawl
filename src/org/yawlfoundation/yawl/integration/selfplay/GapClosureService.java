@@ -232,11 +232,11 @@ public final class GapClosureService {
             enhancementUri,
             gap.name(),
             Instant.now().toString(),
-            gap.title
+            gap.description()
         );
 
         qleverEngine.executeUpdate(enhancementQuery);
-        return "Applied " + gap.title + " capability enhancement";
+        return "Applied " + gap.description() + " capability enhancement";
     }
 
     /**

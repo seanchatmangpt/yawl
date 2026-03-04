@@ -50,8 +50,8 @@ run_all() ->
     %% Return results map
     #{
         total => length(Results),
-        passed => length([R || #{status := passed} <- Results]),
-        failed => length([R || #{status := failed} <- Results]),
+        passed => length([R || R <- Results, R =/= undefined, maps:get(status, R, undefined) =:= passed]),
+        failed => length([R || R <- Results, R =/= undefined, maps:get(status, R, undefined) =:= failed]),
         results => Results
     }.
 
@@ -116,8 +116,8 @@ run_test(Module, Description) ->
 
 %% @doc Generate a summary string from results
 summary(Results) ->
-    Passed = length([R || #{status := passed} <- Results]),
-    Failed = length([R || #{status := Status} <- Results, Status =/= passed]),
+    Passed = length([R || R <- Results, R =/= undefined, maps:get(status, R, undefined) =:= passed]),
+    Failed = length([R || R <- Results, R =/= undefined, maps:get(status, R, undefined) =/= passed]),
     Total = length(Results),
 
     PassRate = case Total of

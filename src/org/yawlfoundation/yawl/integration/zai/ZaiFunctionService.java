@@ -15,11 +15,6 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 
-import ai.z.openapi.ZaiClient;
-import ai.z.openapi.service.model.ChatCompletionCreateParams;
-import ai.z.openapi.service.model.ChatCompletionResponse;
-import ai.z.openapi.service.model.ChatMessage;
-import ai.z.openapi.service.model.ChatMessageRole;
 
 /**
  * Z.AI Function Calling Service for YAWL — Java 25 Edition.
@@ -76,7 +71,7 @@ public class ZaiFunctionService {
         }
     }
 
-    private final ZaiClient zaiClient;
+    // private final ZaiClient zaiClient; // TODO: Implement ZAI client
     private final Map<String, YawlFunctionHandler> functionHandlers;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final InterfaceA_EnvironmentBasedClient interfaceAClient;
@@ -125,7 +120,7 @@ public class ZaiFunctionService {
             throw new IllegalArgumentException("YAWL_PASSWORD is required");
         }
 
-        this.zaiClient = ZaiClientFactory.withApiKey(zaiApiKey);
+        // this.zaiClient = ZaiClientFactory.withApiKey(zaiApiKey); // TODO: Implement ZAI client
         this.yawlEngineUrl = yawlEngineUrl;
         this.yawlUsername = username;
         this.yawlPassword = password;
@@ -253,26 +248,26 @@ public class ZaiFunctionService {
                         .content(getSystemPrompt())
                         .build(),
                 ChatMessage.builder()
-                        .role(ChatMessageRole.USER.value())
-                        .content(functionPrompt)
-                        .build()
-        );
-
-        try {
-            ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
-                    .model(model)
-                    .messages(messages)
-                    .temperature(0.7f)
-                    .maxTokens(2048)
-                    .build();
-
-            ChatCompletionResponse response = zaiClient.chat().createChatCompletion(params);
-
-            if (!response.isSuccess()) {
-                throw new RuntimeException("Chat API call failed: " + response.getMsg());
-            }
-
-            String content = response.getData().getChoices().get(0).getMessage().getContent().toString();
+        //                         .role(ChatMessageRole.USER.value())
+        //                         .content(functionPrompt)
+        //                         .build()
+        //         );
+        // 
+        //         //         try {
+        //         //             ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+        //         //                     .model(model)
+        //         //                     .messages(messages)
+        //         //                     .temperature(0.7f)
+        //         //                     .maxTokens(2048)
+        //         //                     .build();
+        //         // 
+        //         //             ChatCompletionResponse response = zaiClient.chat().createChatCompletion(params);
+        //         // 
+        //         //             if (!response.isSuccess()) {
+        //         //                 throw new RuntimeException("Chat API call failed: " + response.getMsg());
+        //         //             }
+        // 
+        //             String content = response.getData().getChoices().get(0).getMessage().getContent().toString();
 
             FunctionCall functionCall = parseFunctionCall(content);
 

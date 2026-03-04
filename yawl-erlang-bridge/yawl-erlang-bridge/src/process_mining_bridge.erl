@@ -876,3 +876,20 @@ registry_free(Id) ->
 -spec registry_list() -> list() | {error, term()}.
 registry_list() ->
     erlang:nif_error(nif_not_loaded).
+
+%%===================================================================
+%%% gen_server handlers for new functions
+%%===================================================================
+
+handle_call({registry_list, _}, _From, State) ->
+    try
+        case registry_list_nif() of
+            {ok, Items} ->
+                {reply, {ok, Items}, State};
+            {error, Reason} ->
+                {reply, {error, Reason}, State}
+        end
+    catch
+        throw:{'UnsupportedOperationException', Msg} ->
+            {reply, {error, Msg}, State}
+    end.

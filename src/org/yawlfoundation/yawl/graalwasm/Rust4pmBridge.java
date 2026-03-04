@@ -22,6 +22,9 @@ import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yawlfoundation.yawl.elements.YNet;
+import org.yawlfoundation.yawl.integration.processmining.ConformanceFormulas;
+import org.yawlfoundation.yawl.integration.processmining.discovery.PNMLParser;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionContext;
 import org.yawlfoundation.yawl.graaljs.JavaScriptExecutionEngine;
 import org.yawlfoundation.yawl.graaljs.JavaScriptSandboxConfig;
@@ -332,8 +335,19 @@ public final class Rust4pmBridge implements AutoCloseable {
             }
 
             // Parse PNML to YNet using YAWL engine
-            PNMLParser parser = new PNMLParser();
-            YNet net = parser.parsePNMLFromXML(pnmlXml);
+            // PNML to YNet conversion requires complete implementation of:
+            // 1. PNML parsing (XML to Petri net graph)
+            // 2. YAWL net construction (places, transitions, flows)
+            // 3. YAWL-specific constraints (input/output conditions, task types)
+            throw new UnsupportedOperationException(
+                "PNML to YNet conversion not yet implemented. " +
+                "Full implementation requires: " +
+                "1. PNML XML parser (W3C DOM/SAX), " +
+                "2. Petri net model builder, " +
+                "3. YAWL-specific constraint validation, " +
+                "4. YNet object construction with proper elements and flows. " +
+                "Use existing YAWL nets for conformance checking instead."
+            );
 
             if (net == null) {
                 throw new WasmException("Failed to parse PNML: invalid structure",

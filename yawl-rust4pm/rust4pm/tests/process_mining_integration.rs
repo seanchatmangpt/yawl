@@ -16,7 +16,7 @@
 //! This test verifies that we can use functions directly from the process_mining crate
 //! without any custom implementations.
 
-use yawl_process_mining::*;
+use process_mining::*;
 
 #[test]
 fn test_process_mining_functionality() {

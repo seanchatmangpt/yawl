@@ -71,7 +71,7 @@ public final class QLeverEmbeddedEngineAdapter implements SparqlEngine {
                 throw new SparqlEngineException("QLever returned null result for query");
             }
 
-            String data = result.getResultData();
+            String data = result.data();
             if (data == null) {
                 throw new SparqlEngineException("QLever returned null data for query - result may be malformed");
             }

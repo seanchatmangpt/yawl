@@ -54,6 +54,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/scope-validation.sh",
+            "timeout": 5,
+            "statusMessage": "Checking scope keywords..."
+          },
+          {
+            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Ψ refreshing facts..."

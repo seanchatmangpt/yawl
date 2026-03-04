@@ -15,7 +15,7 @@
 //!
 //! This example demonstrates how to use functions directly from the process_mining crate.
 
-use yawl_process_mining::*;
+use process_mining::*;
 
 fn main() {
     println!("YAWL Process Mining Bridge - Basic Usage Example");
