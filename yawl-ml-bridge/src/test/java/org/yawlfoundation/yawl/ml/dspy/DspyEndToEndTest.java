@@ -109,11 +109,10 @@ class DspyEndToEndTest {
     @EnabledIfEnvironmentVariable(named = "GROQ_API_KEY", matches = ".+")
     @DisplayName("End-to-end: Predict with Groq")
     void testEndToEndWithGroq() throws DspyException {
-        // Skip if bridge not available
-        if (!isBridgeAvailable()) {
-            System.out.println("Skipping testEndToEndWithGroq - ML Bridge not available");
-            return;
-        }
+        // Bridge MUST be available - fail fast if not
+        assertThat(isBridgeAvailable())
+            .withFailMessage("ML Bridge not available - start Erlang node first")
+            .isTrue();
 
         Signature signature = Signature.builder()
             .description("Answer a simple math question")
@@ -139,11 +138,10 @@ class DspyEndToEndTest {
     @EnabledIfEnvironmentVariable(named = "GROQ_API_KEY", matches = ".+")
     @DisplayName("End-to-end: Few-shot learning")
     void testFewShotWithGroq() throws DspyException {
-        // Skip if bridge not available
-        if (!isBridgeAvailable()) {
-            System.out.println("Skipping testFewShotWithGroq - ML Bridge not available");
-            return;
-        }
+        // Bridge MUST be available - fail fast if not
+        assertThat(isBridgeAvailable())
+            .withFailMessage("ML Bridge not available - start Erlang node first")
+            .isTrue();
 
         Signature signature = Signature.builder()
             .description("Classify sentiment as positive or negative")

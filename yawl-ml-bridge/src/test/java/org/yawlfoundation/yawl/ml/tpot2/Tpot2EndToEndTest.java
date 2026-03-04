@@ -44,11 +44,10 @@ class Tpot2EndToEndTest {
     @Test
     @DisplayName("Run quick optimization")
     void testQuickOptimization() throws Tpot2Exception {
-        // Skip if bridge not available
-        if (!isBridgeAvailable()) {
-            System.out.println("Skipping testQuickOptimization - ML Bridge not available");
-            return;
-        }
+        // Bridge MUST be available - fail fast if not
+        assertThat(isBridgeAvailable())
+            .withFailMessage("ML Bridge not available - start Erlang node first")
+            .isTrue();
 
         // Generate simple classification data
         List<List<Double>> X = generateClassificationData(50, 4);
