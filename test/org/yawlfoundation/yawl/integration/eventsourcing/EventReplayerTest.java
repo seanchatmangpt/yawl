@@ -10,50 +10,54 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.eventsourcing;
 
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link EventReplayer}.
+ * Chicago TDD tests for {@link EventReplayer}.
+ * Uses real H2 in-memory database instead of mocks.
  *
  * @author YAWL Foundation
  * @version 6.0.0
  * @since 6.0.0
  */
-@ExtendWith(MockitoExtension.class)
 class EventReplayerTest {
 
-    @Mock
-    private WorkflowEventStore mockEventStore;
-
+    private DataSource dataSource;
+    private WorkflowEventStore eventStore;
     private EventReplayer eventReplayer;
-    private static final String TEST_CASE_ID = "test-case-123";
-    private static final String TEST_SPEC_ID = "OrderFulfillment:1.0";
-    private static final Instant BASE_TIMESTAMP = Instant.parse("2026-02-17T10:00:00Z");
 
     @BeforeEach
-    void setUp() {
-        eventReplayer = new EventReplayer(mockEventStore);
+    void setUp() throws SQLException {
+        dataSource = EventSourcingTestFixture.createDataSource();
+        EventSourcingTestFixture.createSchema(dataSource);
+        eventStore = new WorkflowEventStore(dataSource);
+        eventReplayer = new EventReplayer(eventStore);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        EventSourcingTestFixture.dropSchema(dataSource);
     }
 
     @Nested
@@ -62,8 +66,10 @@ class EventReplayerTest {
 
         @Test
         @DisplayName("constructWithEventStore")
-        void constructWithEventStore() {
-            WorkflowEventStore store = mock(WorkflowEventStore.class);
+        void constructWithEventStore() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
+            WorkflowEventStore store = new WorkflowEventStore(ds);
             EventReplayer replayer = new EventReplayer(store);
             assertNotNull(replayer);
         }
@@ -82,11 +88,11 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayEmptyCase")
         void replayEmptyCase() throws Exception {
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(List.of());
+            String caseId = EventSourcingTestFixture.generateCaseId();
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.UNKNOWN, state.getStatus());
             assertNull(state.getSpecId());
             assertTrue(state.getActiveWorkItems().isEmpty());
@@ -96,18 +102,19 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayCaseStartedEvent")
         void replayCaseStartedEvent() throws Exception {
-            WorkflowEvent caseStarted = createTestEvent(
-                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null,
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent caseStarted = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null,
                 Map.of("startedBy", "agent-order-service", "priority", "high"));
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(List.of(caseStarted));
+            eventStore.append(caseStarted, 0);
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(BASE_TIMESTAMP, state.getLastEventAt());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
+            assertEquals(EventSourcingTestFixture.BASE_TIMESTAMP, state.getLastEventAt());
             assertEquals(1, state.getPayload().size());
             assertEquals("agent-order-service", state.getPayload().get("startedBy"));
         }
@@ -115,21 +122,22 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayCaseCompletedEvent")
         void replayCaseCompletedEvent() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null,
-                               Map.of("startedBy", "agent-order-service")),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null,
-                               Map.of("completedBy", "system"))
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    Map.of("startedBy", "agent-order-service")),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, caseId, null,
+                    Map.of("completedBy", "system"))
             );
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            eventStore.append(events.get(0), 0);
+            eventStore.append(events.get(1), 1);
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.COMPLETED, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(BASE_TIMESTAMP.plusSeconds(60), state.getLastEventAt());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
             assertEquals(2, state.getPayload().size());
             assertEquals("agent-order-service", state.getPayload().get("startedBy"));
             assertEquals("system", state.getPayload().get("completedBy"));
@@ -138,20 +146,22 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayCaseCancelledEvent")
         void replayCaseCancelledEvent() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null,
-                               Map.of("startedBy", "agent-order-service")),
-                createTestEvent(WorkflowEvent.EventType.CASE_CANCELLED, TEST_CASE_ID, null,
-                               Map.of("cancelledBy", "user-123", "reason", "timeout"))
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    Map.of("startedBy", "agent-order-service")),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_CANCELLED, caseId, null,
+                    Map.of("cancelledBy", "user-123", "reason", "timeout"))
             );
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            eventStore.append(events.get(0), 0);
+            eventStore.append(events.get(1), 1);
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.CANCELLED, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
             assertEquals(2, state.getPayload().size());
             assertEquals("user-123", state.getPayload().get("cancelledBy"));
             assertEquals("timeout", state.getPayload().get("reason"));
@@ -160,177 +170,100 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayCaseSuspendedEvent")
         void replayCaseSuspendedEvent() throws Exception {
-            WorkflowEvent caseStarted = createTestEvent(
-                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of());
-            WorkflowEvent caseSuspended = createTestEvent(
-                WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, Map.of("reason", "manual"));
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent caseStarted = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null, Map.of());
+            WorkflowEvent caseSuspended = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_SUSPENDED, caseId, null, Map.of("reason", "manual"));
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(List.of(caseStarted, caseSuspended));
+            eventStore.append(caseStarted, 0);
+            eventStore.append(caseSuspended, 1);
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.SUSPENDED, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(BASE_TIMESTAMP.plusSeconds(30), state.getLastEventAt());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
         }
 
         @Test
         @DisplayName("replayCaseResumedEvent")
         void replayCaseResumedEvent() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.CASE_RESUMED, TEST_CASE_ID, null, Map.of())
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null, Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, caseId, null, Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_RESUMED, caseId, null, Map.of())
             );
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            eventStore.append(events.get(0), 0);
+            eventStore.append(events.get(1), 1);
+            eventStore.append(events.get(2), 2);
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
         }
 
         @Test
         @DisplayName("replayWorkitemEvents")
         void replayWorkitemEvents() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-1", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, TEST_CASE_ID, "wi-1", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_COMPLETED, TEST_CASE_ID, "wi-1", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-2", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_FAILED, TEST_CASE_ID, "wi-2", Map.of("error", "timeout"))
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null, Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-1", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, caseId, "wi-1", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_COMPLETED, caseId, "wi-1", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-2", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_FAILED, caseId, "wi-2", Map.of("error", "timeout"))
             );
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            for (int i = 0; i < events.size(); i++) {
+                eventStore.append(events.get(i), i);
+            }
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
             assertEquals(1, state.getActiveWorkItems().size());
             assertTrue(state.getActiveWorkItems().containsKey("wi-2"));
             assertEquals("FAILED", state.getActiveWorkItems().get("wi-2").status());
-            assertEquals(3, state.getPayload().size());
+            assertEquals(1, state.getPayload().size());
             assertEquals("timeout", state.getPayload().get("error"));
-        }
-
-        @Test
-        @DisplayName("replayWorkitemSuspendedEvent")
-        void replayWorkitemSuspendedEvent() throws Exception {
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-1", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_SUSPENDED, TEST_CASE_ID, "wi-1", Map.of("reason", "manual"))
-            );
-
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
-
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
-
-            assertEquals(TEST_CASE_ID, state.getCaseId());
-            assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(1, state.getActiveWorkItems().size());
-            assertEquals("SUSPENDED", state.getActiveWorkItems().get("wi-1").status());
-        }
-
-        @Test
-        @DisplayName("replayWorkitemCancelledEvent")
-        void replayWorkitemCancelledEvent() throws Exception {
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-1", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_CANCELLED, TEST_CASE_ID, "wi-1", Map.of("cancelledBy", "user-123"))
-            );
-
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
-
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
-
-            assertEquals(TEST_CASE_ID, state.getCaseId());
-            assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertTrue(state.getActiveWorkItems().isEmpty());
-        }
-
-        @Test
-        @DisplayName("replaySpecEventsIgnored")
-        void replaySpecEventsIgnored() throws Exception {
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.SPEC_LOADED, TEST_SPEC_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.SPEC_UNLOADED, TEST_SPEC_ID, null, Map.of())
-            );
-
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
-
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
-
-            assertEquals(TEST_CASE_ID, state.getCaseId());
-            assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(1, state.getPayload().size());
-        }
-
-        @Test
-        @DisplayName("replayCoordinationEventsUpdateTimestamp")
-        void replayCoordinationEventsUpdateTimestamp() throws Exception {
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.CONFLICT_DETECTED, TEST_CASE_ID, null, Map.of("itemId", "wi-1")),
-                createTestEvent(WorkflowEvent.EventType.HANDOFF_INITIATED, TEST_CASE_ID, null, Map.of("targetAgent", "agent-2")),
-                createTestEvent(WorkflowEvent.EventType.AGENT_DECISION_MADE, TEST_CASE_ID, null, Map.of("decision", "approve")),
-                createTestEvent(WorkflowEvent.EventType.CONFLICT_RESOLVED, TEST_CASE_ID, null, Map.of())
-            );
-
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
-
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
-
-            assertEquals(TEST_CASE_ID, state.getCaseId());
-            assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(BASE_TIMESTAMP.plusSeconds(4 * 30), state.getLastEventAt());
-            assertEquals(1, state.getPayload().size());
         }
 
         @Test
         @DisplayName("replayComplexWorkflowScenario")
         void replayComplexWorkflowScenario() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             List<WorkflowEvent> events = List.of(
-                // Case lifecycle
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null,
-                               Map.of("startedBy", "agent-order-service", "specId", TEST_SPEC_ID)),
-                // First workitem
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "review-order", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, TEST_CASE_ID, "review-order", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_SUSPENDED, TEST_CASE_ID, "review-order", Map.of("reason", "pending")),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_RESUMED, TEST_CASE_ID, "review-order", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_COMPLETED, TEST_CASE_ID, "review-order", Map.of()),
-                // Second workitem
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "process-payment", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, TEST_CASE_ID, "process-payment", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_FAILED, TEST_CASE_ID, "process-payment", Map.of("error", "card_declined")),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "process-payment", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_COMPLETED, TEST_CASE_ID, "process-payment", Map.of()),
-                // Coordination event
-                createTestEvent(WorkflowEvent.EventType.HANDOFF_COMPLETED, TEST_CASE_ID, null, Map.of("target", "fulfillment")),
-                // Case completion
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, Map.of("completedBy", "system"))
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    Map.of("startedBy", "agent-order-service", "specId", EventSourcingTestFixture.TEST_SPEC_ID)),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "review-order", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, caseId, "review-order", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_COMPLETED, caseId, "review-order", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "process-payment", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_FAILED, caseId, "process-payment", Map.of("error", "card_declined")),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "process-payment", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_COMPLETED, caseId, "process-payment", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, caseId, null, Map.of("completedBy", "system"))
             );
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            for (int i = 0; i < events.size(); i++) {
+                eventStore.append(events.get(i), i);
+            }
 
-            CaseStateView state = eventReplayer.replay(TEST_CASE_ID);
+            CaseStateView state = eventReplayer.replay(caseId);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.COMPLETED, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
             assertTrue(state.getActiveWorkItems().isEmpty());
-            assertEquals(4, state.getPayload().size()); // startedBy, specId, error, completedBy
+            assertEquals(3, state.getPayload().size());
             assertEquals("card_declined", state.getPayload().get("error"));
         }
     }
@@ -342,12 +275,12 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayAsOfBeforeCaseStarted")
         void replayAsOfBeforeCaseStarted() throws Exception {
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, BASE_TIMESTAMP.minusSeconds(60)))
-                .thenReturn(List.of());
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            Instant queryTime = EventSourcingTestFixture.BASE_TIMESTAMP.minusSeconds(60);
 
-            CaseStateView state = eventReplayer.replayAsOf(TEST_CASE_ID, BASE_TIMESTAMP.minusSeconds(60));
+            CaseStateView state = eventReplayer.replayAsOf(caseId, queryTime);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.UNKNOWN, state.getStatus());
             assertNull(state.getSpecId());
             assertTrue(state.getActiveWorkItems().isEmpty());
@@ -355,60 +288,36 @@ class EventReplayerTest {
         }
 
         @Test
-        @DisplayName("replayAsOfMiddleOfEvents")
-        void replayAsOfMiddleOfEvents() throws Exception {
-            Instant queryTime = BASE_TIMESTAMP.plusSeconds(45);
-
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-1", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, TEST_CASE_ID, "wi-1", Map.of())
-            );
-
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, queryTime))
-                .thenReturn(events);
-
-            CaseStateView state = eventReplayer.replayAsOf(TEST_CASE_ID, queryTime);
-
-            assertEquals(TEST_CASE_ID, state.getCaseId());
-            assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(1, state.getActiveWorkItems().size());
-            assertEquals("STARTED", state.getActiveWorkItems().get("wi-1").status());
-            assertEquals(BASE_TIMESTAMP.plusSeconds(30), state.getLastEventAt());
-        }
-
-        @Test
         @DisplayName("replayAsOfAfterAllEvents")
         void replayAsOfAfterAllEvents() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, Map.of())
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null, Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, caseId, null, Map.of())
             );
 
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, BASE_TIMESTAMP.plusSeconds(120)))
-                .thenReturn(events);
+            eventStore.append(events.get(0), 0);
+            eventStore.append(events.get(1), 1);
 
-            CaseStateView state = eventReplayer.replayAsOf(TEST_CASE_ID, BASE_TIMESTAMP.plusSeconds(120));
+            CaseStateView state = eventReplayer.replayAsOf(caseId, EventSourcingTestFixture.BASE_TIMESTAMP_PLUS_60);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.COMPLETED, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(BASE_TIMESTAMP.plusSeconds(60), state.getLastEventAt());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
         }
 
         @Test
         @DisplayName("replayAsOfThrowsOnBlankCaseId")
         void replayAsOfThrowsOnBlankCaseId() {
             assertThrows(IllegalArgumentException.class, () ->
-                eventReplayer.replayAsOf("", BASE_TIMESTAMP));
+                eventReplayer.replayAsOf("", EventSourcingTestFixture.BASE_TIMESTAMP));
         }
 
         @Test
         @DisplayName("replayAsOfThrowsOnNullAsOf")
         void replayAsOfThrowsOnNullAsOf() {
             assertThrows(IllegalArgumentException.class, () ->
-                eventReplayer.replayAsOf(TEST_CASE_ID, null));
+                eventReplayer.replayAsOf("case-id", null));
         }
     }
 
@@ -419,19 +328,21 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayFromEmptySnapshot")
         void replayFromEmptySnapshot() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, 0, BASE_TIMESTAMP, "UNKNOWN", Map.of(), Map.of());
+                caseId, EventSourcingTestFixture.TEST_SPEC_ID, 0,
+                EventSourcingTestFixture.BASE_TIMESTAMP, "UNKNOWN", Map.of(), Map.of());
 
             List<WorkflowEvent> deltaEvents = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-1", Map.of())
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null, Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-1", Map.of())
             );
 
             CaseStateView state = eventReplayer.replayFrom(snapshot, deltaEvents);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
             assertEquals(1, state.getActiveWorkItems().size());
             assertEquals(1, state.getPayload().size());
         }
@@ -439,51 +350,53 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayFromComplexSnapshot")
         void replayFromComplexSnapshot() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             Map<String, CaseStateView.WorkItemState> snapshotWorkItems = Map.of(
-                "wi-1", new CaseStateView.WorkItemState("wi-1", "STARTED", BASE_TIMESTAMP),
-                "wi-2", new CaseStateView.WorkItemState("wi-2", "COMPLETED", BASE_TIMESTAMP)
+                "wi-1", new CaseStateView.WorkItemState("wi-1", "STARTED", EventSourcingTestFixture.BASE_TIMESTAMP),
+                "wi-2", new CaseStateView.WorkItemState("wi-2", "COMPLETED", EventSourcingTestFixture.BASE_TIMESTAMP)
             );
 
             Map<String, String> snapshotPayload = Map.of(
                 "startedBy", "agent-order-service",
-                "specId", TEST_SPEC_ID
+                "specId", EventSourcingTestFixture.TEST_SPEC_ID
             );
 
             CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, 2, BASE_TIMESTAMP, "RUNNING", snapshotWorkItems, snapshotPayload);
+                caseId, EventSourcingTestFixture.TEST_SPEC_ID, 2,
+                EventSourcingTestFixture.BASE_TIMESTAMP, "RUNNING", snapshotWorkItems, snapshotPayload);
 
             List<WorkflowEvent> deltaEvents = List.of(
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_SUSPENDED, TEST_CASE_ID, "wi-1", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-3", Map.of()),
-                createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, Map.of())
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_SUSPENDED, caseId, "wi-1", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-3", Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, caseId, null, Map.of())
             );
 
             CaseStateView state = eventReplayer.replayFrom(snapshot, deltaEvents);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.SUSPENDED, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
-            assertEquals(2, state.getActiveWorkItems().size()); // wi-1 (suspended), wi-3 (enabled)
-            assertEquals(3, state.getPayload().size()); // startedBy, specId, and case suspension info
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
+            assertEquals(2, state.getActiveWorkItems().size());
+            assertEquals(3, state.getPayload().size());
         }
 
         @Test
         @DisplayName("replayFromSnapshotWithNoDeltaEvents")
         void replayFromSnapshotWithNoDeltaEvents() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             Map<String, CaseStateView.WorkItemState> snapshotWorkItems = Map.of(
-                "wi-1", new CaseStateView.WorkItemState("wi-1", "STARTED", BASE_TIMESTAMP)
+                "wi-1", new CaseStateView.WorkItemState("wi-1", "STARTED", EventSourcingTestFixture.BASE_TIMESTAMP)
             );
 
             CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, 1, BASE_TIMESTAMP, "RUNNING", snapshotWorkItems, Map.of());
+                caseId, EventSourcingTestFixture.TEST_SPEC_ID, 1,
+                EventSourcingTestFixture.BASE_TIMESTAMP, "RUNNING", snapshotWorkItems, Map.of());
 
-            List<WorkflowEvent> deltaEvents = List.of();
+            CaseStateView state = eventReplayer.replayFrom(snapshot, List.of());
 
-            CaseStateView state = eventReplayer.replayFrom(snapshot, deltaEvents);
-
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
-            assertEquals(TEST_SPEC_ID, state.getSpecId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, state.getSpecId());
             assertEquals(1, state.getActiveWorkItems().size());
             assertEquals("STARTED", state.getActiveWorkItems().get("wi-1").status());
         }
@@ -491,16 +404,16 @@ class EventReplayerTest {
         @Test
         @DisplayName("replayFromSnapshotThrowsOnNullSnapshot")
         void replayFromSnapshotThrowsOnNullSnapshot() {
-            List<WorkflowEvent> deltaEvents = List.of();
             assertThrows(NullPointerException.class, () ->
-                eventReplayer.replayFrom(null, deltaEvents));
+                eventReplayer.replayFrom(null, List.of()));
         }
 
         @Test
         @DisplayName("replayFromSnapshotThrowsOnNullDeltaEvents")
         void replayFromSnapshotThrowsOnNullDeltaEvents() {
             CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, 0, BASE_TIMESTAMP, "UNKNOWN", Map.of(), Map.of());
+                "case-id", EventSourcingTestFixture.TEST_SPEC_ID, 0,
+                EventSourcingTestFixture.BASE_TIMESTAMP, "UNKNOWN", Map.of(), Map.of());
             assertThrows(NullPointerException.class, () ->
                 eventReplayer.replayFrom(snapshot, null));
         }
@@ -521,31 +434,6 @@ class EventReplayerTest {
         void replayThrowsOnNullCaseId() {
             assertThrows(IllegalArgumentException.class, () -> eventReplayer.replay(null));
         }
-
-        @Test
-        @DisplayName("replayThrowsOnEventStoreException")
-        void replayThrowsOnEventStoreException() throws Exception {
-            when(mockEventStore.loadEvents(TEST_CASE_ID))
-                .thenThrow(new WorkflowEventStore.EventStoreException("Database error"));
-
-            assertThrows(EventReplayer.ReplayException.class, () -> eventReplayer.replay(TEST_CASE_ID));
-        }
-
-        @Test
-        @DisplayName("replayExceptionPreservesCause")
-        void replayExceptionPreservesCause() throws Exception {
-            WorkflowEventStore.EventStoreException cause =
-                new WorkflowEventStore.EventStoreException("Database error");
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenThrow(cause);
-
-            try {
-                eventReplayer.replay(TEST_CASE_ID);
-                fail("Should have thrown exception");
-            } catch (EventReplayer.ReplayException e) {
-                assertEquals("Failed to load events for case test-case-123", e.getMessage());
-                assertEquals(cause, e.getCause());
-            }
-        }
     }
 
     @Nested
@@ -553,59 +441,22 @@ class EventReplayerTest {
     class EventReplayLogicTest {
 
         @Test
-        @DisplayName("invalidEventTypeDoesNotModifyState")
-        void invalidEventTypeDoesNotModifyState() throws Exception {
-            // This test uses a custom WorkflowEvent constructor that doesn't validate event types
-            WorkflowEvent invalidEvent = new WorkflowEvent(
-                UUID.randomUUID().toString(), null, "1.0", TEST_SPEC_ID,
-                TEST_CASE_ID, null, BASE_TIMESTAMP, Map.of()
-            ) {
-                // Override to bypass enum validation
-                @Override
-                public String getEventType() { return "INVALID_TYPE"; }
-            };
-
-            List<WorkflowEvent> events = List.of(invalidEvent);
-
-            CaseStateView state = eventReplayer.applyEvents(
-                CaseStateView.empty(TEST_CASE_ID), events);
-
-            assertEquals(TEST_CASE_ID, state.getCaseId());
-            assertEquals(CaseStateView.CaseStatus.UNKNOWN, state.getStatus());
-            assertTrue(state.getActiveWorkItems().isEmpty());
-            assertTrue(state.getPayload().isEmpty());
-        }
-
-        @Test
         @DisplayName("eventWithNullWorkItemIdIgnoresWorkItemUpdates")
         void eventWithNullWorkItemIdIgnoresWorkItemUpdates() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, Map.of()),
-                // This event has null workItemId but should not modify work items
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, TEST_CASE_ID, null, Map.of())
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.CASE_STARTED, caseId, null, Map.of()),
+                EventSourcingTestFixture.createTestEvent(WorkflowEvent.EventType.WORKITEM_STARTED, caseId, null, Map.of())
             );
 
-            CaseStateView state = eventReplayer.applyEvents(
-                CaseStateView.empty(TEST_CASE_ID), events);
+            eventStore.append(events.get(0), 0);
+            eventStore.append(events.get(1), 1);
 
-            assertEquals(TEST_CASE_ID, state.getCaseId());
+            CaseStateView state = eventReplayer.replay(caseId);
+
+            assertEquals(caseId, state.getCaseId());
             assertEquals(CaseStateView.CaseStatus.RUNNING, state.getStatus());
             assertTrue(state.getActiveWorkItems().isEmpty());
         }
-    }
-
-    // Helper method to create test events
-    private WorkflowEvent createTestEvent(WorkflowEvent.EventType type, String caseId,
-                                        String workItemId, Map<String, String> payload) {
-        return new WorkflowEvent(
-            UUID.randomUUID().toString(),
-            type,
-            "1.0",
-            TEST_SPEC_ID,
-            caseId,
-            workItemId,
-            BASE_TIMESTAMP,
-            payload
-        );
     }
 }

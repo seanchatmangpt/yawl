@@ -145,7 +145,18 @@ public class YawlA2AAgentCard {
                 createSkill("json-to-xml", "Convert JSON workflow data to XML format",
                     List.of("transform", "json", "xml")),
                 createSkill("transform-data", "Transform workflow data using specified rules",
-                    List.of("transform", "data", "convert"))
+                    List.of("transform", "data", "convert")),
+
+                // AI-Powered Skills (Groq Integration)
+                createSkill("natural-language-understanding",
+                    "Understand natural language queries about YAWL workflows",
+                    List.of("ai", "nlu", "understanding")),
+                createSkill("intent-detection",
+                    "Detect user intent from natural language requests",
+                    List.of("ai", "intent", "detection")),
+                createSkill("workflow-recommendation",
+                    "Recommend workflows based on natural language descriptions",
+                    List.of("ai", "recommendation", "workflow"))
             ))
             .supportedInterfaces(List.of(
                 new AgentInterface(

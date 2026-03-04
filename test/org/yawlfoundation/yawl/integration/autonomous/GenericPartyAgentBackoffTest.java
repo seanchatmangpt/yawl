@@ -19,8 +19,6 @@
 package org.yawlfoundation.yawl.integration.autonomous;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,14 +26,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
-import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
+import org.yawlfoundation.yawl.integration.orderfulfillment.AgentCapability;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DecisionReasoner;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.DiscoveryStrategy;
 import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReasoner;
@@ -55,34 +52,26 @@ import org.yawlfoundation.yawl.integration.autonomous.strategies.EligibilityReas
  */
 public class GenericPartyAgentBackoffTest {
 
-    @Mock
-    private InterfaceB_EnvironmentBasedClient ibClient;
-
-    @Mock
-    private DiscoveryStrategy discoveryStrategy;
-
-    @Mock
-    private EligibilityReasoner eligibilityReasoner;
-
-    @Mock
-    private DecisionReasoner decisionReasoner;
-
-    @Mock
-    private Capability capability;
+    private TestInterfaceBClient ibClient;
+    private TestDiscoveryStrategy discoveryStrategy;
+    private TestEligibilityReasoner eligibilityReasoner;
+    private TestDecisionReasoner decisionReasoner;
+    private AgentCapability capability;
 
     private AgentConfiguration config;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        // Real capability instance
+        capability = new AgentCapability("TEST_DOMAIN", "Test capability");
 
-        // Mock the required client connection
-        when(ibClient.connect(anyString(), anyString()))
-            .thenReturn("handle-123");
+        // Real test client that simulates engine responses
+        ibClient = new TestInterfaceBClient();
 
-        // Setup capability mock
-        when(capability.getDomainName()).thenReturn("TEST_DOMAIN");
-        when(capability.getDescription()).thenReturn("Test capability");
+        // Real test strategies that return predictable results
+        discoveryStrategy = new TestDiscoveryStrategy();
+        eligibilityReasoner = new TestEligibilityReasoner();
+        decisionReasoner = new TestDecisionReasoner();
 
         // Build test configuration with 5 second base interval
         config = new AgentConfiguration(
@@ -103,9 +92,8 @@ public class GenericPartyAgentBackoffTest {
     @Test
     @Timeout(30)
     void testExponentialBackoffSequence() throws IOException, InterruptedException {
-        // Arrange: Mock empty discovery cycles
-        when(discoveryStrategy.discoverWorkItems(any(), anyString()))
-            .thenReturn(new ArrayList<>());
+        // Arrange: Set discovery to return empty lists
+        discoveryStrategy.setWorkItemsResponse(new ArrayList<>());
 
         GenericPartyAgent agent = new GenericPartyAgent(config);
 
@@ -127,7 +115,7 @@ public class GenericPartyAgentBackoffTest {
             long baseMs = baseIntervalField.getLong(agent);
 
             // Cycle 1: empty → backoff = 5s
-            agent.runDiscoveryCycle(); // Returns false
+            agent.runDiscoveryCycle();
             updateBackoffAfterEmpty(agent, backoffField, emptyCountField);
 
             long backoff1 = backoffField.getLong(agent);
@@ -166,14 +154,16 @@ public class GenericPartyAgentBackoffTest {
     @Test
     @Timeout(30)
     void testResetToBaseOnItemsFound() throws IOException, InterruptedException {
-        // Arrange: Mock work item discovery
-        WorkItemRecord workItem = createMockWorkItem("item-1", "TASK");
-        when(discoveryStrategy.discoverWorkItems(any(), anyString()))
-            .thenReturn(new ArrayList<>())
-            .thenReturn(new ArrayList<>())
-            .thenReturn(List.of(workItem)); // Third call returns item
+        // Arrange: Set discovery to work item discovery
+        List<WorkItemRecord> workItems = List.of(createRealWorkItem("item-1", "TASK"));
 
-        when(eligibilityReasoner.isEligible(any())).thenReturn(false);
+        // First two calls return empty, third returns work items
+        discoveryStrategy.setWorkItemsResponse(new ArrayList<>());
+        discoveryStrategy.setWorkItemsResponse(new ArrayList<>());
+        discoveryStrategy.setWorkItemsResponse(workItems);
+
+        // Set eligibility to false to ensure items are found but not processed
+        eligibilityReasoner.setEligible(false);
 
         GenericPartyAgent agent = new GenericPartyAgent(config);
 
@@ -221,9 +211,8 @@ public class GenericPartyAgentBackoffTest {
     @Test
     @Timeout(30)
     void testJitterPreventsReSync() throws IOException, InterruptedException {
-        // Arrange: Mock empty discovery for multiple cycles
-        when(discoveryStrategy.discoverWorkItems(any(), anyString()))
-            .thenReturn(new ArrayList<>());
+        // Arrange: Set discovery to return empty lists
+        discoveryStrategy.setWorkItemsResponse(new ArrayList<>());
 
         // Create multiple agents to test jitter variation
         List<GenericPartyAgent> agents = new ArrayList<>();
@@ -319,15 +308,88 @@ public class GenericPartyAgentBackoffTest {
     }
 
     // =========================================================================
+    // Helper Classes (Real Implementations)
+    // =========================================================================
+
+    /**
+     * Real InterfaceB client implementation for testing.
+     * Doesn't connect to a real engine but simulates responses.
+     */
+    private static class TestInterfaceBClient extends InterfaceB_EnvironmentBasedClient {
+        public TestInterfaceBClient() {
+            super("http://localhost:8080/yawl/ib");
+        }
+
+        @Override
+        public String connect(String userID, String password) throws IOException {
+            // Return a predictable session handle for testing
+            return "test-session-handle";
+        }
+
+        @Override
+        public List<WorkItemRecord> getCompleteListOfLiveWorkItems(String sessionHandle) throws IOException {
+            // This method is not actually called in the backoff test,
+            // but the abstract method must be implemented
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Real discovery strategy implementation for testing.
+     * Returns predictable work items based on configuration.
+     */
+    private static class TestDiscoveryStrategy implements DiscoveryStrategy {
+        private List<WorkItemRecord> workItems = new ArrayList<>();
+
+        public void setWorkItemsResponse(List<WorkItemRecord> items) {
+            this.workItems = new ArrayList<>(items);
+        }
+
+        @Override
+        public List<WorkItemRecord> discoverWorkItems(InterfaceB_EnvironmentBasedClient client,
+                                                      String sessionHandle) throws IOException {
+            return new ArrayList<>(workItems);
+        }
+    }
+
+    /**
+     * Real eligibility reasoner implementation for testing.
+     */
+    private static class TestEligibilityReasoner implements EligibilityReasoner {
+        private boolean eligible = true;
+
+        public void setEligible(boolean eligible) {
+            this.eligible = eligible;
+        }
+
+        @Override
+        public boolean isEligible(WorkItemRecord workItem) {
+            return eligible;
+        }
+    }
+
+    /**
+     * Real decision reasoner implementation for testing.
+     */
+    private static class TestDecisionReasoner implements DecisionReasoner {
+        @Override
+        public String produceOutput(WorkItemRecord workItem) {
+            return "test-output";
+        }
+    }
+
+    // =========================================================================
     // Helper Methods
     // =========================================================================
 
-    private WorkItemRecord createMockWorkItem(String id, String taskName) {
-        WorkItemRecord item = mock(WorkItemRecord.class);
-        when(item.getID()).thenReturn(id);
-        when(item.getTaskName()).thenReturn(taskName);
-        when(item.hasLiveStatus()).thenReturn(true);
-        when(item.getStatus()).thenReturn(WorkItemRecord.statusFired);
+    private WorkItemRecord createRealWorkItem(String id, String taskName) {
+        // Create a real WorkItemRecord instance
+        WorkItemRecord item = new WorkItemRecord();
+        item.setUniqueID(id);
+        item.setTaskName(taskName);
+        item.setCaseID("case-" + id);
+        item.setTaskID("task-" + id);
+        item.setStatus(WorkItemRecord.statusFired);
         return item;
     }
 

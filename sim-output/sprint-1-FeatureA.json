@@ -1,0 +1,59 @@
+{
+  "ocel:version": "2.0",
+  "ocel:ordering": "timestamp",
+  "ocel:attribute-names": ["org:resource"],
+  "ocel:object-types": ["Feature"],
+  "ocel:objects": {
+    "FeatureA": {
+      "ocel:type": "Feature",
+      "ocel:ovmap": {
+        "feature:id": "FeatureA"
+      }
+    }
+  },
+  "ocel:events": {
+    "evt-sprint-1-start": {
+      "ocel:activity": "sprint_started",
+      "ocel:timestamp": "2026-03-03T05:35:01.728770Z",
+      "ocel:omap": {
+        "Feature": ["FeatureA"]
+      },
+      "ocel:vmap": {
+        "org:resource": "TeamAlpha"
+      }
+    },
+    "evt-sprint-1-story1": {
+      "ocel:activity": "story_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.728770Z",
+      "ocel:omap": {
+        "Feature": ["FeatureA"]
+      },
+      "ocel:vmap": {
+        "org:resource": "TeamAlpha",
+        "story:points": 5
+      }
+    },
+    "evt-sprint-1-story2": {
+      "ocel:activity": "story_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.728770Z",
+      "ocel:omap": {
+        "Feature": ["FeatureA"]
+      },
+      "ocel:vmap": {
+        "org:resource": "TeamAlpha",
+        "story:points": 3
+      }
+    },
+    "evt-sprint-1-end": {
+      "ocel:activity": "sprint_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.728770Z",
+      "ocel:omap": {
+        "Feature": ["FeatureA"]
+      },
+      "ocel:vmap": {
+        "org:resource": "TeamAlpha",
+        "sprint:velocity": 8
+      }
+    }
+  }
+}

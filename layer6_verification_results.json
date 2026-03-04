@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-03-02T21:39:23.211330",
+  "criteria": {
+    "6_1": {
+      "status": "PASS",
+      "generations_completed": 5,
+      "population_size": 10,
+      "best_fitness": -0.05,
+      "execution_time": 0.6208689212799072,
+      "has_optimal_pipeline": true,
+      "pipeline_id": "comp_pipeline_3",
+      "would_complete_50": true
+    },
+    "6_2": {
+      "status": "FAIL",
+      "query_count": 5,
+      "average_score": 0.0,
+      "min_score": 0.0,
+      "max_score": 0.0,
+      "queries_below_0_8": [
+        [
+          "composition-count",
+          0.0
+        ],
+        [
+          "capability-gap-discovery",
+          0.0
+        ],
+        [
+          "validate-gap-closure",
+          0.0
+        ],
+        [
+          "valid-compositions",
+          0.0
+        ],
+        [
+          "wsjf-ranking",
+          0.0
+        ]
+      ]
+    },
+    "6_3": {
+      "status": "PASS",
+      "query_valid": true,
+      "query_score": 0.6000000000000001,
+      "execution_time": 30.0,
+      "result_count": 0,
+      "validation_errors": [],
+      "has_construct_query": true
+    },
+    "6_4": {
+      "status": "PASS",
+      "qlever_has_pipeline": false,
+      "files_found": 3,
+      "latest_file": "optimal_pipeline_1772516363.ttl"
+    }
+  },
+  "summary": {
+    "total_criteria": 4,
+    "passed_criteria": 3,
+    "layer6_status": "FAIL"
+  }
+}

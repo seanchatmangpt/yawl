@@ -25,7 +25,7 @@ import org.yawlfoundation.yawl.engine.YWorkItem;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
 import org.yawlfoundation.yawl.engine.spi.WorkflowEvent;
 import org.yawlfoundation.yawl.engine.spi.WorkflowEventBus;
-import org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverSparqlEngine;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngine;
 import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngineException;
 import org.yawlfoundation.yawl.stateless.listener.event.YEventType;
 
@@ -39,14 +39,18 @@ import static org.yawlfoundation.yawl.integration.autonomous.analytics.WorkflowE
  * Subscribes to the YAWL {@link WorkflowEventBus} and persists workflow lifecycle events
  * as RDF triples in QLever via SPARQL 1.1 UPDATE.
  *
+ * <p><strong>IMPORTANT:</strong> QLever is an embedded Java/C++ FFI bridge (NOT Docker/HTTP).
+ * Use {@link org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverEmbeddedEngineAdapter}
+ * to wrap {@code QLeverEmbeddedSparqlEngine} for use with this publisher.</p>
+ *
  * <p>Every case start/complete/cancel and every task status transition (to Executing
  * or to a terminal state) is converted to a SPARQL {@code INSERT DATA} statement and
- * posted to the QLever endpoint. This makes the entire workflow execution history
+ * posted to the SPARQL engine. This makes the entire workflow execution history
  * queryable as a graph, enabling path analysis, bypass detection, SLA reporting,
  * and throughput queries via {@link WorkflowQueryService}.</p>
  *
- * <p>QLever unavailability never disrupts the workflow engine. All exceptions from
- * {@link QLeverSparqlEngine#sparqlUpdate(String)} are caught and logged at WARN level;
+ * <p>Engine unavailability never disrupts the workflow engine. All exceptions from
+ * {@link SparqlEngine} are caught and logged at WARN level;
  * the engine event stream continues uninterrupted.</p>
  *
  * <p>Thread safety: all subscription handlers are invoked on virtual threads by
@@ -56,6 +60,7 @@ import static org.yawlfoundation.yawl.integration.autonomous.analytics.WorkflowE
  * @since YAWL 6.0
  * @see WorkflowEventVocabulary
  * @see WorkflowQueryService
+ * @see org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverEmbeddedEngineAdapter
  */
 public final class WorkflowEventPublisher implements AutoCloseable {
 
@@ -67,20 +72,22 @@ public final class WorkflowEventPublisher implements AutoCloseable {
      */
     private static final AtomicLong SEQ = new AtomicLong();
 
-    private final QLeverSparqlEngine engine;
+    private final SparqlEngine engine;
 
     /**
-     * Creates a publisher that subscribes to the given bus and writes triples to QLever.
+     * Creates a publisher that subscribes to the given bus and writes triples to the SPARQL engine.
      *
      * <p>Subscriptions are registered immediately in the constructor and remain active
      * for the lifetime of this object. Call {@link #close()} to release resources
      * (the bus subscriptions themselves are not individually cancellable; calling close
      * on the engine is a no-op).</p>
      *
-     * @param engine the QLever engine to write to; must not be {@code null}
+     * @param engine the SPARQL engine to write to; must not be {@code null}.
+     *               Use {@link org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverEmbeddedEngineAdapter}
+     *               for embedded QLever.
      * @param bus    the workflow event bus to subscribe to; must not be {@code null}
      */
-    public WorkflowEventPublisher(QLeverSparqlEngine engine, WorkflowEventBus bus) {
+    public WorkflowEventPublisher(SparqlEngine engine, WorkflowEventBus bus) {
         this.engine = Objects.requireNonNull(engine, "engine must not be null");
         Objects.requireNonNull(bus, "bus must not be null");
 

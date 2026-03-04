@@ -1,0 +1,1221 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-03-03T10:00:00Z",
+    "source": "realistic-mixed-scenario-normal-abnormal-flows"
+  },
+  "events": [
+    {
+      "id": "mixed_order_001",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:00:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Scenario Order #001 - Normal",
+        "concept:description": "Normal order processing scenario",
+        "customer_id": "normal_customer_001",
+        "customer_name": "Normal Customer",
+        "order_value": 150.00,
+        "items_count": 3,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Mixed Order #001",
+            "customer_id": "normal_customer_001",
+            "total_amount": 150.00,
+            "status": "created",
+            "created_at": "2024-03-03T09:00:00.000Z",
+            "priority": "normal",
+            "mixed_scenario": true,
+            "scenario_type": "normal"
+          }
+        },
+        "mc001": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Normal Customer",
+            "customer_id": "normal_customer_001",
+            "email": "normal@example.com",
+            "status": "active",
+            "loyalty_points": 1000,
+            "mixed_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_001",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:02:15.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Payment Processing #001",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "mixed_txn_001001",
+        "amount": 150.00,
+        "currency": "USD",
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {},
+        "mc001": {},
+        "mp001": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Mixed Payment #001",
+            "payment_method": "credit_card",
+            "amount": 150.00,
+            "status": "processing",
+            "processor": "stripe",
+            "transaction_id": "mixed_txn_001001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_001_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:04:30.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Payment Success #001",
+        "concept:cost": 0.50,
+        "payment_result": "success",
+        "authorization_code": "mixed_auth_001001",
+        "processing_time_ms": 120000,
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {},
+        "mc001": {},
+        "mp001": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:04:00.000Z",
+            "authorization_code": "mixed_auth_001001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_order_002",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:05:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Scenario Order #002 - Abnormal",
+        "concept:description": "Order with invalid data that needs correction",
+        "customer_id": "abnormal_customer_002",
+        "customer_name": "Abnormal Customer",
+        "order_value": null,
+        "items_count": 0,
+        "payment_method": null,
+        "priority": null,
+        "mixed_scenario": true,
+        "scenario_type": "abnormal",
+        "data_validation_failed": true
+      },
+      "objects": {
+        "mo002": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Mixed Order #002",
+            "customer_id": "abnormal_customer_002",
+            "total_amount": null,
+            "status": "created",
+            "created_at": "2024-03-03T09:05:00.000Z",
+            "priority": null,
+            "mixed_scenario": true,
+            "scenario_type": "abnormal",
+            "data_validation_failed": true
+          }
+        },
+        "mc002": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Abnormal Customer",
+            "customer_id": "abnormal_customer_002",
+            "email": "abnormal@example.com",
+            "status": "active",
+            "mixed_customer": true,
+            "data_validation_failed": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_validation_002",
+      "type": "OrderValidation",
+      "timestamp": "2024-03-03T09:07:45.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Data Validation #002",
+        "concept:cost": 0.00,
+        "validation_type": "business_rule",
+        "validation_result": "failed",
+        "error_message": "Order contains null required fields",
+        "validation_passed": false,
+        "mixed_scenario": true,
+        "scenario_type": "abnormal",
+        "auto_correction_available": true
+      },
+      "objects": {
+        "mo002": {
+          "attributes": {
+            "status": "validation_failed",
+            "failed_at": "2024-03-03T09:07:00.000Z",
+            "mixed_scenario": true,
+            "scenario_type": "abnormal"
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_correction_002",
+      "type": "DataCorrection",
+      "timestamp": "2024-03-03T09:09:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Data Correction #002",
+        "concept:cost": 0.00,
+        "correction_type": "auto_fill",
+        "original_values": {
+          "order_value": null,
+          "items_count": 0,
+          "payment_method": null
+        },
+        "corrected_values": {
+          "order_value": 99.99,
+          "items_count": 1,
+          "payment_method": "credit_card"
+        },
+        "correction_applied": true,
+        "mixed_scenario": true,
+        "scenario_type": "abnormal"
+      },
+      "objects": {
+        "mo002": {
+          "attributes": {
+            "status": "corrected",
+            "corrected_at": "2024-03-03T09:09:00.000Z",
+            "mixed_scenario": true,
+            "scenario_type": "abnormal"
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_order_003",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:10:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Scenario Order #003 - Retry",
+        "concept:description": "Order that will require retry due to system issues",
+        "customer_id": "retry_customer_003",
+        "customer_name": "Retry Customer",
+        "order_value": 200.00,
+        "items_count": 2,
+        "payment_method": "paypal",
+        "priority": "express",
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Mixed Order #003",
+            "customer_id": "retry_customer_003",
+            "total_amount": 200.00,
+            "status": "created",
+            "created_at": "2024-03-03T09:10:00.000Z",
+            "priority": "express",
+            "mixed_scenario": true,
+            "scenario_type": "retry"
+          }
+        },
+        "mc003": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Retry Customer",
+            "customer_id": "retry_customer_003",
+            "email": "retry@example.com",
+            "status": "active",
+            "mixed_customer": true,
+            "retry_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_003",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:12:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Payment Processing #003",
+        "concept:cost": 1.99,
+        "payment_processor": "paypal",
+        "transaction_id": "mixed_txn_003001",
+        "amount": 200.00,
+        "currency": "USD",
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {},
+        "mc003": {},
+        "mp003": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Mixed Payment #003",
+            "payment_method": "paypal",
+            "amount": 200.00,
+            "status": "processing",
+            "processor": "paypal",
+            "transaction_id": "mixed_txn_003001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_003_fail",
+      "type": "PaymentError",
+      "timestamp": "2024-03-03T09:15:00.000Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Mixed Payment Failure #003",
+        "concept:cost": 0.00,
+        "error_type": "system_error",
+        "error_message": "PayPal gateway temporarily unavailable",
+        "error_code": "PAYPAL_503",
+        "system_service": "payment_gateway",
+        "mixed_scenario": true,
+        "scenario_type": "retry",
+        "retry_available": true
+      },
+      "objects": {
+        "mo003": {
+          "attributes": {
+            "status": "payment_failed",
+            "failed_at": "2024-03-03T09:15:00.000Z",
+            "mixed_scenario": true,
+            "scenario_type": "retry"
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_003_retry",
+      "type": "PaymentRetry",
+      "timestamp": "2024-03-03T09:17:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Payment Retry #003",
+        "concept:cost": 1.99,
+        "payment_processor": "paypal",
+        "transaction_id": "mixed_txn_003001_retry",
+        "amount": 200.00,
+        "currency": "USD",
+        "retry_count": 1,
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {},
+        "mc003": {},
+        "mp003": {
+          "attributes": {
+            "status": "retrying",
+            "retry_attempts": 1,
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_003_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:20:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Payment Success #003",
+        "concept:cost": 0.30,
+        "payment_result": "success",
+        "paypal_transaction_id": "mixed_paypal_003001",
+        "retry_success": true,
+        "total_attempts": 2,
+        "processing_time_ms": 480000,
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {},
+        "mc003": {},
+        "mp003": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:20:00.000Z",
+            "paypal_transaction_id": "mixed_paypal_003001",
+            "retry_success": true,
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_order_004",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:25:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Scenario Order #004 - Concurrent",
+        "concept:description": "Order processed concurrently with others",
+        "customer_id": "concurrent_customer_004",
+        "customer_name": "Concurrent Customer",
+        "order_value": 75.00,
+        "items_count": 1,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "mixed_scenario": true,
+        "scenario_type": "concurrent",
+        "concurrent_processing": true
+      },
+      "objects": {
+        "mo004": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Mixed Order #004",
+            "customer_id": "concurrent_customer_004",
+            "total_amount": 75.00,
+            "status": "created",
+            "created_at": "2024-03-03T09:25:00.000Z",
+            "priority": "normal",
+            "mixed_scenario": true,
+            "scenario_type": "concurrent"
+          }
+        },
+        "mc004": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Concurrent Customer",
+            "customer_id": "concurrent_customer_004",
+            "email": "concurrent@example.com",
+            "status": "active",
+            "mixed_customer": true,
+            "concurrent_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_004",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:27:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Payment Processing #004",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "mixed_txn_004001",
+        "amount": 75.00,
+        "currency": "USD",
+        "mixed_scenario": true,
+        "scenario_type": "concurrent",
+        "concurrent_requests": 3
+      },
+      "objects": {
+        "mo004": {},
+        "mc004": {},
+        "mp004": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Mixed Payment #004",
+            "payment_method": "credit_card",
+            "amount": 75.00,
+            "status": "processing",
+            "processor": "stripe",
+            "transaction_id": "mixed_txn_004001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_payment_004_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:30:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Payment Success #004",
+        "concept:cost": 0.50,
+        "payment_result": "success",
+        "authorization_code": "mixed_auth_004001",
+        "processing_time_ms": 180000,
+        "mixed_scenario": true,
+        "scenario_type": "concurrent"
+      },
+      "objects": {
+        "mo004": {},
+        "mc004": {},
+        "mp004": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:30:00.000Z",
+            "authorization_code": "mixed_auth_004001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_inventory_check_001",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:32:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Inventory Check #001",
+        "concept:cost": 0.50,
+        "items_checked": 3,
+        "inventory_system": "warehouse_1",
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {},
+        "mi001": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Mixed Inventory #001",
+            "items_count": 3,
+            "stock_status": "checking",
+            "warehouse_id": "wh_001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_inventory_check_001_success",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T09:35:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Inventory Success #001",
+        "concept:cost": 0.10,
+        "result": "success",
+        "items_available": 3,
+        "low_stock_items": [],
+        "processing_time_ms": 180000,
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {},
+        "mi001": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 3,
+            "last_checked": "2024-03-03T09:35:00.000Z",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_shipping_001",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T09:40:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Shipping Preparation #001",
+        "concept:cost": 10.00,
+        "packaging_type": "standard",
+        "shipping_carrier": "fedex",
+        "estimated_weight": 1.5,
+        "dimensions": "10x8x4",
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {},
+        "ms001": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Mixed Shipping #001",
+            "carrier": "fedex",
+            "service_type": "ground",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-05T17:00:00Z",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_shipping_001_complete",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T09:45:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Shipping Handoff #001",
+        "concept:cost": 12.00,
+        "handoff_time": "2024-03-03T09:45:00.000Z",
+        "tracking_number": "FDX_MIXED_123456789",
+        "weight_actual": 1.4,
+        "dimension_actual": "10x8x4",
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {},
+        "ms001": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T09:45:00.000Z",
+            "tracking_number": "FDX_MIXED_123456789",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_inventory_check_003_fail",
+      "type": "InventoryError",
+      "timestamp": "2024-03-03T09:48:00.000Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Mixed Inventory Error #003",
+        "concept:cost": 0.00,
+        "error_type": "timeout",
+        "error_message": "Inventory system timeout during retry scenario",
+        "system_load": "high",
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {
+          "attributes": {
+            "status": "inventory_error",
+            "failed_at": "2024-03-03T09:48:00.000Z",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_inventory_check_003",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:50:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Inventory Check #003",
+        "concept:cost": 0.50,
+        "items_checked": 2,
+        "inventory_system": "warehouse_1",
+        "priority": "high",
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {},
+        "mi003": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Mixed Inventory #003",
+            "items_count": 2,
+            "stock_status": "checking",
+            "warehouse_id": "wh_001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_inventory_check_003_success",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T09:55:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Inventory Success #003",
+        "concept:cost": 0.10,
+        "result": "success",
+        "items_available": 2,
+        "low_stock_items": ["item_D"],
+        "processing_time_ms": 300000,
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {},
+        "mi003": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 2,
+            "low_stock_items": ["item_D"],
+            "last_checked": "2024-03-03T09:55:00.000Z",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_shipping_003",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T10:00:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Shipping Preparation #003",
+        "concept:cost": 20.00,
+        "packaging_type": "express",
+        "shipping_carrier": "ups",
+        "estimated_weight": 1.0,
+        "dimensions": "8x6x3",
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {},
+        "ms003": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Mixed Shipping #003",
+            "carrier": "ups",
+            "service_type": "next_day_air",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-04T17:00:00Z",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_shipping_003_complete",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T10:05:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Shipping Handoff #003",
+        "concept:cost": 25.00,
+        "handoff_time": "2024-03-03T10:05:00.000Z",
+        "tracking_number": "1Z_MIXED_999999999",
+        "weight_actual": 0.9,
+        "dimension_actual": "8x6x3",
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {},
+        "ms003": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T10:05:00.000Z",
+            "tracking_number": "1Z_MIXED_999999999",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_inventory_check_004",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T10:10:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Inventory Check #004",
+        "concept:cost": 0.30,
+        "items_checked": 1,
+        "inventory_system": "warehouse_1",
+        "mixed_scenario": true,
+        "scenario_type": "concurrent"
+      },
+      "objects": {
+        "mo004": {},
+        "mi004": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Mixed Inventory #004",
+            "items_count": 1,
+            "stock_status": "checking",
+            "warehouse_id": "wh_001",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_inventory_check_004_success",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T10:15:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Inventory Success #004",
+        "concept:cost": 0.05,
+        "result": "success",
+        "items_available": 1,
+        "low_stock_items": ["item_E"],
+        "processing_time_ms": 300000,
+        "mixed_scenario": true,
+        "scenario_type": "concurrent"
+      },
+      "objects": {
+        "mo004": {},
+        "mi004": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 1,
+            "low_stock_items": ["item_E"],
+            "last_checked": "2024-03-03T10:15:00.000Z",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_shipping_004",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T10:20:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Mixed Shipping Preparation #004",
+        "concept:cost": 8.00,
+        "packaging_type": "standard",
+        "shipping_carrier": "fedex",
+        "estimated_weight": 0.5,
+        "dimensions": "6x4x2",
+        "mixed_scenario": true,
+        "scenario_type": "concurrent"
+      },
+      "objects": {
+        "mo004": {},
+        "ms004": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Mixed Shipping #004",
+            "carrier": "fedex",
+            "service_type": "ground",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-05T17:00:00Z",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_shipping_004_complete",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T10:25:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Shipping Handoff #004",
+        "concept:cost": 10.00,
+        "handoff_time": "2024-03-03T10:25:00.000Z",
+        "tracking_number": "FDX_MIXED_SMALL_123456",
+        "weight_actual": 0.4,
+        "dimension_actual": "6x4x2",
+        "mixed_scenario": true,
+        "scenario_type": "concurrent"
+      },
+      "objects": {
+        "mo004": {},
+        "ms004": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T10:25:00.000Z",
+            "tracking_number": "FDX_MIXED_SMALL_123456",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_order_close_001",
+      "type": "OrderClose",
+      "timestamp": "2024-03-05T16:00:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Order #001 - Delivered",
+        "concept:cost": 0.00,
+        "delivery_status": "delivered",
+        "delivery_time": "2024-03-05T16:00:00.000Z",
+        "customer_rating": 4.5,
+        "feedback": "Good delivery service",
+        "mixed_scenario": true,
+        "scenario_type": "normal"
+      },
+      "objects": {
+        "mo001": {
+          "attributes": {
+            "status": "delivered",
+            "delivered_at": "2024-03-05T16:00:00.000Z",
+            "customer_rating": 4.5,
+            "feedback": "Good delivery service",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_order_close_003",
+      "type": "OrderClose",
+      "timestamp": "2024-03-04T15:00:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Order #003 - Delivered",
+        "concept:cost": 0.00,
+        "delivery_status": "delivered",
+        "delivery_time": "2024-03-04T15:00:00.000Z",
+        "customer_rating": 5.0,
+        "feedback": "Express delivery was excellent",
+        "mixed_scenario": true,
+        "scenario_type": "retry"
+      },
+      "objects": {
+        "mo003": {
+          "attributes": {
+            "status": "delivered",
+            "delivered_at": "2024-03-04T15:00:00.000Z",
+            "customer_rating": 5.0,
+            "feedback": "Express delivery was excellent",
+            "mixed_scenario": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mixed_order_close_004",
+      "type": "OrderClose",
+      "timestamp": "2024-03-05T14:00:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Mixed Order #004 - Delivered",
+        "concept:cost": 0.00,
+        "delivery_status": "delivered",
+        "delivery_time": "2024-03-05T14:00:00.000Z",
+        "customer_rating": 4.0,
+        "feedback": "Standard delivery was fine",
+        "mixed_scenario": true,
+        "scenario_type": "concurrent"
+      },
+      "objects": {
+        "mo004": {
+          "attributes": {
+            "status": "delivered",
+            "delivered_at": "2024-03-05T14:00:00.000Z",
+            "customer_rating": 4.0,
+            "feedback": "Standard delivery was fine",
+            "mixed_scenario": true
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "mo001": {
+      "id": "mo001",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Mixed Order #001",
+        "concept:description": "Normal order processing scenario",
+        "customer_id": "normal_customer_001",
+        "total_amount": 150.00,
+        "status": "delivered",
+        "created_at": "2024-03-03T09:00:00.000Z",
+        "delivered_at": "2024-03-05T16:00:00.000Z",
+        "priority": "normal",
+        "mixed_scenario": true,
+        "scenario_type": "normal",
+        "payment_status": "completed",
+        "shipping_status": "delivered",
+        "processing_time_minutes": 9600
+      }
+    },
+    "mo002": {
+      "id": "mo002",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Mixed Order #002",
+        "concept:description": "Order with invalid data that needed correction",
+        "customer_id": "abnormal_customer_002",
+        "total_amount": 99.99,
+        "status": "corrected",
+        "created_at": "2024-03-03T09:05:00.000Z",
+        "priority": null,
+        "mixed_scenario": true,
+        "scenario_type": "abnormal",
+        "data_validation_failed": true,
+        "auto_correction_applied": true,
+        "processing_time_minutes": 180
+      }
+    },
+    "mo003": {
+      "id": "mo003",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Mixed Order #003",
+        "concept:description": "Order that required retry due to system issues",
+        "customer_id": "retry_customer_003",
+        "total_amount": 200.00,
+        "status": "delivered",
+        "created_at": "2024-03-03T09:10:00.000Z",
+        "delivered_at": "2024-03-04T15:00:00.000Z",
+        "priority": "express",
+        "mixed_scenario": true,
+        "scenario_type": "retry",
+        "payment_status": "completed",
+        "shipping_status": "delivered",
+        "retry_success": true,
+        "processing_time_minutes": 5100
+      }
+    },
+    "mo004": {
+      "id": "mo004",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Mixed Order #004",
+        "concept:description": "Order processed concurrently with others",
+        "customer_id": "concurrent_customer_004",
+        "total_amount": 75.00,
+        "status": "delivered",
+        "created_at": "2024-03-03T09:25:00.000Z",
+        "delivered_at": "2024-03-05T14:00:00.000Z",
+        "priority": "normal",
+        "mixed_scenario": true,
+        "scenario_type": "concurrent",
+        "payment_status": "completed",
+        "shipping_status": "delivered",
+        "concurrent_processing": true,
+        "processing_time_minutes": 4350
+      }
+    },
+    "mc001": {
+      "id": "mc001",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Normal Customer",
+        "concept:description": "Regular customer in mixed scenario",
+        "customer_id": "normal_customer_001",
+        "email": "normal@example.com",
+        "status": "active",
+        "loyalty_points": 1000,
+        "total_orders": 1,
+        "total_spent": 150.00,
+        "join_date": "2023-01-15T00:00:00Z",
+        "mixed_customer": true
+      }
+    },
+    "mc002": {
+      "id": "mc002",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Abnormal Customer",
+        "concept:description": "Customer with data validation issues",
+        "customer_id": "abnormal_customer_002",
+        "email": "abnormal@example.com",
+        "status": "active",
+        "loyalty_points": 500,
+        "total_orders": 1,
+        "total_spent": 99.99,
+        "join_date": "2023-02-20T00:00:00Z",
+        "mixed_customer": true,
+        "data_validation_failed": true
+      }
+    },
+    "mc003": {
+      "id": "mc003",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Retry Customer",
+        "concept:description": "Customer who experienced payment retry",
+        "customer_id": "retry_customer_003",
+        "email": "retry@example.com",
+        "status": "active",
+        "loyalty_points": 1500,
+        "total_orders": 1,
+        "total_spent": 200.00,
+        "join_date": "2023-03-01T00:00:00Z",
+        "mixed_customer": true,
+        "retry_customer": true
+      }
+    },
+    "mc004": {
+      "id": "mc004",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Concurrent Customer",
+        "concept:description": "Customer with concurrent processing",
+        "customer_id": "concurrent_customer_004",
+        "email": "concurrent@example.com",
+        "status": "active",
+        "loyalty_points": 750,
+        "total_orders": 1,
+        "total_spent": 75.00,
+        "join_date": "2023-03-02T00:00:00Z",
+        "mixed_customer": true,
+        "concurrent_customer": true
+      }
+    },
+    "mp001": {
+      "id": "mp001",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Mixed Payment #001",
+        "concept:description": "Normal payment processing",
+        "payment_method": "credit_card",
+        "amount": 150.00,
+        "status": "completed",
+        "processor": "stripe",
+        "transaction_id": "mixed_txn_001001",
+        "authorization_code": "mixed_auth_001001",
+        "completed_at": "2024-03-03T09:04:00.000Z",
+        "processing_time_ms": 120000,
+        "mixed_scenario": true
+      }
+    },
+    "mp003": {
+      "id": "mp003",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Mixed Payment #003",
+        "concept:description": "Payment that required retry",
+        "payment_method": "paypal",
+        "amount": 200.00,
+        "status": "completed",
+        "processor": "paypal",
+        "transaction_id": "mixed_txn_003001",
+        "paypal_transaction_id": "mixed_paypal_003001",
+        "completed_at": "2024-03-03T09:20:00.000Z",
+        "processing_time_ms": 480000,
+        "retry_success": true,
+        "total_attempts": 2,
+        "mixed_scenario": true
+      }
+    },
+    "mp004": {
+      "id": "mp004",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Mixed Payment #004",
+        "concept:description": "Concurrent payment processing",
+        "payment_method": "credit_card",
+        "amount": 75.00,
+        "status": "completed",
+        "processor": "stripe",
+        "transaction_id": "mixed_txn_004001",
+        "authorization_code": "mixed_auth_004001",
+        "completed_at": "2024-03-03T09:30:00.000Z",
+        "processing_time_ms": 180000,
+        "mixed_scenario": true
+      }
+    },
+    "mi001": {
+      "id": "mi001",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Mixed Inventory #001",
+        "concept:description": "Normal inventory check",
+        "items_count": 3,
+        "stock_status": "available",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T09:35:00.000Z",
+        "mixed_scenario": true
+      }
+    },
+    "mi003": {
+      "id": "mi003",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Mixed Inventory #003",
+        "concept:description": "Inventory for retry scenario",
+        "items_count": 2,
+        "stock_status": "limited",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T09:55:00.000Z",
+        "low_stock_items": ["item_D"],
+        "mixed_scenario": true
+      }
+    },
+    "mi004": {
+      "id": "mi004",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Mixed Inventory #004",
+        "concept:description": "Concurrent inventory check",
+        "items_count": 1,
+        "stock_status": "limited",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T10:15:00.000Z",
+        "low_stock_items": ["item_E"],
+        "mixed_scenario": true
+      }
+    },
+    "ms001": {
+      "id": "ms001",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Mixed Shipping #001",
+        "concept:description": "Normal shipping processing",
+        "carrier": "fedex",
+        "service_type": "ground",
+        "status": "delivered",
+        "estimated_delivery": "2024-03-05T17:00:00Z",
+        "actual_delivery": "2024-03-05T16:00:00.000Z",
+        "tracking_number": "FDX_MIXED_123456789",
+        "handed_off_at": "2024-03-03T09:45:00.000Z",
+        "weight": 1.4,
+        "dimensions": "10x8x4",
+        "mixed_scenario": true
+      }
+    },
+    "ms003": {
+      "id": "ms003",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Mixed Shipping #003",
+        "concept:description": "Express shipping for retry scenario",
+        "carrier": "ups",
+        "service_type": "next_day_air",
+        "status": "delivered",
+        "estimated_delivery": "2024-03-04T17:00:00Z",
+        "actual_delivery": "2024-03-04T15:00:00.000Z",
+        "tracking_number": "1Z_MIXED_999999999",
+        "handed_off_at": "2024-03-03T10:05:00.000Z",
+        "weight": 0.9,
+        "dimensions": "8x6x3",
+        "mixed_scenario": true
+      }
+    },
+    "ms004": {
+      "id": "ms004",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Mixed Shipping #004",
+        "concept:description": "Standard shipping for concurrent scenario",
+        "carrier": "fedex",
+        "service_type": "ground",
+        "status": "delivered",
+        "estimated_delivery": "2024-03-05T17:00:00Z",
+        "actual_delivery": "2024-03-05T14:00:00.000Z",
+        "tracking_number": "FDX_MIXED_SMALL_123456",
+        "handed_off_at": "2024-03-03T10:25:00.000Z",
+        "weight": 0.4,
+        "dimensions": "6x4x2",
+        "mixed_scenario": true
+      }
+    }
+  }
+}

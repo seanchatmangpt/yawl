@@ -73,6 +73,13 @@ yawl:
         enabled: ${A2A_JSONRPC_ENABLED:false}
         port: ${A2A_JSONRPC_PORT:8083}
 
+  # Groq LLM Configuration for A2A
+  groq:
+    enabled: ${GROQ_ENABLED:true}
+    api-key: ${GROQ_API_KEY:}
+    model: ${GROQ_MODEL:openai/gpt-oss-20b}
+    max-concurrency: ${GROQ_MAX_CONCURRENCY:30}
+
   # Greg-Verse Multi-Agent Configuration
   gregverse:
     enabled: ${GREGVERSE_ENABLED:true}

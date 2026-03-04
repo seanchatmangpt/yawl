@@ -1,0 +1,7 @@
+[build]
+target-dir = "target"
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1

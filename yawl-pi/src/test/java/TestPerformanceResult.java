@@ -1,4 +1,4 @@
-import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
+import org.yawlfoundation.yawl.pi.rag.stub.ProcessMiningFacade;
 
 public class TestPerformanceResult {
     public static void main(String[] args) {

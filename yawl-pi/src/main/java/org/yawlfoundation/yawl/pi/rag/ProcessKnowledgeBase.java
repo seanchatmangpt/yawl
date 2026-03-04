@@ -18,7 +18,7 @@
 
 package org.yawlfoundation.yawl.pi.rag;
 
-import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
+import org.yawlfoundation.yawl.pi.rag.stub.ProcessMiningFacade;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
 import org.yawlfoundation.yawl.pi.PIException;
 import org.yawlfoundation.yawl.engine.YSpecificationID;

@@ -27,29 +27,29 @@ hipaa:HealthcareProcessShape a sh:NodeShape ;
     sh:property [
         sh:path yawl:hasTask ;
         sh:node hipaa:HealthcareTaskShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Healthcare process must contain at least one healthcare task" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Healthcare process must contain at least one healthcare task" ;
     ] ;
     sh:property [
         sh:path yawl:hasPHI ;
-        hasValue true ;
-        severity sh:Violation ;
-        message "Process must declare Protected Health Information (PHI) handling" ;
+        sh:hasValue true ;
+        sh:severity sh:Violation ;
+        sh:message "Process must declare Protected Health Information (PHI) handling" ;
     ] ;
     sh:property [
         sh:path yawl:hasSecurity ;
         sh:node hipaa:SecurityShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "HIPAA security requirements must be met" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "HIPAA security requirements must be met" ;
     ] ;
     sh:property [
         sh:path yawl:hasPrivacy ;
         sh:node hipaa:PrivacyShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "HIPAA privacy requirements must be met" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "HIPAA privacy requirements must be met" ;
     ] .
 
 # Healthcare Task Shape
@@ -61,30 +61,30 @@ hipaa:HealthcareTaskShape a sh:NodeShape ;
     sh:message "Healthcare task must comply with HIPAA requirements" ;
     sh:property [
         sh:path yawl:handlesPHI ;
-        hasValue true ;
-        severity sh:Violation ;
-        message "Task must declare PHI handling" ;
+        sh:hasValue true ;
+        sh:severity sh:Violation ;
+        sh:message "Task must declare PHI handling" ;
     ] ;
     sh:property [
         sh:path yawl:hasAccessControl ;
         sh:node hipaa:AccessControlShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Access controls required for healthcare data" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Access controls required for healthcare data" ;
     ] ;
     sh:property [
         sh:path yawl:hasAuditLog ;
         sh:node hipaa:AuditLogShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Audit logs required for healthcare data" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Audit logs required for healthcare data" ;
     ] ;
     sh:property [
         sh:path yawl:hasEncryption ;
         sh:node hipaa:EncryptionShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Encryption required for healthcare data" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Encryption required for healthcare data" ;
     ] .
 
 # Security Rule Shape
@@ -95,21 +95,21 @@ hipaa:SecurityShape a sh:NodeShape ;
     sh:property [
         sh:path yawl:hasAdministrative ;
         sh:node hipaa:AdministrativeShape ;
-        severity sh:Warning ;
-        message "Administrative safeguards should be implemented" ;
+        sh:severity sh:Warning ;
+        sh:message "Administrative safeguards should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:hasPhysical ;
         sh:node hipaa:PhysicalShape ;
-        severity sh:Warning ;
-        message "Physical safeguards should be implemented" ;
+        sh:severity sh:Warning ;
+        sh:message "Physical safeguards should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:hasTechnical ;
         sh:node hipaa:TechnicalShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Technical safeguards required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Technical safeguards required" ;
     ] .
 
 # Administrative Safeguards Shape
@@ -119,27 +119,27 @@ hipaa:AdministrativeShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:property [
         sh:path yawl:hasSecurityManagement ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Security management process should be defined" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Security management process should be defined" ;
     ] ;
     sh:property [
         sh:path yawl:hasWorkforceTraining ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Workforce training should be provided" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Workforce training should be provided" ;
     ] ;
     sh:property [
         sh:path yawl:hasSanctionPolicy ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Sanction policy should be defined" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Sanction policy should be defined" ;
     ] ;
     sh:property [
         sh:path yawl:hasRiskManagement ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Risk management should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Risk management should be implemented" ;
     ] .
 
 # Physical Safeguards Shape
@@ -149,27 +149,27 @@ hipaa:PhysicalShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:property [
         sh:path yawl:hasAccessControl ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Physical access control should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Physical access control should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:hasWorkstationSecurity ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Workstation security should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Workstation security should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:hasDeviceSecurity ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Device security should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Device security should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:hasMediaControls ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Media controls should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Media controls should be implemented" ;
     ] .
 
 # Technical Safeguards Shape
@@ -180,36 +180,36 @@ hipaa:TechnicalShape a sh:NodeShape ;
     sh:property [
         sh:path yawl:hasAccessControl ;
         sh:node hipaa:AccessControlShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Access controls required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Access controls required" ;
     ] ;
     sh:property [
         sh:path yawl:hasAuditControls ;
         sh:node hipaa:AuditControlShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Audit controls required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Audit controls required" ;
     ] ;
     sh:property [
         sh:path yawl:hasIntegrity ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Integrity controls should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Integrity controls should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:hasTransmission ;
         sh:node hipaa:TransmissionShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Transmission security required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Transmission security required" ;
     ] ;
     sh:property [
         sh:path yawl:hasStorage ;
         sh:node hipaa:StorageShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Storage security required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Storage security required" ;
     ] .
 
 # Privacy Rule Shape
@@ -219,33 +219,33 @@ hipaa:PrivacyShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:hasNotice ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Privacy notice required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Privacy notice required" ;
     ] ;
     sh:property [
         sh:path yawl:hasAuthorization ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Authorization required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Authorization required" ;
     ] ;
     sh:property [
         sh:path yawl:hasAccounting ;
         sh:node hipaa:AccountingShape ;
-        severity sh:Warning ;
-        message "Accounting of disclosures should be maintained" ;
+        sh:severity sh:Warning ;
+        sh:message "Accounting of disclosures should be maintained" ;
     ] ;
     sh:property [
         sh:path yawl:hasMinimumNecessary ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Minimum necessary standard required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Minimum necessary standard required" ;
     ] ;
     sh:property [
         sh:path yawl:hasBusinessAssociate ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Business associate agreements should be in place" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Business associate agreements should be in place" ;
     ] .
 
 # Access Control Shape
@@ -255,33 +255,33 @@ hipaa:AccessControlShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:uniqueUserIdentifier ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Unique user identifier required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Unique user identifier required" ;
     ] ;
     sh:property [
         sh:path yawl:emergencyAccess ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Emergency access procedures should be defined" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Emergency access procedures should be defined" ;
     ] ;
     sh:property [
         sh:path yawl:automaticLogoff ;
-        minInclusive 1 ;
-        severity sh:Warning ;
-        message "Automatic logoff should be implemented" ;
+        xsd:minInclusive 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Automatic logoff should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:encryption ;
         sh:node hipaa:EncryptionShape ;
-        severity sh:Warning ;
-        message "Encryption should be implemented" ;
+        sh:severity sh:Warning ;
+        sh:message "Encryption should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:activityReview ;
-        minInclusive 1 ;
-        severity sh:Warning ;
-        message "Activity review should be implemented" ;
+        xsd:minInclusive 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Activity review should be implemented" ;
     ] .
 
 # Audit Control Shape
@@ -291,27 +291,27 @@ hipaa:AuditControlShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:auditTrail ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Audit trail required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Audit trail required" ;
     ] ;
     sh:property [
         sh:path yawl:auditRetention ;
-        minInclusive 6 ;
-        severity sh:Violation ;
-        message "Audit trail retention minimum 6 years" ;
+        xsd:minInclusive 6 ;
+        sh:severity sh:Violation ;
+        sh:message "Audit trail retention minimum 6 years" ;
     ] ;
     sh:property [
         sh:path yawl:auditMonitoring ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Audit monitoring should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Audit monitoring should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:auditReview ;
-        minInclusive 1 ;
-        severity sh:Warning ;
-        message "Audit review should be implemented" ;
+        xsd:minInclusive 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Audit review should be implemented" ;
     ] .
 
 # Encryption Shape
@@ -321,27 +321,27 @@ hipaa:EncryptionShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:encryptTransit ;
-        hasValue true ;
-        severity sh:Violation ;
-        message "Encryption in transit required" ;
+        sh:hasValue true ;
+        sh:severity sh:Violation ;
+        sh:message "Encryption in transit required" ;
     ] ;
     sh:property [
         sh:path yawl:encryptAtRest ;
-        hasValue true ;
-        severity sh:Warning ;
-        message "Encryption at rest should be implemented" ;
+        sh:hasValue true ;
+        sh:severity sh:Warning ;
+        sh:message "Encryption at rest should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:encryptAlgorithm ;
-        in ("AES-256", "AES-192", "AES-128", "3DES", "RSA-2048") ;
-        severity sh:Warning ;
-        message "Encryption algorithm should be strong" ;
+        sh:in ("AES-256", "AES-192", "AES-128", "3DES", "RSA-2048") ;
+        sh:severity sh:Warning ;
+        sh:message "Encryption algorithm should be strong" ;
     ] ;
     sh:property [
         sh:path yawl:keyManagement ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Key management required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Key management required" ;
     ] .
 
 # Transmission Security Shape
@@ -351,27 +351,27 @@ hipaa:TransmissionShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:secureChannel ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Secure channel required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Secure channel required" ;
     ] ;
     sh:property [
         sh:path yawl:authenticity ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Authenticity should be verified" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Authenticity should be verified" ;
     ] ;
     sh:property [
         sh:path yawl:integrity ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Integrity should be verified" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Integrity should be verified" ;
     ] ;
     sh:property [
         sh:path yawl:nonRepudiation ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Non-repudiation should be provided" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Non-repudiation should be provided" ;
     ] .
 
 # Storage Security Shape
@@ -381,27 +381,27 @@ hipaa:StorageShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:accessControl ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Access control required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Access control required" ;
     ] ;
     sh:property [
         sh:path yawl:auditControl ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Audit control should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Audit control should be implemented" ;
     ] ;
     sh:property [
         sh:path yawl:disposal ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Disposal procedures required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Disposal procedures required" ;
     ] ;
     sh:property [
         sh:path yawl:backup ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Backup procedures should be implemented" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Backup procedures should be implemented" ;
     ] .
 
 # Accounting of Disclosures Shape
@@ -411,27 +411,27 @@ hipaa:AccountingShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:property [
         sh:path yawl:accountingProcedure ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Accounting procedures should be defined" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Accounting procedures should be defined" ;
     ] ;
     sh:property [
         sh:path yawl:retentionPeriod ;
-        minInclusive 6 ;
-        severity sh:Warning ;
-        message "Retention period should be at least 6 years" ;
+        xsd:minInclusive 6 ;
+        sh:severity sh:Warning ;
+        sh:message "Retention period should be at least 6 years" ;
     ] ;
     sh:property [
         sh:path yawl:accessProcedure ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Access procedures should be defined" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Access procedures should be defined" ;
     ] ;
     sh:property [
         sh:path yawl:feeStructure ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Fee structure should be defined" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Fee structure should be defined" ;
     ] .
 
 # Breach Notification Shape
@@ -441,33 +441,33 @@ hipaa:BreachNotificationShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:breachDetection ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Breach detection required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Breach detection required" ;
     ] ;
     sh:property [
         sh:path yawl:notificationTime ;
-        minInclusive 60 ;
-        severity sh:Violation ;
-        message "Notification within 60 days" ;
+        xsd:minInclusive 60 ;
+        sh:severity sh:Violation ;
+        sh:message "Notification within 60 days" ;
     ] ;
     sh:property [
         sh:path yawl:notificationContent ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Notification content required" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Notification content required" ;
     ] ;
     sh:property [
         sh:path yawl:notificationMethod ;
-        in ("written", "email", "electronic") ;
-        severity sh:Warning ;
-        message "Notification method should be appropriate" ;
+        sh:in ("written", "email", "electronic") ;
+        sh:severity sh:Warning ;
+        sh:message "Notification method should be appropriate" ;
     ] ;
     sh:property [
         sh:path yawl:lawEnforcement ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "Law enforcement notification should be considered" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Law enforcement notification should be considered" ;
     ] .
 
 # Business Associate Agreement Shape
@@ -477,31 +477,31 @@ hipaa:BusinessAssociateShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:hasBAA ;
-        hasValue true ;
-        severity sh:Violation ;
-        message "Business Associate Agreement required" ;
+        sh:hasValue true ;
+        sh:severity sh:Violation ;
+        sh:message "Business Associate Agreement required" ;
     ] ;
     sh:property [
         sh:path yawl:baaScope ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "BAA scope should be defined" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "BAA scope should be defined" ;
     ] ;
     sh:property [
         sh:path yawl:baaDuration ;
-        minInclusive 1 ;
-        severity sh:Warning ;
-        message "BAA duration should be specified" ;
+        xsd:minInclusive 1 ;
+        sh:severity sh:Warning ;
+        sh:message "BAA duration should be specified" ;
     ] ;
     sh:property [
         sh:path yawl:baaTermination ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "BAA termination should be specified" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "BAA termination should be specified" ;
     ] ;
     sh:property [
         sh:path yawl:baaCompliance ;
-        minCount 1 ;
-        severity sh:Warning ;
-        message "BAA compliance should be monitored" ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "BAA compliance should be monitored" ;
     ] .

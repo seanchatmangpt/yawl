@@ -37,11 +37,26 @@
             <version>4.8.0</version>
         </dependency>
 
-        <!-- JSON Processing (for SPARQL results) -->
+        <!-- JSON Processing -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>${gson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- Logging -->
@@ -74,6 +89,13 @@
         <dependency>
             <groupId>net.sf.jung</groupId>
             <artifactId>jung-graph-impl</artifactId>
+        </dependency>
+
+        <!-- JavaParser for AST parsing -->
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.25.10</version>
         </dependency>
 
         <!-- Testing — versions inherited from parent BOM (${junit.jupiter.version} = 5.12.0) -->
@@ -177,11 +199,7 @@
             <testResource>
                 <directory>src/test/resources</directory>
                 <includes>
-                    <include>**/*.pnml</include>
-                    <include>**/*.xes</include>
-                    <include>**/*.xml</include>
-                    <include>**/*.ttl</include>
-                    <include>**/*.json</include>
+                    <include>**/*</include>
                 </includes>
             </testResource>
         </testResources>

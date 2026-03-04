@@ -1,0 +1,56 @@
+# Autonomous Claude Code Configuration
+# Controls fully autonomous execution without user prompts
+
+[execution]
+mode = "fully_autonomous"
+allow_user_input = false
+ask_user_question_enabled = false
+disable_all_prompts = true
+
+[limits]
+max_iterations_default = 50
+max_iterations_hard = 100
+timeout_per_phase_minutes = 30
+timeout_per_iteration_minutes = 60
+max_stalled_iterations = 5
+max_remediation_attempts = 3
+
+[remediation]
+auto_fix_h_violations = true
+auto_fix_q_violations = true
+auto_fix_confidence_threshold = 0.90
+verify_after_each_fix = true
+create_git_commit_per_fix = true
+
+[validation]
+require_green_before_exit = true
+allow_implicit_success = true
+implicit_success_criteria = ["all_tests_pass", "no_violations", "files_committed"]
+phases_enforced = ["psi", "lambda", "h", "q", "omega"]
+phase_priority = "H > Q > Ψ > Λ > Ω"
+
+[decisions]
+confidence_threshold = 0.75
+allow_fallback = true
+log_all_decisions = true
+decision_log_path = ".claude/memory/decisions.log"
+decision_state_dir = ".claude/.decision-state"
+
+[defaults]
+agent_if_unsure = "yawl-engineer"
+remediation_confidence_threshold = 0.95
+implicit_success_check = true
+observe_before_deciding = true
+
+[logging]
+log_level = "INFO"
+log_decisions = true
+log_remediation = true
+log_validation = true
+audit_trail = ".claude/memory/audit.log"
+
+[observability]
+decision_log_format = "json"
+include_context_in_logs = true
+include_reasoning_in_decisions = true
+memory_dir = ".claude/memory"

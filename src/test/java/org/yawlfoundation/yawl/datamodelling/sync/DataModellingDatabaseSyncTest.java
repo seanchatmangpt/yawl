@@ -21,10 +21,17 @@ package org.yawlfoundation.yawl.datamodelling.sync;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.TestInstance;
+import org.h2.jdbcx.JdbcConnectionPool;
+import org.h2.jdbcx.JdbcDataSource;
 import org.yawlfoundation.yawl.datamodelling.DataModellingBridge;
+import org.yawlfoundation.yawl.datamodelling.DataModellingException;
 
+import java.sql.Connection;
+import java.sql.Statement;
+import java.sql.SQLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,17 +39,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for DataModellingDatabaseSync.
+ * Integration tests for DataModellingDatabaseSync using real database connections.
+ *
+ * <p>Chicago TDD approach: Uses real H2 database connections, not mocks.
+ * Tests actual database synchronization with real data modelling components.</p>
  *
  * <p>Tests cover:
  * <ul>
  *   <li>Workspace to database synchronization (FULL, INCREMENTAL, DELETE_SAFE)</li>
  *   <li>Database to workspace reverse sync</li>
- *   <li>SQL query execution</li>
+ *   <li>SQL query execution against real database</li>
  *   <li>Checkpoint management and resume capability</li>
  *   <li>Thread-safety with concurrent operations</li>
  *   <li>Idempotency of sync operations</li>
@@ -52,30 +64,43 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author YAWL Foundation (Teammate 4 - Engineer)
  * @version 6.0.0
  */
-@DisplayName("DataModellingDatabaseSync Tests")
+@DisplayName("DataModellingDatabaseSync Integration Tests")
+@Tag("integration")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DataModellingDatabaseSyncTest {
 
-    @Mock
-    private DataModellingBridge mockBridge;
-
     private DataModellingDatabaseSync sync;
-    private DatabaseBackendConfig duckdbConfig;
+    private DataModellingBridge bridge;
+    private JdbcConnectionPool h2Pool;
+    private List<Connection> connectionsToClose = new ArrayList<>();
+    private DatabaseBackendConfig h2Config;
     private DatabaseBackendConfig postgresConfig;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        sync = new DataModellingDatabaseSync(mockBridge);
+    void setUp() throws SQLException {
+        // Initialize real DataModellingBridge
+        bridge = new DataModellingBridge();
+        sync = new DataModellingDatabaseSync(bridge);
 
-        // Configure DuckDB backend
-        duckdbConfig = DatabaseBackendConfig.builder()
-            .backendType("duckdb")
-            .connectionString(":memory:")
+        // Set up H2 connection pool for testing
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL");
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
+        h2Pool = JdbcConnectionPool.create(dataSource);
+
+        // Initialize the database with test tables
+        initializeTestDatabase();
+
+        // Configure H2 backend
+        h2Config = DatabaseBackendConfig.builder()
+            .backendType("h2")
+            .connectionString("jdbc:h2:mem:testdb")
             .syncStrategy(DatabaseBackendConfig.SyncStrategy.INCREMENTAL)
             .batchSize(1000)
             .build();
 
-        // Configure PostgreSQL backend
+        // Configure PostgreSQL backend (using H2 for testing, but config shows postgres pattern)
         postgresConfig = DatabaseBackendConfig.builder()
             .backendType("postgres")
             .host("localhost")
@@ -87,6 +112,112 @@ class DataModellingDatabaseSyncTest {
             .build();
     }
 
+    @AfterEach
+    void tearDown() throws SQLException {
+        // Close all connections
+        for (Connection conn : connectionsToClose) {
+            try {
+                if (conn != null && !conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                // Log but continue cleanup
+                System.err.println("Error closing connection: " + e.getMessage());
+            }
+        }
+        connectionsToClose.clear();
+
+        // Close connection pool
+        if (h2Pool != null) {
+            h2Pool.dispose();
+        }
+
+        // Close bridge
+        if (bridge != null) {
+            try {
+                bridge.close();
+            } catch (Exception e) {
+                // Ignore close errors
+            }
+        }
+    }
+
+    /**
+     * Initializes the H2 database with test tables and sample data.
+     */
+    private void initializeTestDatabase() throws SQLException {
+        Connection conn = null;
+        try {
+            conn = h2Pool.getConnection();
+            connectionsToClose.add(conn);
+            Statement stmt = conn.createStatement();
+
+            // Create customers table
+            stmt.execute("""
+                CREATE TABLE customers (
+                    id BIGINT PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    email VARCHAR(255) UNIQUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """);
+
+            // Create orders table
+            stmt.execute("""
+                CREATE TABLE orders (
+                    id BIGINT PRIMARY KEY,
+                    customer_id BIGINT NOT NULL,
+                    total DECIMAL(10,2) NOT NULL,
+                    status VARCHAR(50) DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (customer_id) REFERENCES customers(id)
+                )
+                """);
+
+            // Create products table
+            stmt.execute("""
+                CREATE TABLE products (
+                    id BIGINT PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    price DECIMAL(10,2) NOT NULL,
+                    stock INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """);
+
+            // Insert test data
+            stmt.execute("""
+                INSERT INTO customers (id, name, email) VALUES
+                (1, 'John Doe', 'john@example.com'),
+                (2, 'Jane Smith', 'jane@example.com'),
+                (3, 'Bob Johnson', 'bob@example.com')
+                """);
+
+            stmt.execute("""
+                INSERT INTO orders (id, customer_id, total, status) VALUES
+                (101, 1, 99.99, 'completed'),
+                (102, 1, 49.99, 'pending'),
+                (103, 2, 149.99, 'completed')
+                """);
+
+            stmt.execute("""
+                INSERT INTO products (id, name, price, stock) VALUES
+                (1001, 'Laptop', 999.99, 10),
+                (1002, 'Mouse', 29.99, 50),
+                (1003, 'Keyboard', 79.99, 25)
+                """);
+
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback();
+            }
+            throw e;
+        }
+    }
+
     // ── Workspace to Database Sync Tests ───────────────────────────────────
 
     @Test
@@ -94,12 +225,12 @@ class DataModellingDatabaseSyncTest {
     void testSyncWorkspaceToDB_DuckDB_Success() {
         String workspaceId = "workspace-001";
 
-        SyncResult result = sync.syncWorkspaceToDB(workspaceId, duckdbConfig);
+        SyncResult result = sync.syncWorkspaceToDB(workspaceId, h2Config);
 
         assertTrue(result.isSuccess(), "Sync should succeed");
         assertNotNull(result.getSyncId(), "Sync ID must not be null");
         assertEquals("WORKSPACE_TO_DB", result.getOperationType());
-        assertEquals("duckdb", result.getBackendType());
+        assertEquals("h2", result.getBackendType());
         assertEquals(workspaceId, result.getWorkspaceId());
         assertTrue(result.recordsAdded() > 0, "Should detect added records");
         assertTrue(result.recordsModified() >= 0, "Should detect modified records");
@@ -123,7 +254,7 @@ class DataModellingDatabaseSyncTest {
     void testSyncWorkspaceToDB_CheckpointCreated() {
         String workspaceId = "workspace-003";
 
-        SyncResult result = sync.syncWorkspaceToDB(workspaceId, duckdbConfig);
+        SyncResult result = sync.syncWorkspaceToDB(workspaceId, h2Config);
 
         assertTrue(result.isSuccess());
         assertNotNull(result.checkpointJson(), "Checkpoint should be created");
@@ -136,8 +267,8 @@ class DataModellingDatabaseSyncTest {
     @DisplayName("syncWorkspaceToDB with DELETE_SAFE strategy excludes deleted records")
     void testSyncWorkspaceToDB_DeleteSafeStrategy() {
         DatabaseBackendConfig deleteSafeConfig = DatabaseBackendConfig.builder()
-            .backendType("duckdb")
-            .connectionString(":memory:")
+            .backendType("h2")
+            .connectionString("jdbc:h2:mem:testdb")
             .syncStrategy(DatabaseBackendConfig.SyncStrategy.DELETE_SAFE)
             .build();
 
@@ -145,15 +276,15 @@ class DataModellingDatabaseSyncTest {
         SyncResult result = sync.syncWorkspaceToDB(workspaceId, deleteSafeConfig);
 
         assertTrue(result.isSuccess());
-        assertEquals("DELETE_SAFE", result.backendType() != null ? "duckdb" : null);
+        assertEquals("DELETE_SAFE", result.backendType() != null ? "h2" : null);
     }
 
     @Test
     @DisplayName("syncWorkspaceToDB with FULL strategy replaces all data")
     void testSyncWorkspaceToDB_FullStrategy() {
         DatabaseBackendConfig fullConfig = DatabaseBackendConfig.builder()
-            .backendType("duckdb")
-            .connectionString(":memory:")
+            .backendType("h2")
+            .connectionString("jdbc:h2:mem:testdb")
             .syncStrategy(DatabaseBackendConfig.SyncStrategy.FULL)
             .build();
 
@@ -167,7 +298,7 @@ class DataModellingDatabaseSyncTest {
     @DisplayName("syncWorkspaceToDB throws on null workspace ID")
     void testSyncWorkspaceToDB_NullWorkspaceId() {
         assertThrows(NullPointerException.class,
-            () -> sync.syncWorkspaceToDB(null, duckdbConfig),
+            () -> sync.syncWorkspaceToDB(null, h2Config),
             "Should throw NullPointerException for null workspaceId");
     }
 
@@ -186,7 +317,7 @@ class DataModellingDatabaseSyncTest {
     void testSyncDBToWorkspace_Success() {
         String workspaceId = "workspace-010";
 
-        SyncResult result = sync.syncDBToWorkspace(workspaceId, duckdbConfig);
+        SyncResult result = sync.syncDBToWorkspace(workspaceId, h2Config);
 
         assertTrue(result.isSuccess(), "Reverse sync should succeed");
         assertNotNull(result.getSyncId());
@@ -199,7 +330,7 @@ class DataModellingDatabaseSyncTest {
     void testSyncDBToWorkspace_CheckpointCreated() {
         String workspaceId = "workspace-011";
 
-        SyncResult result = sync.syncDBToWorkspace(workspaceId, duckdbConfig);
+        SyncResult result = sync.syncDBToWorkspace(workspaceId, h2Config);
 
         assertTrue(result.isSuccess());
         assertNotNull(result.checkpointJson(), "Checkpoint should be created for next sync");
@@ -209,7 +340,7 @@ class DataModellingDatabaseSyncTest {
     @DisplayName("syncDBToWorkspace throws on null workspace ID")
     void testSyncDBToWorkspace_NullWorkspaceId() {
         assertThrows(NullPointerException.class,
-            () -> sync.syncDBToWorkspace(null, duckdbConfig),
+            () -> sync.syncDBToWorkspace(null, h2Config),
             "Should throw NullPointerException for null workspaceId");
     }
 
@@ -228,12 +359,29 @@ class DataModellingDatabaseSyncTest {
     void testQueryDatabase_SelectQuery_Success() {
         String sql = "SELECT COUNT(*) as total FROM customers";
 
-        SyncResult result = sync.queryDatabase(sql, duckdbConfig);
+        SyncResult result = sync.queryDatabase(sql, h2Config);
 
         assertTrue(result.isSuccess(), "Query should succeed");
         assertNotNull(result.queryResult(), "Query result should be populated");
         assertEquals("QUERY", result.getOperationType());
-        assertTrue(result.queryResult().contains("id"), "Query result should contain data");
+        // Verify actual database query results
+        Connection conn = null;
+        try {
+            conn = h2Pool.getConnection();
+            var stmt = conn.createStatement();
+            var rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                int actualCount = rs.getInt("total");
+                assertTrue(result.queryResult().contains(String.valueOf(actualCount)),
+                    "Query result should match actual database count");
+            }
+            rs.close();
+            stmt.close();
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+        }
     }
 
     @Test
@@ -246,7 +394,7 @@ class DataModellingDatabaseSyncTest {
             GROUP BY c.id, c.name
             """;
 
-        SyncResult result = sync.queryDatabase(sql, duckdbConfig);
+        SyncResult result = sync.queryDatabase(sql, h2Config);
 
         assertTrue(result.isSuccess());
         assertNotNull(result.queryResult());
@@ -256,7 +404,7 @@ class DataModellingDatabaseSyncTest {
     @DisplayName("queryDatabase throws on null SQL")
     void testQueryDatabase_NullSql() {
         assertThrows(NullPointerException.class,
-            () -> sync.queryDatabase(null, duckdbConfig),
+            () -> sync.queryDatabase(null, h2Config),
             "Should throw NullPointerException for null SQL");
     }
 
@@ -276,8 +424,8 @@ class DataModellingDatabaseSyncTest {
         Path checkpointFile = Files.createTempFile("sync-checkpoint-", ".json");
         try {
             DatabaseBackendConfig configWithCheckpoint = DatabaseBackendConfig.builder()
-                .backendType("duckdb")
-                .connectionString(":memory:")
+                .backendType("h2")
+                .connectionString("jdbc:h2:mem:testdb")
                 .syncStrategy(DatabaseBackendConfig.SyncStrategy.INCREMENTAL)
                 .checkpointPath(checkpointFile.toString())
                 .build();
@@ -320,7 +468,7 @@ class DataModellingDatabaseSyncTest {
                     // Each thread uses a different backend config
                     DatabaseBackendConfig config;
                     if (threadId % 2 == 0) {
-                        config = duckdbConfig;
+                        config = h2Config;
                     } else {
                         config = postgresConfig;
                     }
@@ -359,7 +507,7 @@ class DataModellingDatabaseSyncTest {
             executor.submit(() -> {
                 try {
                     SyncResult result = sync.queryDatabase(
-                        "SELECT * FROM customers", duckdbConfig);
+                        "SELECT * FROM customers", h2Config);
                     if (result.isSuccess()) {
                         successCount.incrementAndGet();
                     }
@@ -382,8 +530,8 @@ class DataModellingDatabaseSyncTest {
     void testSyncWorkspaceToDB_Idempotent() {
         String workspaceId = "workspace-idempotent";
 
-        SyncResult result1 = sync.syncWorkspaceToDB(workspaceId, duckdbConfig);
-        SyncResult result2 = sync.syncWorkspaceToDB(workspaceId, duckdbConfig);
+        SyncResult result1 = sync.syncWorkspaceToDB(workspaceId, h2Config);
+        SyncResult result2 = sync.syncWorkspaceToDB(workspaceId, h2Config);
 
         assertTrue(result1.isSuccess());
         assertTrue(result2.isSuccess());
@@ -396,8 +544,8 @@ class DataModellingDatabaseSyncTest {
     void testQueryDatabase_Idempotent() {
         String sql = "SELECT COUNT(*) FROM customers";
 
-        SyncResult result1 = sync.queryDatabase(sql, duckdbConfig);
-        SyncResult result2 = sync.queryDatabase(sql, duckdbConfig);
+        SyncResult result1 = sync.queryDatabase(sql, h2Config);
+        SyncResult result2 = sync.queryDatabase(sql, h2Config);
 
         assertTrue(result1.isSuccess());
         assertTrue(result2.isSuccess());
@@ -414,7 +562,7 @@ class DataModellingDatabaseSyncTest {
         // In a real scenario, invalid config would trigger failure
         String workspaceId = "workspace-fail";
 
-        SyncResult result = sync.syncWorkspaceToDB(workspaceId, duckdbConfig);
+        SyncResult result = sync.syncWorkspaceToDB(workspaceId, h2Config);
 
         // Currently succeeds due to mock implementation, but demonstrates the pattern
         assertTrue(result.isSuccess());
@@ -425,7 +573,7 @@ class DataModellingDatabaseSyncTest {
     @Test
     @DisplayName("Sync result includes affected tables")
     void testSyncResult_TablesAffected() {
-        SyncResult result = sync.syncWorkspaceToDB("workspace-tables", duckdbConfig);
+        SyncResult result = sync.syncWorkspaceToDB("workspace-tables", h2Config);
 
         assertTrue(result.isSuccess());
         assertFalse(result.getTablesAffected().isEmpty(),
@@ -439,7 +587,7 @@ class DataModellingDatabaseSyncTest {
     @Test
     @DisplayName("Sync result tracks record modifications")
     void testSyncResult_RecordModifications() {
-        SyncResult result = sync.syncWorkspaceToDB("workspace-mods", duckdbConfig);
+        SyncResult result = sync.syncWorkspaceToDB("workspace-mods", h2Config);
 
         assertTrue(result.isSuccess());
         assertTrue(result.recordsAdded() >= 0, "Records added should be non-negative");
@@ -453,7 +601,7 @@ class DataModellingDatabaseSyncTest {
     @Test
     @DisplayName("Sync result includes operation duration")
     void testSyncResult_Duration() {
-        SyncResult result = sync.syncWorkspaceToDB("workspace-timing", duckdbConfig);
+        SyncResult result = sync.syncWorkspaceToDB("workspace-timing", h2Config);
 
         assertTrue(result.isSuccess());
         assertTrue(result.getDurationMillis() >= 0, "Duration should be non-negative");
@@ -469,14 +617,14 @@ class DataModellingDatabaseSyncTest {
     @DisplayName("Config batch size affects sync chunking")
     void testConfig_BatchSize() {
         DatabaseBackendConfig smallBatch = DatabaseBackendConfig.builder()
-            .backendType("duckdb")
-            .connectionString(":memory:")
+            .backendType("h2")
+            .connectionString("jdbc:h2:mem:testdb")
             .batchSize(10)
             .build();
 
         DatabaseBackendConfig largeBatch = DatabaseBackendConfig.builder()
-            .backendType("duckdb")
-            .connectionString(":memory:")
+            .backendType("h2")
+            .connectionString("jdbc:h2:mem:testdb")
             .batchSize(5000)
             .build();
 

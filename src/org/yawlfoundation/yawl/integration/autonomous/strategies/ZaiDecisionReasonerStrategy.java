@@ -123,7 +123,8 @@ public final class ZaiDecisionReasonerStrategy implements DecisionReasoner {
         } catch (Exception e) {
             logger.error("Z.AI decision reasoning failed for work item {}: {}",
                 workItem.getID(), e.getMessage(), e);
-            return wrapInRawXml("ERROR: " + e.getMessage());
+            throw new UnsupportedOperationException("Z.AI decision reasoning failed for work item " +
+                workItem.getID() + ": " + e.getMessage(), e);
         }
     }
 
@@ -191,7 +192,7 @@ public final class ZaiDecisionReasonerStrategy implements DecisionReasoner {
      */
     private String escapeXml(String text) {
         if (text == null) {
-            return "";
+            throw new IllegalArgumentException("Text to escape cannot be null");
         }
         return text
             .replace("&", "&amp;")

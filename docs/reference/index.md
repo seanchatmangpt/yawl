@@ -37,6 +37,7 @@ Information-oriented content for practitioners who need to look up a specific te
 | [autonomous-agents-api.md](autonomous-agents-api.md) | Autonomous agents API reference |
 | [actuator.md](actuator.md) | Spring Boot Actuator endpoints |
 | [actuator-quickref.md](actuator-quickref.md) | Actuator quick reference card |
+| [process-mining-api.md](process-mining-api.md) | Process mining API (discovery, conformance, OCEL2, synthesis) |
 
 ## Workflow Patterns
 
@@ -45,6 +46,12 @@ Information-oriented content for practitioners who need to look up a specific te
 | [workflow-patterns.md](workflow-patterns.md) | WfMC/van der Aalst pattern catalog |
 | [patterns/](patterns/) | Reusable workflow pattern definitions and registry |
 | [observatory-facts.md](observatory-facts.md) | Codebase facts file format reference |
+
+## Process Mining
+
+| Reference | Contents |
+|-----------|----------|
+| [process-mining-api.md](process-mining-api.md) | Complete API for ProcessMiningFacade, discovery algorithms, conformance checking |
 
 ## Performance & Capacity
 

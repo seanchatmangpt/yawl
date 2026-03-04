@@ -11,7 +11,7 @@ set -euo pipefail
 # 6. Configures H2 database for ephemeral testing
 # 7. Only runs in remote Claude Code Web environment
 
-TEMURIN_25_HOME="/usr/lib/jvm/temurin-25-jdk-amd64"
+GRAALVM_HOME="/usr/lib/jvm/graalvm-25"
 
 # Exit early if not in Claude Code Web
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
@@ -20,6 +20,27 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
 fi
 
 echo "🔧 Setting up YAWL for Claude Code Web..."
+
+# ============================================================================
+# RALPH LOOP STATE INITIALIZATION
+# ============================================================================
+#
+# Initialize .claude/.ralph-state/ directory for ralph-loop command.
+# This enables the self-referential loop mechanism used by /ralph-loop.
+#
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+RALPH_STATE_DIR="${REPO_ROOT}/.claude/.ralph-state"
+
+# Create state directory (idempotent - won't fail if exists)
+mkdir -p "${RALPH_STATE_DIR}"
+
+# Initialize stop-hook handler (used by ralph-loop)
+# The stop-hook intercepts session exits to re-inject prompts
+export RALPH_LOOP_ACTIVE=false
+export RALPH_STATE_DIR="${RALPH_STATE_DIR}"
+
+# ============================================================================
 
 # Verify Maven is available (should be pre-installed in environment)
 if ! command -v mvn &> /dev/null; then
@@ -210,47 +231,112 @@ if [ -f "${OTP_BIN}" ]; then
 fi
 
 # ============================================================================
-# JAVA 25 — install via Adoptium if not present
+# GRAALVM 25 — install with GraalPy support (required for yawl-dspy)
 # ============================================================================
 
-echo "☕ Checking Java 25 requirement..."
+echo "☕ Checking GraalVM 25 requirement (with GraalPy)..."
 
-JAVA_VERSION=$(java -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
+GRAALVM_HOME="/usr/lib/jvm/graalvm-25"
+GRAALVM_DOWNLOAD_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-25.0.0/graalvm-community-jdk-25.0.0_linux-x64_bin.tar.gz"
 
-if [ "$JAVA_VERSION" = "25" ]; then
-    echo "   ✅ Java 25 already active"
-else
-    echo "   ⚠️  Java $JAVA_VERSION detected — installing Java 25 (Eclipse Temurin)..."
-
-    # Add Adoptium GPG key + repo
-    if [ ! -f /etc/apt/trusted.gpg.d/adoptium.gpg ]; then
-        wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public \
-            | gpg --dearmor -o /etc/apt/trusted.gpg.d/adoptium.gpg
-        . /etc/os-release
-        echo "deb https://packages.adoptium.net/artifactory/deb ${VERSION_CODENAME} main" \
-            > /etc/apt/sources.list.d/adoptium.list
-        apt-get update -qq
-    fi
-
-    DEBIAN_FRONTEND=noninteractive apt-get install -y temurin-25-jdk
-
-    # Register with update-alternatives
-    update-alternatives --install /usr/bin/java  java  "${TEMURIN_25_HOME}/bin/java"  100
-    update-alternatives --install /usr/bin/javac javac "${TEMURIN_25_HOME}/bin/javac" 100
-    update-alternatives --set java  "${TEMURIN_25_HOME}/bin/java"
-    update-alternatives --set javac "${TEMURIN_25_HOME}/bin/javac"
-
-    JAVA_VERSION=$(java -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
-    if [ "$JAVA_VERSION" != "25" ]; then
-        echo "❌ Java 25 installation failed. Cannot continue."
-        exit 1
-    fi
-    echo "   ✅ Java 25 installed successfully"
+# Check if GraalVM 25 is already installed
+GRAALVM_VERSION=""
+if [ -x "${GRAALVM_HOME}/bin/java" ]; then
+    GRAALVM_VERSION=$("${GRAALVM_HOME}/bin/java" -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
 fi
 
-# Always export JAVA_HOME pointing at Temurin 25
-if [ -d "${TEMURIN_25_HOME}" ]; then
-    export JAVA_HOME="${TEMURIN_25_HOME}"
+if [ "$GRAALVM_VERSION" = "25" ]; then
+    echo "   ✅ GraalVM 25 already active"
+else
+    echo "   ⚠️  GraalVM not found — installing GraalVM 25 with GraalPy..."
+
+    # Install dependencies for GraalVM
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y curl ca-certificates
+
+    # Download and extract GraalVM
+    mkdir -p /usr/lib/jvm
+    GRAALVM_TMP="/tmp/graalvm-25.tar.gz"
+
+    echo "   📥 Downloading GraalVM 25..."
+    if curl -fsSL --max-time 300 "${GRAALVM_DOWNLOAD_URL}" -o "${GRAALVM_TMP}"; then
+        echo "   📦 Extracting GraalVM..."
+        tar -xzf "${GRAALVM_TMP}" -C /usr/lib/jvm/
+
+        # Find the extracted directory (name varies by version)
+        EXTRACTED_DIR=$(tar -tzf "${GRAALVM_TMP}" | head -1 | cut -f1 -d"/")
+        if [ -d "/usr/lib/jvm/${EXTRACTED_DIR}" ] && [ ! -d "${GRAALVM_HOME}" ]; then
+            mv "/usr/lib/jvm/${EXTRACTED_DIR}" "${GRAALVM_HOME}"
+        fi
+
+        rm -f "${GRAALVM_TMP}"
+        echo "   ✅ GraalVM 25 extracted to ${GRAALVM_HOME}"
+    else
+        echo "   ❌ GraalVM download failed"
+        exit 1
+    fi
+
+    # Register with update-alternatives
+    update-alternatives --install /usr/bin/java  java  "${GRAALVM_HOME}/bin/java"  100
+    update-alternatives --install /usr/bin/javac javac "${GRAALVM_HOME}/bin/javac" 100
+    update-alternatives --set java  "${GRAALVM_HOME}/bin/java"
+    update-alternatives --set javac "${GRAALVM_HOME}/bin/javac"
+
+    GRAALVM_VERSION=$("${GRAALVM_HOME}/bin/java" -version 2>&1 | grep 'version "' | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
+    if [ "$GRAALVM_VERSION" != "25" ]; then
+        echo "❌ GraalVM 25 installation failed. Cannot continue."
+        exit 1
+    fi
+    echo "   ✅ GraalVM 25 installed successfully"
+fi
+
+# ============================================================================
+# GRAALPY — Install Python language support
+# ============================================================================
+
+echo "🐍 Checking GraalPy Python language support..."
+
+# Check if Python is already installed in GraalVM
+if "${GRAALVM_HOME}/bin/gu" list 2>/dev/null | grep -q "^python"; then
+    echo "   ✅ GraalPy Python already installed"
+else
+    echo "   📥 Installing GraalPy Python language..."
+
+    # Install Python via GraalVM Updater (gu)
+    if "${GRAALVM_HOME}/bin/gu" install python; then
+        echo "   ✅ GraalPy Python installed successfully"
+    else
+        echo "   ⚠️  GraalPy installation via gu failed — trying community component..."
+
+        # Fallback: Download GraalPy component manually
+        GRAALPY_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-25.0.0/python-community-25.0.0.jar"
+        GRAALPY_TMP="/tmp/python-community.jar"
+
+        if curl -fsSL --max-time 120 "${GRAALPY_URL}" -o "${GRAALPY_TMP}"; then
+            "${GRAALVM_HOME}/bin/gu" install -L "${GRAALPY_TMP}"
+            rm -f "${GRAALPY_TMP}"
+            echo "   ✅ GraalPy installed from community component"
+        else
+            echo "   ⚠️  GraalPy installation failed — Python execution will be unavailable"
+            echo "   yawl-dspy integration tests will be skipped"
+        fi
+    fi
+fi
+
+# Verify GraalPy is working
+if "${GRAALVM_HOME}/bin/gu" list 2>/dev/null | grep -q "^python"; then
+    echo "   ✅ GraalPy verification: Python language available"
+
+    # Test GraalPy execution
+    GRAALPY_TEST=$("${GRAALVM_HOME}/bin/java" -polyglot -eval "print('graalpy-ok')" 2>&1 || echo "")
+    if echo "${GRAALPY_TEST}" | grep -q "graalpy-ok"; then
+        echo "   ✅ GraalPy execution test passed"
+    fi
+fi
+
+# Always export JAVA_HOME pointing at GraalVM 25
+if [ -d "${GRAALVM_HOME}" ]; then
+    export JAVA_HOME="${GRAALVM_HOME}"
     export PATH="${JAVA_HOME}/bin:${PATH}"
 fi
 
@@ -344,8 +430,8 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   # Persist Java 25 JAVA_HOME so Maven uses the right javac in every tool call.
   # Without this, JAVA_HOME stays at the system default (Java 21) even though
   # the hook exports it inside its own subprocess.
-  echo "export JAVA_HOME=${TEMURIN_25_HOME}" >> "$CLAUDE_ENV_FILE"
-  echo "export PATH=${TEMURIN_25_HOME}/bin:\$PATH" >> "$CLAUDE_ENV_FILE"
+  echo "export JAVA_HOME=${GRAALVM_HOME}" >> "$CLAUDE_ENV_FILE"
+  echo "export PATH=${GRAALVM_HOME}/bin:\$PATH" >> "$CLAUDE_ENV_FILE"
   # H2 database properties + egress-proxy connection pool disable.
   # The egress gateway drops CONNECT tunnels after ~1.6 MB; disabling Maven's
   # connection pool ensures each artifact download gets a fresh tunnel.
@@ -369,6 +455,14 @@ if bash scripts/observatory/observatory.sh --facts; then
     sha256sum pom.xml 2>/dev/null | awk '{print $1}' \
         > .yawl/.dx-state/observatory-pom-hash.txt || true
 
+    # Generate agent context from observatory facts
+    # This creates a markdown summary that agents can read for quick context
+    OBS_CONTEXT_FILE="docs/v6/latest/OBSERVATORY_CONTEXT.md"
+    if [[ -f "scripts/observatory/lib/emit-context.sh" ]]; then
+        bash scripts/observatory/lib/emit-context.sh markdown docs/v6/latest/facts > "$OBS_CONTEXT_FILE" 2>/dev/null || true
+        echo "   📝 Agent context: $OBS_CONTEXT_FILE"
+    fi
+
     # Display summary from INDEX.md
     if [ -f "docs/v6/latest/INDEX.md" ]; then
         FACT_COUNT=$(grep -c "^- " docs/v6/latest/INDEX.md || echo "0")
@@ -379,6 +473,12 @@ if bash scripts/observatory/observatory.sh --facts; then
             COMMIT_HASH=$(jq -r '.repo.git.commit // "N/A"' docs/v6/latest/receipts/observatory.json)
             echo "   🔍 Commit hash: ${COMMIT_HASH}"
         fi
+    fi
+
+    # Show one-line summary for quick reference
+    if [[ -f "scripts/observatory/lib/emit-context.sh" ]]; then
+        OBS_SUMMARY=$(bash scripts/observatory/lib/emit-context.sh summary docs/v6/latest/facts 2>/dev/null || echo "")
+        [[ -n "$OBS_SUMMARY" ]] && echo "   $OBS_SUMMARY"
     fi
 else
     echo "⚠️  Observatory generation failed - continuing without facts"
@@ -464,7 +564,7 @@ echo ""
 echo "✨ YAWL environment ready for Claude Code Web"
 echo ""
 echo "📋 Environment Summary:"
-echo "   • Java Version: Java $JAVA_VERSION (required)"
+echo "   • Java Version: GraalVM $GRAALVM_VERSION (with GraalPy)"
 echo "   • Build System: Maven 3.x"
 echo "   • Maven Cache: ${M2_CACHE_DIR}"
 if [ "${MAVEN_PROXY_ENABLED:-false}" = "true" ]; then
@@ -473,6 +573,7 @@ else
     echo "   • Network: Direct repository access"
 fi
 echo "   • Database: H2 (in-memory)"
+echo "   • Python Runtime: GraalPy (in-JVM Python execution)"
 echo "   • Observatory: Facts auto-generated on startup"
 echo "   • Test Command: bash scripts/dx.sh (fast) or mvn clean test (full)"
 echo "   • Environment: Remote/Ephemeral"

@@ -1,0 +1,303 @@
+{
+  "id": "jtbd1-order-processing-log-enhanced",
+  "name": "Order Processing Event Log - Enhanced",
+  "description": "Real-world inspired order processing events with realistic failures and edge cases",
+  "events": [
+    {
+      "id": "e1",
+      "activity": "CreateOrder",
+      "timestamp": "2024-01-15T10:00:15Z",
+      "case": "case1",
+      "resource": "customer001",
+      "attributes": {
+        "customer_id": "cust123",
+        "total_amount": 125.99,
+        "payment_method": "credit_card",
+        "items_count": 3,
+        "discount_code": "SAVE10",
+        "coupon_valid": true
+      }
+    },
+    {
+      "id": "e2",
+      "activity": "VerifyPayment",
+      "timestamp": "2024-01-15T10:02:30Z",
+      "case": "case1",
+      "resource": "payment_processor001",
+      "attributes": {
+        "success": true,
+        "payment_id": "pay12345",
+        "processor": "stripe",
+        "authorization_code": "auth_123456",
+        "avs_result": "Y",
+        "cvv_result": "M"
+      }
+    },
+    {
+      "id": "e3",
+      "activity": "CheckStock",
+      "timestamp": "2024-01-15T10:04:45Z",
+      "case": "case1",
+      "resource": "inventory_system",
+      "attributes": {
+        "available": true,
+        "items_in_stock": 3,
+        "low_stock_warning": false,
+        "alternative_available": true
+      }
+    },
+    {
+      "id": "e4",
+      "activity": "ShipOrder",
+      "timestamp": "2024-01-15T10:06:20Z",
+      "case": "case1",
+      "resource": "shipping_clerk001",
+      "attributes": {
+        "shipping_provider": "ups",
+        "estimated_delivery": "2024-01-17T00:00:00Z",
+        "tracking_number": "1Z999W9999999999999",
+        "insurance_amount": 50.00,
+        "signature_required": true
+      }
+    },
+    {
+      "id": "e5",
+      "activity": "CompleteOrder",
+      "timestamp": "2024-01-15T10:08:10Z",
+      "case": "case1",
+      "resource": "system",
+      "attributes": {
+        "completion_status": "success",
+        "processing_time": "8 minutes 10 seconds",
+        "customer_notified": true
+      }
+    },
+    {
+      "id": "e6",
+      "activity": "CreateOrder",
+      "timestamp": "2024-01-15T10:15:30Z",
+      "case": "case2",
+      "resource": "customer002",
+      "attributes": {
+        "customer_id": "cust456",
+        "total_amount": 89.50,
+        "payment_method": "paypal",
+        "items_count": 2,
+        "gift_message": null
+      }
+    },
+    {
+      "id": "e7",
+      "activity": "VerifyPayment",
+      "timestamp": "2024-01-15T10:17:45Z",
+      "case": "case2",
+      "resource": "payment_processor002",
+      "attributes": {
+        "success": false,
+        "error_code": "INSUFFICIENT_FUNDS",
+        "error_message": "Payment method declined",
+        "attempt_count": 1
+      }
+    },
+    {
+      "id": "e8",
+      "activity": "CancelOrder",
+      "timestamp": "2024-01-15T10:18:20Z",
+      "case": "case2",
+      "resource": "customer002",
+      "attributes": {
+        "cancellation_reason": "payment_failed",
+        "customer_refund": true,
+        "refund_method": "original"
+      }
+    },
+    {
+      "id": "e9",
+      "activity": "CreateOrder",
+      "timestamp": "2024-01-15T10:25:55Z",
+      "case": "case3",
+      "resource": "customer003",
+      "attributes": {
+        "customer_id": "cust789",
+        "total_amount": 999999999999999999999.99,
+        "payment_method": "wire_transfer",
+        "items_count": 1,
+        "high_value_order": true,
+        "requires_manager_approval": true
+      }
+    },
+    {
+      "id": "e10",
+      "activity": "VerifyPayment",
+      "timestamp": "2024-01-15T10:28:15Z",
+      "case": "case3",
+      "resource": "payment_processor003",
+      "attributes": {
+        "success": true,
+        "payment_id": "pay999999",
+        "processor": "wire_transfer",
+        "bank_routing": "021000021",
+        "account_number": null
+      }
+    },
+    {
+      "id": "e11",
+      "activity": "CheckStock",
+      "timestamp": "2024-01-15T10:30:40Z",
+      "case": "case3",
+      "resource": "inventory_system",
+      "attributes": {
+        "available": false,
+        "items_in_stock": 0,
+        "backorder_available": true,
+        "restock_date": "2024-01-20T00:00:00Z"
+      }
+    },
+    {
+      "id": "e12",
+      "activity": "BackorderOrder",
+      "timestamp": "2024-01-15T10:32:05Z",
+      "case": "case3",
+      "resource": "customer003",
+      "attributes": {
+        "backorder_confirmed": true,
+        "expected_ship_date": "2024-01-20T00:00:00Z",
+        "customer_notified": true
+      }
+    },
+    {
+      "id": "e13",
+      "activity": "CreateOrder",
+      "timestamp": "2024-01-15T10:35:20Z",
+      "case": "case4",
+      "resource": "customer004",
+      "attributes": {
+        "customer_id": "cust000",
+        "total_amount": 0,
+        "payment_method": "free_promotion",
+        "items_count": 0,
+        "is_empty_order": true
+      }
+    },
+    {
+      "id": "e14",
+      "activity": "Error",
+      "timestamp": "2024-01-15T10:36:10Z",
+      "case": "case4",
+      "resource": "system",
+      "attributes": {
+        "error_type": "VALIDATION_ERROR",
+        "error_message": "Empty order cannot be processed",
+        "error_code": "EMPTY_ORDER",
+        "severity": "warning"
+      }
+    },
+    {
+      "id": "e15",
+      "activity": "CancelOrder",
+      "timestamp": "2024-01-15T10:36:45Z",
+      "case": "case4",
+      "resource": "system",
+      "attributes": {
+        "cancellation_reason": "system_validation",
+        "auto_cancelled": true
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "order1",
+      "type": "order",
+      "attributes": {
+        "customer_id": "cust123",
+        "total_amount": 125.99,
+        "status": "completed",
+        "created_at": "2024-01-15T10:00:15Z",
+        "completed_at": "2024-01-15T10:08:10Z",
+        "payment_successful": true,
+        "shipped": true,
+        "delivery_status": "in_transit"
+      }
+    },
+    {
+      "id": "order2",
+      "type": "order",
+      "attributes": {
+        "customer_id": "cust456",
+        "total_amount": 89.50,
+        "status": "cancelled",
+        "created_at": "2024-01-15T10:15:30Z",
+        "cancelled_at": "2024-01-15T10:18:20Z",
+        "payment_failed": true,
+        "refund_processed": false
+      }
+    },
+    {
+      "id": "order3",
+      "type": "order",
+      "attributes": {
+        "customer_id": "cust789",
+        "total_amount": 999999999999999999999.99,
+        "status": "backorder",
+        "created_at": "2024-01-15T10:25:55Z",
+        "expected_ship_date": "2024-01-20T00:00:00Z",
+        "high_value": true,
+        "requires_approval": true
+      }
+    },
+    {
+      "id": "order4",
+      "type": "order",
+      "attributes": {
+        "customer_id": "cust000",
+        "total_amount": 0,
+        "status": "cancelled",
+        "created_at": "2024-01-15T10:35:20Z",
+        "cancelled_at": "2024-01-15T10:36:45Z",
+        "validation_failed": true
+      }
+    }
+  ],
+  "relations": [
+    {
+      "source": "e1",
+      "target": "order1",
+      "type": "produce"
+    },
+    {
+      "source": "e5",
+      "target": "order1",
+      "type": "consume"
+    },
+    {
+      "source": "e6",
+      "target": "order2",
+      "type": "produce"
+    },
+    {
+      "source": "e8",
+      "target": "order2",
+      "type": "consume"
+    },
+    {
+      "source": "e9",
+      "target": "order3",
+      "type": "produce"
+    },
+    {
+      "source": "e12",
+      "target": "order3",
+      "type": "update"
+    },
+    {
+      "source": "e13",
+      "target": "order4",
+      "type": "produce"
+    },
+    {
+      "source": "e15",
+      "target": "order4",
+      "type": "consume"
+    }
+  ]
+}

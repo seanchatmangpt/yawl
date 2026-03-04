@@ -74,6 +74,10 @@ public class CaseOutcomePredictor {
      * <p>Attempts ONNX model inference first; falls back to DNA oracle.
      * Computes features: case duration ms, task count, cancelled count, avg event gap ms.
      *
+     * <p>NOTE: DNA oracle functionality is currently stubbed. The real implementation
+     * should use WorkflowDNAOracle.assess() for semantic pattern matching across
+     * historical executions. See the mineAlternativePath() method for the intended usage.
+     *
      * @param caseId Case ID to predict
      * @return Case outcome prediction
      * @throws PIException If event retrieval fails or outcome cannot be determined
@@ -163,43 +167,44 @@ public class CaseOutcomePredictor {
                                                         List<WorkflowEvent> events,
                                                         Instant now) throws PIException {
 
-        List<String> activitySeq = new ArrayList<>();
-        events.forEach(e -> {
-            if (e.getEventType() == WorkflowEvent.EventType.WORKITEM_STARTED) {
-                activitySeq.add("task_" + e.getWorkItemId());
-            }
-        });
-
-        long durationMs = events.get(events.size() - 1).getTimestamp().toEpochMilli()
-            - events.get(0).getTimestamp().toEpochMilli();
-
-        boolean hasCancellation = events.stream()
-            .anyMatch(e -> e.getEventType() == WorkflowEvent.EventType.CASE_CANCELLED);
-
-        double riskScore = 0.0;
-        String riskFactor = "No risk indicators";
-
-        if (hasCancellation) {
-            riskScore = 0.8;
-            riskFactor = "Case was cancelled";
-        } else if (durationMs > 3600000) {
-            riskScore = 0.5;
-            riskFactor = "Long execution time (>1 hour)";
-        } else if (activitySeq.size() > 10) {
-            riskScore = 0.3;
-            riskFactor = "High task count (>10 tasks)";
-        }
-
-        double completionProb = 1.0 - riskScore;
-
-        return new CaseOutcomePrediction(
-            caseId,
-            completionProb,
-            riskScore,
-            riskFactor,
-            false,
-            now
+        throw new UnsupportedOperationException(
+            "predictWithDnaOracle() requires real WorkflowDNAOracle implementation. " +
+            "The dnaOracle.assess() method should be used here for semantic pattern matching " +
+            "across historical executions. Fix the compilation errors in yawl-integration module " +
+            "to enable the real implementation."
         );
+
+        /*
+         * Intended implementation (once WorkflowDNAOracle is available):
+         *
+         * List<String> activitySeq = new ArrayList<>();
+         * events.forEach(e -> {
+         *     if (e.getEventType() == WorkflowEvent.EventType.WORKITEM_STARTED) {
+         *         activitySeq.add("task_" + e.getWorkItemId());
+         *     }
+         * });
+         *
+         * // Get spec ID from events or use default
+         * String specId = "default-spec";
+         *
+         * // Use DNA oracle for semantic risk assessment
+         * DNARecommendation recommendation = dnaOracle.assess(caseId, specId, activitySeq);
+         *
+         * // Extract risk information from recommendation
+         * double riskScore = recommendation.historicalFailureRate();
+         * String riskFactor = recommendation.riskMessage();
+         *
+         * double completionProb = 1.0 - riskScore;
+         *
+         * return new CaseOutcomePrediction(
+         *     caseId,
+         *     completionProb,
+         *     riskScore,
+         *     riskFactor,
+         *     false,
+         *     now
+         * );
+         */
     }
 
     private String interpretRiskFactor(float[] features, float riskScore) {

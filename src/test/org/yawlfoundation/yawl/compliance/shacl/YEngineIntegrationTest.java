@@ -17,11 +17,10 @@
 package org.yawlfoundation.yawl.compliance.shacl;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.Tag;
 import org.yawlfoundation.yawl.compliance.shacl.impl.ShaclValidatorImpl;
 import org.yawlfoundation.yawl.elements.YSpecification;
 import org.yawlfoundation.yawl.elements.YNet;
@@ -40,274 +39,420 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
- * Integration tests for SHACL validator with YEngine.
+ * SHACL Validator Integration Tests with Real YAWL Engine (Chicago TDD)
+ *
+ * Tests real SHACL validation against actual YAWL specifications and engines
+ * using H2 in-memory database for complete isolation.
+ *
+ * Coverage:
+ * - Real YEngine initialization with H2
+ * - Real YNetRunner workflow execution
+ * - Real SHACL validation against SOX/GDPR/HIPAA domains
+ * - Performance validation (100ms target per validation)
+ * - Multi-specification validation scenarios
+ * - Error handling and edge cases
+ * - Database cleanup and isolation
  */
-@ExtendWith(MockitoExtension.class)
+@Tag("integration")
 class YEngineIntegrationTest {
 
     private ShaclValidator validator;
     private YEngine engine;
 
-    @Mock
-    private YNetRunner mockRunner;
-
-    @Mock
-    private YSpecification mockSpecification;
-
-    @Mock
-    private YSpecificationID mockSpecId;
-
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
+        // Initialize real SHACL validator
         validator = new ShaclValidatorImpl();
 
-        // Create a real YEngine instance for integration testing
-        engine = new YEngine();
+        // Initialize real YEngine instance with H2 database
+        engine = YEngine.getInstance();
+        assertNotNull(engine, "YEngine should be available");
+
+        // Clear any existing data to ensure test isolation
+        clearEngineData();
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        // Clean up engine data after each test
+        if (engine != null) {
+            clearEngineData();
+        }
+    }
+
+    private void clearEngineData() throws Exception {
+        // Clear work items and cases to ensure test isolation
+        engine.getWorkItemRepository().clear();
+        engine.getCaseRepository().clear();
     }
 
     @Test
-    @DisplayName("Create a simple YAWL specification and validate compliance")
+    @DisplayName("Validate real YAWL specification against SOX compliance")
     void testCreateAndValidateSpecification() throws Exception {
-        // Create a simple YAWL specification XML
-        String specXML = createSimpleFinancialSpecXML();
-
-        // Unmarshal the specification
+        // Create a real YAWL specification for financial compliance
+        String specXML = createCompliantFinancialSpecXML();
         Document doc = JDOMUtil.stringToDocument(specXML);
         YSpecification spec = YMarshal.unmarshalSpecification(doc);
 
-        // Validate the specification
+        // Verify specification was created correctly
+        assertNotNull(spec, "Specification should be created");
+        assertEquals("compliant-financial-spec", spec.getSpecURI());
+        assertNotNull(spec.getRootNet(), "Specification should have root net");
+
+        // Validate against SOX compliance with real SHACL
         ShaclValidationResult result = validator.validate(spec, ComplianceDomain.SOX);
 
-        assertNotNull(result, "Validation result should not be null");
+        // Verify real validation results
+        assertNotNull(result, "SHACL validation should produce results");
+        assertEquals(ComplianceDomain.SOX, result.complianceDomain());
+        assertEquals(spec.getSpecURI(), result.target());
+        assertTrue(result.valid(), "SOX compliant specification should pass validation");
+
+        // Performance assertion (Chicago TDD: real measurements)
+        assertTrue(result.validationTime() < 100,
+            "SOX validation should complete in <100ms, but took: " + result.validationTime() + "ms");
+    }
+
+    @Test
+    @DisplayName("Validate real YNetRunner with SOX compliance")
+    void testValidateRealYNetRunner() throws Exception {
+        // Create a real specification
+        String specXML = createCompliantFinancialSpecXML();
+        Document doc = JDOMUtil.stringToDocument(specXML);
+        YSpecification spec = YMarshal.unmarshalSpecification(doc);
+
+        // Create real YNetRunner with the specification
+        YNetRunner runner = new YNetRunner(spec);
+        assertNotNull(runner, "YNetRunner should be created");
+
+        // Verify real runner integration
+        YSpecificationID specId = runner.getSpecificationID();
+        assertNotNull(specId, "Runner should have specification ID");
+
+        // Validate real YNetRunner against SOX compliance
+        ShaclValidationResult result = validator.validate(runner, ComplianceDomain.SOX);
+
+        // Verify real validation results
+        assertNotNull(result, "SHACL validation should produce results");
         assertEquals(ComplianceDomain.SOX, result.complianceDomain());
         assertEquals(spec.getSpecURI(), result.target());
 
         // Performance assertion
         assertTrue(result.validationTime() < 100,
-            "Validation should complete in less than 100ms");
+            "SOX validation of real runner should complete in <100ms, but took: " + result.validationTime() + "ms");
     }
 
     @Test
-    @DisplayName("Validate YNetRunner with mock engine")
-    void testValidateYNetRunner() {
-        // Setup mock runner
-        when(mockRunner.getSpecificationID()).thenReturn(mockSpecId);
-        when(mockSpecId.toString()).thenReturn("mock-spec-id");
-
-        // Validate the runner
-        ShaclValidationResult result = validator.validate(mockRunner, ComplianceDomain.SOX);
-
-        assertNotNull(result, "Validation result should not be null");
-        assertEquals(ComplianceDomain.SOX, result.complianceDomain());
-        assertEquals("mock-spec-id", result.target());
-
-        // Performance assertion
-        assertTrue(result.validationTime() < 100,
-            "Validation should complete in less than 100ms");
-    }
-
-    @Test
-    @DisplayName("Validate YEngine with multiple specifications")
+    @DisplayName("Validate real YEngine with multiple specifications across domains")
     void testValidateYEngineWithMultipleSpecifications() throws Exception {
-        // Create two specifications
-        String financialSpecXML = createSimpleFinancialSpecXML();
-        String healthcareSpecXML = createSimpleHealthcareSpecXML();
+        // Create real specifications for different compliance domains
+        String financialSpecXML = createCompliantFinancialSpecXML();
+        String healthcareSpecXML = createCompliantHealthcareSpecXML();
 
-        // Unmarshal specifications
+        // Unmarshal real specifications
         Document financialDoc = JDOMUtil.stringToDocument(financialSpecXML);
         YSpecification financialSpec = YMarshal.unmarshalSpecification(financialDoc);
 
         Document healthcareDoc = JDOMUtil.stringToDocument(healthcareSpecXML);
         YSpecification healthcareSpec = YMarshal.unmarshalSpecification(healthcareDoc);
 
-        // Validate both specifications
-        List<ShaclValidationResult> results = validator.validateAll(financialSpec);
+        // Verify specifications are valid YAWL specs
+        assertNotNull(financialSpec.getRootNet(), "Financial spec should have root net");
+        assertNotNull(healthcareSpec.getRootNet(), "Healthcare spec should have root net");
 
-        assertEquals(2, results.size(), "Should validate 2 specification domains");
+        // Validate all domains for financial specification (SOX only)
+        List<ShaclValidationResult> financialResults = validator.validateAll(financialSpec);
+        assertEquals(1, financialResults.size(), "Financial spec should support 1 domain (SOX)");
 
-        // Check SOX result for financial spec
-        ShaclValidationResult soxResult = results.stream()
+        // Validate all domains for healthcare specification (GDPR only)
+        List<ShaclValidationResult> healthcareResults = validator.validateAll(healthcareSpec);
+        assertEquals(1, healthcareResults.size(), "Healthcare spec should support 1 domain (GDPR)");
+
+        // Check SOX validation for financial spec
+        ShaclValidationResult soxResult = financialResults.stream()
             .filter(r -> r.complianceDomain() == ComplianceDomain.SOX)
             .findFirst()
             .orElseThrow();
 
         assertEquals(ComplianceDomain.SOX, soxResult.complianceDomain());
         assertEquals(financialSpec.getSpecURI(), soxResult.target());
+        assertTrue(soxResult.valid(), "Financial spec should be SOX compliant");
 
-        // Check GDPR result for healthcare spec
-        ShaclValidationResult gdprResult = results.stream()
+        // Check GDPR validation for healthcare spec
+        ShaclValidationResult gdprResult = healthcareResults.stream()
             .filter(r -> r.complianceDomain() == ComplianceDomain.GDPR)
             .findFirst()
             .orElseThrow();
 
         assertEquals(ComplianceDomain.GDPR, gdprResult.complianceDomain());
         assertEquals(healthcareSpec.getSpecURI(), gdprResult.target());
+        assertTrue(gdprResult.valid(), "Healthcare spec should be GDPR compliant");
     }
 
     @Test
-    @DisplayName("Test engine validation with different domains")
-    void testEngineValidationWithDifferentDomains() {
-        // Setup mock runner for engine validation
-        when(mockRunner.getSpecificationID()).thenReturn(mockSpecId);
-        when(mockSpecId.toString()).thenReturn("mock-spec-id");
+    @DisplayName("Test real YEngine validation across different compliance domains")
+    void testRealEngineValidationWithDifferentDomains() throws Exception {
+        // Create a real specification that supports engine validation
+        String specXML = createCompliantFinancialSpecXML();
+        Document doc = JDOMUtil.stringToDocument(specXML);
+        YSpecification spec = YMarshal.unmarshalSpecification(doc);
 
-        // Test SOX validation
-        ShaclValidationResult soxResult = validator.validate(mockRunner, ComplianceDomain.SOX);
-        assertNotNull(soxResult);
+        // Create real YNetRunner for engine validation
+        YNetRunner runner = new YNetRunner(spec);
+        assertNotNull(runner, "Real YNetRunner should be created");
+
+        // Test SOX validation with real engine
+        ShaclValidationResult soxResult = validator.validate(runner, ComplianceDomain.SOX);
+        assertNotNull(soxResult, "SOX validation should succeed");
         assertEquals(ComplianceDomain.SOX, soxResult.complianceDomain());
+        assertTrue(soxResult.valid(), "SOX validation should pass for financial spec");
 
-        // Test HIPAA validation
-        ShaclValidationResult hipaaResult = validator.validate(mockRunner, ComplianceDomain.HIPAA);
-        assertNotNull(hipaaResult);
+        // Test HIPAA validation with real engine
+        ShaclValidationResult hipaaResult = validator.validate(runner, ComplianceDomain.HIPAA);
+        assertNotNull(hipaaResult, "HIPAA validation should succeed");
         assertEquals(ComplianceDomain.HIPAA, hipaaResult.complianceDomain());
+        assertTrue(hipaaResult.valid(), "HIPAA validation should pass for financial spec");
 
-        // Test that GDPR is not supported for engine validation
-        assertThrows(IllegalArgumentException.class, () -> {
-            validator.supportsEngineDomain(ComplianceDomain.GDPR);
-        });
+        // Verify that GDPR is not supported for engine validation (real assertion)
+        assertFalse(validator.supportsEngineDomain(ComplianceDomain.GDPR),
+            "GDPR should not be supported for engine validation");
     }
 
     @Test
-    @DisplayName("Performance test with multiple validations")
-    void testPerformanceWithMultipleValidations() {
-        // Setup mock runner
-        when(mockRunner.getSpecificationID()).thenReturn(mockSpecId);
-        when(mockSpecId.toString()).thenReturn("mock-spec-id");
+    @DisplayName("Performance test with real YEngine and 200 validations")
+    void testPerformanceWithRealEngineValidations() throws Exception {
+        // Create a real specification for performance testing
+        String specXML = createCompliantFinancialSpecXML();
+        Document doc = JDOMUtil.stringToDocument(specXML);
+        YSpecification spec = YMarshal.unmarshalSpecification(doc);
 
-        // Perform multiple validations
+        // Create real YNetRunner for performance testing
+        YNetRunner runner = new YNetRunner(spec);
+        assertNotNull(runner, "Real YNetRunner should be created");
+
+        // Perform 200 real validations (100 SOX + 100 HIPAA)
         long startTime = System.currentTimeMillis();
 
         for (int i = 0; i < 100; i++) {
-            validator.validate(mockRunner, ComplianceDomain.SOX);
-            validator.validate(mockRunner, ComplianceDomain.HIPAA);
+            // Real SOX validation
+            ShaclValidationResult soxResult = validator.validate(runner, ComplianceDomain.SOX);
+            assertTrue(soxResult.valid(), "SOX validation should pass");
+            assertTrue(soxResult.validationTime() < 100,
+                "SOX validation should be fast: " + soxResult.validationTime() + "ms");
+
+            // Real HIPAA validation
+            ShaclValidationResult hipaaResult = validator.validate(runner, ComplianceDomain.HIPAA);
+            assertTrue(hipaaResult.valid(), "HIPAA validation should pass");
+            assertTrue(hipaaResult.validationTime() < 100,
+                "HIPAA validation should be fast: " + hipaaResult.validationTime() + "ms");
         }
 
         long endTime = System.currentTimeMillis();
         long totalTime = endTime - startTime;
 
-        // Average validation time should be less than 100ms
-        long averageTime = totalTime / 200; // 100 iterations * 2 validations
+        // Average validation time should be less than 100ms per validation
+        long averageTime = totalTime / 200; // 200 total validations
         assertTrue(averageTime < 100,
-            "Average validation time should be less than 100ms, but was: " + averageTime + "ms");
+            "Average validation time should be <100ms, actual: " + averageTime + "ms");
 
-        // Get performance metrics
+        // Verify real performance metrics
         Map<String, Object> metrics = validator.getPerformanceMetrics();
-        assertEquals(200, metrics.get("totalValidations"));
+        assertEquals(200, metrics.get("totalValidations"),
+            "Should track 200 real validations");
 
-        // Reset metrics
+        // Reset metrics and verify
         validator.resetPerformanceMetrics();
-        assertEquals(0, validator.getPerformanceMetrics().get("totalValidations"));
+        Map<String, Object> resetMetrics = validator.getPerformanceMetrics();
+        assertEquals(0, resetMetrics.get("totalValidations"),
+            "Metrics should reset to zero");
     }
 
     @Test
-    @DisplayName("Error handling for invalid specifications")
+    @DisplayName("Error handling for null and invalid inputs")
     void testErrorHandling() {
-        // Test with null specification
+        // Test with null specification (should throw NPE)
         assertThrows(NullPointerException.class, () -> {
             validator.validate(null, ComplianceDomain.SOX);
-        });
+        }, "Should throw NPE for null specification");
 
-        // Test with null runner
+        // Test with null runner (should throw NPE)
         assertThrows(NullPointerException.class, () -> {
             validator.validate(null, ComplianceDomain.SOX);
-        });
+        }, "Should throw NPE for null runner");
 
-        // Test with invalid compliance domain
+        // Test with null compliance domain (should throw IAE)
         assertThrows(IllegalArgumentException.class, () -> {
             validator.supportsSpecificationDomain(null);
-        });
+        }, "Should throw IAE for null compliance domain");
+    }
+
+    @Test
+    @DisplayName("Verify real SHACL shapes are loaded and functional")
+    void testShaclShapesAreLoaded() {
+        // Test that SOX domain is supported for specifications
+        assertTrue(validator.supportsSpecificationDomain(ComplianceDomain.SOX),
+            "SOX should be supported for specification validation");
+
+        // Test that GDPR domain is supported for specifications
+        assertTrue(validator.supportsSpecificationDomain(ComplianceDomain.GDPR),
+            "GDPR should be supported for specification validation");
+
+        // Test that HIPAA domain is supported for specifications
+        assertTrue(validator.supportsSpecificationDomain(ComplianceDomain.HIPAA),
+            "HIPAA should be supported for specification validation");
+
+        // Test engine domains
+        assertTrue(validator.supportsEngineDomain(ComplianceDomain.SOX),
+            "SOX should be supported for engine validation");
+
+        assertTrue(validator.supportsEngineDomain(ComplianceDomain.HIPAA),
+            "HIPAA should be supported for engine validation");
+
+        assertFalse(validator.supportsEngineDomain(ComplianceDomain.GDPR),
+            "GDPR should not be supported for engine validation");
     }
 
     /**
-     * Creates a simple YAWL specification XML for financial processes.
+     * Creates a SOX-compliant YAWL specification XML.
      */
-    private String createSimpleFinancialSpecXML() {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-               "< specification xmlns=\"http://www.yawlfoundation.org/yawl\" >\n" +
-               "  < specificationURI > simple-financial-spec < / specificationURI >\n" +
-               "  < name > Simple Financial Process < / name >\n" +
-               "  < specificationDescription > A simple financial workflow < / specificationDescription >\n" +
-               "  < rootNet >\n" +
-               "    < net id=\"simple-financial-net\" >\n" +
-               "      < name > Simple Financial Net < / name >\n" +
-               "      < inputs >\n" +
-               "        < input id=\"input1\" / >\n" +
-               "      < / inputs >\n" +
-               "      < outputs >\n" +
-               "        < output id=\"output1\" / >\n" +
-               "      < / outputs >\n" +
-               "      < tasks >\n" +
-               "        < task id=\"task1\" name=\"Approve Payment\" >\n" +
-               "          < documentation > Approves financial payment < / documentation >\n" +
-               "        < / task >\n" +
-               "        < task id=\"task2\" name=\"Process Payment\" >\n" +
-               "          < documentation > Processes payment with audit trail < / documentation >\n" +
-               "        < / task >\n" +
-               "      < / tasks >\n" +
-               "      < flows >\n" +
-               "        < controlFlow >\n" +
-               "          < from > input1 < / from >\n" +
-               "          < to > task1 < / to >\n" +
-               "        < / controlFlow >\n" +
-               "        < controlFlow >\n" +
-               "          < from > task1 < / from >\n" +
-               "          < to > task2 < / to >\n" +
-               "        < / controlFlow >\n" +
-               "        < controlFlow >\n" +
-               "          < from > task2 < / from >\n" +
-               "          < to > output1 < / to >\n" +
-               "        < / controlFlow >\n" +
-               "      < / flows >\n" +
-               "    < / net >\n" +
-               "  < / rootNet >\n" +
-               "< / specification >";
+    private String createCompliantFinancialSpecXML() {
+        return """
+            <?xml version="1.0" encoding="UTF-8"?>
+            < specification xmlns="http://www.yawlfoundation.org/yawl" >
+              < specificationURI > compliant-financial-spec < / specificationURI >
+              < name > SOX Compliant Financial Process < / name >
+              < specificationDescription > Financial workflow with SOX audit controls < / specificationDescription >
+              < rootNet >
+                < net id="sox-financial-net" >
+                  < name > Financial Net < / name >
+                  < inputs >
+                    < input id="request_input" / >
+                  < / inputs >
+                  < outputs >
+                    < output id="payment_output" / >
+                    < output id="audit_output" / >
+                  < / outputs >
+                  < tasks >
+                    < task id="verify_task" name="Verify Payment Request" >
+                      < documentation >
+                        Verifies payment request has proper authorization and documentation.
+                        Required for SOX compliance to prevent fraudulent transactions.
+                      < / documentation >
+                      < decomposition id="atomic_verification" />
+                    < / task >
+                    < task id="approve_task" name="Approve Payment" >
+                      < documentation >
+                        Final approval by authorized manager with dual control.
+                        Ensures proper oversight for SOX compliance.
+                      < / documentation >
+                      < decomposition id="manager_approval" />
+                    < / task >
+                    < task id="audit_task" name="Audit Trail" >
+                      < documentation >
+                        Creates permanent audit trail of all transactions.
+                        Required by SOX for financial accountability.
+                      < / documentation >
+                      < decomposition id="atomic_audit" />
+                    < / task >
+                  < / tasks >
+                  < flows >
+                    < controlFlow >
+                      < from > request_input < / from >
+                      < to > verify_task < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > verify_task < / from >
+                      < to > approve_task < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > approve_task < / from >
+                      < to > payment_output < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > verify_task < / from >
+                      < to > audit_task < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > audit_task < / from >
+                      < to > audit_output < / to >
+                    < / controlFlow >
+                  < / flows >
+                < / net >
+              < / rootNet >
+            < / specification >
+            """;
     }
 
     /**
-     * Creates a simple YAWL specification XML for healthcare processes.
+     * Creates a GDPR-compliant YAWL specification XML.
      */
-    private String createSimpleHealthcareSpecXML() {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-               "< specification xmlns=\"http://www.yawlfoundation.org/yawl\" >\n" +
-               "  < specificationURI > simple-healthcare-spec < / specificationURI >\n" +
-               "  < name > Simple Healthcare Process < / name >\n" +
-               "  < specificationDescription > A simple healthcare workflow < / specificationDescription >\n" +
-               "  < rootNet >\n" +
-               "    < net id=\"simple-healthcare-net\" >\n" +
-               "      < name > Simple Healthcare Net < / name >\n" +
-               "      < inputs >\n" +
-               "        < input id=\"input1\" / >\n" +
-               "      < / inputs >\n" +
-               "      < outputs >\n" +
-               "        < output id=\"output1\" / >\n" +
-               "      < / outputs >\n" +
-               "      < tasks >\n" +
-               "        < task id=\"task1\" name=\"Collect Patient Data\" >\n" +
-               "          < documentation > Collects patient healthcare data < / documentation >\n" +
-               "        < / task >\n" +
-               "        < task id=\"task2\" name=\"Process Healthcare\" >\n" +
-               "          < documentation > Processes healthcare data with privacy controls < / documentation >\n" +
-               "        < / task >\n" +
-               "      < / tasks >\n" +
-               "      < flows >\n" +
-               "        < controlFlow >\n" +
-               "          < from > input1 < / from >\n" +
-               "          < to > task1 < / to >\n" +
-               "        < / controlFlow >\n" +
-               "        < controlFlow >\n" +
-               "          < from > task1 < / from >\n" +
-               "          < to > task2 < / to >\n" +
-               "        < / controlFlow >\n" +
-               "        < controlFlow >\n" +
-               "          < from > task2 < / from >\n" +
-               "          < to > output1 < / to >\n" +
-               "        < / controlFlow >\n" +
-               "      < / flows >\n" +
-               "    < / net >\n" +
-               "  < / rootNet >\n" +
-               "< / specification >";
+    private String createCompliantHealthcareSpecXML() {
+        return """
+            <?xml version="1.0" encoding="UTF-8"?>
+            < specification xmlns="http://www.yawlfoundation.org/yawl" >
+              < specificationURI > compliant-healthcare-spec < / specificationURI >
+              < name > GDPR Compliant Healthcare Process < / name >
+              < specificationDescription > Healthcare workflow with privacy controls < / specificationDescription >
+              < rootNet >
+                < net id="gdpr-healthcare-net" >
+                  < name > Healthcare Net < / name >
+                  < inputs >
+                    < input id="patient_input" / >
+                  < / inputs >
+                  < outputs >
+                    < output id="treatment_output" / >
+                    < output id="privacy_output" / >
+                  < / outputs >
+                  < tasks >
+                    < task id="consent_task" name="Obtain Patient Consent" >
+                      < documentation >
+                        Obtains explicit patient consent for data processing.
+                        Required by GDPR for lawful data processing.
+                      < / documentation >
+                      < decomposition id="atomic_consent" />
+                    < / task >
+                    < task id="privacy_task" name="Privacy Check" >
+                      < documentation >
+                        Ensures data minimization and proper anonymization.
+                        Required by GDPR to protect patient privacy.
+                      < / documentation >
+                      < decomposition id="atomic_privacy" />
+                    < / task >
+                    < task id="process_task" name="Process Healthcare" >
+                      < documentation >
+                        Processes healthcare data with privacy safeguards.
+                        Compliant with GDPR data processing principles.
+                      < / documentation >
+                      < decomposition id="healthcare_processing" />
+                    < / task >
+                  < / tasks >
+                  < flows >
+                    < controlFlow >
+                      < from > patient_input < / from >
+                      < to > consent_task < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > consent_task < / from >
+                      < to > privacy_task < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > privacy_task < / from >
+                      < to > process_task < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > process_task < / from >
+                      < to > treatment_output < / to >
+                    < / controlFlow >
+                    < controlFlow >
+                      < from > privacy_task < / from >
+                      < to > privacy_output < / to >
+                    < / controlFlow >
+                  < / flows >
+                < / net >
+              < / rootNet >
+            < / specification >
+            """;
     }
 }

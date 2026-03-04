@@ -1,0 +1,485 @@
+---
+# YAWL Workflow for Invoice Verification
+# Multi-case correlation with sibling relationships and bulk processing
+
+id: "invoice-verification-jtbd5"
+name: "Invoice Verification Workflow"
+version: "1.0"
+namespace: "yawl.tests.fixtures"
+
+startTasks:
+  - "receive_invoice"
+
+tasks:
+  "receive_invoice":
+    name: "Receive Invoice"
+    input: |
+      {
+        "invoice_id": "@invoice.id",
+        "vendor_id": "@invoice.vendor",
+        "amount": "@invoice.total_amount",
+        "currency": "@invoice.currency",
+        "invoice_date": "@invoice.date",
+        "due_date": "@invoice.due_date",
+        "po_references": "@invoice.po_numbers",
+        "delivery_references": "@invoice.delivery_numbers",
+        "line_items": "@invoice.items"
+      }
+    output: |
+      {
+        "case_id": "@generated.uuid",
+        "invoice_case_id": "invoice_@invoice.id",
+        "received_at": "@timestamp",
+        "processing_group": "@group_invoices_by_po(@invoice.po_references)",
+        "correlation_ids": {
+          "invoices": [],
+          "purchase_orders": [],
+          "deliveries": [],
+          "approvals": []
+        }
+      }
+    next: "group_related_cases"
+
+  "group_related_cases":
+    name: "Group Related Cases"
+    input: |
+      {
+        "invoice_case": "@case.invoice_case",
+        "po_references": "@case.po_references",
+        "delivery_references": "@case.delivery_references"
+      }
+    output: |
+      {
+        "related_cases": "@find_related_cases()",
+        "sibling_invoices": "@find_sibling_invoices()",
+        "parent_po": "@identify_parent_po()",
+        "matching_strategy": "@determine_matching_strategy()"
+      }
+    next: "initialize_correlation"
+
+  "initialize_correlation":
+    name: "Initialize Correlation"
+    input: |
+      {
+        "invoice_case": "@case",
+        "related_cases": "@group.related_cases",
+        "matching_strategy": "@group.matching_strategy"
+      }
+    output: |
+      {
+        "correlation_id": "@generated.uuid",
+        "correlation_type": @correlation.type,
+        "correlation_state": "active",
+        "participant_cases": @correlation.participants,
+        "dependencies": @correlation.dependencies
+      }
+    next: "verify_purchase_order"
+
+  "verify_purchase_order":
+    name: "Verify Purchase Order"
+    input: |
+      {
+        "invoice_case": "@case",
+        "purchase_orders": "@correlation.purchase_orders",
+        "matching_rules": "@correlation.matching_strategy"
+      }
+    output: |
+      {
+        "po_verification": "@execute_po_verification()",
+        "po_match_status": "@po.match_result",
+        "po_validation_errors": @po.errors,
+        "amendment_required": @po.needs_amendment
+      }
+    next: "check_delivery"
+
+  "check_delivery":
+    name: "Check Delivery Evidence"
+    input": |
+      {
+        "invoice_case": "@case",
+        "delivery_references": "@correlation.delivery_references",
+        "required_matching": "@correlation.matching_strategy"
+      }
+    output": |
+      {
+        "delivery_verification": "@execute_delivery_check()",
+        "delivery_status": @delivery.status,
+        "quantity_matches": @delivery.quantity_match,
+        "date_compliance": @delivery.date_compliant,
+        "exceptions": @delivery.exceptions
+      }
+    next: "perform_matching"
+
+  "perform_matching":
+    name: "Perform Three-Way Matching"
+    input": |
+      {
+        "invoice_case": "@case",
+        "po_verification": "@po_verification",
+        "delivery_verification": "@delivery_verification",
+        "matching_strategy": "@correlation.matching_strategy"
+      }
+    output": |
+      {
+        "match_result": "@execute_three_way_matching()",
+        "match_accuracy": @matching.accuracy,
+        "total_amount_match": @matching.amount_match,
+        "quantity_match": @matching.quantity_match,
+        "price_variance": @matching.price_variance,
+        "variance_threshold_exceeded": @matching.variance > @threshold
+      }
+    next: "exception_decision"
+
+  "exception_decision":
+    name: "Exception Decision"
+    options": [
+      {
+        "condition": "@match_result.match_accuracy == 1.0 && @match_result.variance <= @threshold",
+        "next": "ready_for_approval"
+      },
+      {
+        "condition": "@match_result.price_variance > @threshold && @match_result.price_variance <= @max_threshold",
+        "next": "supervisor_approval"
+      },
+      {
+        "condition": "@match_result.price_variance > @max_threshold",
+        "next": "manager_approval"
+      },
+      {
+        "condition": "@delivery_verification.exceptions.length > 0",
+        "next": "exception_handling"
+      }
+    ]
+
+  "ready_for_approval":
+    name": "Ready for Approval"
+    input": |
+      {
+        "invoice_case": "@case",
+        "match_result": "@matching",
+        "correlation_id": "@correlation.id"
+      }
+    output": |
+      {
+        "approval_required": false,
+        "approval_level": "none",
+        "ready_for_payment": true,
+        "correlation_ready": true
+      }
+    next": "await_bulk_processing"
+
+  "supervisor_approval":
+    name": "Supervisor Approval"
+    role": "accountant_supervisor"
+    input": |
+      {
+        "invoice_case": "@case",
+        "match_result": "@matching",
+        "price_variance": "@matching.price_variance",
+        "justification_required": true
+      }
+    output": |
+      {
+        "supervisor_approved": false,
+        "approval_conditions": [],
+        "amendments_required": [],
+        "review_deadline": "@timestamp.plusDays(2)"
+      }
+    next": "supervisor_decision"
+
+  "manager_approval":
+    name": "Manager Approval"
+    role": "finance_director"
+    input": |
+      {
+        "invoice_case": "@case",
+        "match_result": "@matching",
+        "variance_amount": @matching.variance_amount,
+        "strategic_impact": @calculate_strategic_impact()
+      }
+    output": |
+      {
+        "manager_approved": false,
+        "conditions": [],
+        "sign_off_required": true,
+        "board_review_required": false
+      }
+    next": "manager_decision"
+
+  "exception_handling":
+    name": "Exception Handling"
+    input": |
+      {
+        "invoice_case": "@case",
+        "match_exceptions": "@matching.exceptions",
+        "delivery_exceptions": "@delivery.exceptions",
+        "severity": @determine_exception_severity()
+      }
+    output": |
+      {
+        "exception_type": "@categorize_exception()",
+        "escalation_required": @needs_escalation,
+        "resolution_options": @identify_resolution_options(),
+        "impact_assessment": @assess_impact()
+      }
+    next": "exception_resolution"
+
+  "exception_resolution":
+    name": "Exception Resolution"
+    options": [
+      {
+        "condition": "@exception.type == 'quantity_discrepancy' && @discrepancy < 5%",
+        "next": "auto_approve"
+      },
+      {
+        "condition": "@exception.type == 'price_variance' && @approval_required",
+        "next": "await_approval"
+      },
+      {
+        "condition": "@exception.type == 'delivery_delay' && @delay < 7_days",
+        "next": "conditional_approval"
+      },
+      {
+        "condition": "@exception.type == 'duplicate_invoice'",
+        "next": "deduplicate"
+      }
+    ]
+
+  "auto_approve":
+    name": "Auto Approve Exception"
+    input": |
+      {
+        "invoice_case": "@case",
+        "exception_type": "@exception.type",
+        "approval_conditions_met": true
+      }
+    output": |
+      {
+        "auto_approved": true,
+        "exception_resolved": true,
+        "conditions": []
+      }
+    next": "await_bulk_processing"
+
+  "deduplicate":
+    name": "Handle Duplicate Invoice"
+    input": |
+      {
+        "invoice_case": "@case",
+        "duplicate_invoices": @duplicates,
+        "original_invoice": @original
+      }
+    output": |
+      {
+        "deduplication_complete": true,
+        "kept_invoice": "@original.id",
+        "cancelled_invoices": @duplicate_ids,
+        "deduplication_method": "first_in_first_out"
+      }
+    next": "await_bulk_processing"
+
+  "await_bulk_processing":
+    name": "Await Bulk Processing"
+    input": |
+      {
+        "invoice_case": "@case",
+        "correlation_id": "@correlation.id",
+        "ready_for_payment": true,
+        "siblings_ready": @check_sibling_readiness()
+      }
+    output": |
+      {
+        "bulk_group_id": "@generate_bulk_group_id()",
+        "group_size": @sibling_count,
+        "min_threshold_met": @sibling_count >= @bulk_threshold,
+        "waiting_for_siblings": @sibling_count < @bulk_threshold
+      }
+    next": "bulk_approval_check"
+
+  "bulk_approval_check":
+    name": "Bulk Approval Check"
+    input": |
+      {
+        "bulk_group": "@bulk.group",
+        "member_count": @group.size,
+        "approval_threshold": @bulk.threshold,
+        "individual_approvals": @group.individual_approvals
+      }
+    output": |
+      {
+        "bulk_ready": @group.size >= @bulk.threshold,
+        "approval_percentage": @calculate_approval_percentage(),
+        "batch_id": "@generate_batch_id()"
+      }
+    next": "bulk_approval_decision"
+
+  "bulk_approval_decision":
+    name": "Bulk Approval Decision"
+    options": [
+      {
+        "condition": "@bulk_ready == true && @approval_percentage == 100%",
+        "next": "approve_bulk"
+      },
+      {
+        "condition": "@bulk_ready == true && @approval_percentage > 80%",
+        "next": "conditional_bulk_approval"
+      },
+      {
+        "condition": "@approval_percentage <= 80%",
+        "next": "reject_bulk"
+      }
+    ]
+
+  "approve_bulk":
+    name": "Approve Bulk Payment"
+    role": "finance_director"
+    input": |
+      {
+        "bulk_group": "@bulk.group",
+        "total_amount": @bulk.total_amount,
+        "member_count": @bulk.size,
+        "correlation_id": "@bulk.correlation_id"
+      }
+    output": |
+      {
+        "bulk_approved": true,
+        "approval_batch_id": "@bulk.batch_id",
+        "payment_schedule": @create_payment_schedule(),
+        "funds_reserved": true
+      }
+    next": "process_payment"
+
+  "conditional_bulk_approval":
+    name": "Conditional Bulk Approval"
+    input": |
+      {
+        "bulk_group": "@bulk.group",
+        "pending_approvals": @bulk.pending,
+        "approval_conditions": @bulk.conditions
+      }
+    output": |
+      {
+        "conditionally_approved": true,
+        "reservations_made": true,
+        "conditional_approvals": @approvals,
+        "follow_up_required": true
+      }
+    next": "await_final_approval"
+
+  "await_final_approval":
+    name": "Await Final Approval"
+    input": |
+      {
+        "conditional_approvals": @approvals,
+        "waiting_count": @pending_count,
+        "timeout_threshold": "24 hours"
+      }
+    output": |
+      {
+        "awaiting_final_approval": true,
+        "timeout_active": true,
+        "fallback_required": false
+      }
+    next": "check_final_approval"
+    timeout: "24 hours"
+
+  "check_final_approval":
+    name": "Check Final Approval"
+    input": |
+      {
+        "conditional_approvals": @approvals,
+        "pending_approvals": @pending_count
+      }
+    output": |
+      {
+        "final_approval_received": true,
+        "all_conditions_met": true,
+        "ready_for_payment": true
+      }
+    next": "process_payment"
+
+  "process_payment":
+    name": "Process Payment"
+    input": |
+      {
+        "approved_invoices": @bulk.approved,
+        "payment_amounts": @payment_amounts,
+        "payment_method": "bank_transfer",
+        "due_date": "@earliest_due_date()"
+      }
+    output": |
+      {
+        "payments_processed": true,
+        "payment_ids": @generated_payments,
+        "payment_date": "@timestamp",
+        "processing_fees": @calculate_fees(),
+        "currency_conversions": @conversions
+      }
+    next": "create_reconciliation"
+
+  "create_reconciliation":
+    name": "Create Reconciliation Case"
+    input": |
+      {
+        "original_invoices": @invoices,
+        "processed_payments": @payments,
+        "correlation_id": "@correlation.id"
+      }
+    output": |
+      {
+        "reconciliation_case_id": "recon_@generated.uuid",
+        "reconciliation_type": "standard",
+        "expected_settlement": @calculate_expected_settlement(),
+        "actual_settlement": @calculate_actual_settlement(),
+        "variance_amount": @calculate_variance(),
+        "reconciliation_required": false
+      }
+    next": "schedule_reconciliation"
+
+  "schedule_reconciliation":
+    name": "Schedule Reconciliation"
+    input": |
+      {
+        "reconciliation_case": "@reconciliation",
+        "payment_details": "@payments",
+        "variance_amount": @reconciliation.variance
+      }
+    output": |
+      {
+        "reconciliation_scheduled": true,
+        "reconciliation_date": "@timestamp.plusDays(30)",
+        "auto_reconciliation": @variance < @threshold,
+        "manual_review_required": false
+      }
+    next": "complete_correlation"
+
+  "complete_correlation":
+    name": "Complete Correlation"
+    input": |
+      {
+        "correlation_id": "@correlation.id",
+        "participant_cases": @all_cases,
+        "final_status": "completed",
+        "all_payments_processed": true
+      }
+    output": |
+      {
+        "correlation_completed": true,
+        "finalized_at": "@timestamp",
+        "correlation_summary": @generate_summary(),
+        "archival_required": true
+      }
+    next": "cleanup"
+
+  "cleanup":
+    name": "Process Cleanup"
+    output": |
+      {
+        "process_completed": true,
+        "completed_at": "@timestamp",
+        "cases_closed": true,
+        "correlation_archived": true
+      }
+
+endTasks:
+  - "cleanup"

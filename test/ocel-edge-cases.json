@@ -1,0 +1,614 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-01-20T10:00:00Z",
+    "source": "development-workflow-with-failures"
+  },
+  "events": [
+    {
+      "id": "e1",
+      "type": "CaseCreate",
+      "timestamp": "2024-01-20T09:15:23.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "PI Sprint 2 - Mixed Success",
+        "concept:description": "Sprint with both successful and failed tasks",
+        "pi:sprint": "PI2-Sprint2",
+        "pi:team": "Beta",
+        "duration": 3600
+      },
+      "objects": {
+        "c1": {
+          "type": "Case",
+          "attributes": {
+            "concept:name": "PI2 Sprint 2 - Mixed Success",
+            "pi:priority": "high",
+            "pi:estimation": 35,
+            "pi:deadline": "2024-01-31T17:00:00Z"
+          }
+        },
+        "f2": {
+          "type": "Feature",
+          "attributes": {
+            "concept:name": "Payment Processing",
+            "pi:points": 15,
+            "pi:assignee": "alice",
+            "pi:status": "planning"
+          }
+        }
+      }
+    },
+    {
+      "id": "e2",
+      "type": "TaskStart",
+      "timestamp": "2024-01-20T10:45:12.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Design Payment API",
+        "concept:cost": 480,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 8
+      },
+      "objects": {
+        "c1": {},
+        "t5": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Design Payment API",
+            "pi:parent": "f2",
+            "pi:assignee": "bob",
+            "pi:status": "in_progress",
+            "pi:subtasks": ["t5a", "t5b"]
+          }
+        },
+        "r1": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Bob Developer",
+            "pi:role": "Senior Developer",
+            "pi:team": "Beta",
+            "pi:skills": ["API", "Payment", "Java"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e3",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-20T14:30:45.123Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Design Payment API",
+        "concept:cost": 520,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:actualHours": 7.8,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c1": {},
+        "t5": {},
+        "r1": {}
+      }
+    },
+    {
+      "id": "e4",
+      "type": "TaskStart",
+      "timestamp": "2024-01-20T15:15:33.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement Payment Gateway",
+        "concept:cost": 960,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 16
+      },
+      "objects": {
+        "c1": {},
+        "t6": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement Payment Gateway",
+            "pi:parent": "f2",
+            "pi:assignee": "carol",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t5"]
+          }
+        },
+        "r2": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Carol Developer",
+            "pi:role": "Senior Developer",
+            "pi:team": "Beta",
+            "pi:skills": ["Backend", "Spring", "Payment"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e5",
+      "type": "TaskStart",
+      "timestamp": "2024-01-20T15:30:11.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Payment UI Integration",
+        "concept:cost": 720,
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 12
+      },
+      "objects": {
+        "c1": {},
+        "t7": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Payment UI Integration",
+            "pi:parent": "f2",
+            "pi:assignee": "dave",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t5"]
+          }
+        },
+        "r3": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Dave Developer",
+            "pi:role": "Frontend Developer",
+            "pi:team": "Beta",
+            "pi:skills": ["React", "TypeScript", "Payment"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e6",
+      "type": "TaskFail",
+      "timestamp": "2024-01-21T09:45:22.345Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Implement Payment Gateway",
+        "concept:cost": 240,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:failureReason": "external_service_unavailable",
+        "pi:errorMessage": "Stripe API returned 503 error",
+        "pi:retryCount": 0
+      },
+      "objects": {
+        "c1": {},
+        "t6": {
+          "attributes": {
+            "pi:status": "failed",
+            "pi:failureDate": "2024-01-21T09:45:22.345Z",
+            "pi:retryCount": 0
+          }
+        },
+        "r2": {}
+      }
+    },
+    {
+      "id": "e7",
+      "type": "TaskStart",
+      "timestamp": "2024-01-21T11:15:44.567Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement Payment Gateway (Retry 1)",
+        "concept:cost": 960,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 16,
+        "pi:retryNumber": 1
+      },
+      "objects": {
+        "c1": {},
+        "t6": {
+          "attributes": {
+            "pi:status": "in_progress",
+            "pi:retryNumber": 1
+          }
+        },
+        "r2": {}
+      }
+    },
+    {
+      "id": "e8",
+      "type": "TaskFail",
+      "timestamp": "2024-01-21T16:30:55.789Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Implement Payment Gateway (Retry 1)",
+        "concept:cost": 720,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:failureReason": "integration_test_failed",
+        "pi:errorMessage": "Unit test coverage below 80%",
+        "pi:retryCount": 1
+      },
+      "objects": {
+        "c1": {},
+        "t6": {
+          "attributes": {
+            "pi:status": "failed",
+            "pi:failureDate": "2024-01-21T16:30:55.789Z",
+            "pi:retryCount": 1,
+            "pi:retryAttempts": 1
+          }
+        },
+        "r2": {}
+      }
+    },
+    {
+      "id": "e9",
+      "type": "TaskStart",
+      "timestamp": "2024-01-22T09:00:33.901Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement Payment Service (Fallback)",
+        "concept:cost": 1200,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 20,
+        "pi:isFallback": true
+      },
+      "objects": {
+        "c1": {},
+        "t8": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement Payment Service (Fallback)",
+            "pi:parent": "f2",
+            "pi:assignee": "alice",
+            "pi:status": "in_progress",
+            "pi:dependencies": [],
+            "pi:replaces": "t6"
+          }
+        },
+        "r1": {
+          "attributes": {
+            "pi:role": "Tech Lead",
+            "pi:skills": ["Architecture", "Payment", "Java"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e10",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-22T14:45:12.345Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Implement Payment Service (Fallback)",
+        "concept:cost": 1440,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:actualHours": 19.2,
+        "pi:quality": "acceptable",
+        "pi:isFallback": true
+      },
+      "objects": {
+        "c1": {},
+        "t8": {
+          "attributes": {
+            "pi:status": "completed",
+            "pi:completionDate": "2024-01-22T14:45:12.345Z",
+            "pi:isFallback": true
+          }
+        },
+        "r1": {}
+      }
+    },
+    {
+      "id": "e11",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-23T10:15:33.678Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Payment UI Integration",
+        "concept:cost": 780,
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:actualHours": 11.5,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c1": {},
+        "t7": {},
+        "r3": {}
+      }
+    },
+    {
+      "id": "e12",
+      "type": "ResourceConflict",
+      "timestamp": "2024-01-24T09:20:15.012Z",
+      "lifecycle": "suspend",
+      "attributes": {
+        "concept:name": "Resource overallocation detected",
+        "concept:cost": 0,
+        "pi:conflictType": "resource_overallocation",
+        "pi:affectedResources": ["r1", "r2"],
+        "pi:conflictingTasks": ["t8", "t9"],
+        "pi:conflictResolution": "reassign"
+      },
+      "objects": {
+        "c1": {},
+        "t9": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Payment Testing",
+            "pi:parent": "f2",
+            "pi:assignee": "bob",
+            "pi:status": "conflict",
+            "pi:dependencies": ["t8"]
+          }
+        },
+        "r1": {}
+      }
+    },
+    {
+      "id": "e13",
+      "type": "TaskReassign",
+      "timestamp": "2024-01-24T10:30:44.567Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Payment Testing",
+        "concept:cost": 480,
+        "pi:taskType": "testing",
+        "pi:complexity": "low",
+        "pi:reassignFrom": "bob",
+        "pi:reassignTo": "eve"
+      },
+      "objects": {
+        "c1": {},
+        "t9": {
+          "attributes": {
+            "pi:assignee": "eve",
+            "pi:status": "in_progress"
+          }
+        },
+        "r4": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Eve Developer",
+            "pi:role": "QA Engineer",
+            "pi:team": "Beta",
+            "pi:skills": ["Testing", "JUnit", "Selenium"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e14",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-24T15:45:22.901Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Payment Testing",
+        "concept:cost": 520,
+        "pi:taskType": "testing",
+        "pi:complexity": "low",
+        "pi:actualHours": 4.8,
+        "pi:quality": "excellent"
+      },
+      "objects": {
+        "c1": {},
+        "t9": {},
+        "r4": {}
+      }
+    },
+    {
+      "id": "e15",
+      "type": "CaseComplete",
+      "timestamp": "2024-01-25T14:30:12.654Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "PI2 Sprint 2 - Mixed Success",
+        "concept:cost": 5480,
+        "pi:totalTasks": 5,
+        "pi:completedTasks": 4,
+        "pi:failedTasks": 1,
+        "pi:totalPoints": 29,
+        "pi:velocity": 14.5,
+        "pi:failureRate": 0.2
+      },
+      "objects": {
+        "c1": {},
+        "f2": {
+          "attributes": {
+            "pi:status": "completed",
+            "pi:completionDate": "2024-01-25T14:30:12.654Z",
+            "pi:points": 29,
+            "pi:isPartial": true
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "c1": {
+      "id": "c1",
+      "type": "Case",
+      "attributes": {
+        "concept:name": "PI2 Sprint 2 - Mixed Success",
+        "concept:description": "Sprint with payment feature and mixed outcomes",
+        "pi:priority": "high",
+        "pi:estimation": 35,
+        "pi:deadline": "2024-01-31T17:00:00Z",
+        "pi:actualCost": 5480,
+        "pi:actualDuration": 455548,
+        "pi:team": "Beta",
+        "pi:sprint": "PI2-Sprint2",
+        "pi:failureRate": 0.2,
+        "pi:partialCompletion": true
+      }
+    },
+    "f2": {
+      "id": "f2",
+      "type": "Feature",
+      "attributes": {
+        "concept:name": "Payment Processing",
+        "concept:description": "Online payment processing with multiple gateways",
+        "pi:points": 15,
+        "pi:assignee": "alice",
+        "pi:status": "completed",
+        "pi:actualPoints": 14,
+        "pi:completionDate": "2024-01-25T14:30:12.654Z",
+        "pi:quality": "acceptable",
+        "pi:hadFailures": true
+      }
+    },
+    "t5": {
+      "id": "t5",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Design Payment API",
+        "concept:description": "Design REST API for payment processing",
+        "pi:parent": "f2",
+        "pi:assignee": "bob",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 8,
+        "pi:actualHours": 7.8,
+        "pi:points": 3,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-20T14:30:45.123Z"
+      }
+    },
+    "t6": {
+      "id": "t6",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement Payment Gateway",
+        "concept:description": "Integrate with Stripe payment gateway",
+        "pi:parent": "f2",
+        "pi:assignee": "carol",
+        "pi:status": "failed",
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 16,
+        "pi:actualHours": 9.2,
+        "pi:points": 8,
+        "pi:quality": "failed",
+        "pi:failureDate": "2024-01-21T16:30:55.789Z",
+        "pi:failureReason": "integration_test_failed",
+        "pi:retryCount": 2,
+        "pi:maxRetries": 3
+      }
+    },
+    "t7": {
+      "id": "t7",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Payment UI Integration",
+        "concept:description": "Integrate payment forms with React UI",
+        "pi:parent": "f2",
+        "pi:assignee": "dave",
+        "pi:status": "completed",
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 12,
+        "pi:actualHours": 11.5,
+        "pi:points": 3,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-23T10:15:33.678Z"
+      }
+    },
+    "t8": {
+      "id": "t8",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement Payment Service (Fallback)",
+        "concept:description": "Custom payment service implementation",
+        "pi:parent": "f2",
+        "pi:assignee": "alice",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 20,
+        "pi:actualHours": 19.2,
+        "pi:points": 6,
+        "pi:quality": "acceptable",
+        "pi:completionDate": "2024-01-22T14:45:12.345Z",
+        "pi:isFallback": true,
+        "pi:replaces": "t6"
+      }
+    },
+    "t9": {
+      "id": "t9",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Payment Testing",
+        "concept:description": "End-to-end testing of payment flows",
+        "pi:parent": "f2",
+        "pi:assignee": "eve",
+        "pi:status": "completed",
+        "pi:taskType": "testing",
+        "pi:complexity": "low",
+        "pi:estimatedHours": 5,
+        "pi:actualHours": 4.8,
+        "pi:points": 2,
+        "pi:quality": "excellent",
+        "pi:completionDate": "2024-01-24T15:45:22.901Z",
+        "pi:wasReassigned": true
+      }
+    },
+    "r1": {
+      "id": "r1",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Alice Developer",
+        "concept:description": "Tech lead with payment experience",
+        "pi:role": "Tech Lead",
+        "pi:team": "Beta",
+        "pi:skills": ["Architecture", "Payment", "Java", "Leadership"],
+        "pi:experience": "10 years",
+        "pi:location": "Remote",
+        "pi:wasReassigned": true
+      }
+    },
+    "r2": {
+      "id": "r2",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Carol Developer",
+        "concept:description": "Backend developer with payment experience",
+        "pi:role": "Senior Developer",
+        "pi:team": "Beta",
+        "pi:skills": ["Backend", "Spring", "Payment"],
+        "pi:experience": "7 years",
+        "pi:location": "On-site",
+        "pi:failureCount": 2
+      }
+    },
+    "r3": {
+      "id": "r3",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Dave Developer",
+        "concept:description": "Frontend developer specializing in payments",
+        "pi:role": "Frontend Developer",
+        "pi:team": "Beta",
+        "pi:skills": ["React", "TypeScript", "Payment", "UI/UX"],
+        "pi:experience": "5 years",
+        "pi:location": "Remote"
+      }
+    },
+    "r4": {
+      "id": "r4",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Eve Developer",
+        "concept:description": "QA engineer with payment testing experience",
+        "pi:role": "QA Engineer",
+        "pi:team": "Beta",
+        "pi:skills": ["Testing", "JUnit", "Selenium", "Payment"],
+        "pi:experience": "4 years",
+        "pi:location": "Hybrid",
+        "pi:wasReassigned": true
+      }
+    }
+  }
+}

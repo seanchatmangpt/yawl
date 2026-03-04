@@ -23,3 +23,5 @@ YAWL performance specialist. Analyze and optimize workflow engine performance.
 **Capacity**: 1 engine ~500 concurrent cases, 1 DB ~10K work items. Scale horizontally with load balancer + read replicas.
 
 **Regression**: Baseline before changes, compare after, fail if degradation >10%.
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for performance baseline. Key facts: `modules.json` (engine scope), `dual-family.json` (mirror overhead), `diagrams/50-risk-surfaces.mmd` (risk areas).

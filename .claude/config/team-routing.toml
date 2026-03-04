@@ -1,0 +1,41 @@
+# Task Routing — Route tasks to appropriate team
+# Applies to all phases, all contexts
+
+[routing]
+mode = "keyword_based"
+fallback = "implement"
+
+# Route to EXPLORE team
+[routing.explore]
+keywords = [
+    "research", "investigate", "discover", "analyze", "explore",
+    "understand", "study", "examine", "survey", "probe",
+    "find", "look for", "identify", "detect", "investigate"
+]
+confidence_threshold = 0.7
+
+# Route to PLAN team
+[routing.plan]
+keywords = [
+    "plan", "design", "architect", "strategy", "blueprint",
+    "organize", "structure", "layout", "framework", "approach",
+    "refactor", "reorganize", "conceptualize", "decide"
+]
+confidence_threshold = 0.7
+
+# Route to IMPLEMENT team
+[routing.implement]
+keywords = [
+    "implement", "build", "code", "develop", "write",
+    "create", "fix", "debug", "test", "integrate",
+    "commit", "deploy", "execute", "run", "integrate",
+    "solve", "patch", "improve"
+]
+confidence_threshold = 0.7
+
+# Auto-assignment when multiple teams could handle
+[routing.auto_assignment]
+prefer_loaded_team = false
+prefer_specialized_team = true
+round_robin = true
+max_queue_per_agent = 10

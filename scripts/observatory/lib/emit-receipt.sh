@@ -3,6 +3,11 @@
 # Observatory receipt emitter
 # Generates a JSON receipt with provenance and integrity hashes
 #
+# Environment variables for timing (passed from observatory.sh):
+#   FACTS_DURATION_MS      - Duration of facts phase in milliseconds
+#   DIAGRAMS_DURATION_MS   - Duration of diagrams phase in milliseconds
+#   TOTAL_DURATION_MS      - Total observatory run duration in milliseconds
+#
 
 # Generate the observatory receipt
 generate_receipt() {
@@ -18,10 +23,16 @@ generate_receipt() {
     export DIAGRAMS_DIR="$diagrams_dir"
     export RECEIPTS_DIR="$receipts_dir"
 
+    # Timing values passed from observatory.sh (default to 0 if not set)
+    export RECEIPT_FACTS_DURATION_MS="${FACTS_DURATION_MS:-0}"
+    export RECEIPT_DIAGRAMS_DURATION_MS="${DIAGRAMS_DURATION_MS:-0}"
+    export RECEIPT_TOTAL_DURATION_MS="${TOTAL_DURATION_MS:-0}"
+
     python3 << 'PYEOF'
 import json
 import os
 import hashlib
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -29,6 +40,11 @@ root_dir = os.environ.get('ROOT_DIR', '.')
 facts_dir = os.environ.get('FACTS_DIR', '')
 diagrams_dir = os.environ.get('DIAGRAMS_DIR', '')
 receipts_dir = os.environ.get('RECEIPTS_DIR', '')
+
+# Timing values from environment (set by observatory.sh)
+facts_duration_ms = int(os.environ.get('RECEIPT_FACTS_DURATION_MS', 0))
+diagrams_duration_ms = int(os.environ.get('RECEIPT_DIAGRAMS_DURATION_MS', 0))
+total_duration_ms = int(os.environ.get('RECEIPT_TOTAL_DURATION_MS', 0))
 
 def sha256_file(filepath):
     """Compute SHA256 hash of a file"""
@@ -66,6 +82,8 @@ if os.path.exists(index_file):
     index_sha256 = sha256_file(index_file)
 
 # Build receipt
+receipt_start = time.time()
+
 receipt = {
     "run_id": datetime.utcnow().strftime("%Y%m%dT%H%M%SZ"),
     "generated_at": datetime.utcnow().isoformat() + "Z",
@@ -84,16 +102,24 @@ receipt = {
     "facts_emitted": sorted(list(facts_hashes.keys())),
     "diagrams_emitted": sorted(list(diagrams_hashes.keys())),
     "timing_ms": {
-        "facts": 0,
-        "diagrams": 0,
-        "receipt": 0,
-        "total": 0
+        "facts": facts_duration_ms,
+        "diagrams": diagrams_duration_ms,
+        "receipt": 0,  # Will be filled after JSON generation
+        "total": total_duration_ms
     },
     "refusals": [],
     "warnings": []
 }
 
 receipt_file = os.path.join(receipts_dir, 'observatory.json')
+
+# Calculate receipt generation time
+receipt_end = time.time()
+receipt_duration_ms = int((receipt_end - receipt_start) * 1000)
+
+# Update timing in receipt
+receipt['timing_ms']['receipt'] = receipt_duration_ms
+
 with open(receipt_file, 'w') as f:
     json.dump(receipt, f, indent=2)
     f.write('\n')

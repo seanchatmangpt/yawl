@@ -265,3 +265,21 @@ receipts/
 rebar3.crashdump
 */rebar3.crashdump
 *.beam
+
+# Erlang crash dumps (all variants)
+erl_crash.dump
+**/erl_crash.dump
+
+# Erlang compiled output directories
+ebin/
+**/ebin/
+!**/src/**/ebin/  # preserve bundled resources in src/main/resources
+
+# =============================================================================
+# Native compiled libraries (NIFs, Rust ports, etc.)
+# These are build outputs and should not be committed
+# =============================================================================
+*.dylib
+*.so
+*.dll
+!**/src/**/*.so  # preserve any source .so files if they exist

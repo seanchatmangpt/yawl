@@ -18,75 +18,115 @@
 
 package org.yawlfoundation.yawl.stateless.listener.event;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
+import org.yawlfoundation.yawl.engine.YNetData;
+import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.engine.YWorkItemStatus;
+import org.yawlfoundation.yawl.stateless.YStatelessEngine;
+import org.yawlfoundation.yawl.stateless.elements.YSpecification;
+import org.yawlfoundation.yawl.stateless.engine.YNetRunner;
 import org.yawlfoundation.yawl.stateless.engine.YWorkItem;
+import org.yawlfoundation.yawl.util.StringUtil;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.yawlfoundation.yawl.engine.YWorkItemStatus.*;
 
 /**
  * Test cases for the YWorkItemEvent record.
+ *
+ * Chicago TDD: Tests use real YWorkItem instances and real workflow execution context.
+ * No mocks for domain objects.
  *
  * @author YAWL Foundation
  * @version 6.0.0
  * @since 6.0.0
  */
+@Tag("integration")
 class YWorkItemEventTest {
+
+    private YStatelessEngine engine;
+    private YWorkItem enabledWorkItem;
+    private YWorkItem completedWorkItem;
+    private YWorkItem cancelledWorkItem;
+    private YSpecification spec;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        engine = new YStatelessEngine();
+
+        // Load minimal specification for testing
+        String specXML = StringUtil.inputStreamToString(
+            getClass().getClassLoader().getResourceAsStream("resources/MinimalSpec.xml"));
+        spec = engine.unmarshalSpecification(specXML);
+
+        // Create work items in different states
+        Map<String, String> initialData = Map.of("caseId", "test-case-123");
+        YNetRunner runner = engine.launchCase(spec, "test-case-123", initialData);
+        List<YWorkItem> workItems = engine.getWorkItemsForCase(runner.getCaseID());
+
+        // Get first work item and change its state for testing
+        YWorkItem workItem = workItems.get(0);
+        enabledWorkItem = workItem;
+
+        // Change status to different states for testing
+        enabledWorkItem._status = statusEnabled;
+        enabledWorkItem._prevStatus = statusStarted;
+
+        completedWorkItem = workItem;
+        completedWorkItem._status = statusCompleted;
+        completedWorkItem._prevStatus = statusEnabled;
+
+        cancelledWorkItem = workItem;
+        cancelledWorkItem._status = statusCancelled;
+        cancelledWorkItem._prevStatus = statusStarted;
+    }
 
     @Test
     void testConstructorWithAllParameters() {
-        YWorkItem workItem = mock(YWorkItem.class);
-        when(workItem.getCaseID()).thenReturn("case1");
-        when(workItem.getStatus()).thenReturn(YWorkItemStatus.statusEnabled);
-
-        YWorkItemStatus previousStatus = YWorkItemStatus.statusStarted;
+        YWorkItemStatus previousStatus = statusStarted;
         YWorkItemEvent event = new YWorkItemEvent(
-            YEventType.ITEM_COMPLETED, workItem, previousStatus);
+            YEventType.ITEM_COMPLETED, enabledWorkItem, previousStatus);
 
         assertEquals(YEventType.ITEM_COMPLETED, event.getEventType());
-        assertEquals(workItem, event.getWorkItem());
+        assertEquals(enabledWorkItem, event.getWorkItem());
         assertEquals(previousStatus, event.getPreviousStatus());
-        assertEquals(YWorkItemStatus.statusEnabled, event.getCurrentStatus());
+        assertEquals(statusEnabled, event.getCurrentStatus());
     }
 
     @Test
     void testConstructorWithoutPreviousStatus() {
-        YWorkItem workItem = mock(YWorkItem.class);
-        when(workItem.getCaseID()).thenReturn("case1");
-        when(workItem.getStatus()).thenReturn(YWorkItemStatus.statusCompleted);
-
         YWorkItemEvent event = new YWorkItemEvent(
-            YEventType.ITEM_CANCELLED, workItem);
+            YEventType.ITEM_CANCELLED, completedWorkItem);
 
         assertEquals(YEventType.ITEM_CANCELLED, event.getEventType());
-        assertEquals(workItem, event.getWorkItem());
+        assertEquals(completedWorkItem, event.getWorkItem());
         assertNull(event.getPreviousStatus());
-        assertEquals(YWorkItemStatus.statusCompleted, event.getCurrentStatus());
+        assertEquals(statusCompleted, event.getCurrentStatus());
     }
 
     @Test
     void testNullParametersThrowException() {
-        YWorkItem workItem = mock(YWorkItem.class);
-
         assertThrows(NullPointerException.class, () ->
-            new YWorkItemEvent(null, workItem));
+            new YWorkItemEvent(null, enabledWorkItem));
         assertThrows(NullPointerException.class, () ->
             new YWorkItemEvent(YEventType.ITEM_ENABLED, null));
     }
 
     @Test
     void testGetWorkItemWhenWorkItemIsNull() {
-        YWorkItem workItem = mock(YWorkItem.class);
-        when(workItem.getCaseID()).thenReturn("case1");
+        // Create a work item with null status
+        YWorkItem workItemWithNullStatus = enabledWorkItem;
+        workItemWithNullStatus._status = null;
 
         YWorkItemEvent event = new YWorkItemEvent(
-            YEventType.ITEM_STATUS_CHANGE, workItem);
-
-        when(workItem.getStatus()).thenReturn(null);
+            YEventType.ITEM_STATUS_CHANGE, workItemWithNullStatus);
 
         YWorkItem currentWorkItem = event.getWorkItem();
         assertNotNull(currentWorkItem);
@@ -95,65 +135,48 @@ class YWorkItemEventTest {
 
     @Test
     void testBuilder() {
-        YWorkItem workItem = mock(YWorkItem.class);
-        when(workItem.getCaseID()).thenReturn("case1");
-        when(workItem.getStatus()).thenReturn(YWorkItemStatus.statusEnabled);
-
         YWorkItemEvent event = new YWorkItemEvent.Builder()
             .eventType(YEventType.ITEM_STARTED)
-            .workItem(workItem)
-            .previousStatus(YWorkItemStatus.statusEnabled)
+            .workItem(enabledWorkItem)
+            .previousStatus(statusEnabled)
             .build();
 
         assertEquals(YEventType.ITEM_STARTED, event.getEventType());
-        assertEquals(workItem, event.getWorkItem());
-        assertEquals(YWorkItemStatus.statusEnabled, event.getPreviousStatus());
+        assertEquals(enabledWorkItem, event.getWorkItem());
+        assertEquals(statusEnabled, event.getPreviousStatus());
     }
 
     @Test
     void testBuilderThrowsExceptionForMissingRequiredFields() {
-        YWorkItem workItem = mock(YWorkItem.class);
-
         YWorkItemEvent.Builder builder = new YWorkItemEvent.Builder()
-            .workItem(workItem);
+            .workItem(enabledWorkItem);
 
         assertThrows(IllegalStateException.class, builder::build);
     }
 
     @Test
     void testBuilderChain() {
-        YWorkItem workItem = mock(YWorkItem.class);
-        when(workItem.getCaseID()).thenReturn("case1");
-        when(workItem.getStatus()).thenReturn(YWorkItemStatus.statusCompleted);
-
         YWorkItemEvent event = new YWorkItemEvent.Builder()
             .eventType(YEventType.ITEM_COMPLETED)
-            .workItem(workItem)
-            .previousStatus(YWorkItemStatus.statusStarted)
+            .workItem(completedWorkItem)
+            .previousStatus(statusStarted)
             .build();
 
         assertEquals(YEventType.ITEM_COMPLETED, event.getEventType());
-        assertEquals(workItem, event.getWorkItem());
-        assertEquals(YWorkItemStatus.statusStarted, event.getPreviousStatus());
-        assertEquals(YWorkItemStatus.statusCompleted, event.getCurrentStatus());
+        assertEquals(completedWorkItem, event.getWorkItem());
+        assertEquals(statusStarted, event.getPreviousStatus());
+        assertEquals(statusCompleted, event.getCurrentStatus());
     }
 
     @Test
     void testEqualsAndHashCode() {
-        YWorkItem workItem1 = mock(YWorkItem.class);
-        when(workItem1.getCaseID()).thenReturn("case1");
-        when(workItem1.getStatus()).thenReturn(YWorkItemStatus.statusEnabled);
-
-        YWorkItem workItem2 = mock(YWorkItem.class);
-        when(workItem2.getCaseID()).thenReturn("case1");
-        when(workItem2.getStatus()).thenReturn(YWorkItemStatus.statusEnabled);
-
+        // Use same work item for testing equality
         YWorkItemEvent event1 = new YWorkItemEvent(
-            YEventType.ITEM_COMPLETED, workItem1, YWorkItemStatus.statusStarted);
+            YEventType.ITEM_COMPLETED, enabledWorkItem, statusStarted);
         YWorkItemEvent event2 = new YWorkItemEvent(
-            YEventType.ITEM_COMPLETED, workItem1, YWorkItemStatus.statusStarted);
+            YEventType.ITEM_COMPLETED, enabledWorkItem, statusStarted);
         YWorkItemEvent event3 = new YWorkItemEvent(
-            YEventType.ITEM_STARTED, workItem1, YWorkItemStatus.statusStarted);
+            YEventType.ITEM_STARTED, enabledWorkItem, statusStarted);
 
         assertEquals(event1, event2);
         assertNotEquals(event1, event3);
@@ -163,17 +186,13 @@ class YWorkItemEventTest {
 
     @Test
     void testToString() {
-        YWorkItem workItem = mock(YWorkItem.class);
-        when(workItem.getCaseID()).thenReturn("case1");
-        when(workItem.getStatus()).thenReturn(YWorkItemStatus.statusCompleted);
-
         YWorkItemEvent event = new YWorkItemEvent(
-            YEventType.ITEM_COMPLETED, workItem, YWorkItemStatus.statusStarted);
+            YEventType.ITEM_COMPLETED, completedWorkItem, statusStarted);
 
         String toString = event.toString();
         assertTrue(toString.contains("YWorkItemEvent"));
         assertTrue(toString.contains("eventType=ITEM_COMPLETED"));
         assertTrue(toString.contains("previousStatus=STARTED"));
-        assertTrue(toString.contains("caseID=case1"));
+        assertTrue(toString.contains("caseID=" + completedWorkItem.getCaseID()));
     }
 }

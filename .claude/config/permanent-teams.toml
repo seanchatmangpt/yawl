@@ -1,0 +1,72 @@
+# Permanent Teams Configuration — 5-Agent Multi-Team Setup
+# Active at all times, across all phases, independent of task type
+
+[teams]
+mode = "permanent"
+total_agents = 15
+team_count = 3
+
+# Team 1: EXPLORE (5 agents)
+# Mission: Research, investigation, discovery, data gathering
+[teams.explore]
+name = "explore"
+agent_count = 5
+agents = [
+    "explorer_1",
+    "explorer_2",
+    "explorer_3",
+    "explorer_4",
+    "explorer_5"
+]
+capabilities = ["research", "investigation", "discovery", "analysis", "reporting"]
+priority = 1
+auto_scale = true
+idle_timeout_minutes = 5
+
+# Team 2: PLAN (5 agents)
+# Mission: Architecture, design, strategy, planning, decision-making
+[teams.plan]
+name = "plan"
+agent_count = 5
+agents = [
+    "planner_1",
+    "planner_2",
+    "planner_3",
+    "planner_4",
+    "planner_5"
+]
+capabilities = ["architecture", "design", "strategy", "planning", "decision-making"]
+priority = 2
+auto_scale = true
+idle_timeout_minutes = 5
+
+# Team 3: IMPLEMENT (5 agents)
+# Mission: Coding, building, integration, execution, testing
+[teams.implement]
+name = "implement"
+agent_count = 5
+agents = [
+    "implementer_1",
+    "implementer_2",
+    "implementer_3",
+    "implementer_4",
+    "implementer_5"
+]
+capabilities = ["coding", "building", "integration", "execution", "testing"]
+priority = 3
+auto_scale = true
+idle_timeout_minutes = 5
+
+# Coordination
+[coordination]
+messaging_enabled = true
+message_ttl_minutes = 30
+max_message_queue_per_team = 100
+auto_checkpoint_minutes = 5
+deadlock_detection = true
+
+# Metrics
+[metrics]
+enabled = true
+granularity = "per_agent"
+report_frequency_seconds = 60

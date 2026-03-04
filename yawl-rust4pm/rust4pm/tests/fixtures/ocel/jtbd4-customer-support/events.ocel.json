@@ -1,0 +1,446 @@
+{
+  "id": "jtbd4-customer-support-log",
+  "name": "Customer Support Event Log",
+  "description": "Multi-channel customer support with exception handling and retry mechanisms",
+  "events": [
+    {
+      "id": "e1",
+      "activity": "CreateTicket",
+      "timestamp": "2024-03-01T09:30:00Z",
+      "case": "support_001",
+      "resource": "web_portal",
+      "attributes": {
+        "customer_id": "cust_001",
+        "channel": "email",
+        "issue_type": "billing_error",
+        "priority": "high",
+        "severity": "medium",
+        "subject": "Double charged for March subscription",
+        "description": "I was charged twice for my monthly subscription on March 1st"
+      }
+    },
+    {
+      "id": "e2",
+      "activity": "TriageTicket",
+      "timestamp": "2024-03-01T09:35:00Z",
+      "case": "support_001",
+      "resource": "triage_system",
+      "attributes": {
+        "triage_level": "level1",
+        "category": "billing",
+        "estimated_duration": "15 minutes",
+        "requires_human_agent": true
+      }
+    },
+    {
+      "id": "e3",
+      "activity": "AssignAgent",
+      "timestamp": "2024-03-01T09:40:00Z",
+      "case": "support_001",
+      "resource": "assignment_system",
+      "attributes": {
+        "agent_id": "agent_001",
+        "agent_level": "level1",
+        "assignment_time": "2024-03-01T09:40:00Z",
+        "escalation_ready": false
+      }
+    },
+    {
+      "id": "e4",
+      "activity": "KnowledgeCheck",
+      "timestamp": "2024-03-01T09:41:00Z",
+      "case": "support_001",
+      "resource": "kb_system",
+      "attributes": {
+        "solution_available": false,
+        "articles_found": 2,
+        "requires_human_agent": true
+      }
+    },
+    {
+      "id": "e5",
+      "activity": "AttemptResolution",
+      "timestamp": "2024-03-01T09:45:00Z",
+      "case": "support_001",
+      "resource": "agent_001",
+      "attributes": {
+        "resolution_status": "partial_success",
+        "attempt_number": 1,
+        "customer_contacted": true,
+        "resolution_details": "Refund processed for duplicate charge",
+        "response_required": true,
+        "response_deadline": "2024-03-01T11:45:00Z"
+      }
+    },
+    {
+      "id": "e6",
+      "activity": "WaitCustomerResponse",
+      "timestamp": "2024-03-01T09:46:00Z",
+      "case": "support_001",
+      "resource": "system",
+      "attributes": {
+        "awaiting_response": true,
+        "reminder_triggered": false,
+        "response_deadline": "2024-03-01T11:45:00Z"
+      }
+    },
+    {
+      "id": "e7",
+      "activity": "CheckCustomerResponse",
+      "timestamp": "2024-03-01T10:30:00Z",
+      "case": "support_001",
+      "resource": "agent_001",
+      "attributes": {
+        "response_received": true,
+        "response_type": "follow_up",
+        "customer_satisfaction": 4,
+        "resolution_required": false,
+        "additional_comments": "Thank you for fixing the issue"
+      }
+    },
+    {
+      "id": "e8",
+      "activity": "CloseTicket",
+      "timestamp": "2024-03-01T10:35:00Z",
+      "case": "support_001",
+      "resource": "agent_001",
+      "attributes": {
+        "ticket_closed": true,
+        "resolution_time": "65 minutes",
+        "first_contact_resolution": true,
+        "customer_satisfaction": 4,
+        "resolution_category": "billing"
+      }
+    },
+    {
+      "id": "e9",
+      "activity": "PostResolution",
+      "timestamp": "2024-03-01T10:40:00Z",
+      "case": "support_001",
+      "resource": "kb_system",
+      "attributes": {
+        "knowledge_article_updated": true,
+        "metrics_recorded": true,
+        "feedback_categorized": "positive"
+      }
+    },
+    {
+      "id": "e10",
+      "activity": "CreateTicket",
+      "timestamp": "2024-03-01T14:00:00Z",
+      "case": "support_002",
+      "resource": "phone_system",
+      "attributes": {
+        "customer_id": "cust_002",
+        "channel": "phone",
+        "issue_type": "technical_issue",
+        "priority": "critical",
+        "severity": "high",
+        "subject": "Website completely down",
+        "description": "The website is not loading for any customers"
+      }
+    },
+    {
+      "id": "e11",
+      "activity": "TriageTicket",
+      "timestamp": "2024-03-01T14:05:00Z",
+      "case": "support_002",
+      "resource": "triage_system",
+      "attributes": {
+        "triage_level": "level2",
+        "category": "technical",
+        "estimated_duration": "45 minutes",
+        "requires_specialist": true
+      }
+    },
+    {
+      "id": "e12",
+      "activity": "AssignAgent",
+      "timestamp": "2024-03-01T14:10:00Z",
+      "case": "support_002",
+      "resource": "assignment_system",
+      "attributes": {
+        "agent_id": "agent_002",
+        "agent_level": "level2",
+        "assignment_time": "2024-03-01T14:10:00Z"
+      }
+    },
+    {
+      "id": "e13",
+      "activity": "AttemptResolution",
+      "timestamp": "2024-03-01T14:15:00Z",
+      "case": "support_002",
+      "resource": "agent_002",
+      "attributes": {
+        "resolution_status": "failed",
+        "attempt_number": 1,
+        "failure_reason": "database_connection_error",
+        "error_code": "DB_500",
+        "timeout_occurred": true
+      }
+    },
+    {
+      "id": "e14",
+      "activity": "EscalateTicket",
+      "timestamp": "2024-03-01T14:20:00Z",
+      "case": "support_002",
+      "resource": "escalation_system",
+      "attributes": {
+        "escalation_id": "ESC_001",
+        "escalated_to": "level3_specialist",
+        "escalation_reason": "technical_failure_level2"
+      }
+    },
+    {
+      "id": "e15",
+      "activity": "ReassignTicket",
+      "timestamp": "2024-03-01T14:25:00Z",
+      "case": "support_002",
+      "resource": "assignment_system",
+      "attributes": {
+        "new_agent_assigned": true,
+        "agent_id": "agent_003",
+        "agent_level": "level3",
+        "knowledge_transfer_required": true
+      }
+    },
+    {
+      "id": "e16",
+      "activity": "KnowledgeTransfer",
+      "timestamp": "2024-03-01T14:30:00Z",
+      "case": "support_002",
+      "resource": "agent_003",
+      "attributes": {
+        "transfer_completed": true,
+        "case_summary": "Website down due to database connection failure",
+        "unresolved_points": ["root_cause_identification"],
+        "recommended_actions": ["restart_database_service"]
+      }
+    },
+    {
+      "id": "e17",
+      "activity": "AttemptResolution",
+      "timestamp": "2024-03-01T14:40:00Z",
+      "case": "support_002",
+      "resource": "agent_003",
+      "attributes": {
+        "resolution_status": "success",
+        "attempt_number": 2,
+        "resolution_details": "Database service restarted successfully",
+        "system_status": "operational"
+      }
+    },
+    {
+      "id": "e18",
+      "activity": "CheckCustomerResponse",
+      "timestamp": "2024-03-01T14:50:00Z",
+      "case": "support_002",
+      "resource": "agent_003",
+      "attributes": {
+        "response_received": true,
+        "response_type": "confirmation",
+        "customer_satisfaction": 3,
+        "resolution_required": false
+      }
+    },
+    {
+      "id": "e19",
+      "activity": "CloseTicket",
+      "timestamp": "2024-03-01T14:55:00Z",
+      "case": "support_002",
+      "resource": "agent_003",
+      "attributes": {
+        "ticket_closed": true,
+        "resolution_time": "95 minutes",
+        "escalations_used": 1,
+        "final_resolution": "system_restored"
+      }
+    },
+    {
+      "id": "e20",
+      "activity": "CreateTicket",
+      "timestamp": "2024-03-02T10:00:00Z",
+      "case": "support_003",
+      "resource": "chat_interface",
+      "attributes": {
+        "customer_id": "cust_003",
+        "channel": "chat",
+        "issue_type": "feature_request",
+        "priority": "low",
+        "severity": "low",
+        "subject": "Add dark mode option",
+        "description": "It would be great to have a dark mode for the dashboard"
+      }
+    },
+    {
+      "id": "e21",
+      "activity": "TriageTicket",
+      "timestamp": "2024-03-02T10:02:00Z",
+      "case": "support_003",
+      "resource": "triage_system",
+      "attributes": {
+        "triage_level": "level1",
+        "category": "feature_request",
+        "estimated_duration": "5 minutes",
+        "can_be_automated": true
+      }
+    },
+    {
+      "id": "e22",
+      "activity": "KnowledgeCheck",
+      "timestamp": "2024-03-02T10:03:00Z",
+      "case": "support_003",
+      "resource": "kb_system",
+      "attributes": {
+        "solution_available": true,
+        "article_id": "ART_789",
+        "self_service_option": true
+      }
+    },
+    {
+      "id": "e23",
+      "activity": "AttemptResolution",
+      "timestamp": "2024-03-02T10:05:00Z",
+      "case": "support_003",
+      "resource": "bot_system",
+      "attributes": {
+        "resolution_status": "self_service",
+        "attempt_number": 1,
+        "self_service_completed": true,
+        "knowledge_article_used": "ART_789"
+      }
+    },
+    {
+      "id": "e24",
+      "activity": "CloseTicket",
+      "timestamp": "2024-03-02T10:06:00Z",
+      "case": "support_003",
+      "resource": "bot_system",
+      "attributes": {
+        "ticket_closed": true,
+        "resolution_time": "6 minutes",
+        "first_contact_resolution": true,
+        "self_service_resolution": true
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "ticket_001",
+      "type": "support_ticket",
+      "attributes": {
+        "ticket_id": "TK001",
+        "customer_id": "cust_001",
+        "channel": "email",
+        "issue_type": "billing_error",
+        "priority": "high",
+        "status": "closed",
+        "created_at": "2024-03-01T09:30:00Z",
+        "closed_at": "2024-03-01T10:35:00Z",
+        "resolution_time": "65 minutes"
+      }
+    },
+    {
+      "id": "ticket_002",
+      "type": "support_ticket",
+      "attributes": {
+        "ticket_id": "TK002",
+        "customer_id": "cust_002",
+        "channel": "phone",
+        "issue_type": "technical_issue",
+        "priority": "critical",
+        "status": "closed",
+        "created_at": "2024-03-01T14:00:00Z",
+        "closed_at": "2024-03-01T14:55:00Z",
+        "resolution_time": "95 minutes",
+        "escalations": 1
+      }
+    },
+    {
+      "id": "ticket_003",
+      "type": "support_ticket",
+      "attributes": {
+        "ticket_id": "TK003",
+        "customer_id": "cust_003",
+        "channel": "chat",
+        "issue_type": "feature_request",
+        "priority": "low",
+        "status": "closed",
+        "created_at": "2024-03-02T10:00:00Z",
+        "closed_at": "2024-03-02T10:06:00Z",
+        "resolution_time": "6 minutes",
+        "self_service": true
+      }
+    },
+    {
+      "id": "customer_001",
+      "type": "customer_profile",
+      "attributes": {
+        "customer_id": "cust_001",
+        "name": "John Doe",
+        "tier": "premium",
+        "support_history": 5,
+        "satisfaction_avg": 4.2,
+        "preferred_channel": "email"
+      }
+    },
+    {
+      "id": "kb_article_789",
+      "type": "knowledge_base",
+      "attributes": {
+        "article_id": "ART_789",
+        "title": "Dark Mode Feature",
+        "category": "feature_requests",
+        "self_service_enabled": true,
+        "usage_count": 45
+      }
+    }
+  ],
+  "relations": [
+    {
+      "source": "e1",
+      "target": "ticket_001",
+      "type": "produce"
+    },
+    {
+      "source": "e8",
+      "target": "ticket_001",
+      "type": "consume"
+    },
+    {
+      "source": "e10",
+      "target": "ticket_002",
+      "type": "produce"
+    },
+    {
+      "source": "e19",
+      "target": "ticket_002",
+      "type": "consume"
+    },
+    {
+      "source": "e20",
+      "target": "ticket_003",
+      "type": "produce"
+    },
+    {
+      "source": "e24",
+      "target": "ticket_003",
+      "type": "consume"
+    },
+    {
+      "source": "e1",
+      "target": "customer_001",
+      "type": "use"
+    },
+    {
+      "source": "e22",
+      "target": "kb_article_789",
+      "type": "reference"
+    },
+    {
+      "source": "e23",
+      "target": "kb_article_789",
+      "type": "consume"
+    }
+  ]
+}

@@ -1,0 +1,469 @@
+{
+  "validation_tasks": {
+    "erlang_module_testing": [
+      {
+        "id": "erlang_1",
+        "title": "Test tpot2_bridge gen_server API",
+        "description": "Verify start/stop, init behavior, handle_call and handle_cast functions work correctly",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "unit_test"
+      },
+      {
+        "id": "erlang_2",
+        "title": "Test supervisor restart behavior",
+        "description": "Simulate crashes and verify supervisor restarts tpot2_bridge with proper state recovery",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "integration_test"
+      },
+      {
+        "id": "erlang_3",
+        "title": "Test concurrent predictions",
+        "description": "Verify multiple simultaneous prediction requests don't deadlock or corrupt state",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "load_test"
+      },
+      {
+        "id": "erlang_4",
+        "title": "Test error propagation",
+        "description": "Verify Python import failures, NIF errors, and API errors bubble up correctly to Erlang",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "error_handling_test"
+      },
+      {
+        "id": "erlang_5",
+        "title": "Test configuration reload",
+        "description": "Verify hot reload of configuration without stopping the gen_server",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "functional_test"
+      },
+      {
+        "id": "erlang_6",
+        "title": "Test status/health check endpoints",
+        "description": "Verify /health and /status endpoints return correct system state and metrics",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "api_test"
+      },
+      {
+        "id": "erlang_7",
+        "title": "Test graceful shutdown",
+        "description": "Verify clean shutdown of all resources when tpot2_bridge.stop() is called",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "integration_test"
+      },
+      {
+        "id": "erlang_8",
+        "title": "Test module hot code reload",
+        "description": "Verify live code reload without crashing the ongoing predictions",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "hot_reload_test"
+      },
+      {
+        "id": "erlang_9",
+        "title": "Test NIF reload handling",
+        "description": "Verify NIF library reload works after crashes and recompilation",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "nif_test"
+      },
+      {
+        "id": "erlang_10",
+        "title": "Test log output formatting",
+        "description": "Verify all log entries follow the correct format with timestamps and structured data",
+        "status": "pending",
+        "priority": "low",
+        "test_type": "logging_test"
+      }
+    ],
+    "java_api_testing": [
+      {
+        "id": "java_1",
+        "title": "Verify Signature builder compiles",
+        "description": "Test compilation of Signature class with builder pattern",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_2",
+        "title": "Verify DspyProgram builder compiles",
+        "description": "Test compilation of DspyProgram class with builder pattern",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_3",
+        "title": "Verify Example record compiles",
+        "description": "Test compilation of Example data class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_4",
+        "title": "Verify DspyException compiles",
+        "description": "Test compilation of DspyException class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_5",
+        "title": "Verify MlBridgeClient compiles",
+        "description": "Test compilation of MlBridgeClient class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_6",
+        "title": "Verify Tpot2Optimizer compiles",
+        "description": "Test compilation of Tpot2Optimizer class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_7",
+        "title": "Verify OptimizationResult compiles",
+        "description": "Test compilation of OptimizationResult data class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_8",
+        "title": "Verify Tpot2Exception compiles",
+        "description": "Test compilation of Tpot2Exception class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_9",
+        "title": "Verify Tpot2BridgeClient compiles",
+        "description": "Test compilation of Tpot2BridgeClient class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_10",
+        "title": "Verify MlBridgeShowcase compiles",
+        "description": "Test compilation of MlBridgeShowcase example class",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "compilation_test"
+      },
+      {
+        "id": "java_11",
+        "title": "Test Signature.input() fluent API",
+        "description": "Test fluent API methods for Signature input configuration",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "api_test"
+      },
+      {
+        "id": "java_12",
+        "title": "Test Signature.output() fluent API",
+        "description": "Test fluent API methods for Signature output configuration",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "api_test"
+      },
+      {
+        "id": "java_13",
+        "title": "Test DspyProgram.withGroq() method",
+        "description": "Test Groq provider configuration method",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "integration_test"
+      },
+      {
+        "id": "java_14",
+        "title": "Test DspyProgram.withOpenAI() method",
+        "description": "Test OpenAI provider configuration method",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "integration_test"
+      },
+      {
+        "id": "java_15",
+        "title": "Test Tpot2Optimizer.quick() method",
+        "description": "Test quick optimization method with TPOT2",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "integration_test"
+      }
+    ],
+    "build_system": [
+      {
+        "id": "build_1",
+        "title": "Verify build_all.sh runs without error",
+        "description": "Test the main build script executes successfully",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "build_test"
+      },
+      {
+        "id": "build_2",
+        "title": "Verify Python deps install from requirements.txt",
+        "description": "Test pip install -r requirements.txt completes without errors",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "dependency_test"
+      },
+      {
+        "id": "build_3",
+        "title": "Verify Rust NIF builds with cargo",
+        "description": "Test cargo build for NIF compilation",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "build_test"
+      },
+      {
+        "id": "build_4",
+        "title": "Verify Erlang modules compile with erlc",
+        "description": "Test erlc compilation of .erl files",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "build_test"
+      },
+      {
+        "id": "build_5",
+        "title": "Verify NIF is copied to priv/",
+        "description": "Test NIF library is correctly placed in priv/ directory",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "verification_test"
+      },
+      {
+        "id": "build_6",
+        "title": "Verify symlink created on macOS",
+        "description": "Test macOS symlink creation for NIF library",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "platform_test"
+      },
+      {
+        "id": "build_7",
+        "title": "Verify pom.xml has correct parent path",
+        "description": "Test pom.xml parent POM configuration",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "configuration_test"
+      },
+      {
+        "id": "build_8",
+        "title": "Verify pom.xml has JInterface dependency",
+        "description": "Test JInterface dependency in pom.xml",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "dependency_test"
+      },
+      {
+        "id": "build_9",
+        "title": "Verify pom.xml has Jackson dependency",
+        "description": "Test Jackson JSON dependency in pom.xml",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "dependency_test"
+      },
+      {
+        "id": "build_10",
+        "title": "Verify pom.xml has SLF4J dependency",
+        "description": "Test SLF4J logging dependency in pom.xml",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "dependency_test"
+      }
+    ],
+    "documentation": [
+      {
+        "id": "doc_1",
+        "title": "Create README.md with architecture diagram",
+        "description": "Create comprehensive README with system architecture visualization",
+        "status": "completed",
+        "priority": "high",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_2",
+        "title": "Document DSPy API usage",
+        "description": "Document DSPy integration API and examples",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_3",
+        "title": "Document TPOT2 API usage",
+        "description": "Document TPOT2 optimization API and configuration",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_4",
+        "title": "Document Erlang module API",
+        "description": "Document tpot2_bridge Erlang module API",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_5",
+        "title": "Document Java API",
+        "description": "Document Java client API usage",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_6",
+        "title": "Add code examples to README",
+        "description": "Add practical code examples demonstrating usage",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_7",
+        "title": "Document environment variables needed",
+        "description": "Document required and optional environment variables",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_8",
+        "title": "Document GROQ_API_KEY setup",
+        "description": "Document GROQ API key configuration and usage",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_9",
+        "title": "Document build instructions",
+        "description": "Document build process and requirements",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "documentation"
+      },
+      {
+        "id": "doc_10",
+        "title": "Document test instructions",
+        "description": "Document testing process and test commands",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "documentation"
+      }
+    ],
+    "production_readiness": [
+      {
+        "id": "prod_1",
+        "title": "Test error handling for missing GROQ_API_KEY",
+        "description": "Test behavior when GROQ_API_KEY environment variable is missing",
+        "status": "completed",
+        "priority": "high",
+        "test_type": "error_handling_test"
+      },
+      {
+        "id": "prod_2",
+        "title": "Test error handling for Python import failures",
+        "description": "Test behavior when required Python packages fail to import",
+        "status": "completed",
+        "priority": "high",
+        "test_type": "error_handling_test"
+      },
+      {
+        "id": "prod_3",
+        "title": "Test error handling for invalid provider",
+        "description": "Test behavior when invalid provider is specified",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "error_handling_test"
+      },
+      {
+        "id": "prod_4",
+        "title": "Test error handling for network timeouts",
+        "description": "Test behavior when API calls timeout or fail",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "error_handling_test"
+      },
+      {
+        "id": "prod_5",
+        "title": "Verify GIL handling for long operations",
+        "description": "Test Python Global Interpreter Lock handling during long-running operations",
+        "status": "completed",
+        "priority": "high",
+        "test_type": "performance_test"
+      },
+      {
+        "id": "prod_6",
+        "title": "Test memory cleanup after predictions",
+        "description": "Verify proper memory cleanup after prediction operations",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "memory_test"
+      },
+      {
+        "id": "prod_7",
+        "title": "Test concurrent request handling",
+        "description": "Test behavior under high concurrent load",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "load_test"
+      },
+      {
+        "id": "prod_8",
+        "title": "Verify no memory leaks in NIF",
+        "description": "Test for memory leaks in Rust NIF code",
+        "status": "pending",
+        "priority": "high",
+        "test_type": "memory_test"
+      },
+      {
+        "id": "prod_9",
+        "title": "Test supervisor restart recovery",
+        "description": "Test supervisor recovery after multiple failures",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "resilience_test"
+      },
+      {
+        "id": "prod_10",
+        "title": "Verify graceful degradation",
+        "description": "Test graceful degradation when dependencies are unavailable",
+        "status": "pending",
+        "priority": "medium",
+        "test_type": "resilience_test"
+      }
+    ]
+  },
+  "summary": {
+    "total_tasks": 55,
+    "by_category": {
+      "erlang_module_testing": 10,
+      "java_api_testing": 15,
+      "build_system": 10,
+      "documentation": 10,
+      "production_readiness": 10
+    },
+    "by_priority": {
+      "high": 30,
+      "medium": 25
+    },
+    "created_date": "2026-03-04"
+  }
+}

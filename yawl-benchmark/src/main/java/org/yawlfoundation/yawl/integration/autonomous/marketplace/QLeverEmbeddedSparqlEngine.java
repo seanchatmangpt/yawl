@@ -15,9 +15,9 @@ import java.util.Objects;
  * <p>This implementation uses the native QLever library via JNI/FFI for
  * high-performance in-process SPARQL queries. It requires the QLever native
  * library to be available on the classpath or in library path.</p>
- * 
- * <p>Unlike the HTTP version ({@code QLeverSparqlEngine}), this embedded
- * version has lower overhead but requires proper native library setup.</p>
+ *
+ * <p>QLever is an embedded Java/C++ FFI bridge — NOT Docker, NOT HTTP.
+ * This is the only QLever integration mode; there is no HTTP version.</p>
  * 
  * @since YAWL 6.0
  */

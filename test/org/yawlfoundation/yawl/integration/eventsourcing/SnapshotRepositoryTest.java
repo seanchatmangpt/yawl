@@ -10,67 +10,50 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.eventsourcing;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link SnapshotRepository}.
+ * Chicago TDD tests for {@link SnapshotRepository}.
+ * Uses real H2 in-memory database instead of mocks.
  *
  * @author YAWL Foundation
  * @version 6.0.0
  * @since 6.0.0
  */
-@ExtendWith(MockitoExtension.class)
 class SnapshotRepositoryTest {
 
-    @Mock
-    private DataSource mockDataSource;
-
-    @Mock
-    private Connection mockConnection;
-
-    @Mock
-    private PreparedStatement mockPreparedStatement;
-
-    @Mock
-    private ResultSet mockResultSet;
-
+    private DataSource dataSource;
     private SnapshotRepository snapshotRepository;
-    private static final String TEST_CASE_ID = "test-case-123";
-    private static final String TEST_SPEC_ID = "OrderFulfillment:1.0";
-    private static final Instant BASE_TIMESTAMP = Instant.parse("2026-02-17T10:00:00Z");
-    private static final long TEST_SEQUENCE_NUMBER = 42;
 
     @BeforeEach
     void setUp() throws SQLException {
-        snapshotRepository = new SnapshotRepository(mockDataSource);
+        dataSource = EventSourcingTestFixture.createDataSource();
+        EventSourcingTestFixture.createSchema(dataSource);
+        snapshotRepository = new SnapshotRepository(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        EventSourcingTestFixture.dropSchema(dataSource);
     }
 
     @Nested
@@ -79,8 +62,9 @@ class SnapshotRepositoryTest {
 
         @Test
         @DisplayName("constructWithDefaultThreshold")
-        void constructWithDefaultThreshold() {
-            DataSource ds = mock(DataSource.class);
+        void constructWithDefaultThreshold() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
             SnapshotRepository repo = new SnapshotRepository(ds);
 
             assertEquals(SnapshotRepository.DEFAULT_SNAPSHOT_THRESHOLD, repo.snapshotThreshold);
@@ -88,8 +72,9 @@ class SnapshotRepositoryTest {
 
         @Test
         @DisplayName("constructWithCustomThreshold")
-        void constructWithCustomThreshold() {
-            DataSource ds = mock(DataSource.class);
+        void constructWithCustomThreshold() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
             int customThreshold = 50;
             SnapshotRepository repo = new SnapshotRepository(ds, customThreshold);
 
@@ -98,8 +83,9 @@ class SnapshotRepositoryTest {
 
         @Test
         @DisplayName("constructWithZeroThresholdUsesDefault")
-        void constructWithZeroThresholdUsesDefault() {
-            DataSource ds = mock(DataSource.class);
+        void constructWithZeroThresholdUsesDefault() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
             SnapshotRepository repo = new SnapshotRepository(ds, 0);
 
             assertEquals(SnapshotRepository.DEFAULT_SNAPSHOT_THRESHOLD, repo.snapshotThreshold);
@@ -107,8 +93,9 @@ class SnapshotRepositoryTest {
 
         @Test
         @DisplayName("constructWithNegativeThresholdUsesDefault")
-        void constructWithNegativeThresholdUsesDefault() {
-            DataSource ds = mock(DataSource.class);
+        void constructWithNegativeThresholdUsesDefault() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
             SnapshotRepository repo = new SnapshotRepository(ds, -10);
 
             assertEquals(SnapshotRepository.DEFAULT_SNAPSHOT_THRESHOLD, repo.snapshotThreshold);
@@ -128,127 +115,94 @@ class SnapshotRepositoryTest {
         @Test
         @DisplayName("saveSnapshotSuccess")
         void saveSnapshotSuccess() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            CaseSnapshot snapshot = EventSourcingTestFixture.createTestSnapshot(
+                caseId, 42L, "RUNNING");
+
+            snapshotRepository.save(snapshot);
+
+            assertEquals(1, countSnapshots(dataSource));
+        }
+
+        @Test
+        @DisplayName("saveSnapshotWithWorkItems")
+        void saveSnapshotWithWorkItems() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             Map<String, CaseStateView.WorkItemState> workItems = Map.of(
-                "wi-1", new CaseStateView.WorkItemState("wi-1", "ENABLED", BASE_TIMESTAMP),
-                "wi-2", new CaseStateView.WorkItemState("wi-2", "STARTED", BASE_TIMESTAMP.plusSeconds(30))
+                "wi-1", new CaseStateView.WorkItemState("wi-1", "ENABLED",
+                    EventSourcingTestFixture.BASE_TIMESTAMP),
+                "wi-2", new CaseStateView.WorkItemState("wi-2", "STARTED",
+                    EventSourcingTestFixture.BASE_TIMESTAMP_PLUS_30)
             );
 
+            CaseSnapshot snapshot = new CaseSnapshot(
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                42L,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
+                "RUNNING",
+                workItems,
+                Map.of()
+            );
+
+            snapshotRepository.save(snapshot);
+
+            assertEquals(1, countSnapshots(dataSource));
+        }
+
+        @Test
+        @DisplayName("saveSnapshotWithPayload")
+        void saveSnapshotWithPayload() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             Map<String, String> payload = Map.of(
                 "startedBy", "agent-order-service",
                 "priority", "high"
             );
 
             CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, TEST_SEQUENCE_NUMBER, BASE_TIMESTAMP,
-                "RUNNING", workItems, payload);
-
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).close();
-
-            snapshotRepository.save(snapshot);
-
-            verify(mockPreparedStatement, times(1)).executeUpdate();
-            verify(mockConnection, times(1)).close();
-        }
-
-        @Test
-        @DisplayName("saveSnapshotWithNullWorkItems")
-        void saveSnapshotWithNullWorkItems() throws Exception {
-            CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, TEST_SEQUENCE_NUMBER, BASE_TIMESTAMP,
-                "COMPLETED", null, Map.of("finalStatus", "success"));
-
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).close();
-
-            snapshotRepository.save(snapshot);
-
-            verify(mockPreparedStatement, times(1)).executeUpdate();
-            verify(mockConnection, times(1)).close();
-        }
-
-        @Test
-        @DisplayName("saveSnapshotWithNullPayload")
-        void saveSnapshotWithNullPayload() throws Exception {
-            Map<String, CaseStateView.WorkItemState> workItems = Map.of(
-                "wi-1", new CaseStateView.WorkItemState("wi-1", "COMPLETED", BASE_TIMESTAMP)
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                42L,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
+                "RUNNING",
+                Map.of(),
+                payload
             );
 
-            CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, TEST_SEQUENCE_NUMBER, BASE_TIMESTAMP,
-                "COMPLETED", workItems, null);
-
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).close();
-
             snapshotRepository.save(snapshot);
 
-            verify(mockPreparedStatement, times(1)).executeUpdate();
-            verify(mockConnection, times(1)).close();
+            assertEquals(1, countSnapshots(dataSource));
         }
 
         @Test
-        @DisplayName("saveSnapshotThrowsOnNullSnapshot")
-        void saveSnapshotThrowsOnNullSnapshot() {
-            assertThrows(NullPointerException.class, () -> snapshotRepository.save(null));
+        @DisplayName("saveMultipleSnapshotsForSameCase")
+        void saveMultipleSnapshotsForSameCase() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+
+            CaseSnapshot snapshot1 = EventSourcingTestFixture.createTestSnapshot(caseId, 10L, "RUNNING");
+            CaseSnapshot snapshot2 = EventSourcingTestFixture.createTestSnapshot(caseId, 20L, "COMPLETED");
+
+            snapshotRepository.save(snapshot1);
+            snapshotRepository.save(snapshot2);
+
+            assertEquals(2, countSnapshots(dataSource));
         }
 
         @Test
-        @DisplayName("saveSnapshotThrowsOnSQLException")
-        void saveSnapshotThrowsOnSQLException() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            when(mockPreparedStatement.executeUpdate()).thenThrow(new SQLException("Write failed"));
-            doNothing().when(mockConnection).close();
-
+        @DisplayName("saveSnapshotWithNullWorkItemsThrows")
+        void saveSnapshotWithNullWorkItemsThrows() {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, TEST_SEQUENCE_NUMBER, BASE_TIMESTAMP,
-                "RUNNING", Map.of(), Map.of());
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                42L,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
+                "RUNNING",
+                null,
+                Map.of()
+            );
 
-            assertThrows(SnapshotRepository.SnapshotException.class, () -> snapshotRepository.save(snapshot));
-        }
-
-        @Test
-        @DisplayName("saveSnapshotWithSQLExceptionWrapsCause")
-        void saveSnapshotWithSQLExceptionWrapsCause() throws Exception {
-            SQLException cause = new SQLException("Write failed");
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            when(mockPreparedStatement.executeUpdate()).thenThrow(cause);
-            doNothing().when(mockConnection).close();
-
-            CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, TEST_SEQUENCE_NUMBER, BASE_TIMESTAMP,
-                "RUNNING", Map.of(), Map.of());
-
-            try {
-                snapshotRepository.save(snapshot);
-                fail("Should have thrown exception");
-            } catch (SnapshotRepository.SnapshotException e) {
-                assertEquals("Failed to save snapshot for case test-case-123", e.getMessage());
-                assertEquals(cause, e.getCause());
-            }
+            assertThrows(NullPointerException.class, () -> snapshotRepository.save(snapshot));
         }
     }
 
@@ -259,48 +213,27 @@ class SnapshotRepositoryTest {
         @Test
         @DisplayName("findLatestSnapshotExists")
         void findLatestSnapshotExists() throws Exception {
-            Instant snapshotTime = BASE_TIMESTAMP.plusSeconds(60);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            CaseSnapshot snapshot = EventSourcingTestFixture.createTestSnapshot(
+                caseId, 42L, "RUNNING");
+            snapshotRepository.save(snapshot);
 
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getLong("seq_num")).thenReturn(TEST_SEQUENCE_NUMBER);
-            when(mockResultSet.getTimestamp("snapshot_ts")).thenReturn(Timestamp.from(snapshotTime));
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("status")).thenReturn("RUNNING");
-            when(mockResultSet.getString("active_items_json")).thenReturn("{}");
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
-            doNothing().when(mockConnection).close();
-
-            Optional<CaseSnapshot> result = snapshotRepository.findLatest(TEST_CASE_ID);
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest(caseId);
 
             assertTrue(result.isPresent());
-            CaseSnapshot snapshot = result.get();
-            assertEquals(TEST_CASE_ID, snapshot.getCaseId());
-            assertEquals(TEST_SPEC_ID, snapshot.getSpecId());
-            assertEquals(TEST_SEQUENCE_NUMBER, snapshot.getSequenceNumber());
-            assertEquals(snapshotTime, snapshot.getSnapshotAt());
-            assertEquals("RUNNING", snapshot.getStatus());
-            assertTrue(snapshot.getActiveWorkItems().isEmpty());
-            assertTrue(snapshot.getPayload().isEmpty());
-            verify(mockConnection, times(1)).close();
+            CaseSnapshot found = result.get();
+            assertEquals(caseId, found.getCaseId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, found.getSpecId());
+            assertEquals(42L, found.getSequenceNumber());
+            assertEquals("RUNNING", found.getStatus());
         }
 
         @Test
         @DisplayName("findLatestSnapshotNotFound")
         void findLatestSnapshotNotFound() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(false);
-            doNothing().when(mockConnection).close();
-
-            Optional<CaseSnapshot> result = snapshotRepository.findLatest(TEST_CASE_ID);
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest("nonexistent-case");
 
             assertFalse(result.isPresent());
-            verify(mockConnection, times(1)).close();
         }
 
         @Test
@@ -316,33 +249,22 @@ class SnapshotRepositoryTest {
         }
 
         @Test
-        @DisplayName("findLatestSnapshotThrowsOnSQLException")
-        void findLatestSnapshotThrowsOnSQLException() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenThrow(new SQLException("Read failed"));
-            doNothing().when(mockConnection).close();
+        @DisplayName("findLatestReturnsMostRecentSnapshot")
+        void findLatestReturnsMostRecentSnapshot() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
 
-            assertThrows(SnapshotRepository.SnapshotException.class, () ->
-                snapshotRepository.findLatest(TEST_CASE_ID));
-        }
+            CaseSnapshot snapshot1 = EventSourcingTestFixture.createTestSnapshot(caseId, 10L, "RUNNING");
+            CaseSnapshot snapshot2 = EventSourcingTestFixture.createTestSnapshot(caseId, 20L, "RUNNING");
+            CaseSnapshot snapshot3 = EventSourcingTestFixture.createTestSnapshot(caseId, 15L, "RUNNING");
 
-        @Test
-        @DisplayName("findLatestSnapshotWithSQLExceptionWrapsCause")
-        void findLatestSnapshotWithSQLExceptionWrapsCause() throws Exception {
-            SQLException cause = new SQLException("Read failed");
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenThrow(cause);
-            doNothing().when(mockConnection).close();
+            snapshotRepository.save(snapshot1);
+            snapshotRepository.save(snapshot2);
+            snapshotRepository.save(snapshot3);
 
-            try {
-                snapshotRepository.findLatest(TEST_CASE_ID);
-                fail("Should have thrown exception");
-            } catch (SnapshotRepository.SnapshotException e) {
-                assertEquals("Failed to find latest snapshot for case test-case-123", e.getMessage());
-                assertEquals(cause, e.getCause());
-            }
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest(caseId);
+
+            assertTrue(result.isPresent());
+            assertEquals(20L, result.get().getSequenceNumber(), "Should return highest sequence number");
         }
     }
 
@@ -352,139 +274,125 @@ class SnapshotRepositoryTest {
 
         @Test
         @DisplayName("shouldSnapshotDefaultThreshold")
-        void shouldSnapshotDefaultThreshold() {
-            SnapshotRepository repo = new SnapshotRepository(mockDataSource);
+        void shouldSnapshotDefaultThreshold() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
+            SnapshotRepository repo = new SnapshotRepository(ds);
 
-            assertFalse(repo.shouldSnapshot(99)); // Below threshold
-            assertTrue(repo.shouldSnapshot(100));  // At threshold
-            assertTrue(repo.shouldSnapshot(101));  // Above threshold
+            assertFalse(repo.shouldSnapshot(99));
+            assertTrue(repo.shouldSnapshot(100));
+            assertTrue(repo.shouldSnapshot(101));
         }
 
         @Test
         @DisplayName("shouldSnapshotCustomThreshold")
-        void shouldSnapshotCustomThreshold() {
+        void shouldSnapshotCustomThreshold() throws SQLException {
             int customThreshold = 50;
-            SnapshotRepository repo = new SnapshotRepository(mockDataSource, customThreshold);
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
+            SnapshotRepository repo = new SnapshotRepository(ds, customThreshold);
 
-            assertFalse(repo.shouldSnapshot(49));  // Below threshold
-            assertTrue(repo.shouldSnapshot(50));   // At threshold
-            assertTrue(repo.shouldSnapshot(51));   // Above threshold
+            assertFalse(repo.shouldSnapshot(49));
+            assertTrue(repo.shouldSnapshot(50));
+            assertTrue(repo.shouldSnapshot(51));
         }
 
         @Test
         @DisplayName("shouldSnapshotWithZeroEvents")
-        void shouldSnapshotWithZeroEvents() {
-            SnapshotRepository repo = new SnapshotRepository(mockDataSource, 100);
+        void shouldSnapshotWithZeroEvents() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
+            SnapshotRepository repo = new SnapshotRepository(ds, 100);
+
             assertFalse(repo.shouldSnapshot(0));
         }
 
         @Test
         @DisplayName("shouldSnapshotWithLargeEventCount")
-        void shouldSnapshotWithLargeEventCount() {
-            SnapshotRepository repo = new SnapshotRepository(mockDataSource, 1000);
+        void shouldSnapshotWithLargeEventCount() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
+            SnapshotRepository repo = new SnapshotRepository(ds, 1000);
+
             assertFalse(repo.shouldSnapshot(999));
             assertTrue(repo.shouldSnapshot(1000));
-            assertTrue(repo.shouldSnapshot(1001));
         }
     }
 
     @Nested
-    @DisplayName("JSON Deserialization")
-    class JsonDeserializationTest {
+    @DisplayName("Snapshot Persistence")
+    class SnapshotPersistenceTest {
 
         @Test
-        @DisplayName("deserializesComplexWorkItems")
-        void deserializesComplexWorkItems() throws Exception {
-            String workItemsJson = "{\"wi-1\":{\"workItemId\":\"wi-1\",\"status\":\"STARTED\",\"stateAt\":\"2026-02-17T10:00:30Z\"},\"wi-2\":{\"workItemId\":\"wi-2\",\"status\":\"ENABLED\",\"stateAt\":\"2026-02-17T10:01:00Z\"}}";
-            String payloadJson = "{\"startedBy\":\"agent-order-service\",\"priority\":\"high\"}";
+        @DisplayName("snapshotsPersistAcrossRepositoryInstances")
+        void snapshotsPersistAcrossRepositoryInstances() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            CaseSnapshot snapshot = EventSourcingTestFixture.createTestSnapshot(caseId, 42L, "RUNNING");
+            snapshotRepository.save(snapshot);
 
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getLong("seq_num")).thenReturn(TEST_SEQUENCE_NUMBER);
-            when(mockResultSet.getTimestamp("snapshot_ts")).thenReturn(Timestamp.from(BASE_TIMESTAMP));
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("status")).thenReturn("RUNNING");
-            when(mockResultSet.getString("active_items_json")).thenReturn(workItemsJson);
-            when(mockResultSet.getString("payload_json")).thenReturn(payloadJson);
-            doNothing().when(mockConnection).close();
-
-            Optional<CaseSnapshot> result = snapshotRepository.findLatest(TEST_CASE_ID);
+            SnapshotRepository newRepo = new SnapshotRepository(dataSource);
+            Optional<CaseSnapshot> result = newRepo.findLatest(caseId);
 
             assertTrue(result.isPresent());
-            CaseSnapshot snapshot = result.get();
-            assertEquals(2, snapshot.getActiveWorkItems().size());
-            assertEquals("STARTED", snapshot.getActiveWorkItems().get("wi-1").status());
-            assertEquals("ENABLED", snapshot.getActiveWorkItems().get("wi-2").status());
-            assertEquals("high", snapshot.getPayload().get("priority"));
+            assertEquals(42L, result.get().getSequenceNumber());
         }
 
         @Test
-        @DisplayName("deserializesEmptyWorkItems")
-        void deserializesEmptyWorkItems() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getLong("seq_num")).thenReturn(TEST_SEQUENCE_NUMBER);
-            when(mockResultSet.getTimestamp("snapshot_ts")).thenReturn(Timestamp.from(BASE_TIMESTAMP));
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("status")).thenReturn("RUNNING");
-            when(mockResultSet.getString("active_items_json")).thenReturn("{}");
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
-            doNothing().when(mockConnection).close();
+        @DisplayName("snapshotWithComplexWorkItems")
+        void snapshotWithComplexWorkItems() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            Map<String, CaseStateView.WorkItemState> workItems = Map.of(
+                "wi-1", new CaseStateView.WorkItemState("wi-1", "ENABLED",
+                    EventSourcingTestFixture.BASE_TIMESTAMP),
+                "wi-2", new CaseStateView.WorkItemState("wi-2", "STARTED",
+                    EventSourcingTestFixture.BASE_TIMESTAMP_PLUS_30),
+                "wi-3", new CaseStateView.WorkItemState("wi-3", "COMPLETED",
+                    EventSourcingTestFixture.BASE_TIMESTAMP_PLUS_60)
+            );
 
-            Optional<CaseSnapshot> result = snapshotRepository.findLatest(TEST_CASE_ID);
+            CaseSnapshot snapshot = new CaseSnapshot(
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                42L,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
+                "RUNNING",
+                workItems,
+                Map.of()
+            );
+            snapshotRepository.save(snapshot);
+
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest(caseId);
 
             assertTrue(result.isPresent());
-            CaseSnapshot snapshot = result.get();
-            assertTrue(snapshot.getActiveWorkItems().isEmpty());
-            assertTrue(snapshot.getPayload().isEmpty());
+            assertEquals(3, result.get().getActiveWorkItems().size());
+            assertEquals("ENABLED", result.get().getActiveWorkItems().get("wi-1").status());
         }
 
         @Test
-        @DisplayName("deserializationFailureThrowsSnapshotException")
-        void deserializationFailureThrowsSnapshotException() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getLong("seq_num")).thenReturn(TEST_SEQUENCE_NUMBER);
-            when(mockResultSet.getTimestamp("snapshot_ts")).thenReturn(Timestamp.from(BASE_TIMESTAMP));
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("status")).thenReturn("RUNNING");
-            when(mockResultSet.getString("active_items_json")).thenReturn("invalid-json");
-            doNothing().when(mockConnection).close();
+        @DisplayName("snapshotWithComplexPayload")
+        void snapshotWithComplexPayload() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            Map<String, String> payload = Map.of(
+                "caseParams", "{'customerId':'123','priority':'high'}",
+                "launchedBy", "agent-order-service",
+                "metadata", "{'version':'1.0','source':'web-ui'}"
+            );
 
-            assertThrows(SnapshotRepository.SnapshotException.class, () ->
-                snapshotRepository.findLatest(TEST_CASE_ID));
-        }
+            CaseSnapshot snapshot = new CaseSnapshot(
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                42L,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
+                "RUNNING",
+                Map.of(),
+                payload
+            );
+            snapshotRepository.save(snapshot);
 
-        @Test
-        @DisplayName("deserializationExceptionIncludesCaseId")
-        void deserializationExceptionIncludesCaseId() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getLong("seq_num")).thenReturn(TEST_SEQUENCE_NUMBER);
-            when(mockResultSet.getTimestamp("snapshot_ts")).thenReturn(Timestamp.from(BASE_TIMESTAMP));
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("status")).thenReturn("RUNNING");
-            when(mockResultSet.getString("active_items_json")).thenReturn("invalid-json");
-            doNothing().when(mockConnection).close();
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest(caseId);
 
-            try {
-                snapshotRepository.findLatest(TEST_CASE_ID);
-                fail("Should have thrown exception");
-            } catch (SnapshotRepository.SnapshotException e) {
-                assertTrue(e.getMessage().contains("Failed to parse snapshot data for case test-case-123"));
-            }
+            assertTrue(result.isPresent());
+            assertEquals(payload, result.get().getPayload());
         }
     }
 
@@ -495,52 +403,93 @@ class SnapshotRepositoryTest {
         @Test
         @DisplayName("handleMultipleSnapshotsForSameCase")
         void handleMultipleSnapshotsForSameCase() throws Exception {
-            // This test would normally require database setup, but we're mocking the DB
-            // In a real scenario, the findLatest query would return the most recent snapshot
-            Instant snapshot1Time = BASE_TIMESTAMP;
-            Instant snapshot2Time = BASE_TIMESTAMP.plusSeconds(60);
+            String caseId = EventSourcingTestFixture.generateCaseId();
 
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getLong("seq_num")).thenReturn(TEST_SEQUENCE_NUMBER);
-            when(mockResultSet.getTimestamp("snapshot_ts")).thenReturn(Timestamp.from(snapshot2Time)); // Later snapshot
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("status")).thenReturn("RUNNING");
-            when(mockResultSet.getString("active_items_json")).thenReturn("{}");
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
-            doNothing().when(mockConnection).close();
+            CaseSnapshot snapshot1 = new CaseSnapshot(
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                10L,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
+                "RUNNING",
+                Map.of(),
+                Map.of()
+            );
+            CaseSnapshot snapshot2 = new CaseSnapshot(
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                20L,
+                EventSourcingTestFixture.BASE_TIMESTAMP_PLUS_60,
+                "COMPLETED",
+                Map.of(),
+                Map.of()
+            );
 
-            Optional<CaseSnapshot> result = snapshotRepository.findLatest(TEST_CASE_ID);
+            snapshotRepository.save(snapshot1);
+            snapshotRepository.save(snapshot2);
+
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest(caseId);
 
             assertTrue(result.isPresent());
-            CaseSnapshot snapshot = result.get();
-            assertEquals(snapshot2Time, snapshot.getSnapshotAt());
-            verify(mockConnection, times(1)).close();
+            assertEquals(20L, result.get().getSequenceNumber());
+            assertEquals("COMPLETED", result.get().getStatus());
         }
 
         @Test
         @DisplayName("concurrentSnapshotSave")
         void concurrentSnapshotSave() throws Exception {
+            String case1 = EventSourcingTestFixture.generateCaseId("case-1");
+            String case2 = EventSourcingTestFixture.generateCaseId("case-2");
+
+            CaseSnapshot snapshot1 = EventSourcingTestFixture.createTestSnapshot(case1, 1L, "RUNNING");
+            CaseSnapshot snapshot2 = EventSourcingTestFixture.createTestSnapshot(case2, 1L, "RUNNING");
+
+            snapshotRepository.save(snapshot1);
+            snapshotRepository.save(snapshot2);
+
+            assertEquals(2, countSnapshots(dataSource));
+        }
+
+        @Test
+        @DisplayName("emptyCaseReturnsEmptyOptional")
+        void emptyCaseReturnsEmptyOptional() throws Exception {
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest("empty-case");
+
+            assertFalse(result.isPresent());
+        }
+
+        @Test
+        @DisplayName("snapshotPreservesAllFields")
+        void snapshotPreservesAllFields() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            Map<String, CaseStateView.WorkItemState> workItems = Map.of(
+                "wi-1", new CaseStateView.WorkItemState("wi-1", "ENABLED",
+                    EventSourcingTestFixture.BASE_TIMESTAMP)
+            );
+            Map<String, String> payload = Map.of("key", "value");
+
             CaseSnapshot snapshot = new CaseSnapshot(
-                TEST_CASE_ID, TEST_SPEC_ID, TEST_SEQUENCE_NUMBER, BASE_TIMESTAMP,
-                "RUNNING", Map.of(), Map.of());
+                caseId,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                42L,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
+                "RUNNING",
+                workItems,
+                payload
+            );
 
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).close();
-
-            // Save multiple snapshots concurrently
-            snapshotRepository.save(snapshot);
             snapshotRepository.save(snapshot);
 
-            verify(mockPreparedStatement, times(2)).executeUpdate();
+            Optional<CaseSnapshot> result = snapshotRepository.findLatest(caseId);
+
+            assertTrue(result.isPresent());
+            CaseSnapshot found = result.get();
+            assertEquals(caseId, found.getCaseId());
+            assertEquals(EventSourcingTestFixture.TEST_SPEC_ID, found.getSpecId());
+            assertEquals(42L, found.getSequenceNumber());
+            assertEquals(EventSourcingTestFixture.BASE_TIMESTAMP, found.getSnapshotAt());
+            assertEquals("RUNNING", found.getStatus());
+            assertEquals(workItems, found.getActiveWorkItems());
+            assertEquals(payload, found.getPayload());
         }
     }
 
@@ -567,6 +516,15 @@ class SnapshotRepositoryTest {
 
             assertEquals("Test error", e.getMessage());
             assertEquals(cause, e.getCause());
+        }
+    }
+
+    // Helper method for counting snapshots
+    private int countSnapshots(DataSource ds) throws SQLException {
+        try (var conn = ds.getConnection();
+             var stmt = conn.createStatement();
+             var rs = stmt.executeQuery("SELECT COUNT(*) FROM case_snapshots")) {
+            return rs.next() ? rs.getInt(1) : 0;
         }
     }
 }

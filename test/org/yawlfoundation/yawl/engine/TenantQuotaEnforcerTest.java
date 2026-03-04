@@ -12,9 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.observability.SLOAlertManager;
+import org.yawlfoundation.yawl.observability.TestSLOAlertManager;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Chicago-style integration tests for TenantQuotaEnforcer.
@@ -24,11 +24,11 @@ import static org.mockito.Mockito.*;
 class TenantQuotaEnforcerTest {
 
     private TenantQuotaEnforcer quotaEnforcer;
-    private SLOAlertManager sloAlertManager;
+    private TestSLOAlertManager sloAlertManager;
 
     @BeforeEach
     void setUp() {
-        sloAlertManager = mock(SLOAlertManager.class);
+        sloAlertManager = new TestSLOAlertManager();
 
         // Simple settings provider with defaults
         TenantQuotaEnforcer.QuotaSettingsProvider settingsProvider =
@@ -56,7 +56,7 @@ class TenantQuotaEnforcerTest {
 
         // Assert
         assertEquals(1, quotaEnforcer.getActiveAgentCount("tenant-1"));
-        verify(sloAlertManager, never()).alertQuotaThreshold(anyString(), anyLong(), anyLong(), anyLong());
+        assertEquals(0, sloAlertManager.getAlertCallCount(), "No alerts should be triggered below soft limit");
     }
 
     @Test
@@ -94,18 +94,19 @@ class TenantQuotaEnforcerTest {
         }
 
         // Verify no alert yet (still one below)
-        verify(sloAlertManager, never()).alertQuotaThreshold(anyString(), anyLong(), anyLong(), anyLong());
+        assertEquals(0, sloAlertManager.getAlertCallCount(), "No alerts should be triggered before soft limit");
 
         // Act: Dispatch one more to reach soft limit
         quotaEnforcer.checkAndIncrement(tenantId);
 
         // Assert: Alert should have been triggered exactly once
-        verify(sloAlertManager, times(1)).alertQuotaThreshold(
-                eq(tenantId),
-                eq(81L),
-                eq(hardLimit),
-                eq(softLimit)
-        );
+        assertEquals(1, sloAlertManager.getAlertCallCount(), "Exactly one alert should be triggered at soft limit");
+        assertTrue(sloAlertManager.hasAlertForTenant(tenantId), "Alert should be triggered for the tenant");
+
+        // Verify the alert details
+        String mostRecentAlert = sloAlertManager.getMostRecentAlert();
+        assertTrue(mostRecentAlert.contains("tenant=" + tenantId), "Alert should contain tenant ID");
+        assertTrue(mostRecentAlert.contains("current=81"), "Alert should contain current count");
 
         // Verify count is correct
         assertEquals(81, quotaEnforcer.getActiveAgentCount(tenantId));
@@ -122,16 +123,16 @@ class TenantQuotaEnforcerTest {
             quotaEnforcer.checkAndIncrement(tenantId);
         }
 
-        // Reset the mock to clear the first alert
-        reset(sloAlertManager);
+        // Note: In Chicago TDD, we don't reset the test state.
+        // The real implementation should handle duplicate alerts appropriately
 
         // Act: Add more agents while still above soft limit
         for (int i = 0; i < 5; i++) {
             quotaEnforcer.checkAndIncrement(tenantId);
         }
 
-        // Assert: No additional alerts should be generated
-        verify(sloAlertManager, never()).alertQuotaThreshold(anyString(), anyLong(), anyLong(), anyLong());
+        // Assert: No additional alerts should be generated (soft limit alert only once)
+        assertEquals(1, sloAlertManager.getAlertCallCount(), "Soft limit alert should only be triggered once");
     }
 
     @Test
@@ -145,8 +146,8 @@ class TenantQuotaEnforcerTest {
             quotaEnforcer.checkAndIncrement(tenantId);
         }
 
-        // Reset mock
-        reset(sloAlertManager);
+        // Note: In Chicago TDD, we don't reset the test state.
+        // Each test should start with a clean slate.
 
         // Decrement back below soft limit
         for (int i = 0; i < 5; i++) {
@@ -161,7 +162,7 @@ class TenantQuotaEnforcerTest {
         quotaEnforcer.checkAndIncrement(tenantId);
 
         // Assert: Alert should be triggered again (not suppressed)
-        verify(sloAlertManager, times(1)).alertQuotaThreshold(anyString(), anyLong(), anyLong(), anyLong());
+        assertEquals(2, sloAlertManager.getAlertCallCount(), "Second alert should be triggered when going back above threshold");
     }
 
     @Test
