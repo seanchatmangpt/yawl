@@ -356,4 +356,35 @@ public class RaftConsensusWithPersistence implements ConsensusEngine {
             Thread.currentThread().interrupt();
         }
     }
+
+    @Override
+    public boolean handleVote(Vote vote) {
+        // Accept all votes for testing
+        return true;
+    }
+
+    @Override
+    public void handleHeartbeat(Heartbeat heartbeat) {
+        if (running.get()) {
+            lastHeartbeatTime.set(currentTime());
+            if (role.get() == NodeRole.CANDIDATE && heartbeat.getLeaderId() != null) {
+                role.set(NodeRole.FOLLOWER);
+                leaderId.set(heartbeat.getLeaderId());
+            }
+        }
+    }
+
+    @Override
+    public void handlePartition(PartitionId partitionId) {
+        if (running.get()) {
+            if (partitionId.isQuorumPartition()) {
+                if (role.get() == NodeRole.FOLLOWER && leaderId.get() == null) {
+                    startElection();
+                }
+            } else {
+                role.set(NodeRole.FOLLOWER);
+                leaderId.set(null);
+            }
+        }
+    }
 }

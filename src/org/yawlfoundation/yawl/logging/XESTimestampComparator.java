@@ -69,12 +69,15 @@ public class XESTimestampComparator implements Comparator<XNode> {
 
 
     private String getInstanceID(XNode event) {
+        if (event == null) {
+            throw new IllegalArgumentException("XNode event cannot be null");
+        }
         for (XNode string : event.getChildren("string")) {
             if (string.getAttributeValue("key").equals("lifecycle:instance")) {
                 return string.getAttributeValue("value");
             }
         }
-        return ""; // empty string is a valid default when lifecycle:instance attribute is absent
+        throw new UnsupportedOperationException("XEvent missing required lifecycle:instance attribute");
     }
 
 }

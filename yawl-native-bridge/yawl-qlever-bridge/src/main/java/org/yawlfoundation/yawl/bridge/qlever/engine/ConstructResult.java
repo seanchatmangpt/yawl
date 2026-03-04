@@ -45,9 +45,9 @@ public final record ConstructResult(
         // Add triples
         for (Triple triple : triples) {
             sb.append(" ").append(escapeTurtle(triple.subject))
-              append(" ").append(escapeTurtle(triple.predicate))
-              append(" ").append(escapeTurtle(triple.object))
-              append(" .\n");
+              .append(" ").append(escapeTurtle(triple.predicate))
+              .append(" ").append(escapeTurtle(triple.object))
+              .append(" .\n");
         }
 
         return sb.toString();

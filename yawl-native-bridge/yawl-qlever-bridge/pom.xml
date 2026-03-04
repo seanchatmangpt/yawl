@@ -33,12 +33,8 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Panama FFI for native interop -->
-        <dependency>
-            <groupId>jdk.incubator.foreign</groupId>
-            <artifactId>foreign</artifactId>
-            <version>${panama.version}</version>
-        </dependency>
+        <!-- Panama FFI for native interop - using JDK modules instead -->
+        <!-- No external dependency needed for JDK 21+ with enable-preview -->
 
         <!-- JUnit 5 for testing -->
         <dependency>

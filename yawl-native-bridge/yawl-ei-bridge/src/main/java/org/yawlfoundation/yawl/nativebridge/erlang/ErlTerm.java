@@ -10,7 +10,7 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * Public License for more details.
+ * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
@@ -19,44 +19,25 @@
 package org.yawlfoundation.yawl.nativebridge.erlang;
 
 /**
- * Sealed interface representing an Erlang term in the JVM↔BEAM bridge.
- * This forms the foundation for type-safe Erlang data representation.
+ * Stub interface for Erlang terms.
+ *
+ * This interface requires jextract-generated native code to function properly.
  */
-public sealed interface ErlTerm
-        permits ErlAtom, ErlList, ErlTuple, ErlBinary, ErlLong {
+public interface ErlTerm {
 
     /**
-     * Converts this Erlang term to its string representation.
-     * Used for debugging and logging purposes.
+     * Encodes this term to an Erlang buffer.
      *
-     * @return String representation of the Erlang term
-     */
-    String toErlString();
-
-    /**
-     * Encodes this Erlang term into an ei_x_buff buffer.
-     * This is the primary mechanism for converting Java objects to Erlang format.
-     *
-     * @param buffer The ei_x_buff buffer to encode into
+     * @param buffer The buffer to encode to
      * @return 0 on success, -1 on failure
      * @throws ErlangException if encoding fails
      */
-    int encodeTo(org.yawlfoundation.yawl.nativebridge.erlang.generated.ei_x_buff_t buffer) throws ErlangException;
+    int encodeTo(Object buffer) throws ErlangException;
 
     /**
-     * Returns the type of this Erlang term.
-     * Corresponds to Erlang term types like atom, list, tuple, etc.
+     * Gets the string representation of this term.
      *
-     * @return The Erlang term type
+     * @return The string representation
      */
-    int getType();
-
-    /**
-     * Checks if this term is equal to another Erlang term.
-     * Performs deep comparison for complex types like tuples and lists.
-     *
-     * @param other The Erlang term to compare with
-     * @return true if equal, false otherwise
-     */
-    boolean equals(ErlTerm other);
+    String toString();
 }

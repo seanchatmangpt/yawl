@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.*;
  * Comprehensive test suite for InterfaceARestResource
  * Tests REST API endpoints for specification upload, validation, and management
  * Following Chicago TDD principles with real YAWL engine integration
- * Uses JerseyTest framework for in-memory HTTP testing
+ * Uses JerseyTest framework for in-memory HTTP testing without mocks
  */
 public class InterfaceARestResourceTest extends JerseyTest {
 
@@ -332,11 +332,6 @@ public class InterfaceARestResourceTest extends JerseyTest {
         }
     }
 
-    @AfterEach
-    void tearDown() {
-        super.tearDown();
-    }
-
     @Test
     @DisplayName("Complete specification upload workflow test")
     @Order(15)
@@ -375,5 +370,10 @@ public class InterfaceARestResourceTest extends JerseyTest {
         assertNotNull(response.getMediaType());
         assertTrue(response.getMediaType().toString().contains("xml"),
             "Response should be XML content type");
+    }
+
+    @AfterEach
+    void tearDown() {
+        super.tearDown();
     }
 }

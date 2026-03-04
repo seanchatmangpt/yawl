@@ -53,6 +53,7 @@ import static org.junit.jupiter.api.*;
  * Tests all public methods, error scenarios, and edge cases
  * Following Chicago TDD principles with real HTTP server and TestContainers
  */
+@Tag("integration")
 @Testcontainers
 @TestMethodOrder(OrderAnnotation.class)
 public class InterfaceB_EnvironmentBasedClientTest {

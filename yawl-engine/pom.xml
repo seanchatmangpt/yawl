@@ -293,6 +293,16 @@
             <version>2.1.12</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Jersey Test Dependencies for Chicago TDD Testing -->
+        <dependency>
+            <groupId>org.glassfish.jersey.test-framework</groupId>
+            <artifactId>jersey-test-framework-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+            <artifactId>jersey-test-framework-provider-inmemory</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -327,6 +337,8 @@
                     <include>**/org/yawlfoundation/yawl/engine/**/*.ywl</include>
                     <include>**/org/yawlfoundation/yawl/engine/**/*.properties</include>
                     <include>**/org/yawlfoundation/yawl/engine/**/*.xsd</include>
+                    <!-- Jersey test framework resources -->
+                    <include>**/org/yawlfoundation/yawl/engine/interfce/rest/**</include>
                     <include>**/org/yawlfoundation/yawl/swingWorklist/**/*.xml</include>
                     <!-- Engine tests also reference elements and unmarshal resources -->
                     <include>**/org/yawlfoundation/yawl/elements/**/*.xml</include>
@@ -367,6 +379,8 @@
                         <include>**/org/yawlfoundation/yawl/integration/oauth2/**</include>
                         <!-- Observability classes (RDF, DNA Oracle) with Apache Jena -->
                         <include>**/org/yawlfoundation/yawl/observatory/**</include>
+                        <!-- REST interface tests - Chicago TDD with real integrations -->
+                        <include>**/org/yawlfoundation/yawl/engine/interfce/rest/**</include>
                         <!-- Autonomic observability package (AnomalyDetector, BlackSwanDetector, etc.) -->
                         <include>**/org/yawlfoundation/yawl/observability/**</include>
                         <!-- Logging classes that depend on engine - moved from yawl-utilities -->
@@ -439,7 +453,6 @@
                         <testExclude>**/interfaceB/InterfaceB_EnvironmentBasedClientTest.java</testExclude>
                         <!-- REST interface tests use stale API - excluded pending A5 fix -->
                         <testExclude>**/interfce/rest/InterfaceARestResourceTest.java</testExclude>
-                        <testExclude>**/interfce/rest/YawlExceptionMapperTest.java</testExclude>
                         <testExclude>**/interfce/rest/YawlRestApplicationTest.java</testExclude>
                         <!-- A2ALifecycleIntegrationTest requires cross-module A2A classes not in engine scope -->
                         <testExclude>**/engine/A2ALifecycleIntegrationTest.java</testExclude>
@@ -620,13 +633,15 @@
                         <include>**/org/yawlfoundation/yawl/swingWorklist/**</include>
                         <include>**/org/yawlfoundation/yawl/patternmatching/**</include>
                         <!-- OAuth2 integration tests -->
-                        <include>**/org/yawlfoundation/yawl/integration/oauth2/**</include>
+                        <include>**/org.yawlfoundation.yawl.integration.oauth2/**</include>
                         <!-- Observability tests (RDF, DNA Oracle, etc.) -->
-                        <include>**/org/yawlfoundation/yawl/observatory/**</include>
+                        <include>**/org.yawlfoundation.yawl.observatory/**</include>
                         <!-- BlackSwanDetector test only - other observability tests have pre-existing API mismatches -->
-                        <include>**/org/yawlfoundation/yawl/observability/BlackSwanDetectorTest.java</include>
+                        <include>**/org.yawlfoundation.yawl.observability.BlackSwanDetectorTest.java</include>
                         <!-- Actor pattern benchmarks, marathons, chaos tests -->
-                        <include>**/org/yawlfoundation/yawl/patterns/**</include>
+                        <include>**/org.yawlfoundation.yawl.patterns/**</include>
+                        <!-- REST resource tests (Chicago TDD) -->
+                        <include>**/org.yawlfoundation.yawl.engine.interfce.rest/**</include>
                     </includes>
                     <classpathDependencyExcludes>
                         <!-- log4j-to-slf4j conflicts with log4j-slf4j2-impl -->

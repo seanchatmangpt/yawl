@@ -20,6 +20,10 @@ package org.yawlfoundation.yawl.engine;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -201,27 +205,40 @@ public class BuriedEngine {
                     }
                 });
 
-            // For now, create a placeholder that will be updated when the case is fully created
-            // In production, you might want to use a CompletableFuture or similar async pattern
-            try {
-                // Wait briefly for case creation (not ideal, but works for now)
-                Thread.sleep(100);
-
-                // Get the case ID identifier
-                YIdentifier caseIdentifier = yEngine.getCaseID(caseID);
-                if (caseIdentifier != null) {
-                    // Get the runner from the engine's case registry
-                    YNetRunner runner = yEngine.getNetRunner(caseIdentifier);
-                    if (runner != null) {
-                        this.runner = runner;
-                        return runner;
+            // Use CompletableFuture for proper async case creation
+            CompletableFuture<YNetRunner> runnerFuture = new CompletableFuture<>();
+            Thread.ofVirtual()
+                .name(engineName + "-case-" + caseID + "-async")
+                .start(() -> {
+                    try {
+                        String launchedCaseID = yEngine.launchCase(spec.getSpecificationID(), caseParams, null, logData);
+                        YIdentifier caseIdentifier = yEngine.getCaseID(launchedCaseID);
+                        YNetRunner caseRunner = yEngine.getNetRunner(caseIdentifier);
+                        this.runner = caseRunner;
+                        runnerFuture.complete(caseRunner);
+                        logger.info("Case asynchronously launched: {} in engine {}",
+                            workflowContext.toLogString(), engineName);
+                    } catch (Exception e) {
+                        logger.error("Failed to asynchronously launch case {}: {}", caseID, e.getMessage(), e);
+                        runnerFuture.completeExceptionally(e);
                     }
-                }
-            } catch (Exception e) {
-                logger.warn("Could not get runner immediately for case {}: {}", caseID, e.getMessage());
-            }
+                });
 
-            throw new YEngineStateException("Case created but runner not available immediately");
+            // Wait for case creation with timeout
+            try {
+                YNetRunner caseRunner = runnerFuture.get(5, TimeUnit.SECONDS);
+                this.runner = caseRunner;
+                return caseRunner;
+            } catch (TimeoutException e) {
+                logger.error("Timeout waiting for case creation: {}", caseID);
+                throw new YEngineStateException("Case creation timed out for: " + caseID, e);
+            } catch (ExecutionException e) {
+                logger.error("Case creation failed for {}: {}", caseID, e.getCause().getMessage());
+                throw new YEngineStateException("Case creation failed for: " + caseID, e.getCause());
+            } catch (Exception e) {
+                logger.error("Unexpected error waiting for case creation: {}", caseID, e.getMessage());
+                throw new YEngineStateException("Unexpected error creating case: " + caseID, e);
+            }
           } finally {
             lifecycleLock.unlock();
         }
@@ -244,10 +261,14 @@ public class BuriedEngine {
                 .start(() -> {
                     try {
                         // Get the case ID and cancel it
-                        // String caseIdStr = runner.getCaseID();
-                        // YIdentifier caseIdentifier = yEngine.getCaseID(caseIdStr);
-                        // yEngine.cancelCase(caseIdentifier);
-                        throw new UnsupportedOperationException("Case cancellation requires proper YIdentifier handling");
+                        String caseIdStr = runner.getCaseID();
+                        YIdentifier caseIdentifier = yEngine.getCaseID(caseIdStr);
+                        if (caseIdentifier != null) {
+                            yEngine.cancelCase(caseIdentifier);
+                            logger.info("Case {} cancelled successfully", caseIdStr);
+                        } else {
+                            logger.warn("Could not find case identifier for cancellation: {}", caseIdStr);
+                        }
                     } catch (Exception e) {
                         logger.error("Failed to cancel case {}: {}",
                             runner.getCaseID(), e.getMessage(), e);

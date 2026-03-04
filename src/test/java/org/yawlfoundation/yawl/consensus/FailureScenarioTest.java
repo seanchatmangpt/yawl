@@ -295,10 +295,7 @@ class FailureScenarioTest {
                         proposal.getProposalId(),
                         proposal.getValue(),
                         1,
-                        true,
-                        ConsensusStatus.SUCCESS,
-                        200,
-                        2, 0, null
+                        2, 0, 200
                     )
                 );
             }

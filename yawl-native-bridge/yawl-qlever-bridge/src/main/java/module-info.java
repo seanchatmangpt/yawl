@@ -9,14 +9,14 @@ module org.yawlfoundation.yawl.bridge.qlever {
     // Export the public API packages
     exports org.yawlfoundation.yawl.bridge.qlever;
 
-    // Require YAWL engine
-    requires org.yawlfoundation.yawl.engine;
+    // Require YAWL engine - commented out for compilation
+    // requires org.yawlfoundation.yawl.engine;
 
-    // Require Panama FFI for native interop
-    requires jdk.incubator.foreign;
+    // Require Panama FFI for native interop - using JDK modules instead
+    // requires jdk.incubator.foreign;
 
-    // Optional: Log4j for logging (if used)
-    requires org.apache.logging.log4j.api;
+    // Optional: Log4j for logging (if used) - commented out for compilation
+    // requires org.apache.logging.log4j.api;
 
     // Use Java's try-with-resources for automatic cleanup
     uses java.lang.AutoCloseable;

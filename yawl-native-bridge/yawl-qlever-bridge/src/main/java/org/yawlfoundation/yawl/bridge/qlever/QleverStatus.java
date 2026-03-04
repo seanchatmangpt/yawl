@@ -26,7 +26,7 @@ public record QleverStatus(
     public static final QleverStatus INVALID_INDEX_PATH = new QleverStatus(1, "Invalid or missing index path");
     public static final QleverStatus ENGINE_INITIALIZATION_FAILED = new QleverStatus(2, "Engine initialization failed");
     public static final QleverStatus INVALID_QUERY_SYNTAX = new QleverStatus(3, "Invalid SPARQL query syntax");
-    public static final QleverStatus_QUERY_EXECUTION_FAILED = new QleverStatus(4, "Query execution failed");
+    public static final QleverStatus QUERY_EXECUTION_FAILED = new QleverStatus(4, "Query execution failed");
     public static final QleverStatus RESULT_EXTRACTION_FAILED = new QleverStatus(5, "Result extraction failed");
 
     /**

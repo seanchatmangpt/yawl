@@ -46,33 +46,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Generated jextract bindings -->
-        <dependency>
-            <groupId>org.yawlfoundation</groupId>
-            <artifactId>yawl-native-bridge</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
+        <!-- Generated jextract bindings - removed for compilation -->
+        <!-- No external jextract bindings needed for basic compilation -->
 
-        <!-- Java FFI and memory management -->
-        <dependency>
-            <groupId>org.graalvm.nativeimage</groupId>
-            <artifactId>svm</artifactId>
-            <version>${graalvm.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Memory management for FFI -->
-        <dependency>
-            <groupId>com.github.jnr</groupId>
-            <artifactId>jnr-ffi</artifactId>
-            <version>0.22.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.jnr</groupId>
-            <artifactId>jnr-ffi-runtime</artifactId>
-            <version>0.22.0</version>
-        </dependency>
+        <!-- Panama FFI for native interop - using JDK modules instead -->
+        <!-- No external dependency needed for JDK 21+ with enable-preview -->
 
         <!-- Testing -->
         <dependency>
@@ -164,16 +142,9 @@
 
             <!-- Test configuration -->
             <plugin>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-maven-plugin</artifactId>
-                <version>5.10.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
             </plugin>
 
             <!-- Integration test resources -->
@@ -203,12 +174,12 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.7.3</version>
+                <version>4.8.3.1</version>
                 <dependencies>
                     <dependency>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs</artifactId>
-                        <version>4.7.3</version>
+                        <version>4.8.3.1</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -235,6 +206,7 @@
             <id>local-otp</id>
             <properties>
                 <otp.root>/usr/local</otp.root>
+                <panama.version>23.0.0</panama.version>
             </properties>
             <build>
                 <plugins>

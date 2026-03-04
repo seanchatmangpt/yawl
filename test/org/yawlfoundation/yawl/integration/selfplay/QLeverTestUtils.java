@@ -155,13 +155,11 @@ public class QLeverTestUtils {
      * @throws QLeverFfiException if query fails
      */
     public boolean gapExists(String gapId) throws QLeverFfiException {
-        String query = """
-            ASK WHERE {
-                ?gap a capabilityGap ;
-                     hasId ?id .
-                FILTER (?id = \"""" + gapId + """\")
-            }
-            """;
+        String query = "ASK WHERE {\n" +
+                "  ?gap a capabilityGap ;\n" +
+                "       hasId ?id .\n" +
+                "  FILTER (?id = \\\"\\\"\\\"" + gapId + "\\\"\\\"\\\")\n" +
+                "}";
 
         QLeverSparqlResult result = qlever.query(query);
         return result.getBoolean("result");

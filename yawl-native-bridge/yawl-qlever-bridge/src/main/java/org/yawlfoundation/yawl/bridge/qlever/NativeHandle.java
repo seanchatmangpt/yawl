@@ -147,7 +147,7 @@ public final class NativeHandle<T> implements AutoCloseable {
     /**
      * Check if this handle points to null
      */
-    public isNull() {
+    public boolean isNull() {
         checkNotClosed();
         return address.equals(MemoryAddress.NULL);
     }

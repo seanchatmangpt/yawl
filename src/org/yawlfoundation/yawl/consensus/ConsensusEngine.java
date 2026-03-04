@@ -71,4 +71,26 @@ public interface ConsensusEngine {
      * @return ConsensusStrategy being used
      */
     ConsensusStrategy getStrategy();
+
+    /**
+     * Handle a vote from another node
+     *
+     * @param vote The vote to handle
+     * @return true if vote is accepted
+     */
+    boolean handleVote(Vote vote);
+
+    /**
+     * Handle a heartbeat from another node
+     *
+     * @param heartbeat The heartbeat to handle
+     */
+    void handleHeartbeat(Heartbeat heartbeat);
+
+    /**
+     * Handle network partition detection
+     *
+     * @param partitionId Identifier for the partition
+     */
+    void handlePartition(PartitionId partitionId);
 }

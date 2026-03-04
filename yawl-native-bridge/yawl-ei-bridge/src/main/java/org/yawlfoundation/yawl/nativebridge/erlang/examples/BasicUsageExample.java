@@ -65,7 +65,7 @@ public class BasicUsageExample {
 
         // Create numbers
         ErlTerm number1 = ErlLong.longValue(42);
-        ErlTerm number2 = ErlLong.longValue(3.14);
+        ErlTerm number2 = ErlLong.longValue((long) 3.14);
         System.out.println("  Number 1: " + number1);
         System.out.println("  Number 2: " + number2);
 
@@ -93,26 +93,22 @@ public class BasicUsageExample {
     }
 
     private static void manageConnection() throws ErlangException {
-        // Create Erlang node
-        ErlangNode node = new ErlangNode("yawl@localhost", "secret-cookie", (short) 1);
+        // Create Erlang node - requires jextract-generated code
+        System.out.println("  Creating Erlang node requires jextract-generated native code");
 
-        System.out.println("  Created Erlang node: " + node.getNodeName());
-        System.out.println("  Cookie: " + node.getCookie());
-
-        // In a real scenario, you would connect to an actual Erlang node
-        // node.connect();
-        System.out.println("  Connection status: " + node.isConnected());
-
-        // Close connection (would be called in a finally block in real code)
-        // node.close();
-        System.out.println("  Node created successfully");
+        try {
+            ErlangNode node = new ErlangNode();
+            System.out.println("  ErlangNode stub created");
+            System.out.println("  Note: Full functionality requires native code compilation");
+        } catch (UnsupportedOperationException e) {
+            System.out.println("  Expected exception: " + e.getMessage());
+        }
     }
 
     private static void performRpcOperations() throws ErlangException {
-        // Create node
-        ErlangNode node = new ErlangNode("test@localhost", "test-cookie");
+        System.out.println("  RPC operations require jextract-generated native code");
 
-        // Create arguments for RPC call
+        // Create arguments (these work with stub implementations)
         ErlTerm[] args = {
             ErlAtom.atom("module_name"),
             ErlAtom.atom("function_name"),
@@ -132,33 +128,23 @@ public class BasicUsageExample {
     }
 
     private static void demonstrateProcessMining() throws ErlangException {
-        // Create event log entries
-        List<EventLogEntry> eventLog = List.of(
-            new EventLogEntry(
-                "case-001",
-                "start",
-                1234567890000L,
-                Map.of("user", "john", "department", "sales")
-            ),
-            new EventLogEntry(
-                "case-001",
-                "approve_request",
-                1234567950000L,
-                Map.of("user", "jane", "amount", "1000")
-            ),
-            new EventLogEntry(
-                "case-001",
-                "end",
-                1234568000000L,
-                Map.of("user", "john")
-            )
-        );
+        // Process mining functionality requires additional dependencies
+        // EventLogEntry class would need to be implemented or imported
+        System.out.println("  Process mining functionality requires EventLogEntry class");
 
-        System.out.println("  Created event log with " + eventLog.size() + " entries");
+        // Process mining functionality requires jextract-generated code
+        System.out.println("  Process mining functionality requires native code");
+        System.out.println("  Skipping process mining demonstration");
 
-        // Create process mining client
-        ErlangNode node = new ErlangNode("pm@localhost", "yawl-pm");
-        ProcessMiningClient client = new ProcessMiningClientImpl(node);
+        /*
+        try {
+            ErlangNode node = new ErlangNode("pm@localhost", "yawl-pm");
+            System.out.println("  Process mining node created");
+        } catch (UnsupportedOperationException e) {
+            System.out.println("  Expected exception: " + e.getMessage());
+        }
+        */
+        // ProcessMiningClient client = new ProcessMiningClientImpl(node);
 
         // Demonstrate various operations
         System.out.println("  Operations available:");

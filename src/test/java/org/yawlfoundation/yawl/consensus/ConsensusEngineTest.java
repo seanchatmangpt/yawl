@@ -12,6 +12,7 @@ import org.yawlfoundation.yawl.integration.eventsourcing.EventSourcingTestFixtur
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;

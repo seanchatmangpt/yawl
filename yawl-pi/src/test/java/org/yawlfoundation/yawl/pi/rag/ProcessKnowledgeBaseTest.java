@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.YSpecificationID;
 import org.yawlfoundation.yawl.pi.PIException;
-import org.yawlfoundation.yawl.integration.processmining.ProcessMiningFacade;
+import org.yawlfoundation.yawl.pi.rag.stub.ProcessMiningFacade;
 import org.yawlfoundation.yawl.integration.zai.ZaiService;
 
 import java.time.Instant;

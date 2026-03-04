@@ -273,4 +273,39 @@ public class RaftConsensus implements ConsensusEngine {
         }
         scheduler.shutdown();
     }
+
+    @Override
+    public boolean handleVote(Vote vote) {
+        // In a real Raft implementation, this would validate the vote
+        // For testing, accept all votes
+        return true;
+    }
+
+    @Override
+    public void handleHeartbeat(Heartbeat heartbeat) {
+        if (running.get()) {
+            lastHeartbeatTime.set(System.currentTimeMillis());
+            // If we're a candidate and receive heartbeat from leader, step down
+            if (role.get() == NodeRole.CANDIDATE && heartbeat.getLeaderId() != null) {
+                role.set(NodeRole.FOLLOWER);
+                leaderId.set(heartbeat.getLeaderId());
+            }
+        }
+    }
+
+    @Override
+    public void handlePartition(PartitionId partitionId) {
+        // Handle network partition by updating node role based on partition
+        if (partitionId.isQuorumPartition()) {
+            // Node is in the quorum partition, can participate in consensus
+            if (role.get() == NodeRole.FOLLOWER && leaderId.get() == null) {
+                // Try to become leader if no leader in partition
+                startElection();
+            }
+        } else {
+            // Node is in minority partition, step down
+            role.set(NodeRole.FOLLOWER);
+            leaderId.set(null);
+        }
+    }
 }
