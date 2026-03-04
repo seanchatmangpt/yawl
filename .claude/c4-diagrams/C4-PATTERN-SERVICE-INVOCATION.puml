@@ -1,0 +1,52 @@
+@startuml C4_Pattern_ServiceInvocation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - External Service Invocation
+
+Boundary(yawl_task, "YAWL Task") {
+    Component(service_task, "ServiceTask", "Task", "Invoke external")
+    Component(service_config, "ServiceConfig", "Config", "Endpoint URL")
+}
+
+Boundary(invocation, "Service Invocation") {
+    Component(http_client, "HTTPClient", "Transport", "REST/SOAP")
+    Component(request_builder, "RequestBuilder", "Builder", "Construct request")
+    Component(response_handler, "ResponseHandler", "Parser", "Parse response")
+    Component(error_handler, "ErrorHandler", "Errors", "Handle failures")
+}
+
+Boundary(external_service, "External Service") {
+    Component(service_endpoint, "ServiceEndpoint", "API", "Remote service")
+}
+
+Boundary(resilience, "Resilience") {
+    Component(circuit_breaker, "CircuitBreaker", "Pattern", "Fail fast")
+    Component(retry, "RetryPolicy", "Backoff", "Retry on failure")
+    Component(timeout, "TimeoutPolicy", "Limit", "Max wait time")
+}
+
+service_task --> service_config: Uses endpoint
+service_config --> request_builder: Gets URL
+request_builder --> http_client: Sends via
+http_client --> service_endpoint: Invokes
+service_endpoint --> response_handler: Returns response
+response_handler --> service_task: Completes
+
+error_handler --> circuit_breaker: Routes errors
+circuit_breaker --> retry: Retries if safe
+retry --> timeout: With timeout
+
+Note as N1
+Service Invocation:
+1. Build request from task input
+2. Send via HTTP/SOAP client
+3. Parse response
+4. Handle errors/retries
+5. Return to YAWL
+
+Timeout: <30 seconds default
+Retry: Exponential backoff
+End note
+
+SHOW_LEGEND()
+@enduml

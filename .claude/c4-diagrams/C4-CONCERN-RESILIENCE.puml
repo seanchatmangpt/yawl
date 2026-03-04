@@ -1,0 +1,46 @@
+@startuml C4_Concern_Resilience
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Fault Tolerance & Resilience
+
+Boundary(resilience_patterns, "Resilience Patterns") {
+    Component(circuit_breaker, "CircuitBreaker", "Resilience4j", "Fail fast")
+    Component(retry_policy, "RetryPolicy", "Backoff", "Exponential retry")
+    Component(bulkhead, "Bulkhead", "Isolation", "Resource limits")
+    Component(timeout_policy, "TimeoutPolicy", "SLA", "Time limits")
+    Component(fallback, "Fallback", "Alternative", "Default behavior")
+}
+
+Boundary(failure_detection, "Failure Detection") {
+    Component(health_check, "HealthCheck", "Probe", "Service liveness")
+    Component(metrics_monitor, "MetricsMonitor", "Observability", "Metric tracking")
+    Component(failure_detector, "FailureDetector", "Algorithm", "Detect failures")
+}
+
+Boundary(recovery, "Recovery Strategies") {
+    Component(checkpoint_recovery, "CheckpointRecovery", "State", "Resume from checkpoint")
+    Component(replication, "Replication", "HA", "Replicate state")
+    Component(failover, "Failover", "Automatic", "Switch to standby")
+}
+
+resilience_patterns --> failure_detection: Informed by
+failure_detection --> recovery: Triggers
+recovery --> resilience_patterns: Adjusts strategy
+
+Note as N1
+Resilience Stack:
+1. Circuit Breaker: Fail fast on repeated errors
+2. Retry: Exponential backoff (2s, 4s, 8s, 16s)
+3. Bulkhead: Limit concurrent requests
+4. Timeout: Abort stuck operations
+5. Fallback: Degrade gracefully
+
+Monitoring:
+- Health checks every 30s
+- Circuit breaker state
+- Error rates & latency
+- Recovery time
+End note
+
+SHOW_LEGEND()
+@enduml

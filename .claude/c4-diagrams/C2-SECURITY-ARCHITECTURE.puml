@@ -1,0 +1,83 @@
+@startuml C2_Security_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Security Architecture
+
+Container_Boundary(auth_boundary, "Authentication & Identity") {
+    Container(sso_provider, "SSO Provider", "Okta/Azure AD", "Corporate identity")
+    Container(oauth_server, "OAuth 2.0 Server", "Authorization server", "Token issuance")
+    Container(ldap_connector, "LDAP Connector", "Directory sync", "Legacy integration")
+    Container(mfa_service, "MFA Service", "TOTP/SMS", "Multi-factor authentication")
+    Rel(sso_provider, oauth_server, "Provides identity", "")
+    Rel(oauth_server, mfa_service, "Requires MFA", "")
+}
+
+Container_Boundary(authz_boundary, "Authorization & Access Control") {
+    Container(rbac_engine, "RBAC Engine", "Role-based access", "Permission evaluation")
+    Container(abac_engine, "ABAC Engine", "Attribute-based", "Fine-grained policies")
+    Container(policy_store, "Policy Store", "OPA/Cedar", "Policy definitions")
+    Rel(rbac_engine, policy_store, "Evaluates", "")
+    Rel(abac_engine, policy_store, "Evaluates", "")
+}
+
+Container_Boundary(crypto_boundary, "Encryption & Cryptography") {
+    Container(kms, "Key Management Service", "HSM-backed", "Encryption key management")
+    Container(tls_termination, "TLS Termination", "mTLS capable", "In-transit encryption")
+    Container(data_encryption, "Data Encryption", "AES-256-GCM", "At-rest encryption")
+    Container(crypto_lib, "Crypto Library", "BouncyCastle", "Cryptographic operations")
+    Rel(kms, data_encryption, "Provides keys", "")
+    Rel(tls_termination, kms, "Gets certs", "")
+}
+
+Container_Boundary(secrets_boundary, "Secrets Management") {
+    Container(vault, "Secret Vault", "HashiCorp Vault", "Centralized secrets")
+    Container(secret_rotation, "Secret Rotation", "Automated", "Key/password rotation")
+    Container(secret_audit, "Audit Logger", "Immutable log", "Secret access tracking")
+    Rel(vault, secret_rotation, "Manages", "")
+    Rel(vault, secret_audit, "Logs access", "")
+}
+
+Container_Boundary(network_boundary, "Network Security") {
+    Container(firewall, "Firewall", "Advanced FW", "Inbound/outbound filtering")
+    Container(ddos_protection, "DDoS Protection", "Cloudflare/AWS Shield", "Attack mitigation")
+    Container(waf, "Web App Firewall", "ModSecurity", "OWASP protection")
+    Container(ids_ips, "IDS/IPS", "Suricata", "Intrusion detection")
+}
+
+Container_Boundary(compliance_boundary, "Compliance & Governance") {
+    Container(audit_trail, "Immutable Audit Trail", "Append-only log", "SOX 404 compliance")
+    Container(data_classification, "Data Classification", "Tags & policies", "Data sensitivity")
+    Container(privacy_engine, "Privacy Engine", "GDPR enforcer", "Data rights management")
+    Container(compliance_monitor, "Compliance Monitor", "Automated scanning", "Violation detection")
+}
+
+Container_Boundary(application, "Application Layer") {
+    Container(api_server, "API Server", "Spring Security", "Authorization checks")
+    Container(session_mgr, "Session Manager", "Stateless JWT", "Token lifecycle")
+    Container(input_validator, "Input Validator", "Security rules", "Injection prevention")
+}
+
+Rel(oauth_server, rbac_engine, "Provides claims", "")
+Rel(rbac_engine, api_server, "Returns permissions", "")
+Rel(api_server, input_validator, "Validates input", "")
+Rel(api_server, session_mgr, "Manages tokens", "")
+Rel(session_mgr, oauth_server, "Validates token", "")
+
+Rel(application, tls_termination, "Uses TLS", "")
+Rel(api_server, data_encryption, "Encrypts data", "")
+Rel(data_encryption, kms, "Gets keys from", "")
+
+Rel(api_server, vault, "Gets secrets", "")
+Rel(vault, kms, "Backed by", "")
+
+Rel(firewall, application, "Filters traffic", "")
+Rel(ddos_protection, firewall, "Upstream", "")
+Rel(waf, application, "Filters requests", "")
+Rel(ids_ips, firewall, "Monitors traffic", "")
+
+Rel(application, audit_trail, "Logs actions", "")
+Rel(application, compliance_monitor, "Scans config", "")
+Rel(privacy_engine, data_classification, "Enforces", "")
+
+SHOW_LEGEND()
+@enduml

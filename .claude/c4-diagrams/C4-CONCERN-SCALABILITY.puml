@@ -1,0 +1,62 @@
+@startuml C4_Concern_Scalability
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Horizontal & Vertical Scaling
+
+Boundary(horizontal, "Horizontal Scaling (Multi-Node)") {
+    Component(node1, "YAWL Node 1", "Instance", "Active-active")
+    Component(node2, "YAWL Node 2", "Instance", "Active-active")
+    Component(nodeN, "YAWL Node N", "Instance", "Active-active")
+    Component(load_balancer, "Load Balancer", "Routing", "Distribution")
+    Component(state_replication, "StateReplication", "Sync", "Cross-node sync")
+    Component(distributed_cache, "DistributedCache", "Cache", "Shared state")
+}
+
+Boundary(vertical, "Vertical Scaling (Single Node)") {
+    Component(cpu_cores, "CPU Cores", "Threads", "+16 cores")
+    Component(memory_scaling, "Memory Scaling", "RAM", "+32GB RAM")
+    Component(virtual_thread_pool, "VirtualThreadPool", "Concurrency", "100s threads")
+    Component(jvm_tuning, "JVMTuning", "GC", "G1GC optimized")
+}
+
+Boundary(stateless_pattern, "Stateless Pattern") {
+    Component(external_state, "ExternalState", "DB", "All state external")
+    Component(session_affinity, "SessionAffinity", "Routing", "Client ↔ node")
+    Component(state_fetching, "StateFetching", "Load", "Load from DB")
+}
+
+Boundary(limits, "Scaling Limits") {
+    Component(horizontal_limit, "Horizontal: 1000+ nodes", "Scale", "Limited by coordination")
+    Component(vertical_limit, "Vertical: 64 cores", "Scale", "Limited by single node")
+    Component(optimal, "Optimal: Hybrid", "Balance", "100 nodes × 16 cores")
+}
+
+horizontal --> load_balancer: Uses
+node1 --> state_replication: Syncs
+node2 --> state_replication: Syncs
+state_replication --> distributed_cache: Updates
+vertical --> cpu_cores: Increases
+vertical --> virtual_thread_pool: Enables
+virtual_thread_pool --> jvm_tuning: Uses
+external_state --> stateless_pattern: Enables horizontal
+
+Note as N1
+Horizontal Scaling (Add nodes):
+- Load balancer distributes
+- State replicated across nodes
+- All nodes active-active
+- Scales to 1000+ nodes
+
+Vertical Scaling (More CPU/RAM):
+- More cores → more virtual threads
+- JVM GC tuning critical
+- Per-node limit ~64 cores
+
+Hybrid Approach:
+- 100 nodes × 16 cores each
+- Best of both worlds
+- Elastic cloud deployment
+End note
+
+SHOW_LEGEND()
+@enduml

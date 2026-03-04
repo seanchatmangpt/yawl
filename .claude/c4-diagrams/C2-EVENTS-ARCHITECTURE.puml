@@ -1,0 +1,74 @@
+@startuml C2_Events_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Event-Driven Architecture
+
+Container_Boundary(event_types, "Event Types") {
+    Component(task_created, "TaskCreated", "Emitted", "New task instance")
+    Component(task_assigned, "TaskAssigned", "Emitted", "Task assigned to user")
+    Component(task_started, "TaskStarted", "Emitted", "Task execution begins")
+    Component(task_completed, "TaskCompleted", "Emitted", "Task successfully completed")
+    Component(task_failed, "TaskFailed", "Emitted", "Task execution failed")
+    Component(case_created, "CaseCreated", "Emitted", "New case instance")
+    Component(case_completed, "CaseCompleted", "Emitted", "Case finished")
+    Component(case_suspended, "CaseSuspended", "Emitted", "Case paused")
+    Component(data_changed, "DataChanged", "Emitted", "Case data updated")
+}
+
+Container_Boundary(event_producers, "Event Producers") {
+    Container(engine_producer, "YNetRunner", "Producer", "Workflow engine events")
+    Container(task_producer, "TaskController", "Producer", "Task events")
+    Container(api_producer, "REST API", "Producer", "API-triggered events")
+}
+
+Container_Boundary(event_broker, "Event Broker") {
+    Container(kafka_broker, "Apache Kafka", "Distributed", "Event streaming")
+    Container(rabbitmq_broker, "RabbitMQ", "Alternative", "Message broker")
+    Container(event_schema, "Event Schema", "Avro/JSON Schema", "Contract definition")
+}
+
+Container_Boundary(event_subscriptions, "Event Subscriptions") {
+    Component(internal_subscribers, "Internal Subscribers", "Webhooks", "Internal listeners")
+    Component(external_subscribers, "External Subscribers", "Web hooks", "Partner integrations")
+    Component(ui_subscribers, "UI Subscribers", "WebSocket", "Real-time updates")
+}
+
+Container_Boundary(event_processors, "Event Processors") {
+    Container(async_processor, "Async Processor", "Flink/Spark", "Stream processing")
+    Container(alert_processor, "Alert Processor", "CEP", "Complex event processing")
+    Container(analytics_processor, "Analytics Processor", "Batch", "Event analytics")
+    Container(enrichment, "Event Enrichment", "Lookup service", "Add context")
+}
+
+Container_Boundary(event_storage, "Event Storage") {
+    ContainerDb(event_log, "Event Log", "Append-only", "Immutable event history")
+    ContainerDb(snapshot, "Snapshot Store", "Cache", "Event aggregates")
+    ContainerDb(dead_letter, "Dead Letter Queue", "Failed events", "Error handling")
+}
+
+Container_Boundary(event_delivery, "Delivery Guarantees") {
+    Component(at_least_once, "At-Least-Once", "Default", "May have duplicates")
+    Component(exactly_once, "Exactly-Once", "Transactional", "Idempotent processing")
+    Component(delivery_retry, "Retry Logic", "Exponential backoff", "Failed deliveries")
+}
+
+Rel(engine_producer, kafka_broker, "Publishes events", "")
+Rel(task_producer, kafka_broker, "Publishes events", "")
+Rel(api_producer, kafka_broker, "Publishes events", "")
+
+Rel(kafka_broker, event_schema, "Validates against", "")
+Rel(kafka_broker, async_processor, "Streams to", "")
+Rel(kafka_broker, alert_processor, "Streams to", "")
+
+Rel(async_processor, enrichment, "Enriches events", "")
+Rel(enrichment, event_log, "Stores in", "")
+
+Rel(kafka_broker, internal_subscribers, "Delivers to", "")
+Rel(kafka_broker, external_subscribers, "Delivers to", "")
+Rel(kafka_broker, ui_subscribers, "Delivers to", "WebSocket")
+
+Rel(async_processor, snapshot, "Updates", "")
+Rel(async_processor, analytics_processor, "Feeds", "")
+
+SHOW_LEGEND()
+@enduml

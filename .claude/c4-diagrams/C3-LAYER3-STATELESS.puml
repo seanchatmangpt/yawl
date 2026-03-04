@@ -1,0 +1,51 @@
+@startuml C3_Layer3_Stateless
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 3 - Stateless Engine Variant
+
+Container_Boundary(stateless, "yawl-stateless") {
+
+    Component_Boundary(stateless_model, "Stateless Execution Model") {
+        Component(event_sourced, "EventSourced", "Pattern", "All events recorded")
+        Component(snapshot_mgr, "SnapshotManager", "Optimization", "Periodic snapshots")
+        Component(event_replay, "EventReplay", "Restoration", "Replay from events")
+    }
+
+    Component_Boundary(state_externalization, "State Externalization") {
+        Component(state_serializer, "StateSerializer", "Encoding", "Serialize net state")
+        Component(state_store_ref, "StateStoreReference", "Location", "External store URI")
+        Component(state_fetcher, "StateFetcher", "Retrieval", "Fetch state from store")
+    }
+
+    Component_Boundary(comparison, "Comparison with Stateful") {
+        Component(stateful_storage, "Stateful: In-Process", "Storage", "Memory + DB")
+        Component(stateless_storage, "Stateless: External", "Storage", "External DB only")
+        Component(stateful_perf, "Stateful: Sub-ms latency", "Performance", "Local access")
+        Component(stateless_perf, "Stateless: Trade-off", "Performance", "Network latency")
+    }
+
+    Component_Boundary(use_cases, "Use Cases") {
+        Component(horizontal_scaling, "Horizontal Scaling", "Elastic", "Stateless → 100s nodes")
+        Component(cloud_native, "Cloud-Native", "Deployment", "FaaS/Serverless")
+        Component(disaster_recovery, "DR Friendly", "Recovery", "Any node can recover")
+    }
+
+    Component_Boundary(implementation, "Implementation Details") {
+        Component(context_conversion, "ContextConversion", "Marshalling", "Stateful ↔ Stateless")
+        Component(state_checksum, "StateChecksum", "Verification", "Integrity checking")
+        Component(versioning, "StateVersioning", "Evolution", "Handle schema changes")
+    }
+
+}
+
+Rel(event_sourced, snapshot_mgr, "Optimized by", "")
+Rel(snapshot_mgr, event_replay, "Feeds", "")
+Rel(state_serializer, state_store_ref, "Stores to", "")
+Rel(state_fetcher, state_serializer, "Deserializes from", "")
+Rel(stateless_storage, stateless_perf, "Impacts", "")
+Rel(stateful_storage, stateful_perf, "Impacts", "")
+Rel(horizontal_scaling, stateless_storage, "Enables", "")
+Rel(context_conversion, state_checksum, "Validates via", "")
+
+SHOW_LEGEND()
+@enduml

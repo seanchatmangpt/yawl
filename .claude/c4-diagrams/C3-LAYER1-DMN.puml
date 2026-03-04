@@ -1,0 +1,55 @@
+@startuml C3_Layer1_DMN
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 1 - yawl-dmn Decision Integration
+
+Container_Boundary(dmn, "yawl-dmn") {
+
+    Component_Boundary(dmn_model, "DMN Model") {
+        Component(dmn_definition, "DMNDefinition", "XML model", "DMN 1.3 spec")
+        Component(decision_table, "DecisionTable", "Rules", "Rows × columns")
+        Component(decision_logic, "DecisionLogic", "Expressions", "FEEL/JEXL")
+        Component(input_clause, "InputClause", "Input column", "Input data")
+        Component(output_clause, "OutputClause", "Output column", "Output data")
+    }
+
+    Component_Boundary(decision_engine, "Decision Engine") {
+        Component(rule_evaluator, "RuleEvaluator", "Row matching", "Condition evaluation")
+        Component(expression_parser, "ExpressionParser", "FEEL parser", "Expression evaluation")
+        Component(hit_policy, "HitPolicy", "Conflict resolution", "First/Collect/Unique")
+        Component(decision_executor, "DecisionExecutor", "Execution", "Rule execution")
+    }
+
+    Component_Boundary(integration_points, "YAWL Integration") {
+        Component(decision_task, "DecisionTask", "YAWL task", "DMN invocation")
+        Component(data_mapper, "DataMapper", "Data binding", "Input/output mapping")
+        Component(exception_handler, "ExceptionHandler", "Error handling", "Decision errors")
+    }
+
+    Component_Boundary(caching_perf, "Performance & Caching") {
+        Component(decision_cache, "DecisionCache", "Result caching", "Decision results")
+        Component(rule_cache, "RuleCache", "Compiled rules", "Pre-compiled")
+        Component(performance_monitor, "PerformanceMonitor", "Metrics", "Decision timing")
+    }
+
+}
+
+Rel(dmn_definition, decision_table, "Contains", "")
+Rel(decision_table, input_clause, "Has inputs", "")
+Rel(decision_table, output_clause, "Has outputs", "")
+Rel(decision_table, decision_logic, "Evaluates", "")
+
+Rel(rule_evaluator, expression_parser, "Parses conditions", "")
+Rel(rule_evaluator, hit_policy, "Applies policy", "")
+Rel(decision_executor, rule_evaluator, "Uses", "")
+
+Rel(decision_task, decision_executor, "Invokes", "")
+Rel(data_mapper, decision_task, "Maps data for", "")
+Rel(exception_handler, decision_executor, "Handles errors", "")
+
+Rel(decision_cache, decision_executor, "Caches results", "")
+Rel(rule_cache, rule_evaluator, "Uses cached", "")
+Rel(performance_monitor, decision_executor, "Monitors", "")
+
+SHOW_LEGEND()
+@enduml

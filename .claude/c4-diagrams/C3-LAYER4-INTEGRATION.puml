@@ -1,0 +1,61 @@
+@startuml C3_Layer4_Integration
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 4 - yawl-integration MCP/A2A
+
+Container_Boundary(integration, "yawl-integration") {
+
+    Component_Boundary(mcp_impl, "MCP Implementation") {
+        Component(mcp_server, "YawlMcpServer", "Server", "Model Context Protocol")
+        Component(mcp_resources, "ResourceHandler", "Resources", "Workflow definitions")
+        Component(mcp_tools, "ToolHandler", "Tools", "Executable operations")
+        Component(mcp_prompts, "PromptHandler", "Prompts", "Guidance templates")
+        Component(mcp_stdio, "StdioTransport", "Transport", "stdin/stdout")
+        Component(mcp_socket, "SocketTransport", "Transport", "TCP sockets")
+    }
+
+    Component_Boundary(a2a_impl, "A2A Implementation") {
+        Component(a2a_server, "YawlA2AServer", "Server", "Autonomous Agent Protocol")
+        Component(a2a_messages, "MessageHandler", "Messages", "Message routing")
+        Component(a2a_state_sync, "StateSyncHandler", "Sync", "State synchronization")
+        Component(a2a_tcp, "TCPTransport", "Transport", "TCP server")
+    }
+
+    Component_Boundary(protocol_bridge_impl, "Protocol Bridge") {
+        Component(translator, "MessageTranslator", "Conversion", "Format translation")
+        Component(capability_map, "CapabilityMapper", "Matching", "Feature mapping")
+        Component(error_converter, "ErrorConverter", "Errors", "Exception conversion")
+        Component(codec, "ProtocolCodec", "Serialization", "Protocol encoding")
+    }
+
+    Component_Boundary(agent_exec_impl, "Agent Executor") {
+        Component(agent_invoker, "AgentInvoker", "Invocation", "Workflow task trigger")
+        Component(agent_context, "AgentContext", "State", "Execution context")
+        Component(agent_results, "ResultHandler", "Results", "Outcome capture")
+        Component(agent_audit, "AuditRecorder", "Logging", "Action recording")
+    }
+
+}
+
+Rel(mcp_server, mcp_resources, "Routes to", "")
+Rel(mcp_server, mcp_tools, "Routes to", "")
+Rel(mcp_server, mcp_prompts, "Routes to", "")
+Rel(mcp_server, mcp_stdio, "Uses transport", "")
+Rel(mcp_server, mcp_socket, "Uses transport", "")
+
+Rel(a2a_server, a2a_messages, "Routes to", "")
+Rel(a2a_server, a2a_state_sync, "Routes to", "")
+Rel(a2a_server, a2a_tcp, "Uses transport", "")
+
+Rel(mcp_tools, translator, "Translates via", "")
+Rel(a2a_messages, translator, "Translates via", "")
+Rel(translator, capability_map, "Maps", "")
+Rel(translator, codec, "Encodes/decodes", "")
+
+Rel(capability_map, agent_invoker, "Routes to", "")
+Rel(agent_invoker, agent_context, "Manages", "")
+Rel(agent_context, agent_results, "Produces", "")
+Rel(agent_results, agent_audit, "Records", "")
+
+SHOW_LEGEND()
+@enduml

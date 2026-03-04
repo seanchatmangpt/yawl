@@ -1,0 +1,62 @@
+@startuml C2_Network_Topology
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Network Topology & Load Balancing
+
+Container_Boundary(internet, "Internet") {
+    Component(clients, "External Clients", "")
+}
+
+Container_Boundary(dmz, "DMZ / Perimeter") {
+    Container(firewall, "Firewall", "Advanced Threat Protection", "Inbound filtering")
+    Container(api_gateway, "API Gateway", "Kong/AWS API Gateway", "Rate limiting, auth")
+    Container(waf, "Web Application Firewall", "ModSecurity", "OWASP protection")
+}
+
+Container_Boundary(internal_net, "Internal Network (Private)") {
+    Container_Boundary(lb_tier, "Load Balancer Tier") {
+        Container(nlb, "Network Load Balancer", "Layer 4", "TCP/UDP routing")
+        Container(alb, "Application Load Balancer", "Layer 7", "HTTP/HTTPS routing")
+    }
+
+    Container_Boundary(app_tier, "Application Tier") {
+        Component(app_subnet_1, "App Subnet 1 (AZ-a)", "10.0.1.0/24", "")
+        Component(app_subnet_2, "App Subnet 2 (AZ-b)", "10.0.2.0/24", "")
+        Component(app_subnet_3, "App Subnet 3 (AZ-c)", "10.0.3.0/24", "")
+    }
+
+    Container_Boundary(data_tier, "Data Tier") {
+        Component(db_subnet, "Database Subnet", "10.0.10.0/24", "Private, no internet")
+        Component(cache_subnet, "Cache Subnet", "10.0.11.0/24", "Private, restricted access")
+    }
+
+    Container_Boundary(mgmt_tier, "Management Tier") {
+        Component(bastion, "Bastion Host", "Jump Server", "SSH access control")
+        Component(monitoring, "Monitoring Stack", "Private", "Internal observability")
+    }
+}
+
+Container_Boundary(vpn_partner, "VPN / Partner Networks") {
+    Component(partner_vpn, "Partner VPN", "Encrypted Tunnel", "B2B integrations")
+    Component(partner_network, "Partner Network", "", "External partners")
+}
+
+Rel(clients, internet, "Uses", "")
+Rel(internet, firewall, "Requests", "Port 443/80")
+Rel(firewall, waf, "Validated traffic", "")
+Rel(waf, api_gateway, "Filtered traffic", "")
+Rel(api_gateway, alb, "Routes", "HTTP")
+Rel(alb, app_subnet_1, "Distributes (AZ-a)", "")
+Rel(alb, app_subnet_2, "Distributes (AZ-b)", "")
+Rel(alb, app_subnet_3, "Distributes (AZ-c)", "")
+Rel(app_subnet_1, db_subnet, "Queries", "VPC peering")
+Rel(app_subnet_2, db_subnet, "Queries", "VPC peering")
+Rel(app_subnet_3, db_subnet, "Queries", "VPC peering")
+Rel(app_subnet_1, cache_subnet, "Cache ops", "VPC peering")
+Rel(monitoring, app_subnet_1, "Scrapes metrics", "")
+Rel(bastion, app_subnet_1, "SSH access", "Jump host")
+Rel(partner_vpn, firewall, "Encrypted", "IPsec")
+Rel(partner_network, partner_vpn, "VPN tunnel", "")
+
+SHOW_LEGEND()
+@enduml

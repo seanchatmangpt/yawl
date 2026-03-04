@@ -1,0 +1,53 @@
+@startuml C2_Deployment_Architectures
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Deployment Architectures
+
+Container_Boundary(dev_env, "Development Environment") {
+    Container(dev_app, "YAWL App", "Java 25", "Local instance")
+    ContainerDb(dev_db, "H2 Database", "In-Memory", "Development data (ephemeral)")
+    Container(dev_tools, "Dev Tools", "Maven, IDE, Git", "Local development")
+    Rel(dev_app, dev_db, "Reads/Writes", "JDBC")
+    Rel(dev_tools, dev_app, "Builds/Debugs", "")
+}
+
+Container_Boundary(staging_env, "Staging Environment") {
+    Container(staging_lb, "Load Balancer", "HAProxy", "Traffic routing")
+    Container(staging_app, "YAWL App (×3)", "Java 25 Cluster", "Staging instances")
+    ContainerDb(staging_db, "PostgreSQL", "Persistent", "Staging data")
+    Container(staging_cache, "Redis Cache", "Cache Layer", "Session/data cache")
+    Rel(staging_lb, staging_app, "Routes", "HTTP/HTTPS")
+    Rel(staging_app, staging_db, "Reads/Writes", "JDBC")
+    Rel(staging_app, staging_cache, "Cache ops", "Redis protocol")
+}
+
+Container_Boundary(prod_env, "Production Environment") {
+    Container(prod_lb, "Load Balancer", "F5/AWS ALB", "HA traffic routing")
+    Container(prod_app, "YAWL App (×8)", "Java 25 Cluster", "Production instances (HA)")
+    Container(prod_backup_app, "YAWL App Backup", "Java 25", "Standby cluster (failover)")
+    ContainerDb(prod_db, "PostgreSQL (HA)", "Primary + Replica", "Production data (replication)")
+    ContainerDb(prod_db_backup, "PostgreSQL Backup", "Standby", "Disaster recovery")
+    Container(prod_cache, "Redis Cluster", "HA Cluster", "Session/data cache (replicated)")
+    Container(prod_monitoring, "Prometheus + Grafana", "Monitoring", "Observability stack")
+    Rel(prod_lb, prod_app, "Routes active", "HTTP/HTTPS")
+    Rel(prod_lb, prod_backup_app, "Failover if needed", "HTTP/HTTPS")
+    Rel(prod_app, prod_db, "Reads/Writes", "JDBC (Active)")
+    Rel(prod_backup_app, prod_db_backup, "Reads (Standby)", "JDBC")
+    Rel(prod_app, prod_cache, "Cache ops", "Redis protocol")
+    Rel(prod_app, prod_monitoring, "Exports metrics", "Prometheus scrape")
+}
+
+Container_Boundary(backup_recovery, "Disaster Recovery") {
+    Container(dr_vault, "Encrypted Vault", "HSM", "Backup storage (encrypted)")
+    Container(dr_repl, "Data Replication", "Streaming", "Continuous sync to DR site")
+    Container(dr_runbook, "Runbook", "Automated", "DR procedures (automated)")
+    Rel(prod_db, dr_vault, "Encrypted backup", "")
+    Rel(prod_db, dr_repl, "Streams data", "")
+    Rel(dr_runbook, prod_backup_app, "Triggers failover", "")
+}
+
+Rel(staging_env, prod_env, "Promotes to", "Approval gate")
+Rel(dev_env, staging_env, "Pushes to", "CI/CD pipeline")
+
+SHOW_LEGEND()
+@enduml

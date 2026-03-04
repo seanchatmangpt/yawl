@@ -1,0 +1,136 @@
+@startuml C4_Pattern_ResourceAllocation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Resource-Based Task Assignment
+
+Boundary(task, "Task") {
+    Component(resource_task, "ResourceTask", "Task", "Assign to resource pool")
+    Component(requirements, "TaskRequirements", "Spec", "Required skills")
+}
+
+Boundary(resource_pool, "Resource Pool") {
+    Component(participants, "Participants", "People", "Available people")
+    Component(participant_skills, "ParticipantSkills", "Capabilities", "Who can do what")
+    Component(participant_capacity, "ParticipantCapacity", "Limits", "Max tasks")
+}
+
+Boundary(allocation_engine, "Allocation Engine") {
+    Component(skill_matcher, "SkillMatcher", "Logic", "Match skills to task")
+    Component(load_balancer, "LoadBalancer", "Logic", "Distribute evenly")
+    Component(capacity_checker, "CapacityChecker", "Logic", "Check availability")
+    Component(cost_optimizer, "CostOptimizer", "Logic", "Minimize cost")
+}
+
+Boundary(assignment, "Assignment") {
+    Component(assignment_strategy, "AssignmentStrategy", "Choose", "Specific person or pool")
+    Component(notification, "Notification", "Alert", "Notify assignee")
+    Component(worklist, "Worklist", "Queue", "Task appears in queue")
+}
+
+task --> requirements: Specifies
+requirements --> skill_matcher: Matches against
+participants --> participant_skills: Have
+participant_skills --> skill_matcher: Filtered by
+participant_capacity --> capacity_checker: Checked by
+skill_matcher --> load_balancer: Ranks candidates
+load_balancer --> cost_optimizer: Optimizes
+cost_optimizer --> assignment_strategy: Chooses
+assignment_strategy --> notification: Notifies
+notification --> worklist: Queues
+
+Note as N1
+Resource-Based Assignment Pattern:
+
+Task Requirements:
+- Required skills (Java, Spring, Microservices)
+- Minimum experience level (Senior)
+- Preferred location (same timezone)
+- Estimated duration (4-8 hours)
+- Priority (normal/high/critical)
+
+Resource Pool:
+- Participants (people, roles, systems)
+- Skills: Java, Spring, Microservices, etc.
+- Certifications: AWS Solutions Architect
+- Availability: Free/busy calendar
+- Capacity: Max concurrent tasks
+
+Allocation Algorithm:
+
+1. Filter by Required Skills
+   - Must have all required skills
+   - Consider certification level
+
+2. Check Capacity
+   - Max tasks: <5 concurrent
+   - Check calendar availability
+   - Consider workload trend
+
+3. Calculate Score
+   - Skill match: 80 points max
+   - Experience level: 10 points max
+   - Availability: 10 points max
+   - Score = skill + experience + availability
+
+4. Rank Candidates
+   - Sort by score (descending)
+   - Break ties by load (least busy first)
+   - Consider cost optimization
+
+5. Assign
+   - Assign to top-ranked candidate
+   - If unavailable: fallback to next
+   - If none available: escalate to manager
+
+Assignment Strategies:
+
+Direct Assignment:
+- Assign to specific person (best fit)
+- Example: Senior architect for design
+
+Pool Assignment:
+- Assign to role (anyone with role)
+- Example: "Any customer service rep"
+
+Round-Robin:
+- Distribute evenly across candidates
+- Track assignment count
+- Fair distribution
+
+Load-Balanced:
+- Assign to least-busy candidate
+- Minimize max load
+- Improve throughput
+
+Cost-Optimized:
+- Assign to lowest-cost candidate
+- Consider skill level premium
+- Balance cost vs quality
+
+Escalation Rules:
+
+If No Match:
+- Escalate to manager
+- Manager manually assigns
+- Or wait for participant
+
+If Multiple Equal:
+- Consider availability
+- Consider timezone
+- Consider team balance
+
+Constraints:
+- Never exceed max capacity
+- Respect skill requirements
+- Honor availability windows
+- Maintain SLA (assign <5 min)
+
+Notifications:
+- Email: Task assignment
+- Calendar: Block time
+- Worklist UI: Appear in task list
+- Slack: Optional reminder
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,47 @@
+@startuml C4_Pattern_MultiInstance
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Multi-Instance Tasks
+
+Boundary(parent, "Parent") {
+    Component(mi_task, "MI Task", "Multi-instance", "Create instances")
+    Component(mi_logic, "MILogic", "Coordinator", "Instance mgmt")
+}
+
+Boundary(instance_creation, "Instance Creation") {
+    Component(collection, "Collection", "Data", "Items to process")
+    Component(instance_factory, "InstanceFactory", "Creator", "Create per item")
+    Component(instances, "Instances", "Set", "MI task instances")
+}
+
+Boundary(execution_model, "Execution Model") {
+    Component(sequential, "Sequential", "Mode", "One at a time")
+    Component(parallel, "Parallel", "Mode", "Concurrent")
+    Component(mode_selector, "ModeSelector", "Choice", "Select mode")
+}
+
+Boundary(completion, "Completion Logic") {
+    Component(all_complete, "AllComplete", "Criterion", "All must finish")
+    Component(any_complete, "AnyComplete", "Criterion", "Any one finishes")
+    Component(quorum, "Quorum", "Criterion", "N out of M")
+}
+
+parent --> mi_task: Triggers
+mi_task --> collection: Gets items
+collection --> instance_factory: Creates instances
+instance_factory --> instances: Produces
+instances --> mode_selector: Selects mode
+mode_selector --> sequential: If sequential
+mode_selector --> parallel: If parallel
+instances --> all_complete: Completion criterion
+all_complete --> parent: All done
+
+Note as N1
+MI Task creates multiple instances
+Execution: Sequential or Parallel
+Completion: All/Any/Quorum complete
+Example: Approval from 3 managers
+End note
+
+SHOW_LEGEND()
+@enduml

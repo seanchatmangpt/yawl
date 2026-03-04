@@ -1,0 +1,81 @@
+@startuml C2_Data_Flow_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Complete Data Flow Architecture
+
+Container_Boundary(client_tier, "Client Tier") {
+    Container(web_client, "Web Client", "React SPA", "User interface")
+    Container(mobile_client, "Mobile Client", "Native App", "Mobile UI")
+    Container(api_client, "API Client", "REST/gRPC", "Programmatic access")
+}
+
+Container_Boundary(gateway_tier, "API Gateway Tier") {
+    Container(api_gateway, "API Gateway", "Kong/AWS", "Rate limiting, auth")
+    Container(auth_service, "Auth Service", "OAuth2/LDAP", "User authentication")
+    Container(request_queue, "Request Queue", "Kafka/RabbitMQ", "Async request processing")
+}
+
+Container_Boundary(app_tier, "Application Tier") {
+    Container(yawl_api, "YAWL REST API", "Spring Boot", "API endpoints")
+    Container(workflow_engine, "Workflow Engine", "YNetRunner", "Orchestration")
+    Container(task_executor, "Task Executor", "Virtual Threads", "Task execution")
+    Container(event_bus, "Event Bus", "Async", "Event publishing")
+}
+
+Container_Boundary(cache_tier, "Cache Tier") {
+    ContainerDb(l1_cache, "L1 Cache", "JVM Heap", "Request-level cache")
+    ContainerDb(l2_cache, "L2 Cache", "Redis", "Process-level cache")
+    ContainerDb(l3_cache, "L3 Cache", "CDN", "Static asset cache")
+}
+
+Container_Boundary(data_tier, "Data Tier") {
+    ContainerDb(primary_db, "Primary Database", "PostgreSQL", "Active data")
+    ContainerDb(replica_db, "Replica Database", "PostgreSQL", "Read-only replica")
+    ContainerDb(archive_db, "Archive Database", "PostgreSQL", "Historical data")
+    Container(data_logger, "Data Logger", "Immutable Log", "Audit trail")
+}
+
+Container_Boundary(background_tier, "Background Processing") {
+    Container(job_queue, "Job Queue", "Celery/RabbitMQ", "Async job processing")
+    Container(scheduler, "Job Scheduler", "Quartz", "Scheduled tasks")
+    Container(batch_processor, "Batch Processor", "Spark/Flink", "Batch analytics")
+}
+
+Container_Boundary(observability_tier, "Observability & Analytics") {
+    Container(metrics_store, "Metrics Store", "Prometheus", "Time-series metrics")
+    Container(log_store, "Log Store", "ELK Stack", "Centralized logging")
+    Container(trace_store, "Trace Store", "Jaeger", "Distributed tracing")
+    Container(analytics_store, "Analytics Store", "Data Warehouse", "OLAP analysis")
+}
+
+Rel(web_client, api_gateway, "HTTP/HTTPS requests", "")
+Rel(mobile_client, api_gateway, "REST API calls", "")
+Rel(api_client, api_gateway, "Programmatic access", "")
+
+Rel(api_gateway, auth_service, "Validates tokens", "")
+Rel(api_gateway, yawl_api, "Routes requests", "")
+Rel(api_gateway, request_queue, "Queues async requests", "")
+
+Rel(yawl_api, l1_cache, "Reads/writes", "Cache-aside")
+Rel(l1_cache, l2_cache, "Spills to", "")
+Rel(yawl_api, workflow_engine, "Invokes", "")
+Rel(workflow_engine, task_executor, "Dispatches tasks", "Virtual threads")
+Rel(task_executor, event_bus, "Publishes events", "")
+
+Rel(l2_cache, primary_db, "Load on miss", "")
+Rel(yawl_api, primary_db, "Reads/Writes", "")
+Rel(primary_db, replica_db, "Replication", "")
+Rel(replica_db, archive_db, "Archive", "Periodic copy")
+Rel(yawl_api, data_logger, "Audit trail", "")
+
+Rel(request_queue, job_queue, "Submits jobs", "")
+Rel(scheduler, job_queue, "Schedules tasks", "")
+Rel(job_queue, batch_processor, "Feeds data", "")
+
+Rel(yawl_api, metrics_store, "Pushes metrics", "Prometheus")
+Rel(yawl_api, log_store, "Sends logs", "Filebeat")
+Rel(workflow_engine, trace_store, "Traces execution", "OpenTelemetry")
+Rel(batch_processor, analytics_store, "Loads results", "")
+
+SHOW_LEGEND()
+@enduml

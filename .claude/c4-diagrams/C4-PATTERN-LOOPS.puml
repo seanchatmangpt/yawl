@@ -1,0 +1,32 @@
+@startuml C4_Pattern_Loops
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Loop Patterns
+
+Boundary(loops, "Loop Execution Patterns") {
+    Component(foreach_loop, "For-Each Loop", "Pattern", "Iterate collection")
+    Component(while_loop, "While Loop", "Pattern", "Condition-based")
+    Component(do_while, "Do-While Loop", "Pattern", "Execute-first")
+    Component(loop_handler, "LoopHandler", "Manager", "Loop logic")
+    Component(termination_check, "TerminationChecker", "Safety", "Loop termination")
+}
+
+Boundary(foreach_impl, "For-Each Implementation") {
+    Component(collection, "Collection", "Data", "Items to iterate")
+    Component(iterator, "Iterator", "State", "Current item")
+    Component(loop_task, "LoopTask", "Body", "Execute per item")
+    Component(completion_check, "CompletionChecker", "Logic", "Check done?")
+}
+
+foreach_impl --> loop_handler: Uses
+loop_handler --> termination_check: Validates
+
+Note as N1
+For-Each: FOREACH item IN collection
+While: WHILE condition()
+Do-While: DO { task } WHILE condition()
+Termination: Must exit eventually (safety)
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,72 @@
+@startuml C3_Layer2_VirtualThreads
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 2 - Java 25 Virtual Threads Architecture
+
+Container_Boundary(vt_mgmt, "Virtual Thread Management") {
+
+    Component_Boundary(executor_impl, "Executor Implementation") {
+        Component(vt_executor, "VirtualThreadPerTaskExecutor", "Executor", "One VT per task")
+        Component(vt_factory, "VirtualThreadFactory", "Creation", "VirtualThread.ofVirtual()")
+        Component(executor_service, "ExecutorService", "Interface", "java.util.concurrent")
+    }
+
+    Component_Boundary(carrier_mgmt, "Carrier Thread Management") {
+        Component(carrier_pool, "CarrierPool", "Scheduler", "ForkJoinPool")
+        Component(carrier_pinning, "CarrierPinning", "Tuning", "Pin for blocking I/O")
+        Component(carrier_monitoring, "CarrierMonitoring", "Metrics", "Carrier utilization")
+    }
+
+    Component_Boundary(virtual_thread_op, "Virtual Thread Operations") {
+        Component(vt_parking, "ParkingMechanism", "Suspension", "LockSupport.park()")
+        Component(vt_unparking, "UnparkingMechanism", "Resumption", "LockSupport.unpark()")
+        Component(vt_lifecycle, "VTLifecycle", "States", "NEW → RUNNING → TERMINATED")
+    }
+
+    Component_Boundary(synchronization, "Synchronization Primitives") {
+        Component(scoped_values, "ScopedValues", "Context", "Thread-local replacement")
+        Component(structured_task_scope, "StructuredTaskScope", "Scope", "Lifetime management")
+        Component(scope_shutdown, "ScopeShutdown", "Cleanup", "Graceful termination")
+    }
+
+    Component_Boundary(backpressure_vt, "Backpressure & Flow Control") {
+        Component(vt_queue, "VirtualThreadQueue", "Queue", "Unbounded or bounded")
+        Component(queue_take, "QueueTake", "Blocking take()", "Carrier parking (good!)")
+        Component(queue_poll, "QueuePoll", "Non-blocking poll()", "Avoid for parking")
+        Component(backpressure_monitor, "BackpressureMonitor", "Metrics", "Queue depth")
+    }
+
+    Component_Boundary(perf_tuning, "Performance Tuning") {
+        Component(stack_size, "StackSizeConfig", "Memory", "-Djdk.virtualThreadScheduler.parallelism")
+        Component(bulk_unpark, "BulkUnpark", "Batching", "Reduce context switches")
+        Component(cpu_affinity, "CPUAffinity", "Pinning", "NUMA awareness")
+    }
+
+    Component_Boundary(diagnostics, "Diagnostics & Debugging") {
+        Component(vt_dump, "VirtualThreadDump", "Debugging", "jcmd dump")
+        Component(vt_flight_recorder, "FlightRecorder", "Profiling", "JFR events")
+        Component(vt_metrics, "VTMetrics", "Observability", "Count, timing")
+    }
+
+}
+
+Rel(vt_factory, vt_executor, "Creates threads for", "")
+Rel(vt_executor, executor_service, "Implements", "")
+Rel(executor_service, carrier_pool, "Backed by", "")
+Rel(carrier_pinning, carrier_pool, "Tunes", "")
+
+Rel(vt_parking, vt_unparking, "Paired with", "")
+Rel(vt_lifecycle, vt_parking, "Uses for suspension", "")
+
+Rel(scoped_values, structured_task_scope, "Used by", "")
+Rel(scope_shutdown, structured_task_scope, "Manages", "")
+
+Rel(queue_take, backpressure_vt, "Parks carrier via", "")
+Rel(queue_poll, backpressure_monitor, "May spin via", "avoid!")
+Rel(backpressure_monitor, carrier_monitoring, "Reports to", "")
+
+Rel(vt_dump, vt_flight_recorder, "Uses for", "")
+Rel(vt_metrics, carrier_monitoring, "Includes", "")
+
+SHOW_LEGEND()
+@enduml

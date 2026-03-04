@@ -1,0 +1,70 @@
+@startuml C2_REST_API_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - REST API Architecture
+
+Container_Boundary(workflow_resources, "Workflow Resources") {
+    Component(nets_endpoint, "GET /api/v1/nets", "List workflows")
+    Component(net_detail, "GET /api/v1/nets/{id}", "Get workflow details")
+    Component(net_create, "POST /api/v1/nets", "Create workflow")
+    Component(net_update, "PUT /api/v1/nets/{id}", "Update workflow")
+    Component(net_delete, "DELETE /api/v1/nets/{id}", "Delete workflow")
+}
+
+Container_Boundary(task_resources, "Task Resources") {
+    Component(tasks_endpoint, "GET /api/v1/tasks", "List tasks")
+    Component(task_detail, "GET /api/v1/tasks/{id}", "Get task details")
+    Component(task_assign, "POST /api/v1/tasks/{id}/assign", "Assign to user")
+    Component(task_complete, "POST /api/v1/tasks/{id}/complete", "Mark complete")
+    Component(task_delegate, "POST /api/v1/tasks/{id}/delegate", "Delegate task")
+}
+
+Container_Boundary(execution_resources, "Execution Resources") {
+    Component(cases_endpoint, "GET /api/v1/cases", "List case instances")
+    Component(case_detail, "GET /api/v1/cases/{id}", "Get case details")
+    Component(case_create, "POST /api/v1/cases", "Start new case")
+    Component(case_cancel, "DELETE /api/v1/cases/{id}", "Cancel case")
+}
+
+Container_Boundary(data_resources, "Data Resources") {
+    Component(data_read, "GET /api/v1/data/{id}", "Get case data")
+    Component(data_update, "PUT /api/v1/data/{id}", "Update case data")
+    Component(params_endpoint, "GET /api/v1/params", "Get parameters")
+}
+
+Container_Boundary(admin_resources, "Admin Resources") {
+    Component(users_endpoint, "GET /api/v1/users", "List users")
+    Component(roles_endpoint, "GET /api/v1/roles", "List roles")
+    Component(config_endpoint, "GET /api/v1/config", "Get configuration")
+    Component(config_update, "PUT /api/v1/config", "Update configuration")
+}
+
+Container_Boundary(api_gateway, "API Gateway Features") {
+    Component(rate_limit, "Rate Limiting", "Per-user/IP", "X-RateLimit-* headers")
+    Component(caching, "Response Caching", "HTTP cache headers", "ETags, Last-Modified")
+    Component(compression, "Compression", "gzip/deflate", "Content-Encoding")
+    Component(versioning, "API Versioning", "URL-based: /v1/, /v2/", "Deprecation headers")
+}
+
+Container_Boundary(error_handling, "Error Handling") {
+    Component(validation_errors, "400 Bad Request", "JSON schema validation", "Invalid input")
+    Component(auth_errors, "401 Unauthorized", "Missing/invalid token", "Authentication failure")
+    Component(forbidden_errors, "403 Forbidden", "Permission denied", "Authorization failure")
+    Component(not_found, "404 Not Found", "Resource not found", "")
+    Component(conflict_errors, "409 Conflict", "Concurrency issues", "Stale data")
+    Component(server_errors, "500 Server Error", "Internal errors", "With error codes")
+}
+
+Container_Boundary(response_format, "Response Format") {
+    Component(success_response, "200 OK", "JSON body", "{data: {...}, meta: {...}}")
+    Component(list_response, "List Response", "Pagination", "{data: [...], pagination: {...}}")
+    Component(error_response, "Error Response", "Consistent format", "{error: {...}, timestamp: ...}")
+}
+
+Rel(nets_endpoint, rate_limit, "Uses", "")
+Rel(task_complete, caching, "Invalidates", "")
+Rel(case_create, validation_errors, "May return", "")
+Rel(data_update, conflict_errors, "May return", "")
+
+SHOW_LEGEND()
+@enduml

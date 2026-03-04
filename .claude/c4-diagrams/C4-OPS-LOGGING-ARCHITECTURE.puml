@@ -1,0 +1,105 @@
+@startuml C4_Ops_LoggingArchitecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Operations - Comprehensive Logging Architecture
+
+Boundary(sources, "Log Sources") {
+    Component(app_logs, "ApplicationLogs", "Code", "SLF4J logs")
+    Component(request_logs, "RequestLogs", "HTTP", "Nginx access")
+    Component(error_logs, "ErrorLogs", "Exceptions", "Stack traces")
+    Component(audit_logs, "AuditLogs", "Events", "User actions")
+}
+
+Boundary(collection, "Collection Layer") {
+    Component(filebeat, "Filebeat", "Agent", "Log collection")
+    Component(fluent, "Fluent Bit", "Alternative", "Lightweight")
+    Component(log_buffer, "LogBuffer", "Queue", "Buffering")
+}
+
+Boundary(pipeline, "Processing Pipeline") {
+    Component(parser, "LogParser", "Transform", "JSON parsing")
+    Component(enricher, "LogEnricher", "Context", "Add metadata")
+    Component(filter, "LogFilter", "Selection", "Sensitive data")
+}
+
+Boundary(storage, "Storage") {
+    Component(elasticsearch, "Elasticsearch", "Index", "Full-text search")
+    Component(s3, "S3/GCS", "Archive", "Long-term storage")
+}
+
+Boundary(visualization, "Visualization & Analysis") {
+    Component(kibana, "Kibana", "Dashboard", "Log exploration")
+    Component(splunk, "Splunk", "Alternative", "Enterprise logging")
+}
+
+sources --> filebeat: Collects
+filebeat --> log_buffer: Buffers
+log_buffer --> parser: Parses
+parser --> enricher: Enriches
+enricher --> filter: Filters
+filter --> elasticsearch: Indexes
+elasticsearch --> s3: Archives
+elasticsearch --> kibana: Powers dashboard
+
+Note as N1
+Logging Architecture:
+
+Log Sources:
+- Application: SLF4J (INFO, WARN, ERROR)
+- HTTP: Nginx access/error logs
+- Errors: Full stack traces + context
+- Audit: User actions, API calls
+
+Collection:
+- Filebeat: Primary log collector
+- Fluent Bit: Lightweight alternative
+- Heartbeat: Health check logs
+- Buffering: Prevent loss on spike
+
+Pipeline:
+- Parser: Convert to JSON
+- Enricher: Add hostname, version, trace ID
+- Filter: Remove sensitive data (PII)
+
+Storage:
+- Elasticsearch: Hot storage (current day)
+- S3/GCS: Cold storage (>7 days)
+- TTL: Keep for 90 days
+
+Visualization:
+- Kibana: Real-time exploration
+- Pre-built dashboards: Errors, latency
+- Alerts: Critical errors → PagerDuty
+
+Log Levels:
+- ERROR: System errors, must fix
+- WARN: Potential issues, investigate
+- INFO: Important events, track behavior
+- DEBUG: Development only (not prod)
+
+Log Format (JSON):
+{
+  "timestamp": "2026-03-04T12:34:56Z",
+  "level": "ERROR",
+  "logger": "YNetRunner",
+  "message": "Task failed",
+  "traceId": "abc-123",
+  "userId": "user-456",
+  "duration": 1234
+}
+
+SLA:
+- Log delivery: <1 second
+- Search latency: <5 seconds
+- Retention: 90 days
+- Availability: 99.9%
+
+Optimization:
+- Batch writing to Elasticsearch
+- Compression in S3
+- Sampling for high-volume logs
+- Retention policies per log type
+End note
+
+SHOW_LEGEND()
+@enduml

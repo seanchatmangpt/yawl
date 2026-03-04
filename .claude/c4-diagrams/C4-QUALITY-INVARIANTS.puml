@@ -1,0 +1,73 @@
+@startuml C4_Quality_Invariants
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Quality Gate - Q-Invariants Validation
+
+Boundary(code, "Code") {
+    Component(impl_code, "Implementation Code", "Java", "Real implementations")
+}
+
+Boundary(invariant_checks, "Q-Invariant Checks") {
+    Component(real_impl_check, "RealImplementationChecker", "Validation", "Not mock/stub")
+    Component(exception_thrower, "ExceptionThrower", "Validation", "Throws on error")
+    Component(no_lie_check, "NoLieChecker", "Validation", "Code = docs")
+    Component(no_fallback_check, "NoFallbackChecker", "Validation", "No silent degradation")
+}
+
+Boundary(invariant_rules, "Invariant Rules") {
+    Component(rule1, "Rule 1: real_impl ∨ throw", "Logic", "Must be real or throw")
+    Component(rule2, "Rule 2: ¬mock ∧ ¬stub", "Logic", "No fakes allowed")
+    Component(rule3, "Rule 3: ¬silent_fallback", "Logic", "No degradation")
+    Component(rule4, "Rule 4: code matches docs", "Logic", "Be truthful")
+}
+
+Boundary(validation_engine_q, "Validation Engine") {
+    Component(invariant_validator, "InvariantValidator", "Orchestrator", "Runs all checks")
+    Component(receipt_q, "InvariantReceipt", "Report", "JSON report")
+}
+
+Boundary(gates_q, "Gates") {
+    Component(pass_gate_q, "PASS", "Green", "All invariants hold")
+    Component(fail_gate_q, "FAIL", "Red", "Violations found")
+}
+
+impl_code --> real_impl_check: Validates
+impl_code --> exception_thrower: Validates
+impl_code --> no_lie_check: Validates
+impl_code --> no_fallback_check: Validates
+
+rule1 --> real_impl_check: Implements
+rule2 --> exception_thrower: Implements
+rule3 --> no_fallback_check: Implements
+rule4 --> no_lie_check: Implements
+
+real_impl_check --> invariant_validator: Reports
+exception_thrower --> invariant_validator: Reports
+no_lie_check --> invariant_validator: Reports
+no_fallback_check --> invariant_validator: Reports
+
+invariant_validator --> receipt_q: Generates
+receipt_q --> pass_gate_q: All valid
+receipt_q --> fail_gate_q: Violations found
+
+Note as N1
+Q-Invariants enforce "real code" principle
+Rules:
+1. real_impl ∨ throw - Must be real implementation or throw exception
+2. ¬mock ∧ ¬stub - No mocks/stubs allowed
+3. ¬silent_fallback - No silent degradation
+4. code matches docs - Documentation must match code
+
+Invalid:
+❌ return "default"
+❌ log.error() instead of throw
+❌ catch and return null
+
+Valid:
+✅ Real implementation
+✅ throw new UnsupportedOperationException()
+✅ Documentation matches
+End note
+
+SHOW_LEGEND()
+@enduml

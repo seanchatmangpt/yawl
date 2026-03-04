@@ -1,0 +1,57 @@
+@startuml C4_Pattern_Subnets
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Sub-Net Composition
+
+Boundary(parent, "Parent Net") {
+    Component(parent_net, "ParentNet", "Workflow", "Main workflow")
+    Component(subnet_task, "SubNetTask", "Task", "Invoke subnet")
+}
+
+Boundary(subnet_invocation, "Sub-Net Invocation") {
+    Component(subnet_selector, "SubNetSelector", "Logic", "Choose subnet")
+    Component(param_mapper_in, "ParameterMapper (In)", "Mapping", "Parent → subnet")
+    Component(subnet_context, "SubNetContext", "State", "Execution context")
+}
+
+Boundary(subnet, "Sub-Net") {
+    Component(subnet_net, "SubNet", "Workflow", "Nested workflow")
+    Component(subnet_tasks, "Tasks", "Execution", "Sub-net tasks")
+    Component(subnet_completion, "CompletionChecker", "Logic", "Sub-net done?")
+}
+
+Boundary(return_path, "Return Path") {
+    Component(param_mapper_out, "ParameterMapper (Out)", "Mapping", "Subnet → parent")
+    Component(result_handler, "ResultHandler", "Logic", "Return to parent")
+}
+
+parent_net --> subnet_task: Invokes
+subnet_task --> subnet_selector: Selects subnet
+subnet_selector --> param_mapper_in: Maps parameters
+param_mapper_in --> subnet_context: Creates context
+
+subnet_context --> subnet_net: Enters
+subnet_net --> subnet_tasks: Executes
+subnet_tasks --> subnet_completion: Completes
+subnet_completion --> param_mapper_out: Maps results
+param_mapper_out --> result_handler: Returns
+result_handler --> parent_net: Continues
+
+Note as N1
+Sub-Net Pattern:
+1. Parent invokes sub-net task
+2. Select specific sub-net implementation
+3. Map input parameters (parent → subnet)
+4. Execute sub-net tasks
+5. Collect results from sub-net
+6. Map output parameters (subnet → parent)
+7. Return to parent workflow
+
+Use Cases:
+- Code reuse (shared sub-workflows)
+- Modular design (encapsulation)
+- Exception handlers (alternative flows)
+End note
+
+SHOW_LEGEND()
+@enduml

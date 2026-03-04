@@ -1,0 +1,65 @@
+@startuml C2_Disaster_Recovery
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Disaster Recovery & Business Continuity
+
+Container_Boundary(primary_site, "Primary Site (Active)") {
+    Container(primary_app, "YAWL Cluster", "Active", "Production services")
+    ContainerDb(primary_db, "PostgreSQL (Primary)", "Active", "Production data")
+    Container(primary_backups, "Backup Service", "Continuous", "Real-time backups")
+    Rel(primary_app, primary_db, "Reads/Writes", "")
+    Rel(primary_app, primary_backups, "Sends data", "")
+}
+
+Container_Boundary(dr_site, "Disaster Recovery Site (Standby)") {
+    Container(dr_app, "YAWL Cluster", "Hot standby", "Replicated services")
+    ContainerDb(dr_db, "PostgreSQL (Standby)", "Read-only", "Replicated data")
+    Container(dr_monitoring, "Monitoring", "Active", "Health checks")
+    Rel(dr_db, dr_monitoring, "Monitored by", "")
+    Rel(dr_monitoring, dr_app, "Health status", "")
+}
+
+Container_Boundary(archive_site, "Archive & Compliance") {
+    ContainerDb(archive_db, "Archive Database", "Immutable", "Historical data (encrypted)")
+    Container(vault_storage, "Vault Storage", "Encrypted", "Encrypted backup copies")
+    Container(compliance_records, "Compliance Records", "Audit trail", "Regulatory compliance")
+}
+
+Container_Boundary(disaster_response, "Disaster Response") {
+    Container(failover_orchestrator, "Failover Orchestrator", "Automated", "Automatic failover logic")
+    Container(runbook_executor, "Runbook Executor", "Procedures", "Disaster procedures")
+    Container(notification_service, "Notification Service", "Alerting", "Incident escalation")
+    Container(recovery_testing, "Recovery Testing", "Regular drills", "RTO/RPO validation")
+}
+
+Container_Boundary(replication_layer, "Data Replication & Streaming") {
+    Container(wal_stream, "WAL Streaming", "PostgreSQL WAL", "Write-Ahead Log shipping")
+    Container(replication_lag, "Replication Monitor", "Metrics", "Lag monitoring")
+    Container(failover_trigger, "Failover Trigger", "Automated", "Promotion decision")
+}
+
+Container_Boundary(recovery_metrics, "Recovery Metrics") {
+    Component(rto_target, "RTO Target", "1 hour", "Recovery Time Objective")
+    Component(rpo_target, "RPO Target", "5 minutes", "Recovery Point Objective")
+    Component(rto_actual, "RTO Actual", "Measured", "From last drill")
+    Component(rpo_actual, "RPO Actual", "Measured", "From last drill")
+}
+
+Rel(primary_site, dr_site, "Replicates data", "Continuous")
+Rel(primary_backups, vault_storage, "Stores backups", "Encrypted")
+Rel(primary_db, wal_stream, "Streams WAL", "Network")
+Rel(wal_stream, dr_db, "Applies changes", "")
+
+Rel(dr_monitoring, failover_orchestrator, "Triggers on failure", "")
+Rel(failover_orchestrator, failover_trigger, "Commands", "")
+Rel(failover_trigger, dr_app, "Promotes to active", "")
+Rel(failover_orchestrator, runbook_executor, "Executes procedures", "")
+Rel(runbook_executor, notification_service, "Sends alerts", "")
+
+Rel(replication_lag, recovery_metrics, "Feeds into", "")
+Rel(recovery_testing, rto_actual, "Updates actual", "")
+Rel(recovery_testing, rpo_actual, "Updates actual", "")
+Rel(compliance_records, archive_db, "Stores in", "")
+
+SHOW_LEGEND()
+@enduml

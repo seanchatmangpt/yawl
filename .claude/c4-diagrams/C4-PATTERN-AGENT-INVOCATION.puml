@@ -1,0 +1,54 @@
+@startuml C4_Pattern_AgentInvocation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Autonomous Agent Invocation
+
+Boundary(yawl, "YAWL Workflow") {
+    Component(agent_task, "AgentTask", "Task", "Invoke agent")
+    Component(agent_config, "AgentConfig", "Config", "Agent details")
+}
+
+Boundary(protocol_layer, "Protocol Layer") {
+    Component(mcp_client, "MCPClient", "MCP", "Claude agents")
+    Component(a2a_client, "A2AClient", "A2A", "Z.AI agents")
+    Component(protocol_switch, "ProtocolSwitch", "Router", "Select protocol")
+}
+
+Boundary(agent_execution, "Agent Execution") {
+    Component(agent_context, "AgentContext", "State", "Execution context")
+    Component(task_spec, "TaskSpec", "Spec", "What to do")
+    Component(result_handler, "ResultHandler", "Outcomes", "Collect results")
+}
+
+Boundary(external_agent, "External Agent") {
+    Component(mcp_agent, "Claude Agent", "LLM", "MCP-enabled")
+    Component(a2a_agent, "Z.AI Agent", "Engine", "A2A-enabled")
+}
+
+agent_task --> agent_config: Uses config
+agent_config --> protocol_switch: Selects protocol
+protocol_switch --> mcp_client: If MCP
+protocol_switch --> a2a_client: If A2A
+
+mcp_client --> agent_context: Sends context
+a2a_client --> agent_context: Sends context
+agent_context --> task_spec: Describes task
+task_spec --> mcp_agent: Invokes
+task_spec --> a2a_agent: Invokes
+
+mcp_agent --> result_handler: Returns result
+a2a_agent --> result_handler: Returns result
+result_handler --> agent_task: Completes
+
+Note as N1
+Agent Invocation:
+- MCP: Claude Code agents
+- A2A: Z.AI autonomous agents
+- Context: Workflow state + task description
+- Result: Agent output (structured JSON)
+
+Example: "Review expense report and approve if <$1000"
+End note
+
+SHOW_LEGEND()
+@enduml

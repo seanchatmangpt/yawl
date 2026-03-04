@@ -1,0 +1,71 @@
+@startuml C4_Ops_Monitoring
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Operations - Monitoring & Incident Response
+
+Boundary(monitoring, "Monitoring Stack") {
+    Component(prometheus, "Prometheus", "Metrics", "Time-series DB")
+    Component(grafana, "Grafana", "Visualization", "Dashboards")
+    Component(jaeger, "Jaeger", "Tracing", "Distributed traces")
+    Component(elasticsearch, "Elasticsearch", "Logs", "Log aggregation")
+}
+
+Boundary(alerting, "Alerting & Escalation") {
+    Component(alert_rules, "AlertRules", "Thresholds", "CPU >80%, latency >100ms")
+    Component(alert_manager, "AlertManager", "Logic", "Alert routing")
+    Component(pagerduty, "PagerDuty", "On-call", "Incident escalation")
+    Component(notifications, "Notifications", "Delivery", "Slack/Email/SMS")
+}
+
+Boundary(dashboards, "Dashboards") {
+    Component(health_dash, "HealthDashboard", "Overview", "System health")
+    Component(perf_dash, "PerformanceDashboard", "Metrics", "Throughput/latency")
+    Component(trace_dash, "TraceDashboard", "Traces", "Request flow")
+    Component(log_dash, "LogDashboard", "Logs", "Error investigation")
+}
+
+Boundary(incident_response, "Incident Response") {
+    Component(incident_detection, "IncidentDetection", "Alert", "Alert triggered")
+    Component(runbook, "Runbook", "Procedures", "Troubleshooting steps")
+    Component(remediation, "Remediation", "Action", "Fix the issue")
+    Component(postmortem, "PostMortem", "Learning", "Root cause analysis")
+}
+
+prometheus --> grafana: Powers
+prometheus --> alert_rules: Evaluates
+alert_rules --> alert_manager: Triggers
+alert_manager --> pagerduty: Escalates
+pagerduty --> notifications: Sends
+
+prometheus --> health_dash: Data for
+jaeger --> trace_dash: Data for
+elasticsearch --> log_dash: Data for
+
+incident_detection --> runbook: Consults
+runbook --> remediation: Guides
+remediation --> postmortem: Documents
+
+Note as N1
+Monitoring Objectives:
+1. Detect anomalies early
+2. Alert on SLA violation
+3. Enable rapid investigation
+4. Automate common fixes
+5. Learn from incidents
+
+Key Metrics:
+- Latency (p50, p95, p99)
+- Error rate (%)
+- Throughput (tasks/sec)
+- Resource utilization (CPU, Memory)
+
+Alert Thresholds:
+- Latency >100ms (warning), >1s (critical)
+- Error rate >5% (warning), >10% (critical)
+- CPU >80% (warning), >95% (critical)
+
+Response Time Target: <5 minutes to incident resolution
+End note
+
+SHOW_LEGEND()
+@enduml

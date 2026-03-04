@@ -1,0 +1,101 @@
+@startuml C4_Ecosystem_Marketplace
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Ecosystem - Skills & Agents Marketplace
+
+Boundary(marketplace, "Marketplace Platform") {
+    Component(listing_mgmt, "ListingManagement", "Catalog", "Publish/discover")
+    Component(search_engine, "SearchEngine", "Discovery", "Full-text search")
+    Component(rating_system, "RatingSystem", "Trust", "Star ratings")
+    Component(payment_processor, "PaymentProcessor", "Commerce", "Billing")
+}
+
+Boundary(skill_providers, "Skill Providers") {
+    Component(developer, "Developer", "Creator", "Write skills")
+    Component(skill_definition, "SkillDefinition", "Package", "Manifest + code")
+    Component(version_mgmt, "VersionManagement", "Release", "Semantic versioning")
+}
+
+Boundary(skill_catalog, "Skill Catalog") {
+    Component(approval_gate, "ApprovalGate", "QA", "Code review + tests")
+    Component(published_skill, "PublishedSkill", "Distribution", "Available for use")
+    Component(usage_tracking, "UsageTracking", "Analytics", "Download counts")
+}
+
+Boundary(skill_consumers, "Skill Consumers") {
+    Component(workflow_developer, "WorkflowDeveloper", "User", "Build workflows")
+    Component(skill_discovery, "SkillDiscovery", "Browse", "Find + evaluate")
+    Component(skill_integration, "SkillIntegration", "Use", "Import into workflow")
+}
+
+Boundary(agent_providers, "Autonomous Agent Providers") {
+    Component(agent_dev, "Agent Developer", "Creator", "Build agents")
+    Component(agent_definition, "AgentDefinition", "Package", "MCP/A2A spec")
+    Component(agent_testing, "AgentTesting", "Validation", "Protocol testing")
+}
+
+Boundary(agent_catalog, "Agent Catalog") {
+    Component(agent_approval, "AgentApproval", "QA", "Protocol validation")
+    Component(published_agent, "PublishedAgent", "Distribution", "Available for workflow")
+    Component(agent_usage, "AgentUsage", "Analytics", "Usage metrics")
+}
+
+developer --> skill_definition: Creates
+skill_definition --> approval_gate: Submits
+approval_gate --> published_skill: If approved
+published_skill --> listing_mgmt: Lists
+listing_mgmt --> search_engine: Indexes
+workflow_developer --> search_engine: Searches
+search_engine --> skill_discovery: Returns
+skill_discovery --> skill_integration: Imports
+skill_integration --> published_skill: Downloads
+
+agent_dev --> agent_definition: Creates
+agent_definition --> agent_testing: Tests
+agent_testing --> agent_approval: Submits
+agent_approval --> published_agent: If approved
+published_agent --> listing_mgmt: Lists
+
+rating_system --> published_skill: Reviews
+rating_system --> published_agent: Reviews
+payment_processor --> usage_tracking: Tracks revenue
+
+Note as N1
+Marketplace Vision:
+
+Skills:
+- Reusable task implementations
+- Package: code + manifest + tests
+- Examples: "SendEmail", "ParseJSON", "CallAPI"
+- Version: Semantic versioning (1.0.0)
+- Discovery: Search + filter + rate
+- Integration: Import into workflow
+- Revenue: Developer gets % of usage
+
+Autonomous Agents:
+- Workflow-callable agents
+- Implements: MCP or A2A protocol
+- Examples: "ReviewDocument", "ApproveExpense", "GenerateReport"
+- Testing: Protocol compliance
+- Discovery: Marketplace listing
+- Integration: Invoke as task
+- Revenue: Agent provider gets % of calls
+
+Marketplace Features:
+1. Listing Management: Publish/unpublish
+2. Search Engine: Full-text + filters
+3. Rating System: Stars + reviews
+4. Payment: Subscription/usage-based
+5. Analytics: Usage tracking
+6. Quality Gates: Code review, tests, security scan
+
+Trust Signals:
+- Author reputation (5 stars, 1000+ downloads)
+- Test coverage (≥80%)
+- Security scan (no vulnerabilities)
+- Community reviews
+- Official certification (YAWL Foundation)
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,136 @@
+@startuml C4_Ecosystem_Partners
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Ecosystem - Strategic Partner Integration
+
+Boundary(cloud_providers, "Cloud Providers") {
+    Component(aws, "AWS", "Cloud", "EC2, RDS, S3")
+    Component(gcp, "Google Cloud", "Cloud", "Compute, Firestore")
+    Component(azure, "Microsoft Azure", "Cloud", "App Service, SQL")
+}
+
+Boundary(databases, "Database Partners") {
+    Component(postgres, "PostgreSQL", "Database", "Primary DB")
+    Component(mysql, "MySQL", "Database", "Alternative")
+    Component(mongodb, "MongoDB", "Database", "NoSQL option")
+}
+
+Boundary(monitoring_partners, "Monitoring Partners") {
+    Component(datadog, "Datadog", "APM", "Full observability")
+    Component(newrelic, "New Relic", "APM", "Application monitoring")
+    Component(splunk, "Splunk", "Log", "Enterprise logging")
+}
+
+Boundary(integration_partners, "Integration Partners") {
+    Component(stripe, "Stripe", "Payments", "Payment processing")
+    Component(okta, "Okta", "Auth", "Identity management")
+    Component(slack, "Slack", "Messaging", "Notifications")
+}
+
+Boundary(performance_partners, "Performance Partners") {
+    Component(redis, "Redis", "Cache", "Caching layer")
+    Component(kafka, "Apache Kafka", "Streaming", "Event streaming")
+    Component(elasticsearch, "Elasticsearch", "Search", "Full-text search")
+}
+
+Boundary(development_partners, "Development Ecosystem") {
+    Component(github, "GitHub", "VCS", "Source control")
+    Component(jira, "Jira", "Project Mgmt", "Issue tracking")
+    Component(sonarqube, "SonarQube", "Code Quality", "Quality gates")
+}
+
+cloud_providers --> aws: "Integration"
+databases --> postgres: "Supported"
+monitoring_partners --> datadog: "Integrated"
+integration_partners --> stripe: "Connected"
+performance_partners --> redis: "Enabled"
+development_partners --> github: "Native"
+
+Note as N1
+Strategic Partner Ecosystem:
+
+Cloud Infrastructure:
+- AWS: Preferred partner (EC2, RDS, S3)
+- Google Cloud: GKE, Firestore
+- Azure: App Service, SQL Database
+- Multi-cloud: Kubernetes abstraction
+
+Databases:
+- PostgreSQL: Primary choice (ACID, JSON)
+- MySQL: Compatible (alternative)
+- MongoDB: Document database (optional)
+- Integration: JDBC drivers
+
+Monitoring & Observability:
+- Datadog: Full APM + infrastructure
+- New Relic: Application monitoring
+- Splunk: Enterprise log aggregation
+- OpenTelemetry: Standard protocol
+
+Payment & Commerce:
+- Stripe: Payment processing
+- PayPal: Alternative payment
+- Taxjar: Tax compliance
+
+Authentication & Identity:
+- Okta: Enterprise SSO
+- Azure AD: Microsoft integration
+- Auth0: Alternative IAM
+
+Communication:
+- Slack: Notifications + alerts
+- Teams: Microsoft collaboration
+- Twilio: SMS/voice
+
+Caching & Streaming:
+- Redis: Primary cache
+- Memcached: Alternative
+- Kafka: Event streaming
+- RabbitMQ: Message broker
+
+Search & Analytics:
+- Elasticsearch: Full-text search
+- Solr: Alternative
+- ClickHouse: Columnar analytics
+
+Development & DevOps:
+- GitHub: Source control (primary)
+- GitLab: Alternative SCM
+- Jira: Issue tracking
+- Confluence: Documentation
+- SonarQube: Code quality
+- Jenkins: CI/CD
+
+Version Control Strategy:
+- GitHub: Public + private repos
+- Git flow: Feature branches
+- Protected main branch
+- Signed commits
+
+Integration Patterns:
+- REST APIs (primary)
+- Webhooks (events)
+- SDKs (when available)
+- Direct database integration (rare)
+
+Certification & Support:
+- Partner certifications: AWS, GCP
+- Technical account managers
+- Preferred pricing
+- Co-marketing agreements
+
+Future Partners (2027):
+- AI/ML: OpenAI, Anthropic
+- Blockchain: Ethereum, Polygon
+- Data: Databricks, Palantir
+- Security: CrowdStrike, Palo Alto
+
+Vendor Lock-in Mitigation:
+- Use standards (Kubernetes, OpenTelemetry)
+- Multi-cloud strategy
+- Avoid proprietary APIs
+- Maintain portability
+End note
+
+SHOW_LEGEND()
+@enduml

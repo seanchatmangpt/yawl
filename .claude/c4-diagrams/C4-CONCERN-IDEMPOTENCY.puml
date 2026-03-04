@@ -1,0 +1,73 @@
+@startuml C4_Concern_Idempotency
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Idempotent Operations
+
+Boundary(idempotency_model, "Idempotency Pattern") {
+    Component(request, "Request", "Input", "User request")
+    Component(idempotency_key, "IdempotencyKey", "UUID", "Request identifier")
+    Component(deduplication, "DeduplicationCache", "Storage", "Request ↔ result mapping")
+}
+
+Boundary(request_handling, "Request Processing") {
+    Component(cache_check, "CacheCheck", "Lookup", "Check dedup cache")
+    Component(cache_hit, "CacheHit", "Found", "Return cached result")
+    Component(cache_miss, "CacheMiss", "New", "Process request")
+    Component(execute_task, "ExecuteTask", "Action", "Business logic")
+    Component(cache_result, "CacheResult", "Store", "Save result")
+}
+
+Boundary(idempotent_ops, "Idempotent Operations") {
+    Component(transfer_money, "TransferMoney", "Safe", "f(f(x)) = f(x)")
+    Component(create_record, "CreateRecord", "Safe", "Duplicate create ignored")
+    Component(update_status, "UpdateStatus", "Safe", "Idempotent update")
+}
+
+Boundary(non_idempotent, "Non-Idempotent Operations") {
+    Component(increment, "Increment", "Unsafe", "f(f(x)) ≠ f(x)")
+    Component(append, "Append", "Unsafe", "Duplicate append fails")
+}
+
+request --> idempotency_key: Generates
+idempotency_key --> cache_check: Checks
+cache_check --> cache_hit: If found
+cache_check --> cache_miss: If new
+
+cache_miss --> execute_task: Executes
+execute_task --> cache_result: Saves
+cache_result --> deduplication: Stores mapping
+cache_hit --> request: Returns cached
+
+idempotent_ops --> deduplication: Use pattern
+non_idempotent --> deduplication: Avoid
+
+Note as N1
+Idempotency: f(f(x)) = f(x)
+Calling same operation multiple times = calling once
+
+Key Pattern:
+1. Generate unique request ID (UUID)
+2. Check deduplication cache
+3. If hit → return cached result (fast!)
+4. If miss → execute operation
+5. Cache result with ID
+6. Return result
+
+Safe Operations (Idempotent):
+✅ TransferMoney (idempotency key)
+✅ CreateRecord (unique constraint)
+✅ UpdateStatus (same value OK)
+
+Unsafe Operations (Non-Idempotent):
+❌ Increment counter
+❌ Append to list
+❌ Double-spend prevention
+
+Requirements:
+- Dedup cache size: ≥1000 entries
+- TTL: ≥1 hour
+- Collision probability: <0.001%
+End note
+
+SHOW_LEGEND()
+@enduml

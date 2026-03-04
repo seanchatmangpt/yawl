@@ -1,0 +1,45 @@
+@startuml C4_Pattern_SimpleTask
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Simple Task Execution
+
+Boundary(user, "User") {
+    Actor(user_actor, "User")
+}
+
+Boundary(yawl_system, "YAWL Engine") {
+    Component(ynet_runner, "YNetRunner", "Orchestrator", "Workflow executor")
+    Component(task_mgr, "TaskManager", "Task handler", "Lifecycle mgmt")
+    Component(executor_pool, "ExecutorPool", "Virtual threads", "Task execution")
+    Component(persistence, "Persistence", "Database", "State storage")
+}
+
+Boundary(external, "External") {
+    Component(worklist_ui, "Worklist UI", "User interface", "Task listing")
+    Component(task_form, "Task Form", "Data capture", "User input")
+}
+
+user_actor --> worklist_ui: Accesses
+worklist_ui --> ynet_runner: Queries tasks
+ynet_runner --> task_mgr: Retrieves available
+
+task_mgr --> persistence: Loads task
+persistence --> worklist_ui: Returns task list
+
+user_actor --> task_form: Claims & executes task
+task_form --> ynet_runner: Submits completion
+
+ynet_runner --> executor_pool: Executes post-tasks
+executor_pool --> ynet_runner: Returns outcome
+
+ynet_runner --> persistence: Persists state
+persistence --> worklist_ui: Updates task list
+
+Note as N1
+Sequence: Create → Allocate → Claim → Execute → Complete
+Actors: User, YNetRunner, Database
+Timing: Synchronous API calls
+End note
+
+SHOW_LEGEND()
+@enduml

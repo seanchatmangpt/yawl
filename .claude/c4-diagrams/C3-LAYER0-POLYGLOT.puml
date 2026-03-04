@@ -1,0 +1,72 @@
+@startuml C3_Layer0_Polyglot
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 0 - GraalVM Polyglot Support
+
+Container_Boundary(polyglot, "Polyglot Runtimes") {
+
+    Component_Boundary(graalpy, "yawl-graalpy (Python)") {
+        Component(python_runtime, "PythonRuntime", "GraalVM Python", "Interpreter")
+        Component(python_context, "PythonContext", "Execution context", "Variable scope")
+        Component(python_executor, "PythonExecutor", "Wrapper", "High-level API")
+        Component(python_sandbox, "PythonSandbox", "Security", "Restricted execution")
+    }
+
+    Component_Boundary(graaljs, "yawl-graaljs (JavaScript)") {
+        Component(js_runtime, "JavaScriptRuntime", "GraalVM JS", "Interpreter")
+        Component(js_context, "JavaScriptContext", "Execution context", "Variable scope")
+        Component(js_executor, "JavaScriptExecutor", "Wrapper", "High-level API")
+        Component(js_sandbox, "JavaScriptSandbox", "Security", "Restricted execution")
+    }
+
+    Component_Boundary(graalwasm, "yawl-graalwasm (WebAssembly)") {
+        Component(wasm_runtime, "WasmRuntime", "GraalVM WASM", "Interpreter")
+        Component(wasm_loader, "WasmLoader", "Module loading", "WASM modules")
+        Component(wasm_executor, "WasmExecutor", "Wrapper", "High-level API")
+        Component(wasm_memory, "WasmMemory", "Linear memory", "Data access")
+    }
+
+    Component_Boundary(polyglot_bridge, "Polyglot Bridge") {
+        Component(value_converter, "ValueConverter", "Type conversion", "Java ↔ foreign")
+        Component(callback_handler, "CallbackHandler", "Reverse calls", "Foreign → Java")
+        Component(error_mapper, "ErrorMapper", "Exception conversion", "Unified errors")
+        Component(perf_monitor, "PerformanceMonitor", "Metrics", "Execution timing")
+    }
+
+    Component_Boundary(library_bindings, "Library Bindings") {
+        Component(python_libs, "PythonLibraries", "NumPy, etc.", "Scientific computing")
+        Component(js_libs, "JavaScriptLibraries", "Node.js modules", "Web libraries")
+        Component(wasm_libs, "WasmLibraries", "Compiled libraries", "Performance")
+    }
+
+}
+
+Rel(python_runtime, python_context, "Manages", "")
+Rel(python_context, python_sandbox, "Executes in", "")
+Rel(python_executor, python_runtime, "Uses", "")
+
+Rel(js_runtime, js_context, "Manages", "")
+Rel(js_context, js_sandbox, "Executes in", "")
+Rel(js_executor, js_runtime, "Uses", "")
+
+Rel(wasm_runtime, wasm_loader, "Loads modules", "")
+Rel(wasm_loader, wasm_memory, "Allocates", "")
+Rel(wasm_executor, wasm_runtime, "Uses", "")
+
+Rel(python_executor, value_converter, "Converts values", "")
+Rel(js_executor, value_converter, "Converts values", "")
+Rel(wasm_executor, value_converter, "Converts values", "")
+
+Rel(value_converter, callback_handler, "For callbacks", "")
+Rel(callback_handler, error_mapper, "Converts errors", "")
+
+Rel(python_executor, perf_monitor, "Reports timing", "")
+Rel(js_executor, perf_monitor, "Reports timing", "")
+Rel(wasm_executor, perf_monitor, "Reports timing", "")
+
+Rel(python_libs, python_runtime, "Available to", "")
+Rel(js_libs, js_runtime, "Available to", "")
+Rel(wasm_libs, wasm_runtime, "Available to", "")
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,67 @@
+@startuml C4_Pattern_MessageQueue
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Message-Driven Workflow
+
+Boundary(message_source, "Message Sources") {
+    Component(producer1, "Producer 1", "System", "System A")
+    Component(producer2, "Producer 2", "System", "System B")
+    Component(producer3, "Producer 3", "System", "User action")
+}
+
+Boundary(message_broker, "Message Broker") {
+    Component(kafka, "Kafka/RabbitMQ", "Broker", "Message queue")
+    Component(topic_priority, "Topic: Priority", "Queue", "Urgent messages")
+    Component(topic_normal, "Topic: Normal", "Queue", "Regular messages")
+    Component(topic_dlq, "Topic: DLQ", "Queue", "Dead letter queue")
+}
+
+Boundary(workflow_mgmt, "Workflow Management") {
+    Component(message_listener, "MessageListener", "Subscribe", "Listen to topics")
+    Component(message_mapper, "MessageMapper", "Transform", "Message → task input")
+    Component(message_task, "MessageTask", "Task", "Process message")
+    Component(message_handler, "MessageHandler", "Logic", "Business logic")
+}
+
+Boundary(routing, "Message Routing") {
+    Component(priority_queue, "PriorityQueue", "Urgent", "Process first")
+    Component(normal_queue, "NormalQueue", "Regular", "FIFO order")
+    Component(retry_logic, "RetryLogic", "Error", "Retry on failure")
+}
+
+producer1 --> kafka: Publishes
+producer2 --> kafka: Publishes
+producer3 --> kafka: Publishes
+
+kafka --> topic_priority: High priority
+kafka --> topic_normal: Normal
+kafka --> topic_dlq: Failed
+
+message_listener --> priority_queue: Listens to priority
+message_listener --> normal_queue: Listens to normal
+priority_queue --> message_mapper: Maps message
+normal_queue --> message_mapper: Maps message
+message_mapper --> message_task: Invokes task
+message_task --> message_handler: Executes
+retry_logic --> topic_dlq: On max retries
+
+Note as N1
+Message-Driven Pattern:
+1. Messages published to broker
+2. Multiple topics by priority
+3. Workflow listens to topics
+4. Map messages to task inputs
+5. Execute workflow task
+6. Retry on failure
+7. Dead-letter queue for failures
+
+Advantages:
+- Asynchronous processing
+- Decoupled systems
+- Scalable
+- Fault-tolerant
+- Audit trail (all messages logged)
+End note
+
+SHOW_LEGEND()
+@enduml

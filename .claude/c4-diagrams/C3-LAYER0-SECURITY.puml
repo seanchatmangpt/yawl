@@ -1,0 +1,67 @@
+@startuml C3_Layer0_Security
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 0 - yawl-security Cryptographic Layer
+
+Container_Boundary(security, "yawl-security") {
+
+    Component_Boundary(crypto_core, "Cryptographic Core") {
+        Component(aes_cipher, "AESCipher", "AES-256-GCM", "Authenticated encryption")
+        Component(rsa_cipher, "RSACipher", "RSA-4096", "Asymmetric encryption")
+        Component(key_derivation, "KeyDerivation", "PBKDF2/Argon2", "Password hashing")
+        Component(random_gen, "SecureRandom", "CSPRNG", "Cryptographically strong")
+    }
+
+    Component_Boundary(hashing, "Hashing & Integrity") {
+        Component(hash_func, "HashFunction", "SHA-256/512", "Cryptographic hashes")
+        Component(hmac_gen, "HMACGenerator", "HMAC-SHA256", "Message authentication")
+        Component(signature, "Signature", "RSA-PSS", "Digital signatures")
+    }
+
+    Component_Boundary(tls_ssl, "TLS/SSL Configuration") {
+        Component(tls_context, "TLSContext", "SSLContext", "TLS configuration")
+        Component(cert_manager, "CertificateManager", "X.509", "Certificate handling")
+        Component(keystore_mgr, "KeystoreManager", "PKCS12", "Key storage")
+        Component(hostname_verify, "HostnameVerifier", "Validation", "CN/SAN checking")
+    }
+
+    Component_Boundary(token_mgmt, "Token Management") {
+        Component(jwt_issuer, "JWTIssuer", "HS256/RS256", "Token creation")
+        Component(jwt_validator, "JWTValidator", "Claims validation", "Token verification")
+        Component(refresh_token, "RefreshTokenMgr", "Lifecycle", "Token refresh")
+        Component(token_blacklist, "TokenBlacklist", "Revocation", "Blacklist checking")
+    }
+
+    Component_Boundary(access_control, "Access Control") {
+        Component(principal_factory, "PrincipalFactory", "User/roles", "Principal creation")
+        Component(permission_cache, "PermissionCache", "RBAC", "Role cache")
+        Component(crypto_context, "CryptoContext", "ThreadLocal", "Crypto context")
+    }
+
+    Component_Boundary(crypto_utils, "Cryptographic Utilities") {
+        Component(key_utils, "KeyUtils", "Conversion", "Key format conversion")
+        Component(cert_utils, "CertificateUtils", "Parsing", "Certificate parsing")
+        Component(crypto_helper, "CryptoHelper", "Wrapper", "High-level API")
+    }
+
+}
+
+Rel(aes_cipher, random_gen, "Seeds with", "")
+Rel(rsa_cipher, key_derivation, "Uses derived keys", "")
+Rel(hash_func, hmac_gen, "Powers", "")
+Rel(signature, hash_func, "Uses", "")
+
+Rel(tls_context, cert_manager, "Uses", "")
+Rel(cert_manager, keystore_mgr, "Stores in", "")
+Rel(tls_context, hostname_verify, "Validates with", "")
+
+Rel(jwt_issuer, random_gen, "Seeds", "")
+Rel(jwt_validator, token_blacklist, "Checks", "")
+Rel(refresh_token, jwt_issuer, "Issues", "")
+
+Rel(principal_factory, permission_cache, "Caches", "")
+Rel(crypto_helper, aes_cipher, "Uses", "")
+Rel(crypto_helper, jwt_issuer, "Uses", "")
+
+SHOW_LEGEND()
+@enduml

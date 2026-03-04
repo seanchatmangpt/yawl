@@ -1,0 +1,66 @@
+@startuml C3_Layer1_Ggen
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 1 - yawl-ggen Code Generation Framework
+
+Container_Boundary(ggen, "yawl-ggen") {
+
+    Component_Boundary(generation_phases, "Generation Phases") {
+        Component(phase_psi, "Ψ Phase", "Observatory", "Fact gathering")
+        Component(phase_lambda, "Λ Phase", "Build", "Compilation")
+        Component(phase_h, "H Phase", "Guards", "Pattern detection")
+        Component(phase_q, "Q Phase", "Invariants", "Real impl check")
+        Component(phase_omega, "Ω Phase", "Report", "Output generation")
+    }
+
+    Component_Boundary(template_engine, "Template Engine") {
+        Component(freemarker, "FreeMarker", "Template processor", "Code generation")
+        Component(velocity, "Velocity", "Alternative engine", "Templates")
+        Component(template_cache, "TemplateCache", "Memoization", "Template caching")
+    }
+
+    Component_Boundary(code_generators, "Code Generators") {
+        Component(java_gen, "JavaGenerator", "Java code", "Class/method generation")
+        Component(sql_gen, "SQLGenerator", "SQL DDL", "Schema generation")
+        Component(xml_gen, "XMLGenerator", "XML output", "Configuration gen")
+    }
+
+    Component_Boundary(validation_framework, "Validation Framework") {
+        Component(guard_checker, "GuardChecker", "H validation", "Pattern detection")
+        Component(invariant_checker, "InvariantChecker", "Q validation", "Impl checking")
+        Component(validator_registry, "ValidatorRegistry", "Extensible", "Plugin framework")
+    }
+
+    Component_Boundary(artifact_mgmt, "Artifact Management") {
+        Component(emit_mgmt, "EmitManager", "Output directory", "Generated files")
+        Component(receipt_mgmt, "ReceiptManager", "Metadata", "Generation records")
+        Component(artifact_cache, "ArtifactCache", "Incremental", "Change detection")
+    }
+
+    Component_Boundary(integration_lang, "Language Integration") {
+        Component(python_dsl, "PythonDSL", "DSL execution", "Python expressions")
+        Component(js_dsl, "JavaScriptDSL", "DSL execution", "JavaScript expressions")
+        Component(xpath_eval, "XPathEvaluator", "XML queries", "XPath evaluation")
+    }
+
+}
+
+Rel(phase_psi, phase_lambda, "Feeds", "")
+Rel(phase_lambda, phase_h, "Compiles for", "")
+Rel(phase_h, phase_q, "Guards pass to", "")
+Rel(phase_q, phase_omega, "Invariants pass to", "")
+
+Rel(freemarker, template_cache, "Caches in", "")
+Rel(java_gen, freemarker, "Uses", "")
+Rel(java_gen, emit_mgmt, "Outputs to", "")
+
+Rel(guard_checker, validator_registry, "Registered in", "")
+Rel(invariant_checker, validator_registry, "Registered in", "")
+
+Rel(receipt_mgmt, artifact_cache, "Tracks", "")
+
+Rel(python_dsl, freemarker, "Feeds into", "")
+Rel(js_dsl, freemarker, "Feeds into", "")
+
+SHOW_LEGEND()
+@enduml

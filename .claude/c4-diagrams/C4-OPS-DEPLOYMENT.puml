@@ -1,0 +1,62 @@
+@startuml C4_Ops_Deployment
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Operations - Deployment Pipeline
+
+Boundary(ci, "CI/CD Pipeline") {
+    Component(git_push, "Git Push", "Source", "Code commit")
+    Component(build_job, "Build Job", "Maven", "Compile & test")
+    Component(test_job, "Test Job", "JUnit", "Run all tests")
+    Component(guard_gate, "Guard Gate (H)", "Validation", "h-guards check")
+    Component(invariant_gate, "Invariant Gate (Q)", "Validation", "q-invariants check")
+}
+
+Boundary(staging, "Staging Deployment") {
+    Component(stage_build, "Staging Build", "Container", "Docker image")
+    Component(stage_deploy, "Staging Deploy", "Kubernetes", "Deploy to staging")
+    Component(stage_test, "Staging Tests", "E2E", "Full integration test")
+    Component(stage_approval, "Approval", "Manual", "Human approval")
+}
+
+Boundary(production, "Production Deployment") {
+    Component(prod_build, "Prod Build", "Container", "Official release")
+    Component(prod_canary, "Canary Deploy", "Traffic", "10% traffic")
+    Component(prod_monitor, "Monitoring", "Health", "SLA tracking")
+    Component(prod_full, "Full Deploy", "Traffic", "100% traffic")
+    Component(prod_rollback, "Rollback Ready", "Safety", "Quick rollback")
+}
+
+git_push --> build_job: Triggers
+build_job --> test_job: On success
+test_job --> guard_gate: On success
+guard_gate --> invariant_gate: On success
+invariant_gate --> stage_build: On success
+
+stage_build --> stage_deploy: Builds image
+stage_deploy --> stage_test: Deploys to
+stage_test --> stage_approval: If tests pass
+stage_approval --> prod_build: Approves
+
+prod_build --> prod_canary: Canary release
+prod_canary --> prod_monitor: 10% traffic
+prod_monitor --> prod_full: If healthy
+prod_full --> prod_rollback: Always ready
+
+Note as N1
+Deployment Pipeline:
+1. Git push → builds code
+2. Run tests → must pass
+3. Run guards → no TODO/mock
+4. Run invariants → real code only
+5. Deploy to staging → full E2E
+6. Manual approval
+7. Canary deploy to prod (10%)
+8. Monitor SLAs
+9. Full production rollout
+10. Rollback always ready
+
+Approval Gates: 2 (after invariants, after E2E)
+End note
+
+SHOW_LEGEND()
+@enduml

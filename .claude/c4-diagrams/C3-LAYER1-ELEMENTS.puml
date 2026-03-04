@@ -1,0 +1,63 @@
+@startuml C3_Layer1_Elements
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 1 - yawl-elements Domain Model
+
+Container_Boundary(elements, "yawl-elements") {
+
+    Component_Boundary(net_model, "Net Structure") {
+        Component(ynet, "YNet", "Workflow definition", "Root element")
+        Component(ytask, "YTask", "Task type", "Abstract base")
+        Component(manual_task, "YManualTask", "Human task", "Requires user action")
+        Component(auto_task, "YAutomaticTask", "Service task", "System execution")
+        Component(multi_task, "YMultipleInstanceTask", "MI task", "Parallel tasks")
+    }
+
+    Component_Boundary(gateway_model, "Gateway Logic") {
+        Component(ygateway, "YGateway", "Gateway type", "Abstract base")
+        Component(and_split, "YANDSplit", "Parallel", "All paths")
+        Component(and_join, "YANDJoin", "Synchronizer", "All paths")
+        Component(or_split, "YORSplit", "Selective", "Conditional paths")
+        Component(or_join, "YORJoin", "Merge", "Any path")
+        Component(xor_split, "YXORSplit", "Exclusive", "One path")
+        Component(xor_join, "YXORJoin", "Simple merge", "One path")
+    }
+
+    Component_Boundary(flow_model, "Flow Control") {
+        Component(flow, "YFlow", "Connector", "Net → Element")
+        Component(condition, "YCondition", "Predicate", "Flow condition")
+        Component(predicate, "YPredicate", "Expression", "Boolean logic")
+    }
+
+    Component_Boundary(data_model, "Data Elements") {
+        Component(yparam, "YParameter", "Variable", "Data holder")
+        Component(data_type, "YDataType", "Type definition", "Schema")
+        Component(data_validator, "YDataValidator", "Validation", "Type checking")
+    }
+
+    Component_Boundary(resource_model, "Resource References") {
+        Component(yparticipant, "YParticipant", "User/role", "Resource")
+        Component(yorg, "YOrganization", "Structure", "Org chart")
+        Component(yposition, "YPosition", "Role definition", "Job role")
+    }
+
+    Component_Boundary(execution_model, "Execution Semantics") {
+        Component(yreset_net, "YResetNet", "Semantics", "Reset net variant")
+        Component(nested_net, "YNestedNetTask", "Sub-workflow", "Sub-net invocation")
+        Component(fork_task, "YForkTask", "Parallelization", "Internal fork")
+    }
+
+}
+
+Rel(ynet, ytask, "Contains", "")
+Rel(ytask, manual_task, "Is-a", "")
+Rel(ytask, auto_task, "Is-a", "")
+Rel(ynet, ygateway, "Contains", "")
+Rel(ygateway, and_split, "Is-a", "")
+Rel(flow, ynet, "Connects in", "")
+Rel(condition, flow, "Defines", "")
+Rel(yparam, data_type, "Has type", "")
+Rel(data_validator, data_type, "Validates", "")
+
+SHOW_LEGEND()
+@enduml

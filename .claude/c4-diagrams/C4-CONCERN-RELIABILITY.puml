@@ -1,0 +1,107 @@
+@startuml C4_Concern_Reliability
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Reliability & Redundancy
+
+Boundary(availability, "Availability Strategy") {
+    Component(active_active, "Active-Active", "HA", "All nodes active")
+    Component(active_passive, "Active-Passive", "DR", "Standby ready")
+    Component(load_balancing, "LoadBalancing", "Distribution", "Traffic routing")
+}
+
+Boundary(redundancy, "Redundancy Levels") {
+    Component(single_node, "Single Node", "Dev", "Single point of failure")
+    Component(n_plus_one, "N+1 Redundancy", "Prod", "One failure tolerance")
+    Component(n_plus_two, "N+2 Redundancy", "Critical", "Two failure tolerance")
+}
+
+Boundary(failure_modes, "Failure Mode Analysis") {
+    Component(hardware_failure, "Hardware Failure", "Type", "Server crash")
+    Component(network_failure, "Network Failure", "Type", "Connection loss")
+    Component(software_bug, "Software Bug", "Type", "Logic error")
+    Component(data_corruption, "DataCorruption", "Type", "Bad state")
+}
+
+Boundary(recovery, "Recovery Mechanisms") {
+    Component(checkpointing, "Checkpointing", "State", "Save snapshots")
+    Component(replication, "Replication", "Data", "Multiple copies")
+    Component(failover, "Failover", "Automatic", "Switch to backup")
+    Component(rollback, "Rollback", "Recovery", "Restore from checkpoint")
+}
+
+Boundary(slas, "SLA Targets") {
+    Component(availability_99_9, "99.9% Availability", "Target", "8.76 hours/year downtime")
+    Component(rto, "RTO <1 hour", "Target", "Recovery time")
+    Component(rpo, "RPO <5 minutes", "Target", "Data loss window")
+    Component(mtbf, "MTBF >1000 hours", "Target", "Mean time between failures")
+}
+
+active_active --> load_balancing: Uses
+active_passive --> failover: Uses
+n_plus_one --> redundancy: Requires
+n_plus_two --> redundancy: Requires
+hardware_failure --> failover: Detected by
+network_failure --> failover: Detected by
+software_bug --> rollback: Uses
+data_corruption --> checkpointing: Prevents
+replication --> rpo: Determines
+
+Note as N1
+Reliability Strategy:
+
+Availability:
+- Active-Active: All nodes serve traffic
+- Active-Passive: One active, one standby
+- Load Balancer: Distributes requests
+
+Redundancy Levels:
+
+Development:
+- Single node (acceptable)
+- RTO: N/A
+- RTO: N/A
+
+Production:
+- N+1 redundancy (one failure tolerance)
+- 2 nodes minimum
+- RTO: <1 hour
+- RPO: <5 minutes
+
+Critical Systems:
+- N+2 redundancy (two failures)
+- 3+ nodes minimum
+- RTO: <15 minutes
+- RPO: <1 minute
+
+Failure Detection:
+- Heartbeat every 30 seconds
+- Failure confirmed after 2 missed beats
+- Automatic failover within 60 seconds
+
+Recovery Mechanisms:
+- Checkpointing: Save state every 5 min
+- Replication: Real-time sync to standby
+- Failover: Auto-switch on failure
+- Rollback: Restore from checkpoint
+
+SLA Targets:
+- Availability: 99.9% (8.76 hrs/yr downtime)
+- RTO: <1 hour
+- RPO: <5 minutes
+- MTBF: >1000 hours (not failing every 6 weeks)
+
+Monitoring:
+- Heartbeat monitoring
+- Recovery metrics
+- Failover testing (quarterly)
+- Incident review (weekly)
+
+Testing:
+- Chaos engineering (inject failures)
+- Failover drills (monthly)
+- Data recovery tests (quarterly)
+- Whole-system simulations (yearly)
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,66 @@
+@startuml C3_Layer2_YNetRunner
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 2 - YNetRunner (Core Engine Deep Dive)
+
+Container_Boundary(ynetrunner, "YNetRunner") {
+
+    Component_Boundary(lifecycle, "Net Lifecycle Management") {
+        Component(net_state, "NetState", "Enum", "IDLE, STARTED, COMPLETED")
+        Component(net_init, "NetInitializer", "Setup", "Net creation")
+        Component(net_launcher, "NetLauncher", "Start", "Execution begin")
+        Component(net_terminator, "NetTerminator", "Cleanup", "Net completion")
+    }
+
+    Component_Boundary(transition_logic, "Transition Evaluation") {
+        Component(enablement_checker, "EnablementChecker", "Guard conditions", "Task enabling")
+        Component(condition_evaluator, "ConditionEvaluator", "Edge predicates", "Flow conditions")
+        Component(transition_executor, "TransitionExecutor", "Fire rules", "Transition firing")
+    }
+
+    Component_Boundary(task_queueing, "Task Queueing") {
+        Component(queue_mgmt, "QueueManager", "Task queue", "FIFO queue")
+        Component(queue_monitor, "QueueMonitor", "Metrics", "Queue depth/latency")
+        Component(backpressure, "BackpressureController", "Flow control", "Slow producer")
+    }
+
+    Component_Boundary(execution_engine, "Execution Engine") {
+        Component(task_dispatcher, "TaskDispatcher", "Assignment", "Route to executor")
+        Component(executor_pool, "ExecutorPool", "Virtual threads", "Per-task threads")
+        Component(result_collector, "ResultCollector", "Outcomes", "Task completion")
+    }
+
+    Component_Boundary(error_recovery, "Error & Recovery") {
+        Component(exception_router, "ExceptionRouter", "Routing", "Route exceptions")
+        Component(timeout_mgr, "TimeoutManager", "Deadlines", "SLA enforcement")
+        Component(recovery_handler, "RecoveryHandler", "Repair", "Exception recovery")
+    }
+
+    Component_Boundary(state_mgmt, "State Management") {
+        Component(net_snapshot, "NetSnapshot", "Serialize", "Point-in-time state")
+        Component(state_persistence, "StatePersistence", "Database", "State storage")
+        Component(state_recovery, "StateRecovery", "Deserialize", "State restoration")
+    }
+
+    Component_Boundary(concurrency_control, "Concurrency Control") {
+        Component(lock_mgr, "LockManager", "Distributed", "Pessimistic locking")
+        Component(mvcc, "MVCCCoordinator", "Isolation", "Read-committed")
+        Component(deadlock_detect, "DeadlockDetector", "Prevention", "Wait-for graph")
+    }
+
+}
+
+Rel(net_init, net_launcher, "Launches", "")
+Rel(net_launcher, net_state, "Transitions state", "")
+Rel(enablement_checker, condition_evaluator, "Evaluates", "")
+Rel(transition_executor, queue_mgmt, "Queues tasks", "")
+Rel(queue_monitor, backpressure, "Controls", "")
+Rel(task_dispatcher, executor_pool, "Dispatches to", "")
+Rel(executor_pool, result_collector, "Returns to", "")
+Rel(result_collector, exception_router, "Routes", "")
+Rel(timeout_mgr, exception_router, "Routes timeouts", "")
+Rel(state_persistence, state_recovery, "Restores from", "")
+Rel(lock_mgr, mvcc, "Coordinates with", "")
+
+SHOW_LEGEND()
+@enduml

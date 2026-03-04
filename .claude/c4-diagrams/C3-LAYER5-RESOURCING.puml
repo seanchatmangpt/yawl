@@ -1,0 +1,62 @@
+@startuml C3_Layer5_Resourcing
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 5 - yawl-resourcing Allocation Engine
+
+Container_Boundary(resourcing, "yawl-resourcing") {
+
+    Component_Boundary(resource_model, "Resource Model") {
+        Component(resource_pool, "ResourcePool", "Collection", "Available resources")
+        Component(participant, "Participant", "Person", "Individual user")
+        Component(role, "Role", "Classification", "Job role")
+        Component(capability, "Capability", "Skill", "Person capability")
+    }
+
+    Component_Boundary(allocation_logic, "Allocation Logic") {
+        Component(matcher, "SkillMatcher", "Matching", "Skill-based selection")
+        Component(load_balancer, "LoadBalancer", "Distribution", "Work distribution")
+        Component(constraint_solver, "ConstraintSolver", "Optimization", "Constraint satisfaction (Rust FFI)")
+        Component(fallback_allocator, "FallbackAllocator", "Backup", "Fallback assignment")
+    }
+
+    Component_Boundary(queue_mgmt, "Queue Management") {
+        Component(worklist, "Worklist", "Queue", "Task queue per participant")
+        Component(queue_monitor, "QueueMonitor", "Metrics", "Queue depth/SLA")
+        Component(capacity_checker, "CapacityChecker", "Limits", "Max tasks per person")
+    }
+
+    Component_Boundary(assignment, "Task Assignment") {
+        Component(assignment_engine, "AssignmentEngine", "Logic", "Assign to pool/role/person")
+        Component(delegation, "Delegation", "Reassignment", "Task delegation")
+        Component(escalation, "Escalation", "Urgency", "Priority escalation")
+    }
+
+    Component_Boundary(analytics, "Analytics") {
+        Component(utilization_tracker, "UtilizationTracker", "Metrics", "Person utilization")
+        Component(performance_tracker, "PerformanceTracker", "Metrics", "Task completion time")
+        Component(bottleneck_detector, "BottleneckDetector", "Detection", "Identify slow paths")
+    }
+
+}
+
+Rel(resource_pool, participant, "Contains", "")
+Rel(participant, capability, "Has", "")
+Rel(role, capability, "Requires", "")
+
+Rel(matcher, resource_pool, "Searches in", "")
+Rel(load_balancer, matcher, "Uses", "")
+Rel(constraint_solver, load_balancer, "Optimizes", "")
+Rel(fallback_allocator, constraint_solver, "If fails", "")
+
+Rel(assignment_engine, worklist, "Adds to", "")
+Rel(worklist, queue_monitor, "Monitored by", "")
+Rel(queue_monitor, capacity_checker, "Checks", "")
+
+Rel(delegation, assignment_engine, "Routes to", "")
+Rel(escalation, assignment_engine, "Elevates", "")
+
+Rel(utilization_tracker, assignment_engine, "Feeds", "")
+Rel(bottleneck_detector, performance_tracker, "Analyzes", "")
+
+SHOW_LEGEND()
+@enduml

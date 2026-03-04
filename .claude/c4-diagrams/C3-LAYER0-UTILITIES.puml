@@ -1,0 +1,80 @@
+@startuml C3_Layer0_Utilities
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 0 - yawl-utilities Component Breakdown
+
+Container_Boundary(utilities, "yawl-utilities") {
+
+    Component_Boundary(config_mgmt, "Configuration Management") {
+        Component(config_loader, "ConfigLoader", "YAML/JSON", "Environment-aware config")
+        Component(config_validator, "ConfigValidator", "Schema validation", "Type checking")
+        Component(env_resolver, "EnvironmentResolver", "Substitution", "${VAR} expansion")
+        Component(config_cache, "ConfigCache", "Memoization", "Config caching")
+    }
+
+    Component_Boundary(logging_framework, "Logging Framework") {
+        Component(logger_factory, "LoggerFactory", "SLF4J wrapper", "Logger creation")
+        Component(log_formatter, "LogFormatter", "Structured logs", "JSON formatting")
+        Component(log_appender, "LogAppender", "Async", "Filebeat compatible")
+        Component(async_queue, "AsyncQueue", "Ring buffer", "Lock-free queue")
+    }
+
+    Component_Boundary(validation, "Validation Utilities") {
+        Component(input_validator, "InputValidator", "Regex/custom", "String validation")
+        Component(schema_validator, "SchemaValidator", "JSON Schema", "Structure validation")
+        Component(rule_engine, "RuleEngine", "CEL/OGNL", "Rule evaluation")
+    }
+
+    Component_Boundary(exception_mgmt, "Exception Handling") {
+        Component(exception_hierarchy, "ExceptionHierarchy", "Typed", "Custom exceptions")
+        Component(error_codes, "ErrorCodes", "Catalog", "Standardized error codes")
+        Component(stacktrace_util, "StacktraceUtil", "Filtering", "Clean traces")
+        Component(exception_context, "ExceptionContext", "Metadata", "Error context")
+    }
+
+    Component_Boundary(utilities_core, "Core Utilities") {
+        Component(string_utils, "StringUtils", "Common ops", "Null-safe helpers")
+        Component(collection_utils, "CollectionUtils", "Stream ops", "Functional utilities")
+        Component(json_util, "JSONUtil", "Serialization", "JSON helpers")
+        Component(date_time, "DateTimeUtil", "Temporal", "Timezone-aware")
+        Component(uuid_gen, "UUIDGenerator", "ID generation", "Sortable UUIDs")
+    }
+
+    Component_Boundary(performance, "Performance Utilities") {
+        Component(metrics_helper, "MetricsHelper", "Recording", "Micrometer wrapper")
+        Component(timer_util, "TimerUtil", "Stopwatch", "Duration tracking")
+        Component(object_pool, "ObjectPool", "Pooling", "Object reuse")
+        Component(byte_buffer, "ByteBufferPool", "Direct buffers", "Memory efficiency")
+    }
+
+    Component_Boundary(concurrency_utils, "Concurrency Utilities") {
+        Component(lock_factory, "LockFactory", "Distributed", "ReentrantLock wrapper")
+        Component(latch_helper, "LatchHelper", "CountDownLatch", "Synchronization")
+        Component(thread_pool, "ThreadPoolFactory", "Pools", "Executor creation")
+        Component(virtual_thread, "VirtualThreadHelper", "Java 25", "Virtual thread utils")
+    }
+
+}
+
+Rel(config_loader, config_validator, "Validates config", "")
+Rel(config_validator, config_cache, "Caches", "")
+Rel(env_resolver, config_loader, "Resolves vars", "")
+
+Rel(logger_factory, log_formatter, "Formats logs", "")
+Rel(log_formatter, log_appender, "Sends to", "")
+Rel(log_appender, async_queue, "Queues asynchronously", "")
+
+Rel(input_validator, schema_validator, "Chain validation", "")
+Rel(rule_engine, validation, "Uses", "")
+
+Rel(exception_hierarchy, error_codes, "Maps codes", "")
+Rel(stacktrace_util, exception_context, "Adds context", "")
+
+Rel(metrics_helper, timer_util, "Records", "")
+Rel(byte_buffer, object_pool, "Reuses", "")
+
+Rel(thread_pool, virtual_thread, "Creates", "")
+Rel(lock_factory, latch_helper, "Coordinates", "")
+
+SHOW_LEGEND()
+@enduml

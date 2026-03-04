@@ -1,0 +1,129 @@
+@startuml C4_Future_Blockchain
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Future Vision - Blockchain for Immutable Audit Trail
+
+Boundary(blockchain, "Blockchain Layer") {
+    Component(smart_contract, "SmartContract", "Chain", "Workflow rules")
+    Component(audit_chain, "AuditChain", "Ledger", "Immutable log")
+    Component(state_channel, "StateChannel", "Off-chain", "Payment efficiency")
+}
+
+Boundary(consensus, "Consensus Mechanism") {
+    Component(proof_of_stake, "ProofOfStake", "PoS", "Energy efficient")
+    Component(byzantine_fault, "ByzantineFaultTolerance", "BFT", "3f+1 nodes")
+}
+
+Boundary(privacy, "Privacy & Compliance") {
+    Component(zero_knowledge, "ZeroKnowledgeProofs", "Crypto", "Privacy while auditable")
+    Component(anonymity, "TransactionAnonymity", "Privacy", "Hide user details")
+    Component(gdpr_compliance, "GDPRCompliance", "Erasure", "Right to be forgotten")
+}
+
+Boundary(integration, "Integration Points") {
+    Component(workflow_events, "WorkflowEvents", "Source", "Task completed")
+    Component(chain_writer, "ChainWriter", "Interface", "Write to blockchain")
+    Component(chain_reader, "ChainReader", "Interface", "Read from blockchain")
+    Component(verification, "Verification", "Audit", "Verify history")
+}
+
+Boundary(use_cases, "Use Cases") {
+    Component(supply_chain, "SupplyChain", "Traceability", "Product provenance")
+    Component(compliance_audit, "ComplianceAudit", "Regulation", "SOX/GDPR proof")
+    Component(dispute_resolution, "DisputeResolution", "Legal", "Immutable evidence")
+}
+
+smart_contract --> audit_chain: Records to
+proof_of_stake --> consensus: Uses
+byzantine_fault --> consensus: Alternative
+zero_knowledge --> privacy: Provides
+workflow_events --> chain_writer: Triggers
+chain_writer --> audit_chain: Writes to
+audit_chain --> chain_reader: Reads from
+chain_reader --> verification: Enables
+verification --> compliance_audit: Powers
+
+Note as N1
+Blockchain Vision (2027+):
+
+Immutable Audit Trail:
+- Every workflow event recorded on blockchain
+- Cryptographic proof of sequence
+- Cannot be modified retroactively
+- Non-repudiation (author accountability)
+
+Smart Contracts:
+- Workflow rules embedded in smart contract
+- Autonomous execution
+- Trust in code, not intermediaries
+- Transparent governance
+
+Privacy Considerations:
+- Zero-knowledge proofs: Prove without revealing
+- Transaction anonymity: Hide user identity
+- GDPR compliance: Right to be forgotten
+- Privacy-preserving audit trail
+
+Consensus Mechanisms:
+- Proof of Stake (PoS): Energy efficient
+- Byzantine Fault Tolerance (BFT): Resilient to failures
+- Practical Byzantine Fault Tolerance (PBFT): 3f+1 nodes
+
+Use Cases:
+
+Supply Chain Traceability:
+- Every shipment step recorded
+- Immutable product provenance
+- Consumer verification
+- Reduce counterfeits
+
+Compliance & Audit:
+- SOX 404 audit trail
+- GDPR data processing records
+- Regulatory reporting
+- Incident investigation
+
+Dispute Resolution:
+- Immutable evidence
+- Cryptographic proof of sequence
+- Non-repudiation
+- Smart contract enforcement
+
+Legal & Regulatory:
+- Notarization (timestamp + hash)
+- Smart contracts as legal agreements
+- Autonomous enforcement
+- Reduced litigation
+
+Challenges:
+
+Performance:
+- Blockchain latency: 1-10 seconds/block
+- YAWL needs: <1ms task latency
+- Solution: Off-chain state channels
+
+Scalability:
+- Blockchain throughput: 100s tx/sec
+- YAWL needs: 1000s tasks/sec
+- Solution: Sharding or sidechain
+
+Privacy:
+- Blockchain transparency vs privacy
+- GDPR "right to be forgotten"
+- Solution: Zero-knowledge proofs
+
+Cost:
+- Gas fees per transaction
+- Batch writing to reduce costs
+- Proof-of-Stake (cheaper than PoW)
+
+Timeline:
+- Q4 2026: Research & prototype
+- Q1 2027: MVP with Ethereum
+- Q2 2027: Custom sidechain
+- Q3 2027: Integration with YAWL
+- Q4 2027: Production deployment
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,73 @@
+@startuml C4_Ops_CapacityPlanning
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Operations - Capacity Planning & Forecasting
+
+Boundary(metrics_collection, "Metrics Collection") {
+    Component(usage_metrics, "UsageMetrics", "Data", "Throughput/users")
+    Component(resource_metrics, "ResourceMetrics", "Data", "CPU/memory/disk")
+    Component(growth_rate, "GrowthRate", "Analysis", "Month-over-month")
+}
+
+Boundary(forecasting, "Forecasting") {
+    Component(linear_model, "LinearModel", "Simple", "Straight line projection")
+    Component(seasonal_model, "SeasonalModel", "Realistic", "Account for peaks")
+    Component(exponential_model, "ExponentialModel", "Growth", "Accelerating growth")
+    Component(model_selection, "ModelSelection", "Choice", "Best fit model")
+}
+
+Boundary(capacity_planning, "Capacity Planning") {
+    Component(current_capacity, "CurrentCapacity", "Baseline", "Today's resources")
+    Component(peak_load, "PeakLoad", "Demand", "Busiest hour/day")
+    Component(headroom, "Headroom", "Buffer", "20-30% extra capacity")
+    Component(required_capacity, "RequiredCapacity", "Total", "Peak + headroom")
+}
+
+Boundary(scaling_decisions, "Scaling Decisions") {
+    Component(3month, "3-Month View", "Horizon", "Immediate needs")
+    Component(6month, "6-Month View", "Horizon", "Mid-term planning")
+    Component(12month, "12-Month View", "Horizon", "Annual budgeting")
+    Component(trigger_point, "TriggerPoint", "Action", "Capacity ≥80% → scale")
+}
+
+usage_metrics --> model_selection: Feeds
+resource_metrics --> model_selection: Feeds
+growth_rate --> model_selection: Feeds
+
+model_selection --> linear_model: Tries
+model_selection --> seasonal_model: Tries
+model_selection --> exponential_model: Tries
+
+model_selection --> required_capacity: Predicts
+required_capacity --> 3month: Informs
+required_capacity --> 6month: Informs
+required_capacity --> 12month: Informs
+
+trigger_point --> scaling_decisions: Drives
+
+Note as N1
+Capacity Planning Process:
+1. Collect historical metrics (6-12 months)
+2. Select best forecasting model
+3. Project 3/6/12 month demand
+4. Add 20-30% headroom
+5. Plan scaling in advance
+
+Scaling Triggers:
+- Capacity ≥ 80% → order new hardware
+- CPU > 85% sustained → add nodes
+- Memory > 90% → increase allocation
+
+Cost Optimization:
+- Reserve instances for baseline
+- Spot instances for burst
+- Auto-scaling for elasticity
+
+Forecasting Accuracy:
+- 1-month ahead: ±10% (good)
+- 3-month ahead: ±20% (acceptable)
+- 12-month ahead: ±40% (rough)
+End note
+
+SHOW_LEGEND()
+@enduml

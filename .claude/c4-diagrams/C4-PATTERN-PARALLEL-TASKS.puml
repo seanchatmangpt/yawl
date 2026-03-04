@@ -1,0 +1,52 @@
+@startuml C4_Pattern_ParallelTasks
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Parallel Execution (AND-Split/Join)
+
+Boundary(workflow, "Workflow Execution") {
+    Component(ynet_runner, "YNetRunner", "Orchestrator", "AND-split logic")
+    Component(task_a, "Task A", "Branch 1", "Parallel execution")
+    Component(task_b, "Task B", "Branch 2", "Parallel execution")
+    Component(task_c, "Task C", "Branch 3", "Parallel execution")
+    Component(and_split, "AND-Split", "Gateway", "Create branches")
+    Component(and_join, "AND-Join", "Gateway", "Synchronize branches")
+    Component(sync_point, "SynchronizationPoint", "Barrier", "Wait for all")
+}
+
+Boundary(execution, "Parallel Execution") {
+    Component(vt_pool, "VirtualThreadPool", "Runtime", "×3 Virtual threads")
+}
+
+Boundary(persistence, "State") {
+    Component(db, "Database", "Storage", "Branch states")
+}
+
+ynet_runner --> and_split: Triggers AND-split
+and_split --> task_a: Creates branch A
+and_split --> task_b: Creates branch B
+and_split --> task_c: Creates branch C
+
+task_a --> vt_pool: Executes on VT-A
+task_b --> vt_pool: Executes on VT-B
+task_c --> vt_pool: Executes on VT-C
+
+vt_pool --> db: Saves state (A)
+vt_pool --> db: Saves state (B)
+vt_pool --> db: Saves state (C)
+
+task_a --> sync_point: Completes
+task_b --> sync_point: Completes
+task_c --> sync_point: Completes
+
+sync_point --> and_join: All ready
+and_join --> ynet_runner: Continues
+
+Note as N1
+AND-Split: 1 → 3 tasks (parallel)
+Execution: VirtualThreads (no blocking)
+Synchronization: Barrier (wait all)
+AND-Join: 3 → 1 task (merge)
+End note
+
+SHOW_LEGEND()
+@enduml

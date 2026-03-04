@@ -1,0 +1,58 @@
+@startuml C4_Pattern_EventCorrelation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Event-Based Execution
+
+Boundary(workflow, "Workflow") {
+    Component(event_task, "EventTask", "Task", "Wait for event")
+    Component(correlation_set, "CorrelationSet", "Data", "Matching criteria")
+}
+
+Boundary(event_mgmt, "Event Management") {
+    Component(event_listener, "EventListener", "Subscribe", "Listen for events")
+    Component(event_correlator, "EventCorrelator", "Match", "Match correlation data")
+    Component(event_queue, "EventQueue", "Buffer", "Queued events")
+    Component(timeout_handler, "TimeoutHandler", "Safety", "Max wait time")
+}
+
+Boundary(events, "Event Sources") {
+    Component(external_system, "External System", "Source", "Sends events")
+    Component(message_broker, "MessageBroker", "Broker", "Event distribution")
+}
+
+Boundary(continuation, "Continuation") {
+    Component(event_retrieved, "EventRetrieved", "Outcome", "Event matched")
+    Component(timeout_exceeded, "TimeoutExceeded", "Outcome", "Timeout occurred")
+    Component(next_task, "NextTask", "Task", "Continue workflow")
+}
+
+event_task --> correlation_set: Uses for matching
+correlation_set --> event_listener: Defines criteria
+event_listener --> event_correlator: Correlates events
+external_system --> message_broker: Sends events
+message_broker --> event_queue: Buffers events
+event_queue --> event_correlator: Matches against
+
+event_correlator --> event_retrieved: If matched
+timeout_handler --> timeout_exceeded: If timeout
+event_retrieved --> next_task: Continues
+timeout_exceeded --> next_task: With default
+
+Note as N1
+Event Correlation Pattern:
+1. Task waits for specific event
+2. Define correlation criteria (order ID, user ID)
+3. External system sends events
+4. Correlator matches event to task
+5. Multiple events queued simultaneously
+6. Timeout safety: max 30 minutes
+7. Continue with matched event data
+
+Use Cases:
+- Order fulfillment waiting for shipment confirmation
+- Loan approval waiting for document upload
+- Claim processing waiting for verification
+End note
+
+SHOW_LEGEND()
+@enduml

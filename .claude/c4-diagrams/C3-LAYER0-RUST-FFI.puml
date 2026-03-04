@@ -1,0 +1,76 @@
+@startuml C3_Layer0_RustFFI
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 0 - yawl-rust4pm FFI Layer
+
+Container_Boundary(rust_ffi, "yawl-rust4pm (Rust FFI)") {
+
+    Component_Boundary(jni_bindings, "JNI Bindings") {
+        Component(native_loader, "NativeLibraryLoader", "dlopen/LoadLibrary", "Dynamic loading")
+        Component(method_pointers, "MethodPointers", "JNI function pointers", "Native dispatch")
+        Component(jni_wrapper, "JNIWrapper", "Type marshalling", "Java ↔ Rust")
+    }
+
+    Component_Boundary(performance_algos, "Performance Algorithms") {
+        Component(resource_optimizer, "ResourceOptimizer", "Rust impl", "Capacity optimization")
+        Component(allocation_engine, "AllocationEngine", "Constraint solver", "Work distribution")
+        Component(load_balancer, "LoadBalancer", "Heuristic", "Queue optimization")
+    }
+
+    Component_Boundary(memory_safety, "Memory Safety Contracts") {
+        Component(buffer_mgmt, "BufferManagement", "Pinned memory", "Safe FFI buffers")
+        Component(lifecycle_tracker, "LifecycleTracker", "Ownership", "Memory ownership")
+        Component(leak_detector, "LeakDetector", "Valgrind", "Memory leak checks")
+    }
+
+    Component_Boundary(error_handling_ffi, "Cross-Boundary Error Handling") {
+        Component(rust_error_mapper, "RustErrorMapper", "Enum conversion", "Rust Result → Java Exception")
+        Component(panic_handler, "PanicHandler", "Abort catching", "Panic → Exception")
+        Component(error_logger, "ErrorLogger", "Logging", "Error tracking")
+    }
+
+    Component_Boundary(ffi_performance, "FFI Performance Optimization") {
+        Component(jit_compiler, "JITCompiler", "GraalVM JIT", "Native → Java compilation")
+        Component(call_cache, "CallCache", "Result caching", "FFI result caching")
+        Component(batch_processor, "BatchProcessor", "Batching", "Reduce call overhead")
+        Component(zero_copy, "ZeroCopyBuffers", "Memory sharing", "Avoid copies")
+    }
+
+    Component_Boundary(ffi_security, "Security at FFI Boundary") {
+        Component(input_sanitizer, "InputSanitizer", "Validation", "Buffer overflow prevention")
+        Component(return_validator, "ReturnValidator", "Sanity checks", "Value validation")
+        Component(capability_checker, "CapabilityChecker", "Permissions", "OS capability checks")
+    }
+
+    Component_Boundary(ffi_monitoring, "Monitoring & Profiling") {
+        Component(ffi_tracer, "FFITracer", "OpenTelemetry", "Trace FFI calls")
+        Component(ffi_profiler, "FFIProfiler", "Metrics", "Timing FFI calls")
+        Component(memory_profiler, "MemoryProfiler", "Heap analysis", "FFI memory usage")
+    }
+
+}
+
+Rel(native_loader, jni_wrapper, "Loads via", "")
+Rel(method_pointers, jni_wrapper, "Uses for dispatch", "")
+
+Rel(resource_optimizer, allocation_engine, "Uses results", "")
+Rel(allocation_engine, load_balancer, "Feeds to", "")
+
+Rel(buffer_mgmt, lifecycle_tracker, "Tracks", "")
+Rel(lifecycle_tracker, leak_detector, "Validates", "")
+
+Rel(panic_handler, rust_error_mapper, "Catches → maps", "")
+Rel(rust_error_mapper, error_logger, "Logs", "")
+
+Rel(call_cache, batch_processor, "Batches calls", "")
+Rel(batch_processor, zero_copy, "Uses", "")
+
+Rel(input_sanitizer, jni_wrapper, "Validates input", "")
+Rel(jni_wrapper, return_validator, "Validates returns", "")
+Rel(return_validator, capability_checker, "Checks permissions", "")
+
+Rel(ffi_tracer, ffi_profiler, "Feeds metrics", "")
+Rel(ffi_profiler, memory_profiler, "Includes memory", "")
+
+SHOW_LEGEND()
+@enduml

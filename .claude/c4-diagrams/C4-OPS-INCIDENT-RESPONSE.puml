@@ -1,0 +1,100 @@
+@startuml C4_Ops_IncidentResponse
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Operations - Incident Response Lifecycle
+
+Boundary(detection, "Detection Phase") {
+    Component(monitoring, "Monitoring Alert", "Detection", "Metric crosses threshold")
+    Component(alert_notification, "Alert Notification", "Escalation", "Slack/PagerDuty")
+    Component(incident_creation, "Incident Creation", "Jira", "Create ticket")
+}
+
+Boundary(triage, "Triage Phase") {
+    Component(on_call, "On-Call Engineer", "Responder", "Assigned to incident")
+    Component(initial_assessment, "InitialAssessment", "Analysis", "Severity 1-5")
+    Component(runbook_lookup, "RunbookLookup", "Procedures", "Find applicable runbook")
+}
+
+Boundary(investigation, "Investigation Phase") {
+    Component(metric_analysis, "MetricAnalysis", "Data", "Analyze metrics")
+    Component(log_analysis, "LogAnalysis", "Data", "Search logs")
+    Component(trace_analysis, "TraceAnalysis", "Data", "Trace request flow")
+    Component(root_cause, "RootCauseAnalysis", "Reasoning", "Identify root cause")
+}
+
+Boundary(mitigation, "Mitigation Phase") {
+    Component(immediate_fix, "ImmediateFix", "Action", "Stop the bleeding")
+    Component(remediation, "Remediation", "Action", "Fix the problem")
+    Component(verification, "Verification", "Testing", "Verify fix works")
+    Component(status_update, "StatusUpdate", "Communication", "Notify stakeholders")
+}
+
+Boundary(postmortem, "Post-Mortem Phase") {
+    Component(postmortem_meeting, "PostMortemMeeting", "Retrospective", "Team discussion")
+    Component(root_cause_doc, "RootCauseDoc", "Documentation", "Record findings")
+    Component(lessons_learned, "LessonsLearned", "Learning", "Prevention measures")
+    Component(action_items, "ActionItems", "Improvement", "Prevent recurrence")
+}
+
+monitoring --> alert_notification: Triggers
+alert_notification --> incident_creation: Creates
+incident_creation --> on_call: Assigns to
+on_call --> initial_assessment: Triages
+initial_assessment --> runbook_lookup: Follows
+runbook_lookup --> metric_analysis: Starts investigation
+metric_analysis --> root_cause: Feeds into
+root_cause --> immediate_fix: Informs
+immediate_fix --> remediation: Leads to
+remediation --> verification: Validates
+verification --> status_update: Communicates
+status_update --> postmortem_meeting: Schedules
+postmortem_meeting --> root_cause_doc: Documents
+root_cause_doc --> lessons_learned: Extracts
+lessons_learned --> action_items: Creates
+
+Note as N1
+Incident Response Lifecycle:
+
+Detection (1-2 min):
+- Monitoring alert triggered
+- PagerDuty notification
+- Incident ticket created
+
+Triage (5 min):
+- On-call engineer assigned
+- Severity assessment (1=critical, 5=minor)
+- Runbook retrieved
+
+Investigation (10-30 min):
+- Analyze metrics
+- Search logs
+- Trace request flow
+- Identify root cause
+
+Mitigation (10-60 min):
+- Stop the bleeding (immediate fix)
+- Fix the problem (remediation)
+- Verify fix works
+- Notify stakeholders
+
+Post-Mortem (Next day):
+- Team discussion (why did it happen)
+- Document findings
+- Extract lessons learned
+- Create action items to prevent recurrence
+
+SLOs:
+- Detection: <2 minutes
+- Triage: <5 minutes
+- Investigation: <30 minutes
+- Mitigation: <60 minutes
+- MTTR (Mean Time To Recovery): <1 hour
+
+Root Causes:
+- 70%: Code bugs (fix in PR)
+- 20%: Config errors (update runbook)
+- 10%: External failures (document expected behavior)
+End note
+
+SHOW_LEGEND()
+@enduml

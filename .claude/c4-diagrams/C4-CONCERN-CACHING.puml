@@ -1,0 +1,118 @@
+@startuml C4_Concern_Caching
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Caching Strategy
+
+Boundary(cache_levels, "Multi-Level Cache") {
+    Component(l1, "L1 Cache (JVM Heap)", "Fast", "Request-scoped")
+    Component(l2, "L2 Cache (Redis)", "Warm", "Process-scoped (5-30min)")
+    Component(l3, "L3 Cache (CDN)", "Global", "Shared (1hr+)")
+}
+
+Boundary(cache_patterns, "Caching Patterns") {
+    Component(cache_aside, "Cache-Aside", "Pattern", "Client loads")
+    Component(write_through, "Write-Through", "Pattern", "All writes to cache")
+    Component(write_behind, "Write-Behind", "Pattern", "Async persistence")
+}
+
+Boundary(invalidation, "Invalidation Strategy") {
+    Component(ttl, "TTL-Based", "Simple", "Time-based expiry")
+    Component(event_based, "Event-Based", "Smart", "Invalidate on change")
+    Component(version_based, "Version-Based", "Versioning", "Version increment")
+}
+
+Boundary(metrics, "Cache Metrics") {
+    Component(hit_rate, "Hit Rate", "Target", ">80%")
+    Component(eviction_rate, "EvictionRate", "Monitor", "<10%")
+    Component(latency, "Latency", "Target", "<10ms")
+}
+
+l1 --> l2: Spills to
+l2 --> l3: Spills to
+cache_aside --> l1: Loads into
+write_through --> l2: Writes to
+write_behind --> l2: Queues to
+
+ttl --> l1: Expires
+event_based --> l2: Invalidates on event
+version_based --> l3: Versioned keys
+
+Note as N1
+Multi-Level Cache Strategy:
+
+L1 Cache (JVM Heap):
+- Hotspot data (permissions, config)
+- Scope: Per-request
+- TTL: <1 second
+- Size: Limited (heap pressure)
+
+L2 Cache (Redis):
+- Frequently accessed (users, workflows)
+- Scope: Per-process (5-30 min)
+- TTL: 5-30 minutes
+- Replication: Distributed
+
+L3 Cache (CDN):
+- Static assets (images, CSS)
+- Scope: Global (1hr+)
+- TTL: 1 hour to 1 day
+- Edge caching
+
+Caching Patterns:
+
+Cache-Aside (Most common):
+1. Check cache for data
+2. If hit: return from cache
+3. If miss: load from DB
+4. Store in cache
+5. Return data
+
+Write-Through:
+1. Write to cache
+2. Write to DB (synchronous)
+3. Return to client
+Pro: Data consistency
+Con: Slower writes
+
+Write-Behind (Async):
+1. Write to cache
+2. Queue write to DB (async)
+3. Return to client immediately
+Pro: Fast writes
+Con: Possible data loss
+
+Invalidation:
+
+TTL (Time To Live):
+- Simple: Expire after N seconds
+- Trade-off: Stale data or low TTL
+
+Event-Based:
+- On data change: broadcast invalidation
+- Pro: Always fresh
+- Con: Complex coordination
+
+Version-Based:
+- Key format: "resource#v1", "resource#v2"
+- New version = new key
+- Pro: No invalidation overhead
+- Con: Orphaned keys
+
+Metrics:
+
+Cache Hit Rate (Target: >80%):
+- High = good caching strategy
+- Low = need better key design
+
+Eviction Rate (Target: <10%):
+- Too high = cache too small
+- Monitor memory pressure
+
+Latency (Target: <10ms):
+- L1: <1ms
+- L2: <5ms
+- L3: <10ms
+End note
+
+SHOW_LEGEND()
+@enduml

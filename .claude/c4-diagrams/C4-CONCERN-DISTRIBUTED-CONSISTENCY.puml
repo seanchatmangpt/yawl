@@ -1,0 +1,73 @@
+@startuml C4_Concern_DistributedConsistency
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Distributed Consistency
+
+Boundary(consistency_models, "Consistency Models") {
+    Component(acid, "ACID Transactions", "Guarantee", "Single-node only")
+    Component(eventual, "Eventual Consistency", "Guarantee", "Multi-node async")
+    Component(strong_eventual, "Strong Eventual", "Guarantee", "Eventual + conflict-free")
+}
+
+Boundary(sync_strategy, "Synchronization Strategy") {
+    Component(pessimistic, "Pessimistic Locking", "Strategy", "Lock before write")
+    Component(optimistic, "Optimistic Locking", "Strategy", "Detect conflicts")
+    Component(event_sourcing, "Event Sourcing", "Strategy", "Immutable log")
+}
+
+Boundary(conflict_resolution, "Conflict Resolution") {
+    Component(last_write_wins, "LastWriteWins", "Simple", "Latest timestamp")
+    Component(vector_clock, "VectorClock", "Causal", "Ordering by causality")
+    Component(crdt, "CRDT", "Conflict-Free", "Commutative operations")
+}
+
+Boundary(replication, "Replication Model") {
+    Component(sync_repl, "SynchronousReplication", "Consistency", "Wait for all")
+    Component(async_repl, "AsynchronousReplication", "Performance", "Fire and forget")
+    Component(semi_sync, "Semi-SynchronousReplication", "Hybrid", "Wait for quorum")
+}
+
+Boundary(examples, "Example Scenarios") {
+    Component(bank_transfer, "BankTransfer", "ACID", "Must use transactions")
+    Component(user_profile, "UserProfile", "Eventual", "Cache allowed")
+    Component(shopping_cart, "ShoppingCart", "Eventual", "OK to be stale")
+}
+
+consistency_models --> sync_strategy: Informs
+sync_strategy --> conflict_resolution: Uses
+replication --> consistency_models: Achieves
+
+Note as N1
+Consistency Models Trade-offs:
+
+ACID (Strong):
+- Consistency: Perfect
+- Availability: Lower
+- Partition: Not tolerated
+- Use: Financial transactions
+
+Eventual (Weak):
+- Consistency: Delayed
+- Availability: High
+- Partition: Tolerated
+- Use: User profiles, caches
+
+Strong Eventual (Best of Both):
+- Consistency: Eventually consistent + commutative
+- Availability: High
+- Partition: Tolerated
+- Use: Distributed databases (CRDTs)
+
+CAP Theorem: Pick 2 of 3
+- Consistency: All reads see latest write
+- Availability: System always responds
+- Partition tolerance: Works despite network splits
+
+YAWL Strategy:
+- Workflow state: Semi-sync replication (safety)
+- Cache data: Async replication (speed)
+- Event log: Sync replication (audit trail)
+End note
+
+SHOW_LEGEND()
+@enduml

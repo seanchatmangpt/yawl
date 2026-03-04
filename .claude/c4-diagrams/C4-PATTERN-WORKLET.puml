@@ -1,0 +1,45 @@
+@startuml C4_Pattern_Worklet
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Worklet Invocation
+
+Boundary(parent_workflow, "Parent Workflow") {
+    Component(worklet_task, "WorkletTask", "Task", "Dynamic invocation")
+    Component(exception_handler_map, "ExceptionHandlerMap", "Mapping", "Handler selection")
+}
+
+Boundary(worklet_service, "Worklet Service") {
+    Component(worklet_resolver, "WorkletResolver", "Logic", "Select worklet")
+    Component(worklet_selector, "WorkletSelector", "Strategy", "Handler choice")
+    Component(sub_workflow, "SubWorkflow", "Net", "Worklet instance")
+    Component(state_sync, "StateSync", "Synchronization", "Data exchange")
+}
+
+Boundary(exception_handlers, "Exception Handlers") {
+    Component(handler1, "Handler 1", "Worklet", "Specific handler")
+    Component(handler2, "Handler 2", "Worklet", "Fallback handler")
+    Component(default_handler, "Default", "Worklet", "Default behavior")
+}
+
+parent_workflow --> worklet_task: Triggers
+worklet_task --> exception_handler_map: Selects handler
+exception_handler_map --> worklet_resolver: Resolves
+worklet_resolver --> worklet_selector: Chooses
+worklet_selector --> handler1: Selected
+worklet_selector --> handler2: Fallback
+worklet_selector --> default_handler: Default
+
+handler1 --> sub_workflow: Executes
+sub_workflow --> state_sync: Returns state
+state_sync --> parent_workflow: Continues
+
+Note as N1
+Worklet: Dynamic sub-workflow
+Use Cases:
+- Exception handling with alternatives
+- Dynamic task routing
+- Conditional sub-workflows
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,37 @@
+@startuml C4_Pattern_Exception
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Exception Handling
+
+Boundary(exception_flow, "Exception Handling Flow") {
+    Component(task, "Task", "Execution", "Regular task")
+    Component(exception_thrown, "Exception", "Event", "Task fails")
+    Component(exception_router, "ExceptionRouter", "Logic", "Route exceptions")
+    Component(exception_handler, "ExceptionHandler", "Task", "Handle error")
+    Component(recovery_task, "RecoveryTask", "Task", "Compensate")
+    Component(escalation, "Escalation", "Task", "Notify admin")
+}
+
+exception_flow: task --> exception_thrown: Throws
+exception_thrown --> exception_router: Routes to
+exception_router --> exception_handler: Specific handler
+exception_handler --> recovery_task: Compensate
+recovery_task --> exception_router: Success?
+exception_router --> escalation: If unrecoverable
+
+Note as N1
+Exception Types:
+- Task exception (task fails)
+- Timeout exception (SLA violation)
+- Resource exception (unavailable)
+- Data exception (validation fail)
+
+Handler Actions:
+- Compensate (undo changes)
+- Retry (with backoff)
+- Escalate (to admin)
+- Abort (fail fast)
+End note
+
+SHOW_LEGEND()
+@enduml

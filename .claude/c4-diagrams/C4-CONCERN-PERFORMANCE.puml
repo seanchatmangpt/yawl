@@ -1,0 +1,47 @@
+@startuml C4_Concern_Performance
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Performance Optimization
+
+Boundary(optimization_layers, "Performance Optimization") {
+    Component(cache_l1, "L1 Cache (JVM Heap)", "Request-level", "Hotspot data")
+    Component(cache_l2, "L2 Cache (Redis)", "Process-level", "Shared data")
+    Component(cache_l3, "L3 Cache (CDN)", "Global", "Static assets")
+    Component(cache_invalidation, "Cache Invalidation", "Strategy", "TTL-based")
+}
+
+Boundary(query_optimization, "Query Optimization") {
+    Component(index_strategy, "Index Strategy", "DB", "Query indexes")
+    Component(query_plan, "Query Planner", "DB", "Plan optimization")
+    Component(result_batching, "Result Batching", "App", "Batch processing")
+}
+
+Boundary(thread_optimization, "Threading Optimization") {
+    Component(virtual_threads, "Virtual Threads", "Java 25", "Per-task threads")
+    Component(carrier_tuning, "Carrier Tuning", "Scheduler", "Pinning for I/O")
+    Component(structured_concurrency, "Structured Concurrency", "Scope", "Task management")
+}
+
+Boundary(bottleneck_detection, "Bottleneck Detection") {
+    Component(profiler, "Profiler", "JFR", "CPU/memory profiling")
+    Component(tracer, "Tracer", "OpenTelemetry", "Request tracing")
+    Component(bottleneck_analyzer, "BottleneckAnalyzer", "Analysis", "Identify slow paths")
+}
+
+optimization_layers --> cache_invalidation: Managed by
+query_optimization --> query_plan: Improves
+thread_optimization --> virtual_threads: Uses
+bottleneck_detection --> profiler: Gathers data
+
+Note as N1
+Performance Strategy:
+1. Cache aggressively
+2. Optimize queries
+3. Use virtual threads
+4. Profile continuously
+5. Fix bottlenecks iteratively
+Target: <1ms task latency
+End note
+
+SHOW_LEGEND()
+@enduml

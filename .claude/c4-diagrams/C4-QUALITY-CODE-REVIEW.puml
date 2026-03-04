@@ -1,0 +1,109 @@
+@startuml C4_Quality_CodeReview
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Quality Gate - Code Review Process
+
+Boundary(submission, "Submission Phase") {
+    Component(developer, "Developer", "Author", "Submits PR")
+    Component(auto_checks, "AutomaticChecks", "CI", "Run tests/lint")
+    Component(pr_description, "PRDescription", "Metadata", "What/why/how")
+}
+
+Boundary(review_criteria, "Review Criteria") {
+    Component(design_review, "DesignReview", "Architecture", "Follows patterns")
+    Component(security_review, "SecurityReview", "Safety", "No vulnerabilities")
+    Component(perf_review, "PerformanceReview", "Efficiency", "Not slower")
+    Component(test_review, "TestReview", "Coverage", "80%+ coverage")
+    Component(doc_review, "DocumentationReview", "Clarity", "Updated docs")
+}
+
+Boundary(approval_path, "Approval Path") {
+    Component(junior_review, "JuniorReview", "First", "Code quality")
+    Component(senior_review, "SeniorReview", "Second", "Design/architecture")
+    Component(security_review_final, "SecurityReview (Final)", "Gating", "Security gate")
+    Component(merge_ready, "MergeReady", "Gate", "Approved")
+}
+
+Boundary(feedback_resolution, "Feedback Resolution") {
+    Component(comments, "Comments", "Feedback", "GitHub comments")
+    Component(conversations, "Conversations", "Debate", "Thread discussions")
+    Component(revisions, "Revisions", "Iteration", "Address feedback")
+    Component(re_review, "ReReview", "Validation", "Verify fixes")
+}
+
+submission --> auto_checks: Triggers
+auto_checks --> pr_description: Checks
+pr_description --> design_review: Sent to
+design_review --> security_review: Then
+security_review --> test_review: Then
+test_review --> junior_review: First reviewer
+junior_review --> senior_review: If approved
+senior_review --> security_review_final: If approved
+security_review_final --> merge_ready: If approved
+merge_ready --> comments: Issues found?
+comments --> conversations: Discusses
+conversations --> revisions: Developer fixes
+revisions --> re_review: Re-review cycle
+
+Note as N1
+Code Review Process:
+
+Submission:
+1. Developer submits PR with description
+2. CI runs: tests, linting, coverage
+3. PR description explains what/why/how
+
+Review Checklist:
+- Design: Follows architecture patterns
+- Security: No vulnerabilities (OWASP)
+- Performance: Not slower than baseline
+- Testing: 80%+ code coverage
+- Documentation: Updated/accurate
+
+Approval Workflow:
+1. Junior Review (first): Code quality, tests
+   - Approval: ✅
+   - Changes requested: Resubmit
+2. Senior Review (second): Design, architecture
+   - Approval: ✅
+   - Changes requested: Resubmit
+3. Security Review (gating): Vulnerability scan
+   - Approval: ✅
+   - Changes requested: Resubmit
+4. Merge Ready: All approvals + CI green
+
+Feedback Loop:
+1. Reviewers add comments
+2. Developer discusses in threads
+3. Developer makes revisions
+4. Request re-review
+5. Reviewers verify fixes
+6. Approve and merge
+
+SLA:
+- First review: <4 hours
+- Follow-up reviews: <2 hours
+- Developer response: <4 hours
+- Merge: <24 hours from approval
+
+Merge Criteria:
+- ✅ All tests GREEN
+- ✅ Coverage ≥80%
+- ✅ Guards (H) GREEN
+- ✅ Invariants (Q) GREEN
+- ✅ 2+ approvals (junior + senior)
+- ✅ Security review approved
+- ✅ No unresolved conversations
+
+Common Rejection Reasons:
+1. No test coverage (too risky)
+2. Breaking API change (undocumented)
+3. Performance regression (>10% slower)
+4. Security vulnerability (CVE)
+5. Code duplication (DRY violation)
+6. Missing documentation
+7. Architecture deviation
+End note
+
+SHOW_LEGEND()
+@enduml

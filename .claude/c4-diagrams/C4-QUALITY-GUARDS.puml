@@ -1,0 +1,65 @@
+@startuml C4_Quality_Guards
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Quality Gate - H-Guards Validation
+
+Boundary(generated_code, "Generated Code") {
+    Component(java_files, "Java Files", "Code", "Generated classes")
+}
+
+Boundary(guard_validation, "H-Guards Validation") {
+    Component(h_todo, "H_TODO Detector", "Regex", "TODO/FIXME markers")
+    Component(h_mock, "H_MOCK Detector", "Regex+SPARQL", "Mock implementations")
+    Component(h_stub, "H_STUB Detector", "SPARQL", "Empty returns")
+    Component(h_empty, "H_EMPTY Detector", "SPARQL", "No-op bodies")
+    Component(h_fallback, "H_FALLBACK Detector", "SPARQL", "Silent catch")
+    Component(h_lie, "H_LIE Detector", "SPARQL", "Code ≠ docs")
+    Component(h_silent, "H_SILENT Detector", "Regex", "Log instead throw")
+}
+
+Boundary(validation_engine, "Validation Engine") {
+    Component(hypervalidator, "HyperStandardsValidator", "Orchestrator", "Runs all guards")
+    Component(receipt, "GuardReceipt", "Report", "JSON report")
+}
+
+Boundary(gates, "Gates") {
+    Component(pass_gate, "PASS", "Green", "No violations")
+    Component(fail_gate, "FAIL", "Red", "Violations found")
+}
+
+java_files --> h_todo: Scans for
+java_files --> h_mock: Scans for
+java_files --> h_stub: Scans for
+java_files --> h_empty: Scans for
+java_files --> h_fallback: Scans for
+java_files --> h_lie: Scans for
+java_files --> h_silent: Scans for
+
+h_todo --> hypervalidator: Reports
+h_mock --> hypervalidator: Reports
+h_stub --> hypervalidator: Reports
+h_empty --> hypervalidator: Reports
+h_fallback --> hypervalidator: Reports
+h_lie --> hypervalidator: Reports
+h_silent --> hypervalidator: Reports
+
+hypervalidator --> receipt: Generates
+receipt --> pass_gate: No violations
+receipt --> fail_gate: Violations found
+
+Note as N1
+H-Guards enforce "no fakes" principle
+7 patterns:
+1. TODO/FIXME markers
+2. Mock implementations
+3. Empty returns
+4. No-op methods
+5. Silent degradation
+6. Documentation lies
+7. Logging instead of throwing
+
+Gate: Must be GREEN to proceed
+End note
+
+SHOW_LEGEND()
+@enduml

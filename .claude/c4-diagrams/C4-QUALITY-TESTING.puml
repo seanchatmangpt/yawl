@@ -1,0 +1,80 @@
+@startuml C4_Quality_Testing
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Quality Gate - Test Architecture
+
+Boundary(unit_tests, "Unit Tests") {
+    Component(util_tests, "UtilityTests", "JUnit", "Helper functions")
+    Component(model_tests, "ModelTests", "JUnit", "Domain model")
+    Component(service_tests, "ServiceTests", "JUnit", "Service layer")
+    Component(coverage_unit, "Coverage: 80%+", "Target", "Line coverage")
+}
+
+Boundary(integration_tests, "Integration Tests") {
+    Component(db_tests, "DatabaseTests", "Testcontainers", "H2/PostgreSQL")
+    Component(api_tests, "APITests", "REST Assured", "HTTP endpoints")
+    Component(workflow_tests, "WorkflowTests", "YAWL Engine", "Full workflows")
+    Component(coverage_int, "Coverage: 70%+", "Target", "Branch coverage")
+}
+
+Boundary(e2e_tests, "End-to-End Tests") {
+    Component(scenario_tests, "ScenarioTests", "Chicago TDD", "Real scenarios")
+    Component(performance_tests, "PerformanceTests", "JMH", "Benchmarks")
+    Component(chaos_tests, "ChaosTests", "Failure injection", "Fault tolerance")
+    Component(coverage_e2e, "Coverage: 100%", "Target", "Critical paths")
+}
+
+Boundary(ci_integration, "CI/CD Integration") {
+    Component(github_actions, "GitHubActions", "CI", "Automated runs")
+    Component(test_reporting, "TestReporting", "Reports", "HTML reports")
+    Component(coverage_reporting, "CoverageReporting", "Coverage", "Codecov/Sonar")
+}
+
+unit_tests --> coverage_unit: Reports
+integration_tests --> coverage_int: Reports
+e2e_tests --> coverage_e2e: Reports
+github_actions --> unit_tests: Runs
+github_actions --> integration_tests: Runs
+github_actions --> e2e_tests: Runs
+
+Note as N1
+Test Strategy (Chicago TDD):
+
+Unit Tests (Fast, Isolated):
+- Test individual components
+- Mock external dependencies
+- Target: 80%+ line coverage
+- Execution time: <5 seconds
+
+Integration Tests (Slower, Real):
+- Test component interactions
+- Use Testcontainers for DB
+- Test actual HTTP APIs
+- Target: 70%+ branch coverage
+- Execution time: <30 seconds
+
+E2E Tests (Slowest, Real World):
+- Test complete workflows
+- Real data flows
+- Scenario-based (user stories)
+- Target: 100%+ critical paths
+- Execution time: <5 minutes
+
+Fortune 5 Tests (Scale, Real):
+- 30 concurrent ARTs
+- 5,000+ dependencies
+- SLA enforcement (4h, 30m, 15m)
+- 65+ test combinations
+- Execution time: <4 hours
+
+CI/CD Gates:
+1. Compile GREEN
+2. Unit tests GREEN
+3. Integration tests GREEN
+4. E2E tests GREEN
+5. Coverage ≥80%
+6. All gates must pass before merge
+End note
+
+SHOW_LEGEND()
+@enduml

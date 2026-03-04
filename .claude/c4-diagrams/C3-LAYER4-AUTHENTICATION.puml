@@ -1,0 +1,64 @@
+@startuml C3_Layer4_Authentication
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Layer 4 - yawl-authentication Service
+
+Container_Boundary(auth_service, "yawl-authentication") {
+
+    Component_Boundary(oauth_flow, "OAuth 2.0 Flow") {
+        Component(oauth_provider, "OAuthProvider", "Server", "Token issuance")
+        Component(oauth_client, "OAuthClient", "Client", "Token exchange")
+        Component(auth_endpoint, "AuthorizationEndpoint", "Endpoint", "/oauth/authorize")
+        Component(token_endpoint, "TokenEndpoint", "Endpoint", "/oauth/token")
+        Component(userinfo_endpoint, "UserinfoEndpoint", "Endpoint", "/oauth/userinfo")
+    }
+
+    Component_Boundary(ldap_integration, "LDAP Integration") {
+        Component(ldap_connector, "LDAPConnector", "Adapter", "Directory access")
+        Component(ldap_cache, "LDAPCache", "Performance", "User info cache")
+        Component(ldap_sync, "LDAPSync", "Replication", "Periodic sync")
+    }
+
+    Component_Boundary(mfa, "Multi-Factor Authentication") {
+        Component(totp_service, "TOTPService", "Time-based OTP", "TOTP generator")
+        Component(sms_service, "SMSService", "Text delivery", "SMS OTP")
+        Component(email_service, "EmailService", "Email delivery", "Email OTP")
+        Component(mfa_cache, "MFACache", "Session", "Verified state")
+    }
+
+    Component_Boundary(session_mgmt, "Session Management") {
+        Component(session_factory, "SessionFactory", "Creation", "Session creation")
+        Component(session_store, "SessionStore", "Storage", "Redis/Memcached")
+        Component(session_validator, "SessionValidator", "Validation", "Session checking")
+        Component(session_cleanup, "SessionCleanup", "Expiration", "TTL management")
+    }
+
+    Component_Boundary(token_mgmt, "JWT Token Management") {
+        Component(jwt_issuer, "JWTIssuer", "Creation", "Token issuance")
+        Component(jwt_claims, "JWTClaims", "Data", "Claim builder")
+        Component(jwt_validator, "JWTValidator", "Verification", "Token validation")
+        Component(jwt_refresh, "RefreshTokenService", "Renewal", "Token refresh")
+    }
+
+}
+
+Rel(oauth_client, auth_endpoint, "Requests auth", "")
+Rel(auth_endpoint, oauth_provider, "Validates user", "")
+Rel(oauth_provider, token_endpoint, "Issues token", "")
+Rel(token_endpoint, jwt_issuer, "Creates JWT", "")
+Rel(jwt_issuer, jwt_claims, "Builds claims", "")
+
+Rel(ldap_connector, ldap_cache, "Caches in", "")
+Rel(ldap_cache, ldap_sync, "Updated by", "")
+
+Rel(jwt_validator, mfa_cache, "Checks MFA", "")
+Rel(totp_service, mfa_cache, "Verifies", "")
+
+Rel(session_factory, session_store, "Stores in", "")
+Rel(session_validator, session_store, "Reads from", "")
+Rel(session_cleanup, session_store, "Expires", "")
+
+Rel(jwt_refresh, jwt_issuer, "Issues new", "")
+
+SHOW_LEGEND()
+@enduml

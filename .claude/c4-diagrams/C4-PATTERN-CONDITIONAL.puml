@@ -1,0 +1,45 @@
+@startuml C4_Pattern_Conditional
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Conditional Routing (XOR)
+
+Boundary(workflow, "Workflow Execution") {
+    Component(ynet_runner, "YNetRunner", "Orchestrator", "Condition evaluation")
+    Component(xor_split, "XOR-Split", "Gateway", "Exclusive choice")
+    Component(condition_eval, "ConditionEvaluator", "Logic", "Predicate evaluation")
+    Component(task_approved, "Task: Approved", "Branch A", "If approved")
+    Component(task_rejected, "Task: Rejected", "Branch B", "If rejected")
+    Component(task_review, "Task: Review", "Branch C", "If pending")
+    Component(xor_join, "XOR-Join", "Gateway", "Simple merge")
+}
+
+Boundary(data, "Data Context") {
+    Component(case_data, "Case Data", "Variables", "Approval status")
+    Component(predicate_engine, "PredicateEngine", "Eval", "Parse & execute")
+}
+
+ynet_runner --> case_data: Reads variable
+case_data --> condition_eval: "status = 'approved'"
+condition_eval --> predicate_engine: Evaluates predicate
+
+predicate_engine --> xor_split: Routes decision
+
+xor_split --> task_approved: If true
+xor_split --> task_rejected: Else if false
+xor_split --> task_review: Else if pending
+
+task_approved --> xor_join: Completes
+task_rejected --> xor_join: Completes
+task_review --> xor_join: Completes
+
+xor_join --> ynet_runner: Continues
+
+Note as N1
+XOR-Split: One condition → one path
+Condition: status = 'approved' ? approved : (status = 'rejected' ? rejected : review)
+Execution: Single path (no parallelism)
+XOR-Join: Any path → continue (simple merge)
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,96 @@
+@startuml C4_Future_AIIntegration
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Future Vision - AI/ML Integration
+
+Boundary(ai_layer, "AI/ML Layer") {
+    Component(ml_pipeline, "MLPipeline", "Training", "Model development")
+    Component(feature_eng, "FeatureEngineering", "Prep", "Extract features")
+    Component(model_training, "ModelTraining", "ML", "Train models")
+    Component(model_evaluation, "ModelEvaluation", "Validation", "Evaluate accuracy")
+}
+
+Boundary(inference, "Inference & Serving") {
+    Component(model_serving, "ModelServing", "API", "Inference server")
+    Component(ml_monitoring, "MLMonitoring", "Ops", "Model drift detection")
+    Component(model_versioning, "ModelVersioning", "Release", "Model versions")
+}
+
+Boundary(use_cases, "AI-Powered Use Cases") {
+    Component(resource_optimization, "ResourceOptimization", "ML", "Predict best resource allocation")
+    Component(anomaly_detection, "AnomalyDetection", "ML", "Detect workflow anomalies")
+    Component(predictive_sla, "PredictiveSLA", "ML", "Forecast SLA violations")
+    Component(workflow_generation, "WorkflowGeneration", "GenAI", "Auto-generate workflows from specs")
+}
+
+Boundary(feedback_loop, "Feedback Loop") {
+    Component(prediction_eval, "PredictionEvaluation", "Validation", "Evaluate predictions")
+    Component(retraining, "Retraining", "Improvement", "Retrain with new data")
+    Component(deployment, "Deployment", "Release", "Deploy improved model")
+}
+
+ml_pipeline --> feature_eng: Prepares data
+feature_eng --> model_training: Feeds to
+model_training --> model_evaluation: Validates
+model_evaluation --> model_serving: If approved
+model_serving --> ml_monitoring: Monitors
+
+model_serving --> resource_optimization: Predicts allocation
+model_serving --> anomaly_detection: Detects anomalies
+model_serving --> predictive_sla: Forecasts violations
+
+prediction_eval --> retraining: If accuracy drops
+retraining --> deployment: Redeploys
+
+Note as N1
+YAWL AI/ML Vision (2026-2027):
+
+Resource Optimization (ML):
+- Predict optimal resource allocation
+- Learn from historical allocations
+- Suggest assignments before human
+- Continuous improvement
+
+Anomaly Detection (ML):
+- Detect unusual workflow patterns
+- Predict failures before they happen
+- Reduce MTTR by early warning
+- Improve reliability
+
+Predictive SLA (ML):
+- Forecast SLA violations hours ahead
+- Allow proactive intervention
+- Improve service levels
+- Reduce customer impact
+
+Workflow Generation (GenAI):
+- Spec: "Approval workflow for expenses <$1000"
+- GenAI generates YAWL net definition
+- Human review + refinement
+- Deploy immediately
+- 10× faster workflow creation
+
+Feedback Loop:
+1. Make prediction (resource allocation)
+2. Measure outcome (task completion time)
+3. Evaluate accuracy
+4. Retrain if accuracy drops
+5. Deploy improved model
+6. Repeat
+
+Requirements:
+- Historical data (12+ months)
+- Feedback loop (outcome measurement)
+- Model versioning (track performance)
+- Human-in-the-loop (review before action)
+- Explainability (understand predictions)
+
+Timeline:
+- Q3 2026: Resource optimization MVP
+- Q4 2026: Anomaly detection + predictive SLA
+- Q1 2027: Workflow generation
+- Q2 2027: Multi-tenant model isolation
+End note
+
+SHOW_LEGEND()
+@enduml

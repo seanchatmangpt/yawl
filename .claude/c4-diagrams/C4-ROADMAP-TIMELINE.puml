@@ -1,0 +1,79 @@
+@startuml C4_Roadmap_Timeline
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL v6.0.0 - Product Roadmap Timeline
+
+Boundary(q1_2026, "Q1 2026 (Delivered)") {
+    Component(v6_0_0, "v6.0.0 GA", "Release", "Core engine + Java 25 VT")
+    Component(fortune5_tests, "Fortune 5 Tests", "Feature", "Enterprise scale validation")
+    Component(mcp_a2a, "MCP/A2A", "Feature", "Agent integration")
+    Component(h_guards, "H-Guards", "Feature", "Code quality gates")
+}
+
+Boundary(q2_2026, "Q2 2026 (Planned)") {
+    Component(v6_1_0, "v6.1.0", "Release", "Bug fixes + optimizations")
+    Component(observability, "Observability Stack", "Feature", "Prometheus + Jaeger")
+    Component(distributed_caching, "Distributed Cache", "Feature", "Redis integration")
+    Component(kubernetes, "Kubernetes Support", "Feature", "K8s deployments")
+}
+
+Boundary(q3_2026, "Q3 2026 (Planned)") {
+    Component(v6_2_0, "v6.2.0", "Release", "Performance + scaling")
+    Component(autonomous_agents, "Autonomous Agents", "Feature", "Multi-agent workflows")
+    Component(ml_optimization, "ML Optimization", "Feature", "Resource allocation ML")
+    Component(saas_features, "SaaS Features", "Feature", "Multi-tenancy enhancements")
+}
+
+Boundary(q4_2026, "Q4 2026 (Planned)") {
+    Component(v6_3_0, "v6.3.0", "Release", "Enterprise features")
+    Component(blockchain_audit, "Blockchain Audit", "Feature", "Immutable audit trail")
+    Component(advanced_analytics, "Analytics", "Feature", "Workflow analytics engine")
+    Component(marketplace, "Marketplace", "Feature", "Skills/agents marketplace")
+}
+
+Boundary(future, "Future Vision (2027)") {
+    Component(quantum, "Quantum Ready", "Future", "Quantum-safe crypto")
+    Component(global_federation, "Global Federation", "Future", "Multi-cloud orchestration")
+    Component(ai_planning, "AI Planning", "Future", "Autonomous workflow generation")
+}
+
+v6_0_0 --> v6_1_0: Next release
+v6_1_0 --> v6_2_0: Next release
+v6_2_0 --> v6_3_0: Next release
+v6_3_0 --> quantum: Long-term vision
+
+Note as N1
+YAWL v6.0.0 Roadmap
+
+Q1 2026 (DELIVERED):
+✅ Core engine with Java 25 virtual threads
+✅ Fortune 5 enterprise scale tests
+✅ MCP/A2A agent integration
+✅ H-Guards code quality enforcement
+
+Q2 2026:
+- Full observability stack
+- Distributed caching layer
+- Kubernetes support
+- Performance optimizations
+
+Q3 2026:
+- Autonomous multi-agent workflows
+- ML-based resource optimization
+- Multi-tenancy enhancements
+- Advanced analytics
+
+Q4 2026:
+- Blockchain audit trail
+- Workflow analytics
+- Skills/agents marketplace
+- Enterprise SaaS features
+
+Vision 2027:
+- Quantum-safe cryptography
+- Multi-cloud federation
+- AI-powered workflow generation
+End note
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,48 @@
+@startuml C4_Pattern_Saga
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Workflow Pattern - Saga/Compensation Pattern
+
+Boundary(forward_path, "Forward Path (Happy Path)") {
+    Component(step1, "Step 1: Order", "Task", "Create order")
+    Component(step2, "Step 2: Reserve", "Task", "Reserve inventory")
+    Component(step3, "Step 3: Charge", "Task", "Charge payment")
+    Component(step4, "Step 4: Ship", "Task", "Ship product")
+}
+
+Boundary(compensation_path, "Compensation Path (Rollback)") {
+    Component(comp1, "Comp 1: Cancel Order", "Task", "Undo order")
+    Component(comp2, "Comp 2: Release Inventory", "Task", "Undo reserve")
+    Component(comp3, "Comp 3: Refund", "Task", "Undo charge")
+}
+
+Boundary(saga_coordinator, "Saga Coordinator") {
+    Component(transaction_log, "TransactionLog", "Record", "Track steps")
+    Component(rollback_trigger, "RollbackTrigger", "Logic", "On failure")
+    Component(idempotency_check, "IdempotencyChecker", "Safety", "Prevent duplicates")
+}
+
+step1 --> step2: Success
+step2 --> step3: Success
+step3 --> step4: Success
+
+step3 --> rollback_trigger: If charge fails
+rollback_trigger --> comp3: Reverse charge
+comp3 --> comp2: Reverse inventory
+comp2 --> comp1: Reverse order
+
+transaction_log --> idempotency_check: Validates
+idempotency_check --> step1: Allows only once
+
+Note as N1
+Saga Pattern: Long-running transaction
+Forward: Step 1 → 2 → 3 → 4
+If Step 3 fails:
+- Compensate 3 (refund)
+- Compensate 2 (release inventory)
+- Compensate 1 (cancel order)
+Idempotency: Each step safe to repeat
+End note
+
+SHOW_LEGEND()
+@enduml

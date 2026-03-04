@@ -1,0 +1,75 @@
+@startuml C2_Monitoring_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title YAWL v6.0.0 - Observability Stack
+
+Container_Boundary(instrumentation, "Instrumentation") {
+    Container(app_metrics, "App Metrics Exporter", "Micrometer", "Prometheus endpoint")
+    Container(jvm_metrics, "JVM Metrics", "Java Flight Recorder", "GC, heap, threads")
+    Container(otel_collector, "OpenTelemetry Collector", "Agent/Sidecar", "Trace aggregation")
+    Container(log_collector, "Log Collector", "Filebeat", "Log shipping")
+}
+
+Container_Boundary(storage_tier, "Time-Series & Storage") {
+    ContainerDb(prometheus, "Prometheus", "Time-series DB", "Metrics storage (local)")
+    ContainerDb(prometheus_remote, "Remote Storage", "S3/GCS", "Long-term metrics")
+    ContainerDb(jaeger, "Jaeger Backend", "Trace DB", "Distributed traces")
+    ContainerDb(elasticsearch, "Elasticsearch", "Log DB", "Centralized logs")
+}
+
+Container_Boundary(aggregation_tier, "Aggregation & Processing") {
+    Container(metric_aggregator, "Metric Aggregator", "Prometheus", "Data aggregation")
+    Container(trace_processor, "Trace Processor", "Jaeger collector", "Trace processing")
+    Container(log_processor, "Log Processor", "Logstash", "Log parsing/enrichment")
+}
+
+Container_Boundary(visualization_tier, "Visualization & Dashboards") {
+    Container(grafana, "Grafana", "Dashboards", "Metric visualization")
+    Container(kibana, "Kibana", "Log explorer", "Log analysis")
+    Container(jaeger_ui, "Jaeger UI", "Trace viewer", "Trace exploration")
+}
+
+Container_Boundary(alerting_tier, "Alerting & Escalation") {
+    Container(alert_engine, "Alert Engine", "AlertManager", "Alert evaluation")
+    Container(alert_rules, "Alert Rules", "PromQL", "Thresholds and rules")
+    Container(escalation, "Escalation Service", "PagerDuty/OpsGenie", "On-call routing")
+    Container(notification, "Notification Service", "Email/Slack/SMS", "Alert delivery")
+}
+
+Container_Boundary(analysis_tier, "Analysis & Insights") {
+    Container(slo_tracker, "SLO Tracker", "Error budget", "Service level tracking")
+    Container(capacity_planner, "Capacity Planner", "Forecasting", "Resource trending")
+    Container(anomaly_detector, "Anomaly Detector", "ML-based", "Deviation detection")
+}
+
+Container_Boundary(audit_compliance, "Audit & Compliance") {
+    Container(audit_logger, "Audit Logger", "Immutable log", "User action tracking")
+    Container(compliance_checker, "Compliance Checker", "Automated scanning", "Policy violations")
+    Container(soc_reporter, "SOC Reporter", "Automated reports", "Compliance reporting")
+}
+
+Rel(app_metrics, prometheus, "Scrapes metrics", "HTTP pull")
+Rel(jvm_metrics, prometheus, "Exports metrics", "")
+Rel(otel_collector, jaeger, "Sends traces", "")
+Rel(log_collector, elasticsearch, "Ships logs", "")
+
+Rel(prometheus, metric_aggregator, "Aggregates", "")
+Rel(metric_aggregator, grafana, "Powers", "")
+Rel(log_processor, kibana, "Powers", "")
+Rel(trace_processor, jaeger_ui, "Powers", "")
+
+Rel(prometheus, alert_engine, "Evaluates rules", "")
+Rel(alert_rules, alert_engine, "Thresholds", "")
+Rel(alert_engine, escalation, "Critical alerts", "")
+Rel(escalation, notification, "Routes alerts", "")
+
+Rel(prometheus, slo_tracker, "Feeds metrics", "")
+Rel(prometheus, capacity_planner, "Historical data", "")
+Rel(prometheus, anomaly_detector, "Feeds data", "")
+
+Rel(app_metrics, audit_logger, "Logs actions", "")
+Rel(audit_logger, compliance_checker, "Checks policies", "")
+Rel(compliance_checker, soc_reporter, "Reports findings", "")
+
+SHOW_LEGEND()
+@enduml

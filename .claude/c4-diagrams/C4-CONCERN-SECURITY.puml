@@ -1,0 +1,91 @@
+@startuml C4_Concern_Security
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title YAWL Cross-Cutting Concern - Security & Compliance
+
+Boundary(authentication, "Authentication") {
+    Component(oauth, "OAuth 2.0", "Protocol", "Token-based auth")
+    Component(mfa, "MFA (TOTP/SMS)", "2FA", "Additional factor")
+    Component(session_mgmt, "SessionManagement", "Lifecycle", "Token lifecycle")
+}
+
+Boundary(authorization, "Authorization") {
+    Component(rbac, "RBAC", "Access", "Role-based")
+    Component(abac, "ABAC", "Access", "Attribute-based")
+    Component(permission_cache, "PermissionCache", "Performance", "Cached decisions")
+}
+
+Boundary(encryption, "Encryption") {
+    Component(tls, "TLS 1.3", "Transport", "In-flight encryption")
+    Component(aes_256, "AES-256-GCM", "Symmetric", "At-rest encryption")
+    Component(rsa_4096, "RSA-4096", "Asymmetric", "Key exchange")
+}
+
+Boundary(audit_trail, "Audit & Compliance") {
+    Component(immutable_log, "ImmutableLog", "Append-only", "Audit trail")
+    Component(compliance_checker, "ComplianceChecker", "Scan", "Policy violations")
+    Component(soc_report, "SOC2Reporter", "Report", "SOX 404 compliance")
+}
+
+Boundary(secrets_mgmt, "Secrets Management") {
+    Component(vault, "VaultIntegration", "Storage", "HashiCorp Vault")
+    Component(rotation, "SecretRotation", "Lifecycle", "Auto-rotation")
+}
+
+oauth --> mfa: Requires
+mfa --> session_mgmt: Manages tokens
+session_mgmt --> permission_cache: Checks permissions
+rbac --> permission_cache: Evaluates
+tls --> encryption: Secures
+aes_256 --> vault: Keys from
+vault --> rotation: Rotates
+immutable_log --> compliance_checker: Scans
+compliance_checker --> soc_report: Reports
+
+Note as N1
+Security Strategy:
+
+Authentication:
+- OAuth 2.0 (standard)
+- MFA (TOTP or SMS)
+- Session timeout: 1 hour
+- Token refresh: 7 days
+
+Authorization:
+- RBAC (role-based)
+- ABAC (attribute-based, granular)
+- Permission caching (5 min TTL)
+- Least privilege principle
+
+Encryption:
+- TLS 1.3 (in-flight)
+- AES-256-GCM (at-rest)
+- RSA-4096 (key exchange)
+- Certificates from CA
+
+Compliance:
+- Immutable audit log (append-only)
+- SOX 404 compliance (audit trail)
+- GDPR data deletion
+- Data classification
+
+Secrets:
+- Vault integration
+- Auto-rotation (90 days)
+- Least privilege access
+- Audit logging
+
+Threat Model:
+- External: DDoS, brute force, injection
+- Internal: privilege escalation, data leaks
+- Supply chain: dependency vulnerabilities
+
+Security Testing:
+- OWASP Top 10 checks
+- Penetration testing (quarterly)
+- Dependency scanning (continuous)
+- Code review (all PRs)
+End note
+
+SHOW_LEGEND()
+@enduml
