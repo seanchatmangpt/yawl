@@ -369,6 +369,14 @@ if bash scripts/observatory/observatory.sh --facts; then
     sha256sum pom.xml 2>/dev/null | awk '{print $1}' \
         > .yawl/.dx-state/observatory-pom-hash.txt || true
 
+    # Generate agent context from observatory facts
+    # This creates a markdown summary that agents can read for quick context
+    OBS_CONTEXT_FILE="docs/v6/latest/OBSERVATORY_CONTEXT.md"
+    if [[ -f "scripts/observatory/lib/emit-context.sh" ]]; then
+        bash scripts/observatory/lib/emit-context.sh markdown docs/v6/latest/facts > "$OBS_CONTEXT_FILE" 2>/dev/null || true
+        echo "   📝 Agent context: $OBS_CONTEXT_FILE"
+    fi
+
     # Display summary from INDEX.md
     if [ -f "docs/v6/latest/INDEX.md" ]; then
         FACT_COUNT=$(grep -c "^- " docs/v6/latest/INDEX.md || echo "0")
@@ -379,6 +387,12 @@ if bash scripts/observatory/observatory.sh --facts; then
             COMMIT_HASH=$(jq -r '.repo.git.commit // "N/A"' docs/v6/latest/receipts/observatory.json)
             echo "   🔍 Commit hash: ${COMMIT_HASH}"
         fi
+    fi
+
+    # Show one-line summary for quick reference
+    if [[ -f "scripts/observatory/lib/emit-context.sh" ]]; then
+        OBS_SUMMARY=$(bash scripts/observatory/lib/emit-context.sh summary docs/v6/latest/facts 2>/dev/null || echo "")
+        [[ -n "$OBS_SUMMARY" ]] && echo "   $OBS_SUMMARY"
     fi
 else
     echo "⚠️  Observatory generation failed - continuing without facts"

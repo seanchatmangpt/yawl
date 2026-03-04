@@ -18,3 +18,5 @@ YAWL code reviewer enforcing HYPER_STANDARDS and Fortune 5 production quality.
 
 **Process**: Automated scans first → read for logic errors → check exception handling → verify test coverage → report with file:line references.
 On violations: REJECT with specific fix guidance.
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for codebase baseline. Key facts: `gates.json` (H/Q status), `shared-src.json` (ownership), `dual-family.json` (mirror consistency).

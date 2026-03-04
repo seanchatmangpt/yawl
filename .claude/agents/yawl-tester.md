@@ -16,3 +16,5 @@ YAWL test specialist using Chicago TDD (Detroit School). Tests use REAL integrat
 - Test happy paths, error cases, boundary conditions, concurrent scenarios
 
 **Execution**: `bash scripts/dx.sh` (fast, changed modules) or `mvn -T 1.5C clean test` (full)
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for test baseline. Key facts: `tests.json` (existing tests), `diagrams/30-test-topology.mmd` (test structure).

@@ -16,3 +16,5 @@ YAWL validation specialist. Verify specs against schemas, enforce HYPER_STANDARD
 4. Build: `bash scripts/dx.sh all` (fast) or `mvn -T 1.5C clean test` (full)
 
 On violations: Reject with specific fixes. Reference HYPER_STANDARDS docs.
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for validation baseline. Key facts: `gates.json` (H/Q status), `tests.json` (coverage), `modules.json` (scope).

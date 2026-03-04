@@ -11,3 +11,5 @@ YAWL workflow engine specialist. Production-ready Java for YEngine, YNetRunner, 
 **APIs**: InterfaceA, InterfaceB, InterfaceX, InterfaceE. Real database ops via Hibernate.
 **Testing**: Chicago TDD (real integrations, not mocks). JUnit 5. 80%+ coverage.
 **Standards**: HYPER_STANDARDS enforced by PostToolUse hook. No TODO/mock/stub/fake.
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for codebase snapshot. Key facts: `modules.json` (module structure), `reactor.json` (dependencies), `dual-family.json` (stateless mirrors).
