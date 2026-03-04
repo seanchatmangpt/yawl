@@ -71,7 +71,7 @@ public class ZaiFunctionService {
         }
     }
 
-    // private final ZaiClient zaiClient; // TODO: Implement ZAI client
+    // ZAI client implementation deferred - requires external dependencies
     private final Map<String, YawlFunctionHandler> functionHandlers;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final InterfaceA_EnvironmentBasedClient interfaceAClient;
@@ -120,7 +120,7 @@ public class ZaiFunctionService {
             throw new IllegalArgumentException("YAWL_PASSWORD is required");
         }
 
-        // this.zaiClient = ZaiClientFactory.withApiKey(zaiApiKey); // TODO: Implement ZAI client
+        // ZAI client initialization deferred - requires external dependencies
         this.yawlEngineUrl = yawlEngineUrl;
         this.yawlUsername = username;
         this.yawlPassword = password;
@@ -240,32 +240,16 @@ public class ZaiFunctionService {
             throw new IllegalStateException("ZaiFunctionService is not initialized");
         }
 
-        String functionPrompt = buildFunctionSelectionPrompt(userMessage);
-
-        //         List<ChatMessage> messages = List.of(
-        //                 ChatMessage.builder()
-        //                         .role(ChatMessageRole.SYSTEM.value())
-        //                         .content(getSystemPrompt())
-        //                         .build(),
-        //                 ChatMessage.builder()
-        //                         .role(ChatMessageRole.USER.value())
-        //                         .content(functionPrompt)
-        //                         .build()
-        //         );
-
-            FunctionCall functionCall = parseFunctionCall("mock_response"); // TODO: Implement real ZAI integration
-        // 
-        //             if (functionCall != null) {
-        //                 String result = executeFunction(functionCall.name(),
-        //                     objectMapper.writeValueAsString(functionCall.arguments()));
-        //                 return formatResult(functionCall.name(), result);
-        //             } else {
-        //                 return content;
-        //             }
-        //         } catch (IOException e) {
-        //             throw new RuntimeException("Function processing failed: " + e.getMessage(), e);
-        //         }
-        //     }
+        throw new UnsupportedOperationException(
+            "ZAI (Zhipu AI) function calling not yet implemented. " +
+            "This requires: " +
+            "1. ZAI client library dependency, " +
+            "2. Chat completion API integration, " +
+            "3. Function calling framework, " +
+            "4. Authentication and API setup. " +
+            "Use alternative AI services or implement complete ZAI integration."
+        );
+    }
 
     private String buildFunctionSelectionPrompt(String userMessage) {
         StringBuilder sb = new StringBuilder();

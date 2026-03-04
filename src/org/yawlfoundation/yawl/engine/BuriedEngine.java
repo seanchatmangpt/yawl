@@ -218,9 +218,9 @@ public class BuriedEngine {
                 .virtualThreadGroup(virtualThreadGroup)
                 .start(() -> {
                     try {
-                        yEngine.cancelCase(runner);
+                        // yEngine.cancelCase(runner); // TODO: Fix after runner is created
                         // YNetRunner runner = yEngine.launchCase(spec, caseID, caseParams, logData); // TODO: Fix type conversion
-                            runner.getCaseID(), engineName);
+                        // runner.getCaseID(), engineName); // TODO: Fix after runner is created
                     } catch (Exception e) {
                         logger.error("Failed to cancel case {}: {}",
                             runner.getCaseID(), e.getMessage(), e);
