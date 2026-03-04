@@ -69,6 +69,19 @@
 # ==========================================================================
 set -euo pipefail
 
+# ── Cross-platform helper: sha256sum with macOS fallback ─────────────────────
+# macOS doesn't have sha256sum, uses shasum -a 256 instead
+_sha256sum() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1"
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1"
+    else
+        echo "ERROR: No sha256sum or shasum available" >&2
+        return 1
+    fi
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
@@ -282,7 +295,7 @@ _observatory_facts_fresh() {
 
     # Compute current pom.xml hash (used for both checks)
     local current_hash
-    current_hash=$(sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}')
+    current_hash=$(_sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}')
 
     # Primary: sidecar written by dx_phase_observe() after --facts refresh
     if [[ -f "$sidecar" ]]; then
@@ -615,9 +628,14 @@ dx_phase_observe() {
     obs_start=$(date +%s)
 
     set +e
-    bash "${REPO_ROOT}/scripts/observatory/observatory.sh" --facts 2>&1 | \
+    # Run observatory with 60s timeout to prevent hangs
+    timeout 60 bash "${REPO_ROOT}/scripts/observatory/observatory.sh" --facts 2>&1 | \
         while IFS= read -r line; do printf "   %s\n" "$line"; done
     local OBS_EXIT=${PIPESTATUS[0]}
+    # timeout returns 124 if timed out
+    if [[ $OBS_EXIT -eq 124 ]]; then
+        printf "${C_CYAN}dx${C_RESET}: ${C_RED}${E_FAIL} observatory timed out after 60s${C_RESET}\n"
+    fi
     set -euo pipefail
 
     obs_end=$(date +%s)
@@ -631,7 +649,7 @@ dx_phase_observe() {
 
     # Write pom-hash sidecar so the next staleness check is instant.
     # (observatory.sh --facts does not update the full receipt, so we use this sidecar.)
-    sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}' \
+    _sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}' \
         > "${REPO_ROOT}/.yawl/.dx-state/observatory-pom-hash.txt" 2>/dev/null || true
 
     # Reload ALL_MODULES from the freshly generated reactor.json
