@@ -92,12 +92,6 @@
           },
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/verify-ttl-write.sh",
-            "timeout": 15,
-            "statusMessage": "Validating TTL file integrity..."
-          },
-          {
-            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 30,
             "async": true,
