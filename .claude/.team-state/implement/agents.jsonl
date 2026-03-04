@@ -1,0 +1,40 @@
+{
+  "agent_id": "implement_agent_1",
+  "team": "implement",
+  "status": "idle",
+  "task": null,
+  "heartbeat": "2026-03-04T20:20:18Z",
+  "tasks_completed": 0
+}
+{
+  "agent_id": "implement_agent_2",
+  "team": "implement",
+  "status": "idle",
+  "task": null,
+  "heartbeat": "2026-03-04T20:20:18Z",
+  "tasks_completed": 0
+}
+{
+  "agent_id": "implement_agent_3",
+  "team": "implement",
+  "status": "idle",
+  "task": null,
+  "heartbeat": "2026-03-04T20:20:18Z",
+  "tasks_completed": 0
+}
+{
+  "agent_id": "implement_agent_4",
+  "team": "implement",
+  "status": "idle",
+  "task": null,
+  "heartbeat": "2026-03-04T20:20:18Z",
+  "tasks_completed": 0
+}
+{
+  "agent_id": "implement_agent_5",
+  "team": "implement",
+  "status": "idle",
+  "task": null,
+  "heartbeat": "2026-03-04T20:20:18Z",
+  "tasks_completed": 0
+}
