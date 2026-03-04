@@ -13,6 +13,8 @@ System_Ext(external_systems, "External Systems", "SAP, Salesforce, Jira, etc.\nI
 System_Ext(monitoring, "Monitoring & Observability", "Prometheus, Grafana, ELK Stack")
 System_Ext(auth_external, "Authentication", "OAuth, LDAP, SSO providers")
 System_Ext(database, "Data Store", "H2 (dev), PostgreSQL (prod)")
+System_Ext(intelligence, "Live Intelligence", "Continuous watermark tracking\nExternal API/data monitoring")
+System_Ext(teams, "Team Management", "Agent team orchestration\nTask routing & collaboration")
 
 Rel(end_user, yawl_core, "Execute workflows", "Web UI, REST API")
 Rel(admin, yawl_core, "Configure", "Admin Console")
@@ -22,6 +24,8 @@ Rel(yawl_core, external_systems, "Integrate", "MCP / A2A Protocol")
 Rel(yawl_core, monitoring, "Send metrics", "OpenTelemetry")
 Rel(yawl_core, auth_external, "Authenticate", "Standard protocols")
 Rel(yawl_core, database, "Persist", "JDBC")
+Rel(yawl_core, intelligence, "Fetches live data", "Watermark protocol")
+Rel(teams, yawl_core, "Orchestrates workflows", "Team routing")
 
 SHOW_LEGEND()
 @enduml

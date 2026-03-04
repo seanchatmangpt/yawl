@@ -45,6 +45,9 @@ System_Boundary(yawl_system, "YAWL v6.0.0") {
         Container(integration, "yawl-integration", "Java 25", "MCP/A2A protocol handlers")
         Container(benchmark, "yawl-benchmark", "Java 25", "Performance testing suite")
         Container(webapps, "yawl-webapps", "React + Spring", "Web applications")
+        Container(teams_mgmt, "yawl-teams-management", "Java 25", "Agent team orchestration, routing")
+        Container(intelligence, "yawl-intelligence", "Java 25", "Live watermark tracking, external data")
+
     }
 
     Container_Boundary(layer5_advanced, "LAYER 5: Advanced Services") {
@@ -76,6 +79,8 @@ Rel(resourcing, engine, "Allocates work to", "")
 Rel(monitoring, engine, "Observes", "")
 Rel(integration, mcp_app, "Implements protocol for", "")
 Rel(pi, engine, "Plans portfolio via", "")
+Rel(teams_mgmt, engine, "Routes tasks via", "Team coordination")
+Rel(intelligence, rest_api, "Provides live data to", "Watermark protocol")
 
 Rel(engine, h2_db, "Persists to", "JDBC")
 Rel(security, utilities, "Provides", "")
