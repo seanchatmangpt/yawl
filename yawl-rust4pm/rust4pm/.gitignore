@@ -1,0 +1,41 @@
+# Rust build artifacts
+target/
+Cargo.lock
+**/*.rs.bk
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test output
+*.log
+test_output/
+
+# Documentation
+target/doc/
+
+# Binary executables
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Benchmark results
+benches/*.rs.bench
+
+# Temporary files
+*.tmp
+*.temp
+test_data/*.json

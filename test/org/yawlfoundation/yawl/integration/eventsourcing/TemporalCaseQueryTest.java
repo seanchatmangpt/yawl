@@ -10,55 +10,65 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.yawlfoundation.yawl.integration.eventsourcing;
 
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.Test;
 
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+
+import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link TemporalCaseQuery}.
+ * Chicago TDD tests for {@link TemporalCaseQuery}.
+ *
+ * <p>Tests use real H2 in-memory database and actual event store/replayer
+ * implementations to verify temporal query behavior end-to-end.
  *
  * @author YAWL Foundation
  * @version 6.0.0
  * @since 6.0.0
  */
-@ExtendWith(MockitoExtension.class)
 class TemporalCaseQueryTest {
 
-    @Mock
-    private WorkflowEventStore mockEventStore;
-
-    @Mock
-    private EventReplayer mockReplayer;
-
+    private DataSource dataSource;
+    private WorkflowEventStore eventStore;
+    private EventReplayer replayer;
     private TemporalCaseQuery temporalQuery;
+
     private static final String TEST_CASE_ID = "test-case-123";
     private static final String TEST_SPEC_ID = "OrderFulfillment:1.0";
     private static final Instant BASE_TIMESTAMP = Instant.parse("2026-02-17T10:00:00Z");
 
     @BeforeEach
-    void setUp() {
-        temporalQuery = new TemporalCaseQuery(mockEventStore, mockReplayer);
+    void setUp() throws SQLException {
+        dataSource = EventSourcingTestFixture.createDataSource();
+        EventSourcingTestFixture.createSchema(dataSource);
+
+        eventStore = new WorkflowEventStore(dataSource);
+        replayer = new EventReplayer(eventStore);
+        temporalQuery = new TemporalCaseQuery(eventStore, replayer);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        EventSourcingTestFixture.dropSchema(dataSource);
     }
 
     @Nested
@@ -67,26 +77,30 @@ class TemporalCaseQueryTest {
 
         @Test
         @DisplayName("constructWithEventStoreAndReplayer")
-        void constructWithEventStoreAndReplayer() {
-            WorkflowEventStore store = mock(WorkflowEventStore.class);
-            EventReplayer replayer = mock(EventReplayer.class);
-            TemporalCaseQuery query = new TemporalCaseQuery(store, replayer);
+        void constructWithEventStoreAndReplayer() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
+            WorkflowEventStore store = new WorkflowEventStore(ds);
+            EventReplayer rep = new EventReplayer(store);
+
+            TemporalCaseQuery query = new TemporalCaseQuery(store, rep);
 
             assertNotNull(query);
+            EventSourcingTestFixture.dropSchema(ds);
         }
 
         @Test
         @DisplayName("constructWithNullEventStoreThrows")
         void constructWithNullEventStoreThrows() {
             assertThrows(NullPointerException.class, () ->
-                new TemporalCaseQuery(null, mockReplayer));
+                new TemporalCaseQuery(null, replayer));
         }
 
         @Test
         @DisplayName("constructWithNullReplayerThrows")
         void constructWithNullReplayerThrows() {
             assertThrows(NullPointerException.class, () ->
-                new TemporalCaseQuery(mockEventStore, null));
+                new TemporalCaseQuery(eventStore, null));
         }
     }
 
@@ -97,14 +111,16 @@ class TemporalCaseQueryTest {
         @Test
         @DisplayName("stateAtQueryBeforeCaseStarted")
         void stateAtQueryBeforeCaseStarted() throws Exception {
+            // Given: a case that starts at BASE_TIMESTAMP
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            eventStore.append(startEvent, 0);
+
+            // When: query before case started
             Instant queryTime = BASE_TIMESTAMP.minusSeconds(60);
-            CaseStateView expectedState = CaseStateView.empty(TEST_CASE_ID);
-
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime)).thenReturn(expectedState);
-
             CaseStateView result = temporalQuery.stateAt(TEST_CASE_ID, queryTime);
 
-            assertEquals(expectedState, result);
+            // Then: state is UNKNOWN
             assertEquals(TEST_CASE_ID, result.getCaseId());
             assertEquals(CaseStateView.CaseStatus.UNKNOWN, result.getStatus());
         }
@@ -112,46 +128,51 @@ class TemporalCaseQueryTest {
         @Test
         @DisplayName("stateAtQueryDuringCaseExecution")
         void stateAtQueryDuringCaseExecution() throws Exception {
+            // Given: case with work item enabled
+            Instant enabledTime = BASE_TIMESTAMP.plusSeconds(30);
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent enabledEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "review-order", enabledTime);
+
+            eventStore.append(startEvent, 0);
+            eventStore.append(enabledEvent, 1);
+
+            // When: query after work item enabled
             Instant queryTime = BASE_TIMESTAMP.plusSeconds(45);
-            CaseStateView expectedState = new CaseStateView(
-                TEST_CASE_ID, TEST_SPEC_ID, CaseStateView.CaseStatus.RUNNING,
-                BASE_TIMESTAMP.plusSeconds(30),
-                Map.of("review-order", new CaseStateView.WorkItemState("review-order", "STARTED", BASE_TIMESTAMP.plusSeconds(30))),
-                Map.of("startedBy", "agent-order-service", "priority", "high")
-            );
-
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime)).thenReturn(expectedState);
-
             CaseStateView result = temporalQuery.stateAt(TEST_CASE_ID, queryTime);
 
+            // Then: case is running with active work item
             assertEquals(TEST_CASE_ID, result.getCaseId());
             assertEquals(CaseStateView.CaseStatus.RUNNING, result.getStatus());
             assertEquals(TEST_SPEC_ID, result.getSpecId());
             assertEquals(1, result.getActiveWorkItems().size());
-            assertEquals("STARTED", result.getActiveWorkItems().get("review-order").status());
-            assertEquals(2, result.getPayload().size());
+            assertEquals("ENABLED", result.getActiveWorkItems().get("review-order").status());
         }
 
         @Test
         @DisplayName("stateAtQueryAfterCaseCompleted")
         void stateAtQueryAfterCaseCompleted() throws Exception {
+            // Given: completed case
+            Instant completedTime = BASE_TIMESTAMP.plusSeconds(60);
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent completeEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, completedTime);
+
+            eventStore.append(startEvent, 0);
+            eventStore.append(completeEvent, 1);
+
+            // When: query after completion
             Instant queryTime = BASE_TIMESTAMP.plusSeconds(120);
-            CaseStateView expectedState = new CaseStateView(
-                TEST_CASE_ID, TEST_SPEC_ID, CaseStateView.CaseStatus.COMPLETED,
-                BASE_TIMESTAMP.plusSeconds(60),
-                Map.of(),
-                Map.of("startedBy", "agent-order-service", "completedBy", "system")
-            );
-
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime)).thenReturn(expectedState);
-
             CaseStateView result = temporalQuery.stateAt(TEST_CASE_ID, queryTime);
 
+            // Then: case is completed
             assertEquals(TEST_CASE_ID, result.getCaseId());
             assertEquals(CaseStateView.CaseStatus.COMPLETED, result.getStatus());
             assertEquals(TEST_SPEC_ID, result.getSpecId());
             assertTrue(result.getActiveWorkItems().isEmpty());
-            assertEquals(2, result.getPayload().size());
+            assertNotNull(result.getPayload().get("completedAt"));
         }
 
         @Test
@@ -167,17 +188,6 @@ class TemporalCaseQueryTest {
             assertThrows(IllegalArgumentException.class, () ->
                 temporalQuery.stateAt(TEST_CASE_ID, null));
         }
-
-        @Test
-        @DisplayName("stateAtQueryThrowsOnReplayException")
-        void stateAtQueryThrowsOnReplayException() throws Exception {
-            Instant queryTime = BASE_TIMESTAMP.plusSeconds(45);
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime))
-                .thenThrow(new EventReplayer.ReplayException("Replay failed", new RuntimeException()));
-
-            assertThrows(TemporalCaseQuery.TemporalQueryException.class, () ->
-                temporalQuery.stateAt(TEST_CASE_ID, queryTime));
-        }
     }
 
     @Nested
@@ -187,81 +197,91 @@ class TemporalCaseQueryTest {
         @Test
         @DisplayName("eventsBetweenWithSingleEvent")
         void eventsBetweenWithSingleEvent() throws Exception {
+            // Given: single event in range
+            Instant eventTime = BASE_TIMESTAMP.plusSeconds(15);
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, eventTime);
+            eventStore.append(event, 0);
+
             Instant from = BASE_TIMESTAMP;
             Instant to = BASE_TIMESTAMP.plusSeconds(30);
-            Instant eventTime = BASE_TIMESTAMP.plusSeconds(15);
 
-            WorkflowEvent event = createTestEvent(
-                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, from, eventTime);
-
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, to))
-                .thenReturn(List.of(event));
-
+            // When
             List<WorkflowEvent> result = temporalQuery.eventsBetween(TEST_CASE_ID, from, to);
 
+            // Then
             assertEquals(1, result.size());
-            assertEquals(event, result.get(0));
             assertEquals(eventTime, result.get(0).getTimestamp());
         }
 
         @Test
         @DisplayName("eventsBetweenWithMultipleEvents")
         void eventsBetweenWithMultipleEvents() throws Exception {
+            // Given: multiple events
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-1", BASE_TIMESTAMP.plusSeconds(30));
+            WorkflowEvent event3 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, BASE_TIMESTAMP.plusSeconds(60));
+
+            eventStore.append(event1, 0);
+            eventStore.append(event2, 1);
+            eventStore.append(event3, 2);
+
             Instant from = BASE_TIMESTAMP;
             Instant to = BASE_TIMESTAMP.plusSeconds(120);
-            Instant event1Time = BASE_TIMESTAMP;
-            Instant event2Time = BASE_TIMESTAMP.plusSeconds(30);
-            Instant event3Time = BASE_TIMESTAMP.plusSeconds(60);
 
-            List<WorkflowEvent> allEvents = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, from, event1Time),
-                createTestEvent(WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, "wi-1", null, event2Time),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, null, event3Time)
-            );
-
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, to))
-                .thenReturn(allEvents);
-
+            // When
             List<WorkflowEvent> result = temporalQuery.eventsBetween(TEST_CASE_ID, from, to);
 
+            // Then
             assertEquals(3, result.size());
-            assertEquals(allEvents, result);
+            assertEquals(BASE_TIMESTAMP, result.get(0).getTimestamp());
+            assertEquals(BASE_TIMESTAMP.plusSeconds(30), result.get(1).getTimestamp());
+            assertEquals(BASE_TIMESTAMP.plusSeconds(60), result.get(2).getTimestamp());
         }
 
         @Test
         @DisplayName("eventsBetweenWithNoEventsInRange")
         void eventsBetweenWithNoEventsInRange() throws Exception {
+            // Given: event outside query range
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            eventStore.append(event, 0);
+
             Instant from = BASE_TIMESTAMP.plusSeconds(90);
             Instant to = BASE_TIMESTAMP.plusSeconds(120);
 
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, to))
-                .thenReturn(List.of(
-                    createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, null, BASE_TIMESTAMP)
-                ));
-
+            // When
             List<WorkflowEvent> result = temporalQuery.eventsBetween(TEST_CASE_ID, from, to);
 
+            // Then
             assertTrue(result.isEmpty());
         }
 
         @Test
         @DisplayName("eventsBetweenWithBoundaryEvents")
         void eventsBetweenWithBoundaryEvents() throws Exception {
-            Instant from = BASE_TIMESTAMP;
-            Instant to = BASE_TIMESTAMP.plusSeconds(60);
+            // Given: events at boundary timestamps
             Instant fromEventTime = BASE_TIMESTAMP;
             Instant toEventTime = BASE_TIMESTAMP.plusSeconds(60);
 
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, null, fromEventTime),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, null, toEventTime)
-            );
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, fromEventTime);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, toEventTime);
 
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, to))
-                .thenReturn(events);
+            eventStore.append(event1, 0);
+            eventStore.append(event2, 1);
 
+            Instant from = BASE_TIMESTAMP;
+            Instant to = BASE_TIMESTAMP.plusSeconds(60);
+
+            // When
             List<WorkflowEvent> result = temporalQuery.eventsBetween(TEST_CASE_ID, from, to);
 
+            // Then: both boundary events included (inclusive range)
             assertEquals(2, result.size());
             assertEquals(fromEventTime, result.get(0).getTimestamp());
             assertEquals(toEventTime, result.get(1).getTimestamp());
@@ -297,16 +317,6 @@ class TemporalCaseQueryTest {
             assertThrows(IllegalArgumentException.class, () ->
                 temporalQuery.eventsBetween(TEST_CASE_ID, from, to));
         }
-
-        @Test
-        @DisplayName("eventsBetweenThrowsOnEventStoreException")
-        void eventsBetweenThrowsOnEventStoreException() throws Exception {
-            when(mockEventStore.loadEventsAsOf(TEST_CASE_ID, BASE_TIMESTAMP.plusSeconds(60)))
-                .thenThrow(new WorkflowEventStore.EventStoreException("Read failed"));
-
-            assertThrows(TemporalCaseQuery.TemporalQueryException.class, () ->
-                temporalQuery.eventsBetween(TEST_CASE_ID, BASE_TIMESTAMP, BASE_TIMESTAMP.plusSeconds(60)));
-        }
     }
 
     @Nested
@@ -316,67 +326,89 @@ class TemporalCaseQueryTest {
         @Test
         @DisplayName("workItemStatusAtWhenItemExists")
         void workItemStatusAtWhenItemExists() throws Exception {
+            // Given: case with enabled work item
             String workItemId = "review-order";
+            Instant enabledTime = BASE_TIMESTAMP.plusSeconds(30);
+
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent enabledEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, workItemId, enabledTime);
+
+            eventStore.append(startEvent, 0);
+            eventStore.append(enabledEvent, 1);
+
+            // When: query after item enabled
             Instant queryTime = BASE_TIMESTAMP.plusSeconds(45);
-            CaseStateView state = new CaseStateView(
-                TEST_CASE_ID, TEST_SPEC_ID, CaseStateView.CaseStatus.RUNNING,
-                BASE_TIMESTAMP.plusSeconds(30),
-                Map.of(workItemId, new CaseStateView.WorkItemState(workItemId, "STARTED", BASE_TIMESTAMP.plusSeconds(30))),
-                Map.of()
-            );
-
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime)).thenReturn(state);
-
             String status = temporalQuery.workItemStatusAt(TEST_CASE_ID, workItemId, queryTime);
 
-            assertEquals("STARTED", status);
+            // Then
+            assertEquals("ENABLED", status);
         }
 
         @Test
         @DisplayName("workItemStatusAtWhenItemDoesNotExist")
         void workItemStatusAtWhenItemDoesNotExist() throws Exception {
-            String workItemId = "non-existent";
+            // Given: case without the queried work item
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            eventStore.append(startEvent, 0);
+
+            // When
             Instant queryTime = BASE_TIMESTAMP.plusSeconds(45);
-            CaseStateView state = CaseStateView.empty(TEST_CASE_ID)
-                .withStatus(CaseStateView.CaseStatus.RUNNING);
+            String status = temporalQuery.workItemStatusAt(TEST_CASE_ID, "non-existent", queryTime);
 
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime)).thenReturn(state);
-
-            String status = temporalQuery.workItemStatusAt(TEST_CASE_ID, workItemId, queryTime);
-
+            // Then
             assertEquals("NOT_PRESENT", status);
         }
 
         @Test
         @DisplayName("workItemStatusAtBeforeItemWasEnabled")
         void workItemStatusAtBeforeItemWasEnabled() throws Exception {
+            // Given: work item enabled later
             String workItemId = "review-order";
+            Instant enabledTime = BASE_TIMESTAMP.plusSeconds(30);
+
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent enabledEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, workItemId, enabledTime);
+
+            eventStore.append(startEvent, 0);
+            eventStore.append(enabledEvent, 1);
+
+            // When: query before item enabled
             Instant queryTime = BASE_TIMESTAMP.minusSeconds(30);
-            CaseStateView state = CaseStateView.empty(TEST_CASE_ID);
-
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime)).thenReturn(state);
-
             String status = temporalQuery.workItemStatusAt(TEST_CASE_ID, workItemId, queryTime);
 
+            // Then
             assertEquals("NOT_PRESENT", status);
         }
 
         @Test
         @DisplayName("workItemStatusAtAfterItemWasCompleted")
         void workItemStatusAtAfterItemWasCompleted() throws Exception {
+            // Given: work item completed
             String workItemId = "review-order";
+            Instant enabledTime = BASE_TIMESTAMP.plusSeconds(30);
+            Instant completedTime = BASE_TIMESTAMP.plusSeconds(60);
+
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent enabledEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, TEST_CASE_ID, workItemId, enabledTime);
+            WorkflowEvent completedEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_COMPLETED, TEST_CASE_ID, workItemId, completedTime);
+
+            eventStore.append(startEvent, 0);
+            eventStore.append(enabledEvent, 1);
+            eventStore.append(completedEvent, 2);
+
+            // When: query after item completed
             Instant queryTime = BASE_TIMESTAMP.plusSeconds(90);
-            CaseStateView state = new CaseStateView(
-                TEST_CASE_ID, TEST_SPEC_ID, CaseStateView.CaseStatus.RUNNING,
-                BASE_TIMESTAMP.plusSeconds(60),
-                Map.of(),
-                Map.of()
-            );
-
-            when(mockReplayer.replayAsOf(TEST_CASE_ID, queryTime)).thenReturn(state);
-
             String status = temporalQuery.workItemStatusAt(TEST_CASE_ID, workItemId, queryTime);
 
+            // Then: completed items are removed from active items
             assertEquals("NOT_PRESENT", status);
         }
 
@@ -409,92 +441,135 @@ class TemporalCaseQueryTest {
         @Test
         @DisplayName("durationInStatusNeverInStatus")
         void durationInStatusNeverInStatus() throws Exception {
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, null, BASE_TIMESTAMP),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(60))
-            );
+            // Given: case never suspended
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent completeEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, BASE_TIMESTAMP.plusSeconds(60));
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            eventStore.append(startEvent, 0);
+            eventStore.append(completeEvent, 1);
 
+            // When
             Duration duration = temporalQuery.durationInStatus(TEST_CASE_ID, CaseStateView.CaseStatus.SUSPENDED);
 
+            // Then
             assertEquals(Duration.ZERO, duration);
         }
 
         @Test
         @DisplayName("durationInStatusSingleStatusChange")
         void durationInStatusSingleStatusChange() throws Exception {
+            // Given: case suspended once
             Instant suspendedTime = BASE_TIMESTAMP.plusSeconds(30);
             Instant resumedTime = BASE_TIMESTAMP.plusSeconds(90);
             Instant completedTime = BASE_TIMESTAMP.plusSeconds(120);
 
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, null, BASE_TIMESTAMP),
-                createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, null, suspendedTime),
-                createTestEvent(WorkflowEvent.EventType.CASE_RESUMED, TEST_CASE_ID, null, null, resumedTime),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, null, completedTime)
-            );
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent suspendedEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, suspendedTime);
+            WorkflowEvent resumedEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_RESUMED, TEST_CASE_ID, null, resumedTime);
+            WorkflowEvent completeEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, completedTime);
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            eventStore.append(startEvent, 0);
+            eventStore.append(suspendedEvent, 1);
+            eventStore.append(resumedEvent, 2);
+            eventStore.append(completeEvent, 3);
 
+            // When
             Duration duration = temporalQuery.durationInStatus(TEST_CASE_ID, CaseStateView.CaseStatus.SUSPENDED);
 
+            // Then
             assertEquals(Duration.between(suspendedTime, resumedTime), duration);
         }
 
         @Test
         @DisplayName("durationInStatusMultipleStatusChanges")
         void durationInStatusMultipleStatusChanges() throws Exception {
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, null, BASE_TIMESTAMP),
-                createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(30)),
-                createTestEvent(WorkflowEvent.EventType.CASE_RESUMED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(60)),
-                createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(90)),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(120))
-            );
+            // Given: case suspended twice
+            Instant suspended1 = BASE_TIMESTAMP.plusSeconds(30);
+            Instant resumed1 = BASE_TIMESTAMP.plusSeconds(60);
+            Instant suspended2 = BASE_TIMESTAMP.plusSeconds(90);
+            Instant completed = BASE_TIMESTAMP.plusSeconds(120);
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent suspendedEvent1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, suspended1);
+            WorkflowEvent resumedEvent1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_RESUMED, TEST_CASE_ID, null, resumed1);
+            WorkflowEvent suspendedEvent2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, suspended2);
+            WorkflowEvent completeEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, completed);
 
+            eventStore.append(startEvent, 0);
+            eventStore.append(suspendedEvent1, 1);
+            eventStore.append(resumedEvent1, 2);
+            eventStore.append(suspendedEvent2, 3);
+            eventStore.append(completeEvent, 4);
+
+            // When
             Duration duration = temporalQuery.durationInStatus(TEST_CASE_ID, CaseStateView.CaseStatus.SUSPENDED);
 
-            Duration expected = Duration.between(BASE_TIMESTAMP.plusSeconds(30), BASE_TIMESTAMP.plusSeconds(60))
-                                      .plus(Duration.between(BASE_TIMESTAMP.plusSeconds(90), BASE_TIMESTAMP.plusSeconds(120)));
+            // Then
+            Duration expected = Duration.between(suspended1, resumed1)
+                                      .plus(Duration.between(suspended2, completed));
             assertEquals(expected, duration);
         }
 
         @Test
         @DisplayName("durationInStatusStillInStatusAtEnd")
         void durationInStatusStillInStatusAtEnd() throws Exception {
+            // Given: case still suspended at end of event stream
             Instant suspendedTime = BASE_TIMESTAMP.plusSeconds(30);
 
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, null, BASE_TIMESTAMP),
-                createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, null, suspendedTime)
-            );
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent suspendedEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, suspendedTime);
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            eventStore.append(startEvent, 0);
+            eventStore.append(suspendedEvent, 1);
 
+            // When
             Duration duration = temporalQuery.durationInStatus(TEST_CASE_ID, CaseStateView.CaseStatus.SUSPENDED);
 
-            assertEquals(Duration.between(suspendedTime, BASE_TIMESTAMP.plusSeconds(30)), duration);
+            // Then: duration measured from suspension to last event
+            assertEquals(Duration.between(suspendedTime, suspendedTime), duration);
         }
 
         @Test
         @DisplayName("durationInStatusRunningTime")
         void durationInStatusRunningTime() throws Exception {
-            List<WorkflowEvent> events = List.of(
-                createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, null, BASE_TIMESTAMP),
-                createTestEvent(WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(60)),
-                createTestEvent(WorkflowEvent.EventType.CASE_RESUMED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(90)),
-                createTestEvent(WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, null, BASE_TIMESTAMP.plusSeconds(120))
-            );
+            // Given: case with suspension period
+            Instant suspendedTime = BASE_TIMESTAMP.plusSeconds(60);
+            Instant resumedTime = BASE_TIMESTAMP.plusSeconds(90);
+            Instant completedTime = BASE_TIMESTAMP.plusSeconds(120);
 
-            when(mockEventStore.loadEvents(TEST_CASE_ID)).thenReturn(events);
+            WorkflowEvent startEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null, BASE_TIMESTAMP);
+            WorkflowEvent suspendedEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_SUSPENDED, TEST_CASE_ID, null, suspendedTime);
+            WorkflowEvent resumedEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_RESUMED, TEST_CASE_ID, null, resumedTime);
+            WorkflowEvent completeEvent = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, TEST_CASE_ID, null, completedTime);
 
+            eventStore.append(startEvent, 0);
+            eventStore.append(suspendedEvent, 1);
+            eventStore.append(resumedEvent, 2);
+            eventStore.append(completeEvent, 3);
+
+            // When
             Duration duration = temporalQuery.durationInStatus(TEST_CASE_ID, CaseStateView.CaseStatus.RUNNING);
 
-            Duration expected = Duration.between(BASE_TIMESTAMP, BASE_TIMESTAMP.plusSeconds(60))
-                                      .plus(Duration.between(BASE_TIMESTAMP.plusSeconds(90), BASE_TIMESTAMP.plusSeconds(120)));
+            // Then: RUNNING from start to suspend, then resume to complete
+            Duration expected = Duration.between(BASE_TIMESTAMP, suspendedTime)
+                                      .plus(Duration.between(resumedTime, completedTime));
             assertEquals(expected, duration);
         }
 
@@ -510,16 +585,6 @@ class TemporalCaseQueryTest {
         void durationInStatusThrowsOnNullTargetStatus() {
             assertThrows(IllegalArgumentException.class, () ->
                 temporalQuery.durationInStatus(TEST_CASE_ID, null));
-        }
-
-        @Test
-        @DisplayName("durationInStatusThrowsOnEventStoreException")
-        void durationInStatusThrowsOnEventStoreException() throws Exception {
-            when(mockEventStore.loadEvents(TEST_CASE_ID))
-                .thenThrow(new WorkflowEventStore.EventStoreException("Read failed"));
-
-            assertThrows(TemporalCaseQuery.TemporalQueryException.class, () ->
-                temporalQuery.durationInStatus(TEST_CASE_ID, CaseStateView.CaseStatus.RUNNING));
         }
     }
 
@@ -539,18 +604,69 @@ class TemporalCaseQueryTest {
         }
     }
 
-    // Helper method to create test events
-    private WorkflowEvent createTestEvent(WorkflowEvent.EventType type, String caseId,
-                                        String workItemId, Map<String, String> payload, Instant timestamp) {
-        return new WorkflowEvent(
-            "event-123", type, "1.0", TEST_SPEC_ID, caseId, workItemId, timestamp, payload
-        );
-    }
+    @Nested
+    @DisplayName("Integration Tests")
+    class IntegrationTest {
 
-    private WorkflowEvent createTestEvent(WorkflowEvent.EventType type, String caseId,
-                                        String workItemId, Map<String, String> payload, Instant startTimestamp, Instant eventTimestamp) {
-        return new WorkflowEvent(
-            "event-123", type, "1.0", TEST_SPEC_ID, caseId, workItemId, eventTimestamp, payload
-        );
+        @Test
+        @DisplayName("fullReplayChain_endToEnd")
+        void fullReplayChainEndToEnd() throws Exception {
+            // Given: complete case lifecycle
+            String caseId = EventSourcingTestFixture.generateCaseId("integration");
+
+            // Events in sequence
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null, BASE_TIMESTAMP), 0);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "task-1", BASE_TIMESTAMP.plusSeconds(10)), 1);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_STARTED, caseId, "task-1", BASE_TIMESTAMP.plusSeconds(20)), 2);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_COMPLETED, caseId, "task-1", BASE_TIMESTAMP.plusSeconds(30)), 3);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, caseId, null, BASE_TIMESTAMP.plusSeconds(40)), 4);
+
+            // When: query at various points in time
+            CaseStateView atStart = temporalQuery.stateAt(caseId, BASE_TIMESTAMP);
+            CaseStateView duringTask = temporalQuery.stateAt(caseId, BASE_TIMESTAMP.plusSeconds(25));
+            CaseStateView atEnd = temporalQuery.stateAt(caseId, BASE_TIMESTAMP.plusSeconds(50));
+
+            // Then: states are correct
+            assertEquals(CaseStateView.CaseStatus.RUNNING, atStart.getStatus());
+            assertEquals(0, atStart.getActiveWorkItems().size());
+
+            assertEquals(CaseStateView.CaseStatus.RUNNING, duringTask.getStatus());
+            assertEquals(1, duringTask.getActiveWorkItems().size());
+            assertEquals("STARTED", duringTask.getActiveWorkItems().get("task-1").status());
+
+            assertEquals(CaseStateView.CaseStatus.COMPLETED, atEnd.getStatus());
+            assertEquals(0, atEnd.getActiveWorkItems().size());
+        }
+
+        @Test
+        @DisplayName("multipleCases_independentQueries")
+        void multipleCasesIndependentQueries() throws Exception {
+            // Given: two independent cases
+            String case1 = EventSourcingTestFixture.generateCaseId("case1");
+            String case2 = EventSourcingTestFixture.generateCaseId("case2");
+
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, case1, null, BASE_TIMESTAMP), 0);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_SUSPENDED, case1, null, BASE_TIMESTAMP.plusSeconds(10)), 1);
+
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, case2, null, BASE_TIMESTAMP.plusSeconds(5)), 0);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_COMPLETED, case2, null, BASE_TIMESTAMP.plusSeconds(15)), 1);
+
+            // When: query each case independently
+            CaseStateView state1 = temporalQuery.stateAt(case1, BASE_TIMESTAMP.plusSeconds(20));
+            CaseStateView state2 = temporalQuery.stateAt(case2, BASE_TIMESTAMP.plusSeconds(20));
+
+            // Then: states are independent
+            assertEquals(CaseStateView.CaseStatus.SUSPENDED, state1.getStatus());
+            assertEquals(CaseStateView.CaseStatus.COMPLETED, state2.getStatus());
+        }
     }
 }

@@ -1,0 +1,563 @@
+{
+  "id": "jtbd5-invoice-verification-log",
+  "name": "Invoice Verification Event Log",
+  "description": "Multi-case correlated invoice verification with sibling relationships and bulk processing",
+  "events": [
+    {
+      "id": "e1",
+      "activity": "ReceiveInvoice",
+      "timestamp": "2024-04-01T10:00:00Z",
+      "case": "inv_001",
+      "resource": "invoice_system",
+      "attributes": {
+        "invoice_id": "INV-2024-001",
+        "vendor_id": "VENDOR-001",
+        "amount": 12500.00,
+        "currency": "USD",
+        "po_references": ["PO-2024-1001"],
+        "delivery_references": ["DEL-2024-0501"],
+        "line_items": 3,
+        "total_items": 150
+      }
+    },
+    {
+      "id": "e2",
+      "activity": "GroupRelatedCases",
+      "timestamp": "2024-04-01T10:05:00Z",
+      "case": "inv_001",
+      "resource": "correlation_system",
+      "attributes": {
+        "related_cases": ["po_1001", "del_0501"],
+        "sibling_invoices": [],
+        "parent_po": "PO-2024-1001",
+        "matching_strategy": "three_way"
+      }
+    },
+    {
+      "id": "e3",
+      "activity": "InitializeCorrelation",
+      "timestamp": "2024-04-01T10:10:00Z",
+      "case": "inv_001",
+      "resource": "correlation_system",
+      "attributes": {
+        "correlation_id": "COR-001",
+        "correlation_type": "purchase_order_correlation",
+        "correlation_state": "active",
+        "participant_cases": ["inv_001", "po_1001", "del_0501"]
+      }
+    },
+    {
+      "id": "e4",
+      "activity": "VerifyPurchaseOrder",
+      "timestamp": "2024-04-01T10:15:00Z",
+      "case": "inv_001",
+      "resource": "po_system",
+      "attributes": {
+        "po_verification": "matched",
+        "po_match_status": "valid",
+        "po_validation_errors": [],
+        "amendment_required": false
+      }
+    },
+    {
+      "id": "e5",
+      "activity": "CheckDelivery",
+      "timestamp": "2024-04-01T10:20:00Z",
+      "case": "inv_001",
+      "resource": "delivery_system",
+      "attributes": {
+        "delivery_verification": "partial_match",
+        "delivery_status": "received",
+        "quantity_matches": true,
+        "date_compliance": true,
+        "exceptions": []
+      }
+    },
+    {
+      "id": "e6",
+      "activity": "PerformMatching",
+      "timestamp": "2024-04-01T10:25:00Z",
+      "case": "inv_001",
+      "resource": "matching_engine",
+      "attributes": {
+        "match_result": "successful",
+        "match_accuracy": 1.0,
+        "total_amount_match": true,
+        "quantity_match": true,
+        "price_variance": 0.0,
+        "variance_threshold_exceeded": false
+      }
+    },
+    {
+      "id": "e7",
+      "activity": "ReadyForApproval",
+      "timestamp": "2024-04-01T10:30:00Z",
+      "case": "inv_001",
+      "resource": "approval_system",
+      "attributes": {
+        "approval_required": false,
+        "approval_level": "none",
+        "ready_for_payment": true,
+        "correlation_ready": true
+      }
+    },
+    {
+      "id": "e8",
+      "activity": "AwaitBulkProcessing",
+      "timestamp": "2024-04-01T10:35:00Z",
+      "case": "inv_001",
+      "resource": "bulk_processor",
+      "attributes": {
+        "bulk_group_id": "BULK-001",
+        "group_size": 1,
+        "min_threshold_met": false,
+        "waiting_for_siblings": true
+      }
+    },
+    {
+      "id": "e9",
+      "activity": "ReceiveInvoice",
+      "timestamp": "2024-04-01T11:00:00Z",
+      "case": "inv_002",
+      "resource": "invoice_system",
+      "attributes": {
+        "invoice_id": "INV-2024-002",
+        "vendor_id": "VENDOR-001",
+        "amount": 8750.00,
+        "currency": "USD",
+        "po_references": ["PO-2024-1001"],
+        "delivery_references": ["DEL-2024-0501"],
+        "line_items": 2,
+        "total_items": 75
+      }
+    },
+    {
+      "id": "e10",
+      "activity": "GroupRelatedCases",
+      "timestamp": "2024-04-01T11:05:00Z",
+      "case": "inv_002",
+      "resource": "correlation_system",
+      "attributes": {
+        "related_cases": ["po_1001", "del_0501"],
+        "sibling_invoices": ["inv_001"],
+        "parent_po": "PO-2024-1001",
+        "matching_strategy": "three_way"
+      }
+    },
+    {
+      "id": "e11",
+      "activity": "InitializeCorrelation",
+      "timestamp": "2024-04-01T11:10:00Z",
+      "case": "inv_002",
+      "resource": "correlation_system",
+      "attributes": {
+        "correlation_id": "COR-001",
+        "correlation_type": "purchase_order_correlation",
+        "correlation_state": "active",
+        "participant_cases": ["inv_001", "inv_002", "po_1001", "del_0501"]
+      }
+    },
+    {
+      "id": "e12",
+      "activity": "VerifyPurchaseOrder",
+      "timestamp": "2024-04-01T11:15:00Z",
+      "case": "inv_002",
+      "resource": "po_system",
+      "attributes": {
+        "po_verification": "matched",
+        "po_match_status": "valid",
+        "po_validation_errors": [],
+        "amendment_required": false
+      }
+    },
+    {
+      "id": "e13",
+      "activity": "CheckDelivery",
+      "timestamp": "2024-04-01T11:20:00Z",
+      "case": "inv_002",
+      "resource": "delivery_system",
+      "attributes": {
+        "delivery_verification": "exact_match",
+        "delivery_status": "received",
+        "quantity_matches": true,
+        "date_compliance": true,
+        "exceptions": []
+      }
+    },
+    {
+      "id": "e14",
+      "activity": "PerformMatching",
+      "timestamp": "2024-04-01T11:25:00Z",
+      "case": "inv_002",
+      "resource": "matching_engine",
+      "attributes": {
+        "match_result": "successful",
+        "match_accuracy": 1.0,
+        "total_amount_match": true,
+        "quantity_match": true,
+        "price_variance": 0.0,
+        "variance_threshold_exceeded": false
+      }
+    },
+    {
+      "id": "e15",
+      "activity": "ReadyForApproval",
+      "timestamp": "2024-04-01T11:30:00Z",
+      "case": "inv_002",
+      "resource": "approval_system",
+      "attributes": {
+        "approval_required": false,
+        "approval_level": "none",
+        "ready_for_payment": true,
+        "correlation_ready": true
+      }
+    },
+    {
+      "id": "e16",
+      "activity": "AwaitBulkProcessing",
+      "timestamp": "2024-04-01T11:35:00Z",
+      "case": "inv_002",
+      "resource": "bulk_processor",
+      "attributes": {
+        "bulk_group_id": "BULK-001",
+        "group_size": 2,
+        "min_threshold_met": true,
+        "waiting_for_siblings": false
+      }
+    },
+    {
+      "id": "e17",
+      "activity": "BulkApprovalCheck",
+      "timestamp": "2024-04-01T11:40:00Z",
+      "case": "inv_002",
+      "resource": "bulk_processor",
+      "attributes": {
+        "bulk_ready": true,
+        "approval_percentage": 100,
+        "batch_id": "BATCH-001"
+      }
+    },
+    {
+      "id": "e18",
+      "activity": "ApproveBulk",
+      "timestamp": "2024-04-01T11:45:00Z",
+      "case": "inv_002",
+      "resource": "finance_director",
+      "attributes": {
+        "bulk_approved": true,
+        "approval_batch_id": "BATCH-001",
+        "total_amount": 21250.00,
+        "payment_schedule": "immediate"
+      }
+    },
+    {
+      "id": "e19",
+      "activity": "ProcessPayment",
+      "timestamp": "2024-04-01T11:50:00Z",
+      "case": "inv_002",
+      "resource": "payment_system",
+      "attributes": {
+        "payments_processed": true,
+        "payment_ids": ["PAY-001", "PAY-002"],
+        "payment_date": "2024-04-01",
+        "total_amount": 21250.00,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "e20",
+      "activity": "CreateReconciliation",
+      "timestamp": "2024-04-01T12:00:00Z",
+      "case": "inv_002",
+      "resource": "reconciliation_system",
+      "attributes": {
+        "reconciliation_case_id": "RECON-001",
+        "reconciliation_type": "standard",
+        "expected_settlement": 21250.00,
+        "actual_settlement": 21250.00,
+        "variance_amount": 0.0,
+        "reconciliation_required": false
+      }
+    },
+    {
+      "id": "e21",
+      "activity": "CompleteCorrelation",
+      "timestamp": "2024-04-01T12:15:00Z",
+      "case": "inv_002",
+      "resource": "correlation_system",
+      "attributes": {
+        "correlation_completed": true,
+        "finalized_at": "2024-04-01T12:15:00Z",
+        "archival_required": true
+      }
+    },
+    {
+      "id": "e22",
+      "activity": "ReceiveInvoice",
+      "timestamp": "2024-04-01T14:00:00Z",
+      "case": "inv_003",
+      "resource": "invoice_system",
+      "attributes": {
+        "invoice_id": "INV-2024-003",
+        "vendor_id": "VENDOR-002",
+        "amount": 15600.00,
+        "currency": "USD",
+        "po_references": ["PO-2024-1002"],
+        "delivery_references": ["DEL-2024-0502"],
+        "line_items": 1,
+        "total_items": 100,
+        "price_variance": 12.5
+      }
+    },
+    {
+      "id": "e23",
+      "activity": "PerformMatching",
+      "timestamp": "2024-04-01T14:25:00Z",
+      "case": "inv_003",
+      "resource": "matching_engine",
+      "attributes": {
+        "match_result": "partial",
+        "match_accuracy": 0.875,
+        "total_amount_match": true,
+        "quantity_match": true,
+        "price_variance": 0.125,
+        "variance_threshold_exceeded": true
+      }
+    },
+    {
+      "id": "e24",
+      "activity": "ManagerApproval",
+      "timestamp": "2024-04-01T14:30:00Z",
+      "case": "inv_003",
+      "resource": "finance_director",
+      "attributes": {
+        "manager_approved": false,
+        "variance_amount": 1950.00,
+        "strategic_impact": "medium",
+        "board_review_required": false
+      }
+    },
+    {
+      "id": "e25",
+      "activity": "ManagerDecision",
+      "timestamp": "2024-04-01T15:00:00Z",
+      "case": "inv_003",
+      "resource": "finance_director",
+      "attributes": {
+        "decision": "approved",
+        "conditions": ["vendor_discount_applied"],
+        "approved_at": "2024-04-01T15:00:00Z"
+      }
+    },
+    {
+      "id": "e26",
+      "activity": "ProcessPayment",
+      "timestamp": "2024-04-01T15:15:00Z",
+      "case": "inv_003",
+      "resource": "payment_system",
+      "attributes": {
+        "payments_processed": true,
+        "payment_ids": ["PAY-003"],
+        "payment_date": "2024-04-01",
+        "total_amount": 15600.00,
+        "conditions_applied": true
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "inv_001",
+      "type": "invoice_case",
+      "attributes": {
+        "invoice_id": "INV-2024-001",
+        "vendor_id": "VENDOR-001",
+        "amount": 12500.00,
+        "currency": "USD",
+        "status": "paid",
+        "po_reference": "PO-2024-1001",
+        "delivery_reference": "DEL-2024-0501",
+        "processing_time": "35 minutes",
+        "matched_successfully": true
+      }
+    },
+    {
+      "id": "inv_002",
+      "type": "invoice_case",
+      "attributes": {
+        "invoice_id": "INV-2024-002",
+        "vendor_id": "VENDOR-001",
+        "amount": 8750.00,
+        "currency": "USD",
+        "status": "paid",
+        "po_reference": "PO-2024-1001",
+        "delivery_reference": "DEL-2024-0501",
+        "processing_time": "45 minutes",
+        "matched_successfully": true,
+        "bulk_processed": true
+      }
+    },
+    {
+      "id": "inv_003",
+      "type": "invoice_case",
+      "attributes": {
+        "invoice_id": "INV-2024-003",
+        "vendor_id": "VENDOR-002",
+        "amount": 15600.00,
+        "currency": "USD",
+        "status": "paid",
+        "po_reference": "PO-2024-1002",
+        "delivery_reference": "DEL-2024-0502",
+        "processing_time": "75 minutes",
+        "price_variance": 12.5,
+        "manager_approved": true
+      }
+    },
+    {
+      "id": "po_1001",
+      "type": "purchase_order_case",
+      "attributes": {
+        "po_id": "PO-2024-1001",
+        "vendor_id": "VENDOR-001",
+        "total_amount": 21250.00,
+        "status": "closed",
+        "invoice_count": 2,
+        "delivery_count": 1
+      }
+    },
+    {
+      "id": "po_1002",
+      "type": "purchase_order_case",
+      "attributes": {
+        "po_id": "PO-2024-1002",
+        "vendor_id": "VENDOR-002",
+        "total_amount": 15600.00,
+        "status": "closed",
+        "invoice_count": 1,
+        "delivery_count": 1
+      }
+    },
+    {
+      "id": "del_0501",
+      "type": "delivery_case",
+      "attributes": {
+        "delivery_id": "DEL-2024-0501",
+        "po_reference": "PO-2024-1001",
+        "vendor_id": "VENDOR-001",
+        "delivered_date": "2024-03-28",
+        "quantity_delivered": 225,
+        "status": "received"
+      }
+    },
+    {
+      "id": "del_0502",
+      "type": "delivery_case",
+      "attributes": {
+        "delivery_id": "DEL-2024-0502",
+        "po_reference": "PO-2024-1002",
+        "vendor_id": "VENDOR-002",
+        "delivered_date": "2024-03-30",
+        "quantity_delivered": 100,
+        "status": "received"
+      }
+    },
+    {
+      "id": "vendor_001",
+      "type": "vendor",
+      "attributes": {
+        "vendor_id": "VENDOR-001",
+        "name": "Tech Supplies Inc.",
+        "payment_terms": "net 30",
+        "total_invoices": 2,
+        "total_amount": 21250.00
+      }
+    },
+    {
+      "id": "vendor_002",
+      "type": "vendor",
+      "attributes": {
+        "vendor_id": "VENDOR-002",
+        "name": "Office Equipment Ltd.",
+        "payment_terms": "net 15",
+        "total_invoices": 1,
+        "total_amount": 15600.00
+      }
+    }
+  ],
+  "relations": [
+    {
+      "source": "e1",
+      "target": "inv_001",
+      "type": "produce"
+    },
+    {
+      "source": "e19",
+      "target": "inv_001",
+      "type": "consume"
+    },
+    {
+      "source": "e9",
+      "target": "inv_002",
+      "type": "produce"
+    },
+    {
+      "source": "e19",
+      "target": "inv_002",
+      "type": "consume"
+    },
+    {
+      "source": "e22",
+      "target": "inv_003",
+      "type": "produce"
+    },
+    {
+      "source": "e26",
+      "target": "inv_003",
+      "type": "consume"
+    },
+    {
+      "source": "e4",
+      "target": "po_1001",
+      "type": "reference"
+    },
+    {
+      "source": "e12",
+      "target": "po_1001",
+      "type": "reference"
+    },
+    {
+      "source": "e23",
+      "target": "po_1002",
+      "type": "reference"
+    },
+    {
+      "source": "e5",
+      "target": "del_0501",
+      "type": "reference"
+    },
+    {
+      "source": "e13",
+      "target": "del_0501",
+      "type": "reference"
+    },
+    {
+      "source": "e23",
+      "target": "del_0502",
+      "type": "reference"
+    },
+    {
+      "source": "e1",
+      "target": "vendor_001",
+      "type": "use"
+    },
+    {
+      "source": "e9",
+      "target": "vendor_001",
+      "type": "use"
+    },
+    {
+      "source": "e22",
+      "target": "vendor_002",
+      "type": "use"
+    }
+  ]
+}

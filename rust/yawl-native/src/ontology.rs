@@ -13,11 +13,11 @@ use std::collections::HashMap;
 // ─── Compile-time resource embedding ──────────────────────────────────────────
 
 const ONTOLOGY_TTL: &str =
-    include_str!("../../src/main/resources/ontology/yawl-public-roots.ttl");
+    include_str!("../../../src/main/resources/ontology/yawl-public-roots.ttl");
 const CONSTRUCT_MCP: &str =
-    include_str!("../../src/main/resources/sparql/construct-mcp-from-workflow-ontology.sparql");
+    include_str!("../../../src/main/resources/sparql/construct-mcp-from-workflow-ontology.sparql");
 const CONSTRUCT_A2A: &str =
-    include_str!("../../src/main/resources/sparql/construct-a2a-from-workflow-ontology.sparql");
+    include_str!("../../../src/main/resources/sparql/construct-a2a-from-workflow-ontology.sparql");
 
 // ─── SELECT queries run against materialized graph ─────────────────────────────
 

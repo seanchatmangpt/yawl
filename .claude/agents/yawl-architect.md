@@ -17,3 +17,5 @@ YAWL architecture specialist. Design scalable workflow systems, document archite
 2. Backward compatibility for existing specifications
 3. Extensibility via strategy/factory patterns
 4. Document all decisions in memory
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for architecture snapshot. Key diagrams: `diagrams/10-maven-reactor.mmd`, `diagrams/15-shared-src-map.mmd`, `diagrams/50-risk-surfaces.mmd`.

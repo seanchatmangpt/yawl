@@ -1,0 +1,619 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-03-03T10:00:00Z",
+    "source": "realistic-order-processing-flow"
+  },
+  "events": [
+    {
+      "id": "order_001",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:15:42.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Customer Order #001",
+        "concept:description": "Regular customer order with standard items",
+        "customer_id": "cust_12345",
+        "customer_name": "John Doe",
+        "order_value": 149.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "shipping_address": {
+          "street": "123 Main St",
+          "city": "Anytown",
+          "state": "CA",
+          "zip": "12345"
+        }
+      },
+      "objects": {
+        "o001": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #001",
+            "customer_id": "cust_12345",
+            "total_amount": 149.99,
+            "status": "created",
+            "created_at": "2024-03-03T09:15:42.123Z",
+            "priority": "normal"
+          }
+        },
+        "c001": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "John Doe",
+            "customer_id": "cust_12345",
+            "email": "john.doe@example.com",
+            "status": "active",
+            "loyalty_points": 1250
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_001",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:18:37.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Credit Card Payment Processing",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "txn_123456789",
+        "amount": 149.99,
+        "currency": "USD"
+      },
+      "objects": {
+        "o001": {},
+        "c001": {},
+        "p001": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Payment #001",
+            "payment_method": "credit_card",
+            "amount": 149.99,
+            "status": "processing",
+            "processor": "stripe",
+            "transaction_id": "txn_123456789"
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_001_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:19:22.789Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Credit Card Payment Success",
+        "concept:cost": 0.50,
+        "payment_result": "success",
+        "authorization_code": "auth_987654321",
+        "processing_time_ms": 1456
+      },
+      "objects": {
+        "o001": {},
+        "c001": {},
+        "p001": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:19:22.789Z",
+            "authorization_code": "auth_987654321"
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_001",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:22:15.321Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Inventory Availability Check",
+        "concept:cost": 0.25,
+        "items_checked": 3,
+        "inventory_system": "warehouse_1"
+      },
+      "objects": {
+        "o001": {},
+        "i001": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Standard Inventory Check",
+            "items_count": 3,
+            "stock_status": "available",
+            "warehouse_id": "wh_001"
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_001_result",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T09:24:08.654Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Inventory Check Result",
+        "concept:cost": 0.10,
+        "result": "success",
+        "items_available": 3,
+        "low_stock_items": []
+      },
+      "objects": {
+        "o001": {},
+        "i001": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 3,
+            "last_checked": "2024-03-03T09:24:08.654Z"
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_preparation_001",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T09:28:44.987Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Order Packaging and Labeling",
+        "concept:cost": 5.99,
+        "packaging_type": "standard",
+        "shipping_carrier": "fedex",
+        "estimated_weight": 2.5,
+        "dimensions": "10x8x4"
+      },
+      "objects": {
+        "o001": {},
+        "s001": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Shipping #001",
+            "carrier": "fedex",
+            "service_type": "ground",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-05T17:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_handoff_001",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T10:15:33.210Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Order Handoff to Carrier",
+        "concept:cost": 12.50,
+        "handoff_time": "2024-03-03T10:15:33.210Z",
+        "tracking_number": "FDX1234567890",
+        "weight_actual": 2.3,
+        "dimension_actual": "10x8x4"
+      },
+      "objects": {
+        "o001": {},
+        "s001": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T10:15:33.210Z",
+            "tracking_number": "FDX1234567890"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_002",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T11:05:55.432Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Customer Order #002",
+        "concept:description": "Express order with high priority",
+        "customer_id": "cust_67890",
+        "customer_name": "Jane Smith",
+        "order_value": 89.50,
+        "items_count": 2,
+        "payment_method": "paypal",
+        "priority": "express",
+        "shipping_address": {
+          "street": "456 Oak Ave",
+          "city": "Otherville",
+          "state": "NY",
+          "zip": "67890"
+        }
+      },
+      "objects": {
+        "o002": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #002",
+            "customer_id": "cust_67890",
+            "total_amount": 89.50,
+            "status": "created",
+            "created_at": "2024-03-03T11:05:55.432Z",
+            "priority": "express"
+          }
+        },
+        "c002": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Jane Smith",
+            "customer_id": "cust_67890",
+            "email": "jane.smith@example.com",
+            "status": "active",
+            "loyalty_points": 4500
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_002",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T11:09:18.765Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "PayPal Payment Processing",
+        "concept:cost": 1.99,
+        "payment_processor": "paypal",
+        "transaction_id": "txn_987654321",
+        "amount": 89.50,
+        "currency": "USD"
+      },
+      "objects": {
+        "o002": {},
+        "c002": {},
+        "p002": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Payment #002",
+            "payment_method": "paypal",
+            "amount": 89.50,
+            "status": "processing",
+            "processor": "paypal",
+            "transaction_id": "txn_987654321"
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_002_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T11:11:42.098Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "PayPal Payment Success",
+        "concept:cost": 0.30,
+        "payment_result": "success",
+        "paypal_transaction_id": "paypal_txn_123456",
+        "processing_time_ms": 884
+      },
+      "objects": {
+        "o002": {},
+        "c002": {},
+        "p002": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T11:11:42.098Z",
+            "paypal_transaction_id": "paypal_txn_123456"
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_002",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T11:18:27.543Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Express Inventory Check",
+        "concept:cost": 0.30,
+        "items_checked": 2,
+        "inventory_system": "warehouse_1",
+        "express_mode": true
+      },
+      "objects": {
+        "o002": {},
+        "i002": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Express Inventory Check",
+            "items_count": 2,
+            "stock_status": "limited",
+            "warehouse_id": "wh_001",
+            "express_mode": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_002_result",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T11:20:16.876Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Express Inventory Check Result",
+        "concept:cost": 0.15,
+        "result": "success",
+        "items_available": 2,
+        "low_stock_items": ["item_A"],
+        "express_processing": true
+      },
+      "objects": {
+        "o002": {},
+        "i002": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 2,
+            "low_stock_items": ["item_A"],
+            "last_checked": "2024-03-03T11:20:16.876Z"
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_preparation_002",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T11:25:39.210Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Express Order Packaging",
+        "concept:cost": 8.99,
+        "packaging_type": "express",
+        "shipping_carrier": "ups",
+        "estimated_weight": 1.2,
+        "dimensions": "8x6x3",
+        "express_mode": true
+      },
+      "objects": {
+        "o002": {},
+        "s002": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Shipping #002",
+            "carrier": "ups",
+            "service_type": "next_day_air",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-04T17:00:00Z",
+            "express_mode": true
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_handoff_002",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T11:42:55.543Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Express Order Handoff",
+        "concept:cost": 15.00,
+        "handoff_time": "2024-03-03T11:42:55.543Z",
+        "tracking_number": "1Z999W9999999999999",
+        "weight_actual": 1.1,
+        "dimension_actual": "8x6x3",
+        "express_service": true
+      },
+      "objects": {
+        "o002": {},
+        "s002": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T11:42:55.543Z",
+            "tracking_number": "1Z999W9999999999999"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_close_001",
+      "type": "OrderClose",
+      "timestamp": "2024-03-05T16:30:22.678Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Order #001 - Delivered",
+        "concept:cost": 0.00,
+        "delivery_status": "delivered",
+        "delivery_time": "2024-03-05T16:30:22.678Z",
+        "customer_rating": 4.5,
+        "feedback": "Fast delivery, good packaging"
+      },
+      "objects": {
+        "o001": {
+          "attributes": {
+            "status": "delivered",
+            "delivered_at": "2024-03-05T16:30:22.678Z",
+            "customer_rating": 4.5,
+            "feedback": "Fast delivery, good packaging"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_close_002",
+      "type": "OrderClose",
+      "timestamp": "2024-03-04T14:15:44.876Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Order #002 - Delivered",
+        "concept:cost": 0.00,
+        "delivery_status": "delivered",
+        "delivery_time": "2024-03-04T14:15:44.876Z",
+        "customer_rating": 5.0,
+        "feedback": "Express delivery exceeded expectations"
+      },
+      "objects": {
+        "o002": {
+          "attributes": {
+            "status": "delivered",
+            "delivered_at": "2024-03-04T14:15:44.876Z",
+            "customer_rating": 5.0,
+            "feedback": "Express delivery exceeded expectations"
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "o001": {
+      "id": "o001",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #001",
+        "concept:description": "Regular customer order with standard items",
+        "customer_id": "cust_12345",
+        "total_amount": 149.99,
+        "status": "delivered",
+        "created_at": "2024-03-03T09:15:42.123Z",
+        "delivered_at": "2024-03-05T16:30:22.678Z",
+        "priority": "normal",
+        "shipping_carrier": "fedex",
+        "tracking_number": "FDX1234567890",
+        "customer_rating": 4.5,
+        "feedback": "Fast delivery, good packaging",
+        "processing_time_minutes": 358
+      }
+    },
+    "o002": {
+      "id": "o002",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #002",
+        "concept:description": "Express order with high priority",
+        "customer_id": "cust_67890",
+        "total_amount": 89.50,
+        "status": "delivered",
+        "created_at": "2024-03-03T11:05:55.432Z",
+        "delivered_at": "2024-03-04T14:15:44.876Z",
+        "priority": "express",
+        "shipping_carrier": "ups",
+        "tracking_number": "1Z999W9999999999999",
+        "customer_rating": 5.0,
+        "feedback": "Express delivery exceeded expectations",
+        "processing_time_minutes": 189
+      }
+    },
+    "c001": {
+      "id": "c001",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "John Doe",
+        "concept:description": "Regular customer with moderate spending",
+        "customer_id": "cust_12345",
+        "email": "john.doe@example.com",
+        "status": "active",
+        "loyalty_points": 1250,
+        "total_orders": 1,
+        "total_spent": 149.99,
+        "join_date": "2023-01-15T00:00:00Z"
+      }
+    },
+    "c002": {
+      "id": "c002",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Jane Smith",
+        "concept:description": "VIP customer with high spending",
+        "customer_id": "cust_67890",
+        "email": "jane.smith@example.com",
+        "status": "active",
+        "loyalty_points": 4500,
+        "total_orders": 1,
+        "total_spent": 89.50,
+        "join_date": "2022-08-20T00:00:00Z"
+      }
+    },
+    "p001": {
+      "id": "p001",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Payment #001",
+        "concept:description": "Credit card payment for order #001",
+        "payment_method": "credit_card",
+        "amount": 149.99,
+        "status": "completed",
+        "processor": "stripe",
+        "transaction_id": "txn_123456789",
+        "authorization_code": "auth_987654321",
+        "completed_at": "2024-03-03T09:19:22.789Z",
+        "processing_time_ms": 1456
+      }
+    },
+    "p002": {
+      "id": "p002",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Payment #002",
+        "concept:description": "PayPal payment for order #002",
+        "payment_method": "paypal",
+        "amount": 89.50,
+        "status": "completed",
+        "processor": "paypal",
+        "transaction_id": "txn_987654321",
+        "paypal_transaction_id": "paypal_txn_123456",
+        "completed_at": "2024-03-03T11:11:42.098Z",
+        "processing_time_ms": 884
+      }
+    },
+    "i001": {
+      "id": "i001",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Standard Inventory",
+        "concept:description": "Inventory check for normal order processing",
+        "items_count": 3,
+        "stock_status": "available",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T09:24:08.654Z",
+        "low_stock_items": []
+      }
+    },
+    "i002": {
+      "id": "i002",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Express Inventory",
+        "concept:description": "Express inventory check with limited stock",
+        "items_count": 2,
+        "stock_status": "limited",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T11:20:16.876Z",
+        "low_stock_items": ["item_A"]
+      }
+    },
+    "s001": {
+      "id": "s001",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Shipping #001",
+        "concept:description": "Fedex ground shipping for order #001",
+        "carrier": "fedex",
+        "service_type": "ground",
+        "status": "delivered",
+        "estimated_delivery": "2024-03-05T17:00:00Z",
+        "actual_delivery": "2024-03-05T16:30:22.678Z",
+        "tracking_number": "FDX1234567890",
+        "handed_off_at": "2024-03-03T10:15:33.210Z",
+        "weight": 2.3,
+        "dimensions": "10x8x4"
+      }
+    },
+    "s002": {
+      "id": "s002",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Shipping #002",
+        "concept:description": "UPS express next day air for order #002",
+        "carrier": "ups",
+        "service_type": "next_day_air",
+        "status": "delivered",
+        "estimated_delivery": "2024-03-04T17:00:00Z",
+        "actual_delivery": "2024-03-04T14:15:44.876Z",
+        "tracking_number": "1Z999W9999999999999",
+        "handed_off_at": "2024-03-03T11:42:55.543Z",
+        "weight": 1.1,
+        "dimensions": "8x6x3"
+      }
+    }
+  }
+}

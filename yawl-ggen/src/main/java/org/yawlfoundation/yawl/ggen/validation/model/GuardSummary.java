@@ -1,95 +1,112 @@
-/*
- * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
- *
- * This file is part of YAWL. YAWL is free software: you can
- * redistribute it and/or modify it under the terms of the GNU Lesser
- * General Public License as published by the Free Software Foundation.
- */
-
 package org.yawlfoundation.yawl.ggen.validation.model;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import org.yawlfoundation.yawl.ggen.validation.model.GuardViolation;
 
 /**
- * Summary statistics for guard validation results.
- * Tracks violation counts by pattern type and total violations.
+ * Summary counts of guard violations by pattern type.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class GuardSummary {
-    private int h_todo_count = 0;
-    private int h_mock_count = 0;
-    private int h_stub_count = 0;
-    private int h_empty_count = 0;
-    private int h_fallback_count = 0;
-    private int h_lie_count = 0;
-    private int h_silent_count = 0;
 
-    /**
-     * Increment the count for a given pattern.
-     *
-     * @param pattern the pattern name (e.g., H_TODO)
-     */
-    public void increment(String pattern) {
-        switch (pattern) {
-            case "H_TODO" -> h_todo_count++;
-            case "H_MOCK" -> h_mock_count++;
-            case "H_STUB" -> h_stub_count++;
-            case "H_EMPTY" -> h_empty_count++;
-            case "H_FALLBACK" -> h_fallback_count++;
-            case "H_LIE" -> h_lie_count++;
-            case "H_SILENT" -> h_silent_count++;
+    @JsonProperty("h_todo_count")
+    private int hTodoCount;
+
+    @JsonProperty("h_mock_count")
+    private int hMockViolationCount;
+
+    @JsonProperty("h_stub_count")
+    private int hStubViolationCount;
+
+    @JsonProperty("h_empty_count")
+    private int hEmptyCount;
+
+    @JsonProperty("h_fallback_count")
+    private int hFallbackCount;
+
+    @JsonProperty("h_lie_count")
+    private int hLieCount;
+
+    @JsonProperty("h_silent_count")
+    private int hSilentCount;
+
+    @JsonProperty("total_violations")
+    private int totalViolations;
+
+    public GuardSummary() {
+        this.hTodoCount = 0;
+        this.hMockViolationCount = 0;
+        this.hStubViolationCount = 0;
+        this.hEmptyCount = 0;
+        this.hFallbackCount = 0;
+        this.hLieCount = 0;
+        this.hSilentCount = 0;
+        this.totalViolations = 0;
+    }
+
+    public GuardSummary(List<GuardViolation> violations) {
+        if (violations == null) {
+            throw new NullPointerException("Violations list cannot be null");
+        }
+        for (GuardViolation violation : violations) {
+            increment(violation.getPattern());
         }
     }
 
-    /**
-     * Get the total number of violations across all patterns.
-     */
-    public int getTotalViolations() {
-        return h_todo_count + h_mock_count + h_stub_count + h_empty_count +
-               h_fallback_count + h_lie_count + h_silent_count;
+    public void increment(String pattern) {
+        switch (pattern) {
+            case "H_TODO" -> hTodoCount++;
+            case "H_MOCK" -> hMockViolationCount++;
+            case "H_STUB" -> hStubViolationCount++;
+            case "H_EMPTY" -> hEmptyCount++;
+            case "H_FALLBACK" -> hFallbackCount++;
+            case "H_LIE" -> hLieCount++;
+            case "H_SILENT" -> hSilentCount++;
+        }
+        totalViolations++;
     }
 
-    /**
-     * Get all counts as a map for JSON serialization.
-     */
-    public Map<String, Integer> asMap() {
-        Map<String, Integer> map = new HashMap<>();
-        map.put("h_todo_count", h_todo_count);
-        map.put("h_mock_count", h_mock_count);
-        map.put("h_stub_count", h_stub_count);
-        map.put("h_empty_count", h_empty_count);
-        map.put("h_fallback_count", h_fallback_count);
-        map.put("h_lie_count", h_lie_count);
-        map.put("h_silent_count", h_silent_count);
-        map.put("total_violations", getTotalViolations());
-        return map;
-    }
+    // CamelCase getters
+    public int getHTodoCount() { return hTodoCount; }
+    public int getHMockViolationCount() { return hMockViolationCount; }
+    public int getHStubViolationCount() { return hStubViolationCount; }
+    public int getHEmptyCount() { return hEmptyCount; }
+    public int getHFallbackCount() { return hFallbackCount; }
+    public int getHLieCount() { return hLieCount; }
+    public int getHSilentCount() { return hSilentCount; }
+    public int getTotalViolations() { return totalViolations; }
 
-    /**
-     * Classify the overall severity of this summary as a label.
-     *
-     * <p><b>JEP 455 — Primitive Types in Patterns (Java 25 preview)</b>:
-     * {@code switch (int)} with {@code case int n when n == 0} eliminates Integer boxing
-     * and enables compiler-verified exhaustiveness for primitive values.
-     * Prior to JEP 455, this required an {@code if/else} chain or boxing to {@code Integer}.
-     *
-     * @return "GREEN" for zero violations, "YELLOW" for 1–5, "RED" for 6 or more
-     */
-    @SuppressWarnings("preview")
-    public String getSeverityLabel() {
-        return switch (getTotalViolations()) {
-            case int n when n == 0 -> "GREEN";
-            case int n when n <= 5 -> "YELLOW";
-            case int n             -> "RED";
-        };
-    }
+    // Snake-case getters for HyperStandardsValidator compatibility
+    public int getH_todo_count() { return hTodoCount; }
+    public int getH_mock_violation_count() { return hMockViolationCount; }
+    public int getH_stub_violation_count() { return hStubViolationCount; }
+    public int getH_empty_count() { return hEmptyCount; }
+    public int getH_fallback_count() { return hFallbackCount; }
+    public int getH_lie_count() { return hLieCount; }
+    public int getH_silent_count() { return hSilentCount; }
+    public int getTotal_violations() { return totalViolations; }
 
-    // Getters
-    public int getH_todo_count() { return h_todo_count; }
-    public int getH_mock_count() { return h_mock_count; }
-    public int getH_stub_count() { return h_stub_count; }
-    public int getH_empty_count() { return h_empty_count; }
-    public int getH_fallback_count() { return h_fallback_count; }
-    public int getH_lie_count() { return h_lie_count; }
-    public int getH_silent_count() { return h_silent_count; }
+    // Setters
+    public void setHTodoCount(int hTodoCount) { this.hTodoCount = hTodoCount; }
+    public void setHMockCount(int hMockViolationCount) { this.hMockViolationCount = hMockViolationCount; }
+    public void setHStubCount(int hStubViolationCount) { this.hStubViolationCount = hStubViolationCount; }
+    public void setHEmptyCount(int hEmptyCount) { this.hEmptyCount = hEmptyCount; }
+    public void setHFallbackCount(int hFallbackCount) { this.hFallbackCount = hFallbackCount; }
+    public void setHLieCount(int hLieCount) { this.hLieCount = hLieCount; }
+    public void setHSilentCount(int hSilentCount) { this.hSilentCount = hSilentCount; }
+    public void setTotalViolations(int totalViolations) { this.totalViolations = totalViolations; }
+
+    /** Serialize to JSON string. */
+    public String toJson() {
+        return String.format(
+            "{\"h_todo_count\": %d, \"h_mock_count\": %d, \"h_stub_count\": %d, " +
+            "\"h_empty_count\": %d, \"h_fallback_count\": %d, \"h_lie_count\": %d, " +
+            "\"h_silent_count\": %d, \"total_violations\": %d}",
+            hTodoCount, hMockViolationCount, hStubViolationCount,
+            hEmptyCount, hFallbackCount, hLieCount,
+            hSilentCount, totalViolations
+        );
+    }
 }

@@ -116,6 +116,13 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.18.1</version>
         </dependency>
+
+        <!-- QLever FFI for embedded SPARQL queries (stub implementation for compilation) -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-qlever</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

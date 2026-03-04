@@ -20,3 +20,5 @@ YAWL production validator. Verify deployment readiness and configurations.
 10. Health: `/actuator/health` returns UP, all dependencies accessible
 
 **Rollback if**: Test failures, HYPER violations, security vulns, >20% perf degradation, health checks failing.
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for production baseline. Key facts: `gates.json` (H/Q gates), `maven-hazards.json` (cache risks), `diagrams/40-ci-gates.mmd` (quality gates).

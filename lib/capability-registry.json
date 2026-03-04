@@ -1,0 +1,477 @@
+{
+  "registry": {
+    "name": "YAWL Process Mining Bridge Capability Registry",
+    "version": "1.0.0",
+    "description": "Native capability registry for rust4pm integration",
+    "generatedBy": "gen-ttl from rust4pm/src/lib.rs",
+    "timestamp": "2026-03-02T19:30:00Z",
+    "nativeLibrary": "librust4pm",
+    "bridgeType": "WCP-NB",
+    "totalCapabilities": 40
+  },
+  "capabilities": [
+    {
+      "id": "PARSE_OCEL2_JSON",
+      "name": "Parse OCEL2 JSON",
+      "description": "Parse OCEL2 JSON format into native handle",
+      "nativeFunction": "rust4pm_parse_ocel2_json",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "ParseResult",
+      "memoryManagement": "Handle-based",
+      "category": "Parsing"
+    },
+    {
+      "id": "LOG_EVENT_COUNT",
+      "name": "Log Event Count",
+      "description": "Get event count from loaded OCEL log",
+      "nativeFunction": "rust4pm_log_event_count",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Information"
+    },
+    {
+      "id": "LOG_GET_EVENTS",
+      "name": "Get Events",
+      "description": "Retrieve all events from loaded OCEL log",
+      "nativeFunction": "rust4pm_log_get_events",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "OcelEventsResult",
+      "memoryManagement": "Manual Free",
+      "category": "Information"
+    },
+    {
+      "id": "LOG_OBJECT_COUNT",
+      "name": "Log Object Count",
+      "description": "Get object count from loaded OCEL log",
+      "nativeFunction": "rust4pm_log_object_count",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Information"
+    },
+    {
+      "id": "LOG_GET_OBJECTS",
+      "name": "Get Objects",
+      "description": "Retrieve all objects from loaded OCEL log",
+      "nativeFunction": "rust4pm_log_get_objects",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "OcelObjectsResult",
+      "memoryManagement": "Manual Free",
+      "category": "Information"
+    },
+    {
+      "id": "DISCOVER_DFG",
+      "name": "Discover DFG",
+      "description": "Discover Direct Follow Graph from OCEL log",
+      "nativeFunction": "rust4pm_discover_dfg",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "DfgResult",
+      "memoryManagement": "Manual Free",
+      "category": "Discovery"
+    },
+    {
+      "id": "CHECK_CONFORMANCE",
+      "name": "Check Conformance",
+      "description": "Check process conformance against model",
+      "nativeFunction": "rust4pm_check_conformance",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "ConformanceResult",
+      "memoryManagement": "Manual Free",
+      "category": "Conformance"
+    },
+    {
+      "id": "LOG_FREE",
+      "name": "Free Log",
+      "description": "Free OCEL log handle to release native memory",
+      "nativeFunction": "rust4pm_log_free",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Void",
+      "memoryManagement": "Memory Free",
+      "category": "Memory"
+    },
+    {
+      "id": "EVENTS_FREE",
+      "name": "Free Events",
+      "description": "Free OCEL events result to release native memory",
+      "nativeFunction": "rust4pm_events_free",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Void",
+      "memoryManagement": "Memory Free",
+      "category": "Memory"
+    },
+    {
+      "id": "OBJECTS_FREE",
+      "name": "Free Objects",
+      "description": "Free OCEL objects result to release native memory",
+      "nativeFunction": "rust4pm_objects_free",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Void",
+      "memoryManagement": "Memory Free",
+      "category": "Memory"
+    },
+    {
+      "id": "DFG_FREE",
+      "name": "Free DFG",
+      "description": "Free DFG result to release native memory",
+      "nativeFunction": "rust4pm_dfg_free",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Void",
+      "memoryManagement": "Memory Free",
+      "category": "Memory"
+    },
+    {
+      "id": "ERROR_FREE",
+      "name": "Free Error",
+      "description": "Free error result to release native memory",
+      "nativeFunction": "rust4pm_error_free",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Void",
+      "memoryManagement": "Memory Free",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_OCEL_LOG_HANDLE",
+      "name": "Size OCEL Log Handle",
+      "description": "Calculate size of OCEL log handle",
+      "nativeFunction": "rust4pm_sizeof_ocel_log_handle",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_PARSE_RESULT",
+      "name": "Size Parse Result",
+      "description": "Calculate size of parse result",
+      "nativeFunction": "rust4pm_sizeof_parse_result",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_OCEL_EVENT_C",
+      "name": "Size OCEL Event C",
+      "description": "Calculate size of OCEL event C struct",
+      "nativeFunction": "rust4pm_sizeof_ocel_event_c",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_OCEL_EVENTS_RESULT",
+      "name": "Size OCEL Events Result",
+      "description": "Calculate size of OCEL events result",
+      "nativeFunction": "rust4pm_sizeof_ocel_events_result",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_OCEL_OBJECT_C",
+      "name": "Size OCEL Object C",
+      "description": "Calculate size of OCEL object C struct",
+      "nativeFunction": "rust4pm_sizeof_ocel_object_c",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_OCEL_OBJECTS_RESULT",
+      "name": "Size OCEL Objects Result",
+      "description": "Calculate size of OCEL objects result",
+      "nativeFunction": "rust4pm_sizeof_ocel_objects_result",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_DFG_RESULT_C",
+      "name": "Size DFG Result C",
+      "description": "Calculate size of DFG result C struct",
+      "nativeFunction": "rust4pm_sizeof_dfg_result_c",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "SIZEOF_CONFORMANCE_RESULT_C",
+      "name": "Size Conformance Result C",
+      "description": "Calculate size of conformance result C struct",
+      "nativeFunction": "rust4pm_sizeof_conformance_result_c",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_LOG_HANDLE_PTR",
+      "name": "Offset OCEL Log Handle Ptr",
+      "description": "Get offset of OCEL log handle pointer field",
+      "nativeFunction": "rust4pm_offsetof_ocel_log_handle_ptr",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_PARSE_RESULT_HANDLE",
+      "name": "Offset Parse Result Handle",
+      "description": "Get offset of parse result handle field",
+      "nativeFunction": "rust4pm_offsetof_parse_result_handle",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_PARSE_RESULT_ERROR",
+      "name": "Offset Parse Result Error",
+      "description": "Get offset of parse result error field",
+      "nativeFunction": "rust4pm_offsetof_parse_result_error",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_EVENT_C_EVENT_ID",
+      "name": "Offset OCEL Event Event ID",
+      "description": "Get offset of OCEL event ID field",
+      "nativeFunction": "rust4pm_offsetof_ocel_event_c_event_id",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_EVENT_C_EVENT_TYPE",
+      "name": "Offset OCEL Event Event Type",
+      "description": "Get offset of OCEL event type field",
+      "nativeFunction": "rust4pm_offsetof_ocel_event_c_event_type",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_EVENT_C_TIMESTAMP_MS",
+      "name": "Offset OCEL Event Timestamp",
+      "description": "Get offset of OCEL event timestamp field",
+      "nativeFunction": "rust4pm_offsetof_ocel_event_c_timestamp_ms",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_EVENT_C_ATTR_COUNT",
+      "name": "Offset OCEL Event Attr Count",
+      "description": "Get offset of OCEL event attribute count field",
+      "nativeFunction": "rust4pm_offsetof_ocel_event_c_attr_count",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_EVENTS_RESULT_EVENTS",
+      "name": "Offset OCEL Events Result Events",
+      "description": "Get offset of OCEL events array field",
+      "nativeFunction": "rust4pm_offsetof_ocel_events_result_events",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_EVENTS_RESULT_COUNT",
+      "name": "Offset OCEL Events Result Count",
+      "description": "Get offset of OCEL events count field",
+      "nativeFunction": "rust4pm_offsetof_ocel_events_result_count",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_EVENTS_RESULT_ERROR",
+      "name": "Offset OCEL Events Result Error",
+      "description": "Get offset of OCEL events error field",
+      "nativeFunction": "rust4pm_offsetof_ocel_events_result_error",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_OBJECT_C_OBJECT_ID",
+      "name": "Offset OCEL Object Object ID",
+      "description": "Get offset of OCEL object ID field",
+      "nativeFunction": "rust4pm_offsetof_ocel_object_c_object_id",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_OBJECT_C_OBJECT_TYPE",
+      "name": "Offset OCEL Object Object Type",
+      "description": "Get offset of OCEL object type field",
+      "nativeFunction": "rust4pm_offsetof_ocel_object_c_object_type",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_OBJECTS_RESULT_OBJECTS",
+      "name": "Offset OCEL Objects Result Objects",
+      "description": "Get offset of OCEL objects array field",
+      "nativeFunction": "rust4pm_offsetof_ocel_objects_result_objects",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_OBJECTS_RESULT_COUNT",
+      "name": "Offset OCEL Objects Result Count",
+      "description": "Get offset of OCEL objects count field",
+      "nativeFunction": "rust4pm_offsetof_ocel_objects_result_count",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_OCEL_OBJECTS_RESULT_ERROR",
+      "name": "Offset OCEL Objects Result Error",
+      "description": "Get offset of OCEL objects error field",
+      "nativeFunction": "rust4pm_offsetof_ocel_objects_result_error",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_DFG_RESULT_C_JSON",
+      "name": "Offset DFG Result JSON",
+      "description": "Get offset of DFG result JSON field",
+      "nativeFunction": "rust4pm_offsetof_dfg_result_c_json",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_DFG_RESULT_C_ERROR",
+      "name": "Offset DFG Result Error",
+      "description": "Get offset of DFG result error field",
+      "nativeFunction": "rust4pm_offsetof_dfg_result_c_error",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_CONFORMANCE_RESULT_C_FITNESS",
+      "name": "Offset Conformance Result Fitness",
+      "description": "Get offset of conformance fitness field",
+      "nativeFunction": "rust4pm_offsetof_conformance_result_c_fitness",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_CONFORMANCE_RESULT_C_PRECISION",
+      "name": "Offset Conformance Result Precision",
+      "description": "Get offset of conformance precision field",
+      "nativeFunction": "rust4pm_offsetof_conformance_result_c_precision",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    },
+    {
+      "id": "OFFSETOF_CONFORMANCE_RESULT_C_ERROR",
+      "name": "Offset Conformance Result Error",
+      "description": "Get offset of conformance error field",
+      "nativeFunction": "rust4pm_offsetof_conformance_result_c_error",
+      "javaInterface": "ProcessMiningBridge",
+      "erlangModule": "process_mining_bridge",
+      "returnType": "Integer",
+      "memoryManagement": "None",
+      "category": "Memory"
+    }
+  ],
+  "categories": {
+    "Parsing": ["PARSE_OCEL2_JSON"],
+    "Information": ["LOG_EVENT_COUNT", "LOG_GET_EVENTS", "LOG_OBJECT_COUNT", "LOG_GET_OBJECTS"],
+    "Discovery": ["DISCOVER_DFG"],
+    "Conformance": ["CHECK_CONFORMANCE"],
+    "Memory": ["LOG_FREE", "EVENTS_FREE", "OBJECTS_FREE", "DFG_FREE", "ERROR_FREE"],
+    "Memory": ["SIZEOF_OCEL_LOG_HANDLE", "SIZEOF_PARSE_RESULT", "SIZEOF_OCEL_EVENT_C", "SIZEOF_OCEL_EVENTS_RESULT", "SIZEOF_OCEL_OBJECT_C", "SIZEOF_OCEL_OBJECTS_RESULT", "SIZEOF_DFG_RESULT_C", "SIZEOF_CONFORMANCE_RESULT_C", "OFFSETOF_OCEL_LOG_HANDLE_PTR", "OFFSETOF_PARSE_RESULT_HANDLE", "OFFSETOF_PARSE_RESULT_ERROR", "OFFSETOF_OCEL_EVENT_C_EVENT_ID", "OFFSETOF_OCEL_EVENT_C_EVENT_TYPE", "OFFSETOF_OCEL_EVENT_C_TIMESTAMP_MS", "OFFSETOF_OCEL_EVENT_C_ATTR_COUNT", "OFFSETOF_OCEL_EVENTS_RESULT_EVENTS", "OFFSETOF_OCEL_EVENTS_RESULT_COUNT", "OFFSETOF_OCEL_EVENTS_RESULT_ERROR", "OFFSETOF_OCEL_OBJECT_C_OBJECT_ID", "OFFSETOF_OCEL_OBJECT_C_OBJECT_TYPE", "OFFSETOF_OCEL_OBJECTS_RESULT_OBJECTS", "OFFSETOF_OCEL_OBJECTS_RESULT_COUNT", "OFFSETOF_OCEL_OBJECTS_RESULT_ERROR", "OFFSETOF_DFG_RESULT_C_JSON", "OFFSETOF_DFG_RESULT_C_ERROR", "OFFSETOF_CONFORMANCE_RESULT_C_FITNESS", "OFFSETOF_CONFORMANCE_RESULT_C_PRECISION", "OFFSETOF_CONFORMANCE_RESULT_C_ERROR"]
+  },
+  "statistics": {
+    "byCategory": {
+      "Parsing": 1,
+      "Information": 4,
+      "Discovery": 1,
+      "Conformance": 1,
+      "Memory": 34
+    },
+    "byMemoryManagement": {
+      "Handle-based": 1,
+      "Manual Free": 4,
+      "Memory Free": 5,
+      "None": 30
+    }
+  }
+}

@@ -1,0 +1,94 @@
+# JExtract Configuration for QLever FFI Integration
+#
+# This configuration generates Java bindings from the qlever_ffi.h header
+# for use with Panama Foreign Function Interface.
+
+[config]
+output-dir = "src/main/java"
+target-package = "org.yawlfoundation.yawl.bridge.qlever.jextract"
+
+# Header file specification
+headers = [
+    "src/main/resources/headers/qlever_ffi.h"
+]
+
+# Library specification - adjust for your platform
+[target.linux]
+library-path = "/usr/local/lib"
+library-names = ["qlever"]
+
+[target.macos]
+library-path = "/usr/local/lib"
+library-names = ["qlever"]
+
+[target.windows]
+library-path = "C:\\QLever\\lib"
+library-names = ["qlever"]
+
+# Configuration for header preprocessing
+[preprocessor]
+macros = [
+    "DEBUG=1",
+    "QLever_EXPORTS"
+]
+include-paths = [
+    "src/main/resources/headers"
+]
+
+# Configuration for generated classes
+[classes]
+# Map C structs to Java records/immutable classes
+struct-to-record = true
+field-prefix = ""
+
+# Generate method handles for C functions
+[method-handles]
+enable = true
+# Override function signatures for better Java interop
+signatures = [
+    "qlever_engine_create:(Ljava/lang/String;[J)Lorg/yawlfoundation/yawl/bridge/qlever/jextract/QleverStatus;",
+    "qlever_engine_query:(JJLjava/lang/String;[J)Lorg/yawlfoundation/yawl/bridge/qlever/jextract/QleverStatus;",
+    "qlever_result_get_data:(JJ[J[J)Lorg/yawlfoundation/yawl/bridge/qlever/jextract/QleverStatus;",
+    "qlever_engine_destroy:(J)V",
+    "qlever_result_destroy:(J)V"
+]
+
+# Memory management configuration
+[memory]
+# Use Arena for automatic memory management
+use-arena = true
+arena-type = "org.graalvm.nativeimage.c.function.Arena"
+
+# Function callback configuration
+[callbacks]
+# Enable callback support for future extensibility
+enable = false
+
+# Code generation options
+[generation]
+# Generate documentation for all bindings
+generate-docs = true
+# Generate type-safe wrappers
+generate-wrappers = true
+# Generate null checks for pointers
+generate-null-checks = true
+# Use platform-specific types
+use-platform-types = true
+
+# Exception handling configuration
+[exceptions]
+# Map error codes to Java exceptions
+error-code-mapping = [
+    { code = 1, exception = "QLeverException", message = "Invalid index path" },
+    { code = 2, exception = "QLeverException", message = "Engine initialization failed" },
+    { code = 3, exception = "QLeverException", message = "Invalid query syntax" },
+    { code = 4, exception = "QLeverException", message = "Query execution failed" },
+    { code = 5, exception = "QLeverException", message = "Result extraction failed" }
+]
+
+# Logging configuration
+[logging]
+# Enable debug logging during generation
+debug = false
+# Log function call traces
+trace-calls = false

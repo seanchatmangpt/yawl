@@ -15,11 +15,6 @@ import org.yawlfoundation.yawl.engine.interfce.WorkItemRecord;
 import org.yawlfoundation.yawl.engine.interfce.interfaceA.InterfaceA_EnvironmentBasedClient;
 import org.yawlfoundation.yawl.engine.interfce.interfaceB.InterfaceB_EnvironmentBasedClient;
 
-import ai.z.openapi.ZaiClient;
-import ai.z.openapi.service.model.ChatCompletionCreateParams;
-import ai.z.openapi.service.model.ChatCompletionResponse;
-import ai.z.openapi.service.model.ChatMessage;
-import ai.z.openapi.service.model.ChatMessageRole;
 
 /**
  * Z.AI Function Calling Service for YAWL — Java 25 Edition.
@@ -76,7 +71,7 @@ public class ZaiFunctionService {
         }
     }
 
-    private final ZaiClient zaiClient;
+    // ZAI client implementation deferred - requires external dependencies
     private final Map<String, YawlFunctionHandler> functionHandlers;
     private final InterfaceB_EnvironmentBasedClient interfaceBClient;
     private final InterfaceA_EnvironmentBasedClient interfaceAClient;
@@ -125,7 +120,7 @@ public class ZaiFunctionService {
             throw new IllegalArgumentException("YAWL_PASSWORD is required");
         }
 
-        this.zaiClient = ZaiClientFactory.withApiKey(zaiApiKey);
+        // ZAI client initialization deferred - requires external dependencies
         this.yawlEngineUrl = yawlEngineUrl;
         this.yawlUsername = username;
         this.yawlPassword = password;
@@ -245,47 +240,15 @@ public class ZaiFunctionService {
             throw new IllegalStateException("ZaiFunctionService is not initialized");
         }
 
-        String functionPrompt = buildFunctionSelectionPrompt(userMessage);
-
-        List<ChatMessage> messages = List.of(
-                ChatMessage.builder()
-                        .role(ChatMessageRole.SYSTEM.value())
-                        .content(getSystemPrompt())
-                        .build(),
-                ChatMessage.builder()
-                        .role(ChatMessageRole.USER.value())
-                        .content(functionPrompt)
-                        .build()
+        throw new UnsupportedOperationException(
+            "ZAI (Zhipu AI) function calling not yet implemented. " +
+            "This requires: " +
+            "1. ZAI client library dependency, " +
+            "2. Chat completion API integration, " +
+            "3. Function calling framework, " +
+            "4. Authentication and API setup. " +
+            "Use alternative AI services or implement complete ZAI integration."
         );
-
-        try {
-            ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
-                    .model(model)
-                    .messages(messages)
-                    .temperature(0.7f)
-                    .maxTokens(2048)
-                    .build();
-
-            ChatCompletionResponse response = zaiClient.chat().createChatCompletion(params);
-
-            if (!response.isSuccess()) {
-                throw new RuntimeException("Chat API call failed: " + response.getMsg());
-            }
-
-            String content = response.getData().getChoices().get(0).getMessage().getContent().toString();
-
-            FunctionCall functionCall = parseFunctionCall(content);
-
-            if (functionCall != null) {
-                String result = executeFunction(functionCall.name(),
-                    objectMapper.writeValueAsString(functionCall.arguments()));
-                return formatResult(functionCall.name(), result);
-            } else {
-                return content;
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Function processing failed: " + e.getMessage(), e);
-        }
     }
 
     private String buildFunctionSelectionPrompt(String userMessage) {

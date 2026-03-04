@@ -1,0 +1,22 @@
+# =============================================================================
+# validate-gap-closure.sparql — Verify Gap Closure Success
+# Self-Play Simulation Loop v3.0
+#
+# PURPOSE: Validate that a gap was successfully closed by checking
+# for corresponding capability enhancements
+#
+# OUTPUT: Boolean indicating successful gap closure
+# =============================================================================
+
+PREFIX sim:   <http://yawlfoundation.org/yawl/simulation#>
+PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
+
+ASK {
+  ?enhancement a sim:CapabilityEnhancement ;
+             sim:forGap ?gap ;
+             sim:appliedAt ?time .
+
+  # Ensure enhancement was applied recently (within last 5 minutes)
+  FILTER (?time >= "%s"^^xsd:dateTime)
+}
+# Note: The gap parameter should be substituted at runtime

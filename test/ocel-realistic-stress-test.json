@@ -1,0 +1,962 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-03-03T10:00:00Z",
+    "source": "realistic-stress-test-high-volume-scenarios"
+  },
+  "events": [
+    {
+      "id": "stress_test_start",
+      "type": "StressTestStart",
+      "timestamp": "2024-03-03T09:00:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "High Volume Stress Test Initiation",
+        "concept:description": "Starting stress test with 1000 concurrent orders",
+        "test_duration": 3600,
+        "concurrent_orders": 1000,
+        "system_load": "extreme",
+        "test_type": "volume_stress",
+        "expected_qps": 500,
+        "failure_rate_target": 0.05
+      },
+      "objects": {
+        "test001": {
+          "type": "TestConfiguration",
+          "attributes": {
+            "concept:name": "Volume Stress Test",
+            "total_orders": 1000,
+            "concurrent_users": 100,
+            "system_load": "extreme",
+            "test_duration": 3600,
+            "monitoring_enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_300",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:00:01.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Order #300",
+        "concept:description": "Order created during high volume stress test",
+        "customer_id": "stress_customer_300",
+        "customer_name": "Stress Test User",
+        "order_value": 147.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "stress_test": true,
+        "test_batch": 1,
+        "system_load": "extreme",
+        "queue_position": 1
+      },
+      "objects": {
+        "o300": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Stress Order #300",
+            "customer_id": "stress_customer_300",
+            "total_amount": 147.99,
+            "status": "created",
+            "created_at": "2024-03-03T09:00:01.123Z",
+            "priority": "normal",
+            "stress_test": true,
+            "test_batch": 1
+          }
+        },
+        "c300": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Stress Test User",
+            "customer_id": "stress_customer_300",
+            "email": "stress_user_300@example.com",
+            "status": "active",
+            "loyalty_points": 5000,
+            "stress_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_301",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:00:01.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Order #301",
+        "concept:description": "Concurrent order during stress test",
+        "customer_id": "stress_customer_301",
+        "customer_name": "Stress Test User",
+        "order_value": 147.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
+        "priority": "express",
+        "stress_test": true,
+        "test_batch": 1,
+        "system_load": "extreme",
+        "queue_position": 2
+      },
+      "objects": {
+        "o301": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Stress Order #301",
+            "customer_id": "stress_customer_301",
+            "total_amount": 89.50,
+            "status": "created",
+            "created_at": "2024-03-03T09:00:01.456Z",
+            "priority": "express",
+            "stress_test": true,
+            "test_batch": 1
+          }
+        },
+        "c301": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Stress Test User",
+            "customer_id": "stress_customer_301",
+            "email": "stress_user_301@example.com",
+            "status": "active",
+            "loyalty_points": 5000,
+            "stress_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_302",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:00:01.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Order #302",
+        "concept:description": "Third concurrent order during stress test",
+        "customer_id": "stress_customer_302",
+        "customer_name": "Stress Test User",
+        "order_value": 147.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "stress_test": true,
+        "test_batch": 1,
+        "system_load": "extreme",
+        "queue_position": 3
+      },
+      "objects": {
+        "o302": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Stress Order #302",
+            "customer_id": "stress_customer_302",
+            "total_amount": 234.99,
+            "status": "created",
+            "created_at": "2024-03-03T09:00:01.789Z",
+            "priority": "normal",
+            "stress_test": true,
+            "test_batch": 1
+          }
+        },
+        "c302": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Stress Test User",
+            "customer_id": "stress_customer_302",
+            "email": "stress_user_302@example.com",
+            "status": "active",
+            "loyalty_points": 5000,
+            "stress_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_300",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:00:05.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Payment #300",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "stress_txn_300001",
+        "amount": 147.99,
+        "currency": "USD",
+        "system_load": "extreme",
+        "queue_depth": 1000,
+        "processing_delay_expected": true,
+        "stress_test": true
+      },
+      "objects": {
+        "o300": {},
+        "c300": {},
+        "p300": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Stress Payment #300",
+            "payment_method": "credit_card",
+            "amount": 147.99,
+            "status": "processing",
+            "processor": "stripe",
+            "transaction_id": "stress_txn_300001",
+            "queue_depth": 1000,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_301",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:00:06.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Payment #301",
+        "concept:cost": 1.99,
+        "payment_processor": "paypal",
+        "transaction_id": "stress_txn_301001",
+        "amount": 89.50,
+        "currency": "USD",
+        "system_load": "extreme",
+        "priority": "high",
+        "queue_depth": 1001,
+        "stress_test": true
+      },
+      "objects": {
+        "o301": {},
+        "c301": {},
+        "p301": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Stress Payment #301",
+            "payment_method": "paypal",
+            "amount": 89.50,
+            "status": "processing",
+            "processor": "paypal",
+            "transaction_id": "stress_txn_301001",
+            "queue_depth": 1001,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_302",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:00:07.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Payment #302",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "stress_txn_302001",
+        "amount": 234.99,
+        "currency": "USD",
+        "system_load": "extreme",
+        "queue_depth": 1002,
+        "stress_test": true
+      },
+      "objects": {
+        "o302": {},
+        "c302": {},
+        "p302": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Stress Payment #302",
+            "payment_method": "credit_card",
+            "amount": 234.99,
+            "status": "processing",
+            "processor": "stripe",
+            "transaction_id": "stress_txn_302001",
+            "queue_depth": 1002,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_300",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:00:10.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Inventory #300",
+        "concept:cost": 0.50,
+        "items_checked": 3,
+        "inventory_system": "warehouse_1",
+        "system_load": "extreme",
+        "concurrent_checks": 500,
+        "response_time_expected": "slow",
+        "stress_test": true
+      },
+      "objects": {
+        "o300": {},
+        "i300": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Stress Inventory #300",
+            "items_count": 3,
+            "stock_status": "checking",
+            "warehouse_id": "wh_001",
+            "concurrent_checks": 500,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_301",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:00:11.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Inventory #301",
+        "concept:cost": 0.50,
+        "items_checked": 2,
+        "inventory_system": "warehouse_1",
+        "priority": "high",
+        "concurrent_checks": 501,
+        "stress_test": true
+      },
+      "objects": {
+        "o301": {},
+        "i301": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Stress Inventory #301",
+            "items_count": 2,
+            "stock_status": "checking",
+            "warehouse_id": "wh_001",
+            "express_mode": true,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_300_timeout",
+      "type": "PaymentTimeout",
+      "timestamp": "2024-03-03T09:00:15.123Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Stress Test Payment Timeout",
+        "concept:cost": 0.00,
+        "error_type": "timeout",
+        "error_message": "Payment processing timeout due to high system load",
+        "timeout_duration_ms": 10000,
+        "system_load": "extreme",
+        "queue_depth": 1000,
+        "timeout_reason": "system_overload",
+        "recovery_attempt": true,
+        "stress_test_result": "timeout",
+        "expected_behavior": true
+      },
+      "objects": {
+        "o300": {
+          "attributes": {
+            "status": "payment_timeout",
+            "failed_at": "2024-03-03T09:00:15.123Z",
+            "system_error": "high_load_timeout",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_300_timeout",
+      "type": "InventoryTimeout",
+      "timestamp": "2024-03-03T09:00:20.123Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Stress Test Inventory Timeout",
+        "concept:cost": 0.00,
+        "error_type": "timeout",
+        "error_message": "Inventory check timeout due to system overload",
+        "timeout_duration_ms": 10000,
+        "system_load": "extreme",
+        "concurrent_checks": 500,
+        "timeout_reason": "database_connection_limit",
+        "fallback_action": "cancel_order",
+        "stress_test_result": "timeout",
+        "expected_behavior": true
+      },
+      "objects": {
+        "o300": {
+          "attributes": {
+            "status": "inventory_timeout",
+            "failed_at": "2024-03-03T09:00:20.123Z",
+            "system_error": "database_timeout",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_300_cancel",
+      "type": "OrderCancel",
+      "timestamp": "2024-03-03T09:00:25.123Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Stress Test Order Cancelled",
+        "concept:cost": 0.00,
+        "cancel_reason": "system_overload",
+        "cancel_reason_code": "SYS_OVERLOAD",
+        "cancelled_by": "system",
+        "refund_required": true,
+        "refund_amount": 0.00,
+        "system_load": "extreme",
+        "stress_test_result": "expected_failure",
+        "failure_type": "system_timeout",
+        "stress_test": true
+      },
+      "objects": {
+        "o300": {
+          "attributes": {
+            "status": "cancelled",
+            "cancelled_at": "2024-03-03T09:00:25.123Z",
+            "cancel_reason": "system_overload",
+            "refund_required": true,
+            "system_error": "high_load",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_301_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:00:30.456Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Stress Test Payment Success",
+        "concept:cost": 0.30,
+        "payment_result": "success",
+        "paypal_transaction_id": "stress_paypal_301001",
+        "processing_time_ms": 24000,
+        "system_load": "extreme",
+        "queue_depth": 1001,
+        "stress_test": true
+      },
+      "objects": {
+        "o301": {},
+        "c301": {},
+        "p301": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:00:30.456Z",
+            "paypal_transaction_id": "stress_paypal_301001",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_301_success",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T09:00:35.456Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Stress Test Inventory Success",
+        "concept:cost": 1.00,
+        "result": "success",
+        "items_available": 2,
+        "low_stock_items": ["item_C"],
+        "processing_time_ms": 24000,
+        "system_load": "extreme",
+        "stress_test": true
+      },
+      "objects": {
+        "o301": {},
+        "i301": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 2,
+            "low_stock_items": ["item_C"],
+            "last_checked": "2024-03-03T09:00:35.456Z",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_start_301",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T09:00:40.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Shipping Preparation",
+        "concept:cost": 15.00,
+        "packaging_type": "express",
+        "shipping_carrier": "ups",
+        "estimated_weight": 1.2,
+        "dimensions": "10x6x4",
+        "system_load": "extreme",
+        "queue_depth": 500,
+        "stress_test": true
+      },
+      "objects": {
+        "o301": {},
+        "s301": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Stress Shipping #301",
+            "carrier": "ups",
+            "service_type": "next_day_air",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-04T17:00:00Z",
+            "express_mode": true,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_302_retry",
+      "type": "PaymentRetry",
+      "timestamp": "2024-03-03T09:00:50.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Payment Retry",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "stress_txn_302001_retry",
+        "amount": 234.99,
+        "currency": "USD",
+        "retry_count": 1,
+        "system_load": "extreme",
+        "queue_depth": 1002,
+        "stress_test": true
+      },
+      "objects": {
+        "o302": {},
+        "c302": {},
+        "p302": {
+          "attributes": {
+            "status": "retrying",
+            "retry_attempts": 1,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_302_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:01:00.789Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Stress Test Payment Success After Retry",
+        "concept:cost": 0.30,
+        "payment_result": "success",
+        "authorization_code": "stress_auth_302001",
+        "retry_success": true,
+        "total_attempts": 2,
+        "processing_time_ms": 53000,
+        "system_load": "extreme",
+        "stress_test": true
+      },
+      "objects": {
+        "o302": {},
+        "c302": {},
+        "p302": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:01:00.789Z",
+            "authorization_code": "stress_auth_302001",
+            "retry_success": true,
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_302_success",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T09:01:10.789Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Stress Test Inventory Success",
+        "concept:cost": 1.00,
+        "result": "success",
+        "items_available": 5,
+        "low_stock_items": [],
+        "processing_time_ms": 33000,
+        "system_load": "extreme",
+        "stress_test": true
+      },
+      "objects": {
+        "o302": {},
+        "i302": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 5,
+            "last_checked": "2024-03-03T09:01:10.789Z",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_start_302",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T09:01:20.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Shipping Preparation",
+        "concept:cost": 10.00,
+        "packaging_type": "standard",
+        "shipping_carrier": "fedex",
+        "estimated_weight": 2.0,
+        "dimensions": "12x8x6",
+        "system_load": "extreme",
+        "queue_depth": 501,
+        "stress_test": true
+      },
+      "objects": {
+        "o302": {},
+        "s302": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Stress Shipping #302",
+            "carrier": "fedex",
+            "service_type": "ground",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-05T17:00:00Z",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "stress_midpoint_metrics",
+      "type": "SystemMetrics",
+      "timestamp": "2024-03-03T09:30:00.000Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Midpoint Metrics",
+        "concept:description": "System metrics at 30-minute mark",
+        "test_duration_elapsed": 1800,
+        "orders_processed": 450,
+        "orders_failed": 25,
+        "success_rate": 0.944,
+        "average_processing_time": 28500,
+        "system_load": "extreme",
+        "queue_depth": 2500,
+        "memory_usage": "high",
+        "cpu_usage": "critical",
+        "response_time": "degraded",
+        "stress_test": true
+      }
+    },
+    {
+      "id": "shipping_complete_301",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T09:45:00.456Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Stress Express Shipping Handoff",
+        "concept:cost": 25.00,
+        "handoff_time": "2024-03-03T09:45:00.456Z",
+        "tracking_number": "1Z_STRESS_999999999",
+        "weight_actual": 1.1,
+        "dimension_actual": "10x6x4",
+        "stress_test": true
+      },
+      "objects": {
+        "o301": {},
+        "s301": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T09:45:00.456Z",
+            "tracking_number": "1Z_STRESS_999999999",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_complete_302",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T10:00:00.789Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Stress Standard Shipping Handoff",
+        "concept:cost": 12.00,
+        "handoff_time": "2024-03-03T10:00:00.789Z",
+        "tracking_number": "FDX_STRESS_123456789",
+        "weight_actual": 1.9,
+        "dimension_actual": "12x8x6",
+        "stress_test": true
+      },
+      "objects": {
+        "o302": {},
+        "s302": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T10:00:00.789Z",
+            "tracking_number": "FDX_STRESS_123456789",
+            "stress_test": true
+          }
+        }
+      }
+    },
+    {
+      "id": "stress_test_end",
+      "type": "StressTestEnd",
+      "timestamp": "2024-03-03T10:00:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "High Volume Stress Test Completion",
+        "concept:description": "Stress test completed with final metrics",
+        "test_duration": 3600,
+        "total_orders": 1000,
+        "orders_processed": 875,
+        "orders_failed": 125,
+        "success_rate": 0.875,
+        "average_processing_time": 32000,
+        "system_load": "high",
+        "max_queue_depth": 3000,
+        "failure_rate": 0.125,
+        "stress_test": true,
+        "test_completed": true,
+        "performance_metrics": {
+          "qps_peak": 650,
+          "qps_average": 243,
+          "max_response_time": 125000,
+          "min_response_time": 5000,
+          "cpu_average": 85,
+          "memory_average": 75
+        }
+      }
+    }
+  ],
+  "objects": {
+    "test001": {
+      "id": "test001",
+      "type": "TestConfiguration",
+      "attributes": {
+        "concept:name": "Volume Stress Test",
+        "concept:description": "High volume stress test configuration",
+        "total_orders": 1000,
+        "concurrent_users": 100,
+        "system_load": "extreme",
+        "test_duration": 3600,
+        "monitoring_enabled": true,
+        "test_completed": true,
+        "performance_metrics": {
+          "qps_peak": 650,
+          "qps_average": 243,
+          "success_rate": 0.875,
+          "failure_rate": 0.125
+        }
+      }
+    },
+    "o300": {
+      "id": "o300",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Stress Order #300",
+        "concept:description": "Order that failed during stress test",
+        "customer_id": "stress_customer_300",
+        "total_amount": 147.99,
+        "status": "cancelled",
+        "created_at": "2024-03-03T09:00:01.123Z",
+        "cancelled_at": "2024-03-03T09:00:25.123Z",
+        "priority": "normal",
+        "stress_test": true,
+        "test_batch": 1,
+        "cancel_reason": "system_overload",
+        "refund_required": true,
+        "failure_type": "system_timeout",
+        "processing_time_minutes": 24
+      }
+    },
+    "o301": {
+      "id": "o301",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Stress Order #301",
+        "concept:description": "Express order that succeeded during stress test",
+        "customer_id": "stress_customer_301",
+        "total_amount": 89.50,
+        "status": "created",
+        "created_at": "2024-03-03T09:00:01.456Z",
+        "priority": "express",
+        "stress_test": true,
+        "test_batch": 1,
+        "payment_status": "completed",
+        "shipping_status": "in_transit",
+        "processing_time_minutes": 745
+      }
+    },
+    "o302": {
+      "id": "o302",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Stress Order #302",
+        "concept:description": "Standard order that succeeded after retry",
+        "customer_id": "stress_customer_302",
+        "total_amount": 234.99,
+        "status": "created",
+        "created_at": "2024-03-03T09:00:01.789Z",
+        "priority": "normal",
+        "stress_test": true,
+        "test_batch": 1,
+        "payment_status": "completed",
+        "shipping_status": "in_transit",
+        "retry_success": true,
+        "processing_time_minutes": 998
+      }
+    },
+    "c300": {
+      "id": "c300",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Stress Test User",
+        "concept:description": "User with failed stress test order",
+        "customer_id": "stress_customer_300",
+        "email": "stress_user_300@example.com",
+        "status": "active",
+        "loyalty_points": 5000,
+        "total_orders": 1,
+        "total_spent": 0.00,
+        "join_date": "2024-03-03T00:00:00Z",
+        "stress_customer": true,
+        "order_cancelled": true
+      }
+    },
+    "c301": {
+      "id": "c301",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Stress Test User",
+        "concept:description": "User with successful express stress test order",
+        "customer_id": "stress_customer_301",
+        "email": "stress_user_301@example.com",
+        "status": "active",
+        "loyalty_points": 7500,
+        "total_orders": 1,
+        "total_spent": 89.50,
+        "join_date": "2024-03-03T00:00:00Z",
+        "stress_customer": true
+      }
+    },
+    "c302": {
+      "id": "c302",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Stress Test User",
+        "concept:description": "User with successful standard stress test order",
+        "customer_id": "stress_customer_302",
+        "email": "stress_user_302@example.com",
+        "status": "active",
+        "loyalty_points": 10000,
+        "total_orders": 1,
+        "total_spent": 234.99,
+        "join_date": "2024-03-03T00:00:00Z",
+        "stress_customer": true,
+        "payment_retry_success": true
+      }
+    },
+    "p301": {
+      "id": "p301",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Stress Payment #301",
+        "concept:description": "Payment for successful stress test order",
+        "payment_method": "paypal",
+        "amount": 89.50,
+        "status": "completed",
+        "processor": "paypal",
+        "transaction_id": "stress_txn_301001",
+        "paypal_transaction_id": "stress_paypal_301001",
+        "completed_at": "2024-03-03T09:00:30.456Z",
+        "processing_time_ms": 24000,
+        "stress_test": true
+      }
+    },
+    "p302": {
+      "id": "p302",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Stress Payment #302",
+        "concept:description": "Payment with retry for stress test order",
+        "payment_method": "credit_card",
+        "amount": 234.99,
+        "status": "completed",
+        "processor": "stripe",
+        "transaction_id": "stress_txn_302001",
+        "authorization_code": "stress_auth_302001",
+        "completed_at": "2024-03-03T09:01:00.789Z",
+        "processing_time_ms": 53000,
+        "retry_success": true,
+        "total_attempts": 2,
+        "stress_test": true
+      }
+    },
+    "i301": {
+      "id": "i301",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Stress Inventory #301",
+        "concept:description": "Inventory for successful stress test order",
+        "items_count": 2,
+        "stock_status": "available",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T09:00:35.456Z",
+        "low_stock_items": ["item_C"],
+        "stress_test": true
+      }
+    },
+    "i302": {
+      "id": "i302",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Stress Inventory #302",
+        "concept:description": "Inventory for successful stress test order",
+        "items_count": 5,
+        "stock_status": "available",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T09:01:10.789Z",
+        "stress_test": true
+      }
+    },
+    "s301": {
+      "id": "s301",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Stress Shipping #301",
+        "concept:description": "Express shipping for stress test order",
+        "carrier": "ups",
+        "service_type": "next_day_air",
+        "status": "in_transit",
+        "estimated_delivery": "2024-03-04T17:00:00Z",
+        "tracking_number": "1Z_STRESS_999999999",
+        "handed_off_at": "2024-03-03T09:45:00.456Z",
+        "weight": 1.1,
+        "dimensions": "10x6x4",
+        "stress_test": true
+      }
+    },
+    "s302": {
+      "id": "s302",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Stress Shipping #302",
+        "concept:description": "Standard shipping for stress test order",
+        "carrier": "fedex",
+        "service_type": "ground",
+        "status": "in_transit",
+        "estimated_delivery": "2024-03-05T17:00:00Z",
+        "tracking_number": "FDX_STRESS_123456789",
+        "handed_off_at": "2024-03-03T10:00:00.789Z",
+        "weight": 1.9,
+        "dimensions": "12x8x6",
+        "stress_test": true
+      }
+    }
+  }
+}

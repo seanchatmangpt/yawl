@@ -1,0 +1,901 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-03-03T10:00:00Z",
+    "source": "realistic-concurrent-processing-scenarios"
+  },
+  "events": [
+    {
+      "id": "order_100",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:15:42.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Bulk Order #100 - Concurrent Processing",
+        "concept:description": "Large order with multiple concurrent tasks",
+        "customer_id": "bulk_customer_001",
+        "customer_name": "Bulk Buyer Corp",
+        "order_value": 2500.00,
+        "items_count": 10,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "concurrent_processing": true
+      },
+      "objects": {
+        "o100": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Bulk Order #100",
+            "customer_id": "bulk_customer_001",
+            "total_amount": 2500.00,
+            "status": "created",
+            "created_at": "2024-03-03T09:15:42.123Z",
+            "priority": "normal",
+            "bulk_order": true
+          }
+        },
+        "c100": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Bulk Buyer Corp",
+            "customer_id": "bulk_customer_001",
+            "email": "bulk@buyer.com",
+            "status": "active",
+            "loyalty_points": 100000,
+            "bulk_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_101",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:15:42.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Express Order #101 - Concurrent Start",
+        "concept:description": "Express order starting at same time as bulk order",
+        "customer_id": "express_customer_001",
+        "customer_name": "Express Delivery Inc.",
+        "order_value": 89.99,
+        "items_count": 2,
+        "payment_method": "paypal",
+        "priority": "express",
+        "concurrent_processing": true
+      },
+      "objects": {
+        "o101": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Express Order #101",
+            "customer_id": "express_customer_001",
+            "total_amount": 89.99,
+            "status": "created",
+            "created_at": "2024-03-03T09:15:42.123Z",
+            "priority": "express",
+            "express_order": true
+          }
+        },
+        "c101": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Express Delivery Inc.",
+            "customer_id": "express_customer_001",
+            "email": "express@delivery.com",
+            "status": "active",
+            "loyalty_points": 5000,
+            "express_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_100",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:15:50.234Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Bulk Payment Processing - Initiated",
+        "concept:cost": 5.00,
+        "payment_processor": "stripe",
+        "transaction_id": "bulk_txn_100001",
+        "amount": 2500.00,
+        "currency": "USD",
+        "concurrent_requests": 1,
+        "system_load": "high"
+      },
+      "objects": {
+        "o100": {},
+        "c100": {},
+        "p100": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Bulk Payment #100",
+            "payment_method": "credit_card",
+            "amount": 2500.00,
+            "status": "processing",
+            "processor": "stripe",
+            "transaction_id": "bulk_txn_100001",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_101",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:15:55.345Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Express Payment Processing - Initiated",
+        "concept:cost": 2.00,
+        "payment_processor": "paypal",
+        "transaction_id": "express_txn_101001",
+        "amount": 89.99,
+        "currency": "USD",
+        "concurrent_requests": 2,
+        "priority": "high"
+      },
+      "objects": {
+        "o101": {},
+        "c101": {},
+        "p101": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Express Payment #101",
+            "payment_method": "paypal",
+            "amount": 89.99,
+            "status": "processing",
+            "processor": "paypal",
+            "transaction_id": "express_txn_101001",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_100",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:16:10.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Bulk Inventory Check - Started",
+        "concept:cost": 1.00,
+        "items_checked": 10,
+        "inventory_system": "warehouse_1",
+        "system_load": "critical",
+        "concurrent_checks": 3
+      },
+      "objects": {
+        "o100": {},
+        "i100": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Bulk Inventory #100",
+            "items_count": 10,
+            "stock_status": "checking",
+            "warehouse_id": "wh_001",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_101",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:16:15.567Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Express Inventory Check - Started",
+        "concept:cost": 0.50,
+        "items_checked": 2,
+        "inventory_system": "warehouse_1",
+        "priority": "high",
+        "concurrent_checks": 4
+      },
+      "objects": {
+        "o101": {},
+        "i101": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Express Inventory #101",
+            "items_count": 2,
+            "stock_status": "checking",
+            "warehouse_id": "wh_001",
+            "express_mode": true,
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_100_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:16:35.678Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Bulk Payment Success",
+        "concept:cost": 8.00,
+        "payment_result": "success",
+        "authorization_code": "bulk_auth_100001",
+        "processing_time_ms": 44567,
+        "concurrent_success": true,
+        "system_load_after": "high"
+      },
+      "objects": {
+        "o100": {},
+        "c100": {},
+        "p100": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:16:35.678Z",
+            "authorization_code": "bulk_auth_100001",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_101_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:16:42.789Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Express Payment Success",
+        "concept:cost": 3.00,
+        "payment_result": "success",
+        "paypal_transaction_id": "express_paypal_101001",
+        "processing_time_ms": 47367,
+        "concurrent_success": true,
+        "priority_processed": true
+      },
+      "objects": {
+        "o101": {},
+        "c101": {},
+        "p101": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:16:42.789Z",
+            "paypal_transaction_id": "express_paypal_101001",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_100_success",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T09:17:05.890Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Bulk Inventory Check Complete",
+        "concept:cost": 2.00,
+        "result": "success",
+        "items_available": 10,
+        "low_stock_items": [],
+        "processing_time_ms": 94967,
+        "concurrent_result": true
+      },
+      "objects": {
+        "o100": {},
+        "i100": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 10,
+            "last_checked": "2024-03-03T09:17:05.890Z",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_101_success",
+      "type": "InventoryResult",
+      "timestamp": "2024-03-03T09:17:12.901Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Express Inventory Check Complete",
+        "concept:cost": 1.00,
+        "result": "success",
+        "items_available": 2,
+        "low_stock_items": ["item_B"],
+        "processing_time_ms": 96367,
+        "concurrent_result": true
+      },
+      "objects": {
+        "o101": {},
+        "i101": {
+          "attributes": {
+            "check_result": "success",
+            "items_available": 2,
+            "low_stock_items": ["item_B"],
+            "last_checked": "2024-03-03T09:17:12.901Z",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_start_100",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T09:17:20.012Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Bulk Shipping Preparation",
+        "concept:cost": 15.00,
+        "packaging_type": "bulk",
+        "shipping_carrier": "fedex",
+        "estimated_weight": 25.0,
+        "dimensions": "30x20x15",
+        "concurrent_shipping": true
+      },
+      "objects": {
+        "o100": {},
+        "s100": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Bulk Shipping #100",
+            "carrier": "fedex",
+            "service_type": "freight",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-06T17:00:00Z",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_start_101",
+      "type": "ShippingPrepare",
+      "timestamp": "2024-03-03T09:17:25.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Express Shipping Preparation",
+        "concept:cost": 25.00,
+        "packaging_type": "express",
+        "shipping_carrier": "ups",
+        "estimated_weight": 1.5,
+        "dimensions": "12x8x6",
+        "priority": "high",
+        "concurrent_shipping": true
+      },
+      "objects": {
+        "o101": {},
+        "s101": {
+          "type": "Shipping",
+          "attributes": {
+            "concept:name": "Express Shipping #101",
+            "carrier": "ups",
+            "service_type": "next_day_air",
+            "status": "preparing",
+            "estimated_delivery": "2024-03-04T17:00:00Z",
+            "express_mode": true,
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_102",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:18:30.234Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "System Load Test Order #102",
+        "concept:description": "Order placed during high system load",
+        "customer_id": "stress_test_customer",
+        "customer_name": "Load Test Bot",
+        "order_value": 99.99,
+        "items_count": 3,
+        "payment_method": "credit_card",
+        "priority": "low",
+        "system_load": "critical",
+        "stress_test": true
+      },
+      "objects": {
+        "o102": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Load Test Order #102",
+            "customer_id": "stress_test_customer",
+            "total_amount": 99.99,
+            "status": "created",
+            "created_at": "2024-03-03T09:18:30.234Z",
+            "priority": "low",
+            "stress_test": true
+          }
+        },
+        "c102": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Load Test Bot",
+            "customer_id": "stress_test_customer",
+            "email": "stress@test.com",
+            "status": "active",
+            "loyalty_points": 0,
+            "stress_customer": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_102",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:18:45.345Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Payment Processing",
+        "concept:cost": 0.00,
+        "payment_processor": "stripe",
+        "transaction_id": "stress_txn_102001",
+        "amount": 99.99,
+        "currency": "USD",
+        "system_load": "critical",
+        "queue_position": 50,
+        "estimated_wait_seconds": 120
+      },
+      "objects": {
+        "o102": {},
+        "c102": {},
+        "p102": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Stress Test Payment #102",
+            "payment_method": "credit_card",
+            "amount": 99.99,
+            "status": "queued",
+            "processor": "stripe",
+            "transaction_id": "stress_txn_102001",
+            "system_load": "critical",
+            "queue_position": 50
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_102",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:19:00.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Stress Test Inventory Check",
+        "concept:cost": 0.00,
+        "items_checked": 3,
+        "inventory_system": "warehouse_1",
+        "system_load": "critical",
+        "queue_length": 100,
+        "timeout_expected": true
+      },
+      "objects": {
+        "o102": {},
+        "i102": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "Stress Test Inventory #102",
+            "items_count": 3,
+            "stock_status": "pending",
+            "warehouse_id": "wh_001",
+            "system_load": "critical",
+            "queue_length": 100
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_102_timeout",
+      "type": "PaymentTimeout",
+      "timestamp": "2024-03-03T09:20:45.567Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Stress Test Payment Timeout",
+        "concept:cost": 0.00,
+        "error_type": "timeout",
+        "error_message": "Payment processing timeout due to high system load",
+        "timeout_duration_ms": 125000,
+        "system_load": "critical",
+        "queue_position_final": 75,
+        "timeout_reason": "system_overload",
+        "recovery_attempt": true
+      },
+      "objects": {
+        "o102": {
+          "attributes": {
+            "status": "payment_timeout",
+            "failed_at": "2024-03-03T09:20:45.567Z",
+            "system_error": "high_load_timeout"
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_102_timeout",
+      "type": "InventoryTimeout",
+      "timestamp": "2024-03-03T09:21:00.678Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Stress Test Inventory Timeout",
+        "concept:cost": 0.00,
+        "error_type": "timeout",
+        "error_message": "Inventory check timeout due to system overload",
+        "timeout_duration_ms": 120000,
+        "system_load": "critical",
+        "queue_length": 125,
+        "timeout_reason": "database_connection_limit",
+        "fallback_action": "cancel_order"
+      },
+      "objects": {
+        "o102": {
+          "attributes": {
+            "status": "inventory_timeout",
+            "failed_at": "2024-03-03T09:21:00.678Z",
+            "system_error": "database_timeout"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_102_cancel",
+      "type": "OrderCancel",
+      "timestamp": "2024-03-03T09:21:15.789Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Stress Test Order Cancelled",
+        "concept:cost": 0.00,
+        "cancel_reason": "system_overload",
+        "cancel_reason_code": "SYS_OVERLOAD",
+        "cancelled_by": "system",
+        "refund_required": true,
+        "refund_amount": 0.00,
+        "system_load": "critical",
+        "stress_test_result": "system_failure"
+      },
+      "objects": {
+        "o102": {
+          "attributes": {
+            "status": "cancelled",
+            "cancelled_at": "2024-03-03T09:21:15.789Z",
+            "cancel_reason": "system_overload",
+            "refund_required": true,
+            "system_error": "high_load"
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_complete_100",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T09:25:00.890Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Bulk Shipping Handoff",
+        "concept:cost": 45.00,
+        "handoff_time": "2024-03-03T09:25:00.890Z",
+        "tracking_number": "FDX_BULK_123456789",
+        "weight_actual": 24.8,
+        "dimension_actual": "30x20x15",
+        "concurrent_completion": true
+      },
+      "objects": {
+        "o100": {},
+        "s100": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T09:25:00.890Z",
+            "tracking_number": "FDX_BULK_123456789",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "shipping_complete_101",
+      "type": "ShippingHandoff",
+      "timestamp": "2024-03-03T09:28:15.901Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Express Shipping Handoff",
+        "concept:cost": 35.00,
+        "handoff_time": "2024-03-03T09:28:15.901Z",
+        "tracking_number": "1Z_EXPRESS_999999999",
+        "weight_actual": 1.4,
+        "dimension_actual": "12x8x6",
+        "concurrent_completion": true
+      },
+      "objects": {
+        "o101": {},
+        "s101": {
+          "attributes": {
+            "status": "in_transit",
+            "handed_off_at": "2024-03-03T09:28:15.901Z",
+            "tracking_number": "1Z_EXPRESS_999999999",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_close_100",
+      "type": "OrderClose",
+      "timestamp": "2024-03-06T16:30:22.012Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Bulk Order #100 - Delivered",
+        "concept:cost": 0.00,
+        "delivery_status": "delivered",
+        "delivery_time": "2024-03-06T16:30:22.012Z",
+        "customer_rating": 4.0,
+        "feedback": "Good bulk service",
+        "concurrent_finalization": true
+      },
+      "objects": {
+        "o100": {
+          "attributes": {
+            "status": "delivered",
+            "delivered_at": "2024-03-06T16:30:22.012Z",
+            "customer_rating": 4.0,
+            "feedback": "Good bulk service",
+            "concurrent_processing": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_close_101",
+      "type": "OrderClose",
+      "timestamp": "2024-03-04T14:15:44.123Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Express Order #101 - Delivered",
+        "concept:cost": 0.00,
+        "delivery_status": "delivered",
+        "delivery_time": "2024-03-04T14:15:44.123Z",
+        "customer_rating": 4.5,
+        "feedback": "Excellent express delivery",
+        "concurrent_finalization": true
+      },
+      "objects": {
+        "o101": {
+          "attributes": {
+            "status": "delivered",
+            "delivered_at": "2024-03-04T14:15:44.123Z",
+            "customer_rating": 4.5,
+            "feedback": "Excellent express delivery",
+            "concurrent_processing": true
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "o100": {
+      "id": "o100",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Bulk Order #100",
+        "concept:description": "Large order with multiple concurrent tasks",
+        "customer_id": "bulk_customer_001",
+        "total_amount": 2500.00,
+        "status": "delivered",
+        "created_at": "2024-03-03T09:15:42.123Z",
+        "delivered_at": "2024-03-06T16:30:22.012Z",
+        "priority": "normal",
+        "bulk_order": true,
+        "concurrent_processing": true,
+        "processing_time_minutes": 4958
+      }
+    },
+    "o101": {
+      "id": "o101",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Express Order #101",
+        "concept:description": "Express order starting at same time as bulk order",
+        "customer_id": "express_customer_001",
+        "total_amount": 89.99,
+        "status": "delivered",
+        "created_at": "2024-03-03T09:15:42.123Z",
+        "delivered_at": "2024-03-04T14:15:44.123Z",
+        "priority": "express",
+        "express_order": true,
+        "concurrent_processing": true,
+        "processing_time_minutes": 9602
+      }
+    },
+    "o102": {
+      "id": "o102",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Load Test Order #102",
+        "concept:description": "Order placed during high system load",
+        "customer_id": "stress_test_customer",
+        "total_amount": 99.99,
+        "status": "cancelled",
+        "created_at": "2024-03-03T09:18:30.234Z",
+        "cancelled_at": "2024-03-03T09:21:15.789Z",
+        "priority": "low",
+        "stress_test": true,
+        "concurrent_processing": true,
+        "cancel_reason": "system_overload",
+        "processing_time_minutes": 145
+      }
+    },
+    "c100": {
+      "id": "c100",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Bulk Buyer Corp",
+        "concept:description": "Corporate customer with bulk orders",
+        "customer_id": "bulk_customer_001",
+        "email": "bulk@buyer.com",
+        "status": "active",
+        "loyalty_points": 100000,
+        "total_orders": 1,
+        "total_spent": 2500.00,
+        "join_date": "2023-01-10T00:00:00Z",
+        "bulk_customer": true
+      }
+    },
+    "c101": {
+      "id": "c101",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Express Delivery Inc.",
+        "concept:description": "Express delivery service customer",
+        "customer_id": "express_customer_001",
+        "email": "express@delivery.com",
+        "status": "active",
+        "loyalty_points": 5000,
+        "total_orders": 1,
+        "total_spent": 89.99,
+        "join_date": "2023-02-20T00:00:00Z",
+        "express_customer": true
+      }
+    },
+    "c102": {
+      "id": "c102",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Load Test Bot",
+        "concept:description": "Automated customer for stress testing",
+        "customer_id": "stress_test_customer",
+        "email": "stress@test.com",
+        "status": "active",
+        "loyalty_points": 0,
+        "total_orders": 1,
+        "total_spent": 0.00,
+        "join_date": "2024-03-03T00:00:00Z",
+        "stress_customer": true
+      }
+    },
+    "p100": {
+      "id": "p100",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Bulk Payment #100",
+        "concept:description": "Bulk payment processed concurrently",
+        "payment_method": "credit_card",
+        "amount": 2500.00,
+        "status": "completed",
+        "processor": "stripe",
+        "transaction_id": "bulk_txn_100001",
+        "authorization_code": "bulk_auth_100001",
+        "completed_at": "2024-03-03T09:16:35.678Z",
+        "processing_time_ms": 44567,
+        "concurrent_processing": true
+      }
+    },
+    "p101": {
+      "id": "p101",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Express Payment #101",
+        "concept:description": "Express payment processed concurrently",
+        "payment_method": "paypal",
+        "amount": 89.99,
+        "status": "completed",
+        "processor": "paypal",
+        "transaction_id": "express_txn_101001",
+        "paypal_transaction_id": "express_paypal_101001",
+        "completed_at": "2024-03-03T09:16:42.789Z",
+        "processing_time_ms": 47367,
+        "concurrent_processing": true
+      }
+    },
+    "p102": {
+      "id": "p102",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Stress Test Payment #102",
+        "concept:description": "Payment that timed out due to system load",
+        "payment_method": "credit_card",
+        "amount": 99.99,
+        "status": "timeout",
+        "processor": "stripe",
+        "transaction_id": "stress_txn_102001",
+        "failed_at": "2024-03-03T09:20:45.567Z",
+        "system_error": "high_load_timeout",
+        "queue_position": 75,
+        "concurrent_processing": true
+      }
+    },
+    "i100": {
+      "id": "i100",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Bulk Inventory #100",
+        "concept:description": "Bulk inventory check completed",
+        "items_count": 10,
+        "stock_status": "available",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T09:17:05.890Z",
+        "concurrent_processing": true
+      }
+    },
+    "i101": {
+      "id": "i101",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Express Inventory #101",
+        "concept:description": "Express inventory check with limited stock",
+        "items_count": 2,
+        "stock_status": "limited",
+        "warehouse_id": "wh_001",
+        "last_checked": "2024-03-03T09:17:12.901Z",
+        "low_stock_items": ["item_B"],
+        "concurrent_processing": true
+      }
+    },
+    "i102": {
+      "id": "i102",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Stress Test Inventory #102",
+        "concept:description": "Inventory check that timed out",
+        "items_count": 3,
+        "stock_status": "timeout",
+        "warehouse_id": "wh_001",
+        "failed_at": "2024-03-03T09:21:00.678Z",
+        "system_error": "database_timeout",
+        "queue_length": 125,
+        "concurrent_processing": true
+      }
+    },
+    "s100": {
+      "id": "s100",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Bulk Shipping #100",
+        "concept:description": "Bulk freight shipping",
+        "carrier": "fedex",
+        "service_type": "freight",
+        "status": "delivered",
+        "estimated_delivery": "2024-03-06T17:00:00Z",
+        "actual_delivery": "2024-03-06T16:30:22.012Z",
+        "tracking_number": "FDX_BULK_123456789",
+        "handed_off_at": "2024-03-03T09:25:00.890Z",
+        "weight": 24.8,
+        "dimensions": "30x20x15",
+        "concurrent_processing": true
+      }
+    },
+    "s101": {
+      "id": "s101",
+      "type": "Shipping",
+      "attributes": {
+        "concept:name": "Express Shipping #101",
+        "concept:description": "Express next day air shipping",
+        "carrier": "ups",
+        "service_type": "next_day_air",
+        "status": "delivered",
+        "estimated_delivery": "2024-03-04T17:00:00Z",
+        "actual_delivery": "2024-03-04T14:15:44.123Z",
+        "tracking_number": "1Z_EXPRESS_999999999",
+        "handed_off_at": "2024-03-03T09:28:15.901Z",
+        "weight": 1.4,
+        "dimensions": "12x8x6",
+        "concurrent_processing": true
+      }
+    }
+  }
+}

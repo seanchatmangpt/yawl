@@ -665,20 +665,54 @@ print(json.dumps(output, indent=2))
 PYEOF
 }
 
-# Main function to run all fact emitters
+# Main function to run all fact emitters in parallel
+# 80/20 optimization: Run independent emitters concurrently for ~3x speedup
 run_facts() {
     local root_dir="$1"
     local facts_dir="$2"
 
     export ROOT_DIR="$root_dir"
 
-    emit_modules "$root_dir" "$facts_dir" > "$facts_dir/modules.json"
-    emit_reactor "$root_dir" "$facts_dir" > "$facts_dir/reactor.json"
-    emit_shared_src "$root_dir" "$facts_dir" > "$facts_dir/shared-src.json"
-    emit_tests "$root_dir" "$facts_dir" > "$facts_dir/tests.json"
-    emit_maven_hazards "$root_dir" "$facts_dir" > "$facts_dir/maven-hazards.json"
-    emit_deps_conflicts "$root_dir" "$facts_dir" > "$facts_dir/deps-conflicts.json"
-    emit_gates "$root_dir" "$facts_dir" > "$facts_dir/gates.json"
-    emit_dual_family "$root_dir" "$facts_dir" > "$facts_dir/dual-family.json"
-    emit_duplicates "$root_dir" "$facts_dir" > "$facts_dir/duplicates.json"
+    # Phase 1: POM-dependent facts (can run in parallel - read same input files)
+    emit_modules "$root_dir" "$facts_dir" > "$facts_dir/modules.json" &
+    local pid_modules=$!
+
+    emit_reactor "$root_dir" "$facts_dir" > "$facts_dir/reactor.json" &
+    local pid_reactor=$!
+
+    emit_shared_src "$root_dir" "$facts_dir" > "$facts_dir/shared-src.json" &
+    local pid_shared=$!
+
+    emit_tests "$root_dir" "$facts_dir" > "$facts_dir/tests.json" &
+    local pid_tests=$!
+
+    emit_maven_hazards "$root_dir" "$facts_dir" > "$facts_dir/maven-hazards.json" &
+    local pid_hazards=$!
+
+    emit_deps_conflicts "$root_dir" "$facts_dir" > "$facts_dir/deps-conflicts.json" &
+    local pid_deps=$!
+
+    emit_gates "$root_dir" "$facts_dir" > "$facts_dir/gates.json" &
+    local pid_gates=$!
+
+    # Phase 2: Source-scan facts (depend on filesystem, can also run parallel)
+    emit_dual_family "$root_dir" "$facts_dir" > "$facts_dir/dual-family.json" &
+    local pid_dual=$!
+
+    emit_duplicates "$root_dir" "$facts_dir" > "$facts_dir/duplicates.json" &
+    local pid_dups=$!
+
+    # Wait for all background jobs and check exit codes
+    local failed=0
+    wait $pid_modules || { log_error "emit_modules failed"; failed=1; }
+    wait $pid_reactor || { log_error "emit_reactor failed"; failed=1; }
+    wait $pid_shared || { log_error "emit_shared_src failed"; failed=1; }
+    wait $pid_tests || { log_error "emit_tests failed"; failed=1; }
+    wait $pid_hazards || { log_error "emit_maven_hazards failed"; failed=1; }
+    wait $pid_deps || { log_error "emit_deps_conflicts failed"; failed=1; }
+    wait $pid_gates || { log_error "emit_gates failed"; failed=1; }
+    wait $pid_dual || { log_error "emit_dual_family failed"; failed=1; }
+    wait $pid_dups || { log_error "emit_duplicates failed"; failed=1; }
+
+    return $failed
 }

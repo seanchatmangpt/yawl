@@ -54,6 +54,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/scope-validation.sh",
+            "timeout": 5,
+            "statusMessage": "Checking scope keywords..."
+          },
+          {
+            "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
             "timeout": 5,
             "statusMessage": "Ψ refreshing facts..."
@@ -96,40 +102,6 @@
             "timeout": 30,
             "async": true,
             "statusMessage": "Refreshing Ψ facts in background..."
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-hook-git-check.sh",
-            "timeout": 10,
-            "statusMessage": "Verifying git state..."
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/run-yawl-hooks.sh",
-            "timeout": 5,
-            "statusMessage": "Ψ quality gate..."
-          },
-          {
-            "type": "prompt",
-            "prompt": "You are a quality gate for the YAWL workflow engine implementation.\n\nContext from the agent's session: $ARGUMENTS\n\nEvaluate whether the agent is allowed to stop by checking:\n\n1. If the agent changed Java files, did it run `bash scripts/dx.sh` or `bash scripts/dx.sh all` and show the actual Maven output (BUILD SUCCESS / BUILD FAILURE) — not just a file listing?\n\n2. If the agent said 'READY FOR APPROVAL' or 'implementation complete', did `bash scripts/dx.sh all` run and explicitly show GREEN for both H (Guards) and Q (Invariants) phases?\n\n3. If the agent wrote new code, did it show that guard-receipt.json status is GREEN, or show `dx.sh all` completed without violations? Existence of files does not count.\n\n4. If the agent mentioned tests, did it show actual pass/fail counts from Maven surefire output — not just that test files exist or that tests were 'added'?\n\n5. If the agent's code contains mocks, stubs, TODOs, empty returns, or silent fallbacks, did it flag these as violations rather than marking the component complete?\n\nIf ANY of these checks fails — the agent is claiming completion without verification — respond:\n{\"decision\": \"block\", \"reason\": \"Verification required before stopping. [Specific missing verification]. Run the verification command and show its output.\"}\n\nIf the agent ran actual commands and showed their output, respond:\n{\"decision\": \"approve\", \"reason\": \"Verification commands were executed and output shown.\"}",
-            "timeout": 30
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "You are evaluating whether a YAWL subagent has legitimately completed its task.\n\nSubagent output: $ARGUMENTS\n\nYAWL has these specialized agent roles with specific verification requirements:\n- yawl-engineer: Must show `bash scripts/dx.sh` or `dx.sh all` output with BUILD SUCCESS. Compile errors or skipped tests do not count.\n- yawl-validator: Must show guard-receipt.json GREEN and invariant-receipt.json GREEN — both receipts must be present with status field shown.\n- yawl-architect: Must show design artifacts committed with no H/Q violations; any interface contract change must show the affected module still compiles.\n- yawl-integrator: Must show MCP/A2A endpoint test output (actual HTTP response or tool invocation result) — file existence does not count.\n- yawl-reviewer: Must show specific violation findings with file:line references and severity — a summary without locations does not count.\n- yawl-tester: Must show test pass/fail counts from Maven surefire output (Tests run: X, Failures: 0, Errors: 0) — not just that test files were written.\n\nFor any agent role:\n- File existence checks (ls, find, cat) do NOT count as verification\n- 'It compiles' without showing BUILD SUCCESS output does NOT count\n- Mock/stub/TODO implementations do NOT count as real implementations\n- Observatory facts alone (modules.json, reactor.json) do NOT prove runtime correctness\n\nIf the subagent reported completion WITHOUT showing the required verification output, block it:\n{\"decision\": \"block\", \"reason\": \"[Agent role] reported [component] complete without verification. Required: [specific command and expected output].\"}\n\nIf verification output is present and correct:\n{\"decision\": \"approve\", \"reason\": \"Verification shown for completed components.\"}",
-            "timeout": 30
           }
         ]
       }

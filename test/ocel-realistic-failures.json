@@ -1,0 +1,873 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-03-03T10:00:00Z",
+    "source": "realistic-order-processing-with-failures"
+  },
+  "events": [
+    {
+      "id": "order_003",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:15:42.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Customer Order #003 - High Value",
+        "concept:description": "Large order with expensive items",
+        "customer_id": "cust_11111",
+        "customer_name": "Big Spender Inc.",
+        "order_value": 1250.00,
+        "items_count": 5,
+        "payment_method": "credit_card",
+        "priority": "high",
+        "shipping_address": {
+          "street": "789 Corporate Blvd",
+          "city": "Biztown",
+          "state": "CA",
+          "zip": "90210"
+        }
+      },
+      "objects": {
+        "o003": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #003",
+            "customer_id": "cust_11111",
+            "total_amount": 1250.00,
+            "status": "created",
+            "created_at": "2024-03-03T09:15:42.123Z",
+            "priority": "high"
+          }
+        },
+        "c003": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Big Spender Inc.",
+            "customer_id": "cust_11111",
+            "email": "orders@bigspender.com",
+            "status": "active",
+            "loyalty_points": 50000
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_003_fail",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:18:37.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Credit Card Payment Processing - Attempt 1",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "txn_111111111",
+        "amount": 1250.00,
+        "currency": "USD",
+        "attempts": 1
+      },
+      "objects": {
+        "o003": {},
+        "c003": {},
+        "p003": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Payment #003",
+            "payment_method": "credit_card",
+            "amount": 1250.00,
+            "status": "failed",
+            "processor": "stripe",
+            "transaction_id": "txn_111111111",
+            "failed_attempts": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_003_error",
+      "type": "PaymentError",
+      "timestamp": "2024-03-03T09:20:15.789Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Credit Card Payment Failed",
+        "concept:cost": 0.00,
+        "error_type": "payment_declined",
+        "error_message": "Card declined: insufficient funds",
+        "error_code": "card_declined_insufficient",
+        "processor_response": "Your card was declined because there are insufficient funds available.",
+        "failure_reason": "customer_financial_issue",
+        "recovery_attempts": 2,
+        "max_attempts_exceeded": true
+      },
+      "objects": {
+        "o003": {},
+        "c003": {},
+        "p003": {
+          "attributes": {
+            "status": "failed",
+            "failed_reason": "insufficient_funds",
+            "failed_at": "2024-03-03T09:20:15.789Z",
+            "error_code": "card_declined_insufficient"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_004",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:25:33.012Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Customer Order #004 - International",
+        "concept:description": "International shipping to remote location",
+        "customer_id": "cust_22222",
+        "customer_name": "International Customer",
+        "order_value": 89.99,
+        "items_count": 1,
+        "payment_method": "paypal",
+        "priority": "normal",
+        "shipping_address": {
+          "street": "123 Remote Village",
+          "city": "Faraway",
+          "country": "Unknown",
+          "postal_code": "00000"
+        }
+      },
+      "objects": {
+        "o004": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #004",
+            "customer_id": "cust_22222",
+            "total_amount": 89.99,
+            "status": "created",
+            "created_at": "2024-03-03T09:25:33.012Z",
+            "priority": "normal",
+            "international_shipping": true
+          }
+        },
+        "c004": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "International Customer",
+            "customer_id": "cust_22222",
+            "email": "international@example.com",
+            "status": "active",
+            "country": "Unknown",
+            "loyalty_points": 100
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_004_fail",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:28:44.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "PayPal Payment Processing - Attempt 1",
+        "concept:cost": 1.99,
+        "payment_processor": "paypal",
+        "transaction_id": "txn_222222222",
+        "amount": 89.99,
+        "currency": "USD",
+        "attempts": 1
+      },
+      "objects": {
+        "o004": {},
+        "c004": {},
+        "p004": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Payment #004",
+            "payment_method": "paypal",
+            "amount": 89.99,
+            "status": "failed",
+            "processor": "paypal",
+            "transaction_id": "txn_222222222",
+            "failed_attempts": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_004_retry",
+      "type": "PaymentRetry",
+      "timestamp": "2024-03-03T09:30:22.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "PayPal Payment Retry",
+        "concept:cost": 1.99,
+        "payment_processor": "paypal",
+        "transaction_id": "txn_222222222_retry",
+        "amount": 89.99,
+        "currency": "USD",
+        "retry_count": 1,
+        "retry_reason": "connection_timeout"
+      },
+      "objects": {
+        "o004": {},
+        "c004": {},
+        "p004": {
+          "attributes": {
+            "status": "retrying",
+            "retry_attempts": 1,
+            "retry_reason": "connection_timeout"
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_004_retry_success",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T09:32:11.789Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "PayPal Payment Success After Retry",
+        "concept:cost": 0.30,
+        "payment_result": "success",
+        "paypal_transaction_id": "paypal_txn_222222",
+        "retry_success": true,
+        "total_attempts": 2,
+        "processing_time_ms": 2890
+      },
+      "objects": {
+        "o004": {},
+        "c004": {},
+        "p004": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T09:32:11.789Z",
+            "paypal_transaction_id": "paypal_txn_222222",
+            "retry_success": true
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_003",
+      "type": "InventoryCheck",
+      "timestamp": "2024-03-03T09:35:44.321Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Inventory Check - System Timeout",
+        "concept:cost": 0.25,
+        "items_checked": 5,
+        "inventory_system": "warehouse_1",
+        "system_status": "degraded"
+      },
+      "objects": {
+        "o003": {},
+        "i003": {
+          "type": "Inventory",
+          "attributes": {
+            "concept:name": "High Value Inventory Check",
+            "items_count": 5,
+            "stock_status": "unknown",
+            "warehouse_id": "wh_001",
+            "system_status": "timeout"
+          }
+        }
+      }
+    },
+    {
+      "id": "inventory_check_003_timeout",
+      "type": "InventoryTimeout",
+      "timestamp": "2024-03-03T09:45:33.654Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Inventory Check Timeout",
+        "concept:cost": 0.00,
+        "error_type": "timeout",
+        "error_message": "Inventory system timed out after 30 seconds",
+        "timeout_duration_ms": 30000,
+        "system_unavailable": true,
+        "fallback_action": "cancel_order"
+      },
+      "objects": {
+        "o003": {},
+        "i003": {
+          "attributes": {
+            "check_result": "timeout",
+            "failed_at": "2024-03-03T09:45:33.654Z",
+            "error_code": "timeout"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_cancel_003",
+      "type": "OrderCancel",
+      "timestamp": "2024-03-03T09:47:22.876Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Order #003 - Cancelled Due to Timeout",
+        "concept:cost": 0.00,
+        "cancel_reason": "inventory_timeout",
+        "cancel_reason_code": "INV_TIMEOUT",
+        "cancelled_by": "system",
+        "refund_required": false,
+        "customer_notified": false,
+        "failure_type": "system_unavailable"
+      },
+      "objects": {
+        "o003": {
+          "attributes": {
+            "status": "cancelled",
+            "cancelled_at": "2024-03-03T09:47:22.876Z",
+            "cancel_reason": "inventory_timeout",
+            "refund_amount": 0.00
+          }
+        }
+      }
+    },
+    {
+      "id": "order_005",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T10:15:55.987Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Customer Order #005 - Invalid Address",
+        "concept:description": "Order with malformed shipping address",
+        "customer_id": "cust_33333",
+        "customer_name": "Test Customer",
+        "order_value": 45.00,
+        "items_count": 2,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "shipping_address": {
+          "street": "",
+          "city": "Test City",
+          "state": "XX",
+          "zip": "invalid"
+        }
+      },
+      "objects": {
+        "o005": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #005",
+            "customer_id": "cust_33333",
+            "total_amount": 45.00,
+            "status": "created",
+            "created_at": "2024-03-03T10:15:55.987Z",
+            "priority": "normal",
+            "address_validation_failed": true
+          }
+        },
+        "c005": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Test Customer",
+            "customer_id": "cust_33333",
+            "email": "test@example.com",
+            "status": "active",
+            "loyalty_points": 250
+          }
+        }
+      }
+    },
+    {
+      "id": "address_validation_fail",
+      "type": "ValidationError",
+      "timestamp": "2024-03-03T10:18:33.210Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Address Validation Failed",
+        "concept:cost": 0.00,
+        "error_type": "validation_error",
+        "error_message": "Invalid shipping address format",
+        "validation_service": "address_validator",
+        "error_details": {
+          "street": "empty_string",
+          "city": "valid",
+          "state": "invalid_code",
+          "zip": "invalid_format"
+        },
+        "validation_rules": [
+          {
+            "field": "street",
+            "rule": "non_empty",
+            "passed": false
+          },
+          {
+            "field": "state",
+            "rule": "valid_state_code",
+            "passed": false
+          }
+        ]
+      },
+      "objects": {
+        "o005": {
+          "attributes": {
+            "status": "validation_failed",
+            "failed_at": "2024-03-03T10:18:33.210Z",
+            "validation_error": "address_validation_failed"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_006",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T11:05:42.543Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Customer Order #006 - Empty Order",
+        "concept:description": "Order with no items",
+        "customer_id": "cust_44444",
+        "customer_name": "Empty Order Customer",
+        "order_value": 0.00,
+        "items_count": 0,
+        "payment_method": null,
+        "priority": "normal"
+      },
+      "objects": {
+        "o006": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #006",
+            "customer_id": "cust_44444",
+            "total_amount": 0.00,
+            "status": "created",
+            "created_at": "2024-03-03T11:05:42.543Z",
+            "priority": "normal",
+            "empty_order": true
+          }
+        },
+        "c006": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Empty Order Customer",
+            "customer_id": "cust_44444",
+            "email": "empty@example.com",
+            "status": "active",
+            "loyalty_points": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "empty_order_validation",
+      "type": "OrderValidation",
+      "timestamp": "2024-03-03T11:08:11.765Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Empty Order Validation",
+        "concept:cost": 0.00,
+        "validation_type": "business_rule",
+        "business_rule": "order_items_required",
+        "validation_result": "failed",
+        "error_message": "Order must contain at least one item",
+        "rule_priority": "high",
+        "action_taken": "cancel_order"
+      },
+      "objects": {
+        "o006": {
+          "attributes": {
+            "status": "cancelled",
+            "cancelled_at": "2024-03-03T11:08:11.765Z",
+            "cancel_reason": "empty_order",
+            "business_rule_violated": "order_items_required"
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_005_fail",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T11:12:44.876Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Payment Processing - System Error",
+        "concept:cost": 0.00,
+        "payment_processor": "stripe",
+        "transaction_id": "txn_333333333",
+        "amount": 45.00,
+        "currency": "USD",
+        "system_error": true
+      },
+      "objects": {
+        "o005": {},
+        "c005": {},
+        "p005": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Payment #005",
+            "payment_method": "credit_card",
+            "amount": 45.00,
+            "status": "failed",
+            "processor": "stripe",
+            "transaction_id": "txn_333333333",
+            "failed_reason": "system_error"
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_system_error",
+      "type": "SystemError",
+      "timestamp": "2024-03-03T11:15:22.098Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Payment System Error",
+        "concept:cost": 0.00,
+        "error_type": "system_error",
+        "error_message": "Payment gateway unavailable: 503 Service Unavailable",
+        "error_code": "PGW_503",
+        "system_service": "payment_gateway",
+        "error_category": "infrastructure",
+        "recovery_action": "notify_admin"
+      },
+      "objects": {
+        "o005": {
+          "attributes": {
+            "status": "payment_failed",
+            "failed_at": "2024-03-03T11:15:22.098Z",
+            "system_error": "payment_gateway_unavailable"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_006_success",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T11:25:33.210Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Customer Order #006 - Normal Flow",
+        "concept:description": "Normal order with valid data",
+        "customer_id": "cust_55555",
+        "customer_name": "Normal Customer",
+        "order_value": 150.00,
+        "items_count": 1,
+        "payment_method": "credit_card",
+        "priority": "normal",
+        "shipping_address": {
+          "street": "456 Normal St",
+          "city": "Normalville",
+          "state": "CA",
+          "zip": "12345"
+        }
+      },
+      "objects": {
+        "o007": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #006",
+            "customer_id": "cust_55555",
+            "total_amount": 150.00,
+            "status": "created",
+            "created_at": "2024-03-03T11:25:33.210Z",
+            "priority": "normal"
+          }
+        },
+        "c007": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Normal Customer",
+            "customer_id": "cust_55555",
+            "email": "normal@example.com",
+            "status": "active",
+            "loyalty_points": 1000
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_006_success",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T11:28:44.543Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Payment Processing - Success",
+        "concept:cost": 2.99,
+        "payment_processor": "stripe",
+        "transaction_id": "txn_444444444",
+        "amount": 150.00,
+        "currency": "USD"
+      },
+      "objects": {
+        "o007": {},
+        "c007": {},
+        "p007": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Payment #007",
+            "payment_method": "credit_card",
+            "amount": 150.00,
+            "status": "processing",
+            "processor": "stripe",
+            "transaction_id": "txn_444444444"
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_006_success_complete",
+      "type": "PaymentComplete",
+      "timestamp": "2024-03-03T11:30:22.765Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Payment Processing Success",
+        "concept:cost": 0.50,
+        "payment_result": "success",
+        "authorization_code": "auth_444444444",
+        "processing_time_ms": 983
+      },
+      "objects": {
+        "o007": {},
+        "c007": {},
+        "p007": {
+          "attributes": {
+            "status": "completed",
+            "completed_at": "2024-03-03T11:30:22.765Z",
+            "authorization_code": "auth_444444444"
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "o003": {
+      "id": "o003",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #003",
+        "concept:description": "Large order with expensive items",
+        "customer_id": "cust_11111",
+        "total_amount": 1250.00,
+        "status": "cancelled",
+        "created_at": "2024-03-03T09:15:42.123Z",
+        "cancelled_at": "2024-03-03T09:47:22.876Z",
+        "priority": "high",
+        "cancel_reason": "inventory_timeout",
+        "refund_amount": 0.00,
+        "failure_type": "system_unavailable"
+      }
+    },
+    "o004": {
+      "id": "o004",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #004",
+        "concept:description": "International shipping to remote location",
+        "customer_id": "cust_22222",
+        "total_amount": 89.99,
+        "status": "created",
+        "created_at": "2024-03-03T09:25:33.012Z",
+        "priority": "normal",
+        "international_shipping": true,
+        "payment_status": "completed"
+      }
+    },
+    "o005": {
+      "id": "o005",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #005",
+        "concept:description": "Order with malformed shipping address",
+        "customer_id": "cust_33333",
+        "total_amount": 45.00,
+        "status": "payment_failed",
+        "created_at": "2024-03-03T10:15:55.987Z",
+        "priority": "normal",
+        "address_validation_failed": true,
+        "payment_failed_at": "2024-03-03T11:15:22.098Z"
+      }
+    },
+    "o006": {
+      "id": "o006",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #006",
+        "concept:description": "Order with no items",
+        "customer_id": "cust_44444",
+        "total_amount": 0.00,
+        "status": "cancelled",
+        "created_at": "2024-03-03T11:05:42.543Z",
+        "cancelled_at": "2024-03-03T11:08:11.765Z",
+        "priority": "normal",
+        "empty_order": true,
+        "cancel_reason": "empty_order",
+        "business_rule_violated": "order_items_required"
+      }
+    },
+    "o007": {
+      "id": "o007",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #006",
+        "concept:description": "Normal order with valid data",
+        "customer_id": "cust_55555",
+        "total_amount": 150.00,
+        "status": "created",
+        "created_at": "2024-03-03T11:25:33.210Z",
+        "priority": "normal",
+        "payment_status": "completed"
+      }
+    },
+    "c003": {
+      "id": "c003",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Big Spender Inc.",
+        "concept:description": "Corporate customer with high value orders",
+        "customer_id": "cust_11111",
+        "email": "orders@bigspender.com",
+        "status": "active",
+        "loyalty_points": 50000,
+        "total_orders": 1,
+        "total_spent": 0.00,
+        "join_date": "2023-01-01T00:00:00Z",
+        "last_order_cancelled": true
+      }
+    },
+    "c004": {
+      "id": "c004",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "International Customer",
+        "concept:description": "Customer from unknown country",
+        "customer_id": "cust_22222",
+        "email": "international@example.com",
+        "status": "active",
+        "country": "Unknown",
+        "loyalty_points": 100,
+        "total_orders": 1,
+        "total_spent": 89.99,
+        "join_date": "2023-02-15T00:00:00Z",
+        "payment_retry_success": true
+      }
+    },
+    "c005": {
+      "id": "c005",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Test Customer",
+        "concept:description": "Customer with invalid address",
+        "customer_id": "cust_33333",
+        "email": "test@example.com",
+        "status": "active",
+        "loyalty_points": 250,
+        "total_orders": 1,
+        "total_spent": 0.00,
+        "join_date": "2023-03-01T00:00:00Z",
+        "address_validation_failed": true
+      }
+    },
+    "c006": {
+      "id": "c006",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Empty Order Customer",
+        "concept:description": "Customer who placed empty order",
+        "customer_id": "cust_44444",
+        "email": "empty@example.com",
+        "status": "active",
+        "loyalty_points": 0,
+        "total_orders": 1,
+        "total_spent": 0.00,
+        "join_date": "2023-03-02T00:00:00Z",
+        "business_rule_violated": true
+      }
+    },
+    "c007": {
+      "id": "c007",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Normal Customer",
+        "concept:description": "Regular customer with successful order",
+        "customer_id": "cust_55555",
+        "email": "normal@example.com",
+        "status": "active",
+        "loyalty_points": 1000,
+        "total_orders": 1,
+        "total_spent": 150.00,
+        "join_date": "2023-03-03T00:00:00Z"
+      }
+    },
+    "p003": {
+      "id": "p003",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Payment #003",
+        "concept:description": "Failed payment for high value order",
+        "payment_method": "credit_card",
+        "amount": 1250.00,
+        "status": "failed",
+        "processor": "stripe",
+        "transaction_id": "txn_111111111",
+        "failed_reason": "insufficient_funds",
+        "failed_at": "2024-03-03T09:20:15.789Z",
+        "error_code": "card_declined_insufficient",
+        "max_attempts_exceeded": true
+      }
+    },
+    "p004": {
+      "id": "p004",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Payment #004",
+        "concept:description": "PayPal payment with retry",
+        "payment_method": "paypal",
+        "amount": 89.99,
+        "status": "completed",
+        "processor": "paypal",
+        "transaction_id": "txn_222222222",
+        "paypal_transaction_id": "paypal_txn_222222",
+        "completed_at": "2024-03-03T09:32:11.789Z",
+        "retry_success": true,
+        "total_attempts": 2,
+        "processing_time_ms": 2890
+      }
+    },
+    "p005": {
+      "id": "p005",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Payment #005",
+        "concept:description": "Failed payment due to system error",
+        "payment_method": "credit_card",
+        "amount": 45.00,
+        "status": "failed",
+        "processor": "stripe",
+        "transaction_id": "txn_333333333",
+        "failed_reason": "system_error",
+        "failed_at": "2024-03-03T11:15:22.098Z",
+        "error_code": "PGW_503",
+        "error_category": "infrastructure"
+      }
+    },
+    "p007": {
+      "id": "p007",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Payment #007",
+        "concept:description": "Successful payment for normal order",
+        "payment_method": "credit_card",
+        "amount": 150.00,
+        "status": "completed",
+        "processor": "stripe",
+        "transaction_id": "txn_444444444",
+        "authorization_code": "auth_444444444",
+        "completed_at": "2024-03-03T11:30:22.765Z",
+        "processing_time_ms": 983
+      }
+    },
+    "i003": {
+      "id": "i003",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "High Value Inventory Check",
+        "concept:description": "Inventory check that timed out",
+        "items_count": 5,
+        "stock_status": "unknown",
+        "warehouse_id": "wh_001",
+        "last_checked": null,
+        "system_status": "timeout",
+        "check_result": "timeout",
+        "failed_at": "2024-03-03T09:45:33.654Z"
+      }
+    }
+  }
+}

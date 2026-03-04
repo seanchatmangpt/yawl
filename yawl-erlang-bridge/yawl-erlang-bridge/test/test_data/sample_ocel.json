@@ -1,0 +1,92 @@
+{
+    "events": [
+        {
+            "id": "event1",
+            "type": "start",
+            "timestamp": "2024-01-01T10:00:00Z",
+            "source": ["order1"],
+            "attributes": {
+                "resource": "user1",
+                "cost": "100",
+                "activity": "Start"
+            }
+        },
+        {
+            "id": "event2",
+            "type": "process",
+            "timestamp": "2024-01-01T10:30:00Z",
+            "source": ["order1", "order2"],
+            "attributes": {
+                "resource": "user2",
+                "cost": "200",
+                "activity": "Process"
+            }
+        },
+        {
+            "id": "event3",
+            "type": "complete",
+            "timestamp": "2024-01-01T11:00:00Z",
+            "source": ["order1"],
+            "attributes": {
+                "resource": "user1",
+                "cost": "50",
+                "activity": "Complete"
+            }
+        },
+        {
+            "id": "event4",
+            "type": "start",
+            "timestamp": "2024-01-01T12:00:00Z",
+            "source": ["order2"],
+            "attributes": {
+                "resource": "user3",
+                "cost": "150",
+                "activity": "Start"
+            }
+        },
+        {
+            "id": "event5",
+            "type": "process",
+            "timestamp": "2024-01-01T12:30:00Z",
+            "source": ["order2"],
+            "attributes": {
+                "resource": "user1",
+                "cost": "100",
+                "activity": "Process"
+            }
+        },
+        {
+            "id": "event6",
+            "type": "complete",
+            "timestamp": "2024-01-01T13:00:00Z",
+            "source": ["order2"],
+            "attributes": {
+                "resource": "user2",
+                "cost": "75",
+                "activity": "Complete"
+            }
+        }
+    ],
+    "objects": [
+        {
+            "id": "order1",
+            "type": "order",
+            "attributes": {
+                "status": "completed",
+                "total": 150,
+                "customer": "customer1",
+                "priority": "high"
+            }
+        },
+        {
+            "id": "order2",
+            "type": "order",
+            "attributes": {
+                "status": "completed",
+                "total": 250,
+                "customer": "customer2",
+                "priority": "medium"
+            }
+        }
+    ]
+}

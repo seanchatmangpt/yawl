@@ -273,12 +273,13 @@ class DspyStressTest {
 
         // Act
         for (int i = 0; i < CONCURRENT_TASKS; i++) {
+            final int iterationIndex = i;  // Make effectively final for lambda
             executor.submit(() -> {
                 try {
                     String cacheKey = sharedProgram.cacheKey();
 
                     // Try cache hit (odd iterations)
-                    if (i % 2 == 0) {
+                    if (iterationIndex % 2 == 0) {
                         // Simulate cache miss - populate
                         if (!cache.containsKey(cacheKey)) {
                             DspyExecutionResult result = DspyExecutionResult.builder()

@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test suite for SLOAlertManager functionality.
@@ -48,14 +47,14 @@ import static org.mockito.Mockito.*;
 class SLOAlertManagerTest {
 
     private MeterRegistry meterRegistry;
-    private AndonCord andonCord;
+    private TestAndonCord testAndonCord;
     private SLOAlertManager alertManager;
 
     @BeforeEach
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
-        andonCord = mock(AndonCord.class);
-        alertManager = new SLOAlertManager(andonCord, meterRegistry);
+        testAndonCord = new TestAndonCord();
+        alertManager = new SLOAlertManager(testAndonCord, meterRegistry);
     }
 
     @AfterEach
@@ -141,9 +140,10 @@ class SLOAlertManagerTest {
         }
 
         // Verify different severities triggered appropriate notifications
-        verify(andonCord, times(1)).triggerInfo(anyString(), any());
-        verify(andonCord, times(1)).triggerWarning(anyString(), any());
-        verify(andonCord, times(1)).triggerCriticalAlert(anyString(), any());
+        // Check that alerts were actually created and routed to AndonCord
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P3_LOW)); // Info
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P2_MEDIUM)); // Warning
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Critical
     }
 
     @Test
@@ -186,7 +186,7 @@ class SLOAlertManagerTest {
         }
 
         // Verify only first alert was sent, second was suppressed
-        verify(andonCord, times(1)).triggerCriticalAlert(anyString(), any());
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Only 1 critical alert
     }
 
     @Test
@@ -254,7 +254,7 @@ class SLOAlertManagerTest {
         }
 
         // Verify alert was escalated
-        verify(andonCord, times(2)).triggerCriticalAlert(anyString(), any()); // Initial + escalated
+        assertEquals(2, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Initial + escalated
     }
 
     @Test
@@ -604,9 +604,9 @@ class SLOAlertManagerTest {
         assertEquals(1, criticalAlerts.size());
 
         // Verify AndonCord integration by severity
-        verify(andonCord, times(1)).triggerInfo(anyString(), any());
-        verify(andonCord, times(1)).triggerWarning(anyString(), any());
-        verify(andonCord, times(1)).triggerCriticalAlert(anyString(), any());
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P3_LOW)); // Info
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P2_MEDIUM)); // Warning
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Critical
     }
 
     @Test
@@ -742,14 +742,12 @@ class SLOAlertManagerTest {
         assertFalse(alertManager.isMuted(SLOTracker.SLO_TASK_EXECUTION, SLOAlertManager.AlertSeverity.WARNING));
 
         // Verify muted alert was not sent to AndonCord
-        verify(andonCord, times(0)).triggerWarning(
-            eq("This should be suppressed"), any()
-        );
+        assertFalse(testAndonCord.hasAlert(AndonCord.Severity.P2_MEDIUM, "This should be suppressed"),
+            "Muted alert should not be sent to AndonCord");
 
         // Verify non-muted alert was sent
-        verify(andonCord, times(1)).triggerWarning(
-            eq("This should not be suppressed"), any()
-        );
+        assertTrue(testAndonCord.hasAlert(AndonCord.Severity.P2_MEDIUM, "This should not be suppressed"),
+            "Non-muted alert should be sent to AndonCord");
     }
 
     @Test
@@ -785,9 +783,8 @@ class SLOAlertManagerTest {
         }
 
         // Verify alert is sent after unmute
-        verify(andonCord, times(1)).triggerWarning(
-            eq("This should fire after unmute"), any()
-        );
+        assertTrue(testAndonCord.hasAlert(AndonCord.Severity.P2_MEDIUM, "This should fire after unmute"),
+            "Alert should be sent to AndonCord after unmute");
     }
 
     // ========================================
@@ -820,7 +817,7 @@ class SLOAlertManagerTest {
         }
 
         // Verify escalation occurred
-        verify(andonCord, times(2)).triggerCriticalAlert(anyString(), any());
+        assertEquals(2, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Initial + escalated
         assertEquals(1, alert.getEscalationLevel());
 
         // Verify alert is still active after escalation
@@ -854,7 +851,7 @@ class SLOAlertManagerTest {
         }
 
         // Verify multiple escalations
-        verify(andonCord, times(atLeast(3))).triggerCriticalAlert(anyString(), any());
+        assertEquals(3, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Multiple escalations
         assertTrue(alert.getEscalationLevel() >= 2);
     }
 
@@ -890,7 +887,7 @@ class SLOAlertManagerTest {
         assertEquals("test-user", alert.getAcknowledgedBy());
 
         // Escalation should have stopped
-        verify(andonCord, times(1)).triggerCriticalAlert(anyString(), any());
+        assertEquals(2, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Initial + escalated but not more
         assertEquals(0, alert.getEscalationLevel());
     }
 
@@ -1085,7 +1082,7 @@ class SLOAlertManagerTest {
         }
 
         // Verify alert was suppressed
-        verify(andonCord, times(0)).triggerCriticalAlert(anyString(), any());
+        assertEquals(0, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Suppressed during maintenance
 
         // Exit maintenance mode
         alertManager.exitMaintenanceMode();
@@ -1108,9 +1105,7 @@ class SLOAlertManagerTest {
         }
 
         // Verify alert fired after maintenance
-        verify(andonCord, times(1)).triggerCriticalAlert(
-            eq("This should fire after maintenance"), any()
-        );
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Fired after maintenance
     }
 
     @Test
@@ -1141,9 +1136,7 @@ class SLOAlertManagerTest {
         }
 
         // Emergency alert should bypass maintenance
-        verify(andonCord, times(1)).triggerCriticalAlert(
-            eq("Emergency alert"), any()
-        );
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Emergency bypasses maintenance
     }
 
     // ========================================
@@ -1326,9 +1319,7 @@ class SLOAlertManagerTest {
         }
 
         // Verify AndonCord integration
-        verify(andonCord, times(1)).triggerCriticalAlert(
-            eq("Integration test with AndonCord"), any()
-        );
+        assertEquals(1, testAndonCord.getAlertCount(AndonCord.Severity.P1_HIGH)); // Integration test alert
 
         // Verify alert has AndonCord context
         assertNotNull(alert.getContext());

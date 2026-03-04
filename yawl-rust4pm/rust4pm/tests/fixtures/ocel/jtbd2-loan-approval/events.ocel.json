@@ -1,0 +1,314 @@
+{
+  "id": "jtbd2-loan-approval-log",
+  "name": "Loan Approval Event Log",
+  "description": "Complex loan approval workflow with parallel processing and conditional routing",
+  "events": [
+    {
+      "id": "e1",
+      "activity": "SubmitApplication",
+      "timestamp": "2024-01-20T09:30:00Z",
+      "case": "loan_001",
+      "resource": "customer_001",
+      "attributes": {
+        "loan_amount": 25000,
+        "purpose": "business_expansion",
+        "credit_score": 720,
+        "annual_income": 85000,
+        "collateral_value": 50000
+      }
+    },
+    {
+      "id": "e2",
+      "activity": "InitialAssessment",
+      "timestamp": "2024-01-20T09:45:00Z",
+      "case": "loan_001",
+      "resource": "loan_officer_001",
+      "attributes": {
+        "preliminary_risk": "medium",
+        "approved_for_review": true
+      }
+    },
+    {
+      "id": "e3",
+      "activity": "ConditionalRouting",
+      "timestamp": "2024-01-20T09:46:00Z",
+      "case": "loan_001",
+      "resource": "system",
+      "attributes": {
+        "routing_decision": "approval_supervisor",
+        "requires_committee": false,
+        "parallel_processes": true
+      }
+    },
+    {
+      "id": "e4",
+      "activity": "RiskAnalysis",
+      "timestamp": "2024-01-20T10:00:00Z",
+      "case": "loan_001",
+      "resource": "risk_analyst_001",
+      "attributes": {
+        "risk_score": 65,
+        "risk_factors": ["industry_volatility"],
+        "recommendation": "proceed"
+      }
+    },
+    {
+      "id": "e5",
+      "activity": "CreditCheck",
+      "timestamp": "2024-01-20T10:05:00Z",
+      "case": "loan_001",
+      "resource": "credit_checker_001",
+      "attributes": {
+        "credit_score": 720,
+        "approval_probability": "95%",
+        "risk_level": "low"
+      }
+    },
+    {
+      "id": "e6",
+      "activity": "CollateralEvaluation",
+      "timestamp": "2024-01-20T10:15:00Z",
+      "case": "loan_001",
+      "resource": "collateral_specialist_001",
+      "attributes": {
+        "collateral_value": 50000,
+        "loan_to_value_ratio": 0.8,
+        "collateral_sufficient": true
+      }
+    },
+    {
+      "id": "e7",
+      "activity": "DecisionReview",
+      "timestamp": "2024-01-20T10:30:00Z",
+      "case": "loan_001",
+      "resource": "approval_manager_001",
+      "attributes": {
+        "final_recommendation": "approve",
+        "approval_conditions": [],
+        "risk_level": "acceptable"
+      }
+    },
+    {
+      "id": "e8",
+      "activity": "ApprovalDecision",
+      "timestamp": "2024-01-20T10:32:00Z",
+      "case": "loan_001",
+      "resource": "system",
+      "attributes": {
+        "decision": "approved",
+        "conditions_met": true
+      }
+    },
+    {
+      "id": "e9",
+      "activity": "FundLoan",
+      "timestamp": "2024-01-20T10:35:00Z",
+      "case": "loan_001",
+      "resource": "funding_system",
+      "attributes": {
+        "loan_id": "LN2024001",
+        "funding_status": "completed",
+        "disbursed_at": "2024-01-20T10:35:00Z"
+      }
+    },
+    {
+      "id": "e10",
+      "activity": "SubmitApplication",
+      "timestamp": "2024-01-20T14:00:00Z",
+      "case": "loan_002",
+      "resource": "customer_002",
+      "attributes": {
+        "loan_amount": 125000,
+        "purpose": "commercial_property",
+        "credit_score": 680,
+        "annual_income": 120000,
+        "collateral_value": 200000
+      }
+    },
+    {
+      "id": "e11",
+      "activity": "InitialAssessment",
+      "timestamp": "2024-01-20T14:15:00Z",
+      "case": "loan_002",
+      "resource": "loan_officer_002",
+      "attributes": {
+        "preliminary_risk": "low",
+        "approved_for_review": true
+      }
+    },
+    {
+      "id": "e12",
+      "activity": "ConditionalRouting",
+      "timestamp": "2024-01-20T14:16:00Z",
+      "case": "loan_002",
+      "resource": "system",
+      "attributes": {
+        "routing_decision": "approval_committee",
+        "requires_committee": true,
+        "parallel_processes": true
+      }
+    },
+    {
+      "id": "e13",
+      "activity": "RiskAnalysis",
+      "timestamp": "2024-01-20T14:30:00Z",
+      "case": "loan_002",
+      "resource": "risk_analyst_002",
+      "attributes": {
+        "risk_score": 45,
+        "risk_factors": ["economic_conditions", "property_market"],
+        "recommendation": "proceed"
+      }
+    },
+    {
+      "id": "e14",
+      "activity": "CreditCheck",
+      "timestamp": "2024-01-20T14:35:00Z",
+      "case": "loan_002",
+      "resource": "credit_checker_002",
+      "attributes": {
+        "credit_score": 680,
+        "approval_probability": "85%",
+        "risk_level": "medium"
+      }
+    },
+    {
+      "id": "e15",
+      "activity": "CollateralEvaluation",
+      "timestamp": "2024-01-20T14:45:00Z",
+      "case": "loan_002",
+      "resource": "collateral_specialist_002",
+      "attributes": {
+        "collateral_value": 200000,
+        "loan_to_value_ratio": 0.625,
+        "collateral_sufficient": true
+      }
+    },
+    {
+      "id": "e16",
+      "activity": "DecisionReview",
+      "timestamp": "2024-01-20T15:00:00Z",
+      "case": "loan_002",
+      "resource": "approval_manager_002",
+      "attributes": {
+        "final_recommendation": "committee_required",
+        "approval_conditions": [],
+        "risk_level": "medium"
+      }
+    },
+    {
+      "id": "e17",
+      "activity": "ApprovalDecision",
+      "timestamp": "2024-01-20T15:30:00Z",
+      "case": "loan_002",
+      "resource": "loan_committee_001",
+      "attributes": {
+        "decision": "approved",
+        "vote_count": "5-0",
+        "conditions": ["property_inspection_complete"]
+      }
+    },
+    {
+      "id": "e18",
+      "activity": "BoardApproval",
+      "timestamp": "2024-01-20T15:35:00Z",
+      "case": "loan_002",
+      "resource": "executive_committee_001",
+      "attributes": {
+        "board_approved": true,
+        "conditions": [],
+        "funding_approved": true
+      }
+    },
+    {
+      "id": "e19",
+      "activity": "FundLoan",
+      "timestamp": "2024-01-20T15:40:00Z",
+      "case": "loan_002",
+      "resource": "funding_system",
+      "attributes": {
+        "loan_id": "LN20001",
+        "funding_status": "completed",
+        "disbursed_at": "2024-01-20T15:40:00Z"
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "app_001",
+      "type": "loan_application",
+      "attributes": {
+        "customer_id": "cust_001",
+        "loan_amount": 25000,
+        "purpose": "business_expansion",
+        "status": "approved",
+        "submitted_at": "2024-01-20T09:30:00Z",
+        "approved_at": "2024-01-20T10:32:00Z"
+      }
+    },
+    {
+      "id": "app_002",
+      "type": "loan_application",
+      "attributes": {
+        "customer_id": "cust_002",
+        "loan_amount": 125000,
+        "purpose": "commercial_property",
+        "status": "approved",
+        "submitted_at": "2024-01-20T14:00:00Z",
+        "approved_at": "2024-01-20T15:30:00Z"
+      }
+    },
+    {
+      "id": "customer_001",
+      "type": "customer",
+      "attributes": {
+        "name": "ABC Corp",
+        "credit_score": 720,
+        "annual_income": 85000,
+        "industry": "retail"
+      }
+    },
+    {
+      "id": "customer_002",
+      "type": "customer",
+      "attributes": {
+        "name": "XYZ Properties LLC",
+        "credit_score": 680,
+        "annual_income": 120000,
+        "industry": "real_estate"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "source": "e1",
+      "target": "app_001",
+      "type": "produce"
+    },
+    {
+      "source": "e9",
+      "target": "app_001",
+      "type": "consume"
+    },
+    {
+      "source": "e10",
+      "target": "app_002",
+      "type": "produce"
+    },
+    {
+      "source": "e19",
+      "target": "app_002",
+      "type": "consume"
+    },
+    {
+      "source": "e1",
+      "target": "customer_001",
+      "type": "use"
+    },
+    {
+      "source": "e10",
+      "target": "customer_002",
+      "type": "use"
+    }
+  ]
+}

@@ -1,0 +1,308 @@
+{
+  "ocel": {
+    "version": "2.0",
+    "global-id": "global-concurrent-test",
+    "events": [
+      {
+        "id": "e1",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:00.123Z",
+        "activity": "price_update",
+        "attributes": {
+          "product_id": "prod_001",
+          "old_price": 99.99,
+          "new_price": 89.99,
+          "triggered_by": "scheduler"
+        },
+        "objects": ["prod_001"]
+      },
+      {
+        "id": "e2",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:00.456Z",
+        "activity": "inventory_check",
+        "attributes": {
+          "product_id": "prod_001",
+          "quantity": 150,
+          "threshold": 50,
+          "action": "order_more"
+        },
+        "objects": ["prod_001"]
+      },
+      {
+        "id": "e3",
+        "type": "user_action",
+        "timestamp": "2024-01-15T10:00:00.789Z",
+        "activity": "add_to_cart",
+        "attributes": {
+          "user_id": "user_001",
+          "product_id": "prod_001",
+          "quantity": 1,
+          "session_id": "session_abc"
+        },
+        "objects": ["user_001", "prod_001", "cart_001"]
+      },
+      {
+        "id": "e4",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:01.012Z",
+        "activity": "price_update",
+        "attributes": {
+          "product_id": "prod_002",
+          "old_price": 149.99,
+          "new_price": 139.99,
+          "triggered_by": "promotional_engine"
+        },
+        "objects": ["prod_002"]
+      },
+      {
+        "id": "e5",
+        "type": "user_action",
+        "timestamp": "2024-01-15T10:00:01.345Z",
+        "activity": "view_product",
+        "attributes": {
+          "user_id": "user_002",
+          "product_id": "prod_001",
+          "view_duration": 15,
+          "device": "mobile"
+        },
+        "objects": ["user_002", "prod_001"]
+      },
+      {
+        "id": "e6",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:01.678Z",
+        "activity": "inventory_update",
+        "attributes": {
+          "product_id": "prod_001",
+          "quantity_delta": -1,
+          "reason": "sale",
+          "store_id": "STORE-NYC"
+        },
+        "objects": ["prod_001"]
+      },
+      {
+        "id": "e7",
+        "type": "user_action",
+        "timestamp": "2024-01-15T10:00:02.001Z",
+        "activity": "add_to_cart",
+        "attributes": {
+          "user_id": "user_002",
+          "product_id": "prod_001",
+          "quantity": 1,
+          "session_id": "session_xyz"
+        },
+        "objects": ["user_002", "prod_001", "cart_002"]
+      },
+      {
+        "id": "e8",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:02.234Z",
+        "activity": "price_update",
+        "attributes": {
+          "product_id": "prod_003",
+          "old_price": 79.99,
+          "new_price": 74.99,
+          "triggered_by": "price_optimizer"
+        },
+        "objects": ["prod_003"]
+      },
+      {
+        "id": "e9",
+        "type": "user_action",
+        "timestamp": "2024-01-15T10:00:02.567Z",
+        "activity": "checkout_start",
+        "attributes": {
+          "user_id": "user_001",
+          "cart_id": "cart_001",
+          "items_count": 3,
+          "total_value": 279.97
+        },
+        "objects": ["user_001", "cart_001"]
+      },
+      {
+        "id": "e10",
+        "type": "user_action",
+        "timestamp": "2024-01-15T10:00:02.890Z",
+        "activity": "remove_from_cart",
+        "attributes": {
+          "user_id": "user_001",
+          "product_id": "prod_002",
+          "quantity": 1,
+          "reason": "price_change"
+        },
+        "objects": ["user_001", "prod_002", "cart_001"]
+      },
+      {
+        "id": "e11",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:03.123Z",
+        "activity": "notification_send",
+        "attributes": {
+          "user_id": "user_002",
+          "notification_type": "price_drop",
+          "product_id": "prod_001",
+          "sent_at": "2024-01-15T10:00:03.000Z"
+        },
+        "objects": ["user_002", "prod_001"]
+      },
+      {
+        "id": "e12",
+        "type": "user_action",
+        "timestamp": "2024-01-15T10:00:03.456Z",
+        "activity": "apply_coupon",
+        "attributes": {
+          "user_id": "user_001",
+          "coupon_code": "SAVE20",
+          "discount_percent": 20,
+          "discount_value": 55.99
+        },
+        "objects": ["user_001", "order_001"]
+      },
+      {
+        "id": "e13",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:03.789Z",
+        "activity": "inventory_update",
+        "attributes": {
+          "product_id": "prod_003",
+          "quantity_delta": -2,
+          "reason": "bulk_order",
+          "store_id": "STORE-LA"
+        },
+        "objects": ["prod_003"]
+      },
+      {
+        "id": "e14",
+        "type": "user_action",
+        "timestamp": "2024-01-15T10:00:04.012Z",
+        "activity": "payment_initiate",
+        "attributes": {
+          "user_id": "user_001",
+          "order_id": "order_001",
+          "amount": 223.98,
+          "payment_method": "credit_card"
+        },
+        "objects": ["user_001", "order_001"]
+      },
+      {
+        "id": "e15",
+        "type": "system_trigger",
+        "timestamp": "2024-01-15T10:00:04.345Z",
+        "activity": "stock_reservation",
+        "attributes": {
+          "product_id": "prod_001",
+          "reserved_quantity": 1,
+          "order_id": "order_001",
+          "expires_at": "2024-01-15T10:30:00Z"
+        },
+        "objects": ["prod_001", "order_001"]
+      }
+    ],
+    "objects": [
+      {
+        "id": "prod_001",
+        "type": "product",
+        "attributes": {
+          "name": "Wireless Headphones",
+          "category": "Electronics",
+          "current_price": 89.99,
+          "inventory_count": 148,
+          "available": true
+        }
+      },
+      {
+        "id": "prod_002",
+        "type": "product",
+        "attributes": {
+          "name": "Smart Watch",
+          "category": "Electronics",
+          "current_price": 139.99,
+          "inventory_count": 45,
+          "available": true
+        }
+      },
+      {
+        "id": "prod_003",
+        "type": "product",
+        "attributes": {
+          "name": "Bluetooth Speaker",
+          "category": "Electronics",
+          "current_price": 74.99,
+          "inventory_count": 98,
+          "available": true
+        }
+      },
+      {
+        "id": "user_001",
+        "type": "user",
+        "attributes": {
+          "username": "john_doe",
+          "email": "john@example.com",
+          "membership_level": "premium",
+          "cart_value": 223.98,
+          "session_count": 15
+        }
+      },
+      {
+        "id": "user_002",
+        "type": "user",
+        "attributes": {
+          "username": "jane_smith",
+          "email": "jane@example.com",
+          "membership_level": "standard",
+          "cart_value": 89.99,
+          "session_count": 8
+        }
+      },
+      {
+        "id": "cart_001",
+        "type": "cart",
+        "attributes": {
+          "items_count": 2,
+          "total_value": 223.98,
+          "created_at": "2024-01-15T09:45:00Z",
+          "status": "active"
+        }
+      },
+      {
+        "id": "cart_002",
+        "type": "cart",
+        "attributes": {
+          "items_count": 1,
+          "total_value": 89.99,
+          "created_at": "2024-01-15T10:00:01Z",
+          "status": "active"
+        }
+      },
+      {
+        "id": "order_001",
+        "type": "order",
+        "attributes": {
+          "order_number": "ORD-2024-001",
+          "total_amount": 223.98,
+          "status": "processing",
+          "created_at": "2024-01-15T10:00:04Z"
+        }
+      }
+    ],
+    "objectTypes": {
+      "product": {
+        "name": "Product",
+        "attributes": ["name", "category", "current_price", "inventory_count", "available"]
+      },
+      "user": {
+        "name": "User",
+        "attributes": ["username", "email", "membership_level", "cart_value", "session_count"]
+      },
+      "cart": {
+        "name": "Shopping Cart",
+        "attributes": ["items_count", "total_value", "created_at", "status"]
+      },
+      "order": {
+        "name": "Order",
+        "attributes": ["order_number", "total_amount", "status", "created_at"]
+      }
+    }
+  }
+}

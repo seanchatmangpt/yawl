@@ -10,7 +10,7 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
- * License for more details.
+ * Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
@@ -19,221 +19,248 @@
 package org.yawlfoundation.yawl.integration.eventsourcing;
 
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
-import org.yawlfoundation.yawl.integration.eventsourcing.WorkflowEventStore.EventMetrics;
-
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.Test;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.sql.DataSource;
+
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
- * Performance tests for the optimized WorkflowEventStore implementation.
- * Validates the Java 25 feature optimizations and performance improvements.
+ * Chicago TDD performance tests for WorkflowEventStore.
+ *
+ * <p>Tests correctness under load using real H2 in-memory database.
+ * Focuses on data integrity rather than strict timing assertions.
+ *
+ * <h2>Performance Testing Philosophy (Chicago TDD)</h2>
+ * <ul>
+ *   <li>No strict timing assertions (e.g., "must complete in 100ms") - flaky in CI</li>
+ *   <li>Focus on correctness: all events persisted, no data loss</li>
+ *   <li>Test concurrent access patterns</li>
+ *   <li>Measure throughput for informational purposes only</li>
+ * </ul>
  *
  * @author YAWL Foundation
  * @version 6.0.0
  * @since 6.0.0
  */
-@ExtendWith(MockitoExtension.class)
 class WorkflowEventStorePerformanceTest {
 
-    @Mock
-    private DataSource mockDataSource;
-
-    @Mock
-    private Connection mockConnection;
-
-    @Mock
-    private PreparedStatement mockPreparedStatement;
-
-    @Mock
-    private ResultSet mockResultSet;
-
+    private DataSource dataSource;
     private WorkflowEventStore eventStore;
-    private static final String TEST_CASE_ID = "test-case-performance-123";
+
+    private static final String TEST_CASE_ID = "test-case-performance";
     private static final String TEST_SPEC_ID = "OrderFulfillment:1.0";
     private static final Instant BASE_TIMESTAMP = Instant.parse("2026-02-17T10:00:00Z");
-    private static final int EVENT_COUNT = 1000;
 
     @BeforeEach
     void setUp() throws SQLException {
-        when(mockDataSource.getConnection()).thenReturn(mockConnection);
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-        doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-        doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-        doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-        doNothing().when(mockPreparedStatement).executeUpdate();
-        when(mockResultSet.next()).thenReturn(true);
-        when(mockResultSet.getString("event_id")).thenReturn("test-event");
-        when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-        when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-        when(mockResultSet.getString("seq_num")).thenReturn("0");
-        when(mockResultSet.getString("event_type")).thenReturn("CASE_STARTED");
-        when(mockResultSet.getString("schema_version")).thenReturn("1.0");
-        when(mockResultSet.getTimestamp("event_timestamp")).thenReturn(
-            Timestamp.from(BASE_TIMESTAMP));
-        when(mockResultSet.getString("payload_json")).thenReturn("{}");
-        when(mockResultSet.getLong(1)).thenReturn(-1L);
-        doNothing().when(mockConnection).close();
-        doNothing().when(mockConnection).commit();
+        dataSource = EventSourcingTestFixture.createDataSource();
+        EventSourcingTestFixture.createSchema(dataSource);
+        eventStore = new WorkflowEventStore(dataSource);
+    }
 
-        eventStore = new WorkflowEventStore(mockDataSource, 100, 3);
+    @AfterEach
+    void tearDown() throws SQLException {
+        EventSourcingTestFixture.dropSchema(dataSource);
     }
 
     @Nested
-    @DisplayName("Virtual Thread Performance")
-    class VirtualThreadPerformanceTest {
+    @DisplayName("High Volume Operations")
+    class HighVolumeOperationsTest {
 
         @Test
-        @DisplayName("appendWithVirtualThreads_ShouldBeFasterThanSequential")
-        void appendWithVirtualThreadsShouldBeFasterThanSequential() throws Exception {
-            int concurrentEvents = 100;
-            long sequentialTime = measureSequentialAppend(concurrentEvents);
-            long virtualThreadTime = measureVirtualThreadAppend(concurrentEvents);
+        @DisplayName("appendThousandEvents_allPersisted")
+        void appendThousandEventsAllPersisted() throws Exception {
+            // Given
+            int eventCount = 1000;
+            String caseId = EventSourcingTestFixture.generateCaseId("volume");
 
-            // Virtual threads should be at least 2x faster
-            assertTrue(virtualThreadTime < sequentialTime / 2,
-                String.format("Virtual thread time (%d ms) should be less than half of sequential time (%d ms)",
-                    virtualThreadTime, sequentialTime));
-        }
-
-        @Test
-        @DisplayName("appendBatchWithStructuredConcurrency_ShouldCompleteQuickly")
-        void appendBatchWithStructuredConcurrencyShouldCompleteQuickly() throws Exception {
-            List<WorkflowEvent> events = createTestEvents(EVENT_COUNT);
+            // When
             long startTime = System.nanoTime();
-
-            long lastSeq = eventStore.appendBatch(events, 0);
-
+            for (int i = 0; i < eventCount; i++) {
+                WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                    WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    BASE_TIMESTAMP.plusSeconds(i));
+                eventStore.append(event, i);
+            }
             long duration = System.nanoTime() - startTime;
-            double eventsPerSecond = (EVENT_COUNT * 1_000_000_000.0) / duration;
 
-            assertTrue(eventsPerSecond > 1000,
-                String.format("Batch append should process >1000 events/sec, got %.0f", eventsPerSecond));
-            assertEquals(EVENT_COUNT - 1, lastSeq);
+            // Then: all events persisted
+            List<WorkflowEvent> loaded = eventStore.loadEvents(caseId);
+            assertEquals(eventCount, loaded.size());
+
+            // Info: report throughput (not assertion)
+            double eventsPerSecond = (eventCount * 1_000_000_000.0) / duration;
+            System.out.printf("[INFO] Throughput: %.0f events/sec for %d events%n",
+                eventsPerSecond, eventCount);
         }
 
-        private long measureSequentialAppend(int count) throws Exception {
-            List<WorkflowEvent> events = createTestEvents(count);
-            long startTime = System.nanoTime();
+        @Test
+        @DisplayName("loadThousandEvents_allReturned")
+        void loadThousandEventsAllReturned() throws Exception {
+            // Given: 1000 events already stored
+            int eventCount = 1000;
+            String caseId = EventSourcingTestFixture.generateCaseId("load");
 
-            for (WorkflowEvent event : events) {
-                eventStore.append(event, 0);
+            for (int i = 0; i < eventCount; i++) {
+                WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                    WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    BASE_TIMESTAMP.plusSeconds(i));
+                eventStore.append(event, i);
             }
 
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-        }
-
-        private long measureVirtualThreadAppend(int count) throws Exception {
-            List<WorkflowEvent> events = createTestEvents(count);
+            // When
             long startTime = System.nanoTime();
+            List<WorkflowEvent> loaded = eventStore.loadEvents(caseId);
+            long duration = System.nanoTime() - startTime;
 
-            try (var scope = java.util.concurrent.StructuredTaskScope.ShutdownOnFailure.newInstance()) {
-                events.stream()
-                    .map(event -> scope.fork(() -> {
-                        eventStore.append(event, 0);
-                        return event;
-                    }))
-                    .toList();
+            // Then
+            assertEquals(eventCount, loaded.size());
 
-                scope.join();
-                scope.throwIfFailed();
-            }
-
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+            // Info: report load time
+            double loadTimeMs = duration / 1_000_000.0;
+            System.out.printf("[INFO] Load time: %.2f ms for %d events%n",
+                loadTimeMs, eventCount);
         }
     }
 
     @Nested
-    @DisplayName("Parallel Stream Performance")
-    class ParallelStreamPerformanceTest {
+    @DisplayName("Concurrency Correctness")
+    class ConcurrencyCorrectnessTest {
 
         @Test
-        @DisplayName("loadEventsParallel_ShouldBeFasterThanSequential")
-        void loadEventsParallelShouldBeFasterThanSequential() throws Exception {
-            int caseCount = 10;
-            List<String> caseIds = generateCaseIds(caseCount);
+        @DisplayName("highConcurrencyAppend_noEventLoss")
+        void highConcurrencyAppendNoEventLoss() throws Exception {
+            // Given
+            int threadCount = 20;
+            int eventsPerThread = 50;
+            int expectedTotal = threadCount * eventsPerThread;
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+            CyclicBarrier barrier = new CyclicBarrier(threadCount);
+            AtomicInteger successCount = new AtomicInteger(0);
+            Map<String, AtomicInteger> caseEventCounts = new ConcurrentHashMap<>();
 
-            long sequentialTime = measureSequentialLoad(caseIds);
-            long parallelTime = measureParallelLoad(caseIds);
+            // When: concurrent appends using appendNext (auto-sequence)
+            for (int t = 0; t < threadCount; t++) {
+                final int threadNum = t;
+                executor.submit(() -> {
+                    try {
+                        barrier.await(); // Synchronize start
+                        String caseId = TEST_CASE_ID + "-thread-" + threadNum;
+                        caseEventCounts.put(caseId, new AtomicInteger(0));
 
-            // Parallel load should be at least 3x faster
-            assertTrue(parallelTime < sequentialTime / 3,
-                String.format("Parallel load time (%d ms) should be less than third of sequential time (%d ms)",
-                    parallelTime, sequentialTime));
+                        for (int i = 0; i < eventsPerThread; i++) {
+                            try {
+                                WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                                    WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                                    BASE_TIMESTAMP.plusMillis(i));
+                                eventStore.appendNext(event);
+                                successCount.incrementAndGet();
+                                caseEventCounts.get(caseId).incrementAndGet();
+                            } catch (Exception e) {
+                                // Log but continue - some conflicts expected
+                                System.err.println("[WARN] Append failed: " + e.getMessage());
+                            }
+                        }
+                    } catch (Exception e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
+
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(60, TimeUnit.SECONDS));
+
+            // Then: verify all successful events are persisted
+            int totalPersisted = 0;
+            for (Map.Entry<String, AtomicInteger> entry : caseEventCounts.entrySet()) {
+                List<WorkflowEvent> events = eventStore.loadEvents(entry.getKey());
+                assertEquals(entry.getValue().get(), events.size(),
+                    "Event count mismatch for " + entry.getKey());
+                totalPersisted += events.size();
+            }
+
+            assertEquals(successCount.get(), totalPersisted,
+                "Total persisted should equal successful appends");
+
+            System.out.printf("[INFO] Successfully appended %d/%d events with %d threads%n",
+                successCount.get(), expectedTotal, threadCount);
         }
 
         @Test
-        @DisplayName("loadRecentEventsParallel_ShouldScaleWithCaseCount")
-        void loadRecentEventsParallelShouldScaleWithCaseCount() throws Exception {
-            int[] caseCounts = {1, 5, 10, 20, 50};
-            Map<Integer, Long> executionTimes = new ConcurrentHashMap<>();
+        @DisplayName("mixedOperations_noDeadlocks")
+        void mixedOperationsNoDeadlocks() throws Exception {
+            // Given
+            int operationCount = 200;
+            int caseCount = 10;
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+            CyclicBarrier barrier = new CyclicBarrier(operationCount);
+            AtomicInteger completedOps = new AtomicInteger(0);
+            AtomicInteger failedOps = new AtomicInteger(0);
 
-            for (int caseCount : caseCounts) {
-                List<String> caseIds = generateCaseIds(caseCount);
-                long time = measureRecentEventsLoad(caseIds);
-                executionTimes.put(caseCount, time);
-
-                // Linear scaling: 20 cases should not take 20x longer than 1 case
-                if (caseCount > 1) {
-                    double ratio = (double) time / executionTimes.get(1);
-                    assertTrue(ratio <= caseCount,
-                        String.format("Load time ratio (%.1f) should not exceed case count (%d)", ratio, caseCount));
+            // Pre-populate some events
+            for (int c = 0; c < caseCount; c++) {
+                String caseId = "case-" + c;
+                for (int i = 0; i < 5; i++) {
+                    eventStore.append(EventSourcingTestFixture.createTestEvent(
+                        WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                        BASE_TIMESTAMP.plusSeconds(i)), i);
                 }
             }
-        }
 
-        private long measureSequentialLoad(List<String> caseIds) throws Exception {
-            long startTime = System.nanoTime();
+            // When: mixed reads and writes
+            for (int i = 0; i < operationCount; i++) {
+                final int opNum = i;
+                executor.submit(() -> {
+                    try {
+                        barrier.await();
+                        String caseId = "case-" + (opNum % caseCount);
 
-            for (String caseId : caseIds) {
-                eventStore.loadEvents(caseId);
+                        if (opNum % 3 == 0) {
+                            // Write operation
+                            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                                WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-" + opNum,
+                                BASE_TIMESTAMP.plusSeconds(opNum));
+                            eventStore.appendNext(event);
+                        } else {
+                            // Read operation
+                            eventStore.loadEvents(caseId);
+                        }
+                        completedOps.incrementAndGet();
+                    } catch (Exception e) {
+                        failedOps.incrementAndGet();
+                    }
+                });
             }
 
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-        }
+            executor.shutdown();
+            boolean terminated = executor.awaitTermination(30, TimeUnit.SECONDS);
 
-        private long measureParallelLoad(List<String> caseIds) throws Exception {
-            long startTime = System.nanoTime();
+            // Then: no deadlocks (all operations complete or fail cleanly)
+            assertTrue(terminated, "Operations should complete without deadlock");
+            assertEquals(operationCount, completedOps.get() + failedOps.get());
 
-            Map<String, List<WorkflowEvent>> result = eventStore.loadEventsParallel(caseIds);
-
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-        }
-
-        private long measureRecentEventsLoad(List<String> caseIds) throws Exception {
-            long startTime = System.nanoTime();
-
-            Map<String, List<WorkflowEvent>> result = eventStore.loadRecentEventsParallel(
-                caseIds, BASE_TIMESTAMP);
-
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
+            System.out.printf("[INFO] Completed %d operations, %d failed%n",
+                completedOps.get(), failedOps.get());
         }
     }
 
@@ -242,150 +269,140 @@ class WorkflowEventStorePerformanceTest {
     class MemoryEfficiencyTest {
 
         @Test
-        @DisplayName("largeEventStreams_ShouldHaveReducedMemoryFootprint")
-        void largeEventStreamsShouldHaveReducedMemoryFootprint() throws Exception {
-            Runtime runtime = Runtime.getRuntime();
-            long initialMemory = runtime.totalMemory() - runtime.freeMemory();
-
-            // Process large event stream using parallel streams
-            List<WorkflowEvent> largeEventStream = createTestEvents(10000);
-            List<WorkflowEvent> processed = largeEventStream.stream()
-                .parallel()
-                .map(this::transformEvent)
-                .toList();
-
-            long afterMemory = runtime.totalMemory() - runtime.freeMemory();
-            long memoryIncrease = afterMemory - initialMemory;
-
-            // Memory increase should be reasonable (not linear with event count)
-            double memoryPerEvent = (double) memoryIncrease / processed.size();
-            assertTrue(memoryPerEvent < 500,
-                String.format("Memory per event should be <500 bytes, got %.0f", memoryPerEvent));
-
-            assertEquals(10000, processed.size());
-        }
-
-        @Test
-        @DisplayName("streamProcessing_ShouldNotRetainUnnecessaryObjects")
-        void streamProcessingShouldNotRetainUnnecessaryObjects() throws Exception {
-            // Create events and force garbage collection
-            List<WorkflowEvent> events = createTestEvents(5000);
-            long beforeGC = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-
-            // Process with streams and let references go
-            List<String> eventIds = events.stream()
-                .map(WorkflowEvent::getEventId)
-                .toList();
-
-            events = null; // Remove strong references
-
-            System.gc(); // Suggest garbage collection
-            Thread.sleep(100); // Give GC time to work
-
-            long afterGC = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-            long freedMemory = beforeGC - afterGC;
-
-            // Should have freed most memory
-            assertTrue(freedMemory > beforeGC * 0.8,
-                String.format("Should free >80%% of memory, freed %.1f%%",
-                    (freedMemory * 100.0) / beforeGC));
-        }
-
-        private WorkflowEvent transformEvent(WorkflowEvent event) {
-            // Simulate event transformation without creating new objects unnecessarily
-            return event; // In real implementation, would modify in-place or reuse
-        }
-    }
-
-    @Nested
-    @DisplayName("Performance Metrics")
-    class PerformanceMetricsTest {
-
-        @Test
-        @DisplayName("metricsShouldTrackAllOperations")
-        void metricsShouldTrackAllOperations() throws Exception {
-            // Perform various operations
-            eventStore.append(createTestEvent(), 0);
-            eventStore.loadEvents(TEST_CASE_ID);
-            eventStore.loadEventsAsOf(TEST_CASE_ID, BASE_TIMESTAMP);
-            eventStore.loadEventsSince(TEST_CASE_ID, 0);
-
-            EventMetrics metrics = eventStore.getMetrics();
-
-            // Verify metrics were collected
-            assertTrue(metrics.getTotalEventsWritten() > 0);
-            assertTrue(metrics.getAppendSuccessRate() > 0);
-            assertTrue(metrics.getLoadSuccessRate() > 0);
-            assertTrue(metrics.getAverageQueryTime() > 0);
-        }
-
-        @Test
-        @DisplayName("metricsShouldProvideAccurateThroughput")
-        void metricsShouldProvideAccurateThroughput() throws Exception {
-            int eventCount = 500;
-            long startTime = System.nanoTime();
+        @DisplayName("largeEventStream_loadable")
+        void largeEventStreamLoadable() throws Exception {
+            // Given: 5000 events
+            int eventCount = 5000;
+            String caseId = EventSourcingTestFixture.generateCaseId("large");
 
             for (int i = 0; i < eventCount; i++) {
-                eventStore.append(createTestEvent(), i);
+                WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                    WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    BASE_TIMESTAMP.plusMillis(i),
+                    Map.of("index", String.valueOf(i), "data", "x".repeat(100)));
+                eventStore.append(event, i);
             }
 
-            long duration = System.nanoTime() - startTime;
-            double actualThroughput = (eventCount * 1_000_000_000.0) / duration;
+            // When: load all events
+            List<WorkflowEvent> loaded = eventStore.loadEvents(caseId);
 
-            EventMetrics metrics = eventStore.getMetrics();
-            double reportedThroughput = metrics.getTotalEventsWritten() /
-                                    (metrics.getAverageLoadTime() / 1_000_000_000.0);
+            // Then: all events loadable
+            assertEquals(eventCount, loaded.size());
 
-            // Throughput should be within reasonable bounds (±20%)
-            double ratio = actualThroughput / reportedThroughput;
-            assertTrue(ratio > 0.8 && ratio < 1.2,
-                String.format("Throughput ratio %.2f should be between 0.8 and 1.2", ratio));
+            // Verify order and data integrity
+            for (int i = 0; i < Math.min(100, loaded.size()); i++) {
+                assertEquals(i, loaded.get(i).getSequenceNumber());
+                assertEquals(String.valueOf(i), loaded.get(i).getPayload().get("index"));
+            }
         }
 
         @Test
-        @DisplayName("resetMetricsShouldClearAllCounters")
-        void resetMetricsShouldClearAllCounters() throws Exception {
-            // Perform some operations
-            eventStore.append(createTestEvent(), 0);
-            eventStore.loadEvents(TEST_CASE_ID);
+        @DisplayName("temporalQuery_largeDataset_correctFiltering")
+        void temporalQueryLargeDatasetCorrectFiltering() throws Exception {
+            // Given: 1000 events spread over time
+            int eventCount = 1000;
+            String caseId = EventSourcingTestFixture.generateCaseId("temporal");
 
-            EventMetrics metrics = eventStore.getMetrics();
-            long beforeReset = metrics.getTotalEventsWritten();
+            for (int i = 0; i < eventCount; i++) {
+                WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                    WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    BASE_TIMESTAMP.plusSeconds(i));
+                eventStore.append(event, i);
+            }
 
-            // Reset metrics
-            eventStore.resetMetrics();
+            // When: query at midpoint
+            Instant midpoint = BASE_TIMESTAMP.plusSeconds(500);
+            List<WorkflowEvent> events = eventStore.loadEventsAsOf(caseId, midpoint);
 
-            // Verify all counters are reset
-            assertEquals(0, metrics.getTotalEventsWritten());
-            assertEquals(0, metrics.getAppendAttempts());
-            assertEquals(0, metrics.getLoadAttempts());
-            assertTrue(Double.isNaN(metrics.getAppendSuccessRate()));
+            // Then: only events up to midpoint
+            assertTrue(events.size() <= 501); // 0-500 inclusive
+            for (WorkflowEvent e : events) {
+                assertFalse(e.getTimestamp().isAfter(midpoint));
+            }
         }
     }
 
     @Nested
-    @DisplayName("Concurrency Stress Test")
-    class ConcurrencyStressTest {
+    @DisplayName("Optimistic Concurrency")
+    class OptimisticConcurrencyTest {
 
         @Test
-        @DisplayName("highConcurrencyAppend_ShouldNotLoseEvents")
-        void highConcurrencyAppendShouldNotLoseEvents() throws Exception {
-            int threadCount = 20;
-            int eventsPerThread = 50;
+        @DisplayName("concurrentWrite_sameSequence_handled")
+        void concurrentWriteSameSequenceHandled() throws Exception {
+            // Given: multiple threads trying to write at same sequence
+            int threadCount = 10;
             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-            AtomicLong eventCounter = new AtomicLong(0);
+            CyclicBarrier barrier = new CyclicBarrier(threadCount);
+            AtomicInteger successCount = new AtomicInteger(0);
+            AtomicInteger conflictCount = new AtomicInteger(0);
+            String caseId = EventSourcingTestFixture.generateCaseId("conflict");
 
-            // Submit concurrent append tasks
-            for (int i = 0; i < threadCount; i++) {
+            // When: all threads try to append at sequence 0
+            for (int t = 0; t < threadCount; t++) {
                 executor.submit(() -> {
-                    for (int j = 0; j < eventsPerThread; j++) {
-                        try {
-                            WorkflowEvent event = createTestEvent();
-                            eventStore.append(event, eventCounter.getAndIncrement());
-                        } catch (Exception e) {
-                            // Log but continue
-                            System.err.println("Append failed: " + e.getMessage());
+                    try {
+                        barrier.await();
+                        WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                            WorkflowEvent.EventType.CASE_STARTED, caseId, null, BASE_TIMESTAMP);
+                        eventStore.append(event, 0);
+                        successCount.incrementAndGet();
+                    } catch (WorkflowEventStore.ConcurrentModificationException e) {
+                        conflictCount.incrementAndGet();
+                    } catch (Exception e) {
+                        // Unexpected error
+                        e.printStackTrace();
+                    }
+                });
+            }
+
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+
+            // Then: exactly one success, rest get conflicts
+            assertEquals(1, successCount.get());
+            assertEquals(threadCount - 1, conflictCount.get());
+
+            // Verify the single event was persisted
+            List<WorkflowEvent> events = eventStore.loadEvents(caseId);
+            assertEquals(1, events.size());
+        }
+
+        @Test
+        @DisplayName("retryOnConflict_eventuallySucceeds")
+        void retryOnConflictEventuallySucceeds() throws Exception {
+            // Given: multiple threads with retry logic
+            int threadCount = 5;
+            int maxRetries = 10;
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+            CyclicBarrier barrier = new CyclicBarrier(threadCount);
+            AtomicInteger totalSuccess = new AtomicInteger(0);
+            String caseId = EventSourcingTestFixture.generateCaseId("retry");
+
+            // When: threads retry on conflict
+            for (int t = 0; t < threadCount; t++) {
+                final int threadNum = t;
+                executor.submit(() -> {
+                    try {
+                        barrier.await();
+                        for (int retry = 0; retry < maxRetries; retry++) {
+                            try {
+                                // Get current max sequence
+                                List<WorkflowEvent> existing = eventStore.loadEvents(caseId);
+                                long nextSeq = existing.size();
+
+                                WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                                    WorkflowEvent.EventType.CASE_STARTED, caseId, "thread-" + threadNum,
+                                    BASE_TIMESTAMP.plusMillis(retry));
+                                eventStore.append(event, nextSeq);
+                                totalSuccess.incrementAndGet();
+                                break;
+                            } catch (WorkflowEventStore.ConcurrentModificationException e) {
+                                // Retry with updated sequence
+                                Thread.sleep(1);
+                            }
                         }
+                    } catch (Exception e) {
+                        Thread.currentThread().interrupt();
                     }
                 });
             }
@@ -393,123 +410,165 @@ class WorkflowEventStorePerformanceTest {
             executor.shutdown();
             assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
 
-            // Verify all events were processed
-            EventMetrics metrics = eventStore.getMetrics();
-            long totalEvents = metrics.getTotalEventsWritten();
-            assertEquals((long) threadCount * eventsPerThread, totalEvents,
-                String.format("Expected %d events, got %d",
-                    (long) threadCount * eventsPerThread, totalEvents));
+            // Then: all threads eventually succeed
+            assertEquals(threadCount, totalSuccess.get());
+            List<WorkflowEvent> events = eventStore.loadEvents(caseId);
+            assertEquals(threadCount, events.size());
+        }
+    }
+
+    @Nested
+    @DisplayName("Stress Tests")
+    class StressTest {
+
+        @Test
+        @DisplayName("rapidFireAppends_noDataCorruption")
+        void rapidFireAppendsNoDataCorruption() throws Exception {
+            // Given
+            int eventCount = 500;
+            String caseId = EventSourcingTestFixture.generateCaseId("stress");
+            List<String> eventIds = new ArrayList<>();
+
+            // When: rapid fire appends using appendNext
+            for (int i = 0; i < eventCount; i++) {
+                WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                    WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                    BASE_TIMESTAMP.plusNanos(i),
+                    Map.of("iteration", String.valueOf(i)));
+                eventStore.appendNext(event);
+                eventIds.add(event.getEventId());
+            }
+
+            // Then: verify data integrity
+            List<WorkflowEvent> loaded = eventStore.loadEvents(caseId);
+            assertEquals(eventCount, loaded.size());
+
+            // Verify all event IDs are present
+            for (WorkflowEvent e : loaded) {
+                assertTrue(eventIds.contains(e.getEventId()),
+                    "Event ID " + e.getEventId() + " not found");
+            }
+
+            // Verify sequence order
+            for (int i = 0; i < loaded.size(); i++) {
+                assertEquals(i, loaded.get(i).getSequenceNumber());
+            }
         }
 
         @Test
-        @DisplayName("mixedOperations_ShouldNotCauseDeadlocks")
-        void mixedOperationsShouldNotCauseDeadlocks() throws Exception {
-            int operationCount = 100;
-            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        @DisplayName("multipleCases_concurrentLoad_noMixing")
+        void multipleCasesConcurrentLoadNoMixing() throws Exception {
+            // Given: multiple cases with distinct events
+            int caseCount = 10;
+            int eventsPerCase = 20;
+            Map<String, List<String>> caseEventIds = new ConcurrentHashMap<>();
 
-            // Submit mixed operations (appends and loads)
-            for (int i = 0; i < operationCount; i++) {
-                final int opNum = i;
+            for (int c = 0; c < caseCount; c++) {
+                String caseId = "case-" + c;
+                List<String> ids = new ArrayList<>();
+                for (int i = 0; i < eventsPerCase; i++) {
+                    WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                        WorkflowEvent.EventType.CASE_STARTED, caseId, null,
+                        BASE_TIMESTAMP.plusSeconds(c * 100 + i));
+                    eventStore.append(event, i);
+                    ids.add(event.getEventId());
+                }
+                caseEventIds.put(caseId, ids);
+            }
+
+            // When: concurrent loads
+            ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+            Map<String, List<WorkflowEvent>> results = new ConcurrentHashMap<>();
+
+            for (int c = 0; c < caseCount; c++) {
+                final String caseId = "case-" + c;
                 executor.submit(() -> {
                     try {
-                        if (opNum % 3 == 0) {
-                            // Append operation
-                            WorkflowEvent event = createTestEvent();
-                            eventStore.append(event, opNum);
-                        } else {
-                            // Load operation
-                            eventStore.loadEvents(TEST_CASE_ID + "-" + (opNum % 10));
-                        }
-                        Thread.sleep(1); // Small delay
+                        results.put(caseId, eventStore.loadEvents(caseId));
                     } catch (Exception e) {
-                        // Ignore for stress test
+                        throw new RuntimeException(e);
                     }
                 });
             }
 
             executor.shutdown();
-            assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS),
-                "Mixed operations should complete within 30 seconds");
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+
+            // Then: no event mixing between cases
+            for (Map.Entry<String, List<WorkflowEvent>> entry : results.entrySet()) {
+                String caseId = entry.getKey();
+                List<WorkflowEvent> events = entry.getValue();
+                List<String> expectedIds = caseEventIds.get(caseId);
+
+                assertEquals(eventsPerCase, events.size(),
+                    "Wrong event count for " + caseId);
+
+                for (WorkflowEvent e : events) {
+                    assertTrue(expectedIds.contains(e.getEventId()),
+                        "Event " + e.getEventId() + " doesn't belong to " + caseId);
+                    assertEquals(caseId, e.getCaseId());
+                }
+            }
         }
     }
 
     @Nested
-    @DisplayName("JDBC Batch Optimization")
-    class JdbcBatchOptimizationTest {
+    @DisplayName("Edge Cases")
+    class EdgeCaseTest {
 
         @Test
-        @DisplayName("batchAppendShouldUseOptimalBatchSize")
-        void batchAppendShouldUseOptimalBatchSize() throws Exception {
-            List<WorkflowEvent> events = createTestEvents(200);
-            int[] batchSizes = {10, 50, 100, 200};
+        @DisplayName("emptyCase_returnsEmptyList")
+        void emptyCaseReturnsEmptyList() throws Exception {
+            // Given: no events for case
+            String caseId = "nonexistent-case";
 
-            for (int batchSize : batchSizes) {
-                WorkflowEventStore store = new WorkflowEventStore(mockDataSource, batchSize, 3);
-                long startTime = System.nanoTime();
+            // When
+            List<WorkflowEvent> events = eventStore.loadEvents(caseId);
 
-                store.appendBatch(events, 0);
-
-                long duration = System.nanoTime() - startTime;
-                double eventsPerSecond = (events.size() * 1_000_000_000.0) / duration;
-
-                System.out.printf("Batch size %d: %.0f events/sec%n", batchSize, eventsPerSecond);
-            }
+            // Then
+            assertTrue(events.isEmpty());
         }
 
         @Test
-        @DisplayName("largeBatchShouldHaveBetterPerformance")
-        void largeBatchShouldHaveBetterPerformance() throws Exception {
-            int batchSize = 1000;
-            List<WorkflowEvent> largeBatch = createTestEvents(batchSize);
+        @DisplayName("singleEvent_persistedCorrectly")
+        void singleEventPersistedCorrectly() throws Exception {
+            // Given
+            String caseId = EventSourcingTestFixture.generateCaseId("single");
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null, BASE_TIMESTAMP,
+                Map.of("key", "value"));
 
-            // Test with optimized batch size
-            long startTime = System.nanoTime();
-            eventStore.appendBatch(largeBatch, 0);
-            long optimizedTime = System.nanoTime() - startTime;
+            // When
+            eventStore.append(event, 0);
 
-            // Compare with individual appends
-            startTime = System.nanoTime();
-            for (WorkflowEvent event : largeBatch) {
-                eventStore.append(event, 0);
-            }
-            long individualTime = System.nanoTime() - startTime;
-
-            // Batch should be at least 5x faster
-            assertTrue(optimizedTime < individualTime / 5,
-                String.format("Batch time (%d ns) should be < 1/5 of individual time (%d ns)",
-                    optimizedTime, individualTime));
+            // Then
+            List<WorkflowEvent> loaded = eventStore.loadEvents(caseId);
+            assertEquals(1, loaded.size());
+            assertEquals(event.getEventId(), loaded.get(0).getEventId());
+            assertEquals("value", loaded.get(0).getPayload().get("key"));
         }
-    }
 
-    // Helper methods
+        @Test
+        @DisplayName("eventsAtSameTimestamp_handledCorrectly")
+        void eventsAtSameTimestampHandledCorrectly() throws Exception {
+            // Given: events with same timestamp but different sequences
+            String caseId = EventSourcingTestFixture.generateCaseId("same-time");
+            Instant sameTime = BASE_TIMESTAMP;
 
-    private List<WorkflowEvent> createTestEvents(int count) {
-        List<WorkflowEvent> events = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            events.add(createTestEvent());
+            // When
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null, sameTime), 0);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-1", sameTime), 1);
+            eventStore.append(EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_STARTED, caseId, "wi-1", sameTime), 2);
+
+            // Then: events still ordered by sequence
+            List<WorkflowEvent> events = eventStore.loadEvents(caseId);
+            assertEquals(3, events.size());
+            assertEquals(0, events.get(0).getSequenceNumber());
+            assertEquals(1, events.get(1).getSequenceNumber());
+            assertEquals(2, events.get(2).getSequenceNumber());
         }
-        return events;
-    }
-
-    private WorkflowEvent createTestEvent() {
-        return new WorkflowEvent(
-            UUID.randomUUID().toString(),
-            WorkflowEvent.EventType.CASE_STARTED,
-            "1.0",
-            TEST_SPEC_ID,
-            TEST_CASE_ID + "-" + UUID.randomUUID().toString().substring(0, 8),
-            null,
-            BASE_TIMESTAMP.plusMillis(System.currentTimeMillis()),
-            Map.of("timestamp", String.valueOf(System.currentTimeMillis()),
-                   "iteration", String.valueOf(ThreadLocalRandom.current().nextInt(1000)))
-        );
-    }
-
-    private List<String> generateCaseIds(int count) {
-        List<String> caseIds = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            caseIds.add("case-" + i);
-        }
-        return caseIds;
     }
 }

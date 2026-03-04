@@ -1,0 +1,80 @@
+{
+  "ocel:version": "2.0",
+  "ocel:ordering": "timestamp",
+  "ocel:attribute-names": ["org:resource"],
+  "ocel:object-types": ["Assessment"],
+  "ocel:objects": {
+    "Assessment1": {
+      "ocel:type": "Assessment",
+      "ocel:ovmap": {
+        "assessment:id": "Assessment1"
+      }
+    }
+  },
+  "ocel:events": {
+    "evt-assessment-started": {
+      "ocel:activity": "assessment_started",
+      "ocel:timestamp": "2026-03-03T05:35:01.866077Z",
+      "ocel:omap": {
+        "Assessment": ["Assessment1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "SelfAssessmentAgent"
+      }
+    },
+    "evt-gap-discovery": {
+      "ocel:activity": "gap_discovery",
+      "ocel:timestamp": "2026-03-03T05:35:01.866077Z",
+      "ocel:omap": {
+        "Assessment": ["Assessment1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "SelfAssessmentAgent"
+      }
+    },
+    "evt-construct-query": {
+      "ocel:activity": "construct_query_run",
+      "ocel:timestamp": "2026-03-03T05:35:01.866077Z",
+      "ocel:omap": {
+        "Assessment": ["Assessment1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "SelfAssessmentAgent",
+        "query:complexity": "high"
+      }
+    },
+    "evt-gap-discovered": {
+      "ocel:activity": "gap_discovered",
+      "ocel:timestamp": "2026-03-03T05:35:01.866077Z",
+      "ocel:omap": {
+        "Assessment": ["Assessment1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "SelfAssessmentAgent",
+        "gap:count": 3
+      }
+    },
+    "evt-gap-closed": {
+      "ocel:activity": "gap_closed",
+      "ocel:timestamp": "2026-03-03T05:35:01.866077Z",
+      "ocel:omap": {
+        "Assessment": ["Assessment1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "SelfAssessmentAgent",
+        "gap:closed": 1
+      }
+    },
+    "evt-conformance-updated": {
+      "ocel:activity": "conformance_updated",
+      "ocel:timestamp": "2026-03-03T05:35:01.866077Z",
+      "ocel:omap": {
+        "Assessment": ["Assessment1"]
+      },
+      "ocel:vmap": {
+        "org:resource": "SelfAssessmentAgent",
+        "conformance:score": 0.92
+      }
+    }
+  }
+}

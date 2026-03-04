@@ -150,7 +150,7 @@ public class RetryObservability {
         }
 
         // OpenTelemetry metrics temporarily disabled due to API changes
-        // TODO: Update to OpenTelemetry 1.40+ API when available
+        // OPENTELEMETRY METRICS DISABLED - Throws UnsupportedOperationException
         LOGGER.debug("OpenTelemetry metrics disabled - API version incompatibility");
     }
 

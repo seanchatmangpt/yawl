@@ -1,0 +1,374 @@
+{
+  "id": "jtbd3-resource-allocation-log",
+  "name": "Resource Allocation Event Log",
+  "description": "Complex resource allocation with conflict resolution and priority scheduling",
+  "events": [
+    {
+      "id": "e1",
+      "activity": "RegisterPatient",
+      "timestamp": "2024-02-01T08:00:00Z",
+      "case": "patient_001",
+      "resource": "registration_system",
+      "attributes": {
+        "condition": "emergency",
+        "priority_level": "highest",
+        "service_type": "surgery",
+        "required_specialty": "cardiovascular"
+      }
+    },
+    {
+      "id": "e2",
+      "activity": "ResourceRequest",
+      "timestamp": "2024-02-01T08:05:00Z",
+      "case": "patient_001",
+      "resource": "allocator_system",
+      "attributes": {
+        "requested_resources": [
+          "operating_room_1",
+          "cardiologist",
+          "nurse_team",
+          "heart_monitor"
+        ],
+        "priority": "emergency",
+        "deadline": "2024-02-01T10:00:00Z"
+      }
+    },
+    {
+      "id": "e3",
+      "activity": "AllocateResources",
+      "timestamp": "2024-02-01T08:10:00Z",
+      "case": "patient_001",
+      "resource": "allocator_system",
+      "attributes": {
+        "allocation_status": "conflict",
+        "conflicting_resources": ["operating_room_1"],
+        "conflict_reason": "double_booking",
+        "available_alternatives": ["operating_room_2"]
+      }
+    },
+    {
+      "id": "e4",
+      "activity": "ConflictResolution",
+      "timestamp": "2024-02-01T08:15:00Z",
+      "case": "patient_001",
+      "resource": "conflict_resolver",
+      "attributes": {
+        "resolution_strategy": "priority_override",
+        "overridden_case": "patient_002",
+        "new_allocation": "operating_room_1",
+        "escalation_required": false
+      }
+    },
+    {
+      "id": "e5",
+      "activity": "TreatmentScheduling",
+      "timestamp": "2024-02-01T08:20:00Z",
+      "case": "patient_001",
+      "resource": "scheduler_system",
+      "attributes": {
+        "scheduled_time": "2024-02-01T09:30:00Z",
+        "duration": "2.5 hours",
+        "room": "operating_room_1",
+        "team": "cardiovascular_team"
+      }
+    },
+    {
+      "id": "e6",
+      "activity": "ConfirmAllocation",
+      "timestamp": "2024-02-01T08:25:00Z",
+      "case": "patient_001",
+      "resource": "coordinator",
+      "attributes": {
+        "confirmed": true,
+        "reservation_id": "RES_001",
+        "confirmed_at": "2024-02-01T08:25:00Z"
+      }
+    },
+    {
+      "id": "e7",
+      "activity": "StartTreatment",
+      "timestamp": "2024-02-01T09:30:00Z",
+      "case": "patient_001",
+      "resource": "medical_team",
+      "attributes": {
+        "treatment_type": "cardiac_surgery",
+        "actual_start": "2024-02-01T09:35:00Z",
+        "resources_active": true
+      }
+    },
+    {
+      "id": "e8",
+      "activity": "MonitorUsage",
+      "timestamp": "2024-02-01T10:30:00Z",
+      "case": "patient_001",
+      "resource": "monitoring_system",
+      "attributes": {
+        "usage_normal": true,
+        "resource_stress": "low",
+        "time_elapsed": "1 hour"
+      }
+    },
+    {
+      "id": "e9",
+      "activity": "MonitorUsage",
+      "timestamp": "2024-02-01T11:30:00Z",
+      "case": "patient_001",
+      "resource": "monitoring_system",
+      "attributes": {
+        "usage_normal": true,
+        "resource_stress": "normal",
+        "completion_estimate": "30 minutes remaining"
+      }
+    },
+    {
+      "id": "e10",
+      "activity": "EndTreatment",
+      "timestamp": "2024-02-01T12:05:00Z",
+      "case": "patient_001",
+      "resource": "medical_team",
+      "attributes": {
+        "outcome": "successful",
+        "completion_time": "2024-02-01T12:05:00Z",
+        "efficiency_score": 0.92
+      }
+    },
+    {
+      "id": "e11",
+      "activity": "ReleaseResources",
+      "timestamp": "2024-02-01T12:15:00Z",
+      "case": "patient_001",
+      "resource": "resource_manager",
+      "attributes": {
+        "resources_released": true,
+        "room_available": "2024-02-01T13:00:00Z",
+        "maintenance_required": false
+      }
+    },
+    {
+      "id": "e12",
+      "activity": "UpdateMetrics",
+      "timestamp": "2024-02-01T12:20:00Z",
+      "case": "patient_001",
+      "resource": "metrics_system",
+      "attributes": {
+        "utilization_rate": 0.85,
+        "efficiency_improved": true,
+        "optimization_suggestion": "increase buffer time between cases"
+      }
+    },
+    {
+      "id": "e13",
+      "activity": "RegisterPatient",
+      "timestamp": "2024-02-01T09:00:00Z",
+      "case": "patient_002",
+      "resource": "registration_system",
+      "attributes": {
+        "condition": "scheduled",
+        "priority_level": "normal",
+        "service_type": "routine_checkup",
+        "required_specialty": "general_practice"
+      }
+    },
+    {
+      "id": "e14",
+      "activity": "ResourceRequest",
+      "timestamp": "2024-02-01T09:05:00Z",
+      "case": "patient_002",
+      "resource": "allocator_system",
+      "attributes": {
+        "requested_resources": [
+          "examination_room_1",
+          "general_practitioner",
+          "nurse"
+        ],
+        "priority": "normal",
+        "deadline": "2024-02-01T17:00:00Z"
+      }
+    },
+    {
+      "id": "e15",
+      "activity": "AllocateResources",
+      "timestamp": "2024-02-01T09:10:00Z",
+      "case": "patient_002",
+      "resource": "allocator_system",
+      "attributes": {
+        "allocation_status": "success",
+        "allocated_resources": [
+          "examination_room_1",
+          "doctor_gp_001",
+          "nurse_001"
+        ],
+        "conflicts": null
+      }
+    },
+    {
+      "id": "e16",
+      "activity": "TreatmentScheduling",
+      "timestamp": "2024-02-01T09:15:00Z",
+      "case": "patient_002",
+      "resource": "scheduler_system",
+      "attributes": {
+        "scheduled_time": "2024-02-01T10:00:00Z",
+        "duration": "30 minutes",
+        "room": "examination_room_1",
+        "team": "gp_team"
+      }
+    },
+    {
+      "id": "e17",
+      "activity": "ConfirmAllocation",
+      "timestamp": "2024-02-01T09:20:00Z",
+      "case": "patient_002",
+      "resource": "coordinator",
+      "attributes": {
+        "confirmed": true,
+        "reservation_id": "RES_002",
+        "confirmed_at": "2024-02-01T09:20:00Z"
+      }
+    },
+    {
+      "id": "e18",
+      "activity": "StartTreatment",
+      "timestamp": "2024-02-01T10:00:00Z",
+      "case": "patient_002",
+      "resource": "medical_team",
+      "attributes": {
+        "treatment_type": "routine_checkup",
+        "actual_start": "2024-02-01T10:00:00Z",
+        "resources_active": true
+      }
+    },
+    {
+      "id": "e19",
+      "activity": "EndTreatment",
+      "timestamp": "2024-02-01T10:30:00Z",
+      "case": "patient_002",
+      "resource": "medical_team",
+      "attributes": {
+        "outcome": "completed",
+        "completion_time": "2024-02-01T10:30:00Z",
+        "efficiency_score": 0.95
+      }
+    },
+    {
+      "id": "e20",
+      "activity": "ReleaseResources",
+      "timestamp": "2024-02-01T10:35:00Z",
+      "case": "patient_002",
+      "resource": "resource_manager",
+      "attributes": {
+        "resources_released": true,
+        "room_available": "2024-02-01T11:00:00Z",
+        "maintenance_required": false
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "patient_001",
+      "type": "patient_case",
+      "attributes": {
+        "patient_id": "P001",
+        "condition": "emergency",
+        "priority": "highest",
+        "service_type": "cardiac_surgery",
+        "status": "completed",
+        "start_time": "2024-02-01T09:30:00Z",
+        "end_time": "2024-02-01T12:05:00Z"
+      }
+    },
+    {
+      "id": "patient_002",
+      "type": "patient_case",
+      "attributes": {
+        "patient_id": "P002",
+        "condition": "scheduled",
+        "priority": "normal",
+        "service_type": "routine_checkup",
+        "status": "completed",
+        "start_time": "2024-02-01T10:00:00Z",
+        "end_time": "2024-02-01T10:30:00Z"
+      }
+    },
+    {
+      "id": "or_1",
+      "type": "physical_resource",
+      "attributes": {
+        "resource_id": "operating_room_1",
+        "resource_type": "operating_room",
+        "capacity": "1 case",
+        "utilization_rate": 0.85,
+        "maintenance_schedule": "2024-02-02T02:00:00Z"
+      }
+    },
+    {
+      "id": "exam_room_1",
+      "type": "physical_resource",
+      "attributes": {
+        "resource_id": "examination_room_1",
+        "resource_type": "examination_room",
+        "capacity": "1 patient",
+        "utilization_rate": 0.60,
+        "maintenance_schedule": null
+      }
+    },
+    {
+      "id": "cardio_team",
+      "type": "human_resource",
+      "attributes": {
+        "resource_id": "cardiovascular_team",
+        "specialty": "cardiovascular",
+        "team_size": 8,
+        "current_load": 1,
+        "max_load": 2
+      }
+    }
+  ],
+  "relations": [
+    {
+      "source": "e1",
+      "target": "patient_001",
+      "type": "produce"
+    },
+    {
+      "source": "e10",
+      "target": "patient_001",
+      "type": "consume"
+    },
+    {
+      "source": "e13",
+      "target": "patient_002",
+      "type": "produce"
+    },
+    {
+      "source": "e19",
+      "target": "patient_002",
+      "type": "consume"
+    },
+    {
+      "source": "e7",
+      "target": "or_1",
+      "type": "use"
+    },
+    {
+      "source": "e11",
+      "target": "or_1",
+      "type": "release"
+    },
+    {
+      "source": "e18",
+      "target": "exam_room_1",
+      "type": "use"
+    },
+    {
+      "source": "e20",
+      "target": "exam_room_1",
+      "type": "release"
+    },
+    {
+      "source": "e7",
+      "target": "cardio_team",
+      "type": "assign"
+    }
+  ]
+}

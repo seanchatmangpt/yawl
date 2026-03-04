@@ -1,0 +1,25 @@
+{
+  "constraints": [
+    {
+      "id": "A1",
+      "name": "Exclusive Choice",
+      "description": "At most one of A or B can occur",
+      "type": "ex_choice",
+      "parameters": ["A", "B"]
+    },
+    {
+      "id": "A2",
+      "name": "Existence",
+      "description": "A must occur at least once",
+      "type": "existence",
+      "parameters": ["A"]
+    },
+    {
+      "id": "O1",
+      "name": "Responded Existence",
+      "description": "If A occurs, then B must occur afterwards",
+      "type": "resp_existence",
+      "parameters": ["A", "B"]
+    }
+  ]
+}

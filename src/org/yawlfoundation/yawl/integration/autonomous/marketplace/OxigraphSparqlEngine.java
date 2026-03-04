@@ -29,8 +29,11 @@ import java.util.Objects;
  *
  * <p>Delegates all SPARQL operations to {@link YawlNativeClient}, which targets
  * the {@code /sparql/*} endpoints of the yawl-native service (default port 8083).
- * Unlike {@link QLeverSparqlEngine}, this engine supports mutable operations:
+ * This engine supports mutable operations:
  * {@link #loadTurtle(String)} and {@link #sparqlUpdate(String)}.</p>
+ *
+ * <p><strong>NOTE:</strong> For QLever, use {@link QLeverEmbeddedEngineAdapter}
+ * which wraps the embedded FFI engine (in-process, not HTTP).</p>
  *
  * <p>The {@link #isAvailable()} check hits {@code GET /sparql/health} and returns
  * {@code false} on connection refused — it never throws.</p>
