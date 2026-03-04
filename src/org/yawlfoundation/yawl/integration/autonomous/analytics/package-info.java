@@ -31,8 +31,8 @@
  *   <li><b>Query</b>: {@link org.yawlfoundation.yawl.integration.autonomous.analytics.WorkflowQueryService}
  *       provides 10 pre-built SPARQL queries for bypass detection, throughput,
  *       bottleneck analysis, SLA reporting, and full case path traces — all executed
- *       against QLever via
- *       {@link org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverSparqlEngine}.</li>
+ *       against the embedded QLever engine via
+ *       {@link org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverEmbeddedEngineAdapter}.</li>
  *
  *   <li><b>Present</b>: {@link org.yawlfoundation.yawl.integration.autonomous.analytics.WorkflowAnalytics}
  *       provides typed Java 25 record types ({@code TaskSummary}, {@code CaseSummary},

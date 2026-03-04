@@ -1,0 +1,16 @@
+
+io:format("=== Testing ML Bridge Supervision Tree ===
+
+"),
+
+% 1. Start supervisor
+case ml_bridge_sup:start_link() of
+    {ok, _} -> io:format("✓ Supervisor started
+");
+    {error, {already_started, _}} -> io:format("✓ Supervisor already running
+");
+    {error, Reason} -> io:format("✗ Failed: ~p
+", [Reason])
+end.
+
+

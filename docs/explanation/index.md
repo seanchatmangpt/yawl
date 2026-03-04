@@ -24,6 +24,7 @@ Understanding-oriented content that illuminates the context, concepts, and reaso
 | [worklet-service.md](worklet-service.md) | RDR-based runtime workflow adaptation |
 | [deployment-architecture.md](deployment-architecture.md) | Deployment topology and component placement |
 | [architecture-comparison.md](architecture-comparison.md) | Architecture options and trade-offs |
+| [native-bridge-pattern.md](native-bridge-pattern.md) | Three domains (JVM, BEAM, Rust), two boundaries, one isolation guarantee |
 
 ## Integration & External Connectivity
 
@@ -72,6 +73,8 @@ Understanding-oriented content that illuminates the context, concepts, and reaso
 | [export-competitive.md](export-competitive.md) | Competitive analysis for export formats |
 | [api-client-generation.md](api-client-generation.md) | API client generation opportunities |
 | [process-mining.md](process-mining.md) | Process mining enhancement plan |
+| [process-mining-architecture.md](process-mining-architecture.md) | Process mining architecture (OCEL2 vs XES, algorithm trade-offs, FFI design) |
+| [process-mining-architecture.md](process-mining-architecture.md) | OCEL2 vs XES, algorithm trade-offs, embedded FFI, real-time mining |
 | [tdd-manifesto.md](tdd-manifesto.md) | TDD principles and practices |
 | [temporal-anomaly-sentinel.md](temporal-anomaly-sentinel.md) | Temporal anomaly detection |
 | [observatory-improvements.md](observatory-improvements.md) | Observatory enhancement proposals |

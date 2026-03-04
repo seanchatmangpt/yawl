@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<log xes:version="1.0" xes:creator="YAWL Process Mining Bridge Test" xmlns:xes="http://www.xes.org/standard/0.95.xes">
+  <global trace:concept:name="cost" trace:concept:type="string"/>
+  <global trace:concept:name="resource" trace:concept:type="string"/>
+  <global event:concept:name="resource" event:concept:type="string"/>
+  <global event:concept:name="cost" event:concept:type="string"/>
+  <global event:concept:name="concept:name" event:concept:type="string"/>
+
+  <trace>
+    <string key="concept:name" value="Case_1"/>
+    <string key="cost" value="450"/>
+    <string key="resource" value="Resource_1"/>
+    <event>
+      <string key="concept:name" value="Start"/>
+      <string key="timestamp" value="2024-01-01T10:00:00"/>
+      <string key="resource" value="Resource_1"/>
+      <string key="cost" value="100"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Task_A"/>
+      <string key="timestamp" value="2024-01-01T10:30:00"/>
+      <string key="resource" value="Resource_2"/>
+      <string key="cost" value="200"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Task_B"/>
+      <string key="timestamp" value="2024-01-01T11:00:00"/>
+      <string key="resource" value="Resource_3"/>
+      <string key="cost" value="150"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Complete"/>
+      <string key="timestamp" value="2024-01-01T11:30:00"/>
+      <string key="resource" value="Resource_1"/>
+      <string key="cost" value="50"/>
+    </event>
+  </trace>
+
+  <trace>
+    <string key="concept:name" value="Case_2"/>
+    <string key="cost" value="350"/>
+    <string key="resource" value="Resource_2"/>
+    <event>
+      <string key="concept:name" value="Start"/>
+      <string key="timestamp" value="2024-01-01T12:00:00"/>
+      <string key="resource" value="Resource_2"/>
+      <string key="cost" value="100"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Task_A"/>
+      <string key="timestamp" value="2024-01-01T12:30:00"/>
+      <string key="resource" value="Resource_1"/>
+      <string key="cost" value="180"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Complete"/>
+      <string key="timestamp" value="2024-01-01T13:00:00"/>
+      <string key="resource" value="Resource_3"/>
+      <string key="cost" value="70"/>
+    </event>
+  </trace>
+
+  <trace>
+    <string key="concept:name" value="Case_3"/>
+    <string key="cost" value="600"/>
+    <string key="resource" value="Resource_3"/>
+    <event>
+      <string key="concept:name" value="Start"/>
+      <string key="timestamp" value="2024-01-01T14:00:00"/>
+      <string key="resource" value="Resource_3"/>
+      <string key="cost" value="100"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Task_A"/>
+      <string key="timestamp" value="2024-01-01T14:30:00"/>
+      <string key="resource" value="Resource_1"/>
+      <string key="cost" value="250"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Task_B"/>
+      <string key="timestamp" value="2024-01-01T15:00:00"/>
+      <string key="resource" value="Resource_2"/>
+      <string key="cost" value="200"/>
+    </event>
+    <event>
+      <string key="concept:name" value="Complete"/>
+      <string key="timestamp" value="2024-01-01T15:30:00"/>
+      <string key="resource" value="Resource_1"/>
+      <string key="cost" value="50"/>
+    </event>
+  </trace>
+</log>

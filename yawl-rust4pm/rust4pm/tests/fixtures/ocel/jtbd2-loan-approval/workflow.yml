@@ -1,0 +1,323 @@
+---
+# YAWL Workflow for Loan Approval
+# Complex approval workflow with parallel processing and conditional routing
+
+id: "loan-approval-jtbd2"
+name: "Loan Approval Workflow"
+version: "1.0"
+namespace: "yawl.tests.fixtures"
+
+# Process flow with parallel branches and conditional routing
+startTasks:
+  - "start_application"
+
+tasks:
+  "start_application":
+    name: "Submit Loan Application"
+    input: |
+      {
+        "applicant_id": "@customer.id",
+        "loan_amount": "@loan.requested_amount",
+        "purpose": "@loan.purpose",
+        "credit_score": "@customer.credit_score",
+        "income": "@customer.annual_income",
+        "collateral_value": "@loan.collateral.value"
+      }
+    output: |
+      {
+        "application_id": "@generated.uuid",
+        "submitted_at": "@timestamp",
+        "application_status": "under_review",
+        "loan_type": "@calculate_loan_type(@loan.requested_amount)"
+      }
+    next: "initial_assessment"
+
+  "initial_assessment":
+    name: "Initial Assessment"
+    role: "loan_officer"
+    input: |
+      {
+        "application_id": "@application.id",
+        "loan_amount": "@loan.amount",
+        "applicant_profile": "@customer.profile"
+      }
+    output: |
+      {
+        "assessment_id": "@generated.uuid",
+        "preliminary_risk": "@calculate_preliminary_risk()",
+        "rejection_reason": null,
+        "approved_for_review": true
+      }
+    next: "conditional_routing"
+    exception:
+      condition: "incomplete_application"
+      next: "request_additional_info"
+      handler: "incomplete_handler"
+
+  "conditional_routing":
+    name: "Conditional Routing"
+    input: |
+      {
+        "loan_amount": "@loan.amount",
+        "preliminary_risk": "@assessment.preliminary_risk"
+      }
+    output: |
+      {
+        "routing_decision": "@determine_routing(@loan.amount)",
+        "requires_committee": "@loan.amount > 50000",
+        "parallel_processes": "@determine_parallel_processes(@loan.amount)"
+      }
+    next: "approval_branch"
+
+  "approval_branch":
+    name: "Approval Branch"
+    options: [
+      {
+        "condition": "@loan.amount <= 10000",
+        "next": "approval_officer"
+      },
+      {
+        "condition": "@loan.amount <= 50000",
+        "next": "approval_supervisor"
+      },
+      {
+        "condition": "@loan.amount > 50000",
+        "next": "approval_committee"
+      }
+    ]
+
+  "approval_officer":
+    name: "Officer Approval"
+    role: "loan_officer"
+    input: |
+      {
+        "application_id": "@application.id",
+        "assessment": "@assessment",
+        "risk_score": "@risk.analysis.score"
+      }
+    output: |
+      {
+        "officer_approval": true,
+        "approved_at": "@timestamp",
+        "officer_comments": "Approved within limits"
+      }
+    next: "fund_loan"
+
+  "approval_supervisor":
+    name: "Supervisor Review"
+    role: "approval_manager"
+    input: |
+      {
+        "application_id": "@application.id",
+        "risk_analysis": "@risk",
+        "credit_report": "@credit",
+        "collateral_report": "@collateral"
+      }
+    output: |
+      {
+        "supervisor_decision": "approve",
+        "conditions_met": true,
+        "approval_conditions": []
+      }
+    next: "fund_loan"
+
+  "approval_committee":
+    name: "Committee Approval"
+    role: "loan_committee"
+    input: |
+      {
+        "application_id": "@application.id",
+        "full_analysis": "@risk",
+        "credit_report": "@credit",
+        "collateral_evaluation": "@collateral",
+        "loan_amount": "@loan.amount"
+      }
+    output: |
+      {
+        "committee_decision": "approved",
+        "vote_count": "4-1",
+        "conditions": "@create_committee_conditions()"
+      }
+    next: "fund_loan"
+
+  "parallel_risk_analysis":
+    name: "Risk Analysis (Parallel)"
+    role: "risk_analyst"
+    input: |
+      {
+        "application_id": "@application.id",
+        "customer_profile": "@customer",
+        "loan_terms": "@loan"
+      }
+    output: |
+      {
+        "risk_score": "@calculate_risk_score()",
+        "risk_factors": [],
+        "recommendation": "proceed"
+      }
+    next: "wait_parallel_complete"
+
+  "parallel_credit_check":
+    name: "Credit Check (Parallel)"
+    role: "credit_checker"
+    input: |
+      {
+        "customer_id": "@customer.id",
+        "loan_amount": "@loan.amount",
+        "loan_purpose": "@loan.purpose"
+      }
+    output: |
+      {
+        "credit_score": 750,
+        "approval_probability": "95%",
+        "risk_level": "low"
+      }
+    next: "wait_parallel_complete"
+
+  "parallel_collateral":
+    name: "Collateral Evaluation (Parallel)"
+    role: "collateral_specialist"
+    input: |
+      {
+        "collateral_items": "@loan.collateral.items",
+        "loan_amount": "@loan.amount"
+      }
+    output: |
+      {
+        "collateral_value": "@calculate_collateral_value()",
+        "loan_to_value_ratio": "0.75",
+        "collateral_sufficient": true
+      }
+    next: "wait_parallel_complete"
+
+  "wait_parallel_complete":
+    name: "Wait for Parallel Processes"
+    output: |
+      {
+        "parallel_tasks_completed": true,
+        "combined_analysis": "@combine_risk_analysis()"
+      }
+    next: "decision_review"
+
+  "decision_review":
+    name: "Final Decision Review"
+    role: "approval_manager"
+    input: |
+      {
+        "risk_analysis": "@risk",
+        "credit_report": "@credit",
+        "collateral_report": "@collateral",
+        "loan_amount": "@loan.amount"
+      }
+    output: |
+      {
+        "final_recommendation": "approve",
+        "approval_conditions": [],
+        "risk_level": "acceptable"
+      }
+    next: "approval_decision"
+
+  "approval_decision":
+    name: "Approval Decision"
+    input: |
+      {
+        "recommendation": "@review.recommendation",
+        "loan_amount": "@loan.amount",
+        "risk_assessment": "@risk"
+      }
+    output: |
+      {
+        "decision": "approved",
+        "conditions_met": true,
+        "approved_at": "@timestamp"
+      }
+    next: "conditional_funding"
+
+  "conditional_funding":
+    name: "Conditional Funding"
+    options: [
+      {
+        "condition": "@loan.amount > 100000",
+        "next": "board_approval"
+      },
+      {
+        "condition": "@loan.amount <= 100000",
+        "next": "automated_funding"
+      }
+    ]
+
+  "automated_funding":
+    name: "Automated Funding"
+    input: |
+      {
+        "application_id": "@application.id",
+        "approval": "@approval",
+        "loan_amount": "@loan.amount"
+      }
+    output: |
+      {
+        "funded": true,
+        "funding_id": "@generated.uuid",
+        "disbursement_method": "ach",
+        "completed_at": "@timestamp"
+      }
+    next: "end_process"
+
+  "board_approval":
+    name: "Board Approval"
+    role: "executive_committee"
+    input: |
+      {
+        "application": "@application",
+        "risk_analysis": "@risk",
+        "loan_amount": "@loan.amount"
+      }
+    output: |
+      {
+        "board_approved": true,
+        "conditions": [],
+        "funding_approved": true
+      }
+    next: "automated_funding"
+
+  "request_additional_info":
+    name: "Request Additional Information"
+    role: "loan_officer"
+    input: |
+      {
+        "application_id": "@application.id",
+        "missing_info": ["income_proof", "collateral_docs"]
+      }
+    output: |
+      {
+        "request_sent": true,
+        "response_deadline": "@timestamp.plusDays(7)"
+      }
+    next: "end_process"
+
+  "fund_loan":
+    name: "Fund Loan"
+    input: |
+      {
+        "application_id": "@application.id",
+        "approval_details": "@approval",
+        "funding_amount": "@loan.amount"
+      }
+    output: |
+      {
+        "loan_id": "@generated.uuid",
+        "funding_status": "completed",
+        "disbursed_at": "@timestamp"
+      }
+    next: "end_process"
+
+  "end_process":
+    name: "End Process"
+    output: |
+      {
+        "process_completed": true,
+        "completed_at": "@timestamp"
+      }
+
+endTasks:
+  - "end_process"

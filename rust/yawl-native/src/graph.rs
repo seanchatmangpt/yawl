@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use oxigraph::io::RdfFormat;
-use oxigraph::sparql::{QueryResults, SparqlEvaluator};
+use oxigraph::sparql::{QueryResults};
 use oxigraph::store::Store;
 
 /// In-memory RDF graph backed by Oxigraph.
@@ -43,12 +43,9 @@ impl Graph {
     /// Execute a SPARQL SELECT and return rows as BTreeMap<variable, N-Triples-encoded value>.
     /// Use `term_value()` to strip angle brackets / quotes from individual values.
     pub fn query_select(&self, sparql: &str) -> Result<Vec<BTreeMap<String, String>>, String> {
-        let results = SparqlEvaluator::new()
-            .parse_query(sparql)
-            .map_err(|e| format!("parse_query: {}", e))?
-            .on_store(self.inner.as_ref())
-            .execute()
-            .map_err(|e| format!("execute: {}", e))?;
+        let results = self.inner
+            .query(sparql)
+            .map_err(|e| format!("query: {}", e))?;
 
         match results {
             QueryResults::Solutions(solutions) => {
@@ -79,12 +76,9 @@ pub struct ConstructExecutor<'a> {
 impl<'a> ConstructExecutor<'a> {
     /// Execute a CONSTRUCT query and return the result triples as N-Triples strings.
     pub fn execute(&self, sparql: &str) -> Result<Vec<String>, String> {
-        let results = SparqlEvaluator::new()
-            .parse_query(sparql)
-            .map_err(|e| format!("parse_query: {}", e))?
-            .on_store(self.graph.inner.as_ref())
-            .execute()
-            .map_err(|e| format!("execute: {}", e))?;
+        let results = self.graph.inner
+            .query(sparql)
+            .map_err(|e| format!("query: {}", e))?;
 
         match results {
             QueryResults::Graph(quads) => quads

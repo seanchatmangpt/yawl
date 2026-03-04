@@ -29,6 +29,18 @@ get_fix_guidance() {
         H_MOCK_CLASS)
             echo "Rename class to real name or delete from production code"
             ;;
+        H_STUB)
+            echo "Replace empty/placeholder return with real implementation or throw UnsupportedOperationException"
+            ;;
+        H_EMPTY)
+            echo "Implement method body with real logic or throw UnsupportedOperationException"
+            ;;
+        H_FALLBACK)
+            echo "Propagate exception instead of catching and returning fake data"
+            ;;
+        H_LIE)
+            echo "Update code to match documentation or update documentation to match code behavior"
+            ;;
         H_SILENT)
             echo "Throw exception instead of logging, or propagate the error to caller"
             ;;
@@ -56,19 +68,31 @@ generate_summary() {
     local h_todo_count=0
     local h_mock_count=0
     local h_mock_class_count=0
+    local h_stub_count=0
+    local h_empty_count=0
+    local h_fallback_count=0
+    local h_lie_count=0
     local h_silent_count=0
 
     h_todo_count=$(echo "$violations_json" | grep -o '"pattern":"H_TODO"' | wc -l)
     h_mock_count=$(echo "$violations_json" | grep -o '"pattern":"H_MOCK"' | wc -l)
     h_mock_class_count=$(echo "$violations_json" | grep -o '"pattern":"H_MOCK_CLASS"' | wc -l)
+    h_stub_count=$(echo "$violations_json" | grep -o '"pattern":"H_STUB"' | wc -l)
+    h_empty_count=$(echo "$violations_json" | grep -o '"pattern":"H_EMPTY"' | wc -l)
+    h_fallback_count=$(echo "$violations_json" | grep -o '"pattern":"H_FALLBACK"' | wc -l)
+    h_lie_count=$(echo "$violations_json" | grep -o '"pattern":"H_LIE"' | wc -l)
     h_silent_count=$(echo "$violations_json" | grep -o '"pattern":"H_SILENT"' | wc -l)
 
     cat <<EOF
     "h_todo_count": $h_todo_count,
     "h_mock_count": $h_mock_count,
     "h_mock_class_count": $h_mock_class_count,
+    "h_stub_count": $h_stub_count,
+    "h_empty_count": $h_empty_count,
+    "h_fallback_count": $h_fallback_count,
+    "h_lie_count": $h_lie_count,
     "h_silent_count": $h_silent_count,
-    "total_violations": $((h_todo_count + h_mock_count + h_mock_class_count + h_silent_count))
+    "total_violations": $((h_todo_count + h_mock_count + h_mock_class_count + h_stub_count + h_empty_count + h_fallback_count + h_lie_count + h_silent_count))
 EOF
 }
 
@@ -235,6 +259,10 @@ if [ "$VALIDATE_EMIT_MODE" -eq 1 ] && [ -n "$EMIT_DIR" ]; then
     "h_todo_count": 0,
     "h_mock_count": 0,
     "h_mock_class_count": 0,
+    "h_stub_count": 0,
+    "h_empty_count": 0,
+    "h_fallback_count": 0,
+    "h_lie_count": 0,
     "h_silent_count": 0,
     "total_violations": 0
   },
@@ -272,10 +300,15 @@ EOF
     done < <(find "$EMIT_DIR" -name "*.java" -type f 2>/dev/null)
 
     # Define patterns once (outside the loop to avoid declare -A issues in subshells)
+    # All 7 H-Guard patterns as documented in CLAUDE.md and H-GUARDS-*.md
     declare -A patterns=(
         [H_TODO]='//\s*(TODO|FIXME|XXX|HACK|LATER|FUTURE|NOTE:.*implement|REVIEW:.*implement|TEMPORARY|@incomplete|@unimplemented|@stub|@mock|@fake|not\s+implemented\s+yet|coming\s+soon|placeholder|for\s+demo|simplified\s+version|basic\s+implementation)'
         [H_MOCK]='(mock|stub|fake|demo)[A-Z][a-zA-Z]*\s*[=(]'
         [H_MOCK_CLASS]='(class|interface)\s+(Mock|Stub|Fake|Demo)[A-Za-z]*\s+(implements|extends|\{)'
+        [H_STUB]='return\s+""\s*;|return\s+0\s*;.*//.*stub|return\s+null\s*;.*//.*(stub|placeholder)'
+        [H_EMPTY]='public\s+void\s+\w+\([^)]*\)\s*\{\s*\}'
+        [H_FALLBACK]='catch\s*\([^)]+\)\s*\{[^}]*(return\s+(new|mock|fake|test|"[^"]*"|null)|log\.(warn|error).*not\s+implemented)'
+        [H_LIE]='(//\s*@return\s+never\s+null.*return\s+null|//\s*@throws.*throw\s+new)'
         [H_SILENT]='log\.(warn|error)\([^)]*"[^"]*not\s+implemented[^"]*"'
     )
 

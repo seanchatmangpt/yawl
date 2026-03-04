@@ -1,84 +1,115 @@
-/*
- * Copyright (c) 2004-2026 The YAWL Foundation. All rights reserved.
- *
- * This file is part of YAWL. YAWL is free software: you can
- * redistribute it and/or modify it under the terms of the GNU Lesser
- * General Public License as published by the Free Software Foundation.
- */
-
 package org.yawlfoundation.yawl.ggen.validation.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.yawlfoundation.yawl.ggen.validation.Severity;
+import java.util.Set;
 import java.util.Objects;
 
 /**
- * Represents a single guard violation detected during code validation.
- * Contains pattern name, severity, file location, violating code, and fix guidance.
+ * Represents a guard violation detected during hyper-standards validation.
+ *
+ * <p>Guard violations are categorized by pattern type (H_TODO, H_MOCK, etc.)
+ * and include severity level, location information, and automatic fix guidance.
+ *
+ * <p>This class is immutable and follows Java 25 modern patterns with validation.
+ *
+ * @since 1.0
  */
-public class GuardViolation {
-    private final String pattern;      // H_TODO, H_MOCK, H_STUB, etc.
-    private final String severity;     // FAIL or WARN
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public final class GuardViolation {
+
+    /**
+     * Valid guard pattern names. All patterns must be validated against this set.
+     */
+    private static final Set<String> VALID_PATTERNS = Set.of(
+        "H_TODO", "H_MOCK", "H_STUB", "H_EMPTY",
+        "H_FALLBACK", "H_LIE", "H_SILENT", "H_ERROR"
+    );
+
+    private final String pattern;
+    private final Severity severity;
+    private final String file;
     private final int line;
-    private final String content;      // Exact code that violates
+    private final String content;
     private final String fixGuidance;
-    private String file;               // Set during validation
 
     /**
-     * Create a new guard violation.
+     * Creates a new GuardViolation with the specified parameters.
      *
-     * @param pattern the guard pattern name (e.g., H_TODO)
+     * @param pattern the guard pattern type (must be one of H_TODO, H_MOCK, etc.)
      * @param severity the severity level (FAIL or WARN)
-     * @param line the line number where violation occurs (1-indexed)
+     * @param file the path to the file containing the violation
+     * @param line the line number of the violation (must be >= 0)
      * @param content the exact code content that violates the guard
+     * @throws IllegalArgumentException if pattern is invalid, severity is null,
+     *                                  or line number is negative
      */
-    public GuardViolation(String pattern, String severity, int line, String content) {
-        this.pattern = Objects.requireNonNull(pattern, "pattern must not be null");
-        this.severity = Objects.requireNonNull(severity, "severity must not be null");
+    public GuardViolation(String pattern, Severity severity, String file, int line, String content) {
+        this.pattern = validatePattern(pattern);
+        this.severity = Objects.requireNonNull(severity, "Severity cannot be null");
+        this.file = Objects.requireNonNull(file, "File path cannot be null");
+        validateLineNumber(line);
         this.line = line;
-        this.content = Objects.requireNonNull(content, "content must not be null");
-        this.fixGuidance = getFixGuidanceFor(pattern);
+        this.content = Objects.requireNonNull(content, "Content cannot be null");
+        this.fixGuidance = generateFixGuidance(pattern);
     }
 
     /**
-     * Determine fix guidance based on the violation pattern.
+     * Creates a new GuardViolation with string-based severity.
+     *
+     * @param pattern the guard pattern type (must be one of H_TODO, H_MOCK, etc.)
+     * @param severity the severity level as string (FAIL or WARN)
+     * @param file the path to the file containing the violation
+     * @param line the line number of the violation (must be >= 0)
+     * @param content the exact code content that violates the guard
+     * @throws IllegalArgumentException if pattern is invalid, severity is not FAIL/WARN,
+     *                                  or line number is negative
      */
-    private static String getFixGuidanceFor(String pattern) {
+    public GuardViolation(String pattern, String severity, String file, int line, String content) {
+        this(pattern, Severity.fromString(severity), file, line, content);
+    }
+
+    /**
+     * Validates that the pattern is supported.
+     */
+    private String validatePattern(String pattern) {
+        Objects.requireNonNull(pattern, "Pattern cannot be null");
+
+        if (!VALID_PATTERNS.contains(pattern)) {
+            throw new IllegalArgumentException(
+                "Invalid guard pattern: " + pattern + ". Must be one of: " + VALID_PATTERNS
+            );
+        }
+
+        return pattern;
+    }
+
+    /**
+     * Validates that the line number is non-negative.
+     */
+    private void validateLineNumber(int line) {
+        if (line < 0) {
+            throw new IllegalArgumentException("Line number must be >= 0, got: " + line);
+        }
+    }
+
+    /**
+     * Generates fix guidance text based on the guard pattern type.
+     *
+     * @param pattern the guard pattern type
+     * @return descriptive fix guidance text
+     */
+    private String generateFixGuidance(String pattern) {
         return switch (pattern) {
-            case "H_TODO" ->
-                "Implement real logic or throw UnsupportedOperationException";
-            case "H_MOCK" ->
-                "Delete mock class or implement real service";
-            case "H_STUB" ->
-                "Implement real method logic or throw exception";
-            case "H_EMPTY" ->
-                "Implement real logic or throw exception";
-            case "H_FALLBACK" ->
-                "Propagate exception instead of returning fake data";
-            case "H_LIE" ->
-                "Update code to match documentation or vice versa";
-            case "H_SILENT" ->
-                "Throw exception instead of logging";
-            default ->
-                "Fix guard violation according to pattern definition";
-        };
-    }
-
-    /**
-     * Classify the line number into a coarse code region.
-     *
-     * <p><b>JEP 455 — Primitive Types in Patterns (Java 25 preview)</b>:
-     * {@code switch (int)} with guarded {@code case int ln when ln <= N} patterns gives
-     * exhaustive, zero-boxing dispatch over the primitive {@code line} field.
-     * Before JEP 455 this required {@code Integer.compare} or an if/else ladder.
-     *
-     * @return one of "imports" (≤10), "class-header" (≤50), "body" (≤200), or "end"
-     */
-    @SuppressWarnings("preview")
-    public String getLocationBand() {
-        return switch (line) {
-            case int ln when ln <= 10  -> "imports";
-            case int ln when ln <= 50  -> "class-header";
-            case int ln when ln <= 200 -> "body";
-            case int ln                -> "end";
+            case "H_TODO" -> "Implement real logic or throw UnsupportedOperationException";
+            case "H_MOCK" -> "Delete mock or implement real service";
+            case "H_STUB" -> "Implement real method or throw exception";
+            case "H_EMPTY" -> "Implement real logic or throw exception";
+            case "H_FALLBACK" -> "Propagate exception instead of faking data";
+            case "H_LIE" -> "Update code to match documentation";
+            case "H_SILENT" -> "Throw exception instead of logging";
+            case "H_ERROR" -> "Fix transient error and re-run validation";
+            default -> throw new IllegalArgumentException("Unknown pattern: " + pattern);
         };
     }
 
@@ -88,8 +119,12 @@ public class GuardViolation {
         return pattern;
     }
 
-    public String getSeverity() {
+    public Severity getSeverity() {
         return severity;
+    }
+
+    public String getFile() {
+        return file;
     }
 
     public int getLine() {
@@ -104,13 +139,63 @@ public class GuardViolation {
         return fixGuidance;
     }
 
-    public String getFile() {
-        return file;
+    // Builder pattern for fluent construction
+
+    /**
+     * Builder for creating GuardViolation instances with fluent API.
+     */
+    public static final class Builder {
+        private String pattern;
+        private Severity severity = Severity.FAIL; // Default severity
+        private String file;
+        private int line;
+        private String content;
+
+        public Builder pattern(String pattern) {
+            this.pattern = pattern;
+            return this;
+        }
+
+        public Builder severity(Severity severity) {
+            this.severity = severity;
+            return this;
+        }
+
+        public Builder severity(String severity) {
+            this.severity = Severity.fromString(severity);
+            return this;
+        }
+
+        public Builder file(String file) {
+            this.file = file;
+            return this;
+        }
+
+        public Builder line(int line) {
+            this.line = line;
+            return this;
+        }
+
+        public Builder content(String content) {
+            this.content = content;
+            return this;
+        }
+
+        public GuardViolation build() {
+            return new GuardViolation(pattern, severity, file, line, content);
+        }
     }
 
-    public void setFile(String file) {
-        this.file = file;
+    /**
+     * Creates a new builder instance.
+     *
+     * @return a new builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
+
+    // Standard object methods
 
     @Override
     public boolean equals(Object o) {
@@ -118,21 +203,34 @@ public class GuardViolation {
         if (o == null || getClass() != o.getClass()) return false;
         GuardViolation that = (GuardViolation) o;
         return line == that.line &&
-               Objects.equals(pattern, that.pattern) &&
-               Objects.equals(file, that.file) &&
-               Objects.equals(content, that.content);
+               pattern.equals(that.pattern) &&
+               severity.equals(that.severity) &&
+               file.equals(that.file) &&
+               content.equals(that.content);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pattern, file, line, content);
+        return Objects.hash(pattern, severity, file, line, content);
     }
 
     @Override
     public String toString() {
-        return String.format(
-            "GuardViolation{pattern=%s, severity=%s, file=%s, line=%d, content=%s}",
-            pattern, severity, file, line, content
-        );
+        return "GuardViolation{" +
+               "pattern='" + pattern + '\'' +
+               ", severity=" + severity +
+               ", file='" + file + '\'' +
+               ", line=" + line +
+               ", content='" + content + '\'' +
+               '}';
+    }
+
+    /**
+     * Creates a violation summary string suitable for logging.
+     *
+     * @return a formatted string describing the violation
+     */
+    public String toSummaryString() {
+        return String.format("%s at %s:%d - %s", pattern, file, line, content);
     }
 }

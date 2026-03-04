@@ -154,7 +154,7 @@ public class VanDerAalstPatternAdvisor {
 
         List<String> patternIds = selectPatterns(goals);
 
-        PatternDemoConfig config = PatternDemoConfig.builder()
+        PatternDemoConfig config = PatternDemoConfig.newBuilder()
             .outputFormat(PatternDemoConfig.OutputFormat.CONSOLE)
             .parallelExecution(true)
             .autoComplete(true)
@@ -235,7 +235,7 @@ public class VanDerAalstPatternAdvisor {
      * @return demo configuration
      */
     private PatternDemoConfig createDemoConfig(PatternDemoConfig config) {
-        PatternDemoConfig.Builder configBuilder = PatternDemoConfig.builder()
+        PatternDemoConfig.Builder configBuilder = PatternDemoConfig.newBuilder()
             .outputFormat(config.outputFormat())
             .timeoutSeconds(config.timeoutSeconds())
             .parallelExecution(config.parallelExecution())

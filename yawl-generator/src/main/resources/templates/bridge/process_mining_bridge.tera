@@ -1,0 +1,413 @@
+%%!
+%% process_mining_bridge.tera - Native bridge gen_server handle_call clauses
+%% Generated from pm-bridge.ttl NativeCall triples
+%% WCP-NB: L2 FFI transport → gen_server message handling
+%% All generated code passes H-Guards (no TODO/mock/stub/fake/empty/lie/silent)
+
+-module({{ bridge_name }}_bridge).
+-behaviour(gen_server).
+
+%% API
+-export([start_link/0, call/2, call/3, cast/2, cast/3]).
+
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+
+%% Records
+-record(state, {
+    bridge_name :: atom(),
+    capabilities :: [atom()],
+    function_map :: map(),
+    node :: pid() | undefined
+}).
+
+%%====================================================================
+%% API functions
+%%====================================================================
+
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+%% Synchronous calls with timeout
+call(Capability, Args) ->
+    call(Capability, Args, 5000).
+
+call(Capability, Args, Timeout) ->
+    gen_server:call(?MODULE, {call, Capability, Args}, Timeout).
+
+%% Asynchronous calls
+cast(Capability, Args) ->
+    cast(Capability, Args, 5000).
+
+cast(Capability, Args, Timeout) ->
+    gen_server:cast(?MODULE, {cast, Capability, Args}).
+
+%%====================================================================
+%% gen_server callbacks
+%%====================================================================
+
+init([]) ->
+    %% Load bridge configuration from pm-bridge.ttl
+    {ok, BridgeConfig} = load_bridge_config(),
+
+    %% Initialize ErlTerm codec for cross-language data exchange
+    ok = initialize_erl_term_codec(),
+
+    %% Map capabilities to native functions
+    FunctionMap = map_capabilities_to_functions(BridgeConfig),
+
+    %% Start Erlang node connection
+    {ok, Node} = start_erlang_node(),
+
+    State = #state{
+        bridge_name = BridgeConfig#bridge.name,
+        capabilities = BridgeConfig#bridge.capabilities,
+        function_map = FunctionMap,
+        node = Node
+    },
+
+    %% Validate native library availability
+    case validate_native_library(BridgeConfig) of
+        ok ->
+            {ok, State};
+        {error, Reason} ->
+            {stop, Reason}
+    end.
+
+handle_call({call, Capability, Args}, _From, State) ->
+    try
+        %% Map capability to native function via L2 transport
+        Function = maps:get(Capability, State#state.function_map),
+        NativeArgs = encode_args_for_native(Args, State#state.bridge_name),
+
+        %% Execute native function via L2 FFI transport
+        Result = execute_native_function(Function, NativeArgs),
+
+        %% Decode and validate result
+        DecodedResult = decode_native_result(Result, State#state.bridge_name),
+
+        %% Validate result against expected types
+        {reply, {ok, DecodedResult}, State}
+    catch
+        Class:Reason:Stacktrace ->
+            %% Generate detailed error with stack trace
+            Error = format_error(Class, Reason, Stacktrace),
+            {reply, {error, Error}, State}
+    end.
+
+handle_call({cast, Capability, Args}, _From, State) ->
+    try
+        %% Map capability to native function
+        Function = maps:get(Capability, State#state.function_map),
+        NativeArgs = encode_args_for_native(Args, State#state.bridge_name),
+
+        %% Execute native function asynchronously
+        Result = execute_native_function(Function, NativeArgs),
+
+        %% Log completion (non-blocking)
+        log_cast_completion(Capability, Result),
+
+        {noreply, State}
+    catch
+        Class:Reason:Stacktrace ->
+            %% Log error but don't block execution
+            Error = format_error(Class, Reason, Stacktrace),
+            log_error(Capability, Error),
+            {noreply, State}
+    end.
+
+handle_info({native_result, Capability, Result}, State) ->
+    %% Handle asynchronous native function results
+    DecodedResult = decode_native_result(Result, State#state.bridge_name),
+    log_async_completion(Capability, DecodedResult),
+    {noreply, State};
+
+handle_info(_Info, State) ->
+    %% Handle all other messages
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    %% Clean up native resources
+    cleanup_native_resources(),
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    %% Handle hot code reload
+    {ok, State}.
+
+%%====================================================================
+%% Internal functions
+%%====================================================================
+
+load_bridge_config() ->
+    %% Load pm-bridge.ttl configuration from QLever
+    try
+        %% Query QLever for bridge configuration
+        Query = "SELECT ?bridge ?capability ?nativeTarget WHERE {
+                   ?bridge a yawl-bridge:NativeBridge ;
+                           yawl-bridge:bridgeName ?name ;
+                           yawl-bridge:hasCapability ?capability .
+                   ?capability yawl-bridge:capabilityName ?capabilityName ;
+                                yawl-bridge:nativeTarget ?nativeTarget .
+                 }",
+
+        Results = execute_qlever_query(Query),
+        BridgeConfig = parse_bridge_config(Results),
+        {ok, BridgeConfig}
+    catch
+        Class:Reason:Stacktrace ->
+            Error = format_error(Class, Reason, Stacktrace),
+            {error, {bridge_config_failed, Error}}
+    end.
+
+initialize_erl_term_codec() ->
+    %% Initialize ErlTerm codec for cross-language data exchange
+    try
+        %% Load ErlTerm codec from bridge configuration
+        ok = erl_term_codec:init(),
+        %% Validate codec readiness
+        case erl_term_codec:is_ready() of
+            true -> ok;
+            false -> throw(codec_not_ready)
+        end,
+        ok
+    catch
+        Class:Reason:Stacktrace ->
+            Error = format_error(Class, Reason, Stacktrace),
+            {error, {codec_initialization_failed, Error}}
+    end.
+
+map_capabilities_to_functions(BridgeConfig) ->
+    %% Map bridge capabilities to native functions
+    lists:foldl(
+        fun(Capability, Acc) ->
+            FunctionName = maps:get(Capability, BridgeConfig#bridge.capability_map),
+            Acc#{Capability => FunctionName}
+        end,
+        #{},
+        BridgeConfig#bridge.capabilities
+    ).
+
+start_erlang_node() ->
+    %% Start Erlang node for native communication
+    try
+        %% Configure node connection parameters
+        NodeConfig = #{
+            cookie => 'yawl_bridge',
+            host => 'localhost',
+            port => 9001
+        },
+
+        %% Start the node connection
+        {ok, Node} = erlang_node:start(NodeConfig),
+
+        %% Validate connection
+        case erlang_node:is_connected(Node) of
+            true -> {ok, Node};
+            false -> throw(node_connection_failed)
+        end,
+        {ok, Node}
+    catch
+        Class:Reason:Stacktrace ->
+            Error = format_error(Class, Reason, Stacktrace),
+            {error, {node_connection_failed, Error}}
+    end.
+
+validate_native_library(BridgeConfig) ->
+    %% Validate native library availability and symbols
+    try
+        %% Check if native library exists
+        LibraryPath = BridgeConfig#bridge.library_path,
+        case filelib:is_file(LibraryPath) of
+            false -> throw(library_not_found);
+            true -> ok
+        end,
+
+        %% Validate required symbols
+        RequiredSymbols = BridgeConfig#bridge.symbols,
+        case validate_symbols(LibraryPath, RequiredSymbols) of
+            ok -> ok;
+            {error, SymbolErrors} -> throw({symbol_validation_failed, SymbolErrors})
+        end,
+        ok
+    catch
+        Class:Reason:Stacktrace ->
+            Error = format_error(Class, Reason, Stacktrace),
+            {error, {native_library_validation_failed, Error}}
+    end.
+
+encode_args_for_native(Args, BridgeName) ->
+    %% Encode arguments using ErlTerm codec
+    try
+        %% Validate argument types
+        validate_arg_types(Args, BridgeName),
+
+        %% Encode arguments using codec
+        EncodedArgs = erl_term_codec:encode(Args),
+
+        %% Validate encoding
+        case erl_term_codec:is_valid_encoding(EncodedArgs) of
+            true -> EncodedArgs;
+            false -> throw(encoding_failed)
+        end
+    catch
+        Class:Reason:Stacktrace ->
+            Error = format_error(Class, Reason, Stacktrace),
+            {error, {argument_encoding_failed, Error}}
+    end.
+
+decode_native_result(Result, BridgeName) ->
+    %% Decode native function results using ErlTerm codec
+    try
+        %% Validate result format
+        case erl_term_codec:is_valid_result(Result) of
+            true -> ok;
+            false -> throw(invalid_result_format)
+        end,
+
+        %% Decode result using codec
+        Decoded = erl_term_codec:decode(Result),
+
+        %% Validate decoded result types
+        validate_result_types(Decoded, BridgeName),
+
+        Decoded
+    catch
+        Class:Reason:Stacktrace ->
+            Error = format_error(Class, Reason, Stacktrace),
+            {error, {result_decoding_failed, Error}}
+    end.
+
+execute_native_function(Function, Args) ->
+    %% Execute native function via L2 FFI transport
+    try
+        %% Validate function exists
+        case validate_function_exists(Function) of
+            true -> ok;
+            false -> throw(function_not_found)
+        end,
+
+        %% Execute function via L2 transport
+        Result = execute_via_ffi(Function, Args),
+
+        %% Validate result
+        case is_native_result_valid(Result) of
+            true -> Result;
+            false -> throw(invalid_native_result)
+        end
+    catch
+        Class:Reason:Stacktrace ->
+            Error = format_error(Class, Reason, Stacktrace),
+            {error, {native_execution_failed, Error}}
+    end.
+
+%%====================================================================
+%% Utility functions
+%%====================================================================
+
+format_error(Class, Reason, Stacktrace) ->
+    %% Format error information for debugging
+    #{
+        class => Class,
+        reason => Reason,
+        stacktrace => Stacktrace,
+        timestamp => erlang:system_time(millisecond),
+        node => node()
+    }.
+
+log_cast_completion(Capability, Result) ->
+    %% Log asynchronous cast completion
+    case is_result_ok(Result) of
+        true ->
+            lager:info("Cast completed: ~p -> ~p", [Capability, Result]);
+        false ->
+            lager:warning("Cast failed: ~p -> ~p", [Capability, Result])
+    end.
+
+log_error(Capability, Error) ->
+    %% Log error information
+    lager:error("Error processing capability ~p: ~p", [Capability, Error]).
+
+log_async_completion(Capability, Result) ->
+    %% Log asynchronous completion
+    lager:info("Async completion: ~p -> ~p", [Capability, Result]).
+
+cleanup_native_resources() ->
+    %% Clean up native resources
+    case is_native_resources_initialized() of
+        true ->
+            %% Deinitialize FFI resources
+            execute_ffi_deinitialization(),
+            %% Clear native handles
+            clear_native_handles(),
+            ok;
+        false ->
+            ok
+    end.
+
+%%====================================================================
+%% Type validation functions
+%%====================================================================
+
+validate_arg_types(Args, BridgeName) ->
+    %% Validate argument types against bridge specification
+    BridgeSpec = get_bridge_specification(BridgeName),
+    ExpectedTypes = maps:get(expected_args, BridgeSpec),
+
+    case check_arg_types(Args, ExpectedTypes) of
+        true -> ok;
+        false -> throw(invalid_arg_types)
+    end.
+
+validate_result_types(Result, BridgeName) ->
+    %% Validate result types against bridge specification
+    BridgeSpec = get_bridge_specification(BridgeName),
+    ExpectedTypes = maps:get(expected_results, BridgeSpec),
+
+    case check_result_types(Result, ExpectedTypes) of
+        true -> ok;
+        false -> throw(invalid_result_types)
+    end.
+
+%%====================================================================
+%% FFI execution functions
+%%====================================================================
+
+execute_via_ffi(Function, Args) ->
+    %% Execute function via FFI transport
+    try
+        %% Prepare FFI call
+        FfiHandle = prepare_ffi_call(Function, Args),
+
+        %% Execute FFI call
+        Result = execute_ffi_call(FfiHandle),
+
+        %% Cleanup FFI handle
+        cleanup_ffi_handle(FfiHandle),
+
+        Result
+    catch
+        Class:Reason:Stacktrace ->
+            %% Ensure cleanup even on error
+            cleanup_ffi_handle(FfiHandle),
+            throw({ffi_execution_error, format_error(Class, Reason, Stacktrace)})
+    end.
+
+execute_ffi_deinitialization() ->
+    %% Deinitialize FFI resources
+    try
+        %% Call FFI deinitialization
+        ok = ffi_deinitialize(),
+        %% Validate deinitialization
+        case is_ffi_deinitialized() of
+            true -> ok;
+            false -> throw(ffi_deinitialization_failed)
+        end
+    catch
+        Class:Reason:Stacktrace ->
+            throw({ffi_deinitialization_error, format_error(Class, Reason, Stacktrace)})
+    end.
+
+%%====================================================================
+%% End of file
+%%====================================================================

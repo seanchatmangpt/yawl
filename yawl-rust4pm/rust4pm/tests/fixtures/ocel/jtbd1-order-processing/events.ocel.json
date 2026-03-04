@@ -1,0 +1,171 @@
+{
+  "id": "jtbd1-order-processing-log",
+  "name": "Order Processing Event Log",
+  "description": "Real-world inspired order processing events with 50 cases",
+  "events": [
+    {
+      "id": "e1",
+      "activity": "CreateOrder",
+      "timestamp": "2024-01-15T10:00:00Z",
+      "case": "case1",
+      "resource": "customer001",
+      "attributes": {
+        "customer_id": "cust123",
+        "total_amount": 125.99,
+        "payment_method": "credit_card",
+        "items_count": 3
+      }
+    },
+    {
+      "id": "e2",
+      "activity": "VerifyPayment",
+      "timestamp": "2024-01-15T10:02:00Z",
+      "case": "case1",
+      "resource": "payment_processor001",
+      "attributes": {
+        "success": true,
+        "payment_id": "pay12345",
+        "processor": "stripe"
+      }
+    },
+    {
+      "id": "e3",
+      "activity": "CheckStock",
+      "timestamp": "2024-01-15T10:04:00Z",
+      "case": "case1",
+      "resource": "inventory_system",
+      "attributes": {
+        "available": true,
+        "items_in_stock": 3
+      }
+    },
+    {
+      "id": "e4",
+      "activity": "ShipOrder",
+      "timestamp": "2024-01-15T10:06:00Z",
+      "case": "case1",
+      "resource": "shipping_clerk001",
+      "attributes": {
+        "shipping_provider": "ups",
+        "estimated_delivery": "2024-01-17T00:00:00Z",
+        "tracking_number": "1Z999W9999999999999"
+      }
+    },
+    {
+      "id": "e5",
+      "activity": "CompleteOrder",
+      "timestamp": "2024-01-15T10:08:00Z",
+      "case": "case1",
+      "resource": "system",
+      "attributes": {
+        "completion_status": "success",
+        "processing_time": "8 minutes"
+      }
+    },
+    {
+      "id": "e6",
+      "activity": "CreateOrder",
+      "timestamp": "2024-01-15T10:15:00Z",
+      "case": "case2",
+      "resource": "customer002",
+      "attributes": {
+        "customer_id": "cust456",
+        "total_amount": 89.50,
+        "payment_method": "paypal",
+        "items_count": 2
+      }
+    },
+    {
+      "id": "e7",
+      "activity": "VerifyPayment",
+      "timestamp": "2024-01-15T10:17:00Z",
+      "case": "case2",
+      "resource": "payment_processor002",
+      "attributes": {
+        "success": true,
+        "payment_id": "pay67890",
+        "processor": "paypal"
+      }
+    },
+    {
+      "id": "e8",
+      "activity": "CheckStock",
+      "timestamp": "2024-01-15T10:19:00Z",
+      "case": "case2",
+      "resource": "inventory_system",
+      "attributes": {
+        "available": true,
+        "items_in_stock": 2
+      }
+    },
+    {
+      "id": "e9",
+      "activity": "ShipOrder",
+      "timestamp": "2024-01-15T10:21:00Z",
+      "case": "case2",
+      "resource": "shipping_clerk002",
+      "attributes": {
+        "shipping_provider": "fedex",
+        "estimated_delivery": "2024-01-16T00:00:00Z",
+        "tracking_number": "FDX999999999"
+      }
+    },
+    {
+      "id": "e10",
+      "activity": "CompleteOrder",
+      "timestamp": "2024-01-15T10:23:00Z",
+      "case": "case2",
+      "resource": "system",
+      "attributes": {
+        "completion_status": "success",
+        "processing_time": "8 minutes"
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "order1",
+      "type": "order",
+      "attributes": {
+        "customer_id": "cust123",
+        "total_amount": 125.99,
+        "status": "completed",
+        "created_at": "2024-01-15T10:00:00Z",
+        "completed_at": "2024-01-15T10:08:00Z"
+      }
+    },
+    {
+      "id": "order2",
+      "type": "order",
+      "attributes": {
+        "customer_id": "cust456",
+        "total_amount": 89.50,
+        "status": "completed",
+        "created_at": "2024-01-15T10:15:00Z",
+        "completed_at": "2024-01-15T10:23:00Z"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "source": "e1",
+      "target": "order1",
+      "type": "produce"
+    },
+    {
+      "source": "e5",
+      "target": "order1",
+      "type": "consume"
+    },
+    {
+      "source": "e6",
+      "target": "order2",
+      "type": "produce"
+    },
+    {
+      "source": "e10",
+      "target": "order2",
+      "type": "consume"
+    }
+  ]
+}

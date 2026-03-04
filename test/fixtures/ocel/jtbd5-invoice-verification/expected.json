@@ -1,0 +1,116 @@
+{
+  "scenario": "jtbd5-invoice-verification",
+  "expected_results": {
+    "total_cases": 300,
+    "correlated_cases": 280,
+    "sibling_relationships": 150,
+    "bulk_processed_cases": 180,
+    "resolution_rate": 0.93,
+    "average_duration": {
+      "total": "2.5 hours",
+      "single_invoice": "45 minutes",
+      "bulk_processing": "3 hours",
+      "manager_approval": "2 hours",
+      "reconciliation": "30 minutes"
+    },
+    "correlation_stats": {
+      "three_way_matches": 65,
+      "two_way_matches": 25,
+      "exceptions": 10,
+      "manual_interventions": 5
+    },
+    "bulk_processing": {
+      "average_batch_size": 2.5,
+      "processing_efficiency": 0.88,
+      "time_saved": "40%",
+      "error_reduction": 35
+    }
+  },
+  "validation_rules": [
+    {
+      "rule": "correlation_completeness",
+      "description": "All correlated cases must have matching PO, delivery, and invoice",
+      "check": "SELECT COUNT(*) FROM correlations WHERE participant_cases_count = 3 AND all_participants_matched = true",
+      "expected_min": 280
+    },
+    {
+      "rule": "three_way_matching",
+      "description": "Three-way matching must be successful for POs with multiple invoices",
+      "check": "SELECT COUNT(*) FROM matching_results WHERE accuracy = 1.0 AND variance <= threshold",
+      "expected": 65
+    },
+    {
+      "rule": "bulk_efficiency",
+      "description": "Bulk processing must save at least 30% time vs individual processing",
+      "check": "SELECT AVG((individual_time - bulk_time) / individual_time) FROM bulk_processing_batches",
+      "expected_min": 0.30
+    },
+    {
+      "rule": "correlation_integrity",
+      "description": "Correlation relationships must be bidirectional",
+      "check": "SELECT COUNT(*) FROM relations WHERE type = 'participates_in' AND correlation_id = ?",
+      "expected": 3 * correlation_count
+    }
+  ],
+  "edge_cases": [
+    {
+      "scenario": "multi_po_invoice",
+      "conditions": {
+        "po_references": "> 1",
+        "correlation_complexity": "high",
+        "processing_time": "> 4 hours"
+      },
+      "expected_behavior": "Hierarchical correlation processing"
+    },
+    {
+      "scenario": "large_bulk_processing",
+      "conditions": {
+        "batch_size": "> 50",
+        "total_amount": "> 1 million",
+        "approval_chain": "multi_level"
+      },
+      "expected_behavior": "Tiered approval with split payments"
+    },
+    {
+      "scenario": "currency_mismatch",
+      "conditions": {
+        "invoice_currency": "foreign",
+        "po_currency": "domestic",
+        "exchange_rate_needed": "true"
+      },
+      "expected_behavior": "Real-time conversion and approval"
+    }
+  ],
+  "correlation_validation": {
+    "relationship_types": {
+      "parent_child": "PO parent, invoice children",
+      "siblings": "Multiple invoices per PO",
+      "chain": "Sequential dependencies",
+      "network": "Complex multi-PO relationships"
+    },
+    "integrity_checks": [
+      {
+        "check": "all_children_have_parent",
+        "method": "validate_parent_child_relationships",
+        "threshold": "100%"
+      },
+      {
+        "check": "no_orphaned_invoices",
+        "method": "check_po_invoices",
+        "threshold": "0"
+      }
+    ]
+  },
+  "bulk_processing_metrics": {
+    "efficiency_targets": {
+      "time_saving": "> 30%",
+      "cost_reduction": "> 25%",
+      "error_rate": "< 5%"
+    },
+    "scalability": {
+      "max_batch_size": 100,
+      "max_correlations": 1000,
+      "parallel_batches": 10
+    }
+  }
+}

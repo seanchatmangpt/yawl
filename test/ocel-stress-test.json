@@ -1,0 +1,1175 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-01-28T10:00:00Z",
+    "source": "high-concurrency-stress-test"
+  },
+  "events": [
+    {
+      "id": "e1",
+      "type": "CaseCreate",
+      "timestamp": "2024-01-28T09:00:15.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "PI2 Sprint 3 - High Load Test",
+        "concept:description": "Sprint with multiple parallel workstreams",
+        "pi:sprint": "PI2-Sprint3",
+        "pi:team": "Gamma",
+        "duration": 3600
+      },
+      "objects": {
+        "c2": {
+          "type": "Case",
+          "attributes": {
+            "concept:name": "PI2 Sprint 3 - High Load Test",
+            "pi:priority": "critical",
+            "pi:estimation": 60,
+            "pi:deadline": "2024-02-08T17:00:00Z"
+          }
+        },
+        "f3": {
+          "type": "Feature",
+          "attributes": {
+            "concept:name": "Microservices Migration",
+            "pi:points": 25,
+            "pi:assignee": "alice",
+            "pi:status": "planning"
+          }
+        },
+        "f4": {
+          "type": "Feature",
+          "attributes": {
+            "concept:name": "Analytics Dashboard",
+            "pi:points": 20,
+            "pi:assignee": "bob",
+            "pi:status": "planning"
+          }
+        },
+        "f5": {
+          "type": "Feature",
+          "attributes": {
+            "concept:name": "Notification System",
+            "pi:points": 15,
+            "pi:assignee": "carol",
+            "pi:status": "planning"
+          }
+        }
+      }
+    },
+    {
+      "id": "e2",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T09:15:45.234Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Design Microservices Architecture",
+        "concept:cost": 600,
+        "pi:taskType": "architecture",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 10
+      },
+      "objects": {
+        "c2": {},
+        "t10": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Design Microservices Architecture",
+            "pi:parent": "f3",
+            "pi:assignee": "alice",
+            "pi:status": "in_progress",
+            "pi:subtasks": ["t10a", "t10b"]
+          }
+        },
+        "r1": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Alice Architect",
+            "pi:role": "Solution Architect",
+            "pi:team": "Gamma",
+            "pi:skills": ["Architecture", "Microservices", "Cloud"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e3",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T09:20:12.345Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Design Analytics UI",
+        "concept:cost": 480,
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 8
+      },
+      "objects": {
+        "c2": {},
+        "t11": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Design Analytics UI",
+            "pi:parent": "f4",
+            "pi:assignee": "bob",
+            "pi:status": "in_progress",
+            "pi:subtasks": ["t11a", "t11b"]
+          }
+        },
+        "r2": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Bob UI Designer",
+            "pi:role": "Senior Frontend Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["UI/UX", "React", "D3.js"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e4",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T09:25:33.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Design Notification API",
+        "concept:cost": 360,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 6
+      },
+      "objects": {
+        "c2": {},
+        "t12": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Design Notification API",
+            "pi:parent": "f5",
+            "pi:assignee": "carol",
+            "pi:status": "in_progress",
+            "pi:subtasks": ["t12a", "t12b"]
+          }
+        },
+        "r3": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Carol Backend Developer",
+            "pi:role": "Backend Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["Backend", "Node.js", "API"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e5",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T11:30:45.567Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Design Microservices Architecture",
+        "concept:cost": 720,
+        "pi:taskType": "architecture",
+        "pi:complexity": "high",
+        "pi:actualHours": 9.5,
+        "pi:quality": "excellent"
+      },
+      "objects": {
+        "c2": {},
+        "t10": {},
+        "r1": {}
+      }
+    },
+    {
+      "id": "e6",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T11:35:22.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement User Service",
+        "concept:cost": 1200,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 20
+      },
+      "objects": {
+        "c2": {},
+        "t13": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement User Service",
+            "pi:parent": "f3",
+            "pi:assignee": "dave",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t10"]
+          }
+        },
+        "r4": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Dave Backend Developer",
+            "pi:role": "Senior Backend Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["Backend", "Java", "Microservices"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e7",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T12:40:11.901Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Design Analytics UI",
+        "concept:cost": 560,
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:actualHours": 7.8,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c2": {},
+        "t11": {},
+        "r2": {}
+      }
+    },
+    {
+      "id": "e8",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T12:45:44.012Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement Analytics Dashboard",
+        "concept:cost": 1440,
+        "pi:taskType": "frontend",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 24
+      },
+      "objects": {
+        "c2": {},
+        "t14": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement Analytics Dashboard",
+            "pi:parent": "f4",
+            "pi:assignee": "eve",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t11"]
+          }
+        },
+        "r5": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Eve Frontend Developer",
+            "pi:role": "Frontend Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["React", "D3.js", "TypeScript"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e9",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T13:50:33.123Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Design Notification API",
+        "concept:cost": 420,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:actualHours": 5.5,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c2": {},
+        "t12": {},
+        "r3": {}
+      }
+    },
+    {
+      "id": "e10",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T13:55:55.234Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement Notification Service",
+        "concept:cost": 960,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 16
+      },
+      "objects": {
+        "c2": {},
+        "t15": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement Notification Service",
+            "pi:parent": "f5",
+            "pi:assignee": "frank",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t12"]
+          }
+        },
+        "r6": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Frank Backend Developer",
+            "pi:role": "Backend Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["Backend", "Node.js", "API"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e11",
+      "type": "ResourceConflict",
+      "timestamp": "2024-01-28T14:20:15.345Z",
+      "lifecycle": "suspend",
+      "attributes": {
+        "concept:name": "Resource overallocation",
+        "concept:cost": 0,
+        "pi:conflictType": "resource_overallocation",
+        "pi:affectedResources": ["r4", "r5"],
+        "pi:conflictingTasks": ["t13", "t14"],
+        "pi:conflictResolution": "queue"
+      },
+      "objects": {
+        "c2": {},
+        "t13": {
+          "attributes": {
+            "pi:status": "blocked",
+            "pi:blockReason": "resource_conflict"
+          }
+        },
+        "t14": {
+          "attributes": {
+            "pi:status": "blocked",
+            "pi:blockReason": "resource_conflict"
+          }
+        },
+        "r4": {},
+        "r5": {}
+      }
+    },
+    {
+      "id": "e12",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T14:25:44.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement User Service",
+        "concept:cost": 1200,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 20,
+        "pi:isParallel": true
+      },
+      "objects": {
+        "c2": {},
+        "t16": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement User Service (Parallel)",
+            "pi:parent": "f3",
+            "pi:assignee": "grace",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t10"],
+            "pi:isParallel": true,
+            "pi:conflictsWith": ["t13"]
+          }
+        },
+        "r7": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Grace Backend Developer",
+            "pi:role": "Backend Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["Backend", "Java", "Microservices"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e13",
+      "type": "TaskFail",
+      "timestamp": "2024-01-28T16:30:22.567Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Implement User Service (Parallel)",
+        "concept:cost": 600,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:failureReason": "merge_conflict",
+        "pi:errorMessage": "Cannot merge with parallel implementation",
+        "pi:retryCount": 0
+      },
+      "objects": {
+        "c2": {},
+        "t16": {
+          "attributes": {
+            "pi:status": "failed",
+            "pi:failureDate": "2024-01-28T16:30:22.567Z",
+            "pi:hadParallelConflict": true
+          }
+        },
+        "r7": {}
+      }
+    },
+    {
+      "id": "e14",
+      "type": "TaskStart",
+      "timestamp": "2024-01-28T16:45:33.678Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement User Service (Retry)",
+        "concept:cost": 1200,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 20,
+        "pi:retryNumber": 1
+      },
+      "objects": {
+        "c2": {},
+        "t17": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement User Service (Retry)",
+            "pi:parent": "f3",
+            "pi:assignee": "dave",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t10"],
+            "pi:retryNumber": 1,
+            "pi:replaces": "t16"
+          }
+        },
+        "r4": {
+          "attributes": {
+            "pi:status": "available"
+          }
+        }
+      }
+    },
+    {
+      "id": "e15",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T17:20:15.789Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Implement User Service (Retry)",
+        "concept:cost": 1680,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:actualHours": 21.5,
+        "pi:quality": "good",
+        "pi:retryNumber": 1
+      },
+      "objects": {
+        "c2": {},
+        "t17": {
+          "attributes": {
+            "pi:status": "completed",
+            "pi:completionDate": "2024-01-28T17:20:15.789Z",
+            "pi:wasRetried": true
+          }
+        },
+        "r4": {}
+      }
+    },
+    {
+      "id": "e16",
+      "type": "ResourceConflict",
+      "timestamp": "2024-01-28T17:30:44.890Z",
+      "lifecycle": "suspend",
+      "attributes": {
+        "concept:name": "Resource contention",
+        "concept:cost": 0,
+        "pi:conflictType": "resource_contention",
+        "pi:affectedResources": ["r1", "r2", "r3"],
+        "pi:conflictingTasks": ["t18", "t19", "t20"],
+        "pi:conflictResolution": "reassign"
+      },
+      "objects": {
+        "c2": {},
+        "t18": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Integrate User Service",
+            "pi:parent": "f3",
+            "pi:assignee": "alice",
+            "pi:status": "conflict",
+            "pi:dependencies": ["t17"]
+          }
+        },
+        "t19": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Integrate Analytics",
+            "pi:parent": "f4",
+            "pi:assignee": "bob",
+            "pi:status": "conflict",
+            "pi:dependencies": ["t14"]
+          }
+        },
+        "t20": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Integrate Notifications",
+            "pi:parent": "f5",
+            "pi:assignee": "carol",
+            "pi:status": "conflict",
+            "pi:dependencies": ["t15"]
+          }
+        },
+        "r1": {},
+        "r2": {},
+        "r3": {}
+      }
+    },
+    {
+      "id": "e17",
+      "type": "TaskReassign",
+      "timestamp": "2024-01-28T17:35:55.901Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Integrate User Service",
+        "concept:cost": 480,
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:reassignFrom": "alice",
+        "pi:reassignTo": "heidi"
+      },
+      "objects": {
+        "c2": {},
+        "t18": {
+          "attributes": {
+            "pi:assignee": "heidi",
+            "pi:status": "in_progress"
+          }
+        },
+        "r8": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Heidi DevOps",
+            "pi:role": "DevOps Engineer",
+            "pi:team": "Gamma",
+            "pi:skills": ["DevOps", "CI/CD", "Integration"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e18",
+      "type": "TaskReassign",
+      "timestamp": "2024-01-28T17:40:22.012Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Integrate Analytics",
+        "concept:cost": 480,
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:reassignFrom": "bob",
+        "pi:reassignTo": "ivan"
+      },
+      "objects": {
+        "c2": {},
+        "t19": {
+          "attributes": {
+            "pi:assignee": "ivan",
+            "pi:status": "in_progress"
+          }
+        },
+        "r9": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Ivan FullStack",
+            "pi:role": "FullStack Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["Frontend", "Backend", "Integration"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e19",
+      "type": "TaskReassign",
+      "timestamp": "2024-01-28T17:45:33.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Integrate Notifications",
+        "concept:cost": 480,
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:reassignFrom": "carol",
+        "pi:reassignTo": "judy"
+      },
+      "objects": {
+        "c2": {},
+        "t20": {
+          "attributes": {
+            "pi:assignee": "judy",
+            "pi:status": "in_progress"
+          }
+        },
+        "r10": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Judy Backend",
+            "pi:role": "Backend Developer",
+            "pi:team": "Gamma",
+            "pi:skills": ["Backend", "Node.js", "Integration"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e20",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T18:50:44.234Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Integrate User Service",
+        "concept:cost": 520,
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:actualHours": 5.2,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c2": {},
+        "t18": {},
+        "r8": {}
+      }
+    },
+    {
+      "id": "e21",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T19:00:33.345Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Integrate Analytics",
+        "concept:cost": 520,
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:actualHours": 4.8,
+        "pi:quality": "excellent"
+      },
+      "objects": {
+        "c2": {},
+        "t19": {},
+        "r9": {}
+      }
+    },
+    {
+      "id": "e22",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T19:10:22.456Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Integrate Notifications",
+        "concept:cost": 520,
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:actualHours": 4.5,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c2": {},
+        "t20": {},
+        "r10": {}
+      }
+    },
+    {
+      "id": "e23",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-28T19:20:11.567Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Implement Notification Service",
+        "concept:cost": 1080,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:actualHours": 18.5,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c2": {},
+        "t15": {},
+        "r6": {}
+      }
+    },
+    {
+      "id": "e24",
+      "type": "CaseComplete",
+      "timestamp": "2024-01-28T19:30:00.000Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "PI2 Sprint 3 - High Load Test",
+        "concept:cost": 10420,
+        "pi:totalTasks": 14,
+        "pi:completedTasks": 13,
+        "pi:failedTasks": 1,
+        "pi:totalPoints": 60,
+        "pi:velocity": 30,
+        "pi:failureRate": 0.07,
+        "pi:concurrentTasks": 5,
+        "pi:resourceConflicts": 2
+      },
+      "objects": {
+        "c2": {},
+        "f3": {
+          "attributes": {
+            "pi:status": "completed",
+            "pi:completionDate": "2024-01-28T19:30:00.000Z",
+            "pi:points": 25,
+            "pi:hadConflicts": true
+          }
+        },
+        "f4": {
+          "attributes": {
+            "pi:status": "completed",
+            "pi:completionDate": "2024-01-28T19:30:00.000Z",
+            "pi:points": 20,
+            "pi:hadConflicts": true
+          }
+        },
+        "f5": {
+          "attributes": {
+            "pi:status": "completed",
+            "pi:completionDate": "2024-01-28T19:30:00.000Z",
+            "pi:points": 15,
+            "pi:hadConflicts": true
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "c2": {
+      "id": "c2",
+      "type": "Case",
+      "attributes": {
+        "concept:name": "PI2 Sprint 3 - High Load Test",
+        "concept:description": "Sprint with high concurrency and resource contention",
+        "pi:priority": "critical",
+        "pi:estimation": 60,
+        "pi:deadline": "2024-02-08T17:00:00Z",
+        "pi:actualCost": 10420,
+        "pi:actualDuration": 372845,
+        "pi:team": "Gamma",
+        "pi:sprint": "PI2-Sprint3",
+        "pi:failureRate": 0.07,
+        "pi:concurrentTasks": 5,
+        "pi:resourceConflicts": 2,
+        "pi:highLoad": true
+      }
+    },
+    "f3": {
+      "id": "f3",
+      "type": "Feature",
+      "attributes": {
+        "concept:name": "Microservices Migration",
+        "concept:description": "Migrate monolith to microservices architecture",
+        "pi:points": 25,
+        "pi:assignee": "alice",
+        "pi:status": "completed",
+        "pi:actualPoints": 25,
+        "pi:completionDate": "2024-01-28T19:30:00.000Z",
+        "pi:quality": "good",
+        "pi:hadConflicts": true,
+        "pi:parallelWork": true
+      }
+    },
+    "f4": {
+      "id": "f4",
+      "type": "Feature",
+      "attributes": {
+        "concept:name": "Analytics Dashboard",
+        "concept:description": "Real-time analytics and reporting dashboard",
+        "pi:points": 20,
+        "pi:assignee": "bob",
+        "pi:status": "completed",
+        "pi:actualPoints": 20,
+        "pi:completionDate": "2024-01-28T19:30:00.000Z",
+        "pi:quality": "excellent",
+        "pi:hadConflicts": true,
+        "pi:parallelWork": true
+      }
+    },
+    "f5": {
+      "id": "f5",
+      "type": "Feature",
+      "attributes": {
+        "concept:name": "Notification System",
+        "concept:description": "Push and email notification system",
+        "pi:points": 15,
+        "pi:assignee": "carol",
+        "pi:status": "completed",
+        "pi:actualPoints": 15,
+        "pi:completionDate": "2024-01-28T19:30:00.000Z",
+        "pi:quality": "good",
+        "pi:hadConflicts": true,
+        "pi:parallelWork": true
+      }
+    },
+    "t10": {
+      "id": "t10",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Design Microservices Architecture",
+        "concept:description": "High-level architecture design for microservices",
+        "pi:parent": "f3",
+        "pi:assignee": "alice",
+        "pi:status": "completed",
+        "pi:taskType": "architecture",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 10,
+        "pi:actualHours": 9.5,
+        "pi:points": 8,
+        "pi:quality": "excellent",
+        "pi:completionDate": "2024-01-28T11:30:45.567Z"
+      }
+    },
+    "t11": {
+      "id": "t11",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Design Analytics UI",
+        "concept:description": "Wireframes and mockups for analytics dashboard",
+        "pi:parent": "f4",
+        "pi:assignee": "bob",
+        "pi:status": "completed",
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 8,
+        "pi:actualHours": 7.8,
+        "pi:points": 5,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-28T12:40:11.901Z"
+      }
+    },
+    "t12": {
+      "id": "t12",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Design Notification API",
+        "concept:description": "REST API design for notifications",
+        "pi:parent": "f5",
+        "pi:assignee": "carol",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 6,
+        "pi:actualHours": 5.5,
+        "pi:points": 3,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-28T13:50:33.123Z"
+      }
+    },
+    "t13": {
+      "id": "t13",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement User Service",
+        "concept:description": "User microservice implementation",
+        "pi:parent": "f3",
+        "pi:assignee": "dave",
+        "pi:status": "blocked",
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 20,
+        "pi:points": 8,
+        "pi:blockReason": "resource_conflict",
+        "pi:wasBlocked": true
+      }
+    },
+    "t14": {
+      "id": "t14",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement Analytics Dashboard",
+        "concept:description": "React-based analytics dashboard",
+        "pi:parent": "f4",
+        "pi:assignee": "eve",
+        "pi:status": "blocked",
+        "pi:taskType": "frontend",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 24,
+        "pi:points": 10,
+        "pi:blockReason": "resource_conflict",
+        "pi:wasBlocked": true
+      }
+    },
+    "t15": {
+      "id": "t15",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement Notification Service",
+        "concept:description": "Node.js notification service",
+        "pi:parent": "f5",
+        "pi:assignee": "frank",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 16,
+        "pi:actualHours": 18.5,
+        "pi:points": 4,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-28T19:20:11.567Z",
+        "pi:hadConflicts": true
+      }
+    },
+    "t16": {
+      "id": "t16",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement User Service (Parallel)",
+        "concept:description": "Parallel implementation attempt",
+        "pi:parent": "f3",
+        "pi:assignee": "grace",
+        "pi:status": "failed",
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 20,
+        "pi:actualHours": 10.2,
+        "pi:points": 0,
+        "pi:quality": "failed",
+        "pi:failureDate": "2024-01-28T16:30:22.567Z",
+        "pi:failureReason": "merge_conflict",
+        "pi:retryCount": 0,
+        "pi:hadParallelConflict": true
+      }
+    },
+    "t17": {
+      "id": "t17",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement User Service (Retry)",
+        "concept:description": "Retry of user service implementation",
+        "pi:parent": "f3",
+        "pi:assignee": "dave",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 20,
+        "pi:actualHours": 21.5,
+        "pi:points": 8,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-28T17:20:15.789Z",
+        "pi:wasRetried": true,
+        "pi:replaces": "t16"
+      }
+    },
+    "t18": {
+      "id": "t18",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Integrate User Service",
+        "concept:description": "Integration of user service with others",
+        "pi:parent": "f3",
+        "pi:assignee": "heidi",
+        "pi:status": "completed",
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 6,
+        "pi:actualHours": 5.2,
+        "pi:points": 3,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-28T18:50:44.234Z",
+        "pi:wasReassigned": true
+      }
+    },
+    "t19": {
+      "id": "t19",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Integrate Analytics",
+        "concept:description": "Integration of analytics dashboard",
+        "pi:parent": "f4",
+        "pi:assignee": "ivan",
+        "pi:status": "completed",
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 6,
+        "pi:actualHours": 4.8,
+        "pi:points": 5,
+        "pi:quality": "excellent",
+        "pi:completionDate": "2024-01-28T19:00:33.345Z",
+        "pi:wasReassigned": true
+      }
+    },
+    "t20": {
+      "id": "t20",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Integrate Notifications",
+        "concept:description": "Integration of notification system",
+        "pi:parent": "f5",
+        "pi:assignee": "judy",
+        "pi:status": "completed",
+        "pi:taskType": "integration",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 6,
+        "pi:actualHours": 4.5,
+        "pi:points": 3,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-28T19:10:22.456Z",
+        "pi:wasReassigned": true
+      }
+    },
+    "r1": {
+      "id": "r1",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Alice Architect",
+        "concept:description": "Solution architect for microservices",
+        "pi:role": "Solution Architect",
+        "pi:team": "Gamma",
+        "pi:skills": ["Architecture", "Microservices", "Cloud", "Kubernetes"],
+        "pi:experience": "12 years",
+        "pi:location": "Remote",
+        "pi:wasOverallocated": true,
+        "pi:conflictCount": 1
+      }
+    },
+    "r2": {
+      "id": "r2",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Bob UI Designer",
+        "concept:description": "Frontend designer for analytics",
+        "pi:role": "Senior Frontend Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["UI/UX", "React", "D3.js", "TypeScript"],
+        "pi:experience": "8 years",
+        "pi:location": "Remote",
+        "pi:wasOverallocated": true,
+        "pi:conflictCount": 1
+      }
+    },
+    "r3": {
+      "id": "r3",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Carol Backend",
+        "concept:description": "Backend developer for notifications",
+        "pi:role": "Backend Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["Backend", "Node.js", "API", "Redis"],
+        "pi:experience": "6 years",
+        "pi:location": "Hybrid",
+        "pi:wasOverallocated": true,
+        "pi:conflictCount": 1
+      }
+    },
+    "r4": {
+      "id": "r4",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Dave Backend",
+        "concept:description": "Senior backend developer",
+        "pi:role": "Senior Backend Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["Backend", "Java", "Microservices", "Spring"],
+        "pi:experience": "9 years",
+        "pi:location": "On-site",
+        "pi:wasOverallocated": true,
+        "pi:conflictCount": 2,
+        "pi:wasReassigned": false
+      }
+    },
+    "r5": {
+      "id": "r5",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Eve Frontend",
+        "concept:description": "Frontend developer for analytics",
+        "pi:role": "Frontend Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["React", "D3.js", "TypeScript", "Charts"],
+        "pi:experience": "5 years",
+        "pi:location": "Remote",
+        "pi:wasOverallocated": true,
+        "pi:conflictCount": 1
+      }
+    },
+    "r6": {
+      "id": "r6",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Frank Backend",
+        "concept:description": "Backend developer for notifications",
+        "pi:role": "Backend Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["Backend", "Node.js", "API", "Socket.io"],
+        "pi:experience": "7 years",
+        "pi:location": "Remote",
+        "pi:wasOverallocated": false,
+        "pi:conflictCount": 0
+      }
+    },
+    "r7": {
+      "id": "r7",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Grace Backend",
+        "concept:description": "Backend developer for parallel work",
+        "pi:role": "Backend Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["Backend", "Java", "Microservices", "Parallel"],
+        "pi:experience": "4 years",
+        "pi:location": "Hybrid",
+        "pi:failureCount": 1,
+        "pi:hadParallelFailure": true
+      }
+    },
+    "r8": {
+      "id": "r8",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Heidi DevOps",
+        "concept:description": "DevOps engineer for integration",
+        "pi:role": "DevOps Engineer",
+        "pi:team": "Gamma",
+        "pi:skills": ["DevOps", "CI/CD", "Integration", "Kubernetes"],
+        "pi:experience": "6 years",
+        "pi:location": "On-site",
+        "pi:wasReassigned": true,
+        "pi:resolvedConflicts": 1
+      }
+    },
+    "r9": {
+      "id": "r9",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Ivan FullStack",
+        "concept:description": "Full-stack developer for integration",
+        "pi:role": "FullStack Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["Frontend", "Backend", "Integration", "JavaScript"],
+        "pi:experience": "5 years",
+        "pi:location": "Remote",
+        "pi:wasReassigned": true,
+        "pi:resolvedConflicts": 1
+      }
+    },
+    "r10": {
+      "id": "r10",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Judy Backend",
+        "concept:description": "Backend developer for integration",
+        "pi:role": "Backend Developer",
+        "pi:team": "Gamma",
+        "pi:skills": ["Backend", "Node.js", "Integration", "API"],
+        "pi:experience": "3 years",
+        "pi:location": "Remote",
+        "pi:wasReassigned": true,
+        "pi:resolvedConflicts": 1
+      }
+    }
+  }
+}

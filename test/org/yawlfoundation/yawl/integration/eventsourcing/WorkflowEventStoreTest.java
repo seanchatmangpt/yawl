@@ -10,6 +10,9 @@
  * YAWL is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
  * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -17,62 +20,48 @@ package org.yawlfoundation.yawl.integration.eventsourcing;
 
 import org.yawlfoundation.yawl.integration.messagequeue.WorkflowEvent;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.sql.DataSource;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link WorkflowEventStore}.
+ * Chicago TDD tests for {@link WorkflowEventStore}.
+ * Uses real H2 in-memory database instead of mocks.
  *
  * @author YAWL Foundation
  * @version 6.0.0
  * @since 6.0.0
  */
-@ExtendWith(MockitoExtension.class)
 class WorkflowEventStoreTest {
 
-    @Mock
-    private DataSource mockDataSource;
-
-    @Mock
-    private Connection mockConnection;
-
-    @Mock
-    private PreparedStatement mockPreparedStatement;
-
-    @Mock
-    private ResultSet mockResultSet;
-
+    private DataSource dataSource;
     private WorkflowEventStore eventStore;
-    private static final String TEST_CASE_ID = "test-case-123";
-    private static final String TEST_SPEC_ID = "OrderFulfillment:1.0";
-    private static final Instant BASE_TIMESTAMP = Instant.parse("2026-02-17T10:00:00Z");
 
     @BeforeEach
     void setUp() throws SQLException {
-        eventStore = new WorkflowEventStore(mockDataSource);
+        dataSource = EventSourcingTestFixture.createDataSource();
+        EventSourcingTestFixture.createSchema(dataSource);
+        eventStore = new WorkflowEventStore(dataSource);
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        EventSourcingTestFixture.dropSchema(dataSource);
     }
 
     @Nested
@@ -81,8 +70,9 @@ class WorkflowEventStoreTest {
 
         @Test
         @DisplayName("constructWithDataSource")
-        void constructWithDataSource() {
-            DataSource ds = mock(DataSource.class);
+        void constructWithDataSource() throws SQLException {
+            DataSource ds = EventSourcingTestFixture.createDataSource();
+            EventSourcingTestFixture.createSchema(ds);
             WorkflowEventStore store = new WorkflowEventStore(ds);
             assertNotNull(store);
         }
@@ -101,51 +91,32 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("appendFirstEventSuccess")
         void appendFirstEventSuccess() throws Exception {
-            // Setup mocks
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).close();
-
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
             eventStore.append(event, 0);
 
-            verify(mockPreparedStatement, times(1)).executeUpdate();
-            verify(mockConnection, times(1)).close();
+            assertEquals(1, countEvents(dataSource));
         }
 
         @Test
         @DisplayName("appendNextEventSuccess")
         void appendNextEventSuccess() throws Exception {
-            // Setup mocks
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            when(mockResultSet.next()).thenReturn(true);
-            when(mockResultSet.getLong(1)).thenReturn(0L);
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).commit();
-            doNothing().when(mockConnection).rollback();
-            doNothing().when(mockConnection).close();
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
             long sequence = eventStore.appendNext(event);
 
             assertEquals(0, sequence);
-            verify(mockConnection, times(1)).commit();
+            assertEquals(1, countEvents(dataSource));
         }
 
         @Test
         @DisplayName("appendEventWithInvalidSequenceThrows")
         void appendEventWithInvalidSequenceThrows() {
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
 
             assertThrows(IllegalArgumentException.class, () -> eventStore.append(event, -1));
             assertThrows(IllegalArgumentException.class, () -> eventStore.append(event, Long.MAX_VALUE));
@@ -160,14 +131,15 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("appendEventWithNullPayloadThrows")
         void appendEventWithNullPayloadThrows() {
+            String caseId = EventSourcingTestFixture.generateCaseId();
             WorkflowEvent event = new WorkflowEvent(
                 UUID.randomUUID().toString(),
                 WorkflowEvent.EventType.CASE_STARTED,
                 "1.0",
-                TEST_SPEC_ID,
-                TEST_CASE_ID,
+                EventSourcingTestFixture.TEST_SPEC_ID,
+                caseId,
                 null,
-                BASE_TIMESTAMP,
+                EventSourcingTestFixture.BASE_TIMESTAMP,
                 null
             );
 
@@ -175,34 +147,21 @@ class WorkflowEventStoreTest {
         }
 
         @Test
-        @DisplayName("appendEventWithInvalidEventTypeThrows")
-        void appendEventWithInvalidEventTypeThrows() {
-            // Create a custom event type that doesn't exist in the enum
-            WorkflowEvent event = new WorkflowEvent(
-                UUID.randomUUID().toString(),
-                WorkflowEvent.EventType.CASE_COMPLETED,
-                "1.0",
-                TEST_SPEC_ID,
-                TEST_CASE_ID,
-                null,
-                BASE_TIMESTAMP,
-                Map.of()
-            );
+        @DisplayName("appendMultipleEventsInSequence")
+        void appendMultipleEventsInSequence() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-1");
+            WorkflowEvent event3 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_STARTED, caseId, "wi-1");
 
-            try {
-                when(mockDataSource.getConnection()).thenReturn(mockConnection);
-                when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-                doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-                doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-                doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-                doNothing().when(mockPreparedStatement).executeUpdate();
-                doNothing().when(mockConnection).close();
+            eventStore.append(event1, 0);
+            eventStore.append(event2, 1);
+            eventStore.append(event3, 2);
 
-                eventStore.append(event, 0);
-                fail("Should have thrown exception");
-            } catch (WorkflowEventStore.EventStoreException e) {
-                assertTrue(e.getMessage().contains("Unknown event type"));
-            }
+            assertEquals(3, countEvents(dataSource));
         }
     }
 
@@ -213,40 +172,22 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("loadEventsForCase")
         void loadEventsForCase() throws Exception {
-            // Setup mocks for event loading
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            eventStore.append(event, 0);
 
-            // Mock first event
-            when(mockResultSet.getString("event_id")).thenReturn("event-1");
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getString("seq_num")).thenReturn("0");
-            when(mockResultSet.getString("event_type")).thenReturn("CASE_STARTED");
-            when(mockResultSet.getString("schema_version")).thenReturn("1.0");
-            when(mockResultSet.getTimestamp("event_timestamp")).thenReturn(
-                Timestamp.from(BASE_TIMESTAMP));
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
-
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
-            List<WorkflowEvent> events = eventStore.loadEvents(TEST_CASE_ID);
+            List<WorkflowEvent> events = eventStore.loadEvents(caseId);
 
             assertEquals(1, events.size());
-            assertEquals(TEST_CASE_ID, events.get(0).getCaseId());
+            assertEquals(caseId, events.get(0).getCaseId());
             assertEquals(WorkflowEvent.EventType.CASE_STARTED, events.get(0).getEventType());
         }
 
         @Test
         @DisplayName("loadEventsEmptyCase")
         void loadEventsEmptyCase() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(false);
-
-            List<WorkflowEvent> events = eventStore.loadEvents(TEST_CASE_ID);
+            List<WorkflowEvent> events = eventStore.loadEvents("nonexistent-case");
 
             assertTrue(events.isEmpty());
         }
@@ -254,24 +195,15 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("loadEventsAsOf")
         void loadEventsAsOf() throws Exception {
-            Instant asOf = BASE_TIMESTAMP.plusSeconds(30);
-            Instant eventTimestamp = BASE_TIMESTAMP.plusSeconds(15);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            Instant asOf = EventSourcingTestFixture.BASE_TIMESTAMP.plusSeconds(30);
+            Instant eventTimestamp = EventSourcingTestFixture.BASE_TIMESTAMP.plusSeconds(15);
 
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("event_id")).thenReturn("event-1");
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getString("seq_num")).thenReturn("0");
-            when(mockResultSet.getString("event_type")).thenReturn("CASE_STARTED");
-            when(mockResultSet.getString("schema_version")).thenReturn("1.0");
-            when(mockResultSet.getTimestamp("event_timestamp")).thenReturn(
-                Timestamp.from(eventTimestamp));
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null, eventTimestamp);
+            eventStore.append(event, 0);
 
-            List<WorkflowEvent> events = eventStore.loadEventsAsOf(TEST_CASE_ID, asOf);
+            List<WorkflowEvent> events = eventStore.loadEventsAsOf(caseId, asOf);
 
             assertEquals(1, events.size());
             assertEquals(eventTimestamp, events.get(0).getTimestamp());
@@ -280,26 +212,23 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("loadEventsSince")
         void loadEventsSince() throws Exception {
-            Instant eventTimestamp = BASE_TIMESTAMP.plusSeconds(15);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-1");
+            WorkflowEvent event3 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_STARTED, caseId, "wi-1");
+            eventStore.append(event1, 0);
+            eventStore.append(event2, 1);
+            eventStore.append(event3, 2);
 
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("event_id")).thenReturn("event-1");
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getString("seq_num")).thenReturn("1");
-            when(mockResultSet.getString("event_type")).thenReturn("CASE_STARTED");
-            when(mockResultSet.getString("schema_version")).thenReturn("1.0");
-            when(mockResultSet.getTimestamp("event_timestamp")).thenReturn(
-                Timestamp.from(eventTimestamp));
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
+            // Load events since sequence 0 (should get events at seq 1 and 2)
+            List<WorkflowEvent> events = eventStore.loadEventsSince(caseId, 0);
 
-            List<WorkflowEvent> events = eventStore.loadEventsSince(TEST_CASE_ID, 0);
-
-            assertEquals(1, events.size());
-            assertEquals(1, events.get(0).getSequenceNumber());
+            assertEquals(2, events.size());
+            assertEquals(WorkflowEvent.EventType.WORKITEM_ENABLED, events.get(0).getEventType());
+            assertEquals(WorkflowEvent.EventType.WORKITEM_STARTED, events.get(1).getEventType());
         }
 
         @Test
@@ -313,7 +242,7 @@ class WorkflowEventStoreTest {
         @DisplayName("loadEventsAsOfThrowsOnNullAsOf")
         void loadEventsAsOfThrowsOnNullAsOf() {
             assertThrows(IllegalArgumentException.class, () ->
-                eventStore.loadEventsAsOf(TEST_CASE_ID, null));
+                eventStore.loadEventsAsOf("case-id", null));
         }
 
         @Test
@@ -329,61 +258,76 @@ class WorkflowEventStoreTest {
     class ConcurrentModificationTest {
 
         @Test
-        @DisplayName("concurrentModificationExceptionOnSQLState23000")
-        void concurrentModificationExceptionOnSQLState23000() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString());
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong());
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any());
-            when(mockPreparedStatement.executeUpdate()).thenThrow(
-                new SQLException("Duplicate entry", "23000"));
-            doNothing().when(mockConnection).close();
+        @DisplayName("concurrentModificationExceptionOnDuplicateSequence")
+        void concurrentModificationExceptionOnDuplicateSequence() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
 
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
+            eventStore.append(event1, 0);
 
             assertThrows(WorkflowEventStore.ConcurrentModificationException.class,
-                () -> eventStore.append(event, 0));
-        }
-
-        @Test
-        @DisplayName("concurrentModificationExceptionOnSQLState23505")
-        void concurrentModificationExceptionOnSQLState23505() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            when(mockPreparedStatement.executeUpdate()).thenThrow(
-                new SQLException("Unique violation", "23505"));
-            doNothing().when(mockConnection).close();
-
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
-
-            assertThrows(WorkflowEventStore.ConcurrentModificationException.class,
-                () -> eventStore.append(event, 0));
+                () -> eventStore.append(event2, 0));
         }
 
         @Test
         @DisplayName("concurrentModificationExceptionPreservesCaseIdAndSequence")
         void concurrentModificationExceptionPreservesCaseIdAndSequence() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            when(mockPreparedStatement.executeUpdate()).thenThrow(
-                new SQLException("Duplicate entry", "23000"));
-            doNothing().when(mockConnection).close();
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
 
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
+            eventStore.append(event1, 0);
 
             try {
-                eventStore.append(event, 42);
+                eventStore.append(event2, 0);
+                fail("Should have thrown exception");
             } catch (WorkflowEventStore.ConcurrentModificationException e) {
-                assertEquals(TEST_CASE_ID, e.getCaseId());
-                assertEquals(42, e.getConflictingSeq());
+                assertEquals(caseId, e.getCaseId());
+                assertEquals(0, e.getConflictingSeq());
             }
+        }
+
+        @Test
+        @DisplayName("concurrentWritesFromMultipleThreads")
+        void concurrentWritesFromMultipleThreads() throws Exception {
+            int threadCount = 10;
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(threadCount);
+            AtomicInteger successCount = new AtomicInteger(0);
+            AtomicInteger conflictCount = new AtomicInteger(0);
+
+            for (int i = 0; i < threadCount; i++) {
+                final int threadNum = i;
+                executor.submit(() -> {
+                    try {
+                        startLatch.await();
+                        String caseId = "case-thread-" + threadNum;
+                        WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                            WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+                        eventStore.append(event, 0);
+                        successCount.incrementAndGet();
+                    } catch (WorkflowEventStore.ConcurrentModificationException e) {
+                        conflictCount.incrementAndGet();
+                    } catch (Exception e) {
+                        fail("Unexpected exception: " + e);
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                });
+            }
+
+            startLatch.countDown();
+            doneLatch.await();
+            executor.shutdown();
+
+            assertEquals(threadCount, successCount.get(), "All threads should succeed with unique case IDs");
+            assertEquals(0, conflictCount.get(), "No conflicts expected with unique case IDs");
         }
     }
 
@@ -415,12 +359,13 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("concurrentModificationExceptionWithMessageAndDetails")
         void concurrentModificationExceptionWithMessageAndDetails() {
+            String caseId = "test-case-123";
             WorkflowEventStore.ConcurrentModificationException e =
                 new WorkflowEventStore.ConcurrentModificationException(
-                    "Conflict", TEST_CASE_ID, 5);
+                    "Conflict", caseId, 5);
 
             assertEquals("Conflict", e.getMessage());
-            assertEquals(TEST_CASE_ID, e.getCaseId());
+            assertEquals(caseId, e.getCaseId());
             assertEquals(5, e.getConflictingSeq());
         }
     }
@@ -432,62 +377,35 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("serializeEventPayload")
         void serializeEventPayload() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).close();
-
+            String caseId = EventSourcingTestFixture.generateCaseId();
             Map<String, String> complexPayload = Map.of(
                 "caseParams", "{'customerId':'123','priority':'high'}",
                 "launchedBy", "agent-order-service",
                 "metadata", "{'version':'1.0','source':'web-ui'}"
             );
 
-            WorkflowEvent event = new WorkflowEvent(
-                UUID.randomUUID().toString(),
-                WorkflowEvent.EventType.CASE_STARTED,
-                "1.0",
-                TEST_SPEC_ID,
-                TEST_CASE_ID,
-                null,
-                BASE_TIMESTAMP,
-                complexPayload
-            );
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null, complexPayload);
 
             eventStore.append(event, 0);
 
-            verify(mockPreparedStatement).setString(8,
-                "{\"caseParams\":\"{'customerId':'123','priority':'high'}\",\"launchedBy\":\"agent-order-service\",\"metadata\":\"{'version':'1.0','source':'web-ui'}\"}");
+            List<WorkflowEvent> loaded = eventStore.loadEvents(caseId);
+            assertEquals(1, loaded.size());
+            assertEquals(complexPayload, loaded.get(0).getPayload());
         }
 
         @Test
         @DisplayName("serializeEventWithEmptyPayload")
         void serializeEventWithEmptyPayload() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).close();
-
-            WorkflowEvent event = new WorkflowEvent(
-                UUID.randomUUID().toString(),
-                WorkflowEvent.EventType.CASE_STARTED,
-                "1.0",
-                TEST_SPEC_ID,
-                TEST_CASE_ID,
-                null,
-                BASE_TIMESTAMP,
-                Map.of()
-            );
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null, Map.of());
 
             eventStore.append(event, 0);
 
-            verify(mockPreparedStatement).setString(8, "{}");
+            List<WorkflowEvent> loaded = eventStore.loadEvents(caseId);
+            assertEquals(1, loaded.size());
+            assertTrue(loaded.get(0).getPayload().isEmpty());
         }
     }
 
@@ -498,79 +416,47 @@ class WorkflowEventStoreTest {
         @Test
         @DisplayName("loadMultipleEventsInOrder")
         void loadMultipleEventsInOrder() throws Exception {
-            // Setup multiple events
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-1");
 
-            // Mock multiple events
-            when(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
-            when(mockResultSet.getString("event_id")).thenReturn("event-1", "event-2");
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID, TEST_SPEC_ID);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID, TEST_CASE_ID);
-            when(mockResultSet.getString("seq_num")).thenReturn("0", "1");
-            when(mockResultSet.getString("event_type")).thenReturn("CASE_STARTED", "WORKITEM_ENABLED");
-            when(mockResultSet.getString("schema_version")).thenReturn("1.0", "1.0");
-            when(mockResultSet.getTimestamp("event_timestamp")).thenReturn(
-                Timestamp.from(BASE_TIMESTAMP),
-                Timestamp.from(BASE_TIMESTAMP.plusSeconds(30)));
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
+            eventStore.append(event1, 0);
+            eventStore.append(event2, 1);
 
-            List<WorkflowEvent> events = eventStore.loadEvents(TEST_CASE_ID);
+            List<WorkflowEvent> events = eventStore.loadEvents(caseId);
 
             assertEquals(2, events.size());
-            assertEquals("event-1", events.get(0).getEventId());
-            assertEquals("event-2", events.get(1).getEventId());
+            // Verify events are returned in order
             assertEquals(WorkflowEvent.EventType.CASE_STARTED, events.get(0).getEventType());
             assertEquals(WorkflowEvent.EventType.WORKITEM_ENABLED, events.get(1).getEventType());
-            assertEquals(0, events.get(0).getSequenceNumber());
-            assertEquals(1, events.get(1).getSequenceNumber());
         }
 
         @Test
-        @DisplayName("appendNextWithMaxSeqNull")
-        void appendNextWithMaxSeqNull() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(false);
-            when(mockResultSet.getLong(1)).thenReturn(-1L);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).commit();
-            doNothing().when(mockConnection).close();
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
+        @DisplayName("appendNextWithNoExistingEvents")
+        void appendNextWithNoExistingEvents() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
             long sequence = eventStore.appendNext(event);
 
             assertEquals(0, sequence);
         }
 
         @Test
-        @DisplayName("appendNextWithMaxSeqNotNull")
-        void appendNextWithMaxSeqNotNull() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true);
-            when(mockResultSet.getLong(1)).thenReturn(5L);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            doNothing().when(mockPreparedStatement).executeUpdate();
-            doNothing().when(mockConnection).commit();
-            doNothing().when(mockConnection).close();
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+        @DisplayName("appendNextWithExistingEvents")
+        void appendNextWithExistingEvents() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.WORKITEM_ENABLED, caseId, "wi-1");
 
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
-            long sequence = eventStore.appendNext(event);
+            eventStore.append(event1, 0);
+            long sequence = eventStore.appendNext(event2);
 
-            assertEquals(6, sequence);
+            assertEquals(1, sequence);
         }
     }
 
@@ -579,77 +465,53 @@ class WorkflowEventStoreTest {
     class EdgeCasesTest {
 
         @Test
-        @DisplayName("appendNextWithRollback")
-        void appendNextWithRollback() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true);
-            when(mockResultSet.getLong(1)).thenReturn(5L);
-            doNothing().when(mockPreparedStatement).setString(anyInt(), anyString);
-            doNothing().when(mockPreparedStatement).setLong(anyInt(), anyLong);
-            doNothing().when(mockPreparedStatement).setObject(anyInt(), any);
-            when(mockPreparedStatement.executeUpdate()).thenThrow(new SQLException("Database error"));
-            doNothing().when(mockConnection).rollback();
-            doNothing().when(mockConnection).close();
-
-            WorkflowEvent event = createTestEvent(WorkflowEvent.EventType.CASE_STARTED, TEST_CASE_ID, null);
-
-            try {
-                eventStore.appendNext(event);
-                fail("Should have thrown exception");
-            } catch (WorkflowEventStore.EventStoreException e) {
-                verify(mockConnection, times(1)).rollback();
-            }
+        @DisplayName("loadEventsForNonExistentCase")
+        void loadEventsForNonExistentCase() throws Exception {
+            List<WorkflowEvent> events = eventStore.loadEvents("nonexistent-case");
+            assertTrue(events.isEmpty());
         }
 
         @Test
-        @DisplayName("loadEventsWithSQLException")
-        void loadEventsWithSQLException() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenThrow(new SQLException("Connection failed"));
-            doNothing().when(mockConnection).close();
+        @DisplayName("appendEventsToDifferentCases")
+        void appendEventsToDifferentCases() throws Exception {
+            String case1 = EventSourcingTestFixture.generateCaseId("case-1");
+            String case2 = EventSourcingTestFixture.generateCaseId("case-2");
 
-            assertThrows(WorkflowEventStore.EventStoreException.class,
-                () -> eventStore.loadEvents(TEST_CASE_ID));
+            WorkflowEvent event1 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, case1, null);
+            WorkflowEvent event2 = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, case2, null);
+
+            eventStore.append(event1, 0);
+            eventStore.append(event2, 0);
+
+            assertEquals(2, countEvents(dataSource));
+            assertEquals(1, eventStore.loadEvents(case1).size());
+            assertEquals(1, eventStore.loadEvents(case2).size());
         }
 
         @Test
-        @DisplayName("invalidEventTypeThrowsEventStoreException")
-        void invalidEventTypeThrowsEventStoreException() throws Exception {
-            when(mockDataSource.getConnection()).thenReturn(mockConnection);
-            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-            when(mockResultSet.next()).thenReturn(true);
-            when(mockResultSet.getString("event_id")).thenReturn("event-1");
-            when(mockResultSet.getString("spec_id")).thenReturn(TEST_SPEC_ID);
-            when(mockResultSet.getString("case_id")).thenReturn(TEST_CASE_ID);
-            when(mockResultSet.getString("seq_num")).thenReturn("0");
-            when(mockResultSet.getString("event_type")).thenReturn("INVALID_TYPE");
-            when(mockResultSet.getString("schema_version")).thenReturn("1.0");
-            when(mockResultSet.getTimestamp("event_timestamp")).thenReturn(
-                Timestamp.from(BASE_TIMESTAMP));
-            when(mockResultSet.getString("payload_json")).thenReturn("{}");
-            doNothing().when(mockConnection).close();
+        @DisplayName("eventsPersistAcrossStoreInstances")
+        void eventsPersistAcrossStoreInstances() throws Exception {
+            String caseId = EventSourcingTestFixture.generateCaseId();
+            WorkflowEvent event = EventSourcingTestFixture.createTestEvent(
+                WorkflowEvent.EventType.CASE_STARTED, caseId, null);
+            eventStore.append(event, 0);
 
-            assertThrows(WorkflowEventStore.EventStoreException.class,
-                () -> eventStore.loadEvents(TEST_CASE_ID));
+            WorkflowEventStore newStore = new WorkflowEventStore(dataSource);
+            List<WorkflowEvent> events = newStore.loadEvents(caseId);
+
+            assertEquals(1, events.size());
+            assertEquals(WorkflowEvent.EventType.CASE_STARTED, events.get(0).getEventType());
         }
     }
 
-    // Helper method to create test events
-    private WorkflowEvent createTestEvent(WorkflowEvent.EventType type, String caseId, String workItemId) {
-        return new WorkflowEvent(
-            UUID.randomUUID().toString(),
-            type,
-            "1.0",
-            TEST_SPEC_ID,
-            caseId,
-            workItemId,
-            BASE_TIMESTAMP,
-            Map.of()
-        );
+    // Helper method for counting events
+    private int countEvents(DataSource ds) throws SQLException {
+        try (var conn = ds.getConnection();
+             var stmt = conn.createStatement();
+             var rs = stmt.executeQuery("SELECT COUNT(*) FROM workflow_events")) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
     }
 }

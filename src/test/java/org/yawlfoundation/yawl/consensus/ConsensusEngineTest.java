@@ -5,11 +5,14 @@
 
 package org.yawlfoundation.yawl.consensus;
 
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.yawlfoundation.yawl.integration.eventsourcing.EventSourcingTestFixture;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -17,23 +20,38 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
- * Comprehensive test suite for ConsensusEngine
+ * Comprehensive test suite for ConsensusEngine using Chicago TDD with real implementations
+ * and H2 database persistence.
  */
-@ExtendWith(MockitoExtension.class)
 class ConsensusEngineTest {
+    private static DataSource dataSource;
     private ConsensusEngine consensusEngine;
     private ConsensusNode node1;
     private ConsensusNode node2;
     private ConsensusNode node3;
 
-    @BeforeEach
-    void setUp() {
-        consensusEngine = new RaftConsensus();
+    @BeforeAll
+    static void setupDatabase() throws SQLException {
+        // Create shared H2 in-memory database for all tests
+        dataSource = EventSourcingTestFixture.createDataSource();
+        EventSourcingTestFixture.createSchema(dataSource);
+    }
 
-        // Create test nodes
+    @AfterAll
+    static void cleanupDatabase() throws SQLException {
+        if (dataSource != null) {
+            EventSourcingTestFixture.dropSchema(dataSource);
+        }
+    }
+
+    @BeforeEach
+    void setUp() throws SQLException {
+        // Create real RaftConsensus with persistence
+        consensusEngine = new RaftConsensusWithPersistence(dataSource);
+
+        // Create real test nodes
         node1 = new ConsensusNodeImpl("node1:8080", consensusEngine);
         node2 = new ConsensusNodeImpl("node2:8080", consensusEngine);
         node3 = new ConsensusNodeImpl("node3:8080", consensusEngine);
@@ -245,9 +263,21 @@ class ConsensusEngineTest {
     }
 
     @AfterEach
-    void tearDown() {
-        if (consensusEngine instanceof RaftConsensus) {
-            ((RaftConsensus) consensusEngine).shutdown();
+    void tearDown() throws SQLException {
+        // Clean up database state between tests
+        if (dataSource != null) {
+            try (Connection conn = dataSource.getConnection();
+                 Statement stmt = conn.createStatement()) {
+                // Clear consensus state table
+                stmt.execute("DELETE FROM consensus_state");
+                // Clear proposals table
+                stmt.execute("DELETE FROM consensus_proposals");
+            }
+        }
+
+        // Shutdown consensus engine
+        if (consensusEngine instanceof RaftConsensusWithPersistence) {
+            ((RaftConsensusWithPersistence) consensusEngine).shutdown();
         }
     }
 }

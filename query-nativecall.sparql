@@ -1,0 +1,5 @@
+CONSTRUCT { ?s ?p ?o }
+WHERE {
+    ?s ?p ?o .
+    FILTER(contains(str(?s), "NativeCall") || contains(str(?p), "NativeCall") || contains(str(?o), "NativeCall"))
+} LIMIT 50

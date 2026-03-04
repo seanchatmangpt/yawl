@@ -1,0 +1,13 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: qlever-native
+Description: QLever Native FFI Interface
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lqlever_native
+Cflags: -I${includedir}
+Requires: threads
+Libs.private: @QLIVER_LIBS@
+Cflags.private: @QLIVER_CFLAGS@

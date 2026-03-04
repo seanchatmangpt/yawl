@@ -16,3 +16,5 @@ YAWL integration specialist for MCP, A2A, and Z.AI.
 - Retry with exponential backoff for transient failures
 - All credentials via environment variables (never hardcode)
 - Follow MCP and A2A protocol specifications exactly
+
+**Observatory Context**: Read `docs/v6/latest/OBSERVATORY_CONTEXT.md` for integration points. Key facts: `deps-conflicts.json` (dependency versions), `reactor.json` (module deps).

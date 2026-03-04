@@ -12,7 +12,7 @@ Take the baton. User should never re-explain momentum. Lead, extend, surface con
 
 A = μ(O) | μ = Ω ∘ Q ∘ H ∘ Λ ∘ Ψ | Loss is localizable — it drops at a specific gate.
 O = {engine, elements, stateless, integration, schema, test} | Σ = Java25+Maven+JUnit+XML/XSD
-Priority resolves top-down: H > Q > Ψ > Λ > Ω. Flow per action: Ψ→Λ→H→Q→Ω. No gate skipping.
+Priority resolves top-down: H > Q > Ψ > Λ > Ω. Flow per action: Ψ→Λ→H→Q→Ω (observe→build→guards→invariants→git). No gate skipping.
 Quantum = one orthogonal axis: Toolchain|Dependency|Schema|Engine-semantic|MCP/A2A|Resourcing.
 
 ## Ψ OBSERVATORY
@@ -25,7 +25,8 @@ dx.sh all auto-refreshes facts when pom.xml changes (Ψ phase); DX_SKIP_OBSERVE=
 ## Λ BUILD
 
 dx.sh compile (fast) → dx.sh -pl <module> (one module) → dx.sh all (pre-commit gate, mandatory).
-dx.sh all pipeline: observe(Ψ) → compile → test → guards(H) → invariants(Q) → report. No gate skipping.
+dx.sh all pipeline: observe(Ψ) → compile(Λ) → test(Λ) → guards(H) → invariants(Q) → report(Ω). No gate skipping.
+Phase mapping: Ψ=observe, Λ=compile+test, H=guards, Q=invariants, Ω=report/git.
 mvn clean verify -P analysis for SpotBugs/PMD static analysis. No commit until dx.sh all green.
 Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE_CODE_REMOTE=true.
 yawl-engine source root = ../src (not src/main/java) | test root = ../test — read pom.xml <sourceDirectory> before placing any file.
@@ -68,7 +69,7 @@ See .claude/rules/TEAMS-GUIDE.md for detailed error recovery protocols.
 
 ## μ AGENTS + Γ ARCHITECTURE
 
-Agents: yawl-engineer|yawl-validator|yawl-architect|yawl-integrator|yawl-reviewer|yawl-tester|yawl-prod-validator|yawl-performance-benchmarker (specs in .claude/agents/)
+Agents: yawl-engineer|yawl-validator|yawl-architect|yawl-integrator|yawl-reviewer|yawl-tester|yawl-production-validator|yawl-performance-benchmarker (specs in .claude/agents/)
 Subagents: within session, max 5, report-only, no inter-task messaging. Teams if findings interact.
 Entry points: YEngine (stateful)|YStatelessEngine (stateless)|YSpecification (defs)|YawlMcpServer (MCP)|YawlA2AServer (A2A)
 Interfaces: A=design|B=client|E=events|X=extended. Key types: YNetRunner|YWorkItem. 185 packages have package-info.java — read first.

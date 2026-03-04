@@ -63,14 +63,23 @@
         <module>yawl-utilities</module>
         <module>yawl-security</module>
         <module>yawl-erlang</module>
+        <!-- Disabled - GraalVM SDK not available (2026-03-04)
         <module>yawl-graalpy</module>
+        -->
+        <!-- Disabled - legacy polyglot execution (2026-03-03)
         <module>yawl-graaljs</module>
         <module>yawl-rust4pm</module>
+        -->
 
         <!-- Layer 1: First consumers (build in parallel) -->
         <module>yawl-elements</module>
         <module>yawl-ggen</module>
+        <module>yawl-tpot2</module>
+        <module>yawl-dspy</module>
+        <module>yawl-ml-bridge</module>
+        <!-- Disabled - legacy polyglot execution (2026-03-03)
         <module>yawl-graalwasm</module>
+        -->
         <module>yawl-dmn</module>
         <module>yawl-data-modelling</module>
 
@@ -91,12 +100,17 @@
         <module>yawl-webapps</module>
 
         <!-- Layer 5: Advanced services (build in parallel) -->
+        <!-- Disabled - requires WorkflowDNAOracle and ProcessMiningFacade (2026-03-04)
         <module>yawl-pi</module>
+        -->
         <module>yawl-resourcing</module>
         <module>yawl-qlever</module>
+        <module>yawl-native-bridge</module>
 
         <!-- Layer 6: Top-level application -->
+        <!-- Disabled - extensive ggen dependencies missing (2026-03-04)
         <module>yawl-mcp-a2a-app</module>
+        -->
     </modules>
 
     <!-- PROPERTIES - single source of truth for all dependency versions.
@@ -226,6 +240,9 @@
 
         <!-- GraalVM Polyglot / GraalPy                                         -->
         <graalvm.version>24.1.2</graalvm.version>
+
+        <!-- Erlang JInterface                                                  -->
+        <jinterface.version>1.14</jinterface.version>
 
         <!-- Misc runtime support                                               -->
         <jspecify.version>1.0.0</jspecify.version>
@@ -479,6 +496,11 @@
             </dependency>
             <dependency>
                 <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-tpot2</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-graalpy</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -556,6 +578,18 @@
                 <groupId>org.yawlfoundation</groupId>
                 <artifactId>yawl-erlang</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yawlfoundation</groupId>
+                <artifactId>yawl-ml-bridge</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Erlang JInterface for Java-Erlang communication -->
+            <dependency>
+                <groupId>com.ericsson.otp.erlang</groupId>
+                <artifactId>jinterface</artifactId>
+                <version>${jinterface.version}</version>
             </dependency>
 
             <!-- Apache Commons (not fully covered by Spring Boot BOM) -->
@@ -763,6 +797,20 @@
                 <groupId>io.github.a2asdk</groupId>
                 <artifactId>a2a-java-sdk-client-transport-grpc</artifactId>
                 <version>${a2a.version}</version>
+            </dependency>
+
+            <!-- Jersey Test Dependencies for Chicago TDD Testing -->
+            <dependency>
+                <groupId>org.glassfish.jersey.test-framework</groupId>
+                <artifactId>jersey-test-framework-core</artifactId>
+                <version>${jersey.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+                <artifactId>jersey-test-framework-provider-inmemory</artifactId>
+                <version>${jersey.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

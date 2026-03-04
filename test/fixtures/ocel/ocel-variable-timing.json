@@ -1,0 +1,421 @@
+{
+  "ocel": {
+    "version": "2.0",
+    "global-id": "global-variable-timing",
+    "events": [
+      {
+        "id": "e1",
+        "type": "login",
+        "timestamp": "2024-01-15T08:30:15Z",
+        "activity": "user_login",
+        "attributes": {
+          "user_id": "user_001",
+          "device": "mobile",
+          "ip_address": "192.168.1.100",
+          "login_method": "email"
+        },
+        "objects": ["user_001"]
+      },
+      {
+        "id": "e2",
+        "type": "purchase",
+        "timestamp": "2024-01-15T09:15:33Z",
+        "activity": "place_order",
+        "attributes": {
+          "order_id": "ord_001",
+          "amount": 45.99,
+          "items_count": 2,
+          "payment_method": "credit_card"
+        },
+        "objects": ["user_001", "order_001"]
+      },
+      {
+        "id": "e3",
+        "type": "support",
+        "timestamp": "2024-01-15T10:02:47Z",
+        "activity": "open_ticket",
+        "attributes": {
+          "ticket_id": "ticket_001",
+          "issue_type": "billing",
+          "priority": "medium",
+          "response_time": "2h"
+        },
+        "objects": ["user_001", "ticket_001"]
+      },
+      {
+        "id": "e4",
+        "type": "system",
+        "timestamp": "2024-01-15T10:45:22Z",
+        "activity": "backup_complete",
+        "attributes": {
+          "backup_id": "backup_001",
+          "size_gb": 120.5,
+          "duration_minutes": 45,
+          "success": true
+        },
+        "objects": ["system_backup_001"]
+      },
+      {
+        "id": "e5",
+        "type": "login",
+        "timestamp": "2024-01-15T11:30:08Z",
+        "activity": "user_login",
+        "attributes": {
+          "user_id": "user_002",
+          "device": "desktop",
+          "ip_address": "10.0.0.50",
+          "login_method": "sso"
+        },
+        "objects": ["user_002"]
+      },
+      {
+        "id": "e6",
+        "type": "purchase",
+        "timestamp": "2024-01-15T12:15:55Z",
+        "activity": "place_order",
+        "attributes": {
+          "order_id": "ord_002",
+          "amount": 89.99,
+          "items_count": 3,
+          "payment_method": "paypal"
+        },
+        "objects": ["user_002", "order_002"]
+      },
+      {
+        "id": "e7",
+        "type": "batch",
+        "timestamp": "2024-01-15T13:30:12Z",
+        "activity": "process_transactions",
+        "attributes": {
+          "batch_id": "batch_001",
+          "transaction_count": 1000,
+          "processing_time": 120,
+          "success_rate": 0.98
+        },
+        "objects": ["transaction_batch_001"]
+      },
+      {
+        "id": "e8",
+        "type": "alert",
+        "timestamp": "2024-01-15T14:05:33Z",
+        "activity": "security_alert",
+        "attributes": {
+          "alert_id": "alert_001",
+          "alert_type": "suspicious_login",
+          "severity": "high",
+          "resolved": false
+        },
+        "objects": ["user_002", "security_event_001"]
+      },
+      {
+        "id": "e9",
+        "type": "system",
+        "timestamp": "2024-01-15T15:22:47Z",
+        "activity": "maintenance_start",
+        "attributes": {
+          "maintenance_id": "maint_001",
+          "duration_hours": 2,
+          "affected_services": ["payment", "checkout"],
+          "scheduled": true
+        },
+        "objects": ["system_maintenance_001"]
+      },
+      {
+        "id": "e10",
+        "type": "analytics",
+        "timestamp": "2024-01-15T16:45:19Z",
+        "activity": "generate_report",
+        "attributes": {
+          "report_id": "report_001",
+          "report_type": "daily_sales",
+          "generation_time": 8.5,
+          "data_points": 15000
+        },
+        "objects": ["analytics_report_001"]
+      },
+      {
+        "id": "e11",
+        "type": "weekend_pause",
+        "timestamp": "2024-01-20T18:00:00Z",
+        "activity": "business_hours_end",
+        "attributes": {
+          "end_time": "2024-01-20T18:00:00Z",
+          "next_start": "2024-01-22T08:00:00Z",
+          "timezone": "EST",
+          "weekend": true
+        },
+        "objects": ["business_hours_001"]
+      },
+      {
+        "id": "e12",
+        "type": "night_pause",
+        "timestamp": "2024-01-21T23:45:30Z",
+        "activity": "maintenance_window",
+        "attributes": {
+          "window_type": "scheduled",
+          "duration_minutes": 30,
+          "affected_users": 0,
+          "non_critical_only": true
+        },
+        "objects": ["maintenance_window_001"]
+      },
+      {
+        "id": "e13",
+        "type": "morning_rush",
+        "timestamp": "2024-01-22T07:55:15Z",
+        "activity": "system_wakeup",
+        "attributes": {
+          "system_type": "production",
+          "startup_time": 45,
+          "services_ready": 15,
+          "status": "degraded"
+        },
+        "objects": ["system_prod_001"]
+      },
+      {
+        "id": "e14",
+        "type": "lunch_hour",
+        "timestamp": "2024-01-22T12:30:00Z",
+        "activity": "support_reduction",
+        "attributes": {
+          "normal_agents": 10,
+          "reduced_agents": 5,
+          "reduction_start": "12:00",
+          "reduction_end": "13:30"
+        },
+        "objects": ["support_team_001"]
+      },
+      {
+        "id": "e15",
+        "type": "evening_surge",
+        "timestamp": "2024-01-22T19:20:45Z",
+        "activity": "traffic_spike",
+        "attributes": {
+          "normal_load": 100,
+          "current_load": 450,
+          "duration_minutes": 90,
+          "scale_action": "auto_scale"
+        },
+        "objects": ["web_server_cluster_001"]
+      }
+    ],
+    "objects": [
+      {
+        "id": "user_001",
+        "type": "user",
+        "attributes": {
+          "username": "john_doe",
+          "email": "john@example.com",
+          "registration_date": "2023-11-15T00:00:00Z",
+          "last_login": "2024-01-15T08:30:15Z",
+          "total_purchases": 45
+        }
+      },
+      {
+        "id": "user_002",
+        "type": "user",
+        "attributes": {
+          "username": "jane_smith",
+          "email": "jane@example.com",
+          "registration_date": "2023-10-20T00:00:00Z",
+          "last_login": "2024-01-15T11:30:08Z",
+          "total_purchases": 134
+        }
+      },
+      {
+        "id": "order_001",
+        "type": "order",
+        "attributes": {
+          "order_number": "ORD-001",
+          "order_date": "2024-01-15T09:15:33Z",
+          "total_amount": 45.99,
+          "status": "completed",
+          "fulfillment_time": 2.5
+        }
+      },
+      {
+        "id": "order_002",
+        "type": "order",
+        "attributes": {
+          "order_number": "ORD-002",
+          "order_date": "2024-01-15T12:15:55Z",
+          "total_amount": 89.99,
+          "status": "processing",
+          "fulfillment_time": null
+        }
+      },
+      {
+        "id": "ticket_001",
+        "type": "support_ticket",
+        "attributes": {
+          "ticket_number": "TKT-001",
+          "created_at": "2024-01-15T10:02:47Z",
+          "status": "open",
+          "first_response_time": "45m",
+          "resolution_time": null
+        }
+      },
+      {
+        "id": "system_backup_001",
+        "type": "system",
+        "attributes": {
+          "system_name": "Database Backup",
+          "backup_time": "2024-01-15T10:45:22Z",
+          "backup_type": "full",
+          "retention_days": 30,
+          "last_verified": "2024-01-15T10:46:15Z"
+        }
+      },
+      {
+        "id": "transaction_batch_001",
+        "type": "batch_process",
+        "attributes": {
+          "batch_name": "Daily Transactions",
+          "processed_at": "2024-01-15T13:30:12Z",
+          "total_value": 125000.00,
+          "error_count": 20,
+          "average_time": 0.12
+        }
+      },
+      {
+        "id": "security_event_001",
+        "type": "security_event",
+        "attributes": {
+          "event_type": "suspicious_login",
+          "event_time": "2024-01-15T14:05:33Z",
+          "severity": "high",
+          "resolved": false,
+          "risk_score": 8.2
+        }
+      },
+      {
+        "id": "system_maintenance_001",
+        "type": "maintenance",
+        "attributes": {
+          "maintenance_type": "scheduled",
+          "scheduled_time": "2024-01-15T15:22:47Z",
+          "completion_time": "2024-01-15T17:22:47Z",
+          "impact_level": "medium",
+          "downtime_minutes": 15
+        }
+      },
+      {
+        "id": "analytics_report_001",
+        "type": "report",
+        "attributes": {
+          "report_name": "Daily Sales Report",
+          "generated_at": "2024-01-15T16:45:19Z",
+          "report_format": "pdf",
+          "file_size_mb": 2.5,
+          "recipients": ["management", "finance"]
+        }
+      },
+      {
+        "id": "business_hours_001",
+        "type": "business_hours",
+        "attributes": {
+          "business_type": "retail",
+          "weekend_hours": false,
+          "holiday_schedule": [],
+          "timezone": "EST"
+        }
+      },
+      {
+        "id": "maintenance_window_001",
+        "type": "maintenance_window",
+        "attributes": {
+          "window_type": "scheduled",
+          "frequency": "daily",
+          "start_time": "23:45",
+          "end_time": "00:15",
+          "critical_systems": false
+        }
+      },
+      {
+        "id": "system_prod_001",
+        "type": "production_system",
+        "attributes": {
+          "system_name": "Production Platform",
+          "uptime_percentage": 99.95,
+          "last_restart": "2024-01-22T07:55:15Z",
+          "service_level": "gold"
+        }
+      },
+      {
+        "id": "support_team_001",
+        "type": "support_team",
+        "attributes": {
+          "team_name": "Customer Support",
+          "team_size": 10,
+          "coverage_hours": ["08:00", "20:00"],
+          "timezone": "EST"
+        }
+      },
+      {
+        "id": "web_server_cluster_001",
+        "type": "server_cluster",
+        "attributes": {
+          "cluster_name": "Web Servers",
+          "server_count": 12,
+          "cpu_usage": 78,
+          "memory_usage": 65,
+          "traffic_pattern": "peak_evening"
+        }
+      }
+    ],
+    "objectTypes": {
+      "user": {
+        "name": "User",
+        "attributes": ["username", "email", "registration_date", "last_login", "total_purchases"]
+      },
+      "order": {
+        "name": "Order",
+        "attributes": ["order_number", "order_date", "total_amount", "status", "fulfillment_time"]
+      },
+      "support_ticket": {
+        "name": "Support Ticket",
+        "attributes": ["ticket_number", "created_at", "status", "first_response_time", "resolution_time"]
+      },
+      "system": {
+        "name": "System",
+        "attributes": ["system_name", "backup_time", "backup_type", "retention_days", "last_verified"]
+      },
+      "batch_process": {
+        "name": "Batch Process",
+        "attributes": ["batch_name", "processed_at", "total_value", "error_count", "average_time"]
+      },
+      "security_event": {
+        "name": "Security Event",
+        "attributes": ["event_type", "event_time", "severity", "resolved", "risk_score"]
+      },
+      "maintenance": {
+        "name": "Maintenance",
+        "attributes": ["maintenance_type", "scheduled_time", "completion_time", "impact_level", "downtime_minutes"]
+      },
+      "report": {
+        "name": "Report",
+        "attributes": ["report_name", "generated_at", "report_format", "file_size_mb", "recipients"]
+      },
+      "business_hours": {
+        "name": "Business Hours",
+        "attributes": ["business_type", "weekend_hours", "holiday_schedule", "timezone"]
+      },
+      "maintenance_window": {
+        "name": "Maintenance Window",
+        "attributes": ["window_type", "frequency", "start_time", "end_time", "critical_systems"]
+      },
+      "production_system": {
+        "name": "Production System",
+        "attributes": ["system_name", "uptime_percentage", "last_restart", "service_level"]
+      },
+      "support_team": {
+        "name": "Support Team",
+        "attributes": ["team_name", "team_size", "coverage_hours", "timezone"]
+      },
+      "server_cluster": {
+        "name": "Server Cluster",
+        "attributes": ["cluster_name", "server_count", "cpu_usage", "memory_usage", "traffic_pattern"]
+      }
+    }
+  }
+}

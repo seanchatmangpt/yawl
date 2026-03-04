@@ -1,0 +1,22 @@
+{
+  "events": [
+    {"id": "e1", "type": "Plan", "timestamp": "2024-04-01T09:00:00Z", "omap": ["feature-2", "sprint-2"], "vmap": {"resource": "alice", "story_points": 8}},
+    {"id": "e2", "type": "Start", "timestamp": "2024-04-01T10:00:00Z", "omap": ["story-3"], "vmap": {"resource": "eve"}},
+    {"id": "e3", "type": "Start", "timestamp": "2024-04-01T10:30:00Z", "omap": ["story-4"], "vmap": {"resource": "frank"}},
+    {"id": "e4", "type": "Block", "timestamp": "2024-04-01T14:00:00Z", "omap": ["story-3"], "vmap": {"reason": "database_migration"}},
+    {"id": "e5", "type": "Unblock", "timestamp": "2024-04-02T09:00:00Z", "omap": ["story-3"], "vmap": {"resource": "alice"}},
+    {"id": "e6", "type": "Block", "timestamp": "2024-04-02T10:00:00Z", "omap": ["story-4"], "vmap": {"reason": "external_service_down"}},
+    {"id": "e7", "type": "Unblock", "timestamp": "2024-04-02T15:00:00Z", "omap": ["story-4"], "vmap": {"resource": "bob"}},
+    {"id": "e8", "type": "Complete", "timestamp": "2024-04-03T11:00:00Z", "omap": ["story-3"], "vmap": {"resource": "eve"}},
+    {"id": "e9", "type": "Complete", "timestamp": "2024-04-03T14:00:00Z", "omap": ["story-4"], "vmap": {"resource": "frank"}},
+    {"id": "e10", "type": "Block", "timestamp": "2024-04-03T16:00:00Z", "omap": ["feature-2"], "vmap": {"reason": "integration_test"}},
+    {"id": "e11", "type": "Unblock", "timestamp": "2024-04-04T09:00:00Z", "omap": ["feature-2"], "vmap": {"resource": "carol"}},
+    {"id": "e12", "type": "Accept", "timestamp": "2024-04-04T15:00:00Z", "omap": ["feature-2"], "vmap": {"resource": "alice"}}
+  ],
+  "objects": [
+    {"id": "feature-2", "type": "feature", "ovmap": {"status": "accepted", "team": "beta"}},
+    {"id": "story-3", "type": "story", "ovmap": {"status": "completed", "points": 8}},
+    {"id": "story-4", "type": "story", "ovmap": {"status": "completed", "points": 5}},
+    {"id": "sprint-2", "type": "sprint", "ovmap": {"name": "PI2 Sprint 2"}}
+  ]
+}

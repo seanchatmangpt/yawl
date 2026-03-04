@@ -1,0 +1,458 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-01-15T10:00:00Z",
+    "source": "development-workflow"
+  },
+  "events": [
+    {
+      "id": "e1",
+      "type": "CaseCreate",
+      "timestamp": "2024-01-15T09:15:23.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "PI Sprint Planning",
+        "concept:description": "Initial planning session for PI2",
+        "pi:sprint": "PI2-Sprint1",
+        "pi:team": "Alpha",
+        "duration": 3600
+      },
+      "objects": {
+        "c1": {
+          "type": "Case",
+          "attributes": {
+            "concept:name": "PI2 Sprint 1 - Feature Development",
+            "pi:priority": "high",
+            "pi:estimation": 42,
+            "pi:deadline": "2024-01-26T17:00:00Z"
+          }
+        },
+        "f1": {
+          "type": "Feature",
+          "attributes": {
+            "concept:name": "User Authentication Service",
+            "pi:points": 13,
+            "pi:assignee": "alice",
+            "pi:status": "planning"
+          }
+        }
+      }
+    },
+    {
+      "id": "e2",
+      "type": "TaskStart",
+      "timestamp": "2024-01-15T10:45:12.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Design Authentication API",
+        "concept:cost": 480,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 8
+      },
+      "objects": {
+        "c1": {},
+        "t1": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Design Auth API",
+            "pi:parent": "f1",
+            "pi:assignee": "bob",
+            "pi:status": "in_progress",
+            "pi:subtasks": ["t1a", "t1b"]
+          }
+        },
+        "r1": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Bob Developer",
+            "pi:role": "Senior Developer",
+            "pi:team": "Alpha",
+            "pi:skills": ["API", "Security", "Java"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e3",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-15T14:30:45.123Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Design Authentication API",
+        "concept:cost": 520,
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:actualHours": 7.8,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c1": {},
+        "t1": {},
+        "r1": {}
+      }
+    },
+    {
+      "id": "e4",
+      "type": "TaskStart",
+      "timestamp": "2024-01-15T15:15:33.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Implement Auth Service",
+        "concept:cost": 960,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 16
+      },
+      "objects": {
+        "c1": {},
+        "t2": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Implement Auth Service",
+            "pi:parent": "f1",
+            "pi:assignee": "carol",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t1"]
+          }
+        },
+        "r2": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Carol Developer",
+            "pi:role": "Senior Developer",
+            "pi:team": "Alpha",
+            "pi:skills": ["Backend", "Spring", "Java"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e5",
+      "type": "TaskStart",
+      "timestamp": "2024-01-15T15:30:11.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Create Auth UI Components",
+        "concept:cost": 720,
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 12
+      },
+      "objects": {
+        "c1": {},
+        "t3": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Create Auth UI",
+            "pi:parent": "f1",
+            "pi:assignee": "dave",
+            "pi:status": "in_progress",
+            "pi:dependencies": ["t1"]
+          }
+        },
+        "r3": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Dave Developer",
+            "pi:role": "Frontend Developer",
+            "pi:team": "Alpha",
+            "pi:skills": ["React", "TypeScript", "CSS"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e6",
+      "type": "TaskBlock",
+      "timestamp": "2024-01-16T09:45:22.345Z",
+      "lifecycle": "suspend",
+      "attributes": {
+        "concept:name": "Database Schema Update",
+        "concept:cost": 240,
+        "pi:taskType": "development",
+        "pi:complexity": "low",
+        "pi:blockReason": "waiting_for_review",
+        "pi:blockedBy": "t2"
+      },
+      "objects": {
+        "c1": {},
+        "t4": {
+          "type": "Task",
+          "attributes": {
+            "concept:name": "Update Auth Schema",
+            "pi:parent": "f1",
+            "pi:assignee": "eve",
+            "pi:status": "blocked",
+            "pi:dependencies": ["t2"]
+          }
+        },
+        "r4": {
+          "type": "Resource",
+          "attributes": {
+            "concept:name": "Eve Developer",
+            "pi:role": "Backend Developer",
+            "pi:team": "Alpha",
+            "pi:skills": ["Database", "SQL", "PostgreSQL"]
+          }
+        }
+      }
+    },
+    {
+      "id": "e7",
+      "type": "TaskUnblock",
+      "timestamp": "2024-01-16T14:20:15.678Z",
+      "lifecycle": "resume",
+      "attributes": {
+        "concept:name": "Database Schema Update",
+        "concept:cost": 260,
+        "pi:taskType": "development",
+        "pi:complexity": "low",
+        "pi:blockReason": "waiting_for_review",
+        "pi:unblockedBy": "alice"
+      },
+      "objects": {
+        "c1": {},
+        "t4": {},
+        "r4": {}
+      }
+    },
+    {
+      "id": "e8",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-17T11:30:42.987Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Implement Auth Service",
+        "concept:cost": 1040,
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:actualHours": 17.2,
+        "pi:quality": "excellent"
+      },
+      "objects": {
+        "c1": {},
+        "t2": {},
+        "r2": {}
+      }
+    },
+    {
+      "id": "e9",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-17T16:45:33.210Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Create Auth UI Components",
+        "concept:cost": 780,
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:actualHours": 11.5,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c1": {},
+        "t3": {},
+        "r3": {}
+      }
+    },
+    {
+      "id": "e10",
+      "type": "TaskComplete",
+      "timestamp": "2024-01-18T10:15:55.432Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "Database Schema Update",
+        "concept:cost": 280,
+        "pi:taskType": "development",
+        "pi:complexity": "low",
+        "pi:actualHours": 2.5,
+        "pi:quality": "good"
+      },
+      "objects": {
+        "c1": {},
+        "t4": {},
+        "r4": {}
+      }
+    },
+    {
+      "id": "e11",
+      "type": "CaseComplete",
+      "timestamp": "2024-01-18T14:30:12.654Z",
+      "lifecycle": "complete",
+      "attributes": {
+        "concept:name": "PI2 Sprint 1 - Feature Development",
+        "concept:cost": 3380,
+        "pi:totalTasks": 4,
+        "pi:completedTasks": 4,
+        "pi:totalPoints": 42,
+        "pi:velocity": 21
+      },
+      "objects": {
+        "c1": {},
+        "f1": {
+          "attributes": {
+            "pi:status": "completed",
+            "pi:completionDate": "2024-01-18T14:30:12.654Z"
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "c1": {
+      "id": "c1",
+      "type": "Case",
+      "attributes": {
+        "concept:name": "PI2 Sprint 1 - Feature Development",
+        "concept:description": "Initial PI2 Sprint focusing on authentication",
+        "pi:priority": "high",
+        "pi:estimation": 42,
+        "pi:deadline": "2024-01-26T17:00:00Z",
+        "pi:actualCost": 3380,
+        "pi:actualDuration": 325870,
+        "pi:team": "Alpha",
+        "pi:sprint": "PI2-Sprint1"
+      }
+    },
+    "f1": {
+      "id": "f1",
+      "type": "Feature",
+      "attributes": {
+        "concept:name": "User Authentication Service",
+        "concept:description": "OAuth2-based authentication service with JWT tokens",
+        "pi:points": 13,
+        "pi:assignee": "alice",
+        "pi:status": "completed",
+        "pi:actualPoints": 13,
+        "pi:completionDate": "2024-01-18T14:30:12.654Z",
+        "pi:quality": "excellent"
+      }
+    },
+    "t1": {
+      "id": "t1",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Design Auth API",
+        "concept:description": "Design REST API endpoints for authentication service",
+        "pi:parent": "f1",
+        "pi:assignee": "bob",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 8,
+        "pi:actualHours": 7.8,
+        "pi:points": 3,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-15T14:30:45.123Z"
+      }
+    },
+    "t2": {
+      "id": "t2",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Implement Auth Service",
+        "concept:description": "Implement OAuth2 authentication service with Spring Security",
+        "pi:parent": "f1",
+        "pi:assignee": "carol",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "high",
+        "pi:estimatedHours": 16,
+        "pi:actualHours": 17.2,
+        "pi:points": 8,
+        "pi:quality": "excellent",
+        "pi:completionDate": "2024-01-17T11:30:42.987Z"
+      }
+    },
+    "t3": {
+      "id": "t3",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Create Auth UI Components",
+        "concept:description": "React components for login and registration forms",
+        "pi:parent": "f1",
+        "pi:assignee": "dave",
+        "pi:status": "completed",
+        "pi:taskType": "frontend",
+        "pi:complexity": "medium",
+        "pi:estimatedHours": 12,
+        "pi:actualHours": 11.5,
+        "pi:points": 2,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-17T16:45:33.210Z"
+      }
+    },
+    "t4": {
+      "id": "t4",
+      "type": "Task",
+      "attributes": {
+        "concept:name": "Update Auth Schema",
+        "concept:description": "Update user schema to support OAuth2 tokens",
+        "pi:parent": "f1",
+        "pi:assignee": "eve",
+        "pi:status": "completed",
+        "pi:taskType": "development",
+        "pi:complexity": "low",
+        "pi:estimatedHours": 4,
+        "pi:actualHours": 2.5,
+        "pi:points": 1,
+        "pi:quality": "good",
+        "pi:completionDate": "2024-01-18T10:15:55.432Z",
+        "pi:blockDuration": 17503
+      }
+    },
+    "r1": {
+      "id": "r1",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Bob Developer",
+        "concept:description": "Senior full-stack developer with 8 years experience",
+        "pi:role": "Senior Developer",
+        "pi:team": "Alpha",
+        "pi:skills": ["API", "Security", "Java", "Spring", "PostgreSQL"],
+        "pi:experience": "8 years",
+        "pi:location": "Remote"
+      }
+    },
+    "r2": {
+      "id": "r2",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Carol Developer",
+        "concept:description": "Senior backend developer specializing in Java",
+        "pi:role": "Senior Developer",
+        "pi:team": "Alpha",
+        "pi:skills": ["Backend", "Spring", "Java", "Microservices"],
+        "pi:experience": "7 years",
+        "pi:location": "On-site"
+      }
+    },
+    "r3": {
+      "id": "r3",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Dave Developer",
+        "concept:description": "Frontend developer specializing in React",
+        "pi:role": "Frontend Developer",
+        "pi:team": "Alpha",
+        "pi:skills": ["React", "TypeScript", "CSS", "Redux"],
+        "pi:experience": "5 years",
+        "pi:location": "Remote"
+      }
+    },
+    "r4": {
+      "id": "r4",
+      "type": "Resource",
+      "attributes": {
+        "concept:name": "Eve Developer",
+        "concept:description": "Database administrator and backend developer",
+        "pi:role": "Backend Developer",
+        "pi:team": "Alpha",
+        "pi:skills": ["Database", "SQL", "PostgreSQL", "Java"],
+        "pi:experience": "6 years",
+        "pi:location": "Hybrid"
+      }
+    }
+  }
+}

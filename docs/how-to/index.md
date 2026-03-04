@@ -94,6 +94,18 @@ Task-oriented guides for practitioners. You have a specific goal and need concre
 |-------|------|
 | [performance-testing.md](performance-testing.md) | Run performance benchmarks |
 
+## Process Mining
+
+| Guide | Task |
+|-------|------|
+| [process-mining-analysis.md](process-mining-analysis.md) | Run process mining analysis (conformance, bottlene, OCEL2 export) |
+
+## Process Mining
+
+| Guide | Task |
+|-------|------|
+| [process-mining-analysis.md](process-mining-analysis.md) | Run conformance checking, detect bottlenecks, export to OCEL2/XES/PNML |
+
 ## Observability
 
 | Guide | Task |

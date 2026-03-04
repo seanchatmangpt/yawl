@@ -27,9 +27,9 @@ gdpr:PersonalDataProcessShape a sh:NodeShape ;
     sh:property [
         sh:path yawl:hasTask ;
         sh:node gdpr:PersonalDataTaskShape ;
-        minCount 1 ;
-        severity sh:Violation ;
-        message "Personal data process must contain at least one personal data task" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Personal data process must contain at least one personal data task" ;
     ] ;
     sh:property [
         sh:path yawl:hasLawfulBasis ;
@@ -91,7 +91,7 @@ gdpr:LawfulBasisShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:lawfulBasis ;
-        in ("consent", "contract", "legal", "vital", "public", "legitimate") ;
+$1sh:in ("consent", "contract", "legal", "vital", "public", "legitimate") ;
         severity sh:Violation ;
         message "Lawful basis must be one of: consent, contract, legal, vital, public, legitimate" ;
     ] ;
@@ -115,7 +115,7 @@ gdpr:DataProtectionMeasureShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:protectionType ;
-        in ("technical", "organizational", "administrative") ;
+$1sh:in ("technical", "organizational", "administrative") ;
         severity sh:Violation ;
         message "Protection measure must be technical, organizational, or administrative" ;
     ] ;
@@ -165,7 +165,7 @@ gdpr:ConsentDetailShape a sh:NodeShape ;
     sh:severity sh:Violation ;
     sh:property [
         sh:path yawl:consentType ;
-        in ("explicit", "implicit", "optin", "optout") ;
+$1sh:in ("explicit", "implicit", "optin", "optout") ;
         severity sh:Violation ;
         message "Consent type must be explicit, implicit, optin, or optout" ;
     ] ;
@@ -216,7 +216,7 @@ gdpr:RightDetailShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:property [
         sh:path yawl:rightType ;
-        in ("access", "rectification", "erasure", "restriction", "portability", "object", "notautomated") ;
+$1sh:in ("access", "rectification", "erasure", "restriction", "portability", "object", "notautomated") ;
         severity sh:Warning ;
         message "Right type must be one of GDPR data subject rights" ;
     ] ;
@@ -324,7 +324,7 @@ gdpr:InternationalTransferShape a sh:NodeShape ;
     ] ;
     sh:property [
         sh:path yawl:transferMechanism ;
-        in ("adequacy", "appropriate", "exceptions") ;
+$1sh:in ("adequacy", "appropriate", "exceptions") ;
         severity sh:Violation ;
         message "Transfer mechanism must be adequacy, appropriate safeguards, or exceptions" ;
     ] ;
@@ -374,7 +374,7 @@ gdpr:RecordDetailShape a sh:NodeShape ;
     sh:severity sh:Warning ;
     sh:property [
         sh:path yawl:recordType ;
-        in ("purpose", "categories", "recipients", "retention", "security") ;
+$1sh:in ("purpose", "categories", "recipients", "retention", "security") ;
         severity sh:Warning ;
         message "Record type must be one of the required categories" ;
     ] ;

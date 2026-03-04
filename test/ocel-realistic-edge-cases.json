@@ -1,0 +1,739 @@
+{
+  "globalInfo": {
+    "exporter": "YAWL Test Generator",
+    "exporterVersion": "6.0.0",
+    "timestamp": "2024-03-03T10:00:00Z",
+    "source": "realistic-edge-cases-with-nulls-missing-data"
+  },
+  "events": [
+    {
+      "id": "order_200",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:15:42.123Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Order #200 - Null Values",
+        "concept:description": "Order with null/missing values",
+        "customer_id": null,
+        "customer_name": "",
+        "order_value": null,
+        "items_count": 0,
+        "payment_method": null,
+        "priority": null,
+        "shipping_address": null,
+        "metadata": {
+          "null_test": true,
+          "empty_strings": true
+        }
+      },
+      "objects": {
+        "o200": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #200",
+            "customer_id": null,
+            "total_amount": null,
+            "status": "created",
+            "created_at": "2024-03-03T09:15:42.123Z",
+            "priority": null,
+            "null_values": true
+          }
+        }
+      }
+    },
+    {
+      "id": "validation_200",
+      "type": "OrderValidation",
+      "timestamp": "2024-03-03T09:16:00.234Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Null Validation Check",
+        "concept:cost": 0.00,
+        "validation_type": "null_check",
+        "validation_result": "failed",
+        "null_fields": [
+          "customer_id",
+          "order_value",
+          "payment_method"
+        ],
+        "empty_fields": [
+          "customer_name"
+        ],
+        "error_message": "Order contains null and empty required fields",
+        "action_taken": "reject_order",
+        "validation_passed": false
+      },
+      "objects": {
+        "o200": {
+          "attributes": {
+            "status": "validation_failed",
+            "failed_at": "2024-03-03T09:16:00.234Z",
+            "null_validation": false
+          }
+        }
+      }
+    },
+    {
+      "id": "order_201",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T09:17:30.345Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Order #201 - Extreme Values",
+        "concept:description": "Order with extreme/min-max values",
+        "customer_id": "extreme_customer",
+        "customer_name": "Extreme Value Customer",
+        "order_value": 999999999.99,
+        "items_count": 9999,
+        "payment_method": "credit_card",
+        "priority": "critical",
+        "shipping_address": {
+          "street": "1",
+          "city": "A",
+          "state": "Z",
+          "zip": "00000"
+        }
+      },
+      "objects": {
+        "o201": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #201",
+            "customer_id": "extreme_customer",
+            "total_amount": 999999999.99,
+            "status": "created",
+            "created_at": "2024-03-03T09:17:30.345Z",
+            "priority": "critical",
+            "extreme_value": true
+          }
+        },
+        "c201": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Extreme Value Customer",
+            "customer_id": "extreme_customer",
+            "email": "extreme@example.com",
+            "status": "active",
+            "loyalty_points": 999999999,
+            "total_orders": 9999,
+            "total_spent": 999999999.99,
+            "join_date": "2020-01-01T00:00:00Z",
+            "extreme_values": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_201",
+      "type": "PaymentProcess",
+      "timestamp": "2024-03-03T09:20:00.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Extreme Value Payment Processing",
+        "concept:cost": 0.00,
+        "payment_processor": "stripe",
+        "transaction_id": "extreme_txn_201001",
+        "amount": 999999999.99,
+        "currency": "USD",
+        "risk_level": "extreme",
+        "fraud_check_required": true,
+        "manual_approval_needed": true
+      },
+      "objects": {
+        "o201": {},
+        "c201": {},
+        "p201": {
+          "type": "Payment",
+          "attributes": {
+            "concept:name": "Extreme Payment #201",
+            "payment_method": "credit_card",
+            "amount": 999999999.99,
+            "status": "risk_review",
+            "processor": "stripe",
+            "transaction_id": "extreme_txn_201001",
+            "risk_level": "extreme",
+            "manual_approval_needed": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_201_manual_review",
+      "type": "PaymentManualReview",
+      "timestamp": "2024-03-03T09:25:00.567Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Manual Risk Review",
+        "concept:cost": 0.00,
+        "review_type": "fraud_risk",
+        "risk_score": 95.5,
+        "reviewer": "fraud_analyst",
+        "review_deadline": "2024-03-03T10:00:00Z",
+        "manual_required": true,
+        "risk_factors": [
+          "extreme_amount",
+          "first_time_customer"
+        ]
+      },
+      "objects": {
+        "o201": {},
+        "c201": {},
+        "p201": {
+          "attributes": {
+            "status": "manual_review",
+            "review_started_at": "2024-03-03T09:25:00.567Z",
+            "risk_score": 95.5,
+            "manual_review_required": true
+          }
+        }
+      }
+    },
+    {
+      "id": "payment_201_rejected",
+      "type": "PaymentError",
+      "timestamp": "2024-03-03T09:35:00.678Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Payment Rejected - Extreme Risk",
+        "concept:cost": 0.00,
+        "error_type": "fraud_rejection",
+        "error_message": "Transaction rejected due to extreme risk score",
+        "error_code": "FRAUD_HIGH_RISK",
+        "risk_score": 95.5,
+        "manual_review_result": "rejected",
+        "rejection_reason": "extreme_amount_suspicious",
+        "customer_notified": false
+      },
+      "objects": {
+        "o201": {
+          "attributes": {
+            "status": "fraud_rejected",
+            "failed_at": "2024-03-03T09:35:00.678Z",
+            "rejection_reason": "fraud_risk"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_202",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T10:15:00.789Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Order #202 - Malformed Data",
+        "concept:description": "Order with malformed JSON data",
+        "customer_id": "customer_202",
+        "customer_name": "Malformed Data Customer",
+        "order_value": 100.00,
+        "items_count": 3,
+        "payment_method": "credit_card",
+        "metadata": {
+          "malformed_json": true,
+          "invalid_characters": "test<>",
+          "unicode_escape": "\\u0000"
+        }
+      },
+      "objects": {
+        "o202": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #202",
+            "customer_id": "customer_202",
+            "total_amount": 100.00,
+            "status": "created",
+            "created_at": "2024-03-03T10:15:00.789Z",
+            "malformed_data": true
+          }
+        },
+        "c202": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Malformed Data Customer",
+            "customer_id": "customer_202",
+            "email": "malformed@example.com",
+            "status": "active",
+            "malformed_data": true
+          }
+        }
+      }
+    },
+    {
+      "id": "data_sanitization_202",
+      "type": "DataSanitization",
+      "timestamp": "2024-03-03T10:18:00.890Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Data Sanitization Process",
+        "concept:cost": 0.00,
+        "sanitization_type": "malformed_data",
+        "original_data": {
+          "invalid_characters": "test<>",
+          "unicode_escape": "\\u0000"
+        },
+        "sanitized_data": {
+          "invalid_characters": "test",
+          "unicode_escape": ""
+        },
+        "sanitization_applied": true,
+        "security_risk": "high",
+        "data_cleaned": true
+      },
+      "objects": {
+        "o202": {
+          "attributes": {
+            "status": "sanitized",
+            "sanitized_at": "2024-03-03T10:18:00.890Z"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_203",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T11:15:00.901Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Order #203 - Missing Dependencies",
+        "concept:description": "Order missing required dependencies",
+        "customer_id": "customer_203",
+        "customer_name": "Missing Dependencies Customer",
+        "order_value": 200.00,
+        "items_count": 5,
+        "payment_method": "credit_card",
+        "missing_dependencies": [
+          "inventory_service",
+          "payment_gateway",
+          "shipping_provider"
+        ],
+        "service_availability": "degraded"
+      },
+      "objects": {
+        "o203": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #203",
+            "customer_id": "customer_203",
+            "total_amount": 200.00,
+            "status": "created",
+            "created_at": "2024-03-03T11:15:00.901Z",
+            "missing_dependencies": true
+          }
+        },
+        "c203": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Missing Dependencies Customer",
+            "customer_id": "customer_203",
+            "email": "missing@example.com",
+            "status": "active",
+            "service_unavailable": true
+          }
+        }
+      }
+    },
+    {
+      "id": "dependency_check_203",
+      "type": "DependencyCheck",
+      "timestamp": "2024-03-03T11:18:00.012Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Service Dependency Check",
+        "concept:cost": 0.00,
+        "dependency_status": {
+          "inventory_service": "down",
+          "payment_gateway": "degraded",
+          "shipping_provider": "down"
+        },
+        "available_services": [],
+        "required_services": [
+          "inventory_service",
+          "payment_gateway",
+          "shipping_provider"
+        ],
+        "service_availability": "critical",
+        "fallback_available": false,
+        "order_cancellation_risk": true
+      },
+      "objects": {
+        "o203": {
+          "attributes": {
+            "status": "dependency_check",
+            "dependency_check_at": "2024-03-03T11:18:00.012Z",
+            "services_unavailable": true
+          }
+        }
+      }
+    },
+    {
+      "id": "order_203_cancel",
+      "type": "OrderCancel",
+      "timestamp": "2024-03-03T11:20:00.123Z",
+      "lifecycle": "terminate",
+      "attributes": {
+        "concept:name": "Order Cancelled - Service Unavailable",
+        "concept:cost": 0.00,
+        "cancel_reason": "service_unavailable",
+        "cancel_reason_code": "DEP_UNAVAIL",
+        "cancelled_by": "system",
+        "refund_required": true,
+        "refund_amount": 0.00,
+        "affected_services": [
+          "inventory_service",
+          "payment_gateway",
+          "shipping_provider"
+        ],
+        "service_outage_duration": 1800000,
+        "customer_notified": true,
+        "system_error": "service_dependency_failure"
+      },
+      "objects": {
+        "o203": {
+          "attributes": {
+            "status": "cancelled",
+            "cancelled_at": "2024-03-03T11:20:00.123Z",
+            "cancel_reason": "service_unavailable",
+            "refund_required": true,
+            "system_error": "dependency_failure"
+          }
+        }
+      }
+    },
+    {
+      "id": "order_204",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T12:15:00.234Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Order #204 - Circular Reference",
+        "concept:description": "Order with circular reference in metadata",
+        "customer_id": "customer_204",
+        "customer_name": "Circular Reference Customer",
+        "order_value": 150.00,
+        "items_count": 2,
+        "payment_method": "credit_card",
+        "metadata": {
+          "circular_ref": {
+            "parent": {
+              "child": {
+                "reference": "self"
+              }
+            }
+          }
+        }
+      },
+      "objects": {
+        "o204": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #204",
+            "customer_id": "customer_204",
+            "total_amount": 150.00,
+            "status": "created",
+            "created_at": "2024-03-03T12:15:00.234Z",
+            "circular_reference": true
+          }
+        },
+        "c204": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Circular Reference Customer",
+            "customer_id": "customer_204",
+            "email": "circular@example.com",
+            "status": "active"
+          }
+        }
+      }
+    },
+    {
+      "id": "circular_ref_check_204",
+      "type": "CircularReferenceCheck",
+      "timestamp": "2024-03-03T12:18:00.345Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Circular Reference Detection",
+        "concept:cost": 0.00,
+        "reference_type": "metadata_circular",
+        "detection_result": "detected",
+        "reference_path": "metadata.circular_ref.parent.child.reference",
+        "object_id": "o204",
+        "circular_depth": 3,
+        "memory_risk": "high",
+        "cleanup_required": true
+      },
+      "objects": {
+        "o204": {
+          "attributes": {
+            "status": "circular_detected",
+            "detected_at": "2024-03-03T12:18:00.345Z",
+            "reference_cleared": false
+          }
+        }
+      }
+    },
+    {
+      "id": "order_205",
+      "type": "OrderCreate",
+      "timestamp": "2024-03-03T13:15:00.456Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Order #205 - Type Mismatch",
+        "concept:description": "Order with type mismatched data",
+        "customer_id": 12345,
+        "customer_name": "Number ID Customer",
+        "order_value": "150.00",
+        "items_count": "two",
+        "payment_method": null,
+        "data_type_errors": [
+          "customer_id: string expected, number provided",
+          "items_count: number expected, string provided"
+        ]
+      },
+      "objects": {
+        "o205": {
+          "type": "Order",
+          "attributes": {
+            "concept:name": "Order #205",
+            "customer_id": "12345",
+            "total_amount": 150.00,
+            "status": "created",
+            "created_at": "2024-03-03T13:15:00.456Z",
+            "type_mismatch": true
+          }
+        },
+        "c205": {
+          "type": "Customer",
+          "attributes": {
+            "concept:name": "Number ID Customer",
+            "customer_id": "12345",
+            "email": "number@example.com",
+            "status": "active",
+            "id_type_mismatch": true
+          }
+        }
+      }
+    },
+    {
+      "id": "type_conversion_205",
+      "type": "TypeConversion",
+      "timestamp": "2024-03-03T13:18:00.567Z",
+      "lifecycle": "start",
+      "attributes": {
+        "concept:name": "Data Type Conversion",
+        "concept:cost": 0.00,
+        "conversion_type": "auto_correction",
+        "original_types": {
+          "customer_id": "number",
+          "items_count": "string"
+        },
+        "converted_types": {
+          "customer_id": "string",
+          "items_count": "number"
+        },
+        "conversion_results": {
+          "customer_id": "12345",
+          "items_count": 2
+        },
+        "conversion_applied": true,
+        "data_integrity_maintained": true
+      },
+      "objects": {
+        "o205": {
+          "attributes": {
+            "status": "converted",
+            "converted_at": "2024-03-03T13:18:00.567Z",
+            "type_conversion": true
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "o200": {
+      "id": "o200",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #200",
+        "concept:description": "Order with null/missing values",
+        "customer_id": null,
+        "total_amount": null,
+        "status": "validation_failed",
+        "created_at": "2024-03-03T09:15:42.123Z",
+        "null_values": true,
+        "validation_failed_at": "2024-03-03T09:16:00.234Z"
+      }
+    },
+    "o201": {
+      "id": "o201",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #201",
+        "concept:description": "Order with extreme/min-max values",
+        "customer_id": "extreme_customer",
+        "total_amount": 999999999.99,
+        "status": "fraud_rejected",
+        "created_at": "2024-03-03T09:17:30.345Z",
+        "priority": "critical",
+        "extreme_value": true,
+        "rejected_at": "2024-03-03T09:35:00.678Z",
+        "rejection_reason": "fraud_risk"
+      }
+    },
+    "o202": {
+      "id": "o202",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #202",
+        "concept:description": "Order with malformed JSON data",
+        "customer_id": "customer_202",
+        "total_amount": 100.00,
+        "status": "sanitized",
+        "created_at": "2024-03-03T10:15:00.789Z",
+        "malformed_data": true,
+        "sanitized_at": "2024-03-03T10:18:00.890Z"
+      }
+    },
+    "o203": {
+      "id": "o203",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #203",
+        "concept:description": "Order missing required dependencies",
+        "customer_id": "customer_203",
+        "total_amount": 200.00,
+        "status": "cancelled",
+        "created_at": "2024-03-03T11:15:00.901Z",
+        "missing_dependencies": true,
+        "cancelled_at": "2024-03-03T11:20:00.123Z",
+        "cancel_reason": "service_unavailable",
+        "refund_required": true
+      }
+    },
+    "o204": {
+      "id": "o204",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #204",
+        "concept:description": "Order with circular reference in metadata",
+        "customer_id": "customer_204",
+        "total_amount": 150.00,
+        "status": "circular_detected",
+        "created_at": "2024-03-03T12:15:00.234Z",
+        "circular_reference": true,
+        "detected_at": "2024-03-03T12:18:00.345Z",
+        "reference_cleared": false
+      }
+    },
+    "o205": {
+      "id": "o205",
+      "type": "Order",
+      "attributes": {
+        "concept:name": "Order #205",
+        "concept:description": "Order with type mismatched data",
+        "customer_id": "12345",
+        "total_amount": 150.00,
+        "status": "converted",
+        "created_at": "2024-03-03T13:15:00.456Z",
+        "type_mismatch": true,
+        "converted_at": "2024-03-03T13:18:00.567Z"
+      }
+    },
+    "c201": {
+      "id": "c201",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Extreme Value Customer",
+        "concept:description": "Customer with extreme values",
+        "customer_id": "extreme_customer",
+        "email": "extreme@example.com",
+        "status": "active",
+        "loyalty_points": 999999999,
+        "total_orders": 9999,
+        "total_spent": 999999999.99,
+        "join_date": "2020-01-01T00:00:00Z",
+        "extreme_values": true,
+        "fraud_review": true,
+        "rejection_status": "rejected"
+      }
+    },
+    "c202": {
+      "id": "c202",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Malformed Data Customer",
+        "concept:description": "Customer with malformed data",
+        "customer_id": "customer_202",
+        "email": "malformed@example.com",
+        "status": "active",
+        "malformed_data": true,
+        "data_sanitized": true
+      }
+    },
+    "c203": {
+      "id": "c203",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Missing Dependencies Customer",
+        "concept:description": "Customer during service outage",
+        "customer_id": "customer_203",
+        "email": "missing@example.com",
+        "status": "active",
+        "service_unavailable": true,
+        "order_cancelled": true
+      }
+    },
+    "c204": {
+      "id": "c204",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Circular Reference Customer",
+        "concept:description": "Customer with circular reference issue",
+        "customer_id": "customer_204",
+        "email": "circular@example.com",
+        "status": "active",
+        "circular_reference_detected": true
+      }
+    },
+    "c205": {
+      "id": "c205",
+      "type": "Customer",
+      "attributes": {
+        "concept:name": "Number ID Customer",
+        "concept:description": "Customer with type mismatched ID",
+        "customer_id": "12345",
+        "email": "number@example.com",
+        "status": "active",
+        "id_type_mismatch": true,
+        "type_converted": true
+      }
+    },
+    "p201": {
+      "id": "p201",
+      "type": "Payment",
+      "attributes": {
+        "concept:name": "Extreme Payment #201",
+        "concept:description": "Payment with extreme values",
+        "payment_method": "credit_card",
+        "amount": 999999999.99,
+        "status": "fraud_rejected",
+        "processor": "stripe",
+        "transaction_id": "extreme_txn_201001",
+        "failed_at": "2024-03-03T09:35:00.678Z",
+        "risk_score": 95.5,
+        "manual_review_result": "rejected",
+        "rejection_reason": "fraud_risk"
+      }
+    },
+    "i200": {
+      "id": "i200",
+      "type": "Inventory",
+      "attributes": {
+        "concept:name": "Null Test Inventory",
+        "concept:description": "Inventory for null value testing",
+        "items_count": 0,
+        "stock_status": "unknown",
+        "warehouse_id": null,
+        "null_values": true
+      }
+    }
+  }
+}

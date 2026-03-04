@@ -1,0 +1,315 @@
+# =============================================================================
+# discover-native-calls.sparql - SPARQL query for native capability discovery
+# Generated from pm-bridge.ttl using QLever ontology engine
+# WCP-NB: NativeCall triples → process_mining_bridge gen_server clauses
+# =============================================================================
+
+# Query bridge instances and their native capabilities
+PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX pm: <http://yawlfoundation.org/yawl/processmining/bridge#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# Select all NativeCall triples with capability mapping details
+SELECT DISTINCT
+    ?bridgeName
+    ?bridgePackage
+    ?nativeLibrary
+    ?libraryPathProp
+    ?l2Class
+    ?l3Class
+    ?testClass
+    ?capabilityName
+    ?capabilityDescription
+    ?nativeTarget
+    ?functionName
+    ?javaName
+    ?nativeSymbol
+    ?returnType
+    ?functionDescriptor
+    ?domainOperationName
+    ?domainOperationDescription
+    ?domainOperationReturnType
+    ?testFixture
+    ?exceptionType
+WHERE {
+    # Match bridge instances
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName ?bridgeName ;
+            yawl-bridge:packageName ?bridgePackage .
+
+    # Bridge metadata
+    OPTIONAL { ?bridge yawl-bridge:nativeLibrary ?nativeLibrary }
+    OPTIONAL { ?bridge yawl-bridge:libraryPathProp ?libraryPathProp }
+    OPTIONAL { ?bridge yawl-bridge:l2Class ?l2Class }
+    OPTIONAL { ?bridge yawl-bridge:l3Class ?l3Class }
+    OPTIONAL { ?bridge yawl-bridge:testClass ?testClass }
+
+    # Match capabilities with native targets
+    ?bridge yawl-bridge:hasCapability ?capability .
+    ?capability a yawl-bridge:BridgeCapability ;
+               yawl-bridge:capabilityName ?capabilityName ;
+               yawl-bridge:nativeTarget ?nativeTarget .
+    OPTIONAL { ?capability yawl-bridge:capabilityDescription ?capabilityDescription }
+
+    # Match native functions (L2 transport layer)
+    ?bridge yawl-bridge:hasFunction ?function .
+    ?function a yawl-bridge:NativeFunction ;
+              yawl-bridge:fnHandleName ?functionName ;
+              yawl-bridge:fnJavaName ?javaName ;
+              yawl-bridge:fnNativeSymbol ?nativeSymbol ;
+              yawl-bridge:fnReturnType ?returnType ;
+              yawl-bridge:fnDescriptor ?functionDescriptor .
+    OPTIONAL { ?function yawl-bridge:fnDescription ?functionDescription }
+    OPTIONAL { ?function yawl-bridge:fnReturnDoc ?functionReturnDoc }
+
+    # Match domain operations (L3 domain API layer)
+    ?bridge yawl-bridge:hasDomainOperation ?domainOp .
+    ?domainOp a yawl-bridge:DomainOperation ;
+              yawl-bridge:opName ?domainOperationName ;
+              yawl-bridge:opReturnType ?domainOperationReturnType .
+    OPTIONAL { ?domainOp yawl-bridge:opDescription ?domainOperationDescription }
+    OPTIONAL { ?domainOp yawl-bridge:opReturnDoc ?domainOperationReturnDoc }
+    OPTIONAL { ?domainOp yawl-bridge:opExceptionType ?exceptionType }
+    OPTIONAL { ?domainOp yawl-bridge:testFixture ?testFixture }
+
+    # Filter for process mining bridge only (可根据需求调整过滤条件)
+    FILTER (?bridgeName = "ProcessMining")
+
+    # Sort by capability name for consistent ordering
+    ORDER BY ?bridgeName ?capabilityName ?javaName
+}
+
+# =============================================================================
+# Capability Grouping for Optimization
+# =============================================================================
+
+# Group capabilities by function type for efficient gen_server implementation
+SELECT
+    ?bridgeName
+    (GROUP_CONCAT(DISTINCT ?capabilityName; separator=", ") AS ?capabilities)
+    (GROUP_CONCAT(DISTINCT ?nativeTarget; separator=", ") AS ?nativeTargets)
+    (GROUP_CONCAT(DISTINCT ?javaName; separator=", ") AS ?javaMethods)
+    (GROUP_CONCAT(DISTINCT ?nativeSymbol; separator=", ") AS ?nativeSymbols)
+    (GROUP_CONCAT(DISTINCT ?returnType; separator=", ") AS ?returnTypes)
+    (GROUP_CONCAT(DISTINCT ?functionDescriptor; separator=", ") AS ?functionDescriptors)
+WHERE {
+    # Same pattern as above for finding capabilities
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName ?bridgeName .
+    ?bridge yawl-bridge:hasCapability ?capability .
+    ?capability a yawl-bridge:BridgeCapability ;
+               yawl-bridge:capabilityName ?capabilityName ;
+               yawl-bridge:nativeTarget ?nativeTarget .
+
+    ?bridge yawl-bridge:hasFunction ?function .
+    ?function a yawl-bridge:NativeFunction ;
+              yawl-bridge:fnJavaName ?javaName ;
+              yawl-bridge:fnNativeSymbol ?nativeSymbol ;
+              yawl-bridge:fnReturnType ?returnType ;
+              yawl-bridge:fnDescriptor ?functionDescriptor .
+
+    FILTER (?bridgeName = "ProcessMining")
+}
+GROUP BY ?bridgeName
+
+# =============================================================================
+# Error Handling Patterns
+# =============================================================================
+
+# Select capabilities that may throw exceptions
+SELECT
+    ?bridgeName
+    ?capabilityName
+    ?exceptionType
+    ?functionName
+    ?domainOperationName
+WHERE {
+    # Same pattern as above
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName ?bridgeName .
+    ?bridge yawl-bridge:hasCapability ?capability .
+    ?capability a yawl-bridge:BridgeCapability ;
+               yawl-bridge:capabilityName ?capabilityName .
+
+    ?bridge yawl-bridge:hasFunction ?function .
+    ?function a yawl-bridge:NativeFunction ;
+              yawl-bridge:fnHandleName ?functionName .
+
+    ?bridge yawl-bridge:hasDomainOperation ?domainOp .
+    ?domainOp a yawl-bridge:DomainOperation ;
+              yawl-bridge:opName ?domainOperationName ;
+              yawl-bridge:opExceptionType ?exceptionType .
+
+    FILTER (?bridgeName = "ProcessMining" && BOUND(?exceptionType))
+}
+ORDER BY ?bridgeName ?capabilityName
+
+# =============================================================================
+# Test Fixture Discovery
+# =============================================================================
+
+# Select test fixtures for capability validation
+SELECT
+    ?bridgeName
+    ?capabilityName
+    ?testFixture
+    ?domainOperationName
+WHERE {
+    # Same pattern as above
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName ?bridgeName .
+    ?bridge yawl-bridge:hasCapability ?capability .
+    ?capability a yawl-bridge:BridgeCapability ;
+               yawl-bridge:capabilityName ?capabilityName .
+
+    ?bridge yawl-bridge:hasDomainOperation ?domainOp .
+    ?domainOp a yawl-bridge:DomainOperation ;
+              yawl-bridge:opName ?domainOperationName ;
+              yawl-bridge:testFixture ?testFixture .
+
+    FILTER (?bridgeName = "ProcessMining" && BOUND(?testFixture))
+}
+ORDER BY ?bridgeName ?testFixture
+
+# =============================================================================
+# Type Mapping Information
+# =============================================================================
+
+# Select type mappings for Java-Erlang interoperability
+SELECT
+    ?bridgeName
+    ?capabilityName
+    ?returnType
+    ?functionDescriptor
+    ?domainOperationReturnType
+WHERE {
+    # Same pattern as above
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName ?bridgeName .
+    ?bridge yawl-bridge:hasCapability ?capability .
+    ?capability a yawl-bridge:BridgeCapability ;
+               yawl-bridge:capabilityName ?capabilityName .
+
+    ?bridge yawl-bridge:hasFunction ?function .
+    ?function a yawl-bridge:NativeFunction ;
+              yawl-bridge:fnReturnType ?returnType ;
+              yawl-bridge:fnDescriptor ?functionDescriptor .
+
+    ?bridge yawl-bridge:hasDomainOperation ?domainOp .
+    ?domainOp a yawl-bridge:DomainOperation ;
+              yawl-bridge:opReturnType ?domainOperationReturnType .
+
+    FILTER (?bridgeName = "ProcessMining")
+}
+ORDER BY ?bridgeName ?capabilityName
+
+# =============================================================================
+# Capability Validation Rules
+# =============================================================================
+
+# SPARQL ASK queries for capability validation
+# These are used to validate the bridge configuration
+
+# Check if all capabilities have both L2 and L3 implementations
+ASK {
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName "ProcessMining" ;
+            yawl-bridge:hasCapability ?capability .
+    ?capability a yawl-bridge:BridgeCapability .
+
+    # Must have L2 implementation
+    ?bridge yawl-bridge:hasFunction ?function .
+    ?function a yawl-bridge:NativeFunction ;
+              yawl-bridge:forCapability ?capability .
+
+    # Must have L3 implementation
+    ?bridge yawl-bridge:hasDomainOperation ?domainOp .
+    ?domainOp a yawl-bridge:DomainOperation ;
+              yawl-bridge:forCapability ?capability .
+}
+
+# Check if all native symbols are properly mapped
+ASK {
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName "ProcessMining" .
+    ?bridge yawl-bridge:hasFunction ?function .
+    ?function a yawl-bridge:NativeFunction ;
+              yawl-bridge:fnNativeSymbol ?symbol .
+
+    # Symbol must start with bridge name prefix
+    FILTER (STRSTARTS(?symbol, "rust4pm_"))
+}
+
+# Check if all domain operations have unique names
+ASK {
+    ?bridge a yawl-bridge:NativeBridge ;
+            yawl-bridge:bridgeName "ProcessMining" .
+    ?bridge yawl-bridge:hasDomainOperation ?op1, ?op2 .
+    ?op1 yawl-bridge:opName ?name .
+    ?op2 yawl-bridge:opName ?name .
+
+    # Different operations should have different names
+    FILTER (?op1 != ?op2)
+}
+
+# =============================================================================
+# Query Parameters
+# =============================================================================
+
+# Parameter values for query execution
+# These can be adjusted based on specific requirements
+
+# Bridge name filter
+# Set to empty string for all bridges, or specific bridge name
+PARAM ?bridgeFilter "ProcessMining"
+
+# Capability name filter (optional)
+# Set to empty string for all capabilities
+PARAM ?capabilityFilter ""
+
+# Return type filter (optional)
+# Set to empty string for all return types
+PARAM ?returnTypeFilter ""
+
+# Maximum results limit
+PARAM ?limit 1000
+
+# Offset for pagination
+PARAM ?offset 0
+
+# =============================================================================
+# Query Usage Instructions
+# =============================================================================
+
+# To execute this query in QLever:
+
+# 1. Load pm-bridge.ttl ontology into QLever
+# 2. Execute the main SELECT query to get all NativeCall triples
+# 3. Use the grouped query for optimization
+# 4. Use ASK queries for validation
+
+# Example QLever endpoint configuration:
+# - Ontology: pm-bridge.ttl
+# - Query: Use SELECT queries with parameters
+# - Results: JSON format for processing by ggen templates
+
+# =============================================================================
+# Template Integration
+# =============================================================================
+
+# This SPARQL query is integrated with ggen templates:
+
+# 1. process_mining_bridge.tera uses main SELECT query to generate gen_server clauses
+# 2. erl_term_codec.java.tera uses grouped query for type mappings
+# 3. Template engine filters results based on bridge name and capability filters
+
+# Query results are processed by ggen template engine to generate:
+# - Erlang gen_server handle_call/3 clauses
+# - Java ErlTerm codec methods
+# - Capability validation rules
+# - Error handling patterns
+
+# =============================================================================
+# End of file
+# =============================================================================

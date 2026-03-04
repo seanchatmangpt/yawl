@@ -1,0 +1,89 @@
+# jextract configuration for Erlang ei.h
+# Target: $OTP_ROOT/lib/erl_interface-5.6.3/include/ei.h
+
+[header]
+# Target ei.h file path
+source = "/usr/local/lib/erlang/lib/erl_interface-5.6.3/include/ei.h"
+
+# Include paths for erl_interface headers
+include_paths = [
+    "/usr/local/lib/erlang/lib/erl_interface-5.6.3/include",
+    "/usr/local/lib/erlang/usr/include"
+]
+
+# Output package
+package = "org.yawlfoundation.yawl.bridge.erlang.nativ.ei"
+
+[functions]
+# Connection functions
+ei_connect_init = "ei_connect_init"
+ei_connect = "ei_connect"
+ei_xconnect = "ei_xconnect"
+ei_connect_host_port = "ei_connect_host_port"
+
+# RPC functions
+ei_rpc = "ei_rpc"
+ei_x_rpc = "ei_x_rpc"
+
+# Encoding functions
+ei_x_new = "ei_x_new"
+ei_x_free = "ei_x_free"
+ei_x_append = "ei_x_append"
+ei_x_encode = "ei_x_encode"
+ei_x_encode_atom = "ei_x_encode_atom"
+ei_x_encode_binary = "ei_x_encode_binary"
+ei_x_encode_boolean = "ei_x_encode_boolean"
+ei_x_encode_char = "ei_x_encode_char"
+ei_x_encode_double = "ei_x_encode_double"
+ei_x_encode_empty_list = "ei_x_encode_empty_list"
+ei_x_encode_long = "ei_x_encode_long"
+ei_x_encode_longlong = "ei_x_encode_longlong"
+ei_x_encode_short = "ei_x_encode_short"
+ei_x_encode_string = "ei_x_encode_string"
+ei_x_encode_ulong = "ei_x_encode_ulong"
+ei_x_encode_ulonglong = "ei_x_encode_ulonglong"
+ei_x_encode_term = "ei_x_encode_term"
+
+# Decoding functions
+ei_decode = "ei_decode"
+ei_decode_atom = "ei_decode_atom"
+ei_decode_binary = "ei_decode_binary"
+ei_decode_boolean = "ei_decode_boolean"
+ei_decode_char = "ei_decode_char"
+ei_decode_double = "ei_decode_double"
+ei_decode_empty_list = "ei_decode_empty_list"
+ei_decode_list_header = "ei_decode_list_header"
+ei_decode_long = "ei_decode_long"
+ei_decode_longlong = "ei_decode_longlong"
+ei_decode_string = "ei_decode_string"
+ei_decode_tuple_header = "ei_decode_tuple_header"
+ei_decode_ulong = "ei_decode_ulong"
+ei_decode_ulonglong = "ei_decode_ulonglong"
+ei_decode_version = "ei_decode_version"
+
+[structs]
+ei_x_buff = "ei_x_buff"
+
+[typedefs]
+# Important typedefs we need to expose
+ErlangConnection = "ErlangConnection"
+ErlangError = "ErlangError"
+
+[macros]
+# Skip common macros that are already covered by functions
+skip = [
+    "EI_MAJOR_VERSION",
+    "EI_MINOR_VERSION",
+    "MAXATOMLEN",
+    "MAXATOMLEN_STR",
+    "MAX_TUPLE_SIZE",
+    "MAX_PID_SIZE",
+    "MAX_PORT_SIZE",
+    "MAX_REF_SIZE",
+    "MAX_STRING_SIZE",
+    "MAX_BINARY_SIZE"
+]
+
+[enums]
+# Keep enums that are useful for error handling
+skip = []

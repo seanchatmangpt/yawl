@@ -24,7 +24,7 @@ RECEIPTS_DIR="${OUTPUT_BASE}/receipts"
 # Ensure output directories exist
 mkdir -p "$FACTS_DIR" "$DIAGRAMS_DIR" "$RECEIPTS_DIR"
 
-# Logging
+# Logging (must be defined before dependency validation uses them)
 LOG_LEVEL="${LOG_LEVEL:-INFO}"
 
 log_info() {
@@ -40,6 +40,40 @@ log_debug() {
 log_error() {
     echo "[ERROR] $*" >&2
 }
+
+# ── Dependency validation (fail fast) ───────────────────────────────────────
+DEPENDENCIES=("python3" "jq")
+MISSING_DEPS=()
+
+for dep in "${DEPENDENCIES[@]}"; do
+    if ! command -v "$dep" &>/dev/null; then
+        MISSING_DEPS+=("$dep")
+    fi
+done
+
+# Special check for sha256sum with macOS fallback
+if ! command -v sha256sum &>/dev/null; then
+    if command -v shasum &>/dev/null; then
+        # Create a function wrapper for macOS
+        sha256sum() { shasum -a 256 "$@"; }
+        export -f sha256sum
+    else
+        MISSING_DEPS+=("sha256sum")
+    fi
+fi
+
+if [[ ${#MISSING_DEPS[@]} -gt 0 ]]; then
+    log_error "Missing required dependencies: ${MISSING_DEPS[*]}"
+    log_error "Install with:"
+    for dep in "${MISSING_DEPS[@]}"; do
+        case "$dep" in
+            python3) log_error "  apt install python3 || brew install python3" ;;
+            jq)      log_error "  apt install jq || brew install jq" ;;
+            sha256sum) log_error "  apt install coreutils || brew install coreutils" ;;
+        esac
+    done
+    exit 1
+fi
 
 # Source library files
 source "${SCRIPT_DIR}/lib/emit-facts.sh"
@@ -75,6 +109,7 @@ esac
 
 # Start timer
 START_TIME=$(date +%s%N)
+TOTAL_DURATION=0  # Initialize for receipt phase reference
 
 # Initialize receipt data
 RECEIPT_DATA="{\"inputs\": {}, \"outputs\": {}, \"phases\": {}}"
@@ -118,6 +153,15 @@ if [[ "$RUN_RECEIPT" == "true" ]]; then
     log_info "Generating receipt..."
     RECEIPT_START=$(date +%s%N)
 
+    # Calculate total duration so far (receipt generation time will be added by emit-receipt.sh)
+    END_TIME=$(date +%s%N)
+    TOTAL_DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
+
+    # Export timing values for emit-receipt.sh to include in JSON
+    export FACTS_DURATION_MS="${FACTS_DURATION:-0}"
+    export DIAGRAMS_DURATION_MS="${DIAGRAMS_DURATION:-0}"
+    export TOTAL_DURATION_MS="${TOTAL_DURATION}"
+
     generate_receipt "$ROOT_DIR" "$FACTS_DIR" "$DIAGRAMS_DIR" "$RECEIPTS_DIR"
 
     RECEIPT_END=$(date +%s%N)
@@ -128,9 +172,6 @@ fi
 # ==============================================================================
 # COMPLETION
 # ==============================================================================
-END_TIME=$(date +%s%N)
-TOTAL_DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
-
 log_info "Observatory run complete"
 log_info "Output directory: ${OUTPUT_BASE}"
 log_info "Total duration: ${TOTAL_DURATION}ms"

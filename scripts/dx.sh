@@ -69,21 +69,115 @@
 # ==========================================================================
 set -euo pipefail
 
+# ── Cross-platform helper: sha256sum with macOS fallback ─────────────────────
+# macOS doesn't have sha256sum, uses shasum -a 256 instead
+_sha256sum() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1"
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1"
+    else
+        echo "ERROR: No sha256sum or shasum available" >&2
+        return 1
+    fi
+}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
-# ── Java 25 enforcement ────────────────────────────────────────────────────
+# ── Java 25 enforcement with cross-platform detection ───────────────────────
 # JAVA_HOME may point to Java 21 (system default) even when Temurin 25 is
 # installed. Maven uses JAVA_HOME to locate javac, so we correct it here.
+# Supports: Linux (Debian/RHEL), macOS (Homebrew/Adoptium), Windows (WSL)
+# Priority: explicit env > Adoptium > Homebrew > SDKMAN > system
 # This is authoritative for every dx.sh invocation regardless of shell env.
-_TEMURIN25="/usr/lib/jvm/temurin-25-jdk-amd64"
-if [ -d "${_TEMURIN25}" ]; then
-    _current_major=$(java -version 2>&1 | grep 'version "' | cut -d'"' -f2 | cut -d'.' -f1)
-    if [ "${_current_major}" != "25" ] || [ "${JAVA_HOME:-}" != "${_TEMURIN25}" ]; then
-        export JAVA_HOME="${_TEMURIN25}"
+_detect_java_25_home() {
+    # 1. Explicit environment variable (highest priority)
+    if [[ -n "${JAVA_25_HOME:-}" ]] && [[ -d "${JAVA_25_HOME}" ]]; then
+        echo "${JAVA_25_HOME}"
+        return 0
+    fi
+
+    # 2. Platform-specific detection
+    case "$(uname -s)" in
+        Linux)
+            # Adoptium/AdoptOpenJDK standard paths
+            local paths=(
+                "/usr/lib/jvm/temurin-25-jdk-amd64"
+                "/usr/lib/jvm/temurin-25-jdk"
+                "/usr/lib/jvm/adoptopenjdk-25"
+                "/usr/lib/jvm/java-25-openjdk"
+            )
+            for path in "${paths[@]}"; do
+                if [[ -d "$path" ]]; then
+                    echo "$path"
+                    return 0
+                fi
+            done
+            # SDKMAN glob expansion
+            for sdk_path in "${HOME}/.sdkman/candidates/java/25."*; do
+                if [[ -d "$sdk_path" ]]; then
+                    echo "$sdk_path"
+                    return 0
+                fi
+            done 2>/dev/null || true
+            ;;
+        Darwin)
+            # macOS: Homebrew > Adoptium > Apple
+            local paths=(
+                "/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home"
+                "/usr/local/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home"
+                "/Library/Java/JavaVirtualMachines/temurin-25.jdk/Contents/Home"
+                "/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home"
+            )
+            for path in "${paths[@]}"; do
+                if [[ -d "$path" ]]; then
+                    echo "$path"
+                    return 0
+                fi
+            done
+            # SDKMAN glob expansion
+            for sdk_path in "${HOME}/.sdkman/candidates/java/25."*; do
+                if [[ -d "$sdk_path" ]]; then
+                    echo "$sdk_path"
+                    return 0
+                fi
+            done 2>/dev/null || true
+            ;;
+    esac
+
+    # 3. Fallback: check if current java is already 25
+    local current_major
+    current_major=$(java -version 2>&1 | grep -oE '[0-9]+' | head -1)
+    if [[ "${current_major}" == "25" ]] && [[ -n "${JAVA_HOME:-}" ]]; then
+        echo "${JAVA_HOME}"
+        return 0
+    fi
+
+    return 1  # Java 25 not found
+}
+
+_JAVA_25_HOME=""
+if _JAVA_25_HOME=$(_detect_java_25_home); then
+    if [[ "${JAVA_HOME:-}" != "${_JAVA_25_HOME}" ]]; then
+        export JAVA_HOME="${_JAVA_25_HOME}"
         export PATH="${JAVA_HOME}/bin:${PATH}"
     fi
+else
+    printf "\033[1;33m[WARN]\033[0m Java 25 not found. Build may fail. Install from: https://adoptium.net/temurin/releases/?version=25\n" >&2
+fi
+
+# ── Bash version check (associative arrays require 4+) ──────────────────────
+BASH_MAJOR="${BASH_VERSINFO[0]:-0}"
+BASH_MINOR="${BASH_VERSINFO[1]:-0}"
+if [[ "$BASH_MAJOR" -lt 4 ]]; then
+    printf "\033[1;33m[WARN]\033[0m Bash %d.%d detected. Bash 4+ required for full functionality.\n" "$BASH_MAJOR" "$BASH_MINOR" >&2
+    printf "        Some features disabled (warm cache, semantic filtering).\n" >&2
+    printf "        Upgrade: brew install bash (macOS) or apt install bash (Linux)\n" >&2
+    # Disable features that require Bash 4+ associative arrays
+    DX_WARM_CACHE=0
+    DX_SEMANTIC_FILTER=0
 fi
 
 # ── Parse arguments ───────────────────────────────────────────────────────
@@ -201,7 +295,7 @@ _observatory_facts_fresh() {
 
     # Compute current pom.xml hash (used for both checks)
     local current_hash
-    current_hash=$(sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}')
+    current_hash=$(_sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}')
 
     # Primary: sidecar written by dx_phase_observe() after --facts refresh
     if [[ -f "$sidecar" ]]; then
@@ -429,6 +523,22 @@ readonly E_FAIL='✗'
 PHASE_STATE_DIR="${REPO_ROOT}/.yawl/.dx-state"
 mkdir -p "${PHASE_STATE_DIR}"
 
+# ── Secure temp file management ─────────────────────────────────────────────
+DX_TMP_DIR="${TMPDIR:-/tmp}/dx-${$}"
+mkdir -p "${DX_TMP_DIR}"
+
+# Cleanup trap for temp files
+cleanup_tmp() {
+    rm -rf "${DX_TMP_DIR}" 2>/dev/null || true
+}
+trap cleanup_tmp EXIT INT TERM
+
+# Temp file helper - generates PID-namespaced temp file path
+dx_tmp_file() {
+    local name="$1"
+    echo "${DX_TMP_DIR}/${name}"
+}
+
 # Track which phases we're running in this invocation
 declare -a PHASES_IN_ORDER=("observe" "compile" "test" "guards" "invariants" "report")
 declare -A PHASE_STATUS  # phase → "pending|running|green|red"
@@ -518,9 +628,14 @@ dx_phase_observe() {
     obs_start=$(date +%s)
 
     set +e
-    bash "${REPO_ROOT}/scripts/observatory/observatory.sh" --facts 2>&1 | \
+    # Run observatory with 60s timeout to prevent hangs
+    timeout 60 bash "${REPO_ROOT}/scripts/observatory/observatory.sh" --facts 2>&1 | \
         while IFS= read -r line; do printf "   %s\n" "$line"; done
     local OBS_EXIT=${PIPESTATUS[0]}
+    # timeout returns 124 if timed out
+    if [[ $OBS_EXIT -eq 124 ]]; then
+        printf "${C_CYAN}dx${C_RESET}: ${C_RED}${E_FAIL} observatory timed out after 60s${C_RESET}\n"
+    fi
     set -euo pipefail
 
     obs_end=$(date +%s)
@@ -534,7 +649,7 @@ dx_phase_observe() {
 
     # Write pom-hash sidecar so the next staleness check is instant.
     # (observatory.sh --facts does not update the full receipt, so we use this sidecar.)
-    sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}' \
+    _sha256sum "${REPO_ROOT}/pom.xml" | awk '{print $1}' \
         > "${REPO_ROOT}/.yawl/.dx-state/observatory-pom-hash.txt" 2>/dev/null || true
 
     # Reload ALL_MODULES from the freshly generated reactor.json

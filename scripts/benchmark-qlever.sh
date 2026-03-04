@@ -2,13 +2,11 @@
 #
 # YAWL SPARQL Engine Benchmark Script
 #
-# This script runs JMH benchmarks comparing different SPARQL engine implementations:
-# - QLever HTTP (remote)
-# - QLever Embedded (FFI)
-# - Oxigraph (Rust FFI)
+# IMPORTANT: QLever is an embedded Java/C++ FFI bridge (NOT Docker, NOT HTTP)
+# This script runs JMH benchmarks using QLeverEmbeddedSparqlEngine directly.
 #
 # Usage: ./scripts/benchmark-qlever.sh [--help] [engine-type]
-#   engine-type: qlever-http, qlever-embedded, oxigraph, or "all" to run all
+#   engine-type: qlever-embedded, oxigraph, or "all" to run all
 
 set -euo pipefail
 
@@ -17,10 +15,13 @@ show_help() {
     cat << EOF
 Usage: $0 [--help] [engine-type]
 
-This script runs JMH benchmarks comparing different SPARQL engine implementations.
+This script runs JMH benchmarks for SPARQL engine implementations.
+
+IMPORTANT: QLever is an embedded FFI engine, NOT a Docker HTTP service.
+All QLever benchmarks use QLeverEmbeddedSparqlEngine (in-process).
 
 Arguments:
-  engine-type    Specific engine to benchmark (qlever-http, qlever-embedded, oxigraph)
+  engine-type    Specific engine to benchmark (qlever-embedded, oxigraph)
                  "all" to run all engines (default)
 
 Options:
@@ -31,9 +32,14 @@ Environment variables:
 
 Examples:
   $0                    # Run all benchmarks
-  $0 qlever-http        # Run only QLever HTTP benchmark
-  $0 qlever-embedded   # Run only QLever embedded benchmark
-  $0 oxigraph          # Run only Oxigraph benchmark
+  $0 qlever-embedded    # Run only QLever embedded benchmark
+  $0 oxigraph           # Run only Oxigraph benchmark
+
+Prerequisites:
+  - QLever embedded: Build native library first
+    cd yawl-qlever && mvn compile
+  - Oxigraph: Start yawl-native service
+    ./scripts/start-yawl-native.sh
 EOF
 }
 
@@ -47,18 +53,14 @@ NC='\033[0m' # No Color
 # Configuration
 JMH_ARGS="-rf json -rff benchmark-results.json -wi 3 -i 5 -f 1 -t 1"
 OUTPUT_DIR="benchmark-results"
-ENGINE_BASE_URLs=(
-    "http://localhost:7001"    # QLever HTTP
-    "http://localhost:8083"    # Oxigraph/Yawl-Native
-)
 
-# Default engine types to benchmark
-ENGINE_TYPES=("qlever-http" "qlever-embedded" "oxigraph")
+# Default engine types to benchmark (NO qlever-http - QLever is embedded only)
+ENGINE_TYPES=("qlever-embedded" "oxigraph")
 
 # Parse command line arguments
 if [[ $# -eq 1 ]]; then
     case $1 in
-        "qlever-http"|"qlever-embedded"|"oxigraph")
+        "qlever-embedded"|"oxigraph")
             ENGINE_TYPES=("$1")
             ;;
         "all")
@@ -67,6 +69,12 @@ if [[ $# -eq 1 ]]; then
         "--help")
             show_help
             exit 0
+            ;;
+        "qlever-http")
+            echo -e "${RED}Error: qlever-http is not supported.${NC}"
+            echo "QLever is an embedded FFI engine, not an HTTP service."
+            echo "Use 'qlever-embedded' instead."
+            exit 1
             ;;
         *)
             echo -e "${RED}Error: Invalid engine type: $1${NC}"
@@ -91,32 +99,29 @@ fi
 # Function to check if an engine is available
 check_engine() {
     local engine_type=$1
-    local url=$2
-    
-    echo -e "${BLUE}Checking $engine_type at $url...${NC}"
-    
+
+    echo -e "${BLUE}Checking $engine_type...${NC}"
+
     case $engine_type in
-        "qlever-http")
-            if curl -s -f "$url/api/" > /dev/null 2>&1; then
-                echo -e "${GREEN}✓ QLever HTTP is available${NC}"
+        "qlever-embedded")
+            if [ -f "yawl-qlever/target/classes/org/yawlfoundation/yawl/qlever/QLeverEmbeddedSparqlEngine.class" ]; then
+                echo -e "${GREEN}✓ QLever embedded engine is compiled${NC}"
                 return 0
             else
-                echo -e "${RED}✗ QLever HTTP is not available at $url${NC}"
+                echo -e "${RED}✗ QLever embedded engine not compiled${NC}"
+                echo "  Run: cd yawl-qlever && mvn compile"
                 return 1
             fi
             ;;
         "oxigraph")
-            if curl -s -f "$url/sparql/health" > /dev/null 2>&1; then
+            if curl -s -f "http://localhost:8083/sparql/health" > /dev/null 2>&1; then
                 echo -e "${GREEN}✓ Oxigraph is available${NC}"
                 return 0
             else
-                echo -e "${RED}✗ Oxigraph is not available at $url${NC}"
+                echo -e "${RED}✗ Oxigraph is not available at localhost:8083${NC}"
+                echo "  Run: ./scripts/start-yawl-native.sh"
                 return 1
             fi
-            ;;
-        "qlever-embedded")
-            echo -e "${YELLOW}Note: QLever embedded will be checked at runtime${NC}"
-            return 0
             ;;
     esac
 }
@@ -125,11 +130,11 @@ check_engine() {
 run_benchmark() {
     local engine_type=$1
     local output_file="benchmark-results/${engine_type}-results.json"
-    
+
     echo -e "\n${BLUE}===========================================${NC}"
     echo -e "${BLUE}Benchmarking $engine_type${NC}"
     echo -e "${BLUE}===========================================${NC}"
-    
+
     # Run the benchmark
     echo -e "${YELLOW}Running JMH benchmark...${NC}"
     if mvn -pl yawl-benchmark clean install -q; then
@@ -138,10 +143,10 @@ run_benchmark() {
             -rff "$output_file" \
             QLeverBenchmark \
             -p engineType="$engine_type"
-        
+
         echo -e "${GREEN}Benchmark completed for $engine_type${NC}"
         echo "Results saved to: $output_file"
-        
+
         # Print summary
         if [[ -f "$output_file" ]]; then
             echo -e "\n${YELLOW}Benchmark Summary for $engine_type:${NC}"
@@ -161,6 +166,8 @@ mkdir -p "$OUTPUT_DIR"
 echo -e "${BLUE}"
 echo "================================================"
 echo "  YAWL SPARQL Engine Benchmark Suite"
+echo ""
+echo "  IMPORTANT: QLever is EMBEDDED FFI (not HTTP)"
 echo "================================================"
 echo -e "${NC}"
 
@@ -181,16 +188,8 @@ fi
 
 # Check if required engines are available
 echo ""
-for i in "${!ENGINE_TYPES[@]}"; do
-    engine_type="${ENGINE_TYPES[i]}"
-    case $engine_type in
-        "qlever-http")
-            check_engine "$engine_type" "${ENGINE_BASE_URLs[0]}"
-            ;;
-        "oxigraph")
-            check_engine "$engine_type" "${ENGINE_BASE_URLs[1]}"
-            ;;
-    esac
+for engine_type in "${ENGINE_TYPES[@]}"; do
+    check_engine "$engine_type" || true
 done
 
 # Run benchmarks
@@ -198,7 +197,7 @@ echo -e "\n${BLUE}Starting benchmarks...${NC}"
 
 for engine_type in "${ENGINE_TYPES[@]}"; do
     run_benchmark "$engine_type"
-    
+
     # Small delay between benchmarks
     sleep 2
 done
@@ -213,7 +212,7 @@ for engine_type in "${ENGINE_TYPES[@]}"; do
     if [[ -f "$result_file" ]]; then
         echo -e "\n${GREEN}$engine_type:${NC}"
         echo -e "${YELLOW}Results file:${NC} $result_file"
-        
+
         # Try to extract key metrics
         if command -v jq > /dev/null; then
             echo -e "${YELLOW}Average execution times:${NC}"
@@ -233,4 +232,3 @@ if [ ! -z "$BENCHMARK_UPLOAD_URL" ]; then
     echo -e "\n${YELLOW}Uploading results to $BENCHMARK_UPLOAD_URL...${NC}"
     # Add upload logic here if needed
 fi
-

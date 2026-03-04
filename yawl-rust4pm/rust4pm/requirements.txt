@@ -1,0 +1,15 @@
+# YAWL Process Mining Python Bindings Requirements
+
+# Build dependencies
+maturin>=1.0,<2.0
+
+# Optional dependencies for development
+pytest>=6.0
+pytest-cov>=3.0
+black>=22.0
+ruff>=0.1.0
+mypy>=1.0
+
+# Optional dependencies for examples and testing
+numpy>=1.20.0
+pandas>=1.3.0

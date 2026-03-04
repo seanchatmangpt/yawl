@@ -237,7 +237,8 @@ public final class PermutationRunner {
     }
 
     private static String stripXmlTags(String s) {
-        if (s == null) return "";
+        if (s == null) throw new IllegalArgumentException("Input string cannot be null");
+        if (s.trim().isEmpty()) return s;
         String t = s.trim();
         Matcher m = Pattern.compile(">([^<]+)<").matcher(t);
         return m.find() ? m.group(1).trim() : t.replaceAll("<[^>]+>", "").trim();
@@ -296,9 +297,12 @@ public final class PermutationRunner {
     }
 
     private static String extractString(String json, String key) {
+        if (json == null || key == null) {
+            throw new IllegalArgumentException("JSON and key cannot be null");
+        }
         String search = "\"" + key + "\"";
         int idx = json.indexOf(search);
-        if (idx < 0) return "";
+        if (idx < 0) throw new IllegalArgumentException("Key '" + key + "' not found in JSON");
         int colon = json.indexOf(":", idx);
         int start = json.indexOf("\"", colon + 1) + 1;
         int end = json.indexOf("\"", start);

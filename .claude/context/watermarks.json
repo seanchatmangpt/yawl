@@ -1,4 +1,33 @@
 {
   "version": "1",
-  "watermarks": []
+  "watermarks": [
+    {
+      "name": "eye-reasoner-releases",
+      "url": "https://github.com/eyereasoner/eye/releases",
+      "fetched_at": "2026-03-04T07:05:04.410420Z",
+      "content_hash": "0df64507918bc9dc6bfa64fe57c62c4e6d505b61f962358dd828869259f3d50d",
+      "ttl_hours": 24
+    },
+    {
+      "name": "maven-central-owlrl",
+      "url": "https://search.maven.org/solrsearch/select?q=g:net.sourceforge.owlapi+a:owlapi-distribution&rows=1",
+      "fetched_at": "2026-03-04T19:13:47.063246Z",
+      "content_hash": "5617ac62cf1a7ac81dc9883821630c4e4ee0e2c0d39a0d17bfb1da43d93769db",
+      "ttl_hours": 12
+    },
+    {
+      "name": "rust-blake3",
+      "url": "https://crates.io/api/v1/crates/blake3",
+      "fetched_at": "2026-03-04T07:05:04.410450Z",
+      "content_hash": "d021c0714900a1801eed6db18c4e5e9b63c2acad4a0f8bf0e264808663c8540b",
+      "ttl_hours": 24
+    },
+    {
+      "name": "java-25-release-notes",
+      "url": "https://jdk.java.net/25/release-notes",
+      "fetched_at": "2026-03-04T07:05:04.410451Z",
+      "content_hash": "5b27cc15bb66e19745ad5c80ffb70aac246fa0daf9afbc670abdb6b8555851e3",
+      "ttl_hours": 168
+    }
+  ]
 }

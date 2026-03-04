@@ -1,0 +1,100 @@
+{
+  "ocel:version": "2.0",
+  "ocel:ordering": "timestamp",
+  "ocel:attribute-names": [
+    "org:resource"
+  ],
+  "ocel:object-types": [
+    "Portfolio"
+  ],
+  "ocel:objects": {
+    "Portfolio1": {
+      "ocel:type": "Portfolio",
+      "ocel:ovmap": {
+        "portfolio:id": "Portfolio1"
+      }
+    }
+  },
+  "ocel:events": {
+    "evt-portfolio-sync-start": {
+      "ocel:activity": "portfolio_sync_started",
+      "ocel:timestamp": "2026-03-03T05:35:01.863376Z",
+      "ocel:omap": {
+        "Portfolio": [
+          "Portfolio1"
+        ]
+      },
+      "ocel:vmap": {
+        "org:resource": "PortfolioManager"
+      }
+    },
+    "evt-epic1-ranking": {
+      "ocel:activity": "wsjf_ranking",
+      "ocel:timestamp": "2026-03-03T05:35:01.863376Z",
+      "ocel:omap": {
+        "Portfolio": [
+          "Portfolio1"
+        ]
+      },
+      "ocel:vmap": {
+        "org:resource": "PortfolioManager",
+        "epic:id": "Epic1",
+        "wsjf:score": 85
+      }
+    },
+    "evt-epic2-ranking": {
+      "ocel:activity": "wsjf_ranking",
+      "ocel:timestamp": "2026-03-03T05:35:01.863376Z",
+      "ocel:omap": {
+        "Portfolio": [
+          "Portfolio1"
+        ]
+      },
+      "ocel:vmap": {
+        "org:resource": "PortfolioManager",
+        "epic:id": "Epic2",
+        "wsjf:score": 72
+      }
+    },
+    "evt-portfolio-sync-complete": {
+      "ocel:activity": "portfolio_sync_completed",
+      "ocel:timestamp": "2026-03-03T05:35:01.863376Z",
+      "ocel:omap": {
+        "Portfolio": [
+          "Portfolio1"
+        ]
+      },
+      "ocel:vmap": {
+        "org:resource": "PortfolioManager"
+      }
+    },
+    "evt-epic3-ranking": {
+      "ocel:activity": "wsjf_ranking",
+      "ocel:timestamp": "2026-03-02T21:36:34.000Z",
+      "ocel:omap": {
+        "Portfolio": [
+          "Portfolio1"
+        ]
+      },
+      "ocel:vmap": {
+        "org:resource": "PortfolioManager",
+        "epic:id": "Epic3",
+        "wsjf:score": 68
+      }
+    },
+    "evt-epic4-ranking": {
+      "ocel:activity": "wsjf_ranking",
+      "ocel:timestamp": "2026-03-02T21:36:34.000Z",
+      "ocel:omap": {
+        "Portfolio": [
+          "Portfolio1"
+        ]
+      },
+      "ocel:vmap": {
+        "org:resource": "PortfolioManager",
+        "epic:id": "Epic4",
+        "wsjf:score": 91
+      }
+    }
+  }
+}
