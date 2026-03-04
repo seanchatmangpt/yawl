@@ -96,6 +96,17 @@ pub fn large_list_transfer<'a>(env: Env<'a>, list: Vec<i64>) -> NifResult<Term<'
     Ok((ok(), list).encode(env))
 }
 
+// Benchmark functions that were missing
+#[rustler::nif]
+pub fn small_list_passthrough<'a>(env: Env<'a>, list: Vec<Atom>) -> NifResult<Term<'a>> {
+    Ok((ok(), list).encode(env))
+}
+
+#[rustler::nif]
+pub fn tuple_passthrough<'a>(env: Env<'a>, tuple: (Atom, Atom, Atom, Atom, Atom)) -> NifResult<Term<'a>> {
+    Ok((ok(), tuple).encode(env))
+}
+
 // OCEL operations using process_mining library
 #[rustler::nif]
 pub fn import_ocel_json_path(path: String) -> NifResult<String> {
@@ -331,10 +342,8 @@ pub fn discover_petri_net(id: String) -> NifResult<String> {
         arcs.push(serde_json::json!({"source": format!("t_{}", a), "target": "p_end"}));
     }
 
-    let mut pc = 0;
-    for (a, b) in &causal {
+    for (pc, (a, b)) in causal.iter().enumerate() {
         let pid = format!("p_{}", pc);
-        pc += 1;
         places.push(serde_json::json!({"id": pid}));
         arcs.push(serde_json::json!({"source": format!("t_{}", a), "target": pid}));
         arcs.push(serde_json::json!({"source": pid, "target": format!("t_{}", b)}));
@@ -438,7 +447,7 @@ pub fn token_replay<'a>(env: Env<'a>, ocel_id: String, pn_id: String) -> NifResu
         (atoms::missing_tokens().encode(env), missing.encode(env)),
         (atoms::remaining_tokens().encode(env), remaining.encode(env)),
         (atoms::trace_count().encode(env), total.encode(env)),
-    ])?)
+    ]))
 }
 
 // Registry management
@@ -1023,28 +1032,84 @@ pub fn export_pnml_nif(pn_id: String) -> NifResult<String> {
 
 rustler::init!("process_mining_bridge", [
     // Benchmark functions
-    nop, int_passthrough, atom_passthrough,
-    echo_json, echo_term, echo_binary, echo_ocel_event, large_list_transfer,
-    // Core import functions
-    import_ocel_json_path, import_xes_path,
-    // Core analysis functions
-    num_events, num_objects, index_link_ocel, slim_link_ocel, ocel_type_stats,
-    compute_dfg, discover_dfg, compute_dfg_from_events, align_trace,
-    discover_dfg_ocel, discover_alpha, discover_petri_net, token_replay,
-    // Registry management
-    registry_get_type, registry_free, registry_list,
-    // NIF suffix wrappers (for Erlang compatibility)
-    import_xes_nif, import_ocel_json_nif,
-    discover_dfg_nif, discover_alpha_nif, discover_petri_net_nif,
-    compute_dfg_from_events_nif, token_replay_nif,
-    registry_get_type_nif, registry_free_nif, registry_list_nif,
-    event_log_stats_nif, align_trace_nif,
-    num_events_nif, num_objects_nif, discover_dfg_ocel_nif,
-    // Additional NIFs for Erlang compatibility
-    log_event_count, log_object_count, log_get_events, log_get_objects,
-    events_free, objects_free,
-    calculate_performance_metrics_nif, get_activity_frequency_nif, find_longest_traces_nif,
-    export_xes_nif, export_ocel_json_nif,
-    import_ocel_xml_nif, import_ocel_sqlite_nif,
-    import_pnml_nif, export_pnml_nif,
+    nop,
+    int_passthrough,
+    atom_passthrough,
+    echo_json,
+    echo_term,
+    echo_binary,
+    echo_ocel_event,
+    large_list_transfer,
+    small_list_passthrough,
+    tuple_passthrough,
+
+    // OCEL/XES Import
+    import_ocel_json_path,
+    import_xes_path,
+    import_ocel_json_nif,
+    import_xes_nif,
+
+    // OCEL Operations
+    num_events,
+    num_objects,
+    index_link_ocel,
+    slim_link_ocel,
+    ocel_type_stats,
+    num_events_nif,
+    num_objects_nif,
+
+    // DFG Discovery
+    discover_dfg_ocel,
+    compute_dfg,
+    discover_dfg,
+    discover_dfg_ocel_nif,
+    discover_dfg_nif,
+    compute_dfg_from_events,
+    compute_dfg_from_events_nif,
+
+    // Petri Net Discovery
+    discover_alpha,
+    discover_petri_net,
+    discover_alpha_nif,
+    discover_petri_net_nif,
+
+    // Token Replay & Conformance
+    token_replay,
+    token_replay_nif,
+
+    // Registry Management
+    registry_get_type,
+    registry_free,
+    registry_list,
+    registry_get_type_nif,
+    registry_free_nif,
+    registry_list_nif,
+
+    // Event Log Stats
+    event_log_stats_nif,
+    log_event_count,
+    log_object_count,
+    log_get_events,
+    log_get_objects,
+    events_free,
+    objects_free,
+
+    // Performance Metrics
+    calculate_performance_metrics_nif,
+    get_activity_frequency_nif,
+    find_longest_traces_nif,
+
+    // Trace Alignment
+    align_trace,
+    align_trace_nif,
+
+    // Export Functions
+    export_xes_nif,
+    export_ocel_json_nif,
+    export_pnml_nif,
+
+    // Import Functions (unsupported - throw errors)
+    import_ocel_xml_nif,
+    import_ocel_sqlite_nif,
+    import_pnml_nif,
 ], load = load);

@@ -6,8 +6,9 @@
 
     <parent>
         <groupId>org.yawlfoundation</groupId>
-        <artifactId>yawl</artifactId>
-        <version>6.0.0</version>
+        <artifactId>yawl-parent</artifactId>
+        <version>6.0.0-GA</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>yawl-ml-bridge</artifactId>
@@ -22,7 +23,6 @@
         <dependency>
             <groupId>com.ericsson.otp.erlang</groupId>
             <artifactId>jinterface</artifactId>
-            <version>1.14</version>
         </dependency>
 
         <!-- Logging -->

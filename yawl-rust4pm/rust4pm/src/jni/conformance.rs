@@ -169,22 +169,32 @@ pub fn checkConformance<'local>(
 fn check_conformance_algorithm(eventLogHandle: jlong, pnmlXml: &str, config: &ConformanceConfig) -> Result<ConformanceResult, String> {
     // Safety: Check for invalid handle
     if eventLogHandle == 0 {
-        return Err("Invalid event log handle".to_string());
+        return Err("Invalid event log handle: null reference".to_string());
     }
 
-    // Real conformance computation using mathematical formulas
-    // Based on actual token replay algorithms from process mining literature
+    if eventLogHandle < 0 {
+        return Err("Invalid event log handle: negative value".to_string());
+    }
 
-    let metrics = compute_real_conformance_metrics(eventLogHandle, pnmlXml, config)?;
+    // Validate PNML is not empty
+    if pnmlXml.trim().is_empty() {
+        return Err("PNML XML cannot be empty".to_string());
+    }
 
-    Ok(ConformanceResult {
-        fitness: metrics.fitness,
-        completeness: metrics.completeness,
-        precision: metrics.precision,
-        simplicity: metrics.simplicity,
-        is_conformant: metrics.fitness >= config.fitness_threshold,
-        error_message: std::ptr::null_mut(),
-    })
+    // Real conformance computation requires access to actual event log data
+    // The eventLogHandle is a reference to data in the NIF registry
+    // Since JNI cannot directly access the NIF registry, we need to either:
+    // 1. Have the Java side pass actual metrics extracted via NIF calls
+    // 2. Implement a shared registry accessible from both JNI and NIF
+    //
+    // Production implementation requires the caller to first extract metrics
+    // using NIF functions (num_events_nif, get_activity_frequency_nif, etc.)
+    // and pass them to a conformance function that accepts pre-extracted metrics.
+    Err("check_conformance_algorithm requires real event log data. \
+         The JNI bridge cannot access the NIF registry directly. \
+         Use the NIF conformance functions (token_replay_nif) for production use, \
+         or implement a shared registry between JNI and NIF layers. \
+         See: process_mining_bridge NIF module for token_replay_nif implementation.".to_string())
 }
 
 /// Real conformance computation using mathematical formulas
@@ -296,26 +306,59 @@ fn calculate_token_replay_metrics(event_count: i32, unique_activities: i32, conf
 }
 
 /// Helper to extract event count from handle
+///
+/// # Errors
+/// Returns an error if the handle is invalid or doesn't point to a valid event log.
+/// This function requires a real event log handle from the registry.
 fn extract_event_count_from_handle(handle: jlong) -> Result<i32, String> {
-    // Simulate extracting event count from handle
-    // In real implementation, this would decode the handle to get actual count
     if handle < 0 {
-        return Err("Invalid handle".to_string());
+        return Err("Invalid handle: negative value".to_string());
     }
 
-    // Return realistic simulated count based on handle value
-    Ok((handle % 100 + 10) as i32)
+    if handle == 0 {
+        return Err("Invalid handle: null reference".to_string());
+    }
+
+    // The handle must be a valid registry ID pointing to an EventLog or OCEL
+    // Real implementation requires access to the REGISTRY from nif.rs
+    // Since JNI cannot access the NIF registry directly, this requires:
+    // 1. A shared registry accessible via FFI, OR
+    // 2. The Java side to pass actual event counts extracted via NIF
+    //
+    // For production use, the Java bridge should call the NIF's num_events_nif()
+    // function to get actual counts before calling conformance checking.
+    Err("extract_event_count_from_handle requires real event log data access. \
+         Use the NIF registry functions (num_events_nif, event_log_stats_nif) \
+         to extract metrics before calling conformance checking. \
+         The JNI bridge does not have direct access to the NIF registry.".to_string())
 }
 
 /// Helper to extract unique activity count from handle
+///
+/// # Errors
+/// Returns an error if the handle is invalid or doesn't point to a valid event log.
+/// This function requires a real event log handle from the registry.
 fn extract_unique_activities_from_handle(handle: jlong) -> Result<i32, String> {
-    // Simulate extracting unique activities
     if handle < 0 {
-        return Err("Invalid handle".to_string());
+        return Err("Invalid handle: negative value".to_string());
     }
 
-    // Return realistic simulated count based on handle value
-    Ok((handle % 20 + 5) as i32)
+    if handle == 0 {
+        return Err("Invalid handle: null reference".to_string());
+    }
+
+    // The handle must be a valid registry ID pointing to an EventLog or OCEL
+    // Real implementation requires access to the REGISTRY from nif.rs
+    // Since JNI cannot access the NIF registry directly, this requires:
+    // 1. A shared registry accessible via FFI, OR
+    // 2. The Java side to pass actual activity counts extracted via NIF
+    //
+    // For production use, the Java bridge should call the NIF's
+    // get_activity_frequency_nif() function to get actual counts before calling conformance checking.
+    Err("extract_unique_activities_from_handle requires real event log data access. \
+         Use the NIF registry functions (get_activity_frequency_nif, event_log_stats_nif) \
+         to extract metrics before calling conformance checking. \
+         The JNI bridge does not have direct access to the NIF registry.".to_string())
 }
 
 /// Structure for intermediate metrics

@@ -444,22 +444,90 @@ fn create_alignment_result(id: &str, fitness: f64, py: Python) -> PyResult<PyObj
 
 fn extract_event_count(event_log: &PyAny) -> PyResult<i32> {
     // Extract event count from Python dict
+    // Required keys: "event_count" (int) or "events" (list)
     if let Ok(count) = event_log.get_item("event_count") {
         if let Ok(py_count) = count.extract::<i32>() {
-            return Ok(py_count);
+            if py_count >= 0 {
+                return Ok(py_count);
+            }
         }
     }
-    // Fallback: simulate from activities
-    Ok(42) // Simulated count
+
+    // Try to extract from events list
+    if let Ok(events) = event_log.get_item("events") {
+        if let Ok(py_events) = events.extract::<Vec<PyObject>>() {
+            return Ok(py_events.len() as i32);
+        }
+    }
+
+    // Try to extract from traces
+    if let Ok(traces) = event_log.get_item("traces") {
+        if let Ok(py_traces) = traces.extract::<Vec<PyObject>>() {
+            let total: i32 = py_traces.iter().map(|t| {
+                Python::with_gil(|py| {
+                    t.bind(py).len().unwrap_or(0) as i32
+                })
+            }).sum();
+            if total > 0 {
+                return Ok(total);
+            }
+        }
+    }
+
+    // No fallback - require real data
+    Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+        "extract_event_count requires 'event_count' (int), 'events' (list), or 'traces' (list) \
+         in event_log dict. Hardcoded fallback values are not permitted. \
+         Provide actual event log data for conformance checking."
+    ))
 }
 
 fn extract_unique_activities(event_log: &PyAny) -> PyResult<i32> {
     // Extract unique activity count
+    // Required keys: "activities" (list), "unique_activities" (int), or extract from events
+    if let Ok(count) = event_log.get_item("unique_activities") {
+        if let Ok(py_count) = count.extract::<i32>() {
+            if py_count >= 0 {
+                return Ok(py_count);
+            }
+        }
+    }
+
+    // Try to extract from activities list
     if let Ok(activities) = event_log.get_item("activities") {
         if let Ok(py_activities) = activities.extract::<Vec<String>>() {
             return Ok(py_activities.len() as i32);
         }
+        // Try as set
+        if let Ok(py_set) = activities.extract::<std::collections::HashSet<String>>() {
+            return Ok(py_set.len() as i32);
+        }
     }
-    // Fallback: simulate
-    Ok(15) // Simulated unique activities
+
+    // Try to extract unique activities from events
+    if let Ok(events) = event_log.get_item("events") {
+        if let Ok(py_events) = events.extract::<Vec<PyObject>>() {
+            let mut unique = std::collections::HashSet::new();
+            for event in &py_events {
+                Python::with_gil(|py| {
+                    if let Ok(activity) = event.bind(py).get_item("activity") {
+                        if let Ok(act_str) = activity.extract::<String>() {
+                            unique.insert(act_str);
+                        }
+                    }
+                });
+            }
+            if !unique.is_empty() {
+                return Ok(unique.len() as i32);
+            }
+        }
+    }
+
+    // No fallback - require real data
+    Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+        "extract_unique_activities requires 'activities' (list/set), 'unique_activities' (int), \
+         or 'events' (list with 'activity' keys) in event_log dict. \
+         Hardcoded fallback values are not permitted. \
+         Provide actual event log data for conformance checking."
+    ))
 }

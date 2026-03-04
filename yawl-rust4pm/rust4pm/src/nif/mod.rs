@@ -320,10 +320,8 @@ pub fn discover_petri_net<'a>(env: Env<'a>, id: String) -> NifResult<Term<'a>> {
         arcs.push(serde_json::json!({"source": format!("t_{}", a), "target": "p_end"}));
     }
 
-    let mut pc = 0;
-    for (a, b) in &causal {
+    for (pc, (a, b)) in causal.iter().enumerate() {
         let pid = format!("p_{}", pc);
-        pc += 1;
         places.push(serde_json::json!({"id": pid}));
         arcs.push(serde_json::json!({"source": format!("t_{}", a), "target": pid}));
         arcs.push(serde_json::json!({"source": pid, "target": format!("t_{}", b)}));
@@ -423,7 +421,7 @@ pub fn token_replay<'a>(env: Env<'a>, ocel_id: String, pn_id: String) -> NifResu
         0.5 * pr.min(1.0) + 0.5 * mr
     } else { 1.0 };
 
-    Ok(rustler::Term::map_from_pairs(env, &[
+    rustler::Term::map_from_pairs(env, &[
         (conformance_score().encode(env), score.encode(env)),
         (fitness().encode(env), score.encode(env)),
         (produced_tokens().encode(env), produced.encode(env)),
@@ -431,7 +429,7 @@ pub fn token_replay<'a>(env: Env<'a>, ocel_id: String, pn_id: String) -> NifResu
         (missing_tokens().encode(env), missing.encode(env)),
         (remaining_tokens().encode(env), remaining.encode(env)),
         (trace_count().encode(env), total.encode(env)),
-    ])?)
+    ])
 }
 
 // Registry management
