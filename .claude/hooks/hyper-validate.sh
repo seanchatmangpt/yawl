@@ -134,7 +134,7 @@ load_guard_config() {
         fi
     else
         # Default exclusions if no config file
-        GUARD_EXCLUSIONS="test/fixtures/** docs/templates/** **/src/test/** **/*Test.java test/fixtures/h-guards/ ggen/src/test/resources/fixtures/ yawl-ggen/src/test/resources/fixtures/"
+        GUARD_EXCLUSIONS="test/fixtures/** docs/templates/** **/src/test/** **/*Test.java test/fixtures/h-guards/ ggen/src/test/resources/fixtures/** yawl-ggen/src/test/resources/fixtures/** */fixtures/*"
         GUARD_ALWAYS_EXCLUDE=""
         GUARD_INCLUSION_PATTERNS="src/**/*.java"
 
@@ -158,8 +158,12 @@ should_exclude_file() {
 
     # Check exclusions with proper glob pattern matching
     for pattern in $GUARD_EXCLUSIONS; do
-        # Use bash glob matching with extglob enabled
-        if [[ "$file" == $pattern ]]; then
+        # Convert pattern to regex for matching
+        local regex_pattern="${pattern//\*/.*}"
+        regex_pattern="${regex_pattern//\?/.}"
+        regex_pattern="^${regex_pattern}$"
+
+        if [[ "$file" =~ $regex_pattern ]]; then
             if [ "${VERBOSE:-0}" -eq 1 ]; then
                 echo "[DEBUG] Excluded file '$file' matches pattern '$pattern'" >&2
             fi
