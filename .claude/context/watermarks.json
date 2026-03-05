@@ -4,22 +4,22 @@
     {
       "name": "eye-reasoner-releases",
       "url": "https://github.com/eyereasoner/eye/releases",
-      "fetched_at": "2026-03-04T07:05:04.410420Z",
-      "content_hash": "0df64507918bc9dc6bfa64fe57c62c4e6d505b61f962358dd828869259f3d50d",
+      "fetched_at": "2026-03-05T17:10:58.959997Z",
+      "content_hash": "9d344108f0e697ee2ebb814201daf90054593f935f21497f280c0b223e2754d8",
       "ttl_hours": 24
     },
     {
       "name": "maven-central-owlrl",
       "url": "https://search.maven.org/solrsearch/select?q=g:net.sourceforge.owlapi+a:owlapi-distribution&rows=1",
-      "fetched_at": "2026-03-04T19:13:47.063246Z",
+      "fetched_at": "2026-03-05T17:10:58.960027Z",
       "content_hash": "5617ac62cf1a7ac81dc9883821630c4e4ee0e2c0d39a0d17bfb1da43d93769db",
       "ttl_hours": 12
     },
     {
       "name": "rust-blake3",
       "url": "https://crates.io/api/v1/crates/blake3",
-      "fetched_at": "2026-03-04T07:05:04.410450Z",
-      "content_hash": "d021c0714900a1801eed6db18c4e5e9b63c2acad4a0f8bf0e264808663c8540b",
+      "fetched_at": "2026-03-05T17:10:58.960039Z",
+      "content_hash": "17d4669520ea800a0789ab595e4c23c8229689f95d32cb0402fac88e05a7530a",
       "ttl_hours": 24
     },
     {

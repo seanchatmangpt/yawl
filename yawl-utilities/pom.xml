@@ -175,16 +175,7 @@
             <artifactId>resilience4j-retry</artifactId>
         </dependency>
 
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-        </dependency>
-
+  
         <!-- Argon2 password encryption -->
         <dependency>
             <groupId>de.mkammerer</groupId>
@@ -234,7 +225,18 @@
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
-    </dependencies>
+
+        <!-- Logging (required by authentication classes) -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+
+      </dependencies>
 
     <build>
         <sourceDirectory>../src</sourceDirectory>
@@ -251,7 +253,7 @@
             </resource>
             <!-- Copy XSD files from unmarshal package to classpath (required for schema validation) -->
             <resource>
-                <directory>../src</directory>
+                <directory>src/main/java</directory>
                 <includes>
                     <include>**/org/yawlfoundation/yawl/unmarshal/*.xsd</include>
                 </includes>
@@ -301,6 +303,20 @@
                         <include>**/org/yawlfoundation/yawl/util/**</include>
                         <include>**/org/yawlfoundation/yawl/exceptions/**</include>
                         <include>**/org/yawlfoundation/yawl/engine/interfce/metrics/**</include>
+                        <!-- Exclude elements packages - they compile in yawl-elements module -->
+                        <exclude>**/org/yawlfoundation/yawl/elements/**</exclude>
+                        <!-- Exclude elements.state package - they compile in yawl-elements module -->
+                        <exclude>**/org/yawlfoundation/yawl/elements/state/**</exclude>
+                        <!-- Exclude elements.data package - they compile in yawl-elements module -->
+                        <exclude>**/org/yawlfoundation/yawl/elements/data/**</exclude>
+                        <!-- Exclude elements.data.external package - they compile in yawl-elements module -->
+                        <exclude>**/org/yawlfoundation/yawl/elements/data/external/**</exclude>
+                        <!-- Exclude elements.predicate package - they compile in yawl-elements module -->
+                        <exclude>**/org/yawlfoundation/yawl/elements/predicate/**</exclude>
+                        <!-- Exclude elements.patterns package - they compile in yawl-elements module -->
+                        <exclude>**/org/yawlfoundation/yawl/elements/patterns/**</exclude>
+                        <!-- Exclude elements.e2wfoj package - they compile in yawl-elements module -->
+                        <exclude>**/org/yawlfoundation/yawl/elements/e2wfoj/**</exclude>
                     </includes>
                     <excludes>
                         <!-- Exclude authentication classes that depend on engine/elements - they compile in yawl-engine -->
@@ -315,6 +331,8 @@
                         <exclude>**/org/yawlfoundation/yawl/logging/YLogPredicateWorkItemParser.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/logging/YLogServer.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/logging/YXESBuilder.java</exclude>
+                        <!-- Exclude logging classes that depend on engine - they compile in yawl-elements -->
+                        <exclude>**/org/yawlfoundation/yawl/logging/**</exclude>
                         <!-- Exclude util classes that depend on engine - they compile in yawl-engine -->
                         <exclude>**/org/yawlfoundation/yawl/util/AbstractEngineClient.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/util/Sessions.java</exclude>
@@ -395,6 +413,8 @@
                         <include>**/org/yawlfoundation/yawl/unmarshal/Test*.java</include>
                         <include>**/org/yawlfoundation/yawl/unmarshal/*Test.java</include>
                         <include>**/org/yawlfoundation/yawl/engine/interfce/metrics/*Test.java</include>
+                        <!-- Exclude logging tests - they compile in yawl-elements -->
+                        <exclude>**/org/yawlfoundation/yawl/logging/**Test.java</exclude>
                     </includes>
                     <!-- Exclude conflicting logging bridge: log4j-to-slf4j conflicts with log4j-slf4j2-impl -->
                     <classpathDependencyExcludes>

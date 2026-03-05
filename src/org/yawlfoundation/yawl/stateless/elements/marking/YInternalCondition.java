@@ -19,9 +19,12 @@
 package org.yawlfoundation.yawl.stateless.elements.marking;
 
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.yawlfoundation.yawl.elements.YNetElement;
+import org.yawlfoundation.yawl.stateless.elements.marking.YIdentifier;
 import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.stateless.elements.YConditionInterface;
 import org.yawlfoundation.yawl.stateless.elements.YTask;
 import org.yawlfoundation.yawl.util.XNode;
@@ -34,7 +37,7 @@ import org.yawlfoundation.yawl.util.XNode;
  * 
  */
 public class YInternalCondition extends YNetElement implements YConditionInterface {
-    private final YIdentifierBag _bag;
+    private final org.yawlfoundation.yawl.stateless.elements.marking.YIdentifierBag _bag;
     public YTask _myTask;
     public static String _mi_active = "mi_active";
     public static String _mi_entered = "mi_entered";
@@ -44,7 +47,7 @@ public class YInternalCondition extends YNetElement implements YConditionInterfa
 
     public YInternalCondition(String id, YTask myTask) {
         super(id);
-        _bag = new YIdentifierBag(this);
+        _bag = new org.yawlfoundation.yawl.stateless.elements.marking.YIdentifierBag(this);
         _myTask = myTask;
     }
 
@@ -136,7 +139,7 @@ public class YInternalCondition extends YNetElement implements YConditionInterfa
     public String toXML() {
         return toXNode().toString();
     }
-    
+
     public XNode toXNode() {
         XNode node = new XNode("internalCondition");
         node.addAttribute("id", toString());

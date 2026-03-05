@@ -40,16 +40,19 @@ public enum YSchemaVersion {
     TwoPointOne  ("2.1", 2.1),
     TwoPointTwo  ("2.2", 2.2),
     ThreePointZero ("3.0", 3.0),
-    FourPointZero ("4.0", 4.0);
+    FourPointZero ("4.0", 4.0),
+    FivePointTwo ("5.2", 5.2),
+    SixPointZero ("6.0", 6.0);
 
 
-    public static YSchemaVersion DEFAULT_VERSION = FourPointZero;
+    public static YSchemaVersion DEFAULT_VERSION = SixPointZero;
 
     private final String betaNS = "http://www.citi.qut.edu.au/yawl";
     private final String betaSchemaLocation = betaNS +
-            " d:/yawl/schema/YAWL_SchemaBeta7.1.xsd";
+            " schema/YAWL_SchemaBeta7.1.xsd";
 
     private final String releaseNS = "http://www.yawlfoundation.org/yawlschema";
+    private final String releaseNS_V6 = "http://www.yawlfoundation.org/yawlschema/v6";
 
     private final String headerTemplate =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" +
@@ -94,9 +97,10 @@ public enum YSchemaVersion {
     public String betaSchemaLocation() { return betaSchemaLocation; }
 
     public String releaseNS() { return releaseNS; }
+    public String releaseNS_V6() { return releaseNS_V6; }
 
     public String releaseSchemaLocation() {
-        return String.format("%s %s/%s", releaseNS, releaseNS, getSchemaFileName());
+        return String.format("%s %s/%s", getNameSpace(), getNameSpace(), getSchemaFileName());
     }
 
 
@@ -136,7 +140,8 @@ public enum YSchemaVersion {
 
 
     public String getNameSpace() {
-        return (isBetaVersion() ? betaNS : releaseNS);
+        return (this == SixPointZero ? releaseNS_V6 :
+                isBetaVersion() ? betaNS : releaseNS);
     }
 
 
@@ -144,13 +149,13 @@ public enum YSchemaVersion {
     public String getHeader() {
         return isBetaVersion() ?
                 String.format(headerTemplate, Beta7, betaNS, betaSchemaLocation) :
-                String.format(headerTemplate, _name, releaseNS, releaseSchemaLocation());
+                String.format(headerTemplate, _name, getNameSpace(), releaseSchemaLocation());
     }
 
 
     public boolean isBetaVersion() {
         return switch (this) {
-            case FourPointZero, ThreePointZero, TwoPointTwo, TwoPointOne, TwoPointZero -> false;
+            case FourPointZero, ThreePointZero, TwoPointTwo, TwoPointOne, TwoPointZero, FivePointTwo, SixPointZero -> false;
             default -> true;
         };
     }

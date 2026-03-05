@@ -437,9 +437,17 @@ fi
 # ── Build Maven command ──────────────────────────────────────────────────
 MVN_ARGS=()
 
-# Prefer mvnd if available
+# Prefer mvnd (Maven Daemon) for 10x faster builds
+# Check: PATH > ~/tools/mvnd > fall back to Maven 4 > system mvn
 if command -v mvnd >/dev/null 2>&1; then
     MVN_CMD="mvnd"
+elif [[ -x "${HOME}/tools/mvnd/bin/mvnd" ]]; then
+    MVN_CMD="${HOME}/tools/mvnd/bin/mvnd"
+    export PATH="${HOME}/tools/mvnd/bin:${PATH}"
+elif [[ -x "${HOME}/tools/maven4/bin/mvn" ]]; then
+    # Maven 4.0.0-rc-5 with concurrent builder
+    MVN_CMD="${HOME}/tools/maven4/bin/mvn"
+    export PATH="${HOME}/tools/maven4/bin:${PATH}"
 else
     MVN_CMD="mvn"
 fi

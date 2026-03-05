@@ -228,11 +228,11 @@ public class WSIFInvoker {
                     if (c.equals(String.class)) {
                         value = arg;
                     } else if (c.equals(Double.TYPE)) {
-                        value = SafeNumberParser.parseDoubleOrThrow(arg, "WSIF double parameter "" + inNames[pos] + """);
+                        value = SafeNumberParser.parseDoubleOrThrow(arg, "WSIF double parameter \"" + inNames[pos] + "\"");
                     } else if (c.equals(Float.TYPE)) {
                         value = Float.valueOf(arg);
                     } else if (c.equals(Integer.TYPE)) {
-                        value = SafeNumberParser.parseIntOrThrow(arg, "WSIF integer parameter "" + inNames[pos] + """);
+                        value = SafeNumberParser.parseIntOrThrow(arg, "WSIF integer parameter \"" + inNames[pos] + "\"");
                     } else if (c.equals(Boolean.TYPE)) {
                         value = Boolean.valueOf(arg);
                     } else {

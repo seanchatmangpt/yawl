@@ -395,11 +395,43 @@ public class YNetRunner {
         return ! _cancelling;
     }
 
+    public void set_cancelling(boolean cancelling) {
+        _cancelling = cancelling;
+    }
+
+    /**
+     * Integrates cancel flag with state machine transitions.
+     * This method should be called before any state transition to check if the case is being cancelled.
+     * @throws YStateException if the case is being cancelled
+     */
+    private void checkCancellation() throws YStateException {
+        if (_cancelling) {
+            throw new YStateException("Cannot proceed with state transition - case is being cancelled. CaseID: " +
+                                   _caseIDForNet + " State: " + _executionStatus);
+        }
+    }
+
+    /**
+     * Checks if cancel flag is properly integrated with state machine.
+     * @return true if cancel is integrated, false otherwise
+     */
+    public boolean isCancelIntegrated() {
+        return false; // Stateless version doesn't have cancel integration yet
+    }
+
     /**
      * Assumption: this will only get called AFTER a workitem has been progressed?
      * Because if it is called any other time then it will cause the case to stop.
      */
     public synchronized void kick() throws YDataStateException, YQueryException, YStateException {
+        // Check cancellation before kicking off
+        try {
+            checkCancellation();
+        } catch (YStateException e) {
+            _logger.info("Case cancelled, not kicking off new tasks: {}", e.getMessage());
+            return;
+        }
+
         WorkflowContext ctx = WorkflowContext.of(
             _caseIDForNet.toString(),
             _specID.toKeyString(),

@@ -547,10 +547,28 @@ public class YDecompositionParser {
             }
             if (null == namespace) variable.setUntyped(true);
         }
-        else { //must be version 3 or greater
+        else { //must be version 3 or greater, including v6
+            // Handle both old and new format for compatibility
             name = localVariableElem.getChildText("name", ns);
             dataType = localVariableElem.getChildText("type", ns);
+
+            // Check for v6 format first
+            if (name == null) {
+                // Try v6 attribute format
+                name = localVariableElem.getAttributeValue("name");
+            }
+
+            if (dataType == null) {
+                // Try v6 attribute format
+                dataType = localVariableElem.getAttributeValue("type");
+            }
+
             namespace = localVariableElem.getChildText("namespace", ns);
+            if (namespace == null && dataType != null) {
+                // Fallback namespace logic for v6
+                namespace = dataType.startsWith("xs")
+                        ? "http://www.w3.org/2001/XMLSchema" : null;
+            }
 
             //check to see if the variable is untyped
             variable.setUntyped(localVariableElem.getChild("isUntyped", ns) != null);

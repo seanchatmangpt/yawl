@@ -162,9 +162,36 @@ public class YMarshal {
     private static YSchemaVersion getVersion(Element specRoot) {
         String version = specRoot.getAttributeValue("version");
 
-        // version attribute was not mandatory in version 2
-        // therefore a missing version number would likely be version 2
-        return (null == version) ? YSchemaVersion.Beta2 : YSchemaVersion.fromString(version);
+        // Check namespace to determine version if not explicitly specified
+        String namespaceURI = specRoot.getNamespaceURI();
+
+        if (version == null) {
+            // version attribute was not mandatory in version 2
+            // therefore a missing version number would likely be version 2
+            if (namespaceURI != null) {
+                if (namespaceURI.contains("yawlschema/v6")) {
+                    return YSchemaVersion.SixPointZero;
+                } else if (namespaceURI.contains("yawlschema")) {
+                    return YSchemaVersion.FivePointTwo;
+                } else {
+                    return YSchemaVersion.Beta2;
+                }
+            }
+            return YSchemaVersion.Beta2;
+        }
+
+        // Parse version string to handle different formats
+        YSchemaVersion parsedVersion = YSchemaVersion.fromString(version);
+        if (parsedVersion == null && namespaceURI != null) {
+            // Fallback based on namespace
+            if (namespaceURI.contains("yawlschema/v6")) {
+                return YSchemaVersion.SixPointZero;
+            } else if (namespaceURI.contains("yawlschema")) {
+                return YSchemaVersion.FivePointTwo;
+            }
+        }
+
+        return parsedVersion != null ? parsedVersion : YSchemaVersion.Beta2;
     }
 
 }

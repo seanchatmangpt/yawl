@@ -61,6 +61,7 @@
     <modules>
         <!-- Layer 0: Foundation (no YAWL deps, build in parallel) -->
         <module>yawl-utilities</module>
+        <module>yawl-exceptions</module>
         <module>yawl-security</module>
         <module>yawl-erlang</module>
         <!-- Disabled - GraalVM SDK not available (2026-03-04)

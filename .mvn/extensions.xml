@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <extensions>
-    <!-- Maven 3.9+ build cache extension for Java 25.
-         Provides multi-build incremental caching with SHA-256 hashing.
+    <!-- Maven 4 build cache extension for Java 25.
+         Provides multi-build incremental caching with XX hash algorithm.
 
-         DISABLED: Remote cache config has unresolved placeholders.
-         To re-enable: Set YAWL_S3_BUCKET environment variable and restore
-         .mvn/maven-build-cache-remote-config.xml.disabled
+         DISABLED: The maven-build-cache-extension 1.2.1 is not fully compatible
+         with Maven 4.0.0-rc-5. Will re-enable when extension is updated.
+
+         For Maven 3.9.x, this extension works with local caching.
     -->
     <!-- extension>
         <groupId>org.apache.maven.extensions</groupId>

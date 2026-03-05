@@ -23,14 +23,14 @@ import java.util.*;
 import org.yawlfoundation.yawl.elements.YNetElement;
 import org.yawlfoundation.yawl.elements.state.YIdentifier;
 import org.yawlfoundation.yawl.engine.YPersistenceManager;
-import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
 
 /**
- * 
+ *
  * @author Lachlan Aldred
  * @author Michael Adams (updated for 2.0)
- * 
+ *
  */
 public class YIdentifierBag {
     private Map<YIdentifier, Integer> _idToQtyMap = new HashMap<YIdentifier, Integer>();
@@ -42,12 +42,20 @@ public class YIdentifierBag {
     }
 
 
-    public void addIdentifier(YPersistenceManager pmgr, YIdentifier identifier)
-            throws YPersistenceException {
+    public void addIdentifier(YIdentifier identifier) {
+        addIdentifier(null, identifier);
+    }
+
+
+    public void addIdentifier(YPersistenceManager pmgr, YIdentifier identifier) {
         if (identifier == null) return;
         int amount = getAmount(identifier);
         _idToQtyMap.put(identifier, ++amount);
-        identifier.addLocation(pmgr, _condition);
+        try {
+            identifier.addLocation(pmgr, _condition);
+        } catch (YPersistenceException e) {
+            throw new RuntimeException("Failed to add location to identifier", e);
+        }
     }
 
 
@@ -99,7 +107,7 @@ public class YIdentifierBag {
             }
             else {
                 _idToQtyMap.remove(identifier);
-            } 
+            }
             identifier.removeLocation(pmgr, _condition);
         }
         else {

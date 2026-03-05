@@ -112,8 +112,11 @@ class YSpecificationParser {
             _specification.setSchema(_defaultSchema);
         }
 
-        //If is version beta2 we loop through in a slightly different way.
-        if (isBeta2Version()) {
+        // Handle different versions for root net detection
+        boolean isBeta2 = isBeta2Version();
+        boolean isV6 = _specification.getSchemaVersion() == YSchemaVersion.SixPointZero;
+
+        if (isBeta2) {
             _decompositionParser = new YDecompositionParser[decompositionElems.size() + 1];
             Element rootNetElem = specificationElem.getChild("rootNet", _yawlNS);
             _decompositionParser[0] = new YDecompositionParser(
@@ -133,7 +136,29 @@ class YSpecificationParser {
                 _specification.addDecomposition(decomposition);
             }
         }
-        else {//must be beta3 or greater
+        else if (isV6) {
+            // For v6, handle root net detection differently
+            _decompositionParser = new YDecompositionParser[decompositionElems.size()];
+            for (int i = 0; i < decompositionElems.size(); i++) {
+                Element decompositionElem = decompositionElems.get(i);
+                _decompositionParser[i] = new YDecompositionParser(
+                        decompositionElem,
+                        this,
+                        _specification.getSchemaVersion());
+                YDecomposition decomposition = _decompositionParser[i].getDecomposition();
+                _specification.addDecomposition(decomposition);
+
+                // Check if this is the root net (v6 uses isRootNet attribute)
+                if (decomposition instanceof YNet) {
+                    Element netElem = decompositionElem;
+                    String isRootNet = netElem.getAttributeValue("isRootNet");
+                    if ("true".equals(isRootNet)) {
+                        _specification.setRootNet((YNet) decomposition);
+                    }
+                }
+            }
+        }
+        else {//must be version 3-5.2
             _decompositionParser = new YDecompositionParser[decompositionElems.size()];
             for (int i = 0; i < decompositionElems.size(); i++) {
                 Element decompositionElem = decompositionElems.get(i);

@@ -251,7 +251,7 @@ class WorkflowStateProposal {
                                String participantId, long timestamp) {
         this.workflowId = workflowId;
         this.currentState = currentState;
-        this newState = newState;
+        this.newState = newState;
         this.participantId = participantId;
         this.timestamp = timestamp;
     }

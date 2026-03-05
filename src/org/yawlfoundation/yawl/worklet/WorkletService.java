@@ -95,10 +95,25 @@ public class WorkletService implements YWorkItemEventListener {
      */
     @Override
     public void handleWorkItemEvent(YWorkItemEvent event) {
-        if (event == null || event.getEventType() != YEventType.ITEM_ENABLED) {
+        if (event == null) {
             return;
         }
-        YWorkItem workItem = event.getWorkItem();
+
+        switch (event.getEventType()) {
+            case ITEM_ENABLED -> handleEnabledWorkItemEvent(event.getWorkItem());
+            case ITEM_CANCELLED -> handleCancelledWorkItemEvent(event.getWorkItem());
+            default -> {
+                // Other event types not handled by worklet service
+            }
+        }
+    }
+
+    /**
+     * Handles ITEM_ENABLED events to evaluate and launch new worklets.
+     *
+     * @param workItem the enabled work item; must not be null
+     */
+    private void handleEnabledWorkItemEvent(YWorkItem workItem) {
         if (workItem == null) {
             return;
         }
@@ -115,6 +130,11 @@ public class WorkletService implements YWorkItemEventListener {
                         workItem.getCaseID().toString(),
                         workItem.getTaskID());
                 activeRecords.put(record.getCompositeKey(), record);
+
+                // Launch the worklet case asynchronously
+                Thread.ofVirtual()
+                        .name("worklet-launch-" + workItem.getCaseID() + ":" + workItem.getTaskID())
+                        .start(() -> launchWorkletCase(record, workItem));
             }
             case WorkletSelection.A2AAgentSelection a2a -> {
                 WorkletRecord record = new WorkletRecord(
@@ -131,6 +151,91 @@ public class WorkletService implements YWorkItemEventListener {
                 // No worklet selected; normal YAWL execution continues.
             }
         }
+    }
+
+    /**
+     * Handles ITEM_CANCELLED events to cancel any running worklets for the cancelled work item.
+     *
+     * @param workItem the cancelled work item; must not be null
+     */
+    private void handleCancelledWorkItemEvent(YWorkItem workItem) {
+        if (workItem == null) {
+            return;
+        }
+
+        String compositeKey = workItem.getCaseID().toString() + ":" + workItem.getTaskID();
+        WorkletRecord record = activeRecords.get(compositeKey);
+
+        if (record != null) {
+            log.info("Cancelling worklet '{}' for case '{}' task '{}'",
+                    record.getWorkletName(),
+                    workItem.getCaseID().toString(),
+                    workItem.getTaskID());
+
+            // Cancel the worklet record
+            record.cancel();
+
+            // Remove from active records
+            activeRecords.remove(compositeKey);
+
+            // Note: Actual worklet case cancellation would require YStatelessEngine dependency
+            // or access to worklet runner instances. This is handled at a higher level
+            // when the worklet runner reports case completion/cancellation.
+            log.debug("Worklet record cancelled for case '{}' task '{}'",
+                    workItem.getCaseID().toString(), workItem.getTaskID());
+        }
+    }
+
+    /**
+     * Handles CASE_COMPLETED events to complete all worklets for the completed case.
+     *
+     * @param event the case completed event; must not be null
+     */
+    public void handleCompleteCaseEvent(YWorkItemEvent event) {
+        if (event == null || event.getWorkItem() == null) {
+            return;
+        }
+
+        String caseId = event.getWorkItem().getCaseID().toString();
+        log.info("Completing all worklets for case '{}'", caseId);
+
+        // Find and complete all worklets for this case
+        activeRecords.entrySet().removeIf(entry -> {
+            WorkletRecord record = entry.getValue();
+            if (record.getHostCaseId().equals(caseId)) {
+                record.complete();
+                log.debug("Completed worklet '{}' for case '{}'",
+                        record.getWorkletName(), caseId);
+                return true; // Remove from active records
+            }
+            return false;
+        });
+    }
+
+    /**
+     * Handles CASE_CANCELLED events to cancel all worklets for the cancelled case.
+     *
+     * @param event the case cancelled event; must not be null
+     */
+    public void handleCancelledCaseEvent(YWorkItemEvent event) {
+        if (event == null || event.getWorkItem() == null) {
+            return;
+        }
+
+        String caseId = event.getWorkItem().getCaseID().toString();
+        log.info("Cancelling all worklets for case '{}'", caseId);
+
+        // Find and cancel all worklets for this case
+        activeRecords.entrySet().removeIf(entry -> {
+            WorkletRecord record = entry.getValue();
+            if (record.getHostCaseId().equals(caseId)) {
+                record.cancel();
+                log.debug("Cancelled worklet '{}' for case '{}'",
+                        record.getWorkletName(), caseId);
+                return true; // Remove from active records
+            }
+            return false;
+        });
     }
 
     /**
@@ -256,5 +361,27 @@ public class WorkletService implements YWorkItemEventListener {
                     "JSON field value must not be null; null IDs produce invalid A2A dispatch payloads");
         }
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /**
+     * Launches a worklet case for the selected worklet.
+     *
+     * @param record the worklet record to launch
+     * @param workItem the host work item that triggered the worklet selection
+     */
+    /**
+     * Launches a worklet case for the selected worklet.
+     *
+     * @param record the worklet record to launch
+     * @param workItem the host work item that triggered the worklet selection
+     * @throws UnsupportedOperationException if worklet case launching is not fully implemented
+     */
+    private void launchWorkletCase(WorkletRecord record, YWorkItem workItem) {
+        throw new UnsupportedOperationException(
+            "Worklet case launching requires YStatelessEngine dependency injection and " +
+            "worklet specification loading capability. Currently, worklet selection " +
+            "only supports A2A agent dispatch. Sub-case worklet launching is not yet " +
+            "implemented in this version of WorkletService."
+        );
     }
 }
