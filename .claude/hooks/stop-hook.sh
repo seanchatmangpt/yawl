@@ -289,6 +289,22 @@ reinject_prompt() {
 
     echo "Continue working on the task above."
     echo ""
+
+    # In non-infinite mode with validation errors, suggest team spawning
+    if [[ "${RALPH_INFINITE_MODE}" != "true" ]]; then
+        if [[ -f "${LOGS_DIR}/validation.log" ]]; then
+            echo "---"
+            echo ""
+            echo "**TEAM SUGGESTION**: Consider spawning agents to parallelize fixes:"
+            echo ""
+            echo "\`\`\`"
+            echo "Task(\"Feature\", \"${task_description}\", \"yawl-engineer\")"
+            echo "Task(\"Validation\", \"Validate fixes\", \"yawl-validator\")"
+            echo "Task(\"Testing\", \"Verify tests pass\", \"yawl-tester\")"
+            echo "\`\`\`"
+            echo ""
+        fi
+    fi
 }
 
 # Main
