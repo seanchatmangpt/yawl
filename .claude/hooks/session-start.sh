@@ -402,65 +402,85 @@ else
 fi
 
 # ============================================================================
-# MAVEN 4 READINESS & MVND VALIDATION — verify configuration and run test build
+# MAVEN 4.0+ & MVND REQUIREMENT ENFORCEMENT (TOYOTA PRODUCTION SYSTEM)
 # ============================================================================
+# CRITICAL: YAWL v6.0.0 uses Maven 4.0+ ONLY with mandatory mvnd.
+# This follows Toyota production system principles:
+# - Strict standards with zero workarounds
+# - Real requirements, not recommendations
+# - Fast fail if requirements not met
 
-echo "🔨 Validating Maven 4 readiness and mvnd configuration..."
+echo "🔨 Enforcing Maven 4.0+ and mvnd (Toyota Production System)..."
+echo ""
 
-# Check Maven version
-MAVEN_VERSION=$(mvn --version 2>/dev/null | head -n1 | grep -oP '(?<=Maven )[0-9.]+' || echo "unknown")
-echo "   Maven version: $MAVEN_VERSION"
-
-# Verify .mvn configuration exists
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
-if [ -f "${REPO_ROOT}/.mvn/jvm.config" ] && [ -f "${REPO_ROOT}/.mvn/maven.config" ]; then
-    echo "   ✅ Maven configuration files present (.mvn/jvm.config, .mvn/maven.config)"
-else
-    echo "   ⚠️  Maven configuration files missing"
-fi
+MAVEN_4_CHECK_FAILED=0
 
-# Check for Maven 4 readiness settings
-if grep -q "\-T 2C" "${REPO_ROOT}/.mvn/maven.config" 2>/dev/null; then
+# Requirement 1: mvnd MUST be installed
+echo "   [1/4] Checking mvnd installation (REQUIRED)..."
+if ! command -v mvnd &> /dev/null; then
+    echo "   ❌ FATAL: mvnd not installed (MANDATORY requirement)"
+    echo ""
+    echo "   YAWL v6.0.0 requires Maven Daemon for production compliance."
+    echo "   Install mvnd NOW:"
+    echo "     $ sdk install maven-mvnd"
+    echo "   Or: $ brew install maven-mvnd (macOS)"
+    echo ""
+    MAVEN_4_CHECK_FAILED=1
+else
+    MVND_VERSION=$(mvnd --version 2>/dev/null | head -n1)
+    echo "   ✅ mvnd installed: $MVND_VERSION"
+    MVND_AVAILABLE=true
+fi
+echo ""
+
+# Requirement 2: Maven configuration must enable Maven 4 concurrent builder
+echo "   [2/4] Checking Maven 4 configuration (-b concurrent)..."
+if [ -f "${REPO_ROOT}/.mvn/maven.config" ] && grep -q "^-b concurrent" "${REPO_ROOT}/.mvn/maven.config"; then
+    echo "   ✅ Maven 4 concurrent builder enabled"
+else
+    echo "   ❌ Maven 4 concurrent builder NOT enabled"
+    echo "   Edit: .mvn/maven.config - uncomment: -b concurrent"
+    MAVEN_4_CHECK_FAILED=1
+fi
+echo ""
+
+# Requirement 3: Parallel build flag must be enabled
+echo "   [3/4] Checking parallel build flag (-T 2C)..."
+if [ -f "${REPO_ROOT}/.mvn/maven.config" ] && grep -q "\-T 2C" "${REPO_ROOT}/.mvn/maven.config"; then
     echo "   ✅ Parallel build flag enabled (-T 2C)"
 else
-    echo "   ⚠️  Parallel build flag not enabled"
+    echo "   ❌ Parallel build flag not enabled"
+    echo "   Edit: .mvn/maven.config - add: -T 2C"
+    MAVEN_4_CHECK_FAILED=1
 fi
+echo ""
 
-# Check if mvnd is installed
-if command -v mvnd &> /dev/null; then
-    MVND_VERSION=$(mvnd --version 2>/dev/null | head -n1)
-    echo "   ✅ Maven Daemon (mvnd) installed: $MVND_VERSION"
-    MVND_AVAILABLE=true
-else
-    echo "   ℹ️  Maven Daemon (mvnd) not installed (optional enhancement)"
-    MVND_AVAILABLE=false
-fi
-
-# Quick Maven compile test to verify everything is working
-echo "   🧪 Running quick Maven validation compile..."
-MAVEN_TEST_LOG="/tmp/maven-startup-test-$$.log"
-MAVEN_TEST_RESULT=0
-
-# Test Maven compile on a small, fast module (yawl-utilities has no dependencies)
-if mvn -pl yawl-utilities clean compile -q --no-transfer-progress -B > "${MAVEN_TEST_LOG}" 2>&1; then
-    echo "   ✅ Maven validation compile successful (yawl-utilities)"
-    rm -f "${MAVEN_TEST_LOG}"
-else
-    MAVEN_TEST_RESULT=$?
-    echo "   ⚠️  Maven validation compile had issues (exit code: $MAVEN_TEST_RESULT)"
-    # Show last few lines of error if compile failed
-    if [ -f "${MAVEN_TEST_LOG}" ] && [ -s "${MAVEN_TEST_LOG}" ]; then
-        echo "   Last error lines:"
-        tail -5 "${MAVEN_TEST_LOG}" | sed 's/^/      /'
+# Requirement 4: mvnd daemon must be running (if installed)
+echo "   [4/4] Checking mvnd daemon status..."
+if [ "${MVND_AVAILABLE:-false}" = "true" ]; then
+    if mvnd --status 2>/dev/null | grep -q "listening on"; then
+        echo "   ✅ mvnd daemon running"
+    else
+        echo "   ⚠️  mvnd daemon not running - attempting to start..."
+        # Note: Don't fail here, daemon will start on first build
+        echo "   💡 Daemon will start automatically on first build"
     fi
-    rm -f "${MAVEN_TEST_LOG}"
+fi
+echo ""
+
+# Fail HARD if Maven 4 requirements not met
+if [ "${MAVEN_4_CHECK_FAILED}" -ne 0 ]; then
+    echo "❌ FATAL: Maven 4 requirements not met"
+    echo ""
+    echo "YAWL v6.0.0 uses MAVEN 4.0+ ONLY with mvnd (Toyota Production System)"
+    echo "This is NOT negotiable. Install and configure properly."
+    echo ""
+    exit 2
 fi
 
-if [ "${MVND_AVAILABLE}" = "true" ]; then
-    echo "   💡 Tip: Use 'mvnd clean compile' for 40% faster builds (mvnd daemon)"
-else
-    echo "   💡 Optional: Install mvnd with 'sdk install maven-mvnd' for 40% faster builds"
-fi
+echo "✅ Maven 4 requirements satisfied"
+echo ""
 
 # Configure H2 database for ephemeral testing
 echo "🗄️  Configuring H2 database for remote environment..."
@@ -626,11 +646,11 @@ echo "✨ YAWL environment ready for Claude Code Web"
 echo ""
 echo "📋 Environment Summary:"
 echo "   • Java Version: GraalVM $GRAALVM_VERSION (with GraalPy)"
-echo "   • Build System: Maven $MAVEN_VERSION (Maven 4 ready)"
-if [ "${MVND_AVAILABLE}" = "true" ]; then
-    echo "   • Maven Daemon: mvnd installed (40% faster builds)"
+echo "   • Build System: Maven 4.0+ ONLY (Toyota Production System)"
+if [ "${MVND_AVAILABLE:-false}" = "true" ]; then
+    echo "   • Maven Daemon: ✅ mvnd REQUIRED and installed"
 else
-    echo "   • Maven Daemon: Optional (install for 40% faster builds)"
+    echo "   • Maven Daemon: ❌ mvnd REQUIRED but NOT installed"
 fi
 echo "   • Maven Cache: ${M2_CACHE_DIR}"
 if [ "${MAVEN_PROXY_ENABLED:-false}" = "true" ]; then
@@ -641,8 +661,8 @@ fi
 echo "   • Database: H2 (in-memory)"
 echo "   • Python Runtime: GraalPy (in-JVM Python execution)"
 echo "   • Observatory: Facts auto-generated on startup"
-echo "   • Test Command: bash scripts/dx.sh (fast) or mvn clean test (full)"
-echo "   • Build Command: ./mvnw clean compile (or mvnd for faster)"
+echo "   • Build Command: mvnd clean compile (REQUIRED - no mvn fallback)"
+echo "   • Test Command: bash scripts/dx.sh (enforces mvnd)"
 echo "   • Environment: Remote/Ephemeral"
 echo ""
 
