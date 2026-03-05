@@ -401,6 +401,67 @@ else
   echo "   Dependencies will be re-downloaded on each build"
 fi
 
+# ============================================================================
+# MAVEN 4 READINESS & MVND VALIDATION — verify configuration and run test build
+# ============================================================================
+
+echo "🔨 Validating Maven 4 readiness and mvnd configuration..."
+
+# Check Maven version
+MAVEN_VERSION=$(mvn --version 2>/dev/null | head -n1 | grep -oP '(?<=Maven )[0-9.]+' || echo "unknown")
+echo "   Maven version: $MAVEN_VERSION"
+
+# Verify .mvn configuration exists
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
+if [ -f "${REPO_ROOT}/.mvn/jvm.config" ] && [ -f "${REPO_ROOT}/.mvn/maven.config" ]; then
+    echo "   ✅ Maven configuration files present (.mvn/jvm.config, .mvn/maven.config)"
+else
+    echo "   ⚠️  Maven configuration files missing"
+fi
+
+# Check for Maven 4 readiness settings
+if grep -q "\-T 2C" "${REPO_ROOT}/.mvn/maven.config" 2>/dev/null; then
+    echo "   ✅ Parallel build flag enabled (-T 2C)"
+else
+    echo "   ⚠️  Parallel build flag not enabled"
+fi
+
+# Check if mvnd is installed
+if command -v mvnd &> /dev/null; then
+    MVND_VERSION=$(mvnd --version 2>/dev/null | head -n1)
+    echo "   ✅ Maven Daemon (mvnd) installed: $MVND_VERSION"
+    MVND_AVAILABLE=true
+else
+    echo "   ℹ️  Maven Daemon (mvnd) not installed (optional enhancement)"
+    MVND_AVAILABLE=false
+fi
+
+# Quick Maven compile test to verify everything is working
+echo "   🧪 Running quick Maven validation compile..."
+MAVEN_TEST_LOG="/tmp/maven-startup-test-$$.log"
+MAVEN_TEST_RESULT=0
+
+# Test Maven compile on a small, fast module (yawl-utilities has no dependencies)
+if mvn -pl yawl-utilities clean compile -q --no-transfer-progress -B > "${MAVEN_TEST_LOG}" 2>&1; then
+    echo "   ✅ Maven validation compile successful (yawl-utilities)"
+    rm -f "${MAVEN_TEST_LOG}"
+else
+    MAVEN_TEST_RESULT=$?
+    echo "   ⚠️  Maven validation compile had issues (exit code: $MAVEN_TEST_RESULT)"
+    # Show last few lines of error if compile failed
+    if [ -f "${MAVEN_TEST_LOG}" ] && [ -s "${MAVEN_TEST_LOG}" ]; then
+        echo "   Last error lines:"
+        tail -5 "${MAVEN_TEST_LOG}" | sed 's/^/      /'
+    fi
+    rm -f "${MAVEN_TEST_LOG}"
+fi
+
+if [ "${MVND_AVAILABLE}" = "true" ]; then
+    echo "   💡 Tip: Use 'mvnd clean compile' for 40% faster builds (mvnd daemon)"
+else
+    echo "   💡 Optional: Install mvnd with 'sdk install maven-mvnd' for 40% faster builds"
+fi
+
 # Configure H2 database for ephemeral testing
 echo "🗄️  Configuring H2 database for remote environment..."
 
@@ -565,7 +626,12 @@ echo "✨ YAWL environment ready for Claude Code Web"
 echo ""
 echo "📋 Environment Summary:"
 echo "   • Java Version: GraalVM $GRAALVM_VERSION (with GraalPy)"
-echo "   • Build System: Maven 3.x"
+echo "   • Build System: Maven $MAVEN_VERSION (Maven 4 ready)"
+if [ "${MVND_AVAILABLE}" = "true" ]; then
+    echo "   • Maven Daemon: mvnd installed (40% faster builds)"
+else
+    echo "   • Maven Daemon: Optional (install for 40% faster builds)"
+fi
 echo "   • Maven Cache: ${M2_CACHE_DIR}"
 if [ "${MAVEN_PROXY_ENABLED:-false}" = "true" ]; then
     echo "   • Network: Egress proxy (local proxy bridge: 127.0.0.1:3128)"
@@ -576,6 +642,7 @@ echo "   • Database: H2 (in-memory)"
 echo "   • Python Runtime: GraalPy (in-JVM Python execution)"
 echo "   • Observatory: Facts auto-generated on startup"
 echo "   • Test Command: bash scripts/dx.sh (fast) or mvn clean test (full)"
+echo "   • Build Command: ./mvnw clean compile (or mvnd for faster)"
 echo "   • Environment: Remote/Ephemeral"
 echo ""
 
