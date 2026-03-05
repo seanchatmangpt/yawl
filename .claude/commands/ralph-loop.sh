@@ -105,14 +105,22 @@ fi
 
 STATE_FILE="${RALPH_STATE_DIR}/loop-state.json"
 EDIT_TRACKER="${RALPH_STATE_DIR}/loop-edits.txt"
+LOOP_ID="ralph-$(date +%s)-${RANDOM}"
 
-# Initialize state file with loop metadata
+# Write state files in format stop-hook.sh expects
+echo "active" > "${RALPH_STATE_DIR}/status"
+echo "${LOOP_ID}" > "${RALPH_STATE_DIR}/loop-id"
+echo "1" > "${RALPH_STATE_DIR}/iteration"
+echo "${MAX_ITERATIONS}" > "${RALPH_STATE_DIR}/max-iterations"
+
+# Also write JSON for reference and debugging
 cat > "${STATE_FILE}" << EOF
 {
   "task_description": $(printf '%s\n' "${TASK_DESCRIPTION}" | jq -R -s .),
   "completion_promise": $(printf '%s\n' "${COMPLETION_PROMISE}" | jq -R -s .),
   "max_iterations": ${MAX_ITERATIONS},
   "current_iteration": 1,
+  "loop_id": "${LOOP_ID}",
   "enable_smart_validation": ${ENABLE_SMART_VALIDATION},
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "status": "active"

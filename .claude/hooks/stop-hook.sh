@@ -146,6 +146,27 @@ remediate_errors() {
     log_success "  Auto-remediation attempt complete"
 }
 
+# Check if completion promise was found in output
+check_completion_promise() {
+    local promise_file="${STATE_DIR}/completion-promise"
+    local promise_found_file="${STATE_DIR}/promise-found"
+
+    if [[ ! -f "${promise_file}" ]]; then
+        return 1  # No promise to check
+    fi
+
+    local completion_promise=$(cat "${promise_file}")
+
+    # Check if promise was output in this session
+    # This is set by a hook that detects the promise in output
+    if [[ -f "${promise_found_file}" ]]; then
+        log_success "Completion promise detected in output"
+        return 0
+    fi
+
+    return 1
+}
+
 # Decide continuation
 decide_continuation() {
     log_info "Deciding loop continuation..."
@@ -163,13 +184,57 @@ decide_continuation() {
     fi
 
     if [[ "${validation_status}" == "GREEN" ]]; then
-        log_decision "VALIDATION PASSED - may exit"
-        return 0
+        log_decision "VALIDATION PASSED"
+
+        # If validation passed AND promise found, exit successfully
+        if check_completion_promise; then
+            log_success "EXITING - promise satisfied and validation green"
+            return 0
+        fi
     fi
 
-    # Default: continue
+    # Validation failed or promise not found: continue loop
     log_decision "CONTINUING LOOP (iteration $((RALPH_LOOP_ITERATION + 1)))"
     return 1
+}
+
+# Re-inject prompt for next iteration
+reinject_prompt() {
+    local next_iteration=$((RALPH_LOOP_ITERATION + 1))
+    local task_description=""
+    local completion_promise=""
+
+    if [[ -f "${STATE_DIR}/loop-state.json" ]]; then
+        task_description=$(jq -r '.task_description // ""' "${STATE_DIR}/loop-state.json" 2>/dev/null || echo "")
+        completion_promise=$(jq -r '.completion_promise // ""' "${STATE_DIR}/loop-state.json" 2>/dev/null || echo "")
+    fi
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════════════"
+    echo "🔄 Ralph Loop — Iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS}"
+    echo "═══════════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "**Task**: ${task_description}"
+    echo ""
+    echo "**Status**: Validation detected issues. Please fix them and continue."
+    echo ""
+
+    # Show validation errors if they exist
+    if [[ -f "${LOGS_DIR}/validation.log" ]]; then
+        echo "**Validation Output**:"
+        echo "\`\`\`"
+        tail -20 "${LOGS_DIR}/validation.log" 2>/dev/null || echo "(validation log not available)"
+        echo "\`\`\`"
+        echo ""
+    fi
+
+    echo "**Completion Promise**: When this iteration is complete, output this text:"
+    echo "\`\`\`"
+    echo "${completion_promise}"
+    echo "\`\`\`"
+    echo ""
+    echo "Continue working on the task above."
+    echo ""
 }
 
 # Main
@@ -195,16 +260,23 @@ main() {
     if decide_continuation; then
         log_success "Stop-hook complete - allowing normal exit"
         echo "completed" > "${STATE_DIR}/status"
+        # Clean up promise marker
+        rm -f "${STATE_DIR}/promise-found" "${STATE_DIR}/promise-found-at"
         return 0
     else
-        # Update iteration and reinject
-        echo "$((RALPH_LOOP_ITERATION + 1))" > "${STATE_DIR}/iteration"
+        # Update iteration counter for next iteration
+        local next_iteration=$((RALPH_LOOP_ITERATION + 1))
+        echo "${next_iteration}" > "${STATE_DIR}/iteration"
 
         echo ""
-        echo "🔄 Continuing iteration $((RALPH_LOOP_ITERATION + 1))/${RALPH_LOOP_MAX_ITERATIONS}"
+        log_decision "CONTINUING LOOP (iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS})"
         echo ""
 
-        # Return code 127 signals loop continuation (handled by ralph-loop)
+        # Re-inject the prompt for the next iteration
+        reinject_prompt
+
+        # Signal to Claude Code to continue the session
+        # Return code 127 is our marker for "continue loop"
         return 127
     fi
 }
