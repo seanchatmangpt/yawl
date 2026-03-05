@@ -42,6 +42,7 @@ mkdir -p "${RALPH_STATE_DIR}"
 
 TASK_DESCRIPTION=""
 MAX_ITERATIONS=50
+MIN_ITERATIONS=1
 COMPLETION_PROMISE=""
 
 # Parse arguments
@@ -49,6 +50,10 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --max-iterations)
             MAX_ITERATIONS="$2"
+            shift 2
+            ;;
+        --min-iterations)
+            MIN_ITERATIONS="$2"
             shift 2
             ;;
         --completion-promise)
@@ -68,7 +73,7 @@ done
 # Validate arguments
 if [[ -z "${TASK_DESCRIPTION}" ]]; then
     echo "Error: No task description provided" >&2
-    echo "Usage: /ralph-loop \"Task description\" --max-iterations 10 --completion-promise \"PROMISE\"" >&2
+    echo "Usage: /ralph-loop \"Task description\" --max-iterations 10 --min-iterations 2 --completion-promise \"PROMISE\"" >&2
     exit 2
 fi
 
@@ -79,6 +84,16 @@ fi
 
 if ! [[ "${MAX_ITERATIONS}" =~ ^[0-9]+$ ]] || (( MAX_ITERATIONS < 1 )); then
     echo "Error: max-iterations must be a positive integer" >&2
+    exit 2
+fi
+
+if ! [[ "${MIN_ITERATIONS}" =~ ^[0-9]+$ ]] || (( MIN_ITERATIONS < 1 )); then
+    echo "Error: min-iterations must be a positive integer" >&2
+    exit 2
+fi
+
+if (( MIN_ITERATIONS > MAX_ITERATIONS )); then
+    echo "Error: min-iterations (${MIN_ITERATIONS}) cannot exceed max-iterations (${MAX_ITERATIONS})" >&2
     exit 2
 fi
 
@@ -112,6 +127,7 @@ echo "active" > "${RALPH_STATE_DIR}/status"
 echo "${LOOP_ID}" > "${RALPH_STATE_DIR}/loop-id"
 echo "1" > "${RALPH_STATE_DIR}/iteration"
 echo "${MAX_ITERATIONS}" > "${RALPH_STATE_DIR}/max-iterations"
+echo "${MIN_ITERATIONS}" > "${RALPH_STATE_DIR}/min-iterations"
 
 # Also write JSON for reference and debugging
 cat > "${STATE_FILE}" << EOF
@@ -119,6 +135,7 @@ cat > "${STATE_FILE}" << EOF
   "task_description": $(printf '%s\n' "${TASK_DESCRIPTION}" | jq -R -s .),
   "completion_promise": $(printf '%s\n' "${COMPLETION_PROMISE}" | jq -R -s .),
   "max_iterations": ${MAX_ITERATIONS},
+  "min_iterations": ${MIN_ITERATIONS},
   "current_iteration": 1,
   "loop_id": "${LOOP_ID}",
   "enable_smart_validation": ${ENABLE_SMART_VALIDATION},

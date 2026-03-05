@@ -27,6 +27,7 @@ LOGS_DIR="${CLAUDE_DIR}/logs"
 RALPH_LOOP_ACTIVE="${RALPH_LOOP_ACTIVE:-false}"
 RALPH_LOOP_ID="${RALPH_LOOP_ID:-}"
 RALPH_LOOP_MAX_ITERATIONS="${RALPH_LOOP_MAX_ITERATIONS:-50}"
+RALPH_LOOP_MIN_ITERATIONS="${RALPH_LOOP_MIN_ITERATIONS:-1}"
 RALPH_LOOP_ITERATION="${RALPH_LOOP_ITERATION:-0}"
 
 # Colors
@@ -79,8 +80,9 @@ detect_loop_context() {
             [[ -f "${STATE_DIR}/loop-id" ]] && RALPH_LOOP_ID=$(cat "${STATE_DIR}/loop-id")
             [[ -f "${STATE_DIR}/iteration" ]] && RALPH_LOOP_ITERATION=$(cat "${STATE_DIR}/iteration")
             [[ -f "${STATE_DIR}/max-iterations" ]] && RALPH_LOOP_MAX_ITERATIONS=$(cat "${STATE_DIR}/max-iterations")
+            [[ -f "${STATE_DIR}/min-iterations" ]] && RALPH_LOOP_MIN_ITERATIONS=$(cat "${STATE_DIR}/min-iterations")
 
-            log_info "    Iteration: ${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS}"
+            log_info "    Iteration: ${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS} (min: ${RALPH_LOOP_MIN_ITERATIONS})"
             return 0
         fi
     fi
@@ -177,6 +179,12 @@ decide_continuation() {
         return 0  # Exit
     fi
 
+    # Check minimum iterations — force continue until min is met
+    if [[ ${RALPH_LOOP_ITERATION} -lt ${RALPH_LOOP_MIN_ITERATIONS} ]]; then
+        log_decision "MINIMUM ITERATIONS NOT MET (${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MIN_ITERATIONS}) - forcing continue"
+        return 1  # Continue
+    fi
+
     # Check validation
     local validation_status="UNKNOWN"
     if [[ -f "${STATE_DIR}/validation-status" ]]; then
@@ -211,7 +219,7 @@ reinject_prompt() {
 
     echo ""
     echo "═══════════════════════════════════════════════════════════════════════════"
-    echo "🔄 Ralph Loop — Iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS}"
+    echo "🔄 Ralph Loop — Iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS} (min: ${RALPH_LOOP_MIN_ITERATIONS})"
     echo "═══════════════════════════════════════════════════════════════════════════"
     echo ""
     echo "**Task**: ${task_description}"
