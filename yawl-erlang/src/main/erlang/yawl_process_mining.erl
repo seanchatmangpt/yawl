@@ -2,13 +2,33 @@
 %%% @doc YAWL process mining gen_server.
 %%% Implements Directly-Follows Graph (DFG) discovery and token replay
 %%% conformance checking for process mining analytics.
+%%%
+%%% Supports two input formats:
+%%%   1. Simple trace list: [[Activity1, Activity2, ...], ...]
+%%%   2. OCEL2 JSON: #{<<"events">> => [...], <<"objects">> => [...], ...}
+%%%
+%%% Architecture:
+%%%   Java -> Erlang (via libei) -> NIF (rust4pm_nif) -> Rust algorithms
+%%%
 %%% Real algorithms with stateful analysis tracking.
 %%% @end
 %%%-------------------------------------------------------------------
 -module(yawl_process_mining).
 -behaviour(gen_server).
 
+%% API
 -export([start_link/0, discover_dfg/1, conformance/1, analyze/1]).
+%% OCEL2 API (via NIF)
+-export([
+    parse_ocel2/1,
+    ocel_event_count/1,
+    ocel_object_count/1,
+    ocel_event_type_stats/1,
+    ocel_object_type_stats/1,
+    ocel_discover_dfg/1,
+    ocel_check_conformance/2,
+    ocel_analyze/1
+]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -record(state, {
@@ -202,3 +222,132 @@ derive_linear_model(Log) ->
 compute_unique_activities(Log) ->
     AllActivities = lists:flatten(Log),
     sets:size(sets:from_list(AllActivities)).
+
+%% ===== OCEL2 API (via rust4pm_nif) =====
+%% These functions work with OCEL2 JSON format and use the Rust NIF
+%% for high-performance process mining algorithms.
+
+%% @doc Parse OCEL2 JSON and return a handle for further operations
+%% @param Ocel2Json - Binary containing OCEL2 JSON
+%% @returns {ok, Handle} | {error, Reason}
+-spec parse_ocel2(binary()) -> {ok, reference()} | {error, term()}.
+parse_ocel2(Ocel2Json) when is_binary(Ocel2Json) ->
+    rust4pm_nif:parse_ocel2_json(Ocel2Json);
+parse_ocel2(Ocel2Json) when is_map(Ocel2Json) ->
+    %% Convert map to JSON binary
+    JsonBinary = jsx:encode(Ocel2Json),
+    rust4pm_nif:parse_ocel2_json(JsonBinary).
+
+%% @doc Get event count from OCEL log handle
+-spec ocel_event_count(reference()) -> {ok, non_neg_integer()} | {error, term()}.
+ocel_event_count(Handle) ->
+    rust4pm_nif:log_event_count(Handle).
+
+%% @doc Get object count from OCEL log handle
+-spec ocel_object_count(reference()) -> {ok, non_neg_integer()} | {error, term()}.
+ocel_object_count(Handle) ->
+    rust4pm_nif:log_object_count(Handle).
+
+%% @doc Get event type statistics from OCEL log handle
+-spec ocel_event_type_stats(reference()) -> {ok, list()} | {error, term()}.
+ocel_event_type_stats(Handle) ->
+    case rust4pm_nif:log_event_type_stats(Handle) of
+        {ok, JsonString} when is_binary(JsonString) ->
+            try jsx:decode(JsonString, [return_maps]) of
+                Stats -> {ok, Stats}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {ok, JsonString} when is_list(JsonString) ->
+            try jsx:decode(list_to_binary(JsonString), [return_maps]) of
+                Stats -> {ok, Stats}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {error, _} = Error -> Error
+    end.
+
+%% @doc Get object type statistics from OCEL log handle
+-spec ocel_object_type_stats(reference()) -> {ok, list()} | {error, term()}.
+ocel_object_type_stats(Handle) ->
+    case rust4pm_nif:log_object_type_stats(Handle) of
+        {ok, JsonString} when is_binary(JsonString) ->
+            try jsx:decode(JsonString, [return_maps]) of
+                Stats -> {ok, Stats}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {ok, JsonString} when is_list(JsonString) ->
+            try jsx:decode(list_to_binary(JsonString), [return_maps]) of
+                Stats -> {ok, Stats}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {error, _} = Error -> Error
+    end.
+
+%% @doc Discover DFG from OCEL log handle
+%% @returns {ok, #{nodes => [...], edges => [...]}} | {error, Reason}
+-spec ocel_discover_dfg(reference()) -> {ok, map()} | {error, term()}.
+ocel_discover_dfg(Handle) ->
+    case rust4pm_nif:discover_dfg(Handle) of
+        {ok, JsonString} when is_binary(JsonString) ->
+            try jsx:decode(JsonString, [return_maps]) of
+                DfgMap -> {ok, DfgMap}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {ok, JsonString} when is_list(JsonString) ->
+            try jsx:decode(list_to_binary(JsonString), [return_maps]) of
+                DfgMap -> {ok, DfgMap}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {error, _} = Error -> Error
+    end.
+
+%% @doc Check conformance using token replay
+%% @param Handle - OCEL log handle from parse_ocel2/1
+%% @param PetriNetPnml - PNML string defining the Petri net
+%% @returns {ok, #{fitness => float(), precision => float(), ...}} | {error, Reason}
+-spec ocel_check_conformance(reference(), string() | binary()) -> {ok, map()} | {error, term()}.
+ocel_check_conformance(Handle, PetriNetPnml) when is_list(PetriNetPnml) ->
+    ocel_check_conformance(Handle, list_to_binary(PetriNetPnml));
+ocel_check_conformance(Handle, PetriNetPnml) when is_binary(PetriNetPnml) ->
+    case rust4pm_nif:check_conformance(Handle, PetriNetPnml) of
+        {ok, JsonString} when is_binary(JsonString) ->
+            try jsx:decode(JsonString, [return_maps]) of
+                ConfMap -> {ok, ConfMap}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {ok, JsonString} when is_list(JsonString) ->
+            try jsx:decode(list_to_binary(JsonString), [return_maps]) of
+                ConfMap -> {ok, ConfMap}
+            catch
+                _:E -> {error, {json_decode_error, E}}
+            end;
+        {error, _} = Error -> Error
+    end.
+
+%% @doc Full OCEL analysis: stats + DFG + metrics
+%% @param Ocel2Json - Binary containing OCEL2 JSON
+%% @returns {ok, #{events => N, objects => N, dfg => ..., event_types => ...}} | {error, Reason}
+-spec ocel_analyze(binary()) -> {ok, map()} | {error, term()}.
+ocel_analyze(Ocel2Json) when is_binary(Ocel2Json) ->
+    case parse_ocel2(Ocel2Json) of
+        {ok, Handle} ->
+            {ok, EventCount} = ocel_event_count(Handle),
+            {ok, ObjectCount} = ocel_object_count(Handle),
+            {ok, EventTypeStats} = ocel_event_type_stats(Handle),
+            {ok, ObjectTypeStats} = ocel_object_type_stats(Handle),
+            {ok, Dfg} = ocel_discover_dfg(Handle),
+            {ok, #{
+                events => EventCount,
+                objects => ObjectCount,
+                event_types => EventTypeStats,
+                object_types => ObjectTypeStats,
+                dfg => Dfg
+            }};
+        {error, _} = Error -> Error
+    end.

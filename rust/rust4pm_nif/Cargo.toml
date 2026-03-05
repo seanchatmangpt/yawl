@@ -1,0 +1,18 @@
+[package]
+name = "rust4pm_nif"
+version = "0.1.0"
+edition = "2021"
+description = "Erlang NIF wrapper for rust4pm process mining library"
+
+[lib]
+crate-type = ["cdylib"]
+name = "rust4pm_nif"
+
+[dependencies]
+rustler = "0.32"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
+regex = "1.10"
+uuid = { version = "1.0", features = ["v4"] }
+petgraph = "0.6"

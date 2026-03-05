@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.math.BigInteger;
 
 /**
  * Layer 3 domain API for YAWL workflow and process mining operations.
@@ -289,6 +290,329 @@ public final class ErlangBridge implements AutoCloseable {
             }
             return node.rpc(module, function, args);
         };
+    }
+
+    // =========================================================================
+    // OCEL2 API - Java > OTP > rust4pm > OTP > Java Chain
+    // =========================================================================
+
+    /**
+     * Parses OCEL2 JSON and returns a handle for subsequent operations.
+     *
+     * <p>Java > OTP > rust4pm > OTP > Java chain:
+     * <ol>
+     *   <li>Java: sends OCEL2 JSON binary to Erlang</li>
+     *   <li>Erlang: yawl_process_mining:parse_ocel2/1 calls NIF</li>
+     *   <li>NIF: parse_ocel2_json() parses JSON in Rust</li>
+     *   <li>Rust: Returns OcelLogResource handle</li>
+     *   <li>Erlang: Returns handle reference to Java</li>
+     * </ol>
+     *
+     * @param ocel2Json OCEL2 JSON string
+     * @return Ocel2Result with handle on success, error on failure
+     * @throws ErlangRpcException if the RPC call fails
+     * @throws IllegalStateException if not connected
+     */
+    public Ocel2Result parseOcel2(String ocel2Json) throws ErlangRpcException {
+        if (ocel2Json == null || ocel2Json.isBlank()) {
+            throw new IllegalArgumentException("ocel2Json must be non-blank");
+        }
+
+        if (!node.isConnected()) {
+            throw new IllegalStateException("Bridge is not connected");
+        }
+
+        ErlTerm result = node.rpc("yawl_process_mining", "parse_ocel2",
+            List.of(new ErlBinary(ocel2Json.getBytes(StandardCharsets.UTF_8))));
+
+        return extractOcel2Handle(result);
+    }
+
+    /**
+     * Gets the event count from an OCEL2 log handle.
+     *
+     * @param handle OCEL2 handle from parseOcel2()
+     * @return Ocel2Result with event count
+     * @throws ErlangRpcException if the RPC call fails
+     * @throws IllegalStateException if not connected
+     */
+    public Ocel2Result ocelEventCount(Object handle) throws ErlangRpcException {
+        if (handle == null) {
+            throw new IllegalArgumentException("handle must be non-null");
+        }
+
+        if (!node.isConnected()) {
+            throw new IllegalStateException("Bridge is not connected");
+        }
+
+        // For now, use a simple integer handle approach
+        // In production, this would use the actual Erlang reference
+        ErlTerm result = node.rpc("rust4pm_nif", "log_event_count",
+            List.of(new ErlInteger((java.math.BigInteger) handle)));
+
+        return extractOcel2Count(result);
+    }
+
+    /**
+     * Gets the object count from an OCEL2 log handle.
+     *
+     * @param handle OCEL2 handle from parseOcel2()
+     * @return Ocel2Result with object count
+     * @throws ErlangRpcException if the RPC call fails
+     * @throws IllegalStateException if not connected
+     */
+    public Ocel2Result ocelObjectCount(Object handle) throws ErlangRpcException {
+        if (handle == null) {
+            throw new IllegalArgumentException("handle must be non-null");
+        }
+
+        if (!node.isConnected()) {
+            throw new IllegalStateException("Bridge is not connected");
+        }
+
+        ErlTerm result = node.rpc("rust4pm_nif", "log_object_count",
+            List.of(new ErlInteger((java.math.BigInteger) handle)));
+
+        return extractOcel2Count(result);
+    }
+
+    /**
+     * Discovers a Directly-Follows Graph from an OCEL2 log handle.
+     *
+     * @param handle OCEL2 handle from parseOcel2()
+     * @return DfgResult with nodes and edges
+     * @throws ErlangRpcException if the RPC call fails
+     * @throws IllegalStateException if not connected
+     */
+    public DfgResult ocelDiscoverDfg(Object handle) throws ErlangRpcException {
+        if (handle == null) {
+            throw new IllegalArgumentException("handle must be non-null");
+        }
+
+        if (!node.isConnected()) {
+            throw new IllegalStateException("Bridge is not connected");
+        }
+
+        ErlTerm result = node.rpc("yawl_process_mining", "ocel_discover_dfg",
+            List.of(new ErlInteger((java.math.BigInteger) handle)));
+
+        return extractDfgResult(result);
+    }
+
+    /**
+     * Checks conformance of an OCEL2 log against a Petri net model.
+     *
+     * @param handle OCEL2 handle from parseOcel2()
+     * @param pnml   Petri Net Markup Language string
+     * @return ConformanceMetrics with fitness and precision
+     * @throws ErlangRpcException if the RPC call fails
+     * @throws IllegalStateException if not connected
+     */
+    public ConformanceMetrics ocelCheckConformance(Object handle, String pnml) throws ErlangRpcException {
+        if (handle == null) {
+            throw new IllegalArgumentException("handle must be non-null");
+        }
+        if (pnml == null || pnml.isBlank()) {
+            throw new IllegalArgumentException("pnml must be non-blank");
+        }
+
+        if (!node.isConnected()) {
+            throw new IllegalStateException("Bridge is not connected");
+        }
+
+        ErlTerm result = node.rpc("yawl_process_mining", "ocel_check_conformance",
+            List.of(new ErlInteger((java.math.BigInteger) handle),
+                    new ErlBinary(pnml.getBytes(StandardCharsets.UTF_8))));
+
+        return extractConformanceMetrics(result);
+    }
+
+    /**
+     * Discovers a DFG from simple trace format (list of activity lists).
+     *
+     * @param traces list of traces, each trace is a list of activity names
+     * @return DfgResult with nodes and edges
+     * @throws ErlangRpcException if the RPC call fails
+     * @throws IllegalStateException if not connected
+     */
+    public DfgResult discoverDfgFromTraces(java.util.List<java.util.List<String>> traces) throws ErlangRpcException {
+        if (traces == null) {
+            throw new IllegalArgumentException("traces must be non-null");
+        }
+
+        if (!node.isConnected()) {
+            throw new IllegalStateException("Bridge is not connected");
+        }
+
+        // Convert traces to Erlang list of lists
+        List<ErlTerm> erlTraces = new ArrayList<>();
+        for (java.util.List<String> trace : traces) {
+            List<ErlTerm> erlTrace = new ArrayList<>();
+            for (String activity : trace) {
+                erlTrace.add(new ErlAtom(activity));
+            }
+            erlTraces.add(new ErlList(erlTrace));
+        }
+
+        ErlTerm result = node.rpc("yawl_process_mining", "discover_dfg",
+            List.of(new ErlList(erlTraces)));
+
+        return extractDfgResult(result);
+    }
+
+    // =========================================================================
+    // Private helpers for OCEL2 results
+    // =========================================================================
+
+    private Ocel2Result extractOcel2Handle(ErlTerm result) throws ErlangRpcException {
+        if (result instanceof ErlTuple(var elements) && elements.size() == 2) {
+            ErlTerm status = elements.get(0);
+            if (status instanceof ErlAtom(var atom) && "ok".equals(atom)) {
+                // Return the second element as handle (could be reference or integer)
+                ErlTerm handle = elements.get(1);
+                Object handleObj = switch (handle) {
+                    case ErlInteger(var i) -> i;
+                    case ErlAtom(var a) -> a;
+                    default -> handle.toString();
+                };
+                return Ocel2Result.success(handleObj);
+            } else if ("error".equals(((ErlAtom) status).value())) {
+                String errorMsg = elements.get(1).toString();
+                return Ocel2Result.error(errorMsg);
+            }
+        }
+        throw new ErlangRpcException("yawl_process_mining", "parse_ocel2",
+            "Unexpected result format: " + result);
+    }
+
+    private Ocel2Result extractOcel2Count(ErlTerm result) throws ErlangRpcException {
+        if (result instanceof ErlTuple(var elements) && elements.size() == 2) {
+            ErlTerm status = elements.get(0);
+            if (status instanceof ErlAtom(var atom) && "ok".equals(atom)) {
+                ErlTerm countTerm = elements.get(1);
+                if (countTerm instanceof ErlInteger(var bigInt)) {
+                    return Ocel2Result.count(bigInt.longValue());
+                }
+            } else if ("error".equals(((ErlAtom) status).value())) {
+                return Ocel2Result.error(elements.get(1).toString());
+            }
+        }
+        throw new ErlangRpcException("rust4pm_nif", "count",
+            "Unexpected result format: " + result);
+    }
+
+    private DfgResult extractDfgResult(ErlTerm result) throws ErlangRpcException {
+        if (result instanceof ErlTuple(var elements) && elements.size() == 2) {
+            ErlTerm status = elements.get(0);
+            if (status instanceof ErlAtom(var atom) && "ok".equals(atom)) {
+                // Parse DFG from JSON string or map
+                ErlTerm dfgTerm = elements.get(1);
+                return parseDfgFromTerm(dfgTerm);
+            } else if ("error".equals(((ErlAtom) status).value())) {
+                return DfgResult.error(elements.get(1).toString());
+            }
+        }
+        throw new ErlangRpcException("yawl_process_mining", "discover_dfg",
+            "Unexpected result format: " + result);
+    }
+
+    private DfgResult parseDfgFromTerm(ErlTerm dfgTerm) {
+        // For simplicity, return a placeholder DFG
+        // In production, this would parse the actual DFG structure
+        List<DfgNode> nodes = new ArrayList<>();
+        List<DfgEdge> edges = new ArrayList<>();
+
+        if (dfgTerm instanceof ErlMap(var entries)) {
+            // Parse nodes
+            ErlTerm nodesTerm = entries.get(new ErlAtom("nodes"));
+            if (nodesTerm instanceof ErlList(var nodeList, _)) {
+                for (ErlTerm node : nodeList) {
+                    if (node instanceof ErlMap(var nodeEntries)) {
+                        String id = getStringFromMap(nodeEntries, "id");
+                        String label = getStringFromMap(nodeEntries, "label");
+                        long count = getLongFromMap(nodeEntries, "count");
+                        nodes.add(new DfgNode(id, label, count));
+                    }
+                }
+            }
+
+            // Parse edges
+            ErlTerm edgesTerm = entries.get(new ErlAtom("edges"));
+            if (edgesTerm instanceof ErlList(var edgeList, _)) {
+                for (ErlTerm edge : edgeList) {
+                    if (edge instanceof ErlMap(var edgeEntries)) {
+                        String source = getStringFromMap(edgeEntries, "source");
+                        String target = getStringFromMap(edgeEntries, "target");
+                        long count = getLongFromMap(edgeEntries, "count");
+                        edges.add(new DfgEdge(source, target, count));
+                    }
+                }
+            }
+        }
+
+        return DfgResult.success(nodes, edges);
+    }
+
+    private String getStringFromMap(Map<ErlTerm, ErlTerm> map, String key) {
+        ErlTerm value = map.get(new ErlAtom(key));
+        if (value instanceof ErlBinary(var data)) {
+            return new String(data, StandardCharsets.UTF_8);
+        } else if (value instanceof ErlAtom(var atom)) {
+            return atom;
+        }
+        return value != null ? value.toString() : "";
+    }
+
+    private long getLongFromMap(Map<ErlTerm, ErlTerm> map, String key) {
+        ErlTerm value = map.get(new ErlAtom(key));
+        if (value instanceof ErlInteger(var bigInt)) {
+            return bigInt.longValue();
+        }
+        return 0;
+    }
+
+    private ConformanceMetrics extractConformanceMetrics(ErlTerm result) throws ErlangRpcException {
+        if (result instanceof ErlTuple(var elements) && elements.size() == 2) {
+            ErlTerm status = elements.get(0);
+            if (status instanceof ErlAtom(var atom) && "ok".equals(atom)) {
+                ErlTerm metricsTerm = elements.get(1);
+                return parseConformanceFromTerm(metricsTerm);
+            } else if ("error".equals(((ErlAtom) status).value())) {
+                return ConformanceMetrics.error(elements.get(1).toString());
+            }
+        }
+        throw new ErlangRpcException("yawl_process_mining", "ocel_check_conformance",
+            "Unexpected result format: " + result);
+    }
+
+    private ConformanceMetrics parseConformanceFromTerm(ErlTerm term) {
+        double fitness = 1.0;
+        double precision = 1.0;
+        long produced = 0;
+        long consumed = 0;
+        long missing = 0;
+        long remaining = 0;
+
+        if (term instanceof ErlMap(var entries)) {
+            fitness = getDoubleFromMap(entries, "fitness");
+            precision = getDoubleFromMap(entries, "precision");
+            produced = getLongFromMap(entries, "produced");
+            consumed = getLongFromMap(entries, "consumed");
+            missing = getLongFromMap(entries, "missing");
+            remaining = getLongFromMap(entries, "remaining");
+        }
+
+        return ConformanceMetrics.success(fitness, precision, produced, consumed, missing, remaining);
+    }
+
+    private double getDoubleFromMap(Map<ErlTerm, ErlTerm> map, String key) {
+        ErlTerm value = map.get(new ErlAtom(key));
+        if (value instanceof ErlFloat(var d)) {
+            return d;
+        } else if (value instanceof ErlInteger(var bigInt)) {
+            return bigInt.doubleValue();
+        }
+        return 0.0;
     }
 
     /**
