@@ -168,6 +168,27 @@ else
     printf "\033[1;33m[WARN]\033[0m Java 25 not found. Build may fail. Install from: https://adoptium.net/temurin/releases/?version=25\n" >&2
 fi
 
+# ── Maven Daemon (mvnd) REQUIREMENT ENFORCEMENT ───────────────────────────────
+# CRITICAL: YAWL v6.0.0 uses Maven 4.0+ with mandatory mvnd (Maven Daemon).
+# mvnd is REQUIRED for Toyota production system compliance.
+# This is NOT optional - builds MUST use mvnd.
+if ! command -v mvnd &>/dev/null; then
+    printf "\033[1;31m[FATAL]\033[0m mvnd (Maven Daemon) is REQUIRED but not found in PATH.\n" >&2
+    printf "        YAWL v6.0.0 uses Maven 4+ with Toyota production system standards.\n" >&2
+    printf "        mvnd is MANDATORY - no fallback to mvn allowed.\n" >&2
+    printf "\n" >&2
+    printf "        Install mvnd:\n" >&2
+    printf "        $ sdk install maven-mvnd              (SDKMAN - recommended)\n" >&2
+    printf "        $ brew install maven-mvnd            (Homebrew - macOS)\n" >&2
+    printf "        $ curl -fsSL ... | tar xz -C ~/.local/bin  (Manual)\n" >&2
+    printf "\n" >&2
+    printf "        After installation, start the daemon:\n" >&2
+    printf "        $ mvnd --version       (verify installation)\n" >&2
+    printf "        $ mvnd clean compile   (start daemon)\n" >&2
+    printf "\n" >&2
+    exit 2
+fi
+
 # ── Bash version check (associative arrays require 4+) ──────────────────────
 BASH_MAJOR="${BASH_VERSINFO[0]:-0}"
 BASH_MINOR="${BASH_VERSINFO[1]:-0}"
