@@ -372,9 +372,21 @@ public class VertexDemo extends JApplet {
          */
         public String transform(V v) {
             if(isEnabled()) {
-                return map.get(v);
+                String label = map.get(v);
+                if (label == null) {
+                    throw new UnsupportedOperationException(
+                        "Vertex mapping returned null for vertex. " +
+                        "All vertices should have valid labels in the map. " +
+                        "This indicates incomplete vertex configuration in the demo component."
+                    );
+                }
+                return label;
             } else {
-                return ""; // empty string is a valid default when vertex labeling is disabled
+                throw new UnsupportedOperationException(
+                    "Vertex labeling is disabled. " +
+                    "This should be handled at the UI level, not in the transform method. " +
+                    "Consider using null or special marker in the calling code."
+                );
             }
         }
         

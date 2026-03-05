@@ -140,7 +140,13 @@ public final class OrderfulfillmentLauncher {
     }
 
     private static String stripXmlTags(String s) {
-        if (s == null) return "";
+        if (s == null) {
+            throw new UnsupportedOperationException(
+                "stripXmlTags called with null input. " +
+                "Input should be validated before processing XML content. " +
+                "This indicates improper input validation in order processing logic."
+            );
+        }
         String t = s.trim();
         Matcher m = Pattern.compile(">([^<]+)<").matcher(t);
         return m.find() ? m.group(1).trim() : t.replaceAll("<[^>]+>", "").trim();

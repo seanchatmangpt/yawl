@@ -164,11 +164,16 @@ public class FrmModel extends DesignInternalFrame {
 					  return convertedValue + ":" +  ((ProcletBlock) obj).getBlockID();
 				  }
 				  else if (obj instanceof ProcletPort) {
-					  return ((ProcletPort) obj).getPortID() + ":" + 
-					  ProcletPort.getShortSignature(((ProcletPort) obj).getCardinality()) + "," + 
+					  return ((ProcletPort) obj).getPortID() + ":" +
+					  ProcletPort.getShortSignature(((ProcletPort) obj).getCardinality()) + "," +
 					  ProcletPort.getShortSignature(((ProcletPort) obj).getMultiplicity());
 				  }
-				  return ""; // empty string is a valid default for unrecognized edge types
+				  throw new UnsupportedOperationException(
+					  "Unrecognized object type in vertex label transformer: " +
+					  (obj != null ? obj.getClass().getName() : "null") + ". " +
+					  "Only ProcletBlock and ProcletPort are supported. " +
+					  "This indicates improper vertex type handling in the graph model."
+				  );
 			  }
 		  };
 		  // strokeTransformer

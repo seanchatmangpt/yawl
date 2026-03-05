@@ -252,7 +252,11 @@ public class TestExecutionTimeAnalyzer {
 
     private static String truncate(String text, int maxLen) {
         if (text == null) {
-            return "";
+            throw new UnsupportedOperationException(
+                "truncate called with null text input. " +
+                "Text input should be validated before truncation. " +
+                "This indicates improper null handling in test execution analysis logic."
+            );
         }
         return text.length() <= maxLen ? text : text.substring(0, maxLen) + "...";
     }

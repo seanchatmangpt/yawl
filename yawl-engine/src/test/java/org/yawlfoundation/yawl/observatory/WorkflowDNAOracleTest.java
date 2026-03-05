@@ -12,6 +12,7 @@ package org.yawlfoundation.yawl.observatory;
 import org.junit.jupiter.api.*;
 import org.yawlfoundation.yawl.observatory.rdf.WorkflowDNAOracle.DNARecommendation;
 import org.yawlfoundation.yawl.observatory.rdf.WorkflowDNAOracle.DNASignature;
+import org.yawlfoundation.yawl.integration.processmining.XesToYawlSpecGenerator;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -39,8 +40,9 @@ class WorkflowDNAOracleTest {
 
     @BeforeEach
     void setUp() {
-        mockXesGenerator = new MockXesGenerator();
-        oracle = new WorkflowDNAOracle(mockXesGenerator);
+        // Initialize with a real XesToYawlSpecGenerator
+        XesToYawlSpecGenerator testGenerator = new XesToYawlSpecGenerator();
+        oracle = new WorkflowDNAOracle(testGenerator);
     }
 
     @Test
@@ -319,39 +321,4 @@ class WorkflowDNAOracleTest {
         }
     }
 
-    /**
-     * Mock implementation of XesToYawlSpecGenerator for testing
-     * Avoids external dependencies while testing core functionality
-     */
-    private static class MockXesGenerator {
-
-        public MockXesGenerator() {
-            // Constructor matches XesToYawlSpecGenerator(int)
-        }
-
-        /**
-         * Mock implementation that returns a simple XML string
-         */
-        public String generate(String xesXml, String specName) {
-            // Return a minimal YAWL specification XML
-            return """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <specification xmlns="http://www.yawlfoundation.org/yawl">
-                    <metaData>
-                        <identification name="%s" />
-                        <version>1.0</version>
-                    </metaData>
-                    <process>
-                        <name>%s</name>
-                        <condition xsi:type="empty"/>
-                        <net>
-                            <name>main</name>
-                            <inputCondition xsi:type="empty"/>
-                            <outputCondition xsi:type="empty"/>
-                        </net>
-                    </process>
-                </specification>
-                """.formatted(specName, specName);
-        }
     }
-}

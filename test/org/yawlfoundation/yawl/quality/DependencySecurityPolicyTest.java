@@ -148,7 +148,11 @@ public class DependencySecurityPolicyTest {
     private static String getTextContent(Element parent, String tagName) {
         NodeList nodes = parent.getElementsByTagName(tagName);
         if (nodes.getLength() == 0) {
-            return "";
+            throw new UnsupportedOperationException(
+                "No XML nodes found for the specified XPath expression. " +
+                "This indicates the XML structure doesn't match expected patterns. " +
+                "Verify the XML document structure and XPath query correctness."
+            );
         }
         String text = nodes.item(0).getTextContent();
         return text != null ? text.trim() : "";
@@ -204,7 +208,11 @@ public class DependencySecurityPolicyTest {
 
     private static String truncate(String text, int maxLen) {
         if (text == null) {
-            return "";
+            throw new UnsupportedOperationException(
+                "truncate called with null text input. " +
+                "Text input should be validated before truncation. " +
+                "This indicates improper null handling in dependency security analysis logic."
+            );
         }
         return text.length() <= maxLen ? text : text.substring(0, maxLen) + "...";
     }
