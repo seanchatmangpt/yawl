@@ -25,8 +25,11 @@ LOGS_DIR="${CLAUDE_DIR}/logs"
 
 # Get environment variables (set by ralph-loop.sh or callers)
 RALPH_LOOP_ACTIVE="${RALPH_LOOP_ACTIVE:-false}"
+RALPH_INFINITE_MODE="${RALPH_INFINITE_MODE:-false}"
+RALPH_TRULY_INFINITE="${RALPH_TRULY_INFINITE:-false}"
 RALPH_LOOP_ID="${RALPH_LOOP_ID:-}"
 RALPH_LOOP_MAX_ITERATIONS="${RALPH_LOOP_MAX_ITERATIONS:-50}"
+RALPH_LOOP_MIN_ITERATIONS="${RALPH_LOOP_MIN_ITERATIONS:-1}"
 RALPH_LOOP_ITERATION="${RALPH_LOOP_ITERATION:-0}"
 
 # Colors
@@ -72,15 +75,32 @@ detect_loop_context() {
 
     if [[ -f "${STATE_DIR}/status" ]]; then
         local status=$(cat "${STATE_DIR}/status")
-        if [[ "${status}" == "active" ]]; then
+        if [[ "${status}" == "active" ]] || [[ "${status}" == "active-inf" ]]; then
             RALPH_LOOP_ACTIVE="true"
-            log_success "  Loop detected: ACTIVE"
+
+            # Check if infinite mode
+            if [[ "${status}" == "active-inf" ]] || [[ -f "${STATE_DIR}/infinite-mode" ]]; then
+                RALPH_INFINITE_MODE="true"
+                if [[ -f "${STATE_DIR}/truly-infinite" ]]; then
+                    RALPH_TRULY_INFINITE="true"
+                    log_success "  Loop detected: ACTIVE (TRULY INFINITE — ∞)"
+                else
+                    log_success "  Loop detected: ACTIVE (infinite mode)"
+                fi
+            else
+                log_success "  Loop detected: ACTIVE"
+            fi
 
             [[ -f "${STATE_DIR}/loop-id" ]] && RALPH_LOOP_ID=$(cat "${STATE_DIR}/loop-id")
             [[ -f "${STATE_DIR}/iteration" ]] && RALPH_LOOP_ITERATION=$(cat "${STATE_DIR}/iteration")
             [[ -f "${STATE_DIR}/max-iterations" ]] && RALPH_LOOP_MAX_ITERATIONS=$(cat "${STATE_DIR}/max-iterations")
+            [[ -f "${STATE_DIR}/min-iterations" ]] && RALPH_LOOP_MIN_ITERATIONS=$(cat "${STATE_DIR}/min-iterations")
 
-            log_info "    Iteration: ${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS}"
+            if [[ "${RALPH_INFINITE_MODE}" == "true" ]]; then
+                log_info "    Iteration: ${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS}"
+            else
+                log_info "    Iteration: ${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS} (min: ${RALPH_LOOP_MIN_ITERATIONS})"
+            fi
             return 0
         fi
     fi
@@ -146,14 +166,53 @@ remediate_errors() {
     log_success "  Auto-remediation attempt complete"
 }
 
+# Check if completion promise was found in output
+check_completion_promise() {
+    local promise_file="${STATE_DIR}/completion-promise"
+    local promise_found_file="${STATE_DIR}/promise-found"
+
+    if [[ ! -f "${promise_file}" ]]; then
+        return 1  # No promise to check
+    fi
+
+    local completion_promise=$(cat "${promise_file}")
+
+    # Check if promise was output in this session
+    # This is set by a hook that detects the promise in output
+    if [[ -f "${promise_found_file}" ]]; then
+        log_success "Completion promise detected in output"
+        return 0
+    fi
+
+    return 1
+}
+
 # Decide continuation
 decide_continuation() {
     log_info "Deciding loop continuation..."
+
+    # TRULY INFINITE MODE: never exit based on iterations
+    if [[ "${RALPH_TRULY_INFINITE}" == "true" ]]; then
+        log_decision "TRULY INFINITE MODE - continuing forever (iteration $((RALPH_LOOP_ITERATION + 1)))"
+        return 1  # Continue
+    fi
 
     # Check max iterations
     if [[ ${RALPH_LOOP_ITERATION} -ge ${RALPH_LOOP_MAX_ITERATIONS} ]]; then
         log_decision "MAX ITERATIONS REACHED (${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS})"
         return 0  # Exit
+    fi
+
+    # INFINITE MODE: just continue until max iterations
+    if [[ "${RALPH_INFINITE_MODE}" == "true" ]]; then
+        log_decision "INFINITE MODE - continuing (iteration $((RALPH_LOOP_ITERATION + 1))/${RALPH_LOOP_MAX_ITERATIONS})"
+        return 1  # Continue
+    fi
+
+    # Check minimum iterations — force continue until min is met
+    if [[ ${RALPH_LOOP_ITERATION} -lt ${RALPH_LOOP_MIN_ITERATIONS} ]]; then
+        log_decision "MINIMUM ITERATIONS NOT MET (${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MIN_ITERATIONS}) - forcing continue"
+        return 1  # Continue
     fi
 
     # Check validation
@@ -163,13 +222,90 @@ decide_continuation() {
     fi
 
     if [[ "${validation_status}" == "GREEN" ]]; then
-        log_decision "VALIDATION PASSED - may exit"
-        return 0
+        log_decision "VALIDATION PASSED"
+
+        # If validation passed AND promise found, exit successfully
+        if check_completion_promise; then
+            log_success "EXITING - promise satisfied and validation green"
+            return 0
+        fi
     fi
 
-    # Default: continue
+    # Validation failed or promise not found: continue loop
     log_decision "CONTINUING LOOP (iteration $((RALPH_LOOP_ITERATION + 1)))"
     return 1
+}
+
+# Re-inject prompt for next iteration
+reinject_prompt() {
+    local next_iteration=$((RALPH_LOOP_ITERATION + 1))
+    local task_description=""
+    local completion_promise=""
+
+    if [[ -f "${STATE_DIR}/loop-state.json" ]]; then
+        task_description=$(jq -r '.task_description // ""' "${STATE_DIR}/loop-state.json" 2>/dev/null || echo "")
+        completion_promise=$(jq -r '.completion_promise // ""' "${STATE_DIR}/loop-state.json" 2>/dev/null || echo "")
+    elif [[ -f "${STATE_DIR}/loop-inf-state.json" ]]; then
+        task_description=$(jq -r '.task_description // ""' "${STATE_DIR}/loop-inf-state.json" 2>/dev/null || echo "")
+    fi
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════════════════"
+    if [[ "${RALPH_TRULY_INFINITE}" == "true" ]]; then
+        echo "🔄 Ralph Loop INFINITE (∞) — Iteration ${next_iteration}"
+    elif [[ "${RALPH_INFINITE_MODE}" == "true" ]]; then
+        echo "🔄 Ralph Loop Infinite — Iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS}"
+    else
+        echo "🔄 Ralph Loop — Iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS} (min: ${RALPH_LOOP_MIN_ITERATIONS})"
+    fi
+    echo "═══════════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "**Task**: ${task_description}"
+    echo ""
+
+    if [[ "${RALPH_INFINITE_MODE}" == "true" ]]; then
+        echo "**Status**: Validation output below. Continue with next iteration."
+    else
+        echo "**Status**: Validation detected issues. Please fix them and continue."
+    fi
+    echo ""
+
+    # Show validation errors if they exist
+    if [[ -f "${LOGS_DIR}/validation.log" ]]; then
+        echo "**Validation Output**:"
+        echo "\`\`\`"
+        tail -20 "${LOGS_DIR}/validation.log" 2>/dev/null || echo "(validation log not available)"
+        echo "\`\`\`"
+        echo ""
+    fi
+
+    if [[ "${RALPH_INFINITE_MODE}" != "true" ]] && [[ -n "${completion_promise}" ]]; then
+        echo "**Completion Promise**: When this iteration is complete, output this text:"
+        echo "\`\`\`"
+        echo "${completion_promise}"
+        echo "\`\`\`"
+        echo ""
+    fi
+
+    echo "Continue working on the task above."
+    echo ""
+
+    # In non-infinite mode with validation errors, AUTO-SPAWN agent teams
+    if [[ "${RALPH_INFINITE_MODE}" != "true" ]]; then
+        if [[ -f "${LOGS_DIR}/validation.log" ]]; then
+            echo "---"
+            echo ""
+            echo "**AUTO-SPAWNING AGENT TEAM** to parallelize fixes:"
+            echo ""
+            # These Task() calls will be parsed by Claude Code natively
+            echo "Task(\"Fix\", \"${task_description}\", \"yawl-engineer\")"
+            echo "Task(\"Validate\", \"Validate and test fixes\", \"yawl-validator\")"
+            echo "Task(\"Test\", \"Run full test suite\", \"yawl-tester\")"
+            echo ""
+            echo "Agents working in parallel. Report results when complete."
+            echo ""
+        fi
+    fi
 }
 
 # Main
@@ -195,16 +331,23 @@ main() {
     if decide_continuation; then
         log_success "Stop-hook complete - allowing normal exit"
         echo "completed" > "${STATE_DIR}/status"
+        # Clean up promise marker
+        rm -f "${STATE_DIR}/promise-found" "${STATE_DIR}/promise-found-at"
         return 0
     else
-        # Update iteration and reinject
-        echo "$((RALPH_LOOP_ITERATION + 1))" > "${STATE_DIR}/iteration"
+        # Update iteration counter for next iteration
+        local next_iteration=$((RALPH_LOOP_ITERATION + 1))
+        echo "${next_iteration}" > "${STATE_DIR}/iteration"
 
         echo ""
-        echo "🔄 Continuing iteration $((RALPH_LOOP_ITERATION + 1))/${RALPH_LOOP_MAX_ITERATIONS}"
+        log_decision "CONTINUING LOOP (iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS})"
         echo ""
 
-        # Return code 127 signals loop continuation (handled by ralph-loop)
+        # Re-inject the prompt for the next iteration
+        reinject_prompt
+
+        # Signal to Claude Code to continue the session
+        # Return code 127 is our marker for "continue loop"
         return 127
     fi
 }
