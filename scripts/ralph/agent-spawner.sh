@@ -22,48 +22,39 @@ spawn_agent_team() {
     local spawn_timestamp
     spawn_timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-    # Output Task() syntax that Claude Code will parse and execute
-    # This is the key integration point - Claude Code's native Task() parser
-    # will detect these lines and spawn agents automatically
+    # When ralph agent calls this, it will spawn agents via Task tool
+    # This message is informational - the ralph agent handles actual spawning
     cat <<EOF
 
 ---
-**VALIDATION FAILED** — Auto-spawning agent team to fix issues
+## SPAWNING AGENT TEAM
 
-Ralph is invoking parallel agents to resolve validation failures:
+Validation failed. Invoking parallel agents to fix issues:
+
+1. **yawl-engineer**: Fix YAWL code to pass validation
+2. **yawl-validator**: Validate changes with dx.sh all
+3. **yawl-tester**: Run full test suite
+
+Task descriptions will be provided by ralph agent via Task tool.
+
+**Agents working in parallel. Waiting for completion...**
+
+---
 
 EOF
 
-    # Spawn yawl-engineer to fix code
+    # Record agent spawning (for tracking)
     local engineer_id
     engineer_id=$(generate_uuid)
     record_agent_spawn "${engineer_id}" "yawl-engineer"
 
-    cat <<EOF
-Task("Engineer", "Fix validation failures in YAWL code: ${task_description}", "yawl-engineer")
-EOF
-
-    # Spawn yawl-validator to check fixes
     local validator_id
     validator_id=$(generate_uuid)
     record_agent_spawn "${validator_id}" "yawl-validator"
 
-    cat <<EOF
-Task("Validator", "Validate agent changes: Run dx.sh all and hyper-validate.sh", "yawl-validator")
-EOF
-
-    # Spawn yawl-tester to run full test suite
     local tester_id
     tester_id=$(generate_uuid)
     record_agent_spawn "${tester_id}" "yawl-tester"
-
-    cat <<EOF
-Task("Tester", "Run full test suite and verify all tests pass", "yawl-tester")
-
-**Agents working in parallel.** Results will be integrated into the next loop iteration.
----
-
-EOF
 
     # Wait for agents to commit changes
     # Agents will naturally commit their changes to the branch
