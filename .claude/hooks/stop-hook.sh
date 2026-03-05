@@ -290,18 +290,19 @@ reinject_prompt() {
     echo "Continue working on the task above."
     echo ""
 
-    # In non-infinite mode with validation errors, suggest team spawning
+    # In non-infinite mode with validation errors, AUTO-SPAWN agent teams
     if [[ "${RALPH_INFINITE_MODE}" != "true" ]]; then
         if [[ -f "${LOGS_DIR}/validation.log" ]]; then
             echo "---"
             echo ""
-            echo "**TEAM SUGGESTION**: Consider spawning agents to parallelize fixes:"
+            echo "**AUTO-SPAWNING AGENT TEAM** to parallelize fixes:"
             echo ""
-            echo "\`\`\`"
-            echo "Task(\"Feature\", \"${task_description}\", \"yawl-engineer\")"
-            echo "Task(\"Validation\", \"Validate fixes\", \"yawl-validator\")"
-            echo "Task(\"Testing\", \"Verify tests pass\", \"yawl-tester\")"
-            echo "\`\`\`"
+            # These Task() calls will be parsed by Claude Code natively
+            echo "Task(\"Fix\", \"${task_description}\", \"yawl-engineer\")"
+            echo "Task(\"Validate\", \"Validate and test fixes\", \"yawl-validator\")"
+            echo "Task(\"Test\", \"Run full test suite\", \"yawl-tester\")"
+            echo ""
+            echo "Agents working in parallel. Report results when complete."
             echo ""
         fi
     fi
