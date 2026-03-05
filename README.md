@@ -1,9 +1,9 @@
-# YAWL (Yet Another Workflow Language) v6.0.0
+# YAWL (Yet Another Workflow Language) v7.0.0
 
-![Version](https://img.shields.io/badge/version-6.0.0--Beta-blue)
+![Version](https://img.shields.io/badge/version-7.0.0--GA-blue)
 ![Java](https://img.shields.io/badge/Java-25-blue)
 ![License](https://img.shields.io/badge/license-LGPL--3.0-green)
-![Status](https://img.shields.io/badge/status-Beta-blue)
+![Status](https://img.shields.io/badge/status-GA-brightgreen)
 ![Build](https://img.shields.io/badge/build-GREEN-brightgreen)
 
 **[YAWL](https://yawlfoundation.github.io)** is a BPM/Workflow system based on rigorous Petri net semantics, with:
@@ -11,9 +11,10 @@
 - **Service-oriented architecture** for flexible resource integration
 - **Dynamic workflow** through Worklets for runtime evolution
 - **Exception handling** for both anticipated and unanticipated failures
-- **Multi-agent coordination** with autonomous agents (NEW - v6.0)
+- **Multi-agent coordination** with autonomous agents (ENHANCED - v7.0)
+- **Fortune 5 quality gates** with H-Guard validation (NEW - v7.0)
 
-**Released**: February 2026 | **Java 25 Optimized** | **Build Status**: ✅ GREEN
+**Released**: March 2026 | **Java 25 Optimized** | **Build Status**: ✅ GREEN
 
 ---
 
