@@ -70,21 +70,36 @@ EOF
     # We detect this via git log
     log_info "Waiting for agents to complete and commit changes..."
 
+    # Get pre-agent commit for comparison
+    local pre_agent_commit
+    pre_agent_commit=$(git_current_commit)
+
     # Check for new commits from agents (with timeout)
     local commit_timeout=1800  # 30 minutes
-    local check_cmd="git_log_since '${spawn_timestamp}' 2>&1 | grep -q '.' || [[ \$(git log --since='${spawn_timestamp}' --oneline 2>/dev/null | wc -l) -gt 0 ]]"
+    local check_cmd="verify_agent_commits '${pre_agent_commit}'"
 
     if wait_with_timeout "${commit_timeout}" "${check_cmd}"; then
+        # Verify commits actually changed code
+        local post_agent_commit
+        post_agent_commit=$(git_current_commit)
+
         local new_commits
-        new_commits=$(git log --since="${spawn_timestamp}" --oneline 2>/dev/null | wc -l)
-        log_info "Agents completed: ${new_commits} new commits"
+        new_commits=$(git log --oneline "${pre_agent_commit}..${post_agent_commit}" 2>/dev/null | wc -l)
 
-        record_agent_complete "${engineer_id}" "success" "${new_commits}"
-        record_agent_complete "${validator_id}" "success" "0"
-        record_agent_complete "${tester_id}" "success" "0"
+        # Verify there are actual code changes (not just metadata)
+        if git diff "${pre_agent_commit}..${post_agent_commit}" --stat 2>/dev/null | grep -qE '\.(java|xml|py|sh)'; then
+            log_info "Agents completed: ${new_commits} commits with code changes"
 
-        set_validation_status "PENDING"  # Reset to pending for next iteration
-        return 0
+            record_agent_complete "${engineer_id}" "success" "${new_commits}"
+            record_agent_complete "${validator_id}" "success" "0"
+            record_agent_complete "${tester_id}" "success" "0"
+
+            set_validation_status "PENDING"  # Reset to pending for next iteration
+            return 0
+        else
+            log_error "Agent commits don't contain code changes"
+            return 1
+        fi
     else
         log_error "Agent team timeout - agents did not complete within 30 minutes"
         record_agent_complete "${engineer_id}" "timeout" "0"
@@ -93,6 +108,21 @@ EOF
 
         return 1
     fi
+}
+
+# Verify agent commits exist
+verify_agent_commits() {
+    local pre_commit="$1"
+    local current
+    current=$(git_current_commit)
+
+    if [[ "$pre_commit" == "$current" ]]; then
+        log_debug "No new commits yet (pre: ${pre_commit}, current: ${current})"
+        return 1
+    fi
+
+    log_debug "New commits detected: ${pre_commit} → ${current}"
+    return 0
 }
 
 # Main entry

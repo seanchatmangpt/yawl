@@ -46,11 +46,55 @@ run_iteration() {
     fi
 }
 
+# Pre-flight checks
+preflight_checks() {
+    local errors=0
+
+    # Check required tools
+    for tool in git jq bash timeout; do
+        if ! command -v "$tool" &>/dev/null; then
+            log_error "Required tool not found: $tool"
+            errors=$((errors + 1))
+        fi
+    done
+
+    # Check .ralph-state directory is writable
+    if ! mkdir -p "${RALPH_STATE_DIR}" 2>/dev/null; then
+        log_error "Cannot create directory: ${RALPH_STATE_DIR}"
+        errors=$((errors + 1))
+    fi
+
+    if ! [[ -w "${RALPH_STATE_DIR}" ]]; then
+        log_error "Directory is not writable: ${RALPH_STATE_DIR}"
+        errors=$((errors + 1))
+    fi
+
+    # Check dx.sh exists
+    if ! [[ -f "scripts/dx.sh" ]]; then
+        log_error "scripts/dx.sh not found"
+        errors=$((errors + 1))
+    fi
+
+    if [[ $errors -gt 0 ]]; then
+        log_error "Preflight checks failed (${errors} errors)"
+        return 1
+    fi
+
+    log_info "Preflight checks passed ✓"
+    return 0
+}
+
 # Main orchestration loop
 main() {
     local description="$1"
     local max_iterations="${2:-10}"
     local timeout_mins="${3:-120}"
+
+    # Run preflight checks
+    if ! preflight_checks; then
+        log_error "Ralph Loop startup failed"
+        return 2
+    fi
 
     # Initialize loop state
     local loop_id
@@ -63,6 +107,8 @@ main() {
 
     local iteration_count=0
     local max=$((max_iterations))
+    local consecutive_failures=0
+    local max_consecutive=3
 
     while true; do
         iteration_count=$((iteration_count + 1))
@@ -87,6 +133,16 @@ main() {
             log_info "Ralph Loop completed successfully!"
             bash "${RALPH_HOME}/scripts/ralph/loop-state.sh" summary
             return 0
+        else
+            # Validation failed
+            consecutive_failures=$((consecutive_failures + 1))
+
+            if [[ ${consecutive_failures} -ge ${max_consecutive} ]]; then
+                log_error "Too many consecutive failures (${consecutive_failures}). Bailing out."
+                log_error "Validation is stuck - manual intervention required"
+                bash "${RALPH_HOME}/scripts/ralph/loop-state.sh" summary
+                return 1
+            fi
         fi
 
         # Check for timeout

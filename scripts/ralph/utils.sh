@@ -56,9 +56,25 @@ log_debug() {
     fi
 }
 
-# Git utilities
+# Git utilities with retry logic
 git_fetch_latest() {
-    git fetch origin -q 2>/dev/null || return 1
+    local retries=3
+    local backoff=2
+
+    for attempt in $(seq 1 $retries); do
+        if git fetch origin -q 2>/dev/null; then
+            return 0
+        fi
+
+        if [[ $attempt -lt $retries ]]; then
+            log_debug "git fetch failed (attempt ${attempt}/${retries}), retrying in ${backoff}s"
+            sleep $backoff
+            backoff=$((backoff * 2))
+        fi
+    done
+
+    log_error "git fetch failed after ${retries} attempts"
+    return 1
 }
 
 git_log_since() {
@@ -72,12 +88,24 @@ git_current_commit() {
 
 # Validation check
 check_dx_status() {
-    # Run dx.sh all and return exit code
+    # Run dx.sh all with 5-minute timeout
     # 0 = GREEN (success)
     # 2 = RED (failure)
     # 1 = transient (retry)
-    bash scripts/dx.sh all > "${RALPH_LOGS_DIR}/dx-$(date +%s).log" 2>&1
-    return $?
+    # 124 = timeout (transient)
+    local log_file="${RALPH_LOGS_DIR}/dx-$(date +%s).log"
+
+    if timeout 300 bash scripts/dx.sh all > "$log_file" 2>&1; then
+        return 0
+    fi
+
+    local exit_code=$?
+    if [[ $exit_code -eq 124 ]]; then
+        log_error "dx.sh timeout (5 minutes exceeded)"
+        return 1  # Transient, will retry
+    fi
+
+    return $exit_code
 }
 
 # Wait with timeout
