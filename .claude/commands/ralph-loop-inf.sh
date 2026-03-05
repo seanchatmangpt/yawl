@@ -37,6 +37,7 @@ mkdir -p "${RALPH_STATE_DIR}"
 
 TASK_DESCRIPTION=""
 ITERATIONS=5
+INFINITE=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -44,6 +45,11 @@ while [[ $# -gt 0 ]]; do
         --iterations)
             ITERATIONS="$2"
             shift 2
+            ;;
+        --infinity)
+            INFINITE=true
+            ITERATIONS=99999  # Internal max to prevent actual infinite state
+            shift
             ;;
         *)
             # First non-flag argument is the task description
@@ -59,12 +65,15 @@ done
 if [[ -z "${TASK_DESCRIPTION}" ]]; then
     echo "Error: No task description provided" >&2
     echo "Usage: /ralph-loop-inf \"Task description\" --iterations 5" >&2
+    echo "       /ralph-loop-inf \"Task description\" --infinity" >&2
     exit 2
 fi
 
-if ! [[ "${ITERATIONS}" =~ ^[0-9]+$ ]] || (( ITERATIONS < 1 )); then
-    echo "Error: iterations must be a positive integer" >&2
-    exit 2
+if [[ "${INFINITE}" != "true" ]]; then
+    if ! [[ "${ITERATIONS}" =~ ^[0-9]+$ ]] || (( ITERATIONS < 1 )); then
+        echo "Error: iterations must be a positive integer" >&2
+        exit 2
+    fi
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -99,11 +108,17 @@ echo "${ITERATIONS}" > "${RALPH_STATE_DIR}/max-iterations"
 echo "0" > "${RALPH_STATE_DIR}/min-iterations"
 echo "true" > "${RALPH_STATE_DIR}/infinite-mode"
 
+# Mark if truly infinite (--infinity flag)
+if [[ "${INFINITE}" == "true" ]]; then
+    echo "true" > "${RALPH_STATE_DIR}/truly-infinite"
+fi
+
 # Also write JSON for reference and debugging
 cat > "${STATE_FILE}" << EOF
 {
   "task_description": $(printf '%s\n' "${TASK_DESCRIPTION}" | jq -R -s .),
   "iterations": ${ITERATIONS},
+  "truly_infinite": ${INFINITE},
   "current_iteration": 1,
   "loop_id": "${LOOP_ID}",
   "infinite_mode": true,
@@ -145,16 +160,45 @@ export RALPH_INFINITE_MODE=true
 
 echo ""
 echo "═══════════════════════════════════════════════════════════════════════════"
-echo "🚀 Ralph Loop Infinite — Starting"
+if [[ "${INFINITE}" == "true" ]]; then
+    echo "🚀 Ralph Loop INFINITE — Starting (∞ iterations)"
+else
+    echo "🚀 Ralph Loop Infinite — Starting"
+fi
 echo "───────────────────────────────────────────────────────────────────────────"
 echo "📋 Task: ${TASK_DESCRIPTION}"
-echo "🔄 Iterations: ${ITERATIONS} (no completion promise required)"
+if [[ "${INFINITE}" == "true" ]]; then
+    echo "🔄 Iterations: ∞ (infinite — no stopping condition)"
+else
+    echo "🔄 Iterations: ${ITERATIONS} (no completion promise required)"
+fi
 echo "🧠 Smart validation: $([ "${ENABLE_SMART_VALIDATION}" == "true" ] && echo "ENABLED" || echo "DISABLED")"
 echo "═══════════════════════════════════════════════════════════════════════════"
 echo ""
 
 # Display initial prompt for Claude
-cat << PROMPT
+if [[ "${INFINITE}" == "true" ]]; then
+    cat << PROMPT
+
+## Ralph Loop INFINITE — Iteration 1 (∞)
+
+**Task**: ${TASK_DESCRIPTION}
+
+**Mode**: Truly infinite (no max iterations, no completion promise)
+
+**What happens next**: The loop will run forever until you manually stop it. Each iteration will:
+1. Run your agents/code changes
+2. Validate the work (dx.sh all)
+3. Show validation errors if any
+4. Loop to next iteration (no exit condition)
+
+**Use case**: Testing whether the loop can sustain itself indefinitely, validate agent behavior under continuous iteration.
+
+**Current status**: Ready for iteration 1. Begin work on the task above.
+
+PROMPT
+else
+    cat << PROMPT
 
 ## Ralph Loop Infinite — Iteration 1 of ${ITERATIONS}
 
@@ -173,6 +217,7 @@ The loop will exit after ${ITERATIONS} iterations complete.
 **Current status**: Ready for iteration 1. Begin work on the task above.
 
 PROMPT
+fi
 
 # Return success - the stop-hook takes over from here
 exit 0

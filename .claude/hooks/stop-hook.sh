@@ -26,6 +26,7 @@ LOGS_DIR="${CLAUDE_DIR}/logs"
 # Get environment variables (set by ralph-loop.sh or callers)
 RALPH_LOOP_ACTIVE="${RALPH_LOOP_ACTIVE:-false}"
 RALPH_INFINITE_MODE="${RALPH_INFINITE_MODE:-false}"
+RALPH_TRULY_INFINITE="${RALPH_TRULY_INFINITE:-false}"
 RALPH_LOOP_ID="${RALPH_LOOP_ID:-}"
 RALPH_LOOP_MAX_ITERATIONS="${RALPH_LOOP_MAX_ITERATIONS:-50}"
 RALPH_LOOP_MIN_ITERATIONS="${RALPH_LOOP_MIN_ITERATIONS:-1}"
@@ -80,7 +81,12 @@ detect_loop_context() {
             # Check if infinite mode
             if [[ "${status}" == "active-inf" ]] || [[ -f "${STATE_DIR}/infinite-mode" ]]; then
                 RALPH_INFINITE_MODE="true"
-                log_success "  Loop detected: ACTIVE (infinite mode)"
+                if [[ -f "${STATE_DIR}/truly-infinite" ]]; then
+                    RALPH_TRULY_INFINITE="true"
+                    log_success "  Loop detected: ACTIVE (TRULY INFINITE — ∞)"
+                else
+                    log_success "  Loop detected: ACTIVE (infinite mode)"
+                fi
             else
                 log_success "  Loop detected: ACTIVE"
             fi
@@ -185,6 +191,12 @@ check_completion_promise() {
 decide_continuation() {
     log_info "Deciding loop continuation..."
 
+    # TRULY INFINITE MODE: never exit based on iterations
+    if [[ "${RALPH_TRULY_INFINITE}" == "true" ]]; then
+        log_decision "TRULY INFINITE MODE - continuing forever (iteration $((RALPH_LOOP_ITERATION + 1)))"
+        return 1  # Continue
+    fi
+
     # Check max iterations
     if [[ ${RALPH_LOOP_ITERATION} -ge ${RALPH_LOOP_MAX_ITERATIONS} ]]; then
         log_decision "MAX ITERATIONS REACHED (${RALPH_LOOP_ITERATION}/${RALPH_LOOP_MAX_ITERATIONS})"
@@ -239,7 +251,9 @@ reinject_prompt() {
 
     echo ""
     echo "═══════════════════════════════════════════════════════════════════════════"
-    if [[ "${RALPH_INFINITE_MODE}" == "true" ]]; then
+    if [[ "${RALPH_TRULY_INFINITE}" == "true" ]]; then
+        echo "🔄 Ralph Loop INFINITE (∞) — Iteration ${next_iteration}"
+    elif [[ "${RALPH_INFINITE_MODE}" == "true" ]]; then
         echo "🔄 Ralph Loop Infinite — Iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS}"
     else
         echo "🔄 Ralph Loop — Iteration ${next_iteration}/${RALPH_LOOP_MAX_ITERATIONS} (min: ${RALPH_LOOP_MIN_ITERATIONS})"
