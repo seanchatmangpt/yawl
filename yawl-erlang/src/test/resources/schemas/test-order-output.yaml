@@ -1,9 +1,0 @@
-name: OrderOutput
-version: "1.0"
-properties:
-  confirmationId:
-    type: string
-    required: true
-  status:
-    type: string
-    required: true

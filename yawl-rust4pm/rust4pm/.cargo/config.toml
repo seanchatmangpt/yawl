@@ -1,8 +1,0 @@
-# Cargo configuration for building Erlang NIF on macOS
-# Allow undefined symbols (enif_* functions resolved at runtime by BEAM)
-
-[target.aarch64-apple-darwin]
-rustflags = ["-C", "link-arg=-Wl,-undefined,dynamic_lookup"]
-
-[target.x86_64-apple-darwin]
-rustflags = ["-C", "link-arg=-Wl,-undefined,dynamic_lookup"]
