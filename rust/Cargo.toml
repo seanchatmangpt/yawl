@@ -4,6 +4,7 @@ members = [
     "yawl-native",
     "rust4pm",
     "data-modelling-ffi",
+    "petgraph-jni",
 ]
 
 [workspace.dependencies]
@@ -18,3 +19,4 @@ oxigraph          = "0.4"
 petgraph          = "0.6"
 chrono            = { version = "0.4", features = ["serde"] }
 regex             = "1"
+jni               = "0.21"
