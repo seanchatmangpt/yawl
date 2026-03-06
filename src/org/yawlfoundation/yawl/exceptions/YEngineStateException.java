@@ -21,10 +21,33 @@ import java.io.Serial;
 
 /**
  * Exception thrown when the engine state is invalid in relation to the request being actioned.
+ *
+ * <p><b>Common causes:</b>
+ * <ul>
+ *   <li>Engine not initialized (null or not started)
+ *   <li>Engine shut down before operation completed
+ *   <li>Database connection lost or unavailable
+ *   <li>Case not found (already removed or wrong ID)
+ *   <li>Specification not loaded in engine
+ * </ul>
+ *
+ * <p><b>Recovery guidance:</b>
+ * <ul>
+ *   <li>Verify engine is initialized and running
+ *   <li>Check that required specifications are loaded
+ *   <li>Verify database connectivity
+ *   <li>Ensure case/spec IDs are correct
+ *   <li>Retry operation after engine recovers from transient errors
+ * </ul>
+ *
+ * @see org.yawlfoundation.yawl.engine.YEngine
+ * @see org.yawlfoundation.yawl.stateless.YStatelessEngine
  */
 public class YEngineStateException extends YAWLException {
     @Serial
     private static final long serialVersionUID = 2L;
+
+    private transient String recoveryAction;
 
     /**
      * Constructs a new engine state exception with no detail message.
@@ -59,5 +82,26 @@ public class YEngineStateException extends YAWLException {
      */
     public YEngineStateException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    /**
+     * Constructs a new engine state exception with message, cause, and recovery action.
+     *
+     * @param message         the detail message
+     * @param cause           the cause of this exception
+     * @param recoveryAction  recommended action to recover from this error
+     */
+    public YEngineStateException(String message, Throwable cause, String recoveryAction) {
+        super(message, cause);
+        this.recoveryAction = recoveryAction;
+    }
+
+    /**
+     * Returns the recommended recovery action for this engine state error.
+     *
+     * @return recovery action (may be null if not provided)
+     */
+    public String getRecoveryAction() {
+        return recoveryAction;
     }
 }

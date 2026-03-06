@@ -25,6 +25,23 @@ import org.jdom2.Element;
 /**
  * Exception thrown when data validation fails against a schema during YAWL execution.
  *
+ * <p><b>Common causes:</b>
+ * <ul>
+ *   <li>Missing required XML element or attribute
+ *   <li>Data type mismatch (e.g., non-numeric value for int field)
+ *   <li>Value outside allowed range or pattern
+ *   <li>Schema constraint violation (unique, length, format)
+ *   <li>Malformed XML structure
+ * </ul>
+ *
+ * <p><b>Recovery guidance:</b>
+ * <ul>
+ *   <li>Review error message for specific element/attribute that failed
+ *   <li>Check task output data against workflow specification schema
+ *   <li>Validate data format (ensure required fields are present)
+ *   <li>Consult workflow specification documentation for field requirements
+ * </ul>
+ *
  * @author Lachlan Aldred
  * @since 1/09/2005
  */
@@ -48,6 +65,10 @@ public class YDataValidationException extends YDataStateException {
 
     @Override
     public String getMessage() {
-        return super.getMessage();
+        String base = super.getMessage();
+        if (base == null) {
+            return "Data validation failed. Review schema constraints and ensure all required fields are present.";
+        }
+        return base + " See workflow specification for schema definition.";
     }
 }

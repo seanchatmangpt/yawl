@@ -23,12 +23,32 @@ import java.io.Serial;
 /**
  * Exception thrown when authentication fails in the YAWL engine.
  *
+ * <p><b>Common causes:</b>
+ * <ul>
+ *   <li>Invalid username or password
+ *   <li>Session token expired or revoked
+ *   <li>Missing required authentication credentials
+ *   <li>API key invalid or revoked
+ *   <li>User account disabled
+ * </ul>
+ *
+ * <p><b>Recovery guidance:</b>
+ * <ul>
+ *   <li>Verify username and password are correct
+ *   <li>Check that session token is still valid (tokens expire)
+ *   <li>Ensure API key is configured in environment variables
+ *   <li>Re-authenticate if token expired (typically every 1-24 hours)
+ *   <li>Contact system administrator if account is disabled
+ * </ul>
+ *
  * @author Lachlan Aldred
  * @since 26/11/2004
  */
 public class YAuthenticationException extends YAWLException {
     @Serial
     private static final long serialVersionUID = 2L;
+
+    private transient String remediation;
 
     /**
      * Constructs a new authentication exception with no detail message.
@@ -63,5 +83,35 @@ public class YAuthenticationException extends YAWLException {
      */
     public YAuthenticationException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    /**
+     * Constructs a new authentication exception with message, cause, and remediation steps.
+     *
+     * @param message        the detail message
+     * @param cause          the cause of this exception
+     * @param remediation    steps to resolve the authentication issue
+     */
+    public YAuthenticationException(String message, Throwable cause, String remediation) {
+        super(message, cause);
+        this.remediation = remediation;
+    }
+
+    /**
+     * Returns remediation steps to resolve this authentication error.
+     *
+     * @return remediation steps (may be null if not provided)
+     */
+    public String getRemediation() {
+        return remediation;
+    }
+
+    @Override
+    public String getMessage() {
+        String base = super.getMessage();
+        if (remediation == null) {
+            return base == null ? "Authentication failed. Check credentials and re-authenticate." : base;
+        }
+        return base + " Remediation: " + remediation;
     }
 }

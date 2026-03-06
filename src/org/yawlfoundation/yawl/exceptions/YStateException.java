@@ -23,12 +23,31 @@ import java.io.Serial;
 /**
  * Exception thrown when an invalid state is encountered in the YAWL engine.
  *
+ * <p><b>Common causes:</b>
+ * <ul>
+ *   <li>Attempting to complete a work item that is not enabled
+ *   <li>Starting a case that is already running
+ *   <li>OR-join receiving data when not all branches have completed
+ *   <li>Concurrent state modifications (race condition)
+ *   <li>Case terminated before operation completed
+ * </ul>
+ *
+ * <p><b>Recovery guidance:</b>
+ * <ul>
+ *   <li>Check case/work item status before operation
+ *   <li>Verify OR-join conditions and branch completion
+ *   <li>Review exception message for specific state constraint violated
+ *   <li>See {@link #recoveryHint()} for context-specific advice
+ * </ul>
+ *
  * @author Lachlan Aldred
  * @since 23/04/2003
  */
 public class YStateException extends YAWLException {
     @Serial
     private static final long serialVersionUID = 2L;
+
+    private transient String recoveryHint;
 
     /**
      * Constructs a new state exception with no detail message.
@@ -63,5 +82,35 @@ public class YStateException extends YAWLException {
      */
     public YStateException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    /**
+     * Constructs a new state exception with message, cause, and recovery hint.
+     *
+     * @param message       the detail message
+     * @param cause         the cause of this exception
+     * @param recoveryHint  actionable guidance for resolving the state error
+     */
+    public YStateException(String message, Throwable cause, String recoveryHint) {
+        super(message, cause);
+        this.recoveryHint = recoveryHint;
+    }
+
+    /**
+     * Returns actionable recovery guidance for this state error.
+     *
+     * @return recovery hint (may be null if not provided)
+     */
+    public String recoveryHint() {
+        return recoveryHint;
+    }
+
+    @Override
+    public String toString() {
+        String base = super.toString();
+        if (recoveryHint == null) {
+            return base;
+        }
+        return base + " [Recovery hint: " + recoveryHint + "]";
     }
 }

@@ -1,0 +1,400 @@
+################################################################################
+# YAWL Application Configuration Template (v6.0.0)
+#
+# This file consolidates all YAWL configuration options in one place.
+# Copy this file to application.yml and customize for your deployment.
+#
+# Sections:
+#   1. Server Setup (Spring Boot)
+#   2. Database (HikariCP connection pooling)
+#   3. YAWL Engine (case management, timeouts)
+#   4. Security (authentication, LDAP, TLS)
+#   5. Observability (Micrometer, OpenTelemetry, Logging)
+#   6. Integration (MCP, A2A, REST API)
+#   7. Advanced Tuning (Virtual threads, caching, performance)
+#
+# Required: server.port, spring.datasource.url, spring.datasource.password
+# Optional: Everything else (defaults provided)
+#
+# Quick Start: Copy this file to application.yml, set required fields, restart
+################################################################################
+
+################################################################################
+# 1. SERVER SETUP (Spring Boot)
+################################################################################
+server:
+  # HTTP port (default: 8080)
+  port: ${SERVER_PORT:8080}
+
+  # Servlet context path (e.g., /yawl makes API available at http://host:8080/yawl/api)
+  servlet:
+    context-path: ${SERVLET_CONTEXT_PATH:/yawl}
+
+  # Connection timeouts
+  tomcat:
+    # Max connection idle time before closing (seconds)
+    connection-timeout: ${TOMCAT_CONNECTION_TIMEOUT:30}
+    # Max HTTP header size (default: 8KB)
+    max-http-header-size: ${TOMCAT_MAX_HEADER_SIZE:8192}
+    # Accept queue size when all threads busy
+    accept-count: ${TOMCAT_ACCEPT_COUNT:100}
+    # Max concurrent connections
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:200}
+
+spring:
+  # Application name (used in logs, metrics)
+  application:
+    name: ${SPRING_APP_NAME:yawl}
+
+  # Active profiles (e.g., "prod,otel" for production with observability)
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+################################################################################
+# 2. DATABASE CONFIGURATION (HikariCP)
+################################################################################
+spring:
+  datasource:
+    # Database URL (REQUIRED - customize for your database)
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:yawl;MODE=MySQL}
+
+    # Database username
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+
+    # Database password (REQUIRED for production)
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+    # JDBC driver class (auto-detected from URL, override if needed)
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+
+    # Connection pool settings
+    hikari:
+      # Max number of connections in pool
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      # Min idle connections (keep warm)
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      # Connection test query (keep-alive)
+      connection-test-query: ${DB_POOL_TEST_QUERY:SELECT 1}
+      # Max connection lifetime (30 min default)
+      max-lifetime: ${DB_POOL_MAX_LIFETIME:1800000}
+      # Connection idle timeout before closing (10 min default)
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT:600000}
+      # Connection acquire timeout
+      connection-timeout: ${DB_POOL_CONNECT_TIMEOUT:30000}
+      # Allow pool suspension (useful for deployments)
+      allow-pool-suspension: ${DB_POOL_ALLOW_SUSPENSION:false}
+      # Enable auto-commit
+      auto-commit: ${DB_POOL_AUTO_COMMIT:true}
+
+  # JPA/Hibernate configuration
+  jpa:
+    # Hibernate dialect (auto-detected from datasource, override if needed)
+    database-platform: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
+    # Generate DDL from entities
+    generate-ddl: ${JPA_GENERATE_DDL:true}
+    # Hibernate DDL mode: validate|update|create|create-drop
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
+    # Show SQL in logs (disable for production)
+    show-sql: ${JPA_SHOW_SQL:false}
+    # Format SQL output
+    properties:
+      hibernate:
+        format_sql: ${HIBERNATE_FORMAT_SQL:true}
+        use_sql_comments: ${HIBERNATE_USE_SQL_COMMENTS:true}
+
+  # Flyway database migrations
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    # Schema to manage (leave empty for default)
+    schemas: ${FLYWAY_SCHEMAS:}
+    # Where to look for migration files
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration}
+    # Auto-run migrations on startup
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+
+################################################################################
+# 3. YAWL ENGINE CONFIGURATION
+################################################################################
+yawl:
+  engine:
+    # Case data retention (days, -1 = forever)
+    case-retention-days: ${YAWL_CASE_RETENTION_DAYS:90}
+
+    # Idle case detection (minutes, 0 = disabled)
+    idle-case-timeout-minutes: ${YAWL_IDLE_CASE_TIMEOUT:30}
+
+    # Maximum concurrent cases
+    max-concurrent-cases: ${YAWL_MAX_CONCURRENT_CASES:1000}
+
+    # Work item completion timeout (seconds)
+    work-item-timeout-seconds: ${YAWL_WORK_ITEM_TIMEOUT:3600}
+
+    # Enable persistence (false for stateless mode)
+    enable-persistence: ${YAWL_ENABLE_PERSISTENCE:true}
+
+    # Case monitoring enabled
+    enable-case-monitoring: ${YAWL_ENABLE_CASE_MONITORING:true}
+
+    # Timer thread pool size (for scheduled case monitoring)
+    timer-thread-pool-size: ${YAWL_TIMER_THREADS:4}
+
+  # Multi-tenancy configuration
+  multi-tenancy:
+    enabled: ${YAWL_MULTI_TENANCY_ENABLED:false}
+    # Tenant isolation level: database|schema|row
+    isolation-level: ${YAWL_TENANCY_ISOLATION:row}
+
+################################################################################
+# 4. SECURITY (Authentication, Authorization, TLS)
+################################################################################
+spring:
+  security:
+    # Default admin credentials (CHANGE IN PRODUCTION)
+    user:
+      name: ${SECURITY_USER_NAME:admin}
+      password: ${SECURITY_USER_PASSWORD:admin}
+
+yawl:
+  security:
+    # Authentication provider: local|ldap|oauth2
+    auth-provider: ${YAWL_AUTH_PROVIDER:local}
+
+    # LDAP configuration (if auth-provider=ldap)
+    ldap:
+      enabled: ${YAWL_LDAP_ENABLED:false}
+      url: ${YAWL_LDAP_URL:ldap://localhost:389}
+      base-dn: ${YAWL_LDAP_BASE_DN:dc=example,dc=com}
+      user-search-filter: ${YAWL_LDAP_USER_FILTER:(uid={0})}
+      bind-dn: ${YAWL_LDAP_BIND_DN:}
+      bind-password: ${YAWL_LDAP_BIND_PASSWORD:}
+      # Auto-sync participants from LDAP
+      auto-sync-participants: ${YAWL_LDAP_AUTO_SYNC:false}
+      sync-interval-hours: ${YAWL_LDAP_SYNC_INTERVAL:24}
+
+    # TLS/SSL configuration
+    tls:
+      enabled: ${YAWL_TLS_ENABLED:false}
+      keystore-path: ${YAWL_TLS_KEYSTORE:}
+      keystore-password: ${YAWL_TLS_KEYSTORE_PASSWORD:}
+      truststore-path: ${YAWL_TLS_TRUSTSTORE:}
+      truststore-password: ${YAWL_TLS_TRUSTSTORE_PASSWORD:}
+
+    # JWT token configuration
+    jwt:
+      enabled: ${YAWL_JWT_ENABLED:false}
+      secret: ${YAWL_JWT_SECRET:}
+      expiration-minutes: ${YAWL_JWT_EXPIRATION:60}
+
+  # Authorization: role-based access control (RBAC)
+  rbac:
+    enabled: ${YAWL_RBAC_ENABLED:true}
+    # Default role for new users
+    default-role: ${YAWL_DEFAULT_ROLE:USER}
+
+server:
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:false}
+    key-store: ${SERVER_SSL_KEYSTORE:}
+    key-store-password: ${SERVER_SSL_KEYSTORE_PASSWORD:}
+    key-store-type: ${SERVER_SSL_KEYSTORE_TYPE:PKCS12}
+
+################################################################################
+# 5. OBSERVABILITY (Metrics, Tracing, Logging)
+################################################################################
+management:
+  # Actuator configuration (Spring Boot Actuator = /actuator)
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:health,metrics,prometheus}
+
+  # Micrometer metrics
+  metrics:
+    # Enable metrics collection
+    enable:
+      jvm: ${METRICS_JVM_ENABLED:true}
+      process: ${METRICS_PROCESS_ENABLED:true}
+      system: ${METRICS_SYSTEM_ENABLED:true}
+      logback: ${METRICS_LOGBACK_ENABLED:true}
+
+    # Histogram latency buckets (milliseconds)
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: ${METRICS_HTTP_SLO:50,100,200,500,1000,2000}
+
+  # OpenTelemetry (OTEL) configuration
+  otlp:
+    metrics:
+      # OTLP export enabled (set OTEL_METRICS_ENABLED=true in environment)
+      enabled: ${OTEL_METRICS_ENABLED:false}
+      export:
+        # OTLP collector endpoint (default: localhost:4317 for gRPC)
+        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+
+    tracing:
+      # OTLP trace export enabled
+      enabled: ${OTEL_TRACE_ENABLED:false}
+      export:
+        endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+
+      # Trace sampling ratio (0.0-1.0, default: 0.1 = 10%)
+      sampling-probability: ${OTEL_TRACE_SAMPLING:0.1}
+      # Sample only error traces (high-cardinality filtering)
+      sample-errors-only: ${OTEL_SAMPLE_ERRORS_ONLY:false}
+
+  # Health checks (Spring Boot Health)
+  health:
+    defaults:
+      enabled: ${HEALTH_DEFAULTS_ENABLED:true}
+    livenessState:
+      enabled: ${HEALTH_LIVENESS_ENABLED:true}
+    readinessState:
+      enabled: ${HEALTH_READINESS_ENABLED:true}
+    startup:
+      enabled: ${HEALTH_STARTUP_ENABLED:true}
+
+# Logging configuration
+logging:
+  # Log level (DEBUG|INFO|WARN|ERROR)
+  level:
+    root: ${LOG_LEVEL:INFO}
+    org.yawlfoundation: ${LOG_LEVEL_YAWL:INFO}
+    org.springframework: ${LOG_LEVEL_SPRING:INFO}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:WARN}
+
+  # Log output format
+  pattern:
+    console: ${LOG_PATTERN:%d{HH:mm:ss.SSS} [%-5level] %logger{36} - %msg%n}
+    file: ${LOG_FILE_PATTERN:%d{yyyy-MM-dd HH:mm:ss} [%-5level] [%thread] %logger{36} - %msg%n}
+
+  # File output
+  file:
+    name: ${LOG_FILE_NAME:logs/yawl.log}
+    max-size: ${LOG_FILE_MAX_SIZE:10MB}
+    max-history: ${LOG_FILE_MAX_HISTORY:30}
+    total-size-cap: ${LOG_FILE_TOTAL_SIZE:1GB}
+
+################################################################################
+# 6. INTEGRATION (MCP, A2A, REST API)
+################################################################################
+yawl:
+  # Model Context Protocol (MCP) - Claude AI integration
+  mcp:
+    enabled: ${YAWL_MCP_ENABLED:false}
+    # Engine to connect to
+    engine-url: ${YAWL_MCP_ENGINE_URL:http://localhost:8080/yawl}
+    # Authentication credentials
+    username: ${YAWL_MCP_USERNAME:admin}
+    password: ${YAWL_MCP_PASSWORD:}
+    # Transport method (stdio=local, http=remote)
+    transport: ${YAWL_MCP_TRANSPORT:stdio}
+    # Auto-discover and expose resources
+    auto-discovery: ${YAWL_MCP_AUTO_DISCOVERY:true}
+
+  # Agent-to-Agent (A2A) - External agent invocation
+  a2a:
+    enabled: ${YAWL_A2A_ENABLED:false}
+    # A2A server port
+    port: ${YAWL_A2A_PORT:8081}
+    # Agent registry URL (Git or HTTP)
+    registry-url: ${YAWL_A2A_REGISTRY_URL:https://github.com/myorg/agents}
+    # Refresh agent registry every N seconds
+    registry-refresh-seconds: ${YAWL_A2A_REGISTRY_REFRESH:300}
+    # Call timeout (seconds)
+    call-timeout-seconds: ${YAWL_A2A_CALL_TIMEOUT:30}
+    # Max concurrent agent calls
+    max-concurrent-calls: ${YAWL_A2A_MAX_CONCURRENT:100}
+    # Use virtual threads per agent call
+    virtual-threads-enabled: ${YAWL_A2A_VIRTUAL_THREADS:true}
+
+  # REST API configuration
+  api:
+    enabled: ${YAWL_API_ENABLED:true}
+    # Base path for REST API (relative to servlet context-path)
+    base-path: ${YAWL_API_BASE_PATH:/api}
+    # Rate limiting (requests per minute)
+    rate-limit-rpm: ${YAWL_API_RATE_LIMIT:1000}
+    # Request timeout (seconds)
+    request-timeout-seconds: ${YAWL_API_REQUEST_TIMEOUT:30}
+    # CORS configuration
+    cors:
+      allowed-origins: ${YAWL_API_CORS_ORIGINS:http://localhost:3000}
+      allowed-methods: ${YAWL_API_CORS_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+      max-age-seconds: ${YAWL_API_CORS_MAX_AGE:3600}
+
+################################################################################
+# 7. ADVANCED TUNING (Java 25, Virtual Threads, Performance)
+################################################################################
+yawl:
+  performance:
+    # Virtual threads per case execution
+    virtual-threads-enabled: ${YAWL_VIRTUAL_THREADS:true}
+
+    # Case cache size (number of cases to keep in memory)
+    case-cache-size: ${YAWL_CASE_CACHE_SIZE:1000}
+
+    # Work item queue strategy: fair|lifo|fifo (default: fair)
+    work-item-queue-strategy: ${YAWL_WORK_ITEM_QUEUE:fair}
+
+    # Compact object headers (Java feature, saves memory)
+    compact-object-headers: ${YAWL_COMPACT_HEADERS:true}
+
+    # Batch processing: number of work items to process per batch
+    batch-size: ${YAWL_BATCH_SIZE:10}
+
+    # Enable speculative execution (adaptive optimization)
+    speculative-execution: ${YAWL_SPECULATIVE_EXEC:false}
+
+  # Caching configuration
+  cache:
+    # Specification cache size (number of specs)
+    spec-cache-size: ${CACHE_SPEC_SIZE:100}
+    # Specification cache TTL (hours)
+    spec-cache-ttl-hours: ${CACHE_SPEC_TTL:24}
+    # Work item cache size
+    work-item-cache-size: ${CACHE_WORKITEM_SIZE:10000}
+    # Work item cache TTL (minutes)
+    work-item-cache-ttl-minutes: ${CACHE_WORKITEM_TTL:60}
+
+# JVM tuning (recommend setting via command line: java -Xmx2G -XX:...)
+# See PERFORMANCE.md for detailed tuning guide
+
+################################################################################
+# ENVIRONMENT VARIABLE REFERENCE
+#
+# Quick copy-paste for .env files:
+#
+# SERVER_PORT=8080
+# SERVLET_CONTEXT_PATH=/yawl
+#
+# SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/yawl
+# SPRING_DATASOURCE_USERNAME=yawl_user
+# SPRING_DATASOURCE_PASSWORD=secure_password_here
+# HIBERNATE_DDL_AUTO=validate
+#
+# YAWL_CASE_RETENTION_DAYS=90
+# YAWL_IDLE_CASE_TIMEOUT=30
+#
+# SECURITY_USER_NAME=admin
+# SECURITY_USER_PASSWORD=admin
+# YAWL_JWT_SECRET=your_jwt_secret_here
+#
+# YAWL_MCP_ENABLED=true
+# YAWL_MCP_ENGINE_URL=http://localhost:8080/yawl
+# YAWL_MCP_USERNAME=admin
+# YAWL_MCP_PASSWORD=admin
+#
+# OTEL_METRICS_ENABLED=true
+# OTEL_TRACE_ENABLED=true
+# OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+#
+# LOG_LEVEL=INFO
+# LOG_FILE_NAME=logs/yawl.log
+#
+################################################################################
+
+# End of configuration template
+# Questions? See docs/CONFIGURATION.md or GitHub Issues
