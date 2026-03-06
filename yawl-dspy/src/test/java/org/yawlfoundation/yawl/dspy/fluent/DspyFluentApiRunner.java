@@ -101,7 +101,8 @@ class DspyFluentApiRunner {
             DspyModule generator = Dspy.powlGenerator()
                 .withExample(Dspy.example()
                     .input("workflow_description", "Submit order then process payment")
-                    .output("powl_json", "{\"net\": {\"activities\": [\"Submit Order\", \"Process Payment\"]}}"));
+                    .output("powl_json", "{\"net\": {\"activities\": [\"Submit Order\", \"Process Payment\"]}}")
+                    .build());
 
             DspyResult result = generator.predict(
                 "workflow_description",
@@ -278,10 +279,12 @@ class DspyFluentApiRunner {
                 .withExamples(List.of(
                     Dspy.example()
                         .input("work_item_context", "Emergency order cancellation")
-                        .output("recommended_worklet", "cancellation-urgent"),
+                        .output("recommended_worklet", "cancellation-urgent")
+                        .build(),
                     Dspy.example()
                         .input("work_item_context", "Standard refund request")
                         .output("recommended_worklet", "refund-standard")
+                        .build()
                 ));
 
             DspyResult result = selector.predict(
@@ -351,7 +354,8 @@ class DspyFluentApiRunner {
         void shouldCreateExamples() {
             DspyExample example = Dspy.example()
                 .input("question", "What is 2+2?")
-                .output("answer", "4");
+                .output("answer", "4")
+                .build();
 
             assertNotNull(example);
             assertEquals("What is 2+2?", example.inputString("question"));
@@ -364,7 +368,8 @@ class DspyFluentApiRunner {
             DspyModule module = Dspy.predict("question -> answer")
                 .withExample(Dspy.example()
                     .input("question", "What is YAWL?")
-                    .output("answer", "Workflow language"))
+                    .output("answer", "Workflow language")
+                    .build())
                 .withTemperature(0.5)
                 .withMaxTokens(128);
 
