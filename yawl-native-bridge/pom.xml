@@ -94,7 +94,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <skip>true</skip>
+                            <skip>false</skip>
                             <executable>jextract</executable>
                             <arguments>
                                 <argument>--output</argument>
@@ -114,7 +114,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <skip>true</skip>
+                            <skip>false</skip>
                             <executable>jextract</executable>
                             <arguments>
                                 <argument>--output</argument>
@@ -150,26 +150,6 @@
                 </executions>
             </plugin>
 
-            <!-- Compile Erlang modules - DISABLED for compilation fix
-            <plugin>
-                <groupId>com.igormaznitsa</groupId>
-                <artifactId>erlang-maven-plugin</artifactId>
-                <version>1.7.0</version>
-                <executions>
-                    <execution>
-                        <id>compile-erlang</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <srcDirectory>${project.basedir}/src/main/erlang</srcDirectory>
-                            <outputDirectory>${project.build.outputDirectory}/erlang</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            -->
 
             <!-- Rust NIF compilation - DISABLED for compilation fix
             <plugin>

@@ -68,8 +68,8 @@
         -->
         <!-- Disabled - legacy polyglot execution (2026-03-03)
         <module>yawl-graaljs</module>
-        <module>yawl-rust4pm</module>
         -->
+        <module>yawl-rust4pm</module>
 
         <!-- Layer 1: First consumers (build in parallel) -->
         <module>yawl-elements</module>
