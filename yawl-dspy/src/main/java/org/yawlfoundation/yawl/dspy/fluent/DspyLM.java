@@ -25,13 +25,13 @@ import java.util.Objects;
 /**
  * Fluent builder for DSPy language model configuration.
  *
- * <p>Mirrors Python: {@code dspy.LM(model="groq/llama-3.3-70b-versatile", api_key="...")}
+ * <p>Mirrors Python: {@code dspy.LM(model="groq/gpt-oss-20b", api_key="...")}
  *
  * <h2>Python Equivalent:</h2>
  * <pre>{@code
  * # Python
  * lm = dspy.LM(
- *     model="groq/llama-3.3-70b-versatile",
+ *     model="groq/gpt-oss-20b",
  *     api_key=os.environ["GROQ_API_KEY"],
  *     temperature=0.0
  * )
@@ -42,7 +42,7 @@ import java.util.Objects;
  * <pre>{@code
  * // Java
  * Dspy.configure(lm -> lm
- *     .model("groq/llama-3.3-70b-versatile")
+ *     .model("groq/gpt-oss-20b")
  *     .apiKey(System.getenv("GROQ_API_KEY"))
  *     .temperature(0.0));
  * }</pre>
@@ -82,7 +82,7 @@ public final class DspyLM {
     /**
      * Create a DspyLM with just a model name (API key from environment).
      *
-     * <p>Python: {@code dspy.LM("groq/llama-3.3-70b-versatile")}
+     * <p>Python: {@code dspy.LM("groq/gpt-oss-20b")}
      */
     public static DspyLM of(String model) {
         return builder().model(model).build();
@@ -91,14 +91,14 @@ public final class DspyLM {
     /**
      * Create a DspyLM with model and API key.
      *
-     * <p>Python: {@code dspy.LM("groq/llama-3.3-70b-versatile", api_key="...")}
+     * <p>Python: {@code dspy.LM("groq/gpt-oss-20b", api_key="...")}
      */
     public static DspyLM of(String model, String apiKey) {
         return builder().model(model).apiKey(apiKey).build();
     }
 
     /**
-     * The model identifier (e.g., "groq/llama-3.3-70b-versatile").
+     * The model identifier (e.g., "groq/gpt-oss-20b").
      */
     public String model() {
         return model;
@@ -180,13 +180,26 @@ public final class DspyLM {
     // ── Factory methods for common providers ─────────────────────────────────────
 
     /**
-     * Create a Groq LM with Llama 3.3 70B.
+     * Create a Groq LM with GPT-OSS-20B (recommended).
      *
-     * <p>Python: {@code dspy.LM("groq/llama-3.3-70b-versatile", api_key=os.environ["GROQ_API_KEY"])}
+     * <p>Python: {@code dspy.LM("groq/gpt-oss-20b", api_key=os.environ["GROQ_API_KEY"])}
      */
     public static DspyLM groq() {
         return builder()
-            .model("groq/llama-3.3-70b-versatile")
+            .model("groq/gpt-oss-20b")
+            .apiKey(System.getenv("GROQ_API_KEY"))
+            .temperature(0.0)
+            .build();
+    }
+
+    /**
+     * Create a Groq LM with Llama 3.3 70B.
+     *
+     * <p>Python: {@code dspy.LM("groq/gpt-oss-20b", api_key=os.environ["GROQ_API_KEY"])}
+     */
+    public static DspyLM groqLlama() {
+        return builder()
+            .model("groq/gpt-oss-20b")
             .apiKey(System.getenv("GROQ_API_KEY"))
             .temperature(0.0)
             .build();
@@ -234,7 +247,7 @@ public final class DspyLM {
         /**
          * Set the model identifier.
          *
-         * <p>Format: "provider/model-name" (e.g., "groq/llama-3.3-70b-versatile")
+         * <p>Format: "provider/model-name" (e.g., "groq/gpt-oss-20b")
          */
         public Builder model(String model) {
             this.model = model;
