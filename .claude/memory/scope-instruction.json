@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-03-05T17:41:37Z",
+  "timestamp": "2026-03-06T00:39:36Z",
   "scope_mode": "LITERAL",
-  "user_prompt": "I need you to make sure and test this happens on start up every single time we have a Claude code web session\n",
+  "user_prompt": "feat/java-otp-rust4pm-fluent-api plan on migrating all of the new capabilities out of the yawl project and into a new project. We are refactoring the yawl core and want to keep the build clean\n",
   "detected_keywords": "all/every/complete",
   "instruction": "Interpret ALL literally - no partial work allowed"
 }

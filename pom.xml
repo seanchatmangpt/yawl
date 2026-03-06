@@ -62,11 +62,13 @@
         <!-- Layer 0: Foundation (no YAWL deps, build in parallel) -->
         <module>yawl-utilities</module>
         <module>yawl-security</module>
+        <!-- Disabled - migrated to yawl-capabilities (2026-03-06)
         <module>yawl-erlang</module>
+        -->
         <!-- Disabled - GraalVM SDK not available (2026-03-04)
         <module>yawl-graalpy</module>
         -->
-        <!-- Disabled - legacy polyglot execution (2026-03-03)
+        <!-- Disabled - migrated to yawl-capabilities OR legacy polyglot execution (2026-03-03)
         <module>yawl-graaljs</module>
         <module>yawl-rust4pm</module>
         -->
