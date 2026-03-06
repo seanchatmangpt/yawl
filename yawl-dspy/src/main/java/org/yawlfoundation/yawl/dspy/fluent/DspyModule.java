@@ -301,15 +301,30 @@ public final class DspyModule {
     private org.yawlfoundation.yawl.dspy.module.Module<?> compileModule() {
         org.yawlfoundation.yawl.dspy.signature.Signature internalSig = signature.toSignature();
 
+        // Get LLM client from configured LM or module override
+        org.yawlfoundation.yawl.dspy.llm.LlmClient client = getLlmClient();
+
         // For now, use Predict module (ChainOfThought would be a different implementation)
         // In a full implementation, this would switch based on type
         return switch (type) {
-            case PREDICT -> new org.yawlfoundation.yawl.dspy.module.Predict<>(internalSig, null);
-            case CHAIN_OF_THOUGHT -> new org.yawlfoundation.yawl.dspy.module.ChainOfThought<>(internalSig, null);
+            case PREDICT -> new org.yawlfoundation.yawl.dspy.module.Predict<>(internalSig, client);
+            case CHAIN_OF_THOUGHT -> new org.yawlfoundation.yawl.dspy.module.ChainOfThought<>(internalSig, client);
             case REACT, MULTI_CHAIN, CUSTOM ->
                 throw new UnsupportedOperationException(
                     "Module type " + type + " not yet implemented in fluent API");
         };
+    }
+
+    private org.yawlfoundation.yawl.dspy.llm.LlmClient getLlmClient() {
+        // Priority: module override > global config
+        DspyLM effectiveLm = lm != null ? lm : Dspy.getConfiguredLM();
+
+        if (effectiveLm == null) {
+            throw new DspyException(
+                "No LLM configured. Call Dspy.configure() first or use .withLm() on the module.");
+        }
+
+        return new org.yawlfoundation.yawl.dspy.llm.SimpleLlmClient(effectiveLm);
     }
 
     // ── Builder ─────────────────────────────────────────────────────────────

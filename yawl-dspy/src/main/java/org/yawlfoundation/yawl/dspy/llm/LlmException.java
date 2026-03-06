@@ -66,4 +66,5 @@ public final class LlmException extends RuntimeException {
         MODEL_NOT_FOUND,
         RUNTIME_ERROR
     }
+
 }

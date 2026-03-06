@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-03-06T02:19:58Z",
+  "timestamp": "2026-03-06T05:12:26Z",
   "scope_mode": "LITERAL",
-  "user_prompt": "you handle all of that\n",
+  "user_prompt": "I want you to write a phd thesis explaining the entire architecture, the components, its capabilities now and future, future work, Vision 2030\n",
   "detected_keywords": "all/every/complete",
   "instruction": "Interpret ALL literally - no partial work allowed"
 }
