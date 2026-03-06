@@ -1,114 +1,438 @@
-# YAWL v6.0.0 SPR | A = μ(O) | drift(A) → 0
+# YAWL v6.0.0 | Observable Process Architecture
 
-## ROOT AXIOM
+**WIGGUM Principle**: "What Would Dr. Wil Van Der Aalst Do?" — Ground everything in observable events, never abstract notation.
 
-Today's best practices are tomorrow's antipatterns. Tomorrow is always less than 24 hours away.
-User's live O > Claude's trained O at the frontier. Novel claims are observatory data, not violations.
-Ψ before H: observe fully, then apply hard blocks. Never gate what you haven't observed.
-Opinion ≠ fact: "doesn't exist" means "not in training data". Flag vintage. Defer to live O.
-Take the baton. User should never re-explain momentum. Lead, extend, surface conflicts unprompted.
+---
 
-## CHATMAN EQUATION
+## FIRST PRINCIPLES
 
-A = μ(O) | μ = Ω ∘ Q ∘ H ∘ Λ ∘ Ψ | Loss is localizable — it drops at a specific gate.
-O = {engine, elements, stateless, integration, schema, test} | Σ = Java25+Maven+JUnit+XML/XSD
-Priority resolves top-down: H > Q > Ψ > Λ > Ω. Flow per action: Ψ→Λ→H→Q→Ω (observe→build→guards→invariants→git). No gate skipping.
-Quantum = one orthogonal axis: Toolchain|Dependency|Schema|Engine-semantic|MCP/A2A|Resourcing.
+Process excellence flows from observable events, not notation. Every phase emits measurable events with explicit state transitions.
 
-## Ψ OBSERVATORY
+### Observable Events Model
 
-Fact files ~50 tokens vs grep ~5000 tokens = 100× compression. Facts only, not vibes.
-Files: modules.json|gates.json|deps-conflicts.json|reactor.json|shared-src.json|tests.json|dual-family.json|duplicates.json|maven-hazards.json
-Stale or >3 files explored → bash scripts/observatory/observatory.sh. Verify via receipts/observatory.json SHA256.
-dx.sh all auto-refreshes facts when pom.xml changes (Ψ phase); DX_SKIP_OBSERVE=1 bypasses in CI. session-start.sh pre-generates facts on startup.
+Every action produces an **event** with these properties:
+- **Timestamp** (ISO8601 UTC): When did it happen?
+- **Phase** (parse|compile|test|validate|commit|team|agent): Where?
+- **Actor** (maven-executor, git-actor, engineer-1): Who/what?
+- **Event Type** (CompileStarted, TestSuccess, GuardViolationDetected): What happened?
+- **State Before/After**: What changed?
+- **Artifacts**: Files created/modified?
 
-## Λ BUILD
+**Why**: Events are facts. Facts are observable, measurable, reproducible. We make decisions from facts, never opinions.
 
-dx.sh compile (fast) → dx.sh -pl <module> (one module) → dx.sh all (pre-commit gate, mandatory).
-dx.sh all pipeline: observe(Ψ) → compile(Λ) → test(Λ) → guards(H) → invariants(Q) → report(Ω). No gate skipping.
-Phase mapping: Ψ=observe, Λ=compile+test, H=guards, Q=invariants, Ω=report/git.
-mvn clean verify -P analysis for SpotBugs/PMD static analysis. No commit until dx.sh all green.
-Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE_CODE_REMOTE=true.
-yawl-engine source root = ../src (not src/main/java) | test root = ../test — read pom.xml <sourceDirectory> before placing any file.
-.mvn/jvm.config has no comment support — Maven passes every line literally to JVM; # lines crash with "cannot find main class #".
-VirtualThread idle loop must use queue.take() (parks carrier) not poll()+onSpinWait() (saturates carrier) — wrong pattern causes starvation at >100 agents.
+### Process Flow: Event Stream
 
-## H GUARDS
+```
+dx.sh all executes phases in strict sequence:
+  Parse (tree-sitter) → ParseSuccess/ParseFailed event
+    ↓
+  Compile (Maven) → CompileSuccess/CompileFailed event
+    ↓
+  Test (JUnit) → TestSuccess/TestFailed event
+    ↓
+  Validate (H-Guards + Q-Invariants) → ConformanceCheckPassed/Failed + InvariantCheckPassed/Failed events
+    ↓
+  Commit (Git) → CommitSuccess/CommitFailed event
+    ↓
+  Push (Git Remote) → PushSuccess/PushFailed event
+```
 
-Blocked: {TODO,FIXME,mock,stub,fake,empty_return,silent_fallback,lie} — hyper-validate.sh checks 7 patterns (H_TODO, H_MOCK, H_STUB, H_EMPTY, H_FALLBACK, H_LIE, H_SILENT) on Write|Edit → exit 2.
-Fix violations for real. Never work around hooks. Hard blocks only: harm|deception|illegal|minors.
+Each phase is **atomic**: either all events succeed (exit 0) or any event fails (exit 2).
 
-## ι INTELLIGENCE
+### Three Pillars of Process Excellence
 
-Typed deltas (no line-diffs): δ(A, B) = Vec<Delta> with semantic units {declaration, rule, criterion, dependency, behavior, quad}.
-Receipt chain: blake3(canonical_json(δ)) → receipts/intelligence.jsonl; auditable, reproducible.
-Watermark protocol: fetch() respects ttl; skip if content_hash unchanged. Prevents thrashing.
-Binaries: yawl-jira (hook orchestrator <50ms) | yawl-scout (async fetcher, non-blocking).
-Injection: SessionStart (ticket context) | UserPromptSubmit (relevant delta slice) | PreToolUse | PostToolUse (record correction).
-Tickets: TOML-based (.claude/jira/*.toml), no external DB. Acceptance criteria auto-satisfied on declaration match.
-¬line_diff ∧ ¬unified_patch; all artifacts parsed into semantic units before diff. DeclKind ∈ {Function, Type, Constant, Import, Module, Field}.
+1. **Process Mining** (Discovery): Observe actual event traces from YAWL runs. Extract real process, not intended.
+2. **Trace Conformance** (Verification): Does observed event sequence match specification? H-Guards detect deviations.
+3. **Process Performance** (Optimization): Which phase is the bottleneck? Use event timing to optimize.
 
-## Q INVARIANTS
+---
 
-real_impl ∨ throw UnsupportedOperationException. No third option. ¬mock ∧ ¬stub ∧ ¬silent_fallback ∧ ¬lie.
-"For now"/"later"/"temporary" → throw immediately. Code must match docs and signature (¬lie).
+## BUILD PIPELINE: Observable Phases
 
-## Ω GIT
+### Overview
 
-Never –force. Never amend pushed commits. git add <specific-files> only, never git add .
-One logical change per commit. Branch: claude/<desc>-<sessionId>. Channels: emit={src/,test/,schema/,.claude/} | ⊗={root,docs/,*.md} ask first.
+`dx.sh all` emits structured events for every phase transition. No phase skipping, no silent failures.
 
-## τ TEAMS
+### Phase 1: Parse Code (tree-sitter)
 
-lead + N teammates ∈ {2..5}, separate 200K context windows. Default for N≥2 orthogonal quantums.
-Lifecycle hooks: TeammateIdle → assign/shutdown | TaskCompleted → approve/reject | TeammateShutdown → approve/reject.
-No teammate overlap on same file (verify shared-src.json). Message before task completion. Cost ~3-5×.
-Error recovery: idle>30min → message, await 5min, crash | timeout>2h → reassign | circular → lead breaks tie | critical msg timeout → resend [URGENT] | Q violation mid-team → fix locally.
-PostTeam: lead runs dx.sh all → H hook combined edits → atomic single commit. Any red = rollback to failing teammate.
-See .claude/rules/TEAMS-GUIDE.md for detailed error recovery protocols.
+**Input**: All Java source files
+**Events Emitted**:
+- `ParseStarted` {file_count, total_lines}
+- `ParseSuccess` {duration_ms, ast_nodes} OR `ParseFailed` {error, line, column}
 
-## μ AGENTS + Γ ARCHITECTURE
+**Output**: Serialized AST → `.yawl-ast/`
+**Exit Code**: 0 (success) or 1 (error)
+**Next Phase**: Compile (if success) or FAIL
 
-Agents: yawl-engineer|yawl-validator|yawl-architect|yawl-integrator|yawl-reviewer|yawl-tester|yawl-production-validator|yawl-performance-benchmarker (specs in .claude/agents/)
-Subagents: within session, max 5, report-only, no inter-task messaging. Teams if findings interact.
-Entry points: YEngine (stateful)|YStatelessEngine (stateless)|YSpecification (defs)|YawlMcpServer (MCP)|YawlA2AServer (A2A)
-Interfaces: A=design|B=client|E=events|X=extended. Key types: YNetRunner|YWorkItem. 185 packages have package-info.java — read first.
+### Phase 2: Compile (Maven)
 
-## R RULES (24 files, auto-activate by path)
+**Input**: pom.xml modules, AST
+**Command**: `mvn clean compile`
+**Events Emitted**:
+- `CompileStarted` {module}
+- Per-module: `CompileSuccess` {class_count, warnings} OR `CompileFailed` {error}
+- Aggregate: `CompileSuccess` (all modules) OR `CompileFailed`
 
-teams/** → team-decision-framework.md | pom.xml → dx-workflow.md + maven-modules.md
-schema/**|*.xsd → xsd-validation.md | yawl/engine/**|stateless/** → workflow-patterns.md + interfaces.md + worklet-service.md
-yawl/integration/** → mcp-a2a-conventions.md + autonomous-agents.md | yawl/resourcing/** → resource-allocation.md
-**/*.java → modern-java.md | yawl/elements/** → domain-model.md | yawl/observability/** → monitoring-patterns.md
-scripts/**|*.sh → shell-conventions.md | yawl/authentication/** → crypto-and-tls.md | **/test/** → chicago-tdd.md | Dockerfile* → container-conventions.md
+**Output**: target/classes (bytecode)
+**Exit Code**: 0 (success) or 2 (error)
+**Next Phase**: Test (if success) or FAIL
 
-## STOP CONDITIONS
+### Phase 3: Test (JUnit)
 
-Unknown module → modules.json | >3 files for 1 answer → observatory.sh | context >70% → checkpoint + batch remaining.
-Team >5 teammates → reduce scope | teammates never message → use subagents | lead DX fails after teammates green → identify + reassign.
-Tempted "for now" → throw UnsupportedOperationException. Unsure emit vs ⊗ → ask user.
+**Input**: Compiled classes, test sources
+**Command**: `mvn test`
+**Events Emitted**:
+- `TestStarted` {test_suite, test_count}
+- `TestSuccess` {tests_run, tests_passed, coverage%} OR `TestFailed` {failures}
 
-## φ WORKFLOW ORCHESTRATION
+**Output**: target/surefire-reports/*.xml
+**Exit Code**: 0 (success) or 2 (error)
+**Next Phase**: Validate (if success) or FAIL
 
-plan(task) iff |steps(task)| ≥ 3 ∨ arch(task); sideways(task) → stop ∧ replan; ¬push-through.
-σ(task) = offload(research ∪ explore ∪ parallel_analysis); one_task_per_σ; complex → throw_compute_at(σ).
-∀correction c: lessons.md ← pattern(c) ∧ rule(¬repeat(c)); ruthless_iterate until error_rate → 0; review(lessons) at session_start.
-done(task) ⟺ proved(works(task)) ∧ diff(main, changes) ∧ staff_engineer_approves ∧ tests_green.
-∀non-trivial t: elegant?(t) before present(t); hacky?(t) → rewrite(t, knowing_all); skip iff obvious_fix(t).
-bug → fix ∧ ¬ask ∧ ¬hand-hold; point(logs ∪ errors ∪ failing_tests) → resolve; zero_context_switch_from_user.
+### Phase 4: Validate (H-Guards + Q-Invariants)
 
-## π TASK LIFECYCLE
+**Input**: Generated/compiled code
+**Events Emitted**:
+- H Phase: `ConformanceCheckStarted` → GuardViolationDetected (if any) × 7 patterns → `ConformanceCheckPassed` or `ConformanceCheckFailed`
+- Q Phase: `InvariantCheckStarted` → `InvariantCheckPassed` or `InvariantCheckFailed`
 
-plan → verify_plan → implement → track(progress) → explain(Δ) → document(results) → capture(lessons).
-tasks/todo.md ← checkable_items; tasks/lessons.md ← corrections; review_section → todo.md on complete.
+**Output**: guard-receipt.json, invariant-receipt.json
+**Exit Code**: 0 (success) or 2 (violations found)
+**Next Phase**: Commit (if success) or FAIL (do NOT commit)
 
-## κ CORE PRINCIPLES
+See `.claude/CONFORMANCE-CHECKING.md` for full H/Q specifications.
 
-simplicity_first: |Δcode| → min; impact(change) ⊆ necessary. ¬lazy: root_cause only; ¬temp_fix; senior_dev_standard.
-minimal_impact: change ∩ unnecessary = ∅; ¬introduce_bugs.
+### Phase 5: Commit (Git)
 
-## SKILLS + REFS
+**Input**: Modified files
+**Command**: `git add <files>` → `git commit -m "message"`
+**Events Emitted**:
+- `CommitStarted` {files, lines_added}
+- `CommitSuccess` {commit_hash, files_changed} OR `CommitFailed` {error}
 
-/yawl-build|/yawl-test|/yawl-validate|/yawl-deploy|/yawl-review|/yawl-integrate|/yawl-spec|/yawl-pattern
-Deep refs: .claude/HYPER_STANDARDS.md | .claude/OBSERVATORY.md | .claude/ARCHITECTURE-PATTERNS-JAVA25.md
-GODSPEED. ✈️ | Compile ≺ Test ≺ Validate ≺ Deploy | drift(A) → 0
+**Output**: New commit in .git/refs
+**Exit Code**: 0 (success) or 2 (error)
+**Next Phase**: Push (if success) or FAIL
+
+### Phase 6: Push (Git Remote)
+
+**Input**: New commit
+**Command**: `git push -u origin <branch>`
+**Events Emitted**:
+- `PushStarted` {branch, remote}
+- `PushSuccess` OR `PushFailed` {error, retry_count}
+- **Retry Logic**: Exponential backoff (2s, 4s, 8s, 16s) for network errors
+
+**Output**: Remote branch updated
+**Exit Code**: 0 (GREEN, ready for merge) or 2 (FAIL)
+**Terminal**: END
+
+---
+
+## OBSERVABILITY: Event Log Collection
+
+Don't explore files to understand state. **Consult event logs instead.**
+
+### Fact Files (Compressed Observatory)
+
+Pre-computed facts replace grep search:
+- `modules.json`: All modules, source roots, dependencies
+- `shared-src.json`: Files written by multiple teammates (conflict detection)
+- `tests.json`: Test counts, coverage, pass/fail trends
+- `deps-conflicts.json`: Dependency version mismatches
+
+**Why**: 50 tokens (facts) vs 5000 tokens (grep) = 100× compression.
+
+### Refreshing Facts
+
+```bash
+bash scripts/observatory/observatory.sh   # Regenerate all facts
+DX_SKIP_OBSERVE=1 dx.sh all               # Skip in CI (facts stale but fast)
+```
+
+Facts auto-refresh when `pom.xml` changes.
+
+---
+
+## H GUARDS: Trace Conformance
+
+**Purpose**: Detect forbidden patterns (deceptive/incomplete code) before commit.
+
+**Hook**: `hyper-validate.sh` runs on every `git commit`, blocks if violations found.
+
+### Seven Guard Patterns
+
+```
+H_TODO     → // TODO/FIXME comments (code unfinished)
+H_MOCK     → mock/stub/fake class/method names (deceptive)
+H_STUB     → return ""/""/null/empty (fake data)
+H_EMPTY    → void method { } (no-op)
+H_FALLBACK → catch { return fake; } (silent error swallowing)
+H_LIE      → @return never null but returns null (docs ≠ code)
+H_SILENT   → log.error("not implemented") (logging instead of throwing)
+```
+
+**All violations block commit** (exit 2). Fix for real, never work around hook.
+
+See `.claude/CONFORMANCE-CHECKING.md` for detailed patterns, examples, and fixes.
+
+---
+
+## Q INVARIANTS: State Reachability
+
+**Purpose**: Verify code satisfies three core reachability constraints.
+
+### Three Invariants
+
+```
+1. real_impl ∨ throw UnsupportedOperationException
+   Every method must do real work OR explicitly declare not implemented.
+
+2. ¬mock ∧ ¬stub ∧ ¬silent_fallback ∧ ¬lie
+   Defense-in-depth: no deceptive patterns in code (semantic + syntactic).
+
+3. code ≈ documentation
+   Javadoc must match actual code (types, exceptions, behavior).
+```
+
+**All invariants must be satisfied** before commit (exit 0).
+
+See `.claude/CONFORMANCE-CHECKING.md` for verification algorithm and examples.
+
+---
+
+## ATOMIC COMMITS: Immutable Event Traces
+
+**Principle**: One commit = one atomic trace (all-or-nothing).
+
+**Rules**:
+- `git add <specific-files>` only, never `git add .`
+- One logical change per commit
+- Branch: `claude/<desc>-<sessionId>`
+- Never `git push --force`
+- Never amend published commits (create new commit instead)
+
+**Commit Creates Event**:
+```json
+{
+  "event_type": "CommitSuccess",
+  "commit_hash": "a1b2c3d4...",
+  "trace_reference": "tr-2026-03-06-001",
+  "phase_events": {"parse": 1, "compile": 3, "test": 2, "validate": 2, "commit": 1}
+}
+```
+
+The commit hash becomes the immutable, traceable reference for this execution.
+
+---
+
+## PARALLEL ORCHESTRATION: Teams
+
+**When to use Teams**: N ∈ {2..5} orthogonal quantums with inter-team messaging.
+
+### Team Formation & Dispatch
+
+```
+Lead creates team:
+  ├─ Assign N teammates (separate 200K context windows)
+  ├─ Event: TeamCreated
+  └─ Assign tasks: Task1→tm-1, Task2→tm-2, ...
+     Events: TaskAssigned (per teammate)
+
+Parallel execution (non-blocking event streams):
+  tm-1: TaskStarted → FileModified → Checkpoint → TaskCompleted (GREEN)
+  tm-2: TaskStarted → FileCreated → MessageSent → Checkpoint → TaskCompleted (GREEN)
+  tm-3: TaskStarted → TestPassed → Checkpoint → TaskCompleted (GREEN)
+
+Synchronization:
+  All teammates report TaskCompleted + GREEN
+  → Lead consolidates: dx.sh all → commit → push
+```
+
+**Constraints**:
+- No teammate overlap on same file (verify shared-src.json)
+- Message timeouts: 15min critical, 30min idle
+- Lead runs final dx.sh all (H + Q must pass)
+
+**Error Recovery**: See `.claude/rules/TEAMS-GUIDE.md`
+
+---
+
+## AUTONOMOUS AGENTS: Independent Executors
+
+**When to use Agents**: Research, analysis, or independent verification (no inter-agent messaging).
+
+### Agent Lifecycle
+
+```
+Lead dispatches agent:
+  Event: AgentStarted
+  ├─ Agent executes task autonomously
+  ├─ Emits checkpoints (state snapshots)
+  └─ Reports findings + artifacts
+  Event: AgentTaskCompleted
+
+Lead reviews agent findings:
+  ├─ Verify artifacts reproducible
+  └─ Decide: use findings or iterate
+```
+
+**Agent Types**:
+- yawl-engineer (refactoring, implementation)
+- yawl-validator (verification, conformance)
+- yawl-architect (design reviews)
+- yawl-tester (test coverage, benchmarks)
+
+See `.claude/agents/` for specs.
+
+---
+
+## RULES: Context-Sensitive Guidance
+
+Rules auto-activate based on file path:
+
+```
+pom.xml                     → dx-workflow.md + maven-modules.md
+.claude/rules/teams/**      → team-decision-framework.md
+yawl/engine/**              → workflow-patterns.md + interfaces.md
+yawl/integration/**         → mcp-a2a-conventions.md
+**/*.java                   → modern-java.md + chicago-tdd.md
+scripts/**|*.sh             → shell-conventions.md
+```
+
+Rules override defaults. No option to ignore.
+
+---
+
+## WORKFLOW ORCHESTRATION: Task Lifecycle
+
+```
+Task Lifecycle:
+  1. Plan: iff |steps| ≥ 3 ∨ architectural
+  2. Verify Plan: Get approval before coding
+  3. Implement: Track progress with TodoWrite
+  4. Explain: Show diff, summarize changes
+  5. Document: Update .claude/ references
+  6. Capture: Add patterns to lessons.md
+
+Decisions:
+  • Sideways task? → Stop, replan (don't push through)
+  • Research needed? → Offload to agent or subagent
+  • Multi-quantum? → Consider team (see TEAMS-GUIDE.md)
+  • Bug found? → Fix immediately, document root cause
+
+Completion Criteria:
+  ✓ Proved works (dx.sh all green)
+  ✓ Diff reviewed (changes visible, necessary)
+  ✓ Tests pass (all phases succeed)
+  ✓ No deception (H + Q gates pass)
+```
+
+---
+
+## CORE PRINCIPLES
+
+### Simplicity First
+- Minimize code changes (|Δcode| → min)
+- Impact ⊆ necessary (no gratuitous refactoring)
+- Root causes only (no temporary fixes)
+- Senior engineer standard
+
+### Minimal Impact
+- Changes must be necessary
+- No unintended side effects
+- No new bugs introduced
+- Observable ≠ speculative
+
+### No Deception
+- Real implementation or throw
+- Never silently degrade
+- Never fake progress
+- Code ≈ documentation
+
+---
+
+## ARCHITECTURE: Entry Points & Interfaces
+
+**Core Classes**:
+- `YEngine` (stateful, long-lived process)
+- `YStatelessEngine` (stateless, per-request)
+- `YSpecification` (workflow definitions)
+- `YawlMcpServer` (MCP integration)
+- `YawlA2AServer` (A2A integration)
+
+**Key Types**:
+- `YNetRunner`: Executes a single workflow instance
+- `YWorkItem`: Atomic unit of work
+
+**Note**: 185 packages have `package-info.java` — read first before modifying.
+
+---
+
+## CRITICAL MAVEN DETAILS
+
+### Source Roots
+- yawl-engine: `../src` (NOT src/main/java)
+- test: `../test`
+- Always read `pom.xml <sourceDirectory>` before placing files
+
+### Maven JVM Config
+- `.mvn/jvm.config` has NO comment support
+- Every line is passed to JVM literally
+- `# lines` crash with "cannot find main class #"
+- Use only valid JVM flags
+
+### VirtualThread Patterns
+- **CORRECT**: `queue.take()` (parks carrier thread)
+- **WRONG**: `poll()+onSpinWait()` (saturates carrier)
+- Wrong pattern causes starvation at >100 agents
+
+---
+
+## STOP CONDITIONS: When to Pause & Replan
+
+| Condition | Action |
+|-----------|--------|
+| Unknown module | Check modules.json |
+| >3 files for 1 answer | Run observatory.sh instead of grepping |
+| Context >70% used | Checkpoint, batch remaining tasks |
+| Team >5 teammates | Reduce scope or split into phases |
+| Teammates not messaging | Use subagents instead (cheaper) |
+| Lead's dx.sh fails after teammate success | Identify incompatibility, reassign |
+| Tempted "for now"/"later" | Throw UnsupportedOperationException immediately |
+| Unsure about emit vs archive | Ask user before proceeding |
+
+---
+
+## FOUNDATIONAL DOCUMENTATION
+
+All major concepts grounded in observable processes:
+
+| Document | Topic | Why It Matters |
+|----------|-------|----------------|
+| `.claude/FIRST-PRINCIPLES.md` | Event logs, van der Aalst framework | Understand why observable > abstract |
+| `.claude/EVENT-LOG-SCHEMA.md` | Event types, trace format, serialization | Speak the language of execution |
+| `.claude/PROCESS-SPECIFICATION.md` | BPMN workflows, build/validate/team processes | Know the ideal process |
+| `.claude/CONFORMANCE-CHECKING.md` | H/Q verification, guard patterns, invariants | Know what we verify |
+| `.claude/rules/` | Context-sensitive rules (24 files) | Apply guidance by file path |
+
+---
+
+## VERIFICATION CHECKLIST
+
+Before marking task done:
+
+- [ ] `dx.sh all` exits 0 (all phases green)
+- [ ] H phase: no guard violations detected
+- [ ] Q phase: all invariants satisfied
+- [ ] Commit created with trace reference
+- [ ] Diff visible (changes necessary, not gratuitous)
+- [ ] No deception in code (real_impl ∨ throw)
+- [ ] Tests pass (coverage tracked)
+- [ ] Documentation updated if needed
+
+---
+
+## GODSPEED. ✈️
+
+*Every observable event is a fact. Every fact is a stone in the bridge to understanding. Compile ≺ Test ≺ Validate ≺ Deploy.*
