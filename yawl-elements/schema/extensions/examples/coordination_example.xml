@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Coordination Configuration Example for ADR-025
+  ~
+  ~ Example XML demonstrating coordination features including conflict resolution,
+  ~ agent binding, and A2A communication.
+  ~
+  ~ @author YAWL Foundation
+  ~ @version 5.2
+ -->
+
+<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"
+                 xmlns:coord="http://www.yawlfoundation.org/yawlschema/adr025"
+                 xmlns:binding="http://www.yawlfoundation.org/yawlschema/binding"
+                 xmlns:validation="http://www.yawlfoundation.org/yawlschema/validation"
+                 version="4.0">
+
+    <specification uri="http://example.com/workflows/order-fulfillment">
+        <name>Order Fulfillment with Coordination</name>
+        <documentation>Example workflow demonstrating ADR-025 coordination features</documentation>
+        <metaData>
+            <title>Order Fulfillment Coordination Example</title>
+            <creator>YAWL Foundation</creator>
+            <subject>ADR-025 Coordination Features</subject>
+            <description>Workflow with autonomous agents and conflict resolution</description>
+            <version>5.2.0</version>
+            <status>Example</status>
+        </metaData>
+
+        <!-- Coordination configuration for the entire specification -->
+        <coordination>
+            <coordinationMode>hierarchical</coordinationMode>
+            <timeout>PT5M</timeout>
+            <retryAttempts>3</retryAttempts>
+            <consensusProtocol>byzantine-fault-tolerant</consensusProtocol>
+
+            <coordination monitoringEnabled="true" telemetryEnabled="true" serviceName="coordination-service">
+                <maxConcurrentRequests>100</maxConcurrentRequests>
+                <cacheSize>50</cacheSize>
+                <cacheTimeout>PT10M</cacheTimeout>
+            </coordination>
+
+            <telemetry monitoringEnabled="true" telemetryEnabled="true" serviceName="telemetry-service">
+                <maxConcurrentRequests>50</maxConcurrentRequests>
+                <cacheSize>25</cacheSize>
+            </telemetry>
+        </coordination>
+
+        <!-- Global coordination settings -->
+        <validation>
+            <validationConfiguration>
+                <version>1.0</version>
+                <level>strict</level>
+                <rules>
+                    <validationRule>
+                        <name>ConflictResolutionStrategyCompatibility</name>
+                        <description>Ensure conflict resolution strategy matches task requirements</description>
+                        <level>strict</level>
+                        <condition>coord:conflictResolution/coord:strategy in ('majorityVote', 'escalatingArbiter')</condition>
+                        <message>Conflict resolution strategy must be compatible with task type</message>
+                        <severity>error</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+                    <validationRule>
+                        <name>AgentHealthStatus</name>
+                        <description>Validate agent health status for active bindings</description>
+                        <level>basic</level>
+                        <condition>binding:agent/binding:healthStatus = 'active'</condition>
+                        <message>Bound agents must be in active state</message>
+                        <severity>warning</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+                </rules>
+            </validationConfiguration>
+        </validation>
+
+        <decomposition id="process-order">
+            <name>Process Order</name>
+            <documentation>Root net for order processing with agent coordination</documentation>
+
+            <!-- Agent configuration -->
+            <coordination>
+                <agents>
+                    <agent>
+                        <agentId>order-agent-1</agentId>
+                        <endpoint>http://agent1.example.com/api</endpoint>
+                        <capabilities>decisionMaking workflowOrchestration</capabilities>
+                        <capabilities>resourceAllocation</capabilities>
+                        <coordinationMode>hierarchical</coordinationMode>
+                        <heartbeatInterval>30</heartbeatInterval>
+                        <timeout>PT2M</timeout>
+                        <metadata>Primary order processing agent</metadata>
+                    </agent>
+                    <agent>
+                        <agentId>order-agent-2</agentId>
+                        <endpoint>http://agent2.example.com/api</endpoint>
+                        <capabilities>decisionMaking monitoring</capabilities>
+                        <coordinationMode>peerToPeer</coordinationMode>
+                        <heartbeatInterval>30</heartbeatInterval>
+                        <timeout>PT2M</timeout>
+                        <metadata>Secondary order processing agent</metadata>
+                    </agent>
+                    <agent>
+                        <agentId>arbiter-agent</agentId>
+                        <endpoint>http://arbiter.example.com/api</endpoint>
+                        <capabilities>conflictResolution</capabilities>
+                        <coordinationMode>hierarchical</coordinationMode>
+                        <heartbeatInterval>30</heartbeatInterval>
+                        <timeout>PT1M</timeout>
+                        <metadata>Conflict resolution arbiter</metadata>
+                    </agent>
+                </agents>
+
+                <!-- Global conflict resolution configuration -->
+                <conflictResolution>
+                    <strategy>hybrid</strategy>
+                    <severityThreshold>HIGH</severityThreshold>
+                    <arbiter>arbiter-agent</arbiter>
+                    <escalationTimeout>PT30S</escalationTimeout>
+                    <votingWeight>0.6</votingWeight>
+                    <fallbackStrategy>humanFallback</fallbackStrategy>
+                    <resolutionTimeout>PT5M</resolutionTimeout>
+                </conflictResolution>
+
+                <agentBindings>
+                    <binding>
+                        <taskId>validate-order</taskId>
+                        <agentId>order-agent-1</agentId>
+                        <bindingType>primary</bindingType>
+                        <loadBalancing>true</loadBalancing>
+                        <failoverEnabled>true</failoverEnabled>
+                        <priority>1</priority>
+                    </binding>
+                    <binding>
+                        <taskId>validate-order</taskId>
+                        <agentId>order-agent-2</agentId>
+                        <bindingType>secondary</bindingType>
+                        <loadBalancing>true</loadBalancing>
+                        <priority>2</priority>
+                    </binding>
+                    <binding>
+                        <taskId>resolve-conflict</taskId>
+                        <agentId>arbiter-agent</agentId>
+                        <bindingType>primary</bindingType>
+                    </binding>
+                </agentBindings>
+
+                <!-- A2A communication configuration -->
+                <a2aCommunication>
+                    <protocol>HTTP/2</protocol>
+                    <encoding>application/json</encoding>
+                    <compressionEnabled>true</compressionEnabled>
+                    <encryptionEnabled>true</encryptionEnabled>
+                    <maxMessageSize>1048576</maxMessageSize>
+                    <timeout>PT30S</timeout>
+                    <retryPolicy>exponentialBackoff</retryPolicy>
+                </a2aCommunication>
+            </coordination>
+
+            <inputParam name="orderData" type="string" isUntyped="true"/>
+            <inputParam name="customerInfo" type="string" isUntyped="true"/>
+            <outputParam name="orderStatus" type="string" isUntyped="true"/>
+            <outputParam name="fulfillmentDetails" type="string" isUntyped="true"/>
+
+            <processControlElements>
+                <inputCondition id="start">
+                    <name>Start</name>
+                </inputCondition>
+
+                <task id="validate-order" name="Validate Order">
+                    <name>Validate Order</name>
+                    <documentation>Validates order details with autonomous agents</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <!-- Agent binding configuration for this task -->
+                    <agentBinding>
+                        <taskId>validate-order</taskId>
+                        <bindingType>dynamic</bindingType>
+                        <agentSelector>leastLoaded</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>order-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>0.6</weight>
+                                <capabilities>
+                                    <capability>decisionMaking</capability>
+                                    <capability>validation</capability>
+                                </capabilities>
+                            </agent>
+                            <agent>
+                                <agentId>order-agent-2</agentId>
+                                <priority>2</priority>
+                                <weight>0.4</weight>
+                                <capabilities>
+                                    <capability>decisionMaking</capability>
+                                    <capability>monitoring</capability>
+                                </capabilities>
+                            </agent>
+                        </agents>
+                        <loadBalancer>
+                            <strategy>leastLoaded</strategy>
+                            <metric>queueSize</metric>
+                            <threshold>0.8</threshold>
+                            <checkInterval>PT10S</checkInterval>
+                            <healthCheck>heartbeat</healthCheck>
+                            <stickySessions>false</stickySessions>
+                        </loadBalancer>
+                        <failover>
+                            <enabled>true</enabled>
+                            <detectionTime>PT10S</detectionTime>
+                            <switchTime>PT5S</switchTime>
+                            <backoffStrategy>exponential</backoffStrategy>
+                            <failoverAgents>
+                                <agent>
+                                    <agentId>order-agent-2</agentId>
+                                    <priority>1</priority>
+                                </agent>
+                            </failoverAgents>
+                        </failover>
+                        <timeout>PT2M</timeout>
+                        <retryCount>3</retryCount>
+                    </agentBinding>
+
+                    <!-- Conflict resolution configuration -->
+                    <conflictResolution>
+                        <strategy>hybrid</strategy>
+                        <severityThreshold>MEDIUM</severityThreshold>
+                        <arbiter>arbiter-agent</arbiter>
+                        <escalationTimeout>PT30S</escalationTimeout>
+                        <votingWeight>0.6</votingWeight>
+                        <fallbackStrategy>humanFallback</fallbackStrategy>
+                        <resolutionTimeout>PT5M</resolutionTimeout>
+                    </conflictResolution>
+
+                    <!-- A2A communication -->
+                    <a2aCommunication>
+                        <protocol>HTTP/2</protocol>
+                        <encoding>application/json</encoding>
+                        <compressionEnabled>true</compressionEnabled>
+                        <encryptionEnabled>true</encryptionEnabled>
+                        <maxMessageSize>1048576</maxMessageSize>
+                        <timeout>PT30S</timeout>
+                        <retryPolicy>exponentialBackoff</retryPolicy>
+                    </a2aCommunication>
+
+                    <flowsInto>
+                        <nextElementRef id="check-inventory"/>
+                    </flowsInto>
+                </task>
+
+                <task id="check-inventory" name="Check Inventory">
+                    <name>Check Inventory</name>
+                    <documentation>Check inventory availability with multiple agents</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <!-- Agent binding with static configuration -->
+                    <agentBinding>
+                        <taskId>check-inventory</taskId>
+                        <bindingType>static</bindingType>
+                        <agentSelector>capabilityBased</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>inventory-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>1.0</weight>
+                                <capabilities>
+                                    <capability>resourceAllocation</capability>
+                                    <capability>inventoryCheck</capability>
+                                </capabilities>
+                            </agent>
+                        </agents>
+                        <timeout>PT1M</timeout>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="process-payment"/>
+                    </flowsInto>
+                </task>
+
+                <condition id="resolve-conflict" name="Resolve Conflict">
+                    <name>Resolve Conflict</name>
+                    <documentation>Conflict resolution point for order processing</documentation>
+
+                    <!-- Conflict resolution arbiter binding -->
+                    <agentBinding>
+                        <taskId>resolve-conflict</taskId>
+                        <agentId>arbiter-agent</agentId>
+                        <bindingType>primary</bindingType>
+                        <failoverEnabled>true</failoverEnabled>
+                    </agentBinding>
+
+                    <conflictResolution>
+                        <strategy>escalatingArbiter</strategy>
+                        <severity>HIGH</severity>
+                        <arbiter>arbiter-agent</arbiter>
+                        <escalationTimeout>PT30S</escalationTimeout>
+                        <resolutionTimeout>PT5M</resolutionTimeout>
+                    </conflictResolution>
+
+                    <flowsInto>
+                        <nextElementRef id="process-payment"/>
+                    </flowsInto>
+                </condition>
+
+                <task id="process-payment" name="Process Payment">
+                    <name>Process Payment</name>
+                    <documentation>Process payment with agent coordination</documentation>
+                    <join code="and"/>
+                    <split code="xor"/>
+
+                    <flowsInto>
+                        <nextElementRef id="fulfill-order"/>
+                    </flowsInto>
+                </task>
+
+                <task id="fulfill-order" name="Fulfill Order">
+                    <name>Fulfill Order</name>
+                    <documentation>Fulfill order with autonomous agents</documentation>
+                    <join code="and"/>
+                    <split code="xor"/>
+
+                    <!-- Adaptive binding for fulfillment -->
+                    <agentBinding>
+                        <taskId>fulfill-order</taskId>
+                        <bindingType>adaptive</bindingType>
+                        <agentSelector>weighted</agentSelector>
+                        <agents>
+                            <agent>
+                                <agentId>fulfillment-agent-1</agentId>
+                                <priority>1</priority>
+                                <weight>0.7</weight>
+                            </agent>
+                            <agent>
+                                <agentId>fulfillment-agent-2</agentId>
+                                <priority>2</priority>
+                                <weight>0.3</weight>
+                            </agent>
+                        </agents>
+                        <timeout>PT5M</timeout>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="end"/>
+                    </flowsInto>
+                </task>
+
+                <outputCondition id="end">
+                    <name>End</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <importedNet>http://example.com/schemas/inventory.xsd</importedNet>
+        <importedNet>http://example.com/schemas/payment.xsd</importedNet>
+    </specification>
+
+    <!-- Validation report -->
+    <validation>
+        <validationReport>
+            <timestamp>2026-02-18T10:00:00Z</timestamp>
+            <status>validated</status>
+            <summary>Coordination features validated successfully</summary>
+            <errors/>
+            <warnings/>
+            <infos>
+                <validationInfo>
+                    <id>coord-enabled</id>
+                    <message>Coordination features are enabled</message>
+                    <location>/specification/coordination</location>
+                </validationInfo>
+            </infos>
+        </validationReport>
+    </validation>
+</specificationSet>

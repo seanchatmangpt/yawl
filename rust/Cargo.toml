@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "yawl-native",
     "rust4pm",
+    "rust4pm_nif",
     "data-modelling-ffi",
 ]
 

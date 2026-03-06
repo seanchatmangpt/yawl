@@ -30,7 +30,7 @@ setup() ->
             throw({failed_to_start, Reason})
     end.
 
-teardown(Pid) ->
+teardown(_Pid) ->
     %% Stop the process mining bridge
     process_mining_bridge:stop(),
     ok.

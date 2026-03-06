@@ -1,0 +1,755 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/sac/yawl/rust/data-modelling-ffi/Cargo.toml
+workspace: /Users/sac/yawl/rust/Cargo.toml
+    Blocking waiting for file lock on build directory
+INFO: Compiling Erlang sources...
+===> Verifying dependencies...
+Building yawl_ml_bridge native library...
+Running cargo build...
+    Blocking waiting for file lock on build directory
+===> Analyzing applications...
+===> Compiling yawl
+===> Compiling src/test/erlang/process_mining_bridge_simple_tests.erl failed
+    ┌─ src/test/erlang/process_mining_bridge_simple_tests.erl:
+    │
+ 33 │  teardown(Pid) ->
+    │           ╰── variable 'Pid' is unused
+
+
+WARNING: rebar3 failed (likely OTP version mismatch) — falling back to erlc
+INFO: erlc compilation succeeded
+INFO: .beam files copied to /Users/sac/yawl/yawl-erlang/src/main/resources/org/yawlfoundation/yawl/erlang/ebin
+[ERROR] COMPILATION ERROR : 
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataQueryException.java:[23,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[25,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[26,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[27,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[28,24] package org.jdom2.output does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[29,24] package org.jdom2.output does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[30,36] package org.yawlfoundation.yawl.util does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[26,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[27,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[28,23] package org.jdom2.input does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataQueryException.java:[43,52] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataQueryException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataQueryException.java:[72,12] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataQueryException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[45,15] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[48,15] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[49,15] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[55,28] cannot find symbol
+  symbol:   class XMLOutputter
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[56,28] cannot find symbol
+  symbol:   class XMLOutputter
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[66,46] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[67,32] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[96,12] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[136,50] cannot find symbol
+  symbol:   class Document
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[158,12] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[40,22] cannot find symbol
+  symbol:   class SAXBuilder
+  location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[105,43] cannot find symbol
+  symbol:   class Document
+  location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[105,73] cannot find symbol
+  symbol:   class JDOMException
+  location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[122,42] cannot find symbol
+  symbol:   class Document
+  location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YConnectivityException.java:[23,40] package org.yawlfoundation.yawl.elements does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YSyntaxException.java:[23,40] package org.yawlfoundation.yawl.elements does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YConnectivityException.java:[47,35] cannot find symbol
+  symbol:   class YExternalNetElement
+  location: class org.yawlfoundation.yawl.exceptions.YConnectivityException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YConnectivityException.java:[47,63] cannot find symbol
+  symbol:   class YExternalNetElement
+  location: class org.yawlfoundation.yawl.exceptions.YConnectivityException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YSyntaxException.java:[56,29] cannot find symbol
+  symbol:   class YExternalNetElement
+  location: class org.yawlfoundation.yawl.exceptions.YSyntaxException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataValidationException.java:[23,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataValidationException.java:[44,52] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataValidationException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[40,48] cannot find symbol
+  symbol:   class SAXBuilder
+  location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[55,59] cannot find symbol
+  symbol:   class XMLOutputter
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[55,72] cannot find symbol
+  symbol:   variable Format
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[56,52] cannot find symbol
+  symbol:   class XMLOutputter
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[56,65] cannot find symbol
+  symbol:   variable Format
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[79,22] cannot find symbol
+  symbol:   class JDOMException
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[113,23] cannot find symbol
+  symbol:   variable StringUtil
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[116,23] cannot find symbol
+  symbol:   variable StringUtil
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[119,23] cannot find symbol
+  symbol:   variable StringUtil
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[122,23] cannot find symbol
+  symbol:   variable StringUtil
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[125,23] cannot find symbol
+  symbol:   variable StringUtil
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[128,23] cannot find symbol
+  symbol:   variable StringUtil
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[131,23] cannot find symbol
+  symbol:   variable StringUtil
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[137,9] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[139,9] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[141,9] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[142,9] cannot find symbol
+  symbol:   class Element
+  location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] COMPILATION ERROR : 
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTimerParameters.java:[44,8] enum TimeUnit is public, should be declared in a file named TimeUnit.java
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTimerParameters.java:[51,8] enum TriggerType is public, should be declared in a file named TriggerType.java
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/GroupedMIOutputData.java:[10,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/GroupedMIOutputData.java:[33,35] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.GroupedMIOutputData
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[39,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[41,43] cannot find symbol
+  symbol:   class YTimer
+  location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[30,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[31,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[32,51] package org.yawlfoundation.yawl.engine.announcement does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[33,47] package org.yawlfoundation.yawl.engine.instance does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[34,58] package org.yawlfoundation.yawl.engine.interfce.interfaceA does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[35,58] package org.yawlfoundation.yawl.engine.interfce.interfaceA does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[36,58] package org.yawlfoundation.yawl.engine.interfce.interfaceA does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[37,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[38,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[39,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[40,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[41,47] package org.yawlfoundation.yawl.engine.interfce does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[42,43] cannot find symbol
+  symbol:   class YTimedObject
+  location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[43,43] cannot find symbol
+  symbol:   class YTimer
+  location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[52,52] package org.yawlfoundation.yawl.engine.observability does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[53,52] package org.yawlfoundation.yawl.engine.observability does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[54,52] package org.yawlfoundation.yawl.engine.observability does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[78,33] cannot find symbol
+  symbol: class InterfaceADesign
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[79,33] cannot find symbol
+  symbol: class InterfaceAManagement
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[80,33] cannot find symbol
+  symbol: class InterfaceBClient
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[81,33] cannot find symbol
+  symbol: class InterfaceBInterop
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItemID.java:[25,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[101,13] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[36,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[37,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[46,51] package org.yawlfoundation.yawl.engine.core.marking does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[112,75] cannot find symbol
+  symbol: class IMarkingTask
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YAtomicTask.java:[25,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCompositeTask.java:[26,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[40,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:[46,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:[47,43] cannot find symbol
+  symbol:   class YLaunchDelayer
+  location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[146,48] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[165,23] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[186,33] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[261,53] cannot find symbol
+  symbol:   class YNetData
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[312,60] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[470,59] cannot find symbol
+  symbol:   class YNetData
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[613,37] cannot find symbol
+  symbol:   class WorkItemCompletion
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[845,12] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[859,12] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[897,12] cannot find symbol
+  symbol:   class YNetRunner
+  location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/YVariable.java:[34,48] package org.yawlfoundation.yawl.engine.core.data does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/YVariable.java:[45,82] cannot find symbol
+  symbol: class IVariableDescriptor
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[26,38] cannot find symbol
+  symbol:   class YNetData
+  location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YSpecification.java:[26,38] cannot find symbol
+  symbol:   class YSpecificationID
+  location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[79,13] cannot find symbol
+  symbol:   class YNetData
+  location: class org.yawlfoundation.yawl.elements.YDecomposition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[109,63] cannot find symbol
+  symbol:   class YNetData
+  location: class org.yawlfoundation.yawl.elements.YDecomposition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[118,29] cannot find symbol
+  symbol:   class YNetData
+  location: class org.yawlfoundation.yawl.elements.YDecomposition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[34,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[35,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/schema/YDataValidator.java:[22,48] package org.yawlfoundation.yawl.engine.core.data does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/schema/YDataValidator.java:[46,37] cannot find symbol
+  symbol: class YCoreDataValidator
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YSpecification.java:[282,12] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.elements.YSpecification
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[24,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[23,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[390,52] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YNet
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[575,39] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YNet
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[579,38] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YNet
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/external/ExternalDataGateway.java:[27,38] cannot find symbol
+  symbol:   class YSpecificationID
+  location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/external/ExternalDataGateway.java:[84,30] cannot find symbol
+  symbol:   class YSpecificationID
+  location: interface org.yawlfoundation.yawl.elements.data.external.ExternalDataGateway
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/external/ExternalDataGateway.java:[99,29] cannot find symbol
+  symbol:   class YSpecificationID
+  location: interface org.yawlfoundation.yawl.elements.data.external.ExternalDataGateway
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[24,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[79,47] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[84,21] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[89,29] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[99,26] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[104,17] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[109,12] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[120,27] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[144,24] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[149,27] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[36,17] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[45,31] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[50,57] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[62,26] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[71,29] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[76,17] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[88,50] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[41,22] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[54,19] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[60,10] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[69,5] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[78,20] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[89,17] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[96,20] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[116,14] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[124,40] cannot find symbol
+  symbol:   class YIdentifier
+  location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventKeyCache.java:[24,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventKeyCache.java:[25,38] cannot find symbol
+  symbol:   class YSpecificationID
+  location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[221,33] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.logging.YEventLogger
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[234,46] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.logging.YEventLogger
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[249,38] cannot find symbol
+  symbol:   class YSpecificationID
+  location: class org.yawlfoundation.yawl.logging.YEventLogger
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[250,38] cannot find symbol
+  symbol:   class YIdentifier
+  location: class org.yawlfoundation.yawl.logging.YEventLogger
+warning: unused import: `super::*`
+  --> data-modelling-ffi/src/lib.rs:11:9
+   |
+11 |     use super::*;
+   |         ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `data-modelling-ffi` (lib) generated 1 warning (run `cargo fix --lib -p data-modelling-ffi` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3m 36s
+warning: unused import: `pyo3::prepare_freethreaded_python`
+  --> src/lib.rs:10:5
+   |
+10 | use pyo3::prepare_freethreaded_python;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `yawl_ml_bridge` (lib) generated 1 warning (run `cargo fix --lib -p yawl_ml_bridge` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3m 34s
+Copying library to parent directory...
+Build complete. Library available at: ../priv/libyawl_ml_bridge.dylib
+Verifying library...
+../priv/libyawl_ml_bridge.dylib: Mach-O 64-bit dynamically linked shared library arm64
+-rwxr-xr-x@ 1 sac  staff  492432 Mar  4 20:55 ../priv/libyawl_ml_bridge.dylib
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project yawl-exceptions: Compilation failure: Compilation failure: 
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataQueryException.java:[23,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[25,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[26,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[27,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[28,24] package org.jdom2.output does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[29,24] package org.jdom2.output does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[30,36] package org.yawlfoundation.yawl.util does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[26,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[27,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[28,23] package org.jdom2.input does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataQueryException.java:[43,52] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataQueryException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataQueryException.java:[72,12] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataQueryException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[45,15] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[48,15] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[49,15] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[55,28] cannot find symbol
+[ERROR]   symbol:   class XMLOutputter
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[56,28] cannot find symbol
+[ERROR]   symbol:   class XMLOutputter
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[66,46] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[67,32] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[96,12] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[136,50] cannot find symbol
+[ERROR]   symbol:   class Document
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[158,12] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[40,22] cannot find symbol
+[ERROR]   symbol:   class SAXBuilder
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[105,43] cannot find symbol
+[ERROR]   symbol:   class Document
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[105,73] cannot find symbol
+[ERROR]   symbol:   class JDOMException
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[122,42] cannot find symbol
+[ERROR]   symbol:   class Document
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YConnectivityException.java:[23,40] package org.yawlfoundation.yawl.elements does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YSyntaxException.java:[23,40] package org.yawlfoundation.yawl.elements does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YConnectivityException.java:[47,35] cannot find symbol
+[ERROR]   symbol:   class YExternalNetElement
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YConnectivityException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YConnectivityException.java:[47,63] cannot find symbol
+[ERROR]   symbol:   class YExternalNetElement
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YConnectivityException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YSyntaxException.java:[56,29] cannot find symbol
+[ERROR]   symbol:   class YExternalNetElement
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YSyntaxException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataValidationException.java:[23,17] package org.jdom2 does not exist
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataValidationException.java:[44,52] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataValidationException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YAWLException.java:[40,48] cannot find symbol
+[ERROR]   symbol:   class SAXBuilder
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YAWLException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[55,59] cannot find symbol
+[ERROR]   symbol:   class XMLOutputter
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[55,72] cannot find symbol
+[ERROR]   symbol:   variable Format
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[56,52] cannot find symbol
+[ERROR]   symbol:   class XMLOutputter
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[56,65] cannot find symbol
+[ERROR]   symbol:   variable Format
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[79,22] cannot find symbol
+[ERROR]   symbol:   class JDOMException
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[113,23] cannot find symbol
+[ERROR]   symbol:   variable StringUtil
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[116,23] cannot find symbol
+[ERROR]   symbol:   variable StringUtil
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[119,23] cannot find symbol
+[ERROR]   symbol:   variable StringUtil
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[122,23] cannot find symbol
+[ERROR]   symbol:   variable StringUtil
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[125,23] cannot find symbol
+[ERROR]   symbol:   variable StringUtil
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[128,23] cannot find symbol
+[ERROR]   symbol:   variable StringUtil
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[131,23] cannot find symbol
+[ERROR]   symbol:   variable StringUtil
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[137,9] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[139,9] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[141,9] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] /Users/sac/yawl/yawl-exceptions/src/main/java/org/yawlfoundation/yawl/exceptions/YDataStateException.java:[142,9] cannot find symbol
+[ERROR]   symbol:   class Element
+[ERROR]   location: class org.yawlfoundation.yawl.exceptions.YDataStateException
+[ERROR] -> [Help 1]
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project yawl-utilities: Compilation failure: Compilation failure: 
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTimerParameters.java:[44,8] enum TimeUnit is public, should be declared in a file named TimeUnit.java
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTimerParameters.java:[51,8] enum TriggerType is public, should be declared in a file named TriggerType.java
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/GroupedMIOutputData.java:[10,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/GroupedMIOutputData.java:[33,35] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.GroupedMIOutputData
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[39,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[41,43] cannot find symbol
+[ERROR]   symbol:   class YTimer
+[ERROR]   location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[30,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[31,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[32,51] package org.yawlfoundation.yawl.engine.announcement does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[33,47] package org.yawlfoundation.yawl.engine.instance does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[34,58] package org.yawlfoundation.yawl.engine.interfce.interfaceA does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[35,58] package org.yawlfoundation.yawl.engine.interfce.interfaceA does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[36,58] package org.yawlfoundation.yawl.engine.interfce.interfaceA does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[37,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[38,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[39,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[40,58] package org.yawlfoundation.yawl.engine.interfce.interfaceB does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[41,47] package org.yawlfoundation.yawl.engine.interfce does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[42,43] cannot find symbol
+[ERROR]   symbol:   class YTimedObject
+[ERROR]   location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[43,43] cannot find symbol
+[ERROR]   symbol:   class YTimer
+[ERROR]   location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[52,52] package org.yawlfoundation.yawl.engine.observability does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[53,52] package org.yawlfoundation.yawl.engine.observability does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[54,52] package org.yawlfoundation.yawl.engine.observability does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[78,33] cannot find symbol
+[ERROR]   symbol: class InterfaceADesign
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[79,33] cannot find symbol
+[ERROR]   symbol: class InterfaceAManagement
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[80,33] cannot find symbol
+[ERROR]   symbol: class InterfaceBClient
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YEngine.java:[81,33] cannot find symbol
+[ERROR]   symbol: class InterfaceBInterop
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItemID.java:[25,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[101,13] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[36,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[37,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[46,51] package org.yawlfoundation.yawl.engine.core.marking does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YTask.java:[112,75] cannot find symbol
+[ERROR]   symbol: class IMarkingTask
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YAtomicTask.java:[25,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCompositeTask.java:[26,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[40,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:[46,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YPersistenceManager.java:[47,43] cannot find symbol
+[ERROR]   symbol:   class YLaunchDelayer
+[ERROR]   location: package org.yawlfoundation.yawl.engine.time
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[146,48] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[165,23] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[186,33] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[261,53] cannot find symbol
+[ERROR]   symbol:   class YNetData
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[312,60] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[470,59] cannot find symbol
+[ERROR]   symbol:   class YNetData
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[613,37] cannot find symbol
+[ERROR]   symbol:   class WorkItemCompletion
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[845,12] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[859,12] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/engine/YWorkItem.java:[897,12] cannot find symbol
+[ERROR]   symbol:   class YNetRunner
+[ERROR]   location: class org.yawlfoundation.yawl.engine.YWorkItem
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/YVariable.java:[34,48] package org.yawlfoundation.yawl.engine.core.data does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/YVariable.java:[45,82] cannot find symbol
+[ERROR]   symbol: class IVariableDescriptor
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[26,38] cannot find symbol
+[ERROR]   symbol:   class YNetData
+[ERROR]   location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YSpecification.java:[26,38] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[79,13] cannot find symbol
+[ERROR]   symbol:   class YNetData
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YDecomposition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[109,63] cannot find symbol
+[ERROR]   symbol:   class YNetData
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YDecomposition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YDecomposition.java:[118,29] cannot find symbol
+[ERROR]   symbol:   class YNetData
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YDecomposition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[34,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[35,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/schema/YDataValidator.java:[22,48] package org.yawlfoundation.yawl.engine.core.data does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/schema/YDataValidator.java:[46,37] cannot find symbol
+[ERROR]   symbol: class YCoreDataValidator
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YSpecification.java:[282,12] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YSpecification
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[24,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[23,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[390,52] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YNet
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[575,39] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YNet
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YNet.java:[579,38] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YNet
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/external/ExternalDataGateway.java:[27,38] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/external/ExternalDataGateway.java:[84,30] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.data.external.ExternalDataGateway
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/data/external/ExternalDataGateway.java:[99,29] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.data.external.ExternalDataGateway
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[24,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[79,47] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[84,21] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[89,29] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[99,26] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[104,17] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[109,12] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[120,27] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[144,24] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YCondition.java:[149,27] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.elements.YCondition
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[36,17] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[45,31] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[50,57] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[62,26] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[71,29] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[76,17] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/util/YIdentifierBag.java:[88,50] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.util.YIdentifierBag
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[41,22] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[54,19] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[60,10] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[69,5] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[78,20] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[89,17] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[96,20] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[116,14] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/elements/YConditionInterface.java:[124,40] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: interface org.yawlfoundation.yawl.elements.YConditionInterface
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventKeyCache.java:[24,46] package org.yawlfoundation.yawl.elements.state does not exist
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventKeyCache.java:[25,38] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: package org.yawlfoundation.yawl.engine
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[221,33] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.logging.YEventLogger
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[234,46] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.logging.YEventLogger
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[249,38] cannot find symbol
+[ERROR]   symbol:   class YSpecificationID
+[ERROR]   location: class org.yawlfoundation.yawl.logging.YEventLogger
+[ERROR] /Users/sac/yawl/src/org/yawlfoundation/yawl/logging/YEventLogger.java:[250,38] cannot find symbol
+[ERROR]   symbol:   class YIdentifier
+[ERROR]   location: class org.yawlfoundation.yawl.logging.YEventLogger
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :yawl-exceptions

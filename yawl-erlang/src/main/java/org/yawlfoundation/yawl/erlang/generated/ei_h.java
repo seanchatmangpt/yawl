@@ -149,15 +149,15 @@ public final class ei_h {
      * <pre>
      *   struct ei_x_buff {
      *     char *buff;    // 8 bytes (pointer, 64-bit)
-     *     int   index;   // 4 bytes (current encode/decode position)
      *     int   buffsz;  // 4 bytes (allocated buffer size)
+     *     int   index;   // 4 bytes (current encode/decode position)
      *   };              // total: 16 bytes
      * </pre>
      */
     public static final StructLayout EI_X_BUFF_LAYOUT = MemoryLayout.structLayout(
         ADDRESS.withName("buff"),
-        JAVA_INT.withName("index"),
-        JAVA_INT.withName("buffsz")
+        JAVA_INT.withName("buffsz"),
+        JAVA_INT.withName("index")
     ).withName("ei_x_buff");
 
     /** VarHandle for {@code ei_x_buff.buff} (the char* data pointer). */

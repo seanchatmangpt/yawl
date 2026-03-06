@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Integration Schema for ADR-025 Coordination Extensions
+  *
+ * Master schema that integrates all coordination extensions into the YAWL Schema 4.0.
+ * Provides a unified namespace and imports all extension schemas.
+ *
+ * @author YAWL Foundation
+ * @version 5.2
+ -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:yawl="http://www.yawlfoundation.org/yawlschema"
+           xmlns:coord="http://www.yawlfoundation.org/yawlschema/adr025"
+           xmlns:binding="http://www.yawlfoundation.org/yawlschema/binding"
+           xmlns:validation="http://www.yawlfoundation.org/yawlschema/validation"
+           targetNamespace="http://www.yawlfoundation.org/yawlschema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="4.1">
+
+    <!-- Note: Base schema import is handled by the main YAWL schema -->
+    <!-- The integration schema focuses on extending the base schema with coordination features -->
+
+    <!-- Import coordination extensions -->
+    <xs:import namespace="http://www.yawlfoundation.org/yawlschema/adr025"
+               schemaLocation="YAWL_Schema4.0_Coordination.xsd"/>
+
+    <!-- Import agent binding extensions -->
+    <xs:import namespace="http://www.yawlfoundation.org/yawlschema/binding"
+               schemaLocation="YAWL_Schema4.0_AgentBinding.xsd"/>
+
+    <!-- Import validation extensions -->
+    <xs:import namespace="http://www.yawlfoundation.org/yawlschema/validation"
+               schemaLocation="YAWL_Schema4.0_Validation.xsd"/>
+
+    <!--=======================================================================================
+		EXTENSION POINTS: OVERRIDE EXISTING TYPES TO INCLUDE COORDINATION
+	=======================================================================================-->
+
+    <!-- Override decomposition type to include coordination -->
+    <xs:complexType name="DecompositionFactsType">
+        <xs:complexContent>
+            <xs:extension base="yawl:DecompositionFactsType">
+                <xs:sequence>
+                    <xs:element name="coordination" type="coord:CoordinationConfigFactsType" minOccurs="0"/>
+                    <xs:element name="agentBindings" type="coord:AgentBindingSetFactsType" minOccurs="0"/>
+                    <xs:element name="conflictResolution" type="coord:ConflictResolutionConfigType" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Override external task type to include coordination -->
+    <xs:complexType name="ExternalTaskFactsType">
+        <xs:complexContent>
+            <xs:extension base="yawl:ExternalTaskFactsType">
+                <xs:sequence>
+                    <xs:element name="agentBinding" type="binding:BindingConfigurationType" minOccurs="0"/>
+                    <xs:element name="bindingConstraints" type="binding:BindingConstraintType" minOccurs="0"/>
+                    <xs:element name="conflictResolution" type="coord:ConflictResolutionConfigType" minOccurs="0"/>
+                    <xs:element name="a2aCommunication" type="coord:A2ACommunicationType" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Override condition type to include coordination -->
+    <xs:complexType name="ExternalConditionFactsType">
+        <xs:complexContent>
+            <xs:extension base="yawl:ExternalConditionFactsType">
+                <xs:sequence>
+                    <xs:element name="agentBinding" type="binding:BindingConfigurationType" minOccurs="0"/>
+                    <xs:element name="conflictResolution" type="coord:ConflictResolutionConfigType" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!--=======================================================================================
+		TOP-LEVEL ELEMENTS FOR COORDINATION CONFIGURATION
+	=======================================================================================-->
+
+    <!-- Root element for complete coordination configuration -->
+    <xs:element name="coordinationConfiguration" type="coord:CoordinationConfigurationType">
+        <xs:annotation>
+            <xs:documentation>Root element for ADR-025 coordination configuration.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <!-- Root element for agent binding configuration -->
+    <xs:element name="agentBindingConfiguration" type="binding:AgentBindingConfigurationType">
+        <xs:annotation>
+            <xs:documentation>Root element for agent binding configuration.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <!-- Root element for validation configuration -->
+    <xs:element name="validationConfiguration" type="validation:ValidationConfigurationType">
+        <xs:annotation>
+            <xs:documentation>Root element for validation configuration.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <!--=======================================================================================
+		INTEGRATION: COORDINATION IN WORKFLOW SPECIFICATIONS
+	=======================================================================================-->
+
+    <!-- Extended specification type with coordination support -->
+    <xs:complexType name="YAWLSpecificationFactsType">
+        <xs:complexContent>
+            <xs:extension base="yawl:YAWLSpecificationFactsType">
+                <xs:sequence>
+                    <xs:element name="coordination" type="coord:CoordinationConfigFactsType" minOccurs="0"/>
+                    <xs:element name="validation" type="validation:ValidationConfigurationType" minOccurs="0"/>
+                    <xs:element name="validationReport" type="validation:ValidationReportType" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!--=======================================================================================
+		GLOBAL COORDINATION SETTINGS
+	=======================================================================================-->
+
+    <!-- Global coordination settings that apply to all workflows -->
+    <xs:element name="globalCoordinationSettings" type="coord:GlobalCoordinationSettingsType">
+        <xs:annotation>
+            <xs:documentation>Global coordination settings for the YAWL engine.</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <!--=======================================================================================
+		CONSTRAINTS AND VALIDATION RULES
+	=======================================================================================-->
+
+    <!-- Constraint: Unique agent IDs across all configurations -->
+    <xs:unique name="UniqueAgentIdGlobal">
+        <xs:annotation>
+            <xs:documentation>Ensures agent IDs are unique across all configurations.</xs:documentation>
+        </xs:annotation>
+        <xs:selector xpath="coord:agents/coord:agent | binding:agents/binding:agent | coord:agentBindings/coord:binding"/>
+        <xs:field xpath="coord:agentId | binding:agentId"/>
+    </xs:unique>
+
+    <!-- Constraint: Task-agent binding uniqueness -->
+    <xs:unique name="TaskAgentBindingUnique">
+        <xs:annotation>
+            <xs:documentation>Ensures unique task-agent bindings.</xs:documentation>
+        </xs:annotation>
+        <xs:selector xpath="coord:agentBindings/coord:binding | binding:binding"/>
+        <xs:field xpath="coord:taskId | binding:taskId"/>
+        <xs:field xpath="coord:agentId | binding:agentId"/>
+    </xs:unique>
+
+    <!-- Constraint: Conflict resolution arbiter must exist -->
+    <xs:keyref name="ConflictResolutionArbiterExists" refer="coord:AgentConfigType">
+        <xs:annotation>
+            <xs:documentation>Validates that conflict resolution arbiters are defined.</xs:documentation>
+        </xs:annotation>
+        <xs:selector xpath="coord:conflictResolution | coord:conflictResolution"/>
+        <xs:field xpath="coord:arbiter"/>
+    </xs:keyref>
+
+    <!-- Constraint: Binding compatibility -->
+    <xs:keyref name="BindingCompatibility" refer="binding:AgentProfileType">
+        <xs:annotation>
+            <xs:documentation>Validates binding compatibility between tasks and agents.</xs:documentation>
+        </xs:annotation>
+        <xs:selector xpath="binding:binding/binding:agents/binding:agent | coord:agentBindings/coord:binding"/>
+        <xs:field xpath="binding:agentId | coord:agentId"/>
+    </xs:keyref>
+
+    <!--=======================================================================================
+		VERSION AND NAMESPACE INFORMATION
+	=======================================================================================-->
+
+    <xs:annotation>
+        <xs:documentation>
+            ADR-025 Coordination Extensions for YAWL Schema 4.0
+            Version: 4.1
+            Namespace: http://www.yawlfoundation.org/yawlschema
+            Extensions: http://www.yawlfoundation.org/yawlschema/adr025
+                      http://www.yawlfoundation.org/yawlschema/binding
+                      http://www.yawlfoundation.org/yawlschema/validation
+
+            This schema extends YAWL Schema 4.0 with coordination features including:
+            - Multi-agent coordination
+            - Conflict resolution
+            - Agent binding and load balancing
+            - A2A communication
+            - Validation and constraints
+
+            The extensions are backward compatible and optional.
+        </xs:documentation>
+    </xs:annotation>
+
+</xs:schema>

@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Schema Validation Extensions for YAWL Schema 4.0
+  ~
+  ~ XML Schema extensions for validating coordination and agent binding features.
+  ~ Provides validation rules and constraints for ADR-025 features.
+  ~
+  ~ @author YAWL Foundation
+  ~ @version 5.2
+ -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:yawl="http://www.yawlfoundation.org/yawlschema"
+           xmlns:coord="http://www.yawlfoundation.org/yawlschema/adr025"
+           xmlns:binding="http://www.yawlfoundation.org/yawlschema/binding"
+           xmlns:validation="http://www.yawlfoundation.org/yawlschema/validation"
+           targetNamespace="http://www.yawlfoundation.org/yawlschema/validation"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+	<!-- Import base schemas -->
+	<xs:import namespace="http://www.yawlfoundation.org/yawlschema"
+               schemaLocation="YAWL_Schema4.0.xsd"/>
+	<xs:import namespace="http://www.yawlfoundation.org/yawlschema/adr025"
+               schemaLocation="YAWL_Schema4.0_Coordination.xsd"/>
+	<xs:import namespace="http://www.yawlfoundation.org/yawlschema/binding"
+               schemaLocation="YAWL_Schema4.0_AgentBinding.xsd"/>
+
+	<!--=======================================================================================
+		VALIDATION SIMPLE TYPES
+	=======================================================================================-->
+
+	<xs:simpleType name="ValidationLevelType">
+		<xs:annotation>
+			<xs:documentation>Validation levels for coordination features.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="basic"/>
+			<xs:enumeration value="strict"/>
+			<xs:enumeration value="comprehensive"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="ValidationModeType">
+		<xs:annotation>
+			<xs:documentation>Validation modes for coordination scenarios.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="schema"/>
+			<xs:enumeration value="businessLogic"/>
+			<xs:enumeration value="consistency"/>
+			<xs:enumeration value="performance"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!--=======================================================================================
+		COMPLEX TYPES FOR VALIDATION RULES
+	=======================================================================================-->
+
+	<!-- Validation Rule Type -->
+	<xs:complexType name="ValidationRuleType">
+		<xs:annotation>
+			<xs:documentation>Defines a validation rule for coordination features.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="name" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="level" type="validation:ValidationLevelType" minOccurs="1"/>
+			<xs:element name="mode" type="validation:ValidationModeType" minOccurs="0"/>
+			<xs:element name="condition" type="xs:string" minOccurs="1"/>
+			<xs:element name="message" type="xs:string" minOccurs="0"/>
+			<xs:element name="severity" type="xs:string" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="error"/>
+						<xs:enumeration value="warning"/>
+						<xs:enumeration value="info"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="enabled" type="xs:boolean" minOccurs="0" fixed="true"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Validation Configuration Type -->
+	<xs:complexType name="ValidationConfigurationType">
+		<xs:annotation>
+			<xs:documentation>Configuration for validation of coordination features.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="version" type="xs:string" fixed="1.0"/>
+			<xs:element name="level" type="validation:ValidationLevelType" minOccurs="0"/>
+			<xs:element name="rules" type="validation:ValidationRuleType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="exclusions" type="validation:ExclusionType" minOccurs="0"/>
+			<xs:element name="customValidators" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Exclusion Type -->
+	<xs:complexType name="ExclusionType">
+		<xs:sequence>
+			<xs:element name="rule" type="xs:NCName" minOccurs="1" maxOccurs="unbounded"/>
+			<xs:element name="reason" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!--=======================================================================================
+		COORDINATION VALIDATION RULES
+	=======================================================================================-->
+
+	<!-- Conflict Resolution Validation Rule -->
+	<xs:element name="conflictResolutionValidation" type="validation:ValidationConfigurationType">
+		<xs:annotation>
+			<xs:documentation>Validation rules for conflict resolution configurations.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- Agent Binding Validation Rule -->
+	<xs:element name="agentBindingValidation" type="validation:ValidationConfigurationType">
+		<xs:annotation>
+			<xs:documentation>Validation rules for agent binding configurations.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- A2A Communication Validation Rule -->
+	<xs:element name="a2aCommunicationValidation" type="validation:ValidationConfigurationType">
+		<xs:annotation>
+			<xs:documentation>Validation rules for agent-to-agent communication.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!--=======================================================================================
+		VALIDATION CONSTRAINTS
+	=======================================================================================-->
+
+	<!-- Constraint: Agent ID Uniqueness Across All Bindings -->
+	<xs:unique name="AgentIdUniqueness">
+		<xs:annotation>
+			<xs:documentation>Ensures agent IDs are unique across all bindings.</xs:documentation>
+		</xs:annotation>
+		<xs:selector xpath="coord:agents/coord:agent | binding:agents/binding:agent"/>
+		<xs:field xpath="coord:agentId | binding:agentId"/>
+	</xs:unique>
+
+	<!-- Constraint: Task-Agent Binding Uniqueness -->
+	<xs:unique name="TaskAgentBindingUniqueness">
+		<xs:annotation>
+			<xs:documentation>Ensures each task has at most one primary agent binding.</xs:documentation>
+		</xs:annotation>
+		<xs:selector xpath="binding:bindings/binding:binding"/>
+		<xs:field xpath="binding:taskId"/>
+	</xs:unique>
+
+	<!-- Constraint: Conflict Resolution Strategy Compatibility -->
+	<xs:keyref name="ConflictResolutionStrategyCompatibility" refer="coord:ConflictResolutionConfigType">
+		<xs:annotation>
+			<xs:documentation>Validates that conflict resolution strategies are compatible with task types.</xs:documentation>
+		</xs:annotation>
+		<xs:selector xpath="yawl:decomposition/coord:conflictResolution"/>
+		<xs:field xpath="coord:strategy"/>
+	</xs:keyref>
+
+	<!-- Constraint: Agent Capability Matching -->
+	<xs:keyref name="AgentCapabilityMatching" refer="binding:AgentCapabilityType">
+		<xs:annotation>
+			<xs:documentation>Validates that agent capabilities match task requirements.</xs:documentation>
+		</xs:annotation>
+		<xs:selector xpath="binding:binding/binding:agents/binding:agent"/>
+		<xs:field xpath="binding:capabilities/binding:capability"/>
+	</xs:keyref>
+
+	<!-- Constraint: Load Balancer Configuration -->
+	<xs:keyref name="LoadBalancerConfiguration" refer="binding:LoadBalancerType">
+		<xs:annotation>
+			<xs:documentation>Validates load balancer configurations are properly set.</xs:documentation>
+		</xs:annotation>
+		<xs:selector xpath="binding:binding/binding:loadBalancer"/>
+		<xs:field xpath="binding:strategy"/>
+	</xs:keyref>
+
+	<!--=======================================================================================
+		BUSINESS LOGIC VALIDATION RULES
+	=======================================================================================-->
+
+	<!-- Validation Rule: Conflict Resolution Strategy Must Match Severity -->
+	<xs:element name="conflictSeverityStrategyRule" type="validation:ValidationRuleType">
+		<xs:annotation>
+			<xs:documentation>Ensures conflict resolution strategy matches the severity level.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- Validation Rule: Agent Health Status -->
+	<xs:element name="agentHealthStatusRule" type="validation:ValidationRuleType">
+		<xs:annotation>
+			<xs:documentation>Validates agent health status for active bindings.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- Validation Rule: Timeout Configuration -->
+	<xs:element name="timeoutConfigurationRule" type="validation:ValidationRuleType">
+		<xs:annotation>
+			<xs:documentation>Validates timeout configurations are reasonable.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- Validation Rule: Binding Consistency -->
+	<xs:element name="bindingConsistencyRule" type="validation:ValidationRuleType">
+		<xs:annotation>
+			<xs:documentation>Validates consistency across all bindings.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!--=======================================================================================
+		PERFORMANCE VALIDATION RULES
+	=======================================================================================-->
+
+	<!-- Validation Rule: Performance Impact Assessment -->
+	<xs:element name="performanceImpactRule" type="validation:ValidationRuleType">
+		<xs:annotation>
+			<xs:documentation>Validates performance impact of coordination features.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!-- Validation Rule: Resource Utilization -->
+	<xs:element name="resourceUtilizationRule" type="validation:ValidationRuleType">
+		<xs:annotation>
+			<xs:documentation>Validates resource utilization levels.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+
+	<!--=======================================================================================
+		SCHEMA EXTENSION FOR VALIDATION
+	=======================================================================================-->
+
+	<!-- Extension to YAWLSpecificationFactsType for validation -->
+	<xs:complexType name="YAWLSpecificationValidationFactsType">
+		<xs:complexContent>
+			<xs:extension base="yawl:YAWLSpecificationFactsType">
+				<xs:sequence>
+					<xs:element name="validation" type="validation:ValidationConfigurationType" minOccurs="0"/>
+					<xs:element name="validationReport" type="validation:ValidationReportType" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<!-- Validation Report Type -->
+	<xs:complexType name="ValidationReportType">
+		<xs:sequence>
+			<xs:element name="timestamp" type="xs:dateTime" minOccurs="1"/>
+			<xs:element name="status" type="xs:string" minOccurs="0"/>
+			<xs:element name="summary" type="xs:string" minOccurs="0"/>
+			<xs:element name="errors" type="validation:ValidationErrorType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="warnings" type="validation:ValidationWarningType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="infos" type="validation:ValidationInfoType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Validation Error Type -->
+	<xs:complexType name="ValidationErrorType">
+		<xs:sequence>
+			<xs:element name="id" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="message" type="xs:string" minOccurs="1"/>
+			<xs:element name="location" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="path" type="xs:string" minOccurs="0"/>
+			<xs:element name="suggestion" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Validation Warning Type -->
+	<xs:complexType name="ValidationWarningType">
+		<xs:sequence>
+			<xs:element name="id" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="message" type="xs:string" minOccurs="1"/>
+			<xs:element name="location" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="path" type="xs:string" minOccurs="0"/>
+			<xs:element name="suggestion" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Validation Info Type -->
+	<xs:complexType name="ValidationInfoType">
+		<xs:sequence>
+			<xs:element name="id" type="xs:NCName" minOccurs="1"/>
+			<xs:element name="message" type="xs:string" minOccurs="1"/>
+			<xs:element name="location" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="path" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- Override specification type to include validation -->
+	<xs:element name="specification" type="validation:YAWLSpecificationValidationFactsType" substitutionGroup="yawl:specification"/>
+
+</xs:schema>

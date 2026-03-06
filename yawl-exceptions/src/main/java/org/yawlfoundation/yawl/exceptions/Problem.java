@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.yawlfoundation.yawl.exceptions;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.Objects;
+
+/**
+ * Represents a problem or warning message generated during YAWL execution.
+ *
+ * @author Lachlan Aldred
+ * @since 10/10/2005
+ */
+public class Problem implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 2L;
+
+    /** Message type indicating an empty resource set warning. */
+    public static final String EMPTY_RESOURCE_SET_MESSAGETYPE = "EmptyResourceSetType";
+
+    private String _source;
+    private Instant _problemTime;
+    private String _messageType;
+    private String _message;
+
+    public String getSource() {
+        return _source;
+    }
+
+    public void setSource(String source) {
+        this._source = source;
+    }
+
+    public Instant getProblemTime() {
+        return _problemTime;
+    }
+
+    public void setProblemTime(Instant timeStamp) {
+        this._problemTime = timeStamp;
+    }
+
+    public String getMessageType() {
+        return _messageType;
+    }
+
+    public void setMessageType(String messageType) {
+        this._messageType = messageType;
+    }
+
+    public String getMessage() {
+        return _message;
+    }
+
+    public void setMessage(String message) {
+        this._message = message;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Problem warning)) return false;
+
+        return Objects.equals(_problemTime, warning._problemTime)
+                && Objects.equals(_source, warning._source);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_source, _problemTime);
+    }
+}

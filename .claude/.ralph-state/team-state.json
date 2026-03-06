@@ -1,0 +1,30 @@
+{
+  "team_id": "tau-guard-fixers-1772674488",
+  "team_name": "implement",
+  "agents": [
+    "implementer_1",
+    "implementer_2",
+    "implementer_3",
+    "implementer_4",
+    "implementer_5"
+  ],
+  "agent_count": 5,
+  "status": "active",
+  "mailbox": [],
+  "checkpoints": [],
+  "started_at": "2026-03-05T01:34:48Z",
+  "task_focus": "H-Guard violation resolution",
+  "violation_targets": [
+    "src/org/yawlfoundation/yawl/util/XNode.java",
+    "src/org/yawlfoundation/yawl/integration/orderfulfillment/OrderfulfillmentLauncher.java",
+    "src/org/yawlfoundation/yawl/procletService/editor/pconns/VertexDemo.java",
+    "src/org/yawlfoundation/yawl/procletService/editor/model/FrmModel.java",
+    "yawl-engine/test/org/yawlfoundation/yawl/compliance/shacl/ShaclShapeRegistryTest.java",
+    "yawl-engine/src/test/java/org/yawlfoundation/yawl/observatory/WorkflowDNAOracleTest.java"
+  ],
+  "excluded_patterns": [
+    "test/fixtures/h-guards/",
+    "ggen/src/test/resources/fixtures/",
+    "yawl-ggen/src/test/resources/fixtures/"
+  ]
+}

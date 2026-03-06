@@ -1,0 +1,57 @@
+WORKFLOW PATTERNS VALIDATION RESULTS:
+Item 21: FAIL - WCP-01 Sequence - Test file not found
+Item 22: FAIL - WCP-02 Parallel Split - Test file not found
+Item 23: FAIL - WCP-03 Synchronization - Test file not found
+Item 24: FAIL - WCP-04 XOR Choice - Test file not found
+Item 25: FAIL - WCP-05 Exclusive Choice - Test file not found
+
+Item 26: FAIL - WCP-06 OR Split - Test file not found
+Item 27: FAIL - WCP-07 OR Join - Test file not found
+Item 28: FAIL - WCP-08 Synchronizing Merge - Test file not found
+Item 29: FAIL - WCP-09 Multi-Merge - Test file not found
+Item 30: FAIL - WCP-10 Discriminator - Test file not found
+
+Item 31: FAIL - WCP-11 Implicit Termination - Test file not found
+Item 32: FAIL - WCP-12 Multiple Instances Without Sync - Test file not found
+Item 33: FAIL - WCP-13 Multiple Instances With Design-Time Known Sync - Test file not found
+Item 34: FAIL - WCP-14 Multiple Instances With Run-Time Known Sync - Test file not found
+Item 35: FAIL - WCP-15 Multiple Instances Without Run-Time Known Sync - Test file not found
+
+Item 36: FAIL - WCP-16 Deferred Choice - Test file not found
+Item 37: FAIL - WCP-17 Interleaved Parallel Routing - Test file not found
+Item 38: FAIL - WCP-18 Milestone - Test file not found
+Item 39: FAIL - WCP-19 Cancel Case - Test file not found
+Item 40: FAIL - WCP-20 Cancel Case - Test file not found
+
+SUMMARY: 0/20 passed
+
+INVESTIGATION FINDINGS:
+1. Test files (WcpBusinessPatterns10to18Test.java, SoundnessTest.java, etc.) were not found in:
+   - src/test/org/yawlfoundation/yawl/engine/patterns/
+   - src/test/org/yawlfoundation/yawl/patterns/
+   - test/org/yawlfoundation/yawl/engine/patterns/
+   - test/org/yawlfoundation/yawl/patterns/
+
+2. Available test directories in yawl-engine:
+   - test/resources/ (only contains performance-baseline.json)
+   - test/org/ (empty directories)
+   - No actual test class files found
+
+3. Maven test configuration exists but tests are skipped due to missing test files
+
+4. Note: WcpBusinessPatterns10to18Test.java exists in:
+   - yawl-mcp-a2a-app/src/test/java/org/yawlfoundation/yawl/mcp/a2a/wcp/
+   But this module has compilation errors preventing test execution
+
+RECOMMENDATION:
+The workflow pattern test files need to be implemented or restored from a backup/previous version. The validation cannot be completed without the test implementations.
+
+Files referenced but not found:
+- WcpBusinessPatterns10to18Test.java
+- SoundnessTest.java
+- WorkflowInvariantPropertyTest.java
+- CompetingConsumersTest.java
+- ScatterGatherTest.java
+- CascadeCancellationTest.java
+- YMilestoneGuardedTaskTest.java
+- YMilestoneConditionTest.java

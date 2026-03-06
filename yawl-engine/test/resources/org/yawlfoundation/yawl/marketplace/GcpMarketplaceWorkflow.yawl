@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GCP Marketplace YAWL Workflow Specification
+
+  Complete workflow definition for GCP marketplace operations:
+  - Vendor onboarding and product listing
+  - Order placement and confirmation
+  - Payment processing with retries
+  - Fulfillment with center selection and routing
+  - Delivery and completion
+  - Exception handling: cancellation, payment failure, vendor suspension
+
+  Author: YAWL Foundation
+  Version: 1.0
+  Since: 6.0.0
+-->
+<specification xmlns="http://www.yawlfoundation.org/yawlschema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.yawlfoundation.org/yawlschema http://www.yawlfoundation.org/yawlschema/YAWL_Schema2.3.xsd" externalDataGateway="" name="GcpMarketplaceWorkflow" version="1.0" uid="GcpMarketplaceWorkflow_1.0">
+  <documentation/>
+
+  <metaData>
+    <title>GCP Marketplace Workflow</title>
+    <description>Complete workflow for GCP marketplace order processing</description>
+    <version>1.0</version>
+    <author>YAWL Foundation</author>
+    <contact>foundation@yawl.org</contact>
+    <date>2026-02-21</date>
+  </metaData>
+
+  <isAdministrative>false</isadministrative>
+
+  <net id="OrderProcessingNet" isRootNet="true">
+    <localVariable>
+      <index>0</index>
+      <name>order</name>
+      <type>Order</type>
+      <initialValue/>
+      <documentation>Current order being processed</documentation>
+    </localVariable>
+    <localVariable>
+      <index>1</index>
+      <name>vendor</name>
+      <type>Vendor</type>
+      <initialValue/>
+      <documentation>Vendor information</documentation>
+    </localVariable>
+    <localVariable>
+      <index>2</index>
+      <name>payment</name>
+      <type>Payment</type>
+      <initialValue/>
+      <documentation>Payment transaction details</documentation>
+    </localVariable>
+    <localVariable>
+      <index>3</index>
+      <name>fulfillment</name>
+      <type>Fulfillment</type>
+      <initialValue/>
+      <documentation>Fulfillment and shipment details</documentation>
+    </localVariable>
+
+    <!-- Source condition - order created -->
+    <condition id="ConditionOrderCreated">
+      <name>Order Created</name>
+      <flowsInto>
+        <nextElementRef id="TaskValidateOrder"/>
+      </flowsInto>
+    </condition>
+
+    <!-- Task 1: Validate Order -->
+    <task id="TaskValidateOrder" name="Validate Order">
+      <description>Validate order contents, inventory, and totals</description>
+      <flowsInto>
+        <nextElementRef id="TaskProcessPayment"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+      <decomposesTo id="ValidateOrderSubnet"/>
+    </task>
+
+    <!-- Task 2: Process Payment -->
+    <task id="TaskProcessPayment" name="Process Payment">
+      <description>Process customer payment (credit card, ACH, digital wallet)</description>
+      <flowsInto>
+        <nextElementRef id="ConditionPaymentSuccessful"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+      <decomposesTo id="ProcessPaymentSubnet"/>
+    </task>
+
+    <!-- Condition: Payment Successful? -->
+    <condition id="ConditionPaymentSuccessful">
+      <name>Payment Successful</name>
+      <flowsInto>
+        <nextElementRef id="TaskSelectFulfillmentCenter"/>
+        <predicate yawlVersion="2.3">
+          <expression query="$payment/status = 'COMPLETED'"/>
+        </predicate>
+      </flowsInto>
+      <flowsInto>
+        <nextElementRef id="TaskRetryPayment"/>
+        <predicate yawlVersion="2.3">
+          <expression query="$payment/status = 'FAILED'"/>
+        </predicate>
+      </flowsInto>
+    </condition>
+
+    <!-- Task 2b: Retry Payment -->
+    <task id="TaskRetryPayment" name="Retry Payment">
+      <description>Customer retries payment with different method</description>
+      <flowsInto>
+        <nextElementRef id="ConditionPaymentSuccessful"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+
+    <!-- Task 3: Select Fulfillment Center -->
+    <task id="TaskSelectFulfillmentCenter" name="Select Fulfillment Center">
+      <description>Route order to appropriate fulfillment center based on location and availability</description>
+      <flowsInto>
+        <nextElementRef id="TaskFulfillOrder"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+
+    <!-- Task 4: Fulfill Order (Pick, Pack, Ship) -->
+    <task id="TaskFulfillOrder" name="Fulfill Order">
+      <description>Pick items, pack box, prepare for shipment</description>
+      <flowsInto>
+        <nextElementRef id="ConditionCancellationRequest"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+      <decomposesTo id="FulfillOrderSubnet"/>
+    </task>
+
+    <!-- Condition: Cancellation Request? (before shipment) -->
+    <condition id="ConditionCancellationRequest">
+      <name>Cancellation Requested</name>
+      <flowsInto>
+        <nextElementRef id="TaskProcessRefund"/>
+        <predicate yawlVersion="2.3">
+          <expression query="$order/status = 'CANCEL_REQUESTED'"/>
+        </predicate>
+      </flowsInto>
+      <flowsInto>
+        <nextElementRef id="TaskShipOrder"/>
+        <predicate yawlVersion="2.3">
+          <expression query="$order/status = 'CONFIRMED'"/>
+        </predicate>
+      </flowsInto>
+    </condition>
+
+    <!-- Task 5a: Process Refund -->
+    <task id="TaskProcessRefund" name="Process Refund">
+      <description>Initiate refund for cancelled order</description>
+      <flowsInto>
+        <nextElementRef id="ConditionOrderComplete"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+
+    <!-- Task 5b: Ship Order -->
+    <task id="TaskShipOrder" name="Ship Order">
+      <description>Hand off to shipping carrier for delivery</description>
+      <flowsInto>
+        <nextElementRef id="TaskTrackShipment"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+
+    <!-- Task 6: Track Shipment -->
+    <task id="TaskTrackShipment" name="Track Shipment">
+      <description>Monitor shipment status until delivery</description>
+      <flowsInto>
+        <nextElementRef id="ConditionOrderComplete"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+
+    <!-- Condition: Order Complete -->
+    <condition id="ConditionOrderComplete">
+      <name>Order Complete</name>
+      <flowsInto>
+        <nextElementRef id="ConditionOutputPlace"/>
+      </flowsInto>
+    </condition>
+
+    <!-- Sink condition - workflow complete -->
+    <condition id="ConditionOutputPlace">
+      <name>Order Processed</name>
+    </condition>
+  </net>
+
+  <!-- Subnet: Validate Order -->
+  <net id="ValidateOrderSubnet" isRootNet="false">
+    <localVariable>
+      <index>0</index>
+      <name>productList</name>
+      <type>Product[]</type>
+      <initialValue/>
+      <documentation>Products in order</documentation>
+    </localVariable>
+    <condition id="ValidateOrderInput">
+      <name>Input</name>
+      <flowsInto>
+        <nextElementRef id="CheckInventory"/>
+      </flowsInto>
+    </condition>
+    <task id="CheckInventory" name="Check Inventory">
+      <description>Verify all products have sufficient stock</description>
+      <flowsInto>
+        <nextElementRef id="ValidateOrderOutput"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+    <condition id="ValidateOrderOutput">
+      <name>Output</name>
+    </condition>
+  </net>
+
+  <!-- Subnet: Process Payment -->
+  <net id="ProcessPaymentSubnet" isRootNet="false">
+    <condition id="ProcessPaymentInput">
+      <name>Input</name>
+      <flowsInto>
+        <nextElementRef id="ChargePaymentMethod"/>
+      </flowsInto>
+    </condition>
+    <task id="ChargePaymentMethod" name="Charge Payment Method">
+      <description>Submit payment to payment processor (Stripe, Square, Adyen)</description>
+      <flowsInto>
+        <nextElementRef id="ProcessPaymentOutput"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+    <condition id="ProcessPaymentOutput">
+      <name>Output</name>
+    </condition>
+  </net>
+
+  <!-- Subnet: Fulfill Order -->
+  <net id="FulfillOrderSubnet" isRootNet="false">
+    <condition id="FulfillOrderInput">
+      <name>Input</name>
+      <flowsInto>
+        <nextElementRef id="PickItems"/>
+      </flowsInto>
+    </condition>
+    <task id="PickItems" name="Pick Items">
+      <description>Pick items from warehouse shelves</description>
+      <flowsInto>
+        <nextElementRef id="PackBox"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+    <task id="PackBox" name="Pack Box">
+      <description>Pack items into shipping box with protective materials</description>
+      <flowsInto>
+        <nextElementRef id="ApplyLabel"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+    <task id="ApplyLabel" name="Apply Shipping Label">
+      <description>Apply label and prepare for handoff to carrier</description>
+      <flowsInto>
+        <nextElementRef id="FulfillOrderOutput"/>
+      </flowsInto>
+      <join code="xor"/>
+      <split code="xor"/>
+      <completionMeasure>automatic</completionMeasure>
+      <resourcingSet>
+        <initialSet/>
+        <changingSet/>
+      </resourcingSet>
+    </task>
+    <condition id="FulfillOrderOutput">
+      <name>Output</name>
+    </condition>
+  </net>
+</specification>

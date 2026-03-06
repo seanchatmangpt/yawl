@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Conflict Resolution Configuration Example
+  *
+ * Example XML demonstrating conflict resolution strategies and arbiter configurations.
+ *
+ * @author YAWL Foundation
+ * @version 5.2
+ -->
+
+<specificationSet xmlns="http://www.yawlfoundation.org/yawlschema"
+                 xmlns:coord="http://www.yawlfoundation.org/yawlschema/adr025"
+                 version="4.0">
+
+    <specification uri="http://example.com/workflows/conflict-resolution-demo">
+        <name>Conflict Resolution Demo</name>
+        <documentation>Example workflow demonstrating conflict resolution strategies</documentation>
+        <metaData>
+            <title>Conflict Resolution Configuration Example</title>
+            <creator>YAWL Foundation</creator>
+            <subject>ADR-025 Conflict Resolution</subject>
+            <description>Demonstration of various conflict resolution strategies</description>
+            <version>5.2.0</version>
+            <status>Example</status>
+        </metaData>
+
+        <decomposition id="conflict-resolution-net">
+            <name>Conflict Resolution Net</name>
+            <documentation>Net demonstrating conflict resolution capabilities</documentation>
+
+            <inputParam name="caseData" type="string" isUntyped="true"/>
+            <outputParam name="resolutionResult" type="string" isUntyped="true"/>
+
+            <processControlElements>
+                <inputCondition id="start">
+                    <name>Start</name>
+                </inputCondition>
+
+                <!-- Task with majority vote conflict resolution -->
+                <task id="resource-allocation" name="Resource Allocation">
+                    <name>Resource Allocation</name>
+                    <documentation>Multiple agents may produce conflicting resource allocation decisions</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <conflictResolution>
+                        <strategy>majorityVote</strategy>
+                        <severityThreshold>MEDIUM</severityThreshold>
+                        <votingWeight>0.5</votingWeight>
+                        <fallbackStrategy>humanFallback</fallbackStrategy>
+                        <resolutionTimeout>PT2M</resolutionTimeout>
+                    </conflictResolution>
+
+                    <!-- Agent binding for conflict resolution -->
+                    <agentBinding>
+                        <taskId>resource-allocation</taskId>
+                        <agentId>arbiter-agent</agentId>
+                        <bindingType>primary</bindingType>
+                        <failoverEnabled>true</failoverEnabled>
+                    </agentBinding>
+
+                    <flowsInto>
+                        <nextElementRef id="decision-point"/>
+                    </flowsInto>
+                </task>
+
+                <!-- Condition with escalating arbiter -->
+                <condition id="decision-point" name="Critical Decision Point">
+                    <name>Critical Decision Point</name>
+                    <documentation>High-impact decision requiring escalation</documentation>
+
+                    <conflictResolution>
+                        <strategy>escalatingArbiter</strategy>
+                        <severity>CRITICAL</severity>
+                        <arbiter>human-arbiter</arbiter>
+                        <escalationTimeout>PT1M</escalationTimeout>
+                        <resolutionTimeout>PT10M</resolutionTimeout>
+                    </conflictResolution>
+
+                    <flowsInto>
+                        <nextElementRef id="high-risk-processing"/>
+                    </flowsInto>
+
+                    <flowsInto>
+                        <nextElementRef id="fallback-path"/>
+                        <predicate ordering="1">
+                            XQuery="case($risk-level > 'HIGH')"
+                        </predicate>
+                    </flowsInto>
+                </condition>
+
+                <!-- Task with hybrid conflict resolution -->
+                <task id="high-risk-processing" name="High-Risk Processing">
+                    <name>High-Risk Processing</name>
+                    <documentation>Processing with hybrid conflict resolution strategy</documentation>
+                    <join code="and"/>
+                    <split code="xor"/>
+
+                    <conflictResolution>
+                        <strategy>hybrid</strategy>
+                        <severityThreshold>HIGH</severityThreshold>
+                        <arbiter>arbiter-agent</arbiter>
+                        <escalationTimeout>PT30S</escalationTimeout>
+                        <votingWeight>0.6</votingWeight>
+                        <fallbackStrategy>humanFallback</fallbackStrategy>
+                        <resolutionTimeout>PT5M</resolutionTimeout>
+                    </conflictResolution>
+
+                    <!-- Multiple agent decisions may conflict -->
+                    <conflictContext>
+                        <conflictId>high-risk-decision</conflictId>
+                        <workflowId>conflict-resolution-demo</workflowId>
+                        <taskId>high-risk-processing</taskId>
+                        <severity>HIGH</severity>
+                        <conflictingDecisions>
+                            <agentDecision>
+                                <agentId>agent-a</agentId>
+                                <decision>proceed</decision>
+                                <metadata>
+                                    <confidence>0.85</confidence>
+                                </metadata>
+                                <confidence>0.85</confidence>
+                                <rationale>Based on historical success rate</rationale>
+                            </agentDecision>
+                            <agentDecision>
+                                <agentId>agent-b</agentId>
+                                <decision>abort</decision>
+                                <metadata>
+                                    <confidence>0.92</confidence>
+                                </metadata>
+                                <confidence>0.92</confidence>
+                                <rationale>Risk assessment exceeds threshold</rationale>
+                            </agentDecision>
+                            <agentDecision>
+                                <agentId>agent-c</agentId>
+                                <decision>proceed</decision>
+                                <metadata>
+                                    <confidence>0.78</confidence>
+                                </metadata>
+                                <confidence>0.78</confidence>
+                                <rationale>Optimization model suggests continuation</rationale>
+                            </agentDecision>
+                        </conflictingDecisions>
+                        <contextData>
+                            <riskLevel>high</riskLevel>
+                            <businessCritical>true</businessCritical>
+                            <deadline>2026-02-18T18:00:00Z</deadline>
+                        </contextData>
+                    </conflictContext>
+
+                    <flowsInto>
+                        <nextElementRef id="resolution-result"/>
+                    </flowsInto>
+                </task>
+
+                <!-- Task with human fallback -->
+                <task id="fallback-path" name="Human Intervention Path">
+                    <name>Human Intervention Path</name>
+                    <documentation>Fallback to human decision maker</documentation>
+                    <join code="xor"/>
+                    <split code="xor"/>
+
+                    <conflictResolution>
+                        <strategy>humanFallback</strategy>
+                        <severity>CRITICAL</severity>
+                        <resolutionTimeout>PT30M</resolutionTimeout>
+                    </conflictResolution>
+
+                    <flowsInto>
+                        <nextElementRef id="resolution-result"/>
+                    </flowsInto>
+                </task>
+
+                <!-- Output with resolution result -->
+                <condition id="resolution-result" name="Resolution Result">
+                    <name>Resolution Result</name>
+                    <documentation>Final resolution output</documentation>
+
+                    <!-- The resolved decision -->
+                    <resolvedDecision>
+                        <resolvedValue>proceed_with_conditions</resolvedValue>
+                        <severity>HIGH</severity>
+                        <participatingAgents>agent-a,agent-c,arbiter-agent</participatingAgents>
+                        <resolutionStrategy>hybrid</resolutionStrategy>
+                        <resolutionMetadata>
+                            <confidence>0.91</confidence>
+                            <conditions>increased_monitoring,review_at_step_3</conditions>
+                            <timestamp>2026-02-18T10:30:15Z</timestamp>
+                        </resolutionMetadata>
+                    </resolvedDecision>
+
+                    <flowsInto>
+                        <nextElementRef id="end"/>
+                    </flowsInto>
+                </condition>
+
+                <outputCondition id="end">
+                    <name>End</name>
+                </outputCondition>
+            </processControlElements>
+        </decomposition>
+
+        <!-- Coordination configuration -->
+        <coordination>
+            <conflictResolution>
+                <strategy>hybrid</strategy>
+                <severityThreshold>MEDIUM</severityThreshold>
+                <arbiter>arbiter-agent</arbiter>
+                <escalationTimeout>PT1M</escalationTimeout>
+                <votingWeight>0.6</votingWeight>
+                <fallbackStrategy>humanFallback</fallbackStrategy>
+                <resolutionTimeout>PT10M</resolutionTimeout>
+            </conflictResolution>
+
+            <agents>
+                <agent>
+                    <agentId>arbiter-agent</agentId>
+                    <endpoint>http://arbiter.example.com/api</endpoint>
+                    <capabilities>conflictResolution</capabilities>
+                    <capabilities>decisionMaking</capabilities>
+                    <coordinationMode>hierarchical</coordinationMode>
+                    <heartbeatInterval>30</heartbeatInterval>
+                    <timeout>PT2M</timeout>
+                    <metadata>Automated conflict resolution arbiter</metadata>
+                </agent>
+
+                <agent>
+                    <agentId>agent-a</agentId>
+                    <endpoint>http://agent-a.example.com/api</endpoint>
+                    <capabilities>decisionMaking</capabilities>
+                    <capabilities>resourceAllocation</capabilities>
+                    <coordinationMode>peerToPeer</coordinationMode>
+                    <heartbeatInterval>30</heartbeatInterval>
+                    <timeout>PT1M</timeout>
+                    <metadata>Primary decision agent</metadata>
+                </agent>
+
+                <agent>
+                    <agentId>agent-b</agentId>
+                    <endpoint>http://agent-b.example.com/api</endpoint>
+                    <capabilities>decisionMaking</capabilities>
+                    <capabilities>riskAssessment</capabilities>
+                    <coordinationMode>peerToPeer</coordinationMode>
+                    <heartbeatInterval>30</heartbeatInterval>
+                    <timeout>PT1M</timeout>
+                    <metadata>Risk assessment agent</metadata>
+                </agent>
+
+                <agent>
+                    <agentId>agent-c</agentId>
+                    <endpoint>http://agent-c.example.com/api</endpoint>
+                    <capabilities>decisionMaking</capabilities>
+                    <capabilities>optimization</capabilities>
+                    <coordinationMode>peerToPeer</coordinationMode>
+                    <heartbeatInterval>30</heartbeatInterval>
+                    <timeout>PT1M</timeout>
+                    <metadata>Optimization agent</metadata>
+                </agent>
+
+                <agent>
+                    <agentId>human-arbiter</agentId>
+                    <endpoint>http://human.example.com/api</endpoint>
+                    <capabilities>humanDecision</capabilities>
+                    <coordinationMode>hierarchical</coordinationMode>
+                    <heartbeatInterval>300</heartbeatInterval>
+                    <timeout>PT30M</timeout>
+                    <metadata>Human arbiter for critical decisions</metadata>
+                </agent>
+            </agents>
+
+            <!-- A2A communication configuration -->
+            <a2aCommunication>
+                <protocol>HTTP/2</protocol>
+                <encoding>application/json</encoding>
+                <compressionEnabled>true</compressionEnabled>
+                <encryptionEnabled>true</encryptionEnabled>
+                <maxMessageSize>1048576</maxMessageSize>
+                <timeout>PT30S</timeout>
+                <retryPolicy>exponentialBackoff</retryPolicy>
+            </a2aCommunication>
+        </coordination>
+
+        <!-- Validation configuration -->
+        <validation>
+            <validationConfiguration>
+                <version>1.0</version>
+                <level>strict</level>
+                <rules>
+                    <validationRule>
+                        <name>ConflictResolutionStrategyCompatibility</name>
+                        <description>Ensure conflict resolution strategy matches severity</description>
+                        <level>strict</level>
+                        <condition>
+                            concat(coord:conflictResolution/coord:strategy, '-',
+                                   coord:conflictResolution/coord:severityThreshold)
+                            in ('majorityVote-MEDIUM', 'escalatingArbiter-HIGH',
+                                'hybrid-CRITICAL', 'humanFallback-CRITICAL')
+                        </condition>
+                        <message>Conflict resolution strategy must be compatible with severity level</message>
+                        <severity>error</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+
+                    <validationRule>
+                        <name>ArbiterAvailability</name>
+                        <description>Validate arbiter availability for conflict resolution</description>
+                        <level>basic</level>
+                        <condition>coord:agents/coord:agent[coord:agentId = current()/coord:conflictResolution/coord:arbiter]/coord:healthStatus = 'active'</condition>
+                        <message>Arbiter agent must be active</message>
+                        <severity>warning</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+
+                    <validationRule>
+                        <name>TimeoutConfiguration</name>
+                        <description>Validate timeout configurations are reasonable</description>
+                        <level>basic</level>
+                        <condition>coord:conflictResolution/coord:resolutionTimeout > coord:conflictResolution/coord:escalationTimeout</condition>
+                        <message>Resolution timeout must be greater than escalation timeout</message>
+                        <severity>warning</severity>
+                        <enabled>true</enabled>
+                    </validationRule>
+                </rules>
+            </validationConfiguration>
+        </validation>
+    </specification>
+</specificationSet>

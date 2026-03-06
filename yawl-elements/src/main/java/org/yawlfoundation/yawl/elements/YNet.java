@@ -1,0 +1,639 @@
+/*
+ * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.yawlfoundation.yawl.elements;
+
+import java.util.*;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
+import org.yawlfoundation.yawl.elements.data.YParameter;
+import org.yawlfoundation.yawl.elements.data.YVariable;
+import org.yawlfoundation.yawl.elements.data.external.ExternalDataGateway;
+import org.yawlfoundation.yawl.elements.data.external.ExternalDataGatewayFactory;
+import org.yawlfoundation.yawl.elements.e2wfoj.E2WFOJNet;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.elements.state.YMarking;
+import org.yawlfoundation.yawl.engine.YPersistenceManager;
+import org.yawlfoundation.yawl.exceptions.YDataStateException;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.util.JDOMUtil;
+import org.yawlfoundation.yawl.util.StringUtil;
+import org.yawlfoundation.yawl.util.XNode;
+import org.yawlfoundation.yawl.util.YVerificationHandler;
+
+/**
+ * Represents a YAWL workflow net - the core container for process control elements.
+ *
+ * <p>A YNet contains the complete control flow definition of a workflow process including
+ * input/output conditions, tasks, and intermediate conditions. It implements Petri net
+ * semantics with YAWL-specific extensions for cancellation, OR-joins, and multi-instance
+ * tasks.</p>
+ *
+ * <h2>Structure</h2>
+ * <ul>
+ *   <li><b>Input Condition</b> - Single entry point (must have exactly one)</li>
+ *   <li><b>Output Condition</b> - Single exit point (must have exactly one)</li>
+ *   <li><b>Tasks</b> - YAtomicTask or YCompositeTask elements</li>
+ *   <li><b>Conditions</b> - Places that hold tokens between tasks</li>
+ *   <li><b>Local Variables</b> - Net-scoped data variables</li>
+ * </ul>
+ *
+ * <h2>OR-Join Semantics</h2>
+ * <p>YNet implements the E2WFOJ (Extended Workflow Net with OR-Joins) algorithm for
+ * determining OR-join enablement. The algorithm considers the possibility of future
+ * token arrivals to ensure soundness without requiring safe nets.</p>
+ *
+ * <h2>External Data Gateway</h2>
+ * <p>Nets can be configured with an external data gateway that provides initial case
+ * data and receives final case data upon completion. This enables integration with
+ * external data sources.</p>
+ *
+ * <h2>Cloning</h2>
+ * <p>Nets are cloned when creating case instances to ensure each case has its own
+ * independent copy of the net definition. The clone operation creates deep copies
+ * of all net elements and local variables.</p>
+ *
+ * @author Lachlan Aldred
+ * @see YInputCondition
+ * @see YOutputCondition
+ * @see YTask
+ * @see YCondition
+ * @see YDecomposition
+ */
+public final class YNet extends YDecomposition {
+
+    private YInputCondition _inputCondition;
+    private YOutputCondition _outputCondition;
+    private Map<String, YExternalNetElement> _netElements =
+            new HashMap<>();
+    private Map<String, YVariable> _localVariables = new HashMap<>();
+    private String _externalDataGateway;
+    // ThreadLocal ensures each thread has its own clone-in-progress slot.
+    // The original instance field caused a race condition: concurrent startCase() calls
+    // on the same specification's root net would overwrite each other's _clone value,
+    // producing NullPointerException in element.clone() → getCloneContainer().
+    private final ThreadLocal<YNet> _clone = new ThreadLocal<>();
+
+    private static final Logger _log = LogManager.getLogger(YNet.class);
+
+
+    public YNet(String id, YSpecification specification) {
+        super(id, specification);
+    }
+
+
+    public void setInputCondition(YInputCondition inputCondition) {
+        _inputCondition = inputCondition;
+        _netElements.put(inputCondition.getID(), inputCondition);
+    }
+
+
+    public void setOutputCondition(YOutputCondition outputCondition) {
+        _outputCondition = outputCondition;
+        _netElements.put(outputCondition.getID(), outputCondition);
+    }
+
+
+    /** This method removes a net element together with preSet, postSet, reset,
+     * cancelledBy sets.
+     */
+    public boolean removeNetElement(YExternalNetElement netElement) {
+
+        for (YExternalNetElement preset : netElement.getPresetElements()) {
+            YFlow flow = new YFlow(preset, netElement);
+            preset.removePostsetFlow(flow);
+        }
+
+        for (YExternalNetElement postset : netElement.getPostsetElements()) {
+            YFlow flow = new YFlow(netElement, postset);
+            postset.removePresetFlow(flow);
+        }
+
+        // need to remove from removeSet and cancelledBySet as well
+        if (netElement instanceof YTask task) {
+            Set<YExternalNetElement> removeSet = task.getRemoveSet();
+            if (removeSet != null) {
+                for (YExternalNetElement element : removeSet) {
+                    element.removeFromCancelledBySet(task);
+                 }
+            }
+        }
+
+        // check if a place or condition is part of any cancellation sets
+        Set<YExternalNetElement> cancelledBy = netElement.getCancelledBySet();
+        if (cancelledBy != null) {
+            for (YExternalNetElement element : cancelledBy) {
+                if (element instanceof YTask task) {
+                    task.removeFromRemoveSet(netElement);
+                }
+            }
+        }
+
+        return _netElements.remove(netElement.getID()) != null;
+    }
+
+
+    public void addNetElement(YExternalNetElement netElement) {
+        _netElements.put(netElement.getID(), netElement);
+    }
+
+    // only have to update the map when an element's id changes
+    public void refreshNetElementIdentifier(String oldIdentifier) {
+        YExternalNetElement element = _netElements.remove(oldIdentifier);
+        if (element != null) {
+            _netElements.put(element.getID(), element);
+        }
+    }
+
+
+    public Map<String, YExternalNetElement> getNetElements() {
+        return new HashMap<String, YExternalNetElement>(_netElements);
+    }
+
+    public List<YTask> getNetTasks() {
+        List<YTask> result = new ArrayList<>();
+        for (YNetElement element : _netElements.values()) {
+            if (element instanceof YTask task)
+                result.add(task);
+        }
+        return result;
+    }
+
+
+    /**
+     * Method getInputCondition.
+     * @return YConditionInterface
+     */
+    public YInputCondition getInputCondition() {
+        return this._inputCondition;
+    }
+
+
+    /**
+     * Method getOutputCondition.
+     * @return YCondition
+     */
+    public YOutputCondition getOutputCondition() {
+        return _outputCondition;
+    }
+
+
+    /**
+     *
+     * @param id
+     * @return YExternalNetElement
+     */
+    public YExternalNetElement getNetElement(String id) {
+        return _netElements.get(id);
+    }
+
+
+    public void setExternalDataGateway(String gateway) {
+        _externalDataGateway = gateway;
+    }
+
+
+    public String getExternalDataGateway() {
+        return _externalDataGateway;
+    }
+
+
+    /**
+     * Used to verify that the net conforms to syntax of YAWL.
+     */
+    @Override
+    public void verify(YVerificationHandler handler) {
+        super.verify(handler);
+
+        if (_inputCondition == null) {
+            handler.error(this, this + " must contain input condition.");
+        }
+        if (_outputCondition == null) {
+            handler.error(this, this + " must contain output condition.");
+        }
+
+        for (YExternalNetElement element : _netElements.values()) {
+            if (element instanceof YInputCondition inputCond && ! element.equals(_inputCondition)) {
+                handler.error(this, "Only one Input Condition allowed per net.");
+            }
+            if (element instanceof YOutputCondition outputCond && ! element.equals(_outputCondition)) {
+                handler.error(this, "Only one Output Condition allowed per net.");
+            }
+            element.verify(handler);
+        }
+        for (YVariable var : _localVariables.values()) {
+            var.verify(handler);
+        }
+        //check that all elements in the net are on a directed path from 'i' to 'o'.
+        verifyDirectedPath(handler);
+        
+        new YNetLocalVarVerifier(this).verify(handler);
+    }
+
+
+    private void verifyDirectedPath(YVerificationHandler handler) {
+
+        /* Function isValid(YConditionInterface i, YConditionInterface o, Tasks T, Conditions C): Boolean
+        BEGIN:
+            #Initalize variables:
+            visitedFw := {i};
+            visitingFw := postset(visitedFw);
+            visitedBk := {o};
+            visitingBk := preset(visitedBk); */
+
+        Set<YExternalNetElement> visitedFw = new HashSet<>();
+        Set<YExternalNetElement> visitingFw = new HashSet<>();
+        visitingFw.add(_inputCondition);
+        Set<YExternalNetElement> visitedBk = new HashSet<>();
+        Set<YExternalNetElement> visitingBk = new HashSet<>();
+        visitingBk.add(_outputCondition);
+
+        /*  Begin Loop:
+                    visitedFw := visitedFw Union visitingFw;
+                    visitingFw := postset(visitingFw) - visitedFw;
+            Until: visitingFw = {} */
+
+        do {
+            visitedFw.addAll(visitingFw);
+            visitingFw = getPostset(visitingFw);
+            visitingFw.removeAll(visitedFw);
+        } while (visitingFw.size() > 0);
+
+        /*  Begin Loop:
+                    visitedBk := visitedBk Union visitingBk;
+                    visitingBk := preset(visitingBk) - visitedBk;
+            Until: visitingBk = {} */
+
+        do {
+            visitedBk.addAll(visitingBk);
+            visitingBk = getPreset(visitingBk);
+            visitingBk.removeAll(visitedBk);
+        } while (visitingBk.size() > 0);
+
+        /*  return visitedFw = T U C ^ visitedBk = T U C;
+            // returns true iff all t in T are on a directed path from i to o
+        END */
+
+        int numElements = _netElements.size();
+        Set<YExternalNetElement> allElements = new HashSet<YExternalNetElement>(_netElements.values());
+        allElements.add(_inputCondition);
+        allElements.add(_outputCondition);
+        Set<YExternalNetElement> elementsNotInPath;
+        if (visitedFw.size() != numElements) {
+            elementsNotInPath = new HashSet<YExternalNetElement>(allElements);
+            elementsNotInPath.removeAll(visitedFw);
+            for (YExternalNetElement element : elementsNotInPath) {
+                handler.error(this, element +
+                        " is not on a forward directed path from i to o.");
+            }
+        }
+        if (visitedBk.size() != numElements) {
+            elementsNotInPath = new HashSet<YExternalNetElement>(allElements);
+            elementsNotInPath.removeAll(visitedBk);
+            for (YExternalNetElement element : elementsNotInPath) {
+                handler.error(this, element +
+                        " is not on a backward directed path from i to o.");
+            }
+        }
+    }
+
+
+    public static Set<YExternalNetElement> getPostset(Set<YExternalNetElement> elements) {
+        Set<YExternalNetElement> postset = new HashSet<>();
+        for (YExternalNetElement element : elements) {
+            if (! (element instanceof YOutputCondition)) {
+                postset.addAll(element.getPostsetElements());
+            }
+        }
+        return postset;
+    }
+
+
+    public static Set<YExternalNetElement> getPreset(Set<YExternalNetElement> elements) {
+        Set<YExternalNetElement> preset = new HashSet<>();
+        for (YExternalNetElement element : elements) {
+           if (element != null && !(element instanceof YInputCondition inputCond)) {
+                preset.addAll(element.getPresetElements());
+            }
+        }
+        return preset;
+    }
+
+
+    @Override
+    public Object clone() {
+        try {
+            _clone.set((YNet) super.clone());
+            _clone.get()._netElements = new HashMap<>();
+
+            Set<YExternalNetElement> visited = new HashSet<>();
+            Set<YExternalNetElement> visiting = new HashSet<>();
+            visiting.add(_inputCondition);
+
+            do {
+                for (YExternalNetElement element : visiting) {
+                    element.clone();
+                }
+
+                //ensure traversal of each element only occurs once
+                visited.addAll(visiting);
+                visiting = getPostset(visiting);
+                visiting.removeAll(visited);
+            } while (visiting.size() > 0);
+
+            _clone.get()._localVariables = new HashMap<>();
+            for (YVariable variable : _localVariables.values()) {
+                YVariable copyVar = (YVariable) variable.clone();
+                _clone.get().setLocalVariable(copyVar);
+            }
+            _clone.get()._externalDataGateway = _externalDataGateway;
+            _clone.get()._data = (Document) this._data.clone();
+
+            //do cleanup of thread-local _clone before returning.
+            YNet temp = _clone.get();
+            _clone.remove();
+            return temp;
+        }
+        catch (CloneNotSupportedException e) {
+            _log.error("Unexpected CloneNotSupportedException cloning YNet: {} - YCloneable contract violated", getID(), e);
+            throw new IllegalStateException("YNet is Cloneable but clone() failed", e);
+        }
+    }
+
+
+    protected YNet getCloneContainer() {
+        return _clone.get();
+    }
+
+
+    public boolean orJoinEnabled(YTask orJoinTask, YIdentifier caseID) {
+
+        if (orJoinTask == null || caseID == null) {
+            throw new RuntimeException("Irrelevant to check the enabledness of an " +
+                    "or join if this is called with null params.");
+        }
+
+        if (orJoinTask.getJoinType() != YTask._OR) {
+            throw new RuntimeException(orJoinTask + " is not an OR-Join.");
+        }
+
+        YMarking actualMarking = new YMarking(caseID);
+        List<YNetElement> locations = new ArrayList<YNetElement>(actualMarking.getLocations());
+        Set preSet = orJoinTask.getPresetElements();
+        if (locations.containsAll(preSet)) {
+            return true;
+        }
+
+        for (YNetElement element : locations) {
+            if (preSet.contains(element)) {
+                try {
+                    E2WFOJNet e2Net = new E2WFOJNet(this, orJoinTask);
+                    e2Net.restrictNet(actualMarking);
+                    e2Net.restrictNet(orJoinTask);
+                    return e2Net.orJoinEnabled(actualMarking, orJoinTask);
+                } catch (Exception e) {
+                    throw new RuntimeException("Exception in OR-join call:" + e);
+                }
+            }
+        }
+        // or join task has no tokens in preset
+        return false;
+    }
+
+
+    public void setLocalVariable(YVariable variable) {
+        if (null != variable.getName()) {
+            _localVariables.put(variable.getName(), variable);
+        } else if (null != variable.getElementName()) {
+            _localVariables.put(variable.getElementName(), variable);
+        }
+    }
+
+
+    public Map<String, YVariable> getLocalVariables() {
+        return _localVariables;
+    }
+
+
+    public YVariable removeLocalVariable(String name) {
+        return _localVariables.remove(name);
+    }
+
+
+    public YVariable getLocalOrInputVariable(String name) {
+        return _localVariables.containsKey(name) ? _localVariables.get(name) :
+               getInputParameters().get(name);
+    }
+
+
+    @Override
+    public String toXML() {
+        StringBuilder xml = new StringBuilder();
+        xml.append(super.toXML());
+        for (YVariable variable : getLocalVarsSorted()) {
+            xml.append(variable.toXML());
+        }
+        xml.append("<processControlElements>");
+        xml.append(_inputCondition.toXML());
+
+        Set<YExternalNetElement> visitedFw = new HashSet<>();
+        Set<YExternalNetElement> visitingFw = new HashSet<>();
+        visitingFw.add(_inputCondition);
+        do {
+            visitedFw.addAll(visitingFw);
+            visitingFw = getPostset(visitingFw);
+            visitingFw.removeAll(visitedFw);
+            xml.append(produceXMLStringForSet(visitingFw));
+        } while (visitingFw.size() > 0);
+
+        Set<YExternalNetElement> remainingElements =
+                new HashSet<YExternalNetElement>(_netElements.values());
+        remainingElements.removeAll(visitedFw);
+        xml.append(produceXMLStringForSet(remainingElements));
+        xml.append(_outputCondition.toXML());
+        xml.append("</processControlElements>");
+        if (_externalDataGateway != null) {
+            xml.append(StringUtil.wrap(_externalDataGateway, "externalDataGateway"));
+        }
+        return xml.toString();
+    }
+
+
+    private String produceXMLStringForSet(Set<YExternalNetElement> elements) {
+        List<YExternalNetElement> elementList = new ArrayList<YExternalNetElement>(elements);
+        Collections.sort(elementList, new Comparator<YExternalNetElement>() {
+            public int compare(YExternalNetElement e1, YExternalNetElement e2) {
+                if ((e1 == null) || (e1.getID() == null)) return -1;
+                if ((e2 == null) || (e2.getID() == null)) return 1;
+                return e1.getID().compareTo(e2.getID());
+            }
+        });
+        StringBuilder xml = new StringBuilder();
+        for (YExternalNetElement element : elementList) {
+            if (element instanceof YTask task) {
+                xml.append(element.toXML());
+            }
+            else if (element instanceof YCondition condition) {
+                if (! (condition instanceof YInputCondition inputCond ||
+                        condition instanceof YOutputCondition outputCond || condition.isImplicit())) {
+                    xml.append(condition.toXML());
+                }
+            }
+        }
+        return xml.toString();
+    }
+
+
+    private List<YVariable> getLocalVarsSorted() {
+        List<YVariable> variables = new ArrayList<YVariable>(_localVariables.values());
+        Collections.sort(variables, new Comparator<YVariable>() {
+            public int compare(YVariable var1, YVariable var2) {
+                return var1.getOrdering() - var2.getOrdering();
+            }
+        });
+        return variables;
+    }
+
+
+    /**
+     * Initialises the variable/parameter declarations so that the net may execute.
+     */
+    @Override
+    public void initialise(YPersistenceManager pmgr) throws YPersistenceException {
+        super.initialise(pmgr);
+        for (YVariable variable : _localVariables.values()) {
+            String varElementName = variable.getPreferredName();            
+            if (variable.getInitialValue() != null) {
+                addData(pmgr, new XNode(varElementName,
+                        variable.getInitialValue()).toElement());
+            } 
+            else {
+                addData(pmgr, new Element(varElementName));
+            }
+        }
+    }
+
+
+    public void setIncomingData(YPersistenceManager pmgr, Element incomingData)
+            throws YDataStateException, YPersistenceException {
+        for (YParameter parameter : getInputParameters().values()) {
+            Element actualParam = incomingData.getChild(parameter.getName());
+            if (parameter.isMandatory() && actualParam == null) {
+                throw new IllegalArgumentException("The input data for Net:" + getID() +
+                        " is missing mandatory input data for a parameter (" + parameter.getName() + ").  " +
+                        " Alternatively the data is there but the query in the super net produced data with" +
+                        " the wrong name (Check your specification). "
+                        + new XMLOutputter(Format.getPrettyFormat()).outputString(incomingData).trim());
+            }
+
+            // remove any attributes - not required and cause validation errors if left
+            if ((actualParam != null) && ! actualParam.getAttributes().isEmpty()) {
+                JDOMUtil.stripAttributes(actualParam);
+            }
+        }
+
+        // validate against schema
+        getSpecification().getDataValidator().validate(
+                                   getInputParameters().values(), incomingData, getID());
+
+        for (Element element : incomingData.getChildren()) {
+            if (getInputParameters().containsKey(element.getName())) {
+                addData(pmgr, element.clone());
+            }
+            else {
+                throw new IllegalArgumentException("Element " + element +
+                        " is not a valid input parameter of " + this);
+            }
+        }
+    }
+
+    public Set<YTask> getBusyTasks() {
+        return getActiveTasks(null, "busy") ;
+    }
+
+    public Set<YTask> getEnabledTasks(YIdentifier id) {
+        return getActiveTasks(id, "enabled") ;
+    }
+
+    public Set<YTask> getActiveTasks(YIdentifier id, String taskType) {
+        Set<YTask> activeTasks = new HashSet<>();
+        for (YExternalNetElement element : _netElements.values()) {
+            if (element instanceof YTask task) {
+                if ((taskType.equals("enabled") && task.t_enabled(id)) ||
+                    (taskType.equals("busy") && task.t_isBusy())) {
+                    activeTasks.add(task);
+                }
+            }
+        }
+        return activeTasks;
+    }
+
+    // only called when a case successfully completes
+    public void postCaseDataToExternal(String caseID) throws YStateException {
+        ExternalDataGateway gateway = getInstantiatedExternalDataGateway();
+        if (gateway != null) {
+            try {
+                gateway.updateFromCaseData(getSpecification().getSpecificationID(),
+                        caseID,
+                        new ArrayList<YParameter>(getOutputParameters().values()),
+                        _data.getRootElement());
+            }
+            catch (Throwable t) {
+                throw new YStateException("Failed to write completion data to external source: " +
+                        t.getMessage());
+            }
+        }
+    }
+
+    // called when a case begins
+    public Element getCaseDataFromExternal(String caseID) throws YStateException {
+        ExternalDataGateway gateway = getInstantiatedExternalDataGateway();
+        if (gateway != null) {
+            try {
+                return gateway.populateCaseData(getSpecification().getSpecificationID(),
+                        caseID,
+                        new ArrayList<YParameter>(getInputParameters().values()),
+                        new ArrayList<YVariable>(getLocalVariables().values()),
+                        _data.getRootElement());
+            }
+            catch (Throwable t) {
+                throw new YStateException("Failed to get starting data from external source: " +
+                        t.getMessage());
+            }
+        }
+        return null;
+    }
+
+    private ExternalDataGateway getInstantiatedExternalDataGateway() {
+        if (_externalDataGateway != null) {
+            return ExternalDataGatewayFactory.getInstance(_externalDataGateway);
+        }
+        else return null;
+    }
+
+
+    public boolean usesSimpleRootData() {
+        return getRootDataElementName().equals("data");
+    }
+}

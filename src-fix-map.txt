@@ -1,0 +1,13 @@
+# Package mapping from legacy src/ to new module structure
+# Format: old.package=new.package
+
+org.yawlfoundation.yawl.engine=org.yawlfoundation.yawl.engine
+org.yawlfoundation.yawl.engine.core.data=org.yawlfoundation.yawl.engine.core.data
+org.yawlfoundation.yawl.elements.state=org.yawlfoundation.yawl.elements.state
+
+# For util package, check if it exists in both locations
+org.yawlfoundation.yawl.util=org.yawlfoundation.yawl.util
+
+# For elements packages, they should stay the same but need to reference correct source root
+org.yawlfoundation.yawl.elements=org.yawlfoundation.yawl.elements
+org.yawlfoundation.yawl.elements.data=org.yawlfoundation.yawl.elements.data

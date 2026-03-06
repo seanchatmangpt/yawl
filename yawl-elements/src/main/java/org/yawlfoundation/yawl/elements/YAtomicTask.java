@@ -1,0 +1,321 @@
+/*
+ * Copyright (c) 2004-2020 The YAWL Foundation. All rights reserved.
+ * The YAWL Foundation is a collaboration of individuals and
+ * organisations who are committed to improving workflow technology.
+ *
+ * This file is part of YAWL. YAWL is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser
+ * General Public License as published by the Free Software Foundation.
+ *
+ * YAWL is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with YAWL. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.yawlfoundation.yawl.elements;
+
+import java.util.*;
+
+import org.jdom2.Element;
+import org.yawlfoundation.yawl.elements.data.YParameter;
+import org.yawlfoundation.yawl.elements.state.YIdentifier;
+import org.yawlfoundation.yawl.engine.YPersistenceManager;
+import org.yawlfoundation.yawl.engine.YWorkItem;
+import org.yawlfoundation.yawl.exceptions.YDataStateException;
+import org.yawlfoundation.yawl.exceptions.YPersistenceException;
+import org.yawlfoundation.yawl.exceptions.YQueryException;
+import org.yawlfoundation.yawl.exceptions.YStateException;
+import org.yawlfoundation.yawl.util.YVerificationHandler;
+
+/**
+ * A YAtomicTask object is the executable equivalent of the Atomic Task
+ * in the YAWL language. They have the same properties and behaviour.
+ *
+ * @author Lachlan Aldred
+ * @author Michael Adams (v2.0 and later)
+ * @since 0.1
+ */
+public non-sealed class YAtomicTask extends YTask {
+
+    /**
+     * Constructs a new atomic task.
+     * @param id the task identifier.
+     * @param joinType the task's join type.
+     * @param splitType the task's split type.
+     * @param container the task's containing net.
+     * @see YTask
+     */
+    public YAtomicTask(String id, int joinType, int splitType, YNet container) {
+        super(id, joinType, splitType, container);
+    }
+
+
+    /**
+     * Sets the enablement data mappings for an atomic task to those specified.
+     * @param map a map of [variable name, query] pairs.
+     * @deprecated Since 2.0, enablement mappings have no function.
+     *             This method is retained for backward compatibility only.
+     */
+    @Deprecated
+    public void setDataMappingsForEnablement(Map<String, String> map) {
+        _dataMappingsForTaskEnablement.putAll(map);
+    }
+
+
+    /**
+     * Changes the inner state of an atomic task from entered to executing.
+     * @param pmgr an instantiated persistence manager object.
+     * @param id the identifier to move from inner marking 'entered' to inner marking
+     * 'executing'.
+     * @throws YPersistenceException if there's a problem persisting the change.
+     */
+    @Override
+    protected void startOne(YPersistenceManager pmgr, YIdentifier id) throws YPersistenceException {
+        this._mi_entered.removeOne(pmgr, id);
+        this._mi_executing.add(pmgr, id);
+    }
+
+
+    /**
+     * Checks that a task is currently executing.
+     * @return true if the task has 'executing' state.
+     */
+    public boolean isRunning() {
+        return _i != null;
+    }
+
+
+    /**
+     * Cancels a task.
+     * @param pmgr an instantiated persistence manager object.
+     * @throws YPersistenceException if there's a problem persisting the change.
+     */
+    @Override
+    public void cancel(YPersistenceManager pmgr) throws YPersistenceException {
+        // Use _taskStateLock (from YTask) — reentrant, so super.cancel() re-acquires safely.
+        // Avoids virtual-thread pinning that synchronized causes during Hibernate JDBC calls.
+        _taskStateLock.lock();
+        try {
+            cancelBusyWorkItem(pmgr);
+            super.cancel(pmgr);
+        } finally {
+            _taskStateLock.unlock();
+        }
+    }
+
+
+    /**
+     * Cancels the task. If the task is not currently executing, first check that the
+     * workitem is still referenced by the engine before attempting the cancellation.
+     * @param pmgr an instantiated persistence manager object.
+     * @param caseID the case identifier of this atomic task.
+     * @throws YPersistenceException if there's a problem persisting the change.
+     */
+    public void cancel(YPersistenceManager pmgr, YIdentifier caseID)
+            throws YPersistenceException {
+        _taskStateLock.lock();
+        try {
+            if (! cancelBusyWorkItem(pmgr)) {
+                String workItemID = caseID.get_idString() + ":" + getID();
+                YWorkItem workItem = getWorkItemRepository().get(workItemID);
+                if (null != workItem) cancelWorkItem(pmgr, workItem);
+            }
+            super.cancel(pmgr);
+        } finally {
+            _taskStateLock.unlock();
+        }
+    }
+
+
+
+
+    private boolean cancelBusyWorkItem(YPersistenceManager pmgr)
+             throws YPersistenceException {
+
+        // nothing to do if not fired or has no decomposition
+        if ((_i == null) || (_decompositionPrototype == null)) return false;
+
+        YWorkItem workItem = getWorkItemRepository().get(_i.toString(), getID());
+        if (null != workItem) cancelWorkItem(pmgr, workItem) ;
+        return true;
+    }
+
+
+    private void cancelWorkItem(YPersistenceManager pmgr, YWorkItem workItem)
+            throws YPersistenceException {
+        getWorkItemRepository().removeWorkItemFamily(workItem);
+        workItem.cancel(pmgr);
+    }
+
+
+    /**
+     * Rolls back a task's inner state from 'executing' to 'entered'.
+     * <p/>
+     * The roll back will only occur if the task's inner 'executing' marking contains
+     * the identifier specified.
+     * @param pmgr an instantiated persistence manager object.
+     * @param caseID the case identifier of this atomic task.
+     * @return true if the rollback occurs, false if the rollback request could not
+     * be actioned because the task's inner 'executing' marking does not contain 
+     * the identifier specified.
+     * @throws YPersistenceException if there's a problem persisting the change.
+     */
+    public boolean t_rollBackToFired(YPersistenceManager pmgr, YIdentifier caseID)
+            throws YPersistenceException {
+        if (_mi_executing.contains(caseID)) {
+            _mi_executing.removeOne(pmgr, caseID);
+            _mi_entered.add(pmgr, caseID);
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * Clones this atomic task.
+     * @return a (Object) clone of the task.
+     * @throws CloneNotSupportedException if there's a problem cloning the task.
+     */
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        YNet copyContainer = _net.getCloneContainer();
+        if (copyContainer.getNetElements().containsKey(this.getID())) {
+            return copyContainer.getNetElement(this.getID());
+        }
+        return super.clone();
+    }
+
+
+    /**
+     * Gets the map of enablement mappings for the task.
+     * @return the map of enablement mappings.
+     * @deprecated Since 2.0, enablement mappings have no function.
+     *             This method is retained for backward compatibility only.
+     */
+    @Deprecated
+    public Map getDataMappingsForEnablement() {
+        return _dataMappingsForTaskEnablement;
+    }
+
+
+    /**
+     * Builds the enablement data set for the task.
+     * @return the enablement data set; that is, a set of data variables and
+     * corresponding values that were populated after evaluating their mapping
+     * expressions.
+     * @throws YQueryException if there's a problem with a query evaluation.
+     * @throws YDataStateException if there's a problem with the evaluated data.
+     * @deprecated Since 2.0, enablement mappings have no function.
+     *             This method is retained for backward compatibility only.
+     */
+    @Deprecated
+    public Element prepareEnablementData() throws YQueryException, YDataStateException {
+        if (null == getDecompositionPrototype()) {
+            return null;
+        }
+        Element enablementData = produceDataRootElement();
+        YAWLServiceGateway serviceGateway = (YAWLServiceGateway) _decompositionPrototype;
+        List<YParameter> enablementParams =
+                new ArrayList<YParameter>(serviceGateway.getEnablementParameters().values());
+        Collections.sort(enablementParams);
+        for (YParameter parameter : enablementParams) {
+            String paramName = parameter.getPreferredName();
+            String expression = _dataMappingsForTaskEnablement.get(paramName);
+            Element result = performDataExtraction(expression, parameter);
+            enablementData.addContent(result.clone());
+        }
+        return enablementData;
+    }
+
+
+    /***** VERIFICATION *******************************************************/
+
+    /**
+     * Verifies this atomic task definition against YAWL semantics.
+     * @return a List of error and/or warning messages. An empty list is returned if
+     * the atomic task verifies successfully.
+     */
+    @Override
+    public void verify(YVerificationHandler handler) {
+        super.verify(handler);
+        if (_decompositionPrototype == null) {
+            if (_multiInstAttr != null && (_multiInstAttr.getMaxInstances() > 1 ||
+                    _multiInstAttr.getThreshold() > 1)) {
+                handler.error(this, this +
+                        " cannot have multiple instances and a blank work description.");
+            }
+        }
+        else if (!(_decompositionPrototype instanceof YAWLServiceGateway)) {
+            handler.error(this, this +
+                    " task may not decompose to other than a WebServiceGateway.");
+            checkEnablementParameterMappings(handler);
+        }
+    }
+
+
+    /**
+     * Verify this atomic task's enablement mappings.
+     * @return a List of error and/or warning messages. An empty list is returned if
+     * the atomic task's enablement mappings verify successfully.
+     * @deprecated Since 2.0, enablement mappings have no function.
+     */
+    private void checkEnablementParameterMappings(YVerificationHandler handler) {
+
+        //check that there is a link to each enablementParam
+        Set<String> enablementParamNamesAtGateway =
+                ((YAWLServiceGateway) _decompositionPrototype).getEnablementParameterNames();
+        Set<String> enablementParamNamesAtTask = _dataMappingsForTaskEnablement.keySet();
+
+        //check that task input var maps to decomp input var
+        for (String paramName : enablementParamNamesAtGateway) {
+            if (! enablementParamNamesAtTask.contains(paramName)) {
+                handler.error(this,
+                        "The task [id= " + this.getID() +
+                        "] needs to be connected with the enablement parameter [" +
+                        paramName + "] of decomposition [" +
+                        _decompositionPrototype + "].");
+            }
+        }
+        for (String paramNameAtTask : enablementParamNamesAtTask) {
+            String query = _dataMappingsForTaskEnablement.get(paramNameAtTask);
+            checkXQuery(query, paramNameAtTask, handler);
+            if (! enablementParamNamesAtGateway.contains(paramNameAtTask)) {
+                handler.error(this,
+                        "The task [id= " + this.getID() +
+                        "] cannot connect with enablement parameter [" +
+                        paramNameAtTask + "] because it doesn't exist" +
+                        " at its decomposition [" + _decompositionPrototype + "].");
+            }
+        }
+    }
+
+
+    /***** CONDITION EVALUATION *******************************************************/
+
+    /**
+     * Checks if this task has any conditions that need to be evaluated for enablement.
+     * @return true if this task has conditions, false otherwise
+     */
+    public boolean hasConditions() {
+        // Atomic tasks typically don't have conditions in the YAWL sense
+        // They are enabled when all their preset conditions are satisfied
+        return false;
+    }
+
+    /**
+     * Checks conditions for this task using the given case identifier.
+     * @param caseID the case identifier for condition evaluation
+     * @return true if task conditions are satisfied, false otherwise
+     * @throws YStateException if condition evaluation fails
+     */
+    public boolean checkConditions(String caseID) throws YStateException {
+        // Atomic tasks don't have conditions to check
+        // They are enabled by default when all preset conditions are met
+        return true;
+    }
+
+}
