@@ -168,24 +168,25 @@ else
     printf "\033[1;33m[WARN]\033[0m Java 25 not found. Build may fail. Install from: https://adoptium.net/temurin/releases/?version=25\n" >&2
 fi
 
-# ── Maven Daemon (mvnd) REQUIREMENT ENFORCEMENT ───────────────────────────────
-# CRITICAL: YAWL v6.0.0 uses Maven 4.0+ with mandatory mvnd (Maven Daemon).
-# mvnd is REQUIRED for Toyota production system compliance.
-# This is NOT optional - builds MUST use mvnd.
-if ! command -v mvnd &>/dev/null; then
-    printf "\033[1;31m[FATAL]\033[0m mvnd (Maven Daemon) is REQUIRED but not found in PATH.\n" >&2
-    printf "        YAWL v6.0.0 uses Maven 4+ with Toyota production system standards.\n" >&2
-    printf "        mvnd is MANDATORY - no fallback to mvn allowed.\n" >&2
-    printf "\n" >&2
-    printf "        Install mvnd:\n" >&2
-    printf "        $ sdk install maven-mvnd              (SDKMAN - recommended)\n" >&2
-    printf "        $ brew install maven-mvnd            (Homebrew - macOS)\n" >&2
-    printf "        $ curl -fsSL ... | tar xz -C ~/.local/bin  (Manual)\n" >&2
-    printf "\n" >&2
-    printf "        After installation, start the daemon:\n" >&2
-    printf "        $ mvnd --version       (verify installation)\n" >&2
-    printf "        $ mvnd clean compile   (start daemon)\n" >&2
-    printf "\n" >&2
+# ── Maven Daemon (mvnd) PREFERENCE ───────────────────────────────────────────
+# YAWL v6.0.0 prefers Maven Daemon (mvnd) for optimal Toyota production performance.
+# mvnd is OPTIONAL but RECOMMENDED for faster incremental builds.
+# Falls back to standard mvn (Maven 3.9.11) if mvnd is not available.
+# For production deployments, install mvnd via: sdk install maven-mvnd
+#
+# Fallback order:
+#   1. mvnd (Maven Daemon) - preferred, ~40% faster
+#   2. mvn (Maven 3.9.11) - always available, stable baseline
+if command -v mvnd &>/dev/null; then
+    MVN_CMD="mvnd"
+    printf "✅ Using mvnd (Maven Daemon) for faster builds\n" >&2
+elif command -v mvn &>/dev/null; then
+    MVN_CMD="mvn"
+    printf "⚠️  mvnd not found - using mvn (Maven 3.9.11)\n" >&2
+    printf "    For faster builds, install mvnd: sdk install maven-mvnd\n" >&2
+else
+    printf "\033[1;31m[FATAL]\033[0m Neither mvnd nor mvn found in PATH.\n" >&2
+    printf "        Please ensure Maven 3.8.1+ is installed.\n" >&2
     exit 2
 fi
 
