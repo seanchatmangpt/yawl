@@ -138,10 +138,10 @@ run_single() {
         --allowedTools "${ALLOWED_TOOLS}" \
         "${PROMPT}" 2>&1) || {
             log_error "claude exited non-zero"
-            echo "${output}"
+            printf '%s\n' "${output}" >&2
             exit 1
         }
-    echo "${output}"
+    printf '%s\n' "${output}"
     commit_changes 1 "${PROMPT}"
     log_ok "Done."
 }
@@ -155,14 +155,14 @@ run_ralph() {
     local iteration=0
     local completed=false
 
-    # Append loop context to prompt so Claude knows it's iterating
+    # Append loop context to prompt so Claude knows it's iterating.
+    # The heredoc is unquoted so ${COMPLETION_PROMISE} expands correctly.
     local loop_header
-    loop_header="$(cat <<'HEADER'
+    loop_header="$(cat <<HEADER
 You are running in an autonomous loop (Ralph Wiggum mode).
 Each iteration you will see the current state of the codebase.
 Read the git log and any previous work before acting.
-When the task is fully complete, output exactly: <promise>COMPLETE</promise>
-(or whatever completion promise was specified).
+When the task is fully complete, output exactly: ${COMPLETION_PROMISE}
 Do not stop early; iterate until the task is genuinely done.
 
 ---
@@ -182,17 +182,17 @@ HEADER
             --allowedTools "${ALLOWED_TOOLS}" \
             "${full_prompt}" 2>&1) || {
                 log_error "Iteration ${iteration}: claude exited non-zero — aborting loop"
-                echo "${output}"
+                printf '%s\n' "${output}" >&2
                 exit 1
             }
 
-        echo "${output}"
+        printf '%s\n' "${output}"
 
         # Commit any work this iteration produced
         commit_changes "${iteration}" "iter-${iteration}: ${PROMPT:0:50}"
 
         # Check for completion promise
-        if echo "${output}" | grep -qF "${COMPLETION_PROMISE}"; then
+        if printf '%s\n' "${output}" | grep -qF "${COMPLETION_PROMISE}"; then
             log_ok "Completion promise detected after iteration ${iteration}: '${COMPLETION_PROMISE}'"
             completed=true
             break
