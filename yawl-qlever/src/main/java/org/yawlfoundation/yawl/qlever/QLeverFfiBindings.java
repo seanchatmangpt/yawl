@@ -204,8 +204,8 @@ public final class QLeverFfiBindings {
         checkNativeLibraryLoaded();
 
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment dataPtr = arena.allocateFrom(data);
-            MemorySegment formatPtr = arena.allocateFrom(format);
+            MemorySegment dataPtr = arena.allocateUtf8String(data);
+            MemorySegment formatPtr = arena.allocateUtf8String(format);
             MemorySegment resultPtr = arena.allocate(ValueLayout.JAVA_LONG);
 
             long resultCode = (long) loadRdfDataHandle.invokeExact(dataPtr, formatPtr, resultPtr);
@@ -248,7 +248,7 @@ public final class QLeverFfiBindings {
         checkNativeLibraryLoaded();
 
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment queryPtr = arena.allocateFrom(query);
+            MemorySegment queryPtr = arena.allocateUtf8String(query);
             MemorySegment resultPtr = arena.allocate(ValueLayout.JAVA_LONG);
 
             long resultCode = (long) executeQueryHandle.invokeExact(queryPtr, resultPtr);
@@ -279,7 +279,7 @@ public final class QLeverFfiBindings {
         checkNativeLibraryLoaded();
 
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment updatePtr = arena.allocateFrom(update);
+            MemorySegment updatePtr = arena.allocateUtf8String(update);
             MemorySegment resultPtr = arena.allocate(ValueLayout.JAVA_LONG);
 
             long resultCode = (long) executeUpdateHandle.invokeExact(updatePtr, resultPtr);
@@ -427,7 +427,7 @@ public final class QLeverFfiBindings {
         if (ptr == null || ptr.equals(MemorySegment.NULL)) {
             throw new QLeverFfiException("Native string pointer is null - native operation returned no result");
         }
-        return ptr.reinterpret(65536).getString(0);
+        return ptr.reinterpret(65536).getUtf8String(0);
     }
 
     /**

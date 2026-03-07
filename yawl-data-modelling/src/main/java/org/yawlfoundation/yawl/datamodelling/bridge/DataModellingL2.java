@@ -390,15 +390,17 @@ public final class DataModellingL2 implements AutoCloseable {
                 "Native method handle is null — library not loaded. Set -D" + LIB_PATH_PROP);
         }
         try (Arena call = Arena.ofConfined()) {
-            MemorySegment jsonSeg = call.allocateFrom(json, StandardCharsets.UTF_8);
+            // Java 21 compat: allocateFrom(String,Charset) is Java 22+; use allocateUtf8String
+            MemorySegment jsonSeg = call.allocateUtf8String(json);
             MemorySegment result = (MemorySegment) mh.invokeExact(jsonSeg);
             if (MemorySegment.NULL.equals(result)) {
                 throw new AssertionError(
                     "libdatamodelling.so returned NULL — check input JSON");
             }
             try {
+                // Java 21 compat: getString(int,Charset) is Java 22+; getUtf8String is Java 21
                 return result.reinterpret(Long.MAX_VALUE)
-                             .getString(0, StandardCharsets.UTF_8);
+                             .getUtf8String(0);
             } finally {
                 this.mh$dm_string_free.invokeExact(result);
             }

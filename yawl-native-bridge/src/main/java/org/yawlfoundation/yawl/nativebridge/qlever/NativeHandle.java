@@ -66,7 +66,7 @@ public final class NativeHandle<T extends QLeverEngine> implements AutoCloseable
      */
     public boolean ask(String sparql) throws QLeverException {
         try (Arena queryArena = Arena.ofConfined()) {
-            MemorySegment sparqlSeg = queryArena.allocateFrom(sparql);
+            MemorySegment sparqlSeg = queryArena.allocateUtf8String(sparql);
 
             MemorySegment resultSeg = queryArena.allocate(ValueLayout.JAVA_INT);
             int status = qlever_ffi.qlever_ask(engineHandle, sparqlSeg, resultSeg);
@@ -90,7 +90,7 @@ public final class NativeHandle<T extends QLeverEngine> implements AutoCloseable
      */
     public List<Map<String, String>> select(String sparql) throws QLeverException {
         try (Arena queryArena = Arena.ofConfined()) {
-            MemorySegment sparqlSeg = queryArena.allocateFrom(sparql);
+            MemorySegment sparqlSeg = queryArena.allocateUtf8String(sparql);
 
             MemorySegment resultHandle = queryArena.allocate(qlever_ffi.QLEVER_RESULT_HANDLE_LAYOUT);
             int status = qlever_ffi.qlever_select(engineHandle, sparqlSeg, resultHandle);
@@ -113,7 +113,7 @@ public final class NativeHandle<T extends QLeverEngine> implements AutoCloseable
      */
     public List<Triple> construct(String sparql) throws QLeverException {
         try (Arena queryArena = Arena.ofConfined()) {
-            MemorySegment sparqlSeg = queryArena.allocateFrom(sparql);
+            MemorySegment sparqlSeg = queryArena.allocateUtf8String(sparql);
 
             MemorySegment resultHandle = queryArena.allocate(qlever_ffi.QLEVER_RESULT_HANDLE_LAYOUT);
             int status = qlever_ffi.qlever_construct(engineHandle, sparqlSeg, resultHandle);
@@ -135,7 +135,7 @@ public final class NativeHandle<T extends QLeverEngine> implements AutoCloseable
      */
     public void update(String turtle) throws QLeverException {
         try (Arena queryArena = Arena.ofConfined()) {
-            MemorySegment turtleSeg = queryArena.allocateFrom(turtle);
+            MemorySegment turtleSeg = queryArena.allocateUtf8String(turtle);
 
             int status = qlever_ffi.qlever_update(engineHandle, turtleSeg);
 

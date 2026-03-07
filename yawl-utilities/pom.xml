@@ -326,6 +326,8 @@
                         <!-- Exclude Spring Boot health indicators - they compile in yawl-integration/yawl-mcp-a2a-app -->
                         <exclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/InterfaceXHealthIndicator.java</exclude>
                         <exclude>**/org/yawlfoundation/yawl/engine/interfce/metrics/ResilienceHealthIndicator.java</exclude>
+                        <!-- Exclude Java 25-only APIs (Gatherer) — not available before Java 25 -->
+                        <exclude>**/org/yawlfoundation/yawl/util/java25/*.java</exclude>
                         <!-- Exclude non-Java files -->
                         <exclude>**/*.xsd</exclude>
                         <exclude>**/*.xml</exclude>

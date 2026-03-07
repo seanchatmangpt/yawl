@@ -117,8 +117,8 @@ public class ErlangNode implements AutoCloseable {
             arena = Arena.ofShared();
             cnode = arena.allocate(ei_h.EI_CNODE_SIZE, 8L);
 
-            MemorySegment localNameSeg = arena.allocateFrom(localName);
-            MemorySegment cookieSeg = arena.allocateFrom(cookie);
+            MemorySegment localNameSeg = arena.allocateUtf8String(localName);
+            MemorySegment cookieSeg = arena.allocateUtf8String(cookie);
 
             int initRc = ei_h.ei_connect_init(cnode, localNameSeg, cookieSeg, (short) 0);
             if (initRc != 0) {
@@ -126,7 +126,7 @@ public class ErlangNode implements AutoCloseable {
                 throw new ErlangConnectionException(targetNode, "ei_connect_init failed with rc=" + initRc);
             }
 
-            MemorySegment targetNodeSeg = arena.allocateFrom(targetNode);
+            MemorySegment targetNodeSeg = arena.allocateUtf8String(targetNode);
             fd = ei_h.ei_connect(cnode, targetNodeSeg);
 
             if (fd < 0) {
@@ -175,8 +175,8 @@ public class ErlangNode implements AutoCloseable {
             arena = Arena.ofShared();
             cnode = arena.allocate(ei_h.EI_CNODE_SIZE, 8L);
 
-            MemorySegment localNameSeg = arena.allocateFrom(localName);
-            MemorySegment cookieSeg = arena.allocateFrom(cookie);
+            MemorySegment localNameSeg = arena.allocateUtf8String(localName);
+            MemorySegment cookieSeg = arena.allocateUtf8String(cookie);
 
             int initRc = ei_h.ei_connect_init(cnode, localNameSeg, cookieSeg, (short) 0);
             if (initRc != 0) {
@@ -184,7 +184,7 @@ public class ErlangNode implements AutoCloseable {
                 throw new ErlangConnectionException(targetHost, "ei_connect_init failed with rc=" + initRc);
             }
 
-            MemorySegment hostSeg = arena.allocateFrom(targetHost);
+            MemorySegment hostSeg = arena.allocateUtf8String(targetHost);
             fd = ei_h.ei_connect_host_port(cnode, hostSeg, targetPort);
 
             if (fd < 0) {
@@ -233,8 +233,8 @@ public class ErlangNode implements AutoCloseable {
                 MemorySegment argSeg = callArena.allocate(argBytes.length, 1L);
                 argSeg.copyFrom(MemorySegment.ofArray(argBytes));
 
-                MemorySegment modSeg = callArena.allocateFrom(module);
-                MemorySegment funSeg = callArena.allocateFrom(function);
+                MemorySegment modSeg = callArena.allocateUtf8String(module);
+                MemorySegment funSeg = callArena.allocateUtf8String(function);
 
                 MemorySegment resultBuf = callArena.allocate(ei_h.EI_X_BUFF_LAYOUT);
                 int initRc = ei_h.ei_x_new_with_version(resultBuf);
@@ -291,7 +291,7 @@ public class ErlangNode implements AutoCloseable {
                 MemorySegment msgSeg = callArena.allocate(msgBytes.length, 1L);
                 msgSeg.copyFrom(MemorySegment.ofArray(msgBytes));
 
-                MemorySegment nameSeg = callArena.allocateFrom(registeredName);
+                MemorySegment nameSeg = callArena.allocateUtf8String(registeredName);
 
                 int sendRc = ei_h.ei_reg_send(cnode, fd, nameSeg, msgSeg, msgBytes.length);
                 if (sendRc != 0) {
