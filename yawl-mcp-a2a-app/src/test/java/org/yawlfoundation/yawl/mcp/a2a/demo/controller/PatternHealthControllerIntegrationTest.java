@@ -26,11 +26,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Integration tests for DemoHealthController.
+ * Integration tests for PatternHealthController.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-class DemoHealthControllerIntegrationTest {
+class PatternHealthControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

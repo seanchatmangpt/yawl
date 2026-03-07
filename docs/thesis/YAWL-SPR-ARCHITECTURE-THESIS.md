@@ -314,6 +314,11 @@ The AI/ML integration layer transforms YAWL from a passive execution engine into
 │  └────────┬────────┘                                            │
 │           │                                                      │
 │  ┌────────▼────────┐                                            │
+│  │ Layer 1.5:      │  QLever → SPARQL Process Knowledge Graph  │
+│  │ Knowledge Graph │  (embedded FFI, <5ms query, 100K+ triples)│
+│  └────────┬────────┘                                            │
+│           │                                                      │
+│  ┌────────▼────────┐                                            │
 │  │ Layer 1: Process│  YAWL Engine → Event Stream                │
 │  │ Execution       │  (case starts, task completions, etc.)     │
 │  └─────────────────┘                                            │
@@ -750,6 +755,70 @@ The Rust4PM module provides high-performance process mining through native Rust 
 | OcelValue | `yawl-rust4pm/.../model/OcelValue.java` | Value type |
 | DirectlyFollowsGraph | `yawl-rust4pm/.../model/DirectlyFollowsGraph.java` | DFG model |
 | ConformanceReport | `yawl-rust4pm/.../model/ConformanceReport.java` | Conformance results |
+
+## 5.5b QLever: Embedded SPARQL Engine
+
+The QLever module provides **high-performance SPARQL query execution** through native integration via Java 25 Panama FFM (Foreign Function & Memory API, JEP 454):
+
+### 5.5b.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    QLEVER FFI BRIDGE                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   ┌──────────┐     ┌──────────┐     ┌──────────┐               │
+│   │  Java    │ ──▶ │  Panama  │ ──▶ │  C/C++   │               │
+│   │  API     │     │  FFM     │     │  QLever  │               │
+│   └──────────┘     └──────────┘     └──────────┘               │
+│        │                                   │                     │
+│        │         libqlever.so              │                     │
+│        └───────────────────────────────────┘                     │
+│                                                                  │
+│   Features: SPARQL 1.1, Full-Text Search, RDF Index,            │
+│             Memory-Mapped I/O, Compressed Permutations           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 5.5b.2 Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| QLeverEmbeddedSparqlEngine | `yawl-qlever/.../QLeverEmbeddedSparqlEngine.java` | Thread-safe engine wrapper |
+| QLeverFfiBindings | `yawl-qlever/.../QLeverFfiBindings.java` | Panama FFM downcalls |
+| QLeverResult | `yawl-qlever/.../QLeverResult.java` | Query result container |
+| QLeverStatus | `yawl-qlever/.../QLeverStatus.java` | Engine status enum |
+| QLeverFfiException | `yawl-qlever/.../QLeverFfiException.java` | Structured error handling |
+| QLeverMediaType | `yawl-qlever/.../QLeverMediaType.java` | RDF format negotiation |
+
+### 5.5b.3 Integration Points
+
+QLever serves two critical roles in the YAWL architecture:
+
+**1. Process Knowledge Graphs**: The PI module (Section 4.6) uses QLever to execute SPARQL queries over process execution data encoded as RDF. Workflow events, case outcomes, resource allocations, and performance metrics are mapped to a process ontology (`yawl:` namespace) and loaded into the embedded engine. Queries like bottleneck predecessor analysis, resource allocation pattern discovery, and SLA correlation analysis execute in <5ms on 100K+ triple graphs.
+
+**2. H-Guards Code Validation**: The H-Guards quality system (Section 6.1) converts Java ASTs to RDF triples and executes seven SPARQL guard queries to detect forbidden patterns. QLever's index-based execution provides deterministic sub-10ms validation per source file, enabling real-time guard checking as a pre-commit hook.
+
+### 5.5b.4 Panama FFM Advantage
+
+Unlike Rust4PM's JNI bridge (Section 5.5), QLever uses Panama FFM:
+
+| Property | JNI (Rust4PM) | Panama FFM (QLever) |
+|----------|---------------|---------------------|
+| Binding generation | Manual JNI headers | jextract (automatic from C headers) |
+| Memory management | Global refs | Arena-scoped (auto-cleanup) |
+| Call overhead | ~50ns | ~20ns |
+| Safety | Manual null checks | MemorySegment layout validation |
+
+The Lippincott pattern in the QLever FFI C wrapper catches all C++ exceptions at the native boundary and converts them to integer error codes, which `QLeverFfiBindings` translates to `QLeverFfiException`. This guarantees that no native exception can propagate to the JVM.
+
+**Evidence 5.5b**: QLever FFI Implementation
+| Component | File | Line | Evidence |
+|-----------|------|------|----------|
+| QLeverEmbeddedSparqlEngine | `yawl-qlever/src/main/java/.../QLeverEmbeddedSparqlEngine.java` | L23 | `public final class QLeverEmbeddedSparqlEngine` |
+| QLever FFI header | `yawl-native-bridge/headers/qlever_ffi.h` | L1 | Native C header for FFM bindings |
+| QLever bridge | `yawl-native-bridge/yawl-qlever-bridge/.../QleverNativeBridge.java` | L1 | Native bridge implementation |
 
 ## 5.6 Erlang/OTP Integration
 

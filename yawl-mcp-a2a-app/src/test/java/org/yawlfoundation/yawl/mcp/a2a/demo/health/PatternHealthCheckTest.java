@@ -18,27 +18,27 @@ package org.yawlfoundation.yawl.mcp.a2a.demo.health;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.yawlfoundation.yawl.mcp.a2a.demo.health.DemoHealthCheck.Status;
+import org.yawlfoundation.yawl.mcp.a2a.demo.health.PatternHealthCheck.Status;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for DemoHealthCheck.
+ * Unit tests for PatternHealthCheck.
  */
-class DemoHealthCheckTest {
+class PatternHealthCheckTest {
 
-    private DemoHealthCheck healthCheck;
+    private PatternHealthCheck healthCheck;
 
     @BeforeEach
     void setUp() {
-        healthCheck = new DemoHealthCheck();
+        healthCheck = new PatternHealthCheck();
     }
 
     @Test
     void testInitialization() {
-        DemoHealthCheck.HealthStatus status = healthCheck.check();
+        PatternHealthCheck.HealthStatus status = healthCheck.check();
 
         assertEquals(Status.STARTING, status.status());
         assertFalse(status.isHealthy());
@@ -50,7 +50,7 @@ class DemoHealthCheckTest {
         healthCheck.markInitialized();
         healthCheck.setTotalPatterns(5);
 
-        DemoHealthCheck.HealthStatus status = healthCheck.check();
+        PatternHealthCheck.HealthStatus status = healthCheck.check();
 
         assertEquals(Status.HEALTHY, status.status());
         assertTrue(status.isHealthy());
@@ -66,7 +66,7 @@ class DemoHealthCheckTest {
         healthCheck.incrementCompleted();
         healthCheck.incrementFailed();
 
-        DemoHealthCheck.HealthStatus status = healthCheck.check();
+        PatternHealthCheck.HealthStatus status = healthCheck.check();
 
         assertEquals(10, status.details().get("patterns_total"));
         assertEquals(2, status.details().get("patterns_completed"));
@@ -85,7 +85,7 @@ class DemoHealthCheckTest {
         healthCheck.incrementFailed();
         healthCheck.incrementFailed(); // 20% failure rate
 
-        DemoHealthCheck.HealthStatus status = healthCheck.check();
+        PatternHealthCheck.HealthStatus status = healthCheck.check();
 
         assertEquals(Status.DEGRADED, status.status());
         assertFalse(status.isHealthy());
@@ -100,7 +100,7 @@ class DemoHealthCheckTest {
         healthCheck.incrementCompleted();
         healthCheck.markShutdownRequested();
 
-        DemoHealthCheck.HealthStatus status = healthCheck.check();
+        PatternHealthCheck.HealthStatus status = healthCheck.check();
 
         assertEquals(Status.STOPPING, status.status());
         assertEquals("SHUTTING_DOWN", status.details().get("status"));
@@ -113,7 +113,7 @@ class DemoHealthCheckTest {
         healthCheck.markInitialized();
         healthCheck.setTotalPatterns(0);
 
-        DemoHealthCheck.HealthStatus status = healthCheck.check();
+        PatternHealthCheck.HealthStatus status = healthCheck.check();
 
         assertEquals(0, status.details().get("patterns_total"));
         assertEquals(0, status.details().get("patterns_completed"));

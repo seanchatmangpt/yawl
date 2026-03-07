@@ -30,7 +30,7 @@ import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.TokenAnalysis;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.PatternResult.TraceEvent;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.ReportGenerator;
 import org.yawlfoundation.yawl.mcp.a2a.demo.report.YawlPatternDemoReport;
-import org.yawlfoundation.yawl.mcp.a2a.demo.health.DemoHealthCheck;
+import org.yawlfoundation.yawl.mcp.a2a.demo.health.PatternHealthCheck;
 import org.yawlfoundation.yawl.mcp.a2a.example.ExtendedYamlConverter;
 import org.yawlfoundation.yawl.stateless.YStatelessEngine;
 
@@ -127,7 +127,7 @@ public class PatternDemoRunner {
     private final PatternDemoConfig config;
     private final ExtendedYamlConverter yamlConverter;
     private final PatternRegistry registry;
-    private final DemoHealthCheck healthCheck = new DemoHealthCheck();
+    private final PatternHealthCheck healthCheck = new PatternHealthCheck();
     private final CircuitBreaker zaiCircuitBreaker;
     private YStatelessEngine engine;
     private HttpClient zaiClient;

@@ -30,12 +30,12 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/demo")
-public class DemoHealthController {
+public class PatternHealthController {
 
-    private final PatternDemoRunner demoRunner;
+    private final PatternDemoRunner patternRunner;
 
-    public DemoHealthController(PatternDemoRunner demoRunner) {
-        this.demoRunner = demoRunner;
+    public PatternHealthController(PatternDemoRunner patternRunner) {
+        this.patternRunner = patternRunner;
     }
 
     /**
@@ -45,7 +45,7 @@ public class DemoHealthController {
      */
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> health() {
-        Map<String, Object> healthStatus = demoRunner.getHealthStatus();
+        Map<String, Object> healthStatus = patternRunner.getHealthStatus();
 
         // Determine HTTP status based on health status
         String status = (String) healthStatus.get("status");

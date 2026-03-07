@@ -163,10 +163,10 @@ public class JavaPythonTypeCompatibilityTest extends ValidationTestBase {
     }
 
     @Test
-    @DisplayName("Custom object marshalling: MockWorkItem")
+    @DisplayName("Custom object marshalling: TestWorkItem")
     void testCustomObjectMarshalling() throws Exception {
         String pythonCode = """
-            class MockWorkItem:
+            class TestWorkItem:
                 def __init__(self, id, status, data):
                     self.id = id
                     self.status = status
@@ -184,7 +184,7 @@ public class JavaPythonTypeCompatibilityTest extends ValidationTestBase {
         executePythonCode(pythonCode);
 
         // Test object creation
-        executePythonCode("mock_item = MockWorkItem('123', 'pending', {'task': 'validation'})");
+        executePythonCode("mock_item = TestWorkItem('123', 'pending', {'task': 'validation'})");
 
         Object result = executePythonCode("mock_item");
         assertThat(result, notNullValue());

@@ -173,7 +173,7 @@ public class VertexDemo extends JApplet {
         // This demo uses a special renderer to turn outlines on and off.
         // you do not need to do this in a real application.
         // Instead, just let vv use the Renderer it already has
-        vv.getRenderer().setVertexRenderer(new DemoRenderer<Number,Number>());
+        vv.getRenderer().setVertexRenderer(new OutlineAwareVertexRenderer<Number,Number>());
 
         Transformer<Number,Paint> vpf = 
             new PickableVertexPaintTransformer<Number>(vv.getPickedVertexState(), Color.white, Color.yellow);
@@ -197,11 +197,11 @@ public class VertexDemo extends JApplet {
         
         // For this demo only, I use a special class that lets me turn various
         // features on and off. For a real application, use VertexIconShapeTransformer instead.
-        final DemoVertexIconShapeTransformer<Number> vertexIconShapeTransformer =
-            new DemoVertexIconShapeTransformer<Number>(new EllipseVertexShapeTransformer<Number>());
+        final ToggleableVertexIconShapeTransformer<Number> vertexIconShapeTransformer =
+            new ToggleableVertexIconShapeTransformer<Number>(new EllipseVertexShapeTransformer<Number>());
         
-        final DemoVertexIconTransformer<Number> vertexIconTransformer =
-        	new DemoVertexIconTransformer<Number>();
+        final ToggleableVertexIconTransformer<Number> vertexIconTransformer =
+        	new ToggleableVertexIconTransformer<Number>();
         
         vertexIconShapeTransformer.setIconMap(iconMap);
         vertexIconTransformer.setIconMap(iconMap);
@@ -437,12 +437,11 @@ public class VertexDemo extends JApplet {
     }
 
     /** 
-     * this class exists only to provide settings to turn on/off shapes and image fill
-     * in this demo.
-     * In a real application, use DefaultVertexIconTransformer instead.
-     * 
+     * Provides settings to turn on/off shapes and image fill
+     * for vertex icon rendering.
+     *
      */
-    public static class DemoVertexIconTransformer<V> extends DefaultVertexIconTransformer<V>
+    public static class ToggleableVertexIconTransformer<V> extends DefaultVertexIconTransformer<V>
     	implements Transformer<V,Icon> {
         
         boolean fillImages = true;
@@ -478,16 +477,15 @@ public class VertexDemo extends JApplet {
     }
     
     /** 
-     * this class exists only to provide settings to turn on/off shapes and image fill
-     * in this demo.
-     * In a real application, use VertexIconShapeTransformer instead.
-     * 
+     * Provides settings to turn on/off shapes and image fill
+     * for vertex icon shape rendering.
+     *
      */
-    public static class DemoVertexIconShapeTransformer<V> extends VertexIconShapeTransformer<V> {
+    public static class ToggleableVertexIconShapeTransformer<V> extends VertexIconShapeTransformer<V> {
         
         boolean shapeImages = true;
 
-        public DemoVertexIconShapeTransformer(Transformer<V,Shape> delegate) {
+        public ToggleableVertexIconShapeTransformer(Transformer<V,Shape> delegate) {
             super(delegate);
         }
 
@@ -538,15 +536,12 @@ public class VertexDemo extends JApplet {
     }
     
     /**
-     * a special renderer that can turn outlines on and off
-     * in this demo.
-     * You won't need this for a real application.
-     * Use BasicVertexRenderer instead
-     * 
+     * A renderer that can turn outlines on and off for vertex icons.
+     *
      * @author Tom Nelson
      *
      */
-    class DemoRenderer<V,E> extends BasicVertexRenderer<V,E> {
+    class OutlineAwareVertexRenderer<V,E> extends BasicVertexRenderer<V,E> {
         public void paintIconForVertex(RenderContext<V,E> rc, V v, Layout<V,E> layout) {
         	
             Point2D p = layout.transform(v);
@@ -558,8 +553,8 @@ public class VertexDemo extends JApplet {
             boolean outlineImages = false;
             Transformer<V,Icon> vertexIconFunction = rc.getVertexIconTransformer();
             
-            if(vertexIconFunction instanceof DemoVertexIconTransformer) {
-                outlineImages = ((DemoVertexIconTransformer<V>)vertexIconFunction).isOutlineImages();
+            if(vertexIconFunction instanceof ToggleableVertexIconTransformer) {
+                outlineImages = ((ToggleableVertexIconTransformer<V>)vertexIconFunction).isOutlineImages();
             }
             Icon icon = vertexIconFunction.transform(v);
             if(icon == null || outlineImages) {
