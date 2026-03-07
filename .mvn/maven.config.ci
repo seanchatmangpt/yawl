@@ -1,0 +1,39 @@
+# CI/remote maven.config — Maven 3 compatible (no -b concurrent, no Maven 4 flags)
+# Auto-selected by dx.sh when CLAUDE_CODE_REMOTE=true
+
+# Batch mode (non-interactive)
+-B
+
+# Parallel artifact resolution
+-Dmaven.artifact.threads=8
+
+# Disable Maven 4 build cache (not available in Maven 3)
+-Dmaven.build.cache.enabled=false
+
+# Java 21 compat: override release 25 to 21 (env has Java 21, not 25)
+-Dmaven.compiler.release=21
+# Keep preview enabled — Java 21 preview features are valid with --release 21
+-Dmaven.compiler.enablePreview=true
+# Exclude Java 25-only source files (use Gatherer API not available in Java 21)
+-Dmaven.compiler.java25.excludes=**/java25/*.java
+
+# JUnit 5 parallel execution
+-Djunit.jupiter.execution.parallel.enabled=true
+-Djunit.jupiter.execution.parallel.config.strategy=dynamic
+-Djunit.jupiter.execution.parallel.config.dynamic.max-pool-size=512
+-Djunit.jupiter.execution.parallel.config.default=concurrent
+-Dsurefire.fail-if-no-specified-tests=false
+
+# Fork configuration
+-Dsurefire.forkCount=1C
+-Dfailsafe.forkCount=1
+-Dfailsafe.reuseForks=true
+
+# Coverage
+-Djacoco.skip=false
+-Djacoco.output.dir=./target/coverage-reports
+-Djacoco.output.format=xml
+
+# Parallel (2 threads per CPU)
+-T 2C
+-Djunit.jupiter.execution.parallel.config.dynamic.factor=4.0
