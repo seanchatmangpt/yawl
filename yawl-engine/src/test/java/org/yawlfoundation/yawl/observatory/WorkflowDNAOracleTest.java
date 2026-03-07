@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class WorkflowDNAOracleTest {
 
     private WorkflowDNAOracle oracle;
-    private MockXesGenerator mockXesGenerator;
 
     @BeforeEach
     void setUp() {

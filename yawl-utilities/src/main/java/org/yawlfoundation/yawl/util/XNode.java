@@ -718,12 +718,12 @@ public class XNode implements Comparable<XNode> {
 
 
     private String printComment(boolean pretty, String tabs) {
-        return isComment() ? printSpecialText("<!-- ", " -->", pretty, tabs) : "";
+        return printSpecialText("<!-- ", " -->", pretty, tabs);
     }
 
 
     private String printCDATA(boolean pretty, String tabs) {
-        return isCDATA() ? printSpecialText("<![CDATA[", "]]>", pretty, tabs) : "";
+        return printSpecialText("<![CDATA[", "]]>", pretty, tabs);
     }
 
 

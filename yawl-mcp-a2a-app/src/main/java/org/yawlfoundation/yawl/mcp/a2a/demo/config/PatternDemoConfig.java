@@ -84,7 +84,7 @@ public record PatternDemoConfig(
     boolean parallelExecution,
     boolean tokenAnalysis,
     boolean withCommentary,
-    boolean mockEngine,
+    boolean simulatedEngine,
     int circuitBreakerFailureRateThreshold,
     int circuitBreakerWaitDurationOpen,
     int circuitBreakerPermittedCallsHalfOpen,
@@ -311,7 +311,7 @@ public record PatternDemoConfig(
         return new PatternDemoConfig(
             newFormat, outputPath, timeoutSeconds, enableTracing, enableMetrics,
             autoComplete, parallelExecution, tokenAnalysis, withCommentary,
-            mockEngine,
+            simulatedEngine,
             circuitBreakerFailureRateThreshold, circuitBreakerWaitDurationOpen,
             circuitBreakerPermittedCallsHalfOpen, circuitBreakerSlidingWindowSize,
             patternIds, categories,
@@ -329,7 +329,7 @@ public record PatternDemoConfig(
         return new PatternDemoConfig(
             outputFormat, outputPath, newTimeoutSeconds, enableTracing, enableMetrics,
             autoComplete, parallelExecution, tokenAnalysis, withCommentary,
-            mockEngine,
+            simulatedEngine,
             circuitBreakerFailureRateThreshold, circuitBreakerWaitDurationOpen,
             circuitBreakerPermittedCallsHalfOpen, circuitBreakerSlidingWindowSize,
             patternIds, categories,
@@ -445,7 +445,7 @@ public record PatternDemoConfig(
         private boolean parallelExecution = true;
         private boolean tokenAnalysis = true;
         private boolean withCommentary = false;
-        private boolean mockEngine = false;
+        private boolean simulatedEngine = false;
         private boolean failOnValidationError = false;
         private final List<String> patternIds = new ArrayList<>();
         private final List<PatternCategory> categories = new ArrayList<>();
@@ -550,13 +550,13 @@ public record PatternDemoConfig(
         }
 
         /**
-         * Enable or disable mock engine for CI testing.
+         * Enable or disable simulated engine for CI testing.
          *
-         * @param enabled mock engine enabled
+         * @param enabled simulated engine enabled
          * @return this builder
          */
-        public Builder mockEngine(boolean enabled) {
-            this.mockEngine = enabled;
+        public Builder simulatedEngine(boolean enabled) {
+            this.simulatedEngine = enabled;
             return this;
         }
 
@@ -641,7 +641,7 @@ public record PatternDemoConfig(
                 parallelExecution,
                 tokenAnalysis,
                 withCommentary,
-                mockEngine,
+                simulatedEngine,
                 circuitBreakerFailureRateThreshold,
                 circuitBreakerWaitDurationOpen,
                 circuitBreakerPermittedCallsHalfOpen,

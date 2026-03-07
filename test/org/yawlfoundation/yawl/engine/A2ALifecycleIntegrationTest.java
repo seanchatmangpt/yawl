@@ -164,7 +164,7 @@ class A2ALifecycleIntegrationTest {
             integration.initialize();
 
             // Verify startup event was published
-            Map<String, Object> events = mockEngine.getPublishedEvents();
+            Map<String, Object> events = testEngine.getPublishedEvents();
             assertEquals(1, events.size(), "Should publish one startup event");
 
             Map<String, Object> eventData = (Map<String, Object>) events.get("startup");
@@ -181,7 +181,7 @@ class A2ALifecycleIntegrationTest {
             // Initialize
             integration.initialize();
 
-            Map<String, Object> events = mockEngine.getPublishedEvents();
+            Map<String, Object> events = testEngine.getPublishedEvents();
             Map<String, Object> eventData = (Map<String, Object>) events.get("startup");
 
             // Verify all required fields
@@ -201,7 +201,7 @@ class A2ALifecycleIntegrationTest {
             integration.initialize();
 
             // Should only publish one event
-            Map<String, Object> events = mockEngine.getPublishedEvents();
+            Map<String, Object> events = testEngine.getPublishedEvents();
             assertEquals(1, events.size(), "Should only publish one startup event");
         }
     }
@@ -240,7 +240,7 @@ class A2ALifecycleIntegrationTest {
             integration.handleCaseStarted(caseInstance);
 
             // Verify event was published and monitoring was called
-            Map<String, Object> events = mockEngine.getPublishedEvents();
+            Map<String, Object> events = testEngine.getPublishedEvents();
             assertFalse(events.isEmpty(), "Should publish case started event");
         }
 
@@ -268,7 +268,7 @@ class A2ALifecycleIntegrationTest {
             integration.handleCaseStarted(null);
 
             // Verify no events were published
-            assertTrue(mockEngine.getPublishedEvents().isEmpty(),
+            assertTrue(testEngine.getPublishedEvents().isEmpty(),
                        "No events should be published for null case instance");
         }
 
@@ -286,7 +286,7 @@ class A2ALifecycleIntegrationTest {
             integration.handleCaseStarted(caseInstance);
 
             // Verify event was published with case data
-            Map<String, Object> events = mockEngine.getPublishedEvents();
+            Map<String, Object> events = testEngine.getPublishedEvents();
             assertFalse(events.isEmpty(), "Should publish case started event");
         }
     }
@@ -338,7 +338,7 @@ class A2ALifecycleIntegrationTest {
             integration.handleCaseCompleted(null);
 
             // Verify no events were published
-            assertTrue(mockEngine.getPublishedEvents().isEmpty(),
+            assertTrue(testEngine.getPublishedEvents().isEmpty(),
                        "No events should be published for null case instance");
         }
     }

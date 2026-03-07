@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * Health check for demo execution status.
  */
-public class DemoHealthCheck {
-    private static final Logger LOG = LoggerFactory.getLogger(DemoHealthCheck.class);
+public class PatternHealthCheck {
+    private static final Logger LOG = LoggerFactory.getLogger(PatternHealthCheck.class);
 
     private volatile boolean initialized = false;
     private volatile boolean shutdownRequested = false;
