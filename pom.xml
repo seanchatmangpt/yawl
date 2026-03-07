@@ -63,24 +63,24 @@
         <module>yawl-utilities</module>
         <module>yawl-security</module>
         <module>yawl-erlang</module>
-        <!-- Disabled - GraalVM SDK not available (2026-03-04)
+        <!-- GraalVM SDK available via Maven proxy (2026-03-07) -->
         <module>yawl-graalpy</module>
-        -->
-        <!-- Disabled - legacy polyglot execution (2026-03-03)
+        <!-- yawl-graaljs: re-enabled, GraalJS deps downloadable (2026-03-07) -->
         <module>yawl-graaljs</module>
-        <module>yawl-rust4pm</module>
-        -->
+        <!-- yawl-rust4pm: disabled - legacy polyglot execution (2026-03-03) -->
+        <!-- <module>yawl-rust4pm</module> -->
 
         <!-- Layer 1: First consumers (build in parallel) -->
         <module>yawl-elements</module>
         <module>yawl-ggen</module>
         <module>yawl-tpot2</module>
         <module>yawl-dspy</module>
-        <module>yawl-ml-bridge</module>
-        <!-- Disabled - legacy polyglot execution (2026-03-03)
+        <!-- yawl-ml-bridge: disabled - jinterface not in Maven Central (2026-03-07) -->
+        <!-- <module>yawl-ml-bridge</module> -->
+        <!-- yawl-graalwasm: provides WASM resources only, no Java classes needed in CI -->
         <module>yawl-graalwasm</module>
-        -->
-        <module>yawl-dmn</module>
+        <!-- yawl-dmn: disabled - imports org.yawlfoundation.yawl.graalwasm.* classes that don't exist in source tree (2026-03-07) -->
+        <!-- <module>yawl-dmn</module> -->
         <module>yawl-data-modelling</module>
 
         <!-- Layer 2: Core engine -->
@@ -105,7 +105,8 @@
         -->
         <module>yawl-resourcing</module>
         <module>yawl-qlever</module>
-        <module>yawl-native-bridge</module>
+        <!-- yawl-native-bridge: disabled - depends on yawl-rust4pm which is not in Maven Central (2026-03-07) -->
+        <!-- <module>yawl-native-bridge</module> -->
 
         <!-- Layer 6: Top-level application -->
         <!-- Disabled - extensive ggen dependencies missing (2026-03-04)
@@ -119,6 +120,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.enablePreview>true</maven.compiler.enablePreview>
+        <!-- When overriding release to <25, set this to exclude Java 25-only source -->
+        <maven.compiler.java25.excludes>NONE_BY_DEFAULT</maven.compiler.java25.excludes>
         <!-- Skip tests by default for offline builds. Enable with -Dmaven.test.skip=false -->
         <maven.test.skip>true</maven.test.skip>
         <!-- Enable virtual threads, compact object headers, and Java 25 preview features.
@@ -826,12 +830,15 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.13.0</version>
                     <configuration>
-                        <release>25</release>
-                        <enablePreview>true</enablePreview>
+                        <release>${maven.compiler.release}</release>
+                        <enablePreview>${maven.compiler.enablePreview}</enablePreview>
                         <parameters>true</parameters>
                         <compilerArgs>
                             <arg>--enable-preview</arg>
                         </compilerArgs>
+                        <excludes>
+                            <exclude>${maven.compiler.java25.excludes}</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
 
@@ -922,6 +929,41 @@
                         <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
                     </configuration>
+                </plugin>
+
+                <!-- Exec Maven Plugin: Run external tools (rebar3, jextract, etc.) -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>3.3.0</version>
+                </plugin>
+
+                <!-- Build Helper Maven Plugin: Add generated source roots -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.6.0</version>
+                </plugin>
+
+                <!-- Maven Clean Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.3.2</version>
+                </plugin>
+
+                <!-- Maven WAR Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>3.4.0</version>
+                </plugin>
+
+                <!-- Maven Resources Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.3.1</version>
                 </plugin>
 
                 <!-- Maven GPG Plugin: Sign artifacts -->

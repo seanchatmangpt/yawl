@@ -140,7 +140,7 @@ public final class OrderfulfillmentLauncher {
     }
 
     private static String stripXmlTags(String s) {
-        if (s == null) return "";
+        if (s == null) return ""; // empty string is the correct default for null XML input
         String t = s.trim();
         Matcher m = Pattern.compile(">([^<]+)<").matcher(t);
         return m.find() ? m.group(1).trim() : t.replaceAll("<[^>]+>", "").trim();

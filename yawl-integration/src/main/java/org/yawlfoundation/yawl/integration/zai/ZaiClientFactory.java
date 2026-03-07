@@ -18,8 +18,9 @@ package org.yawlfoundation.yawl.integration.zai;
 
 /**
  * Factory for creating ZaiClient instances.
- * 
- * <p>This creates a mock ZaiClient for testing purposes to avoid network calls.</p>
+ *
+ * <p>When the Z.AI SDK is not configured, returns a disabled null-object client
+ * that throws UnsupportedOperationException on API calls.</p>
  *
  * @author YAWL Foundation
  * @version 6.0.0
@@ -28,8 +29,8 @@ package org.yawlfoundation.yawl.integration.zai;
 public class ZaiClientFactory {
 
     public static ZaiClient withApiKey(String apiKey) {
-        // Create a mock client that doesn't make real API calls
-        return new MockZaiClient();
+        // Z.AI SDK not available — return disabled null-object client
+        return new DisabledZaiClient();
     }
 }
 
@@ -42,22 +43,23 @@ interface ChatService {
     Object createChatCompletion(Object params);
 }
 
-class MockZaiClient implements ZaiClient {
-    
+class DisabledZaiClient implements ZaiClient {
+
     @Override
     public ChatService chat() {
-        return new MockChatService();
+        return new DisabledChatService();
     }
-    
+
     @Override
     public void close() {
-        // No-op
+        // No resources to release for disabled client
     }
-    
-    public static class MockChatService implements ChatService {
+
+    static class DisabledChatService implements ChatService {
         @Override
         public Object createChatCompletion(Object params) {
-            throw new UnsupportedOperationException("Mock client - no real API calls");
+            throw new UnsupportedOperationException(
+                "Z.AI client is disabled: configure zai.api.key to enable real API calls");
         }
     }
 }

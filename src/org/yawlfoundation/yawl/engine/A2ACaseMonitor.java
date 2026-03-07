@@ -221,9 +221,7 @@ public class A2ACaseMonitor {
      * Uses a 4-second deadline to prevent indefinite blocking.
      */
     private void checkAllCasesInParallel(long now) {
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.awaitAll(),
-                config -> config.withTimeout(Duration.ofSeconds(4)))) {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 
             // Fork case monitoring for each active case
             for (Map.Entry<String, CaseState> entry : activeCases.entrySet()) {
@@ -237,10 +235,9 @@ public class A2ACaseMonitor {
             }
 
             // Wait for all case checks to complete (max 4 seconds)
-            scope.join();
-
-            // Check if timeout occurred
-            if (scope.isCancelled()) {
+            try {
+                scope.joinUntil(Instant.now().plusSeconds(4));
+            } catch (java.util.concurrent.TimeoutException e) {
                 _caseCheckTimeouts.increment();
                 _logger.warn("Case monitoring cycle exceeded 4-second deadline");
             }

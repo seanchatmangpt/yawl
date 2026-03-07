@@ -109,7 +109,7 @@ fi
 # STEP 1: Quick File Validation (No Code? No Problem)
 # ============================================================================
 
-java_files=$(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null | wc -l)
+java_files=$(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" -not -path "*/test/*" -not -path "*/tests/*" -not -path "*/demo/*" -not -path "*/fixtures/*" -not -name "*Test.java" -not -name "*Tests.java" -not -name "*TestCase.java" -not -name "*Spec.java" -not -name "*IT.java" 2>/dev/null | wc -l)
 
 if [ "$java_files" -eq 0 ]; then
     if [ "$JSON_ONLY" -eq 0 ]; then
@@ -180,7 +180,7 @@ while IFS= read -r java_file; do
             done <<< "$matches"
         fi
     fi
-done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
+done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" -not -path "*/test/*" -not -path "*/tests/*" -not -path "*/demo/*" -not -path "*/fixtures/*" -not -name "*Test.java" -not -name "*Tests.java" -not -name "*TestCase.java" -not -name "*Spec.java" -not -name "*IT.java" 2>/dev/null)
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$EMPTY_METHODS" -gt 0 ]; then
@@ -222,7 +222,7 @@ while IFS= read -r java_file; do
             done <<< "$matches"
         fi
     fi
-done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
+done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" -not -path "*/test/*" -not -path "*/tests/*" -not -path "*/demo/*" -not -path "*/fixtures/*" -not -name "*Test.java" -not -name "*Tests.java" -not -name "*TestCase.java" -not -name "*Spec.java" -not -name "*IT.java" 2>/dev/null)
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$MOCK_CLASSES" -gt 0 ]; then
@@ -272,7 +272,7 @@ while IFS= read -r java_file; do
             fi
         fi
     fi
-done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
+done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" -not -path "*/test/*" -not -path "*/tests/*" -not -path "*/demo/*" -not -path "*/fixtures/*" -not -name "*Test.java" -not -name "*Tests.java" -not -name "*TestCase.java" -not -name "*Spec.java" -not -name "*IT.java" 2>/dev/null)
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$SILENT_FALLBACKS" -gt 0 ]; then

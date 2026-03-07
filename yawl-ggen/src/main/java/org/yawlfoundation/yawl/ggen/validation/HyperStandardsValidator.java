@@ -370,13 +370,10 @@ public class HyperStandardsValidator {
      * @param count violation count (non-negative)
      * @return "GREEN", "YELLOW", or "RED"
      */
-    @SuppressWarnings("preview")
     private static String severityBand(int count) {
-        return switch (count) {
-            case int n when n == 0 -> "GREEN";
-            case int n when n < 10 -> "YELLOW";
-            case int n             -> "RED";
-        };
+        if (count == 0) return "GREEN";
+        if (count < 10) return "YELLOW";
+        return "RED";
     }
 
     /**

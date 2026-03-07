@@ -553,7 +553,7 @@
                                        includeantruntime="false">
                                     <classpath refid="maven.test.classpath"/>
                                     <compilerarg value="--release"/>
-                                    <compilerarg value="25"/>
+                                    <compilerarg value="${maven.compiler.release}"/>
                                     <compilerarg value="--enable-preview"/>
                                 </javac>
                             </target>

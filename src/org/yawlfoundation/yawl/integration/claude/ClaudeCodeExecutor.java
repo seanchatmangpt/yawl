@@ -155,8 +155,7 @@ public class ClaudeCodeExecutor {
         Instant start = Instant.now();
         String processKey = sessionId != null ? sessionId : "single-" + System.nanoTime();
 
-        try (var scope = StructuredTaskScope.open(
-                StructuredTaskScope.Joiner.<ClaudeExecutionResult>awaitAllSuccessfulOrThrow())) {
+        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 
             StructuredTaskScope.Subtask<ClaudeExecutionResult> subtask = scope.fork(() -> {
                 Process process = pb.start();
@@ -194,6 +193,7 @@ public class ClaudeCodeExecutor {
             });
 
             scope.join();
+            scope.throwIfFailed();
 
             return subtask.get();
 

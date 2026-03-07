@@ -833,13 +833,13 @@ public class VirtualThreadYawlA2AServer {
             StringBuilder errors = new StringBuilder();
 
             // Use structured concurrency for parallel processing
-            try (var scope = StructuredTaskScope.open(
-                    StructuredTaskScope.Joiner.<WorkItemResult>awaitAllSuccessfulOrThrow())) {
+            try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
                 List<StructuredTaskScope.Subtask<WorkItemResult>> tasks = processableItems.stream()
                     .map(item -> scope.fork(() -> processWorkItemWithResult(item)))
                     .toList();
 
                 scope.join();
+                scope.throwIfFailed();
 
                 for (StructuredTaskScope.Subtask<WorkItemResult> task : tasks) {
                     WorkItemResult result = task.get();
