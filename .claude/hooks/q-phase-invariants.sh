@@ -109,7 +109,17 @@ fi
 # STEP 1: Quick File Validation (No Code? No Problem)
 # ============================================================================
 
-java_files=$(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null | wc -l)
+java_files=$(find "$CODE_DIR" -name "*.java" -type f \
+    -not -path "*/target/*" \
+    -not -path "*/_build/*" \
+    -not -path "*/fixtures/*" \
+    -not -path "*/src/test/*" \
+    -not -path "*/demo/*" \
+    -not -path "*/deprecated/*" \
+    -not -path "*/legacy/*" \
+    -not -name "*Test.java" \
+    -not -name "*Tests.java" \
+    2>/dev/null | wc -l)
 
 if [ "$java_files" -eq 0 ]; then
     if [ "$JSON_ONLY" -eq 0 ]; then
@@ -153,6 +163,21 @@ if [ "$JSON_ONLY" -eq 0 ]; then
     echo "[Q] Step 1/4: Scanning for empty methods (Q1: real_impl ∨ throw)..."
 fi
 
+# Generate java file list once for all Q phases (avoids process substitution which requires /dev/fd)
+_Q_JAVA_FILES=$(mktemp)
+find "$CODE_DIR" -name "*.java" -type f \
+    -not -path "*/target/*" \
+    -not -path "*/_build/*" \
+    -not -path "*/fixtures/*" \
+    -not -path "*/src/test/*" \
+    -not -path "*/demo/*" \
+    -not -path "*/deprecated/*" \
+    -not -path "*/legacy/*" \
+    -not -name "*Test.java" \
+    -not -name "*Tests.java" \
+    2>/dev/null > "$_Q_JAVA_FILES" || true
+trap 'rm -f "$_Q_JAVA_FILES"' EXIT
+
 # Q1: Find empty method bodies that don't throw exceptions
 # Pattern: public/private [return-type] method() { }  (empty body, no throw UnsupportedOperationException)
 EMPTY_METHODS_FILES=""
@@ -180,7 +205,7 @@ while IFS= read -r java_file; do
             done <<< "$matches"
         fi
     fi
-done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
+done < "$_Q_JAVA_FILES"
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$EMPTY_METHODS" -gt 0 ]; then
@@ -222,7 +247,7 @@ while IFS= read -r java_file; do
             done <<< "$matches"
         fi
     fi
-done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
+done < "$_Q_JAVA_FILES"
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$MOCK_CLASSES" -gt 0 ]; then
@@ -272,7 +297,7 @@ while IFS= read -r java_file; do
             fi
         fi
     fi
-done < <(find "$CODE_DIR" -name "*.java" -type f -not -path "*/target/*" -not -path "*/_build/*" 2>/dev/null)
+done < "$_Q_JAVA_FILES"
 
 if [ "$JSON_ONLY" -eq 0 ]; then
     if [ "$SILENT_FALLBACKS" -gt 0 ]; then

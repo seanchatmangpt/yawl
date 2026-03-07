@@ -1,10 +1,16 @@
 {
-  "task_description": "find all the gaps and fill 80/20",
-  "completion_promise": "THESIS_GAPS_FILLED_80_20",
-  "max_iterations": 10,
+  "task_description": "Fix all H-Guard violations for YAWL v7.0.0 release",
+  "completion_promise": "DX_ALL_GREEN",
+  "max_iterations": 50,
   "current_iteration": 1,
-  "started_at": "2026-03-06T07:30:00Z",
-  "completed_at": "2026-03-06T07:35:00Z",
-  "status": "completed",
-  "result": "SUCCESS"
+  "enable_smart_validation": true,
+  "started_at": "2026-03-07T05:28:24Z",
+  "status": "active",
+  "team_mode": true,
+  "team_name": "implement",
+  "depth_mode": "maximum",
+  "agent_model": "opus",
+  "agent_max_turns": 200,
+  "coordinator_mode": "spawn_only",
+  "dx_baseline_green": false
 }

@@ -22,6 +22,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -183,13 +185,10 @@ class ShaclShapeRegistryTest {
     @Test
     @DisplayName("Handle missing shapes file")
     void testMissingShapesFile() {
-        // Create a registry with a custom class loader that won't find shapes
-        ClassLoader testLoader = new ClassLoader() {
-            @Override
-            public URL getResource(String name) {
-                return null; // Always return null to simulate missing files
-            }
-        };
+        // Create a URLClassLoader with an empty path to simulate missing shape files.
+        // This is a real ClassLoader implementation that will not find resources
+        // because it has no URLs to search.
+        ClassLoader testLoader = new URLClassLoader(new URL[0], null);
 
         ShaclShapeRegistry customRegistry = new ShaclShapeRegistry(testLoader);
 

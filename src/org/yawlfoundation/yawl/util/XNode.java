@@ -718,12 +718,30 @@ public class XNode implements Comparable<XNode> {
 
 
     private String printComment(boolean pretty, String tabs) {
-        return isComment() ? printSpecialText("<!-- ", " -->", pretty, tabs) : "";
+        if (isComment()) {
+            return printSpecialText("<!-- ", " -->", pretty, tabs);
+        }
+        // printComment() should only be called on comment nodes, as checked in toString()
+        // If this throws, it indicates improper usage of printComment on non-comment content
+        throw new UnsupportedOperationException(
+            "printComment called on non-comment node. " +
+            "Content type is: " + _contentType +
+            ". This method should only be called after isComment() check."
+        );
     }
 
 
     private String printCDATA(boolean pretty, String tabs) {
-        return isCDATA() ? printSpecialText("<![CDATA[", "]]>", pretty, tabs) : "";
+        if (isCDATA()) {
+            return printSpecialText("<![CDATA[", "]]>", pretty, tabs);
+        }
+        // printCDATA() should only be called on CDATA nodes, as checked in toString()
+        // If this throws, it indicates improper usage of printCDATA on non-CDATA content
+        throw new UnsupportedOperationException(
+            "printCDATA called on non-CDATA node. " +
+            "Content type is: " + _contentType +
+            ". This method should only be called after isCDATA() check."
+        );
     }
 
 

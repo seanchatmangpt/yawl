@@ -235,6 +235,11 @@ while [[ $# -gt 0 ]]; do
             VALIDATE_EMIT_MODE=1
             shift 5
             ;;
+        --file-only)
+            # Internal per-file mode — handled later, stop batch accumulation
+            REMAINING_ARGS=()
+            break
+            ;;
         *)
             REMAINING_ARGS+=("$1")
             shift
@@ -286,6 +291,8 @@ EOF
 
     # Collect all Java files first, applying exclusions
     java_files=()
+    _emit_tmp=$(mktemp)
+    find "$EMIT_DIR" -name "*.java" -type f 2>/dev/null > "$_emit_tmp" || true
     while IFS= read -r java_file; do
         # Convert to relative path for exclusion checking
         relative_file="${java_file#$(pwd)/}"
@@ -299,7 +306,8 @@ EOF
                 echo "[hyper-validate.sh] Excluded: $relative_file" >&2
             fi
         fi
-    done < <(find "$EMIT_DIR" -name "*.java" -type f 2>/dev/null)
+    done < "$_emit_tmp"
+    rm -f "$_emit_tmp"
 
     # Define patterns once (outside the loop to avoid declare -A issues in subshells)
     # All 7 H-Guard patterns as documented in CLAUDE.md and H-GUARDS-*.md
@@ -435,12 +443,15 @@ if [ "${#REMAINING_ARGS[@]}" -gt 0 ]; then
 
     # Run individual file checks across all found Java files
     BATCH_FAILURES=0
+    JAVA_FILES_TMP=$(mktemp)
+    find "$@" -name "*.java" 2>/dev/null > "$JAVA_FILES_TMP" || true
     while IFS= read -r java_file; do
         result=$(FILE="$java_file" TOOL="batch" bash "${BASH_SOURCE[0]}" --file-only "$java_file" 2>&1) || {
             echo "$result" >&2
             BATCH_FAILURES=$((BATCH_FAILURES + 1))
         }
-    done < <(find "$@" -name "*.java" 2>/dev/null)
+    done < "$JAVA_FILES_TMP"
+    rm -f "$JAVA_FILES_TMP"
 
     if [ "$BATCH_FAILURES" -gt 0 ]; then
         if [ "$JSON_ONLY" -eq 0 ]; then
