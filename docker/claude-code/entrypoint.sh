@@ -48,11 +48,27 @@ log_error() { printf '[ERROR] %s\n' "$*" >&2; }
 # ---------------------------------------------------------------------------
 git config --global user.name  "${GIT_USER_NAME}"
 git config --global user.email "${GIT_USER_EMAIL}"
-git config --global credential.helper store
 
-CLONE_URL="${GIT_REPO_URL}"
-if [[ -n "${GIT_TOKEN:-}" ]]; then
+# Auth strategy:
+#   USE_WORKLOAD_IDENTITY=true  → gcloud credential helper (CSR, no token)
+#   GIT_TOKEN set               → inject token into HTTPS URL (GitHub fallback)
+#   neither                     → plain clone (public repos only)
+USE_WORKLOAD_IDENTITY="${USE_WORKLOAD_IDENTITY:-false}"
+
+if [[ "${USE_WORKLOAD_IDENTITY}" == "true" ]]; then
+    # Cloud Source Repositories: auth via the attached service account
+    git config --global credential.helper gcloud.sh
+    log_info "Git auth: Workload Identity (gcloud credential helper)"
+    CLONE_URL="${GIT_REPO_URL}"
+elif [[ -n "${GIT_TOKEN:-}" ]]; then
+    # GitHub (or any HTTPS): inject personal access token
+    git config --global credential.helper store
     CLONE_URL="${GIT_REPO_URL/https:\/\//https://${GIT_TOKEN}@}"
+    log_info "Git auth: token (HTTPS)"
+else
+    git config --global credential.helper store
+    CLONE_URL="${GIT_REPO_URL}"
+    log_warn "No auth configured — clone will fail on private repos"
 fi
 
 log_info "Cloning ${GIT_REPO_URL} branch=${BRANCH}"
