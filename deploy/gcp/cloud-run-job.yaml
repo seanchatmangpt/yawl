@@ -1,0 +1,50 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: yawl-claude-code
+  namespace: default
+  labels:
+    app: yawl-claude-code
+    managed-by: gcloud
+spec:
+  template:
+    spec:
+      template:
+        spec:
+          # Run to completion (not a server)
+          restartPolicy: Never
+          # Service account with Secret Manager + Artifact Registry access
+          serviceAccountName: yawl-claude-runner@PROJECT_ID.iam.gserviceaccount.com
+          containers:
+            - name: claude-code
+              image: REGION-docker.pkg.dev/PROJECT_ID/yawl/claude-code:latest
+              resources:
+                limits:
+                  cpu: "4"
+                  memory: 8Gi
+              env:
+                - name: GIT_REPO_URL
+                  value: "https://github.com/seanchatmangpt/yawl.git"
+                - name: GIT_BRANCH
+                  value: "master"
+                - name: GIT_USER_NAME
+                  value: "Claude Code GCP Bot"
+                - name: GIT_USER_EMAIL
+                  value: "claude-code@gcp.run"
+                - name: ANTHROPIC_MODEL
+                  value: "claude-sonnet-4-6"
+                # CLAUDE_TASK is passed at execution time via --update-env-vars
+                # Secrets are injected from Secret Manager below
+                - name: ANTHROPIC_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: anthropic-api-key
+                      key: latest
+                - name: GIT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: github-token
+                      key: latest
+          # Max 1 hour per job execution
+          timeoutSeconds: 3600
+          maxRetries: 1
