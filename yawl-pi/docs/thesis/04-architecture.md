@@ -61,9 +61,22 @@ org.yawlfoundation.yawl.pi
 │   ├── PredictiveAdaptationRules   Rule factory: 7 methods + 4 vertical rule sets
 │   └── EnterpriseAutoMlPatterns    Tutorial facade: 4 verticals in 1 line each
 │
-└── mcp/              MCP tool provider for AI agent integration
-    ├── PIToolProvider              Exposes PI capabilities as MCP tools
-    └── PISkill                    Individual tool skill definition
+├── mcp/              MCP tool provider for AI agent integration
+│   ├── PIToolProvider              Exposes PI capabilities as MCP tools
+│   └── PISkill                    Individual tool skill definition
+│
+└── knowledgegraph/   QLever SPARQL over process RDF            [new v7.0]
+    ├── ProcessKnowledgeGraphBuilder  WorkflowEventStore → RDF triples
+    ├── QLeverProcessQueryEngine      Pre-built SPARQL query library
+    └── ProcessOntology               yawl: namespace definitions
+
+org.yawlfoundation.yawl.qlever    (yawl-qlever module)            [new v7.0]
+├── QLeverEmbeddedSparqlEngine     Thread-safe embedded QLever wrapper
+├── QLeverFfiBindings              Panama FFM downcalls to native engine
+├── QLeverResult                   Query result container (status + data)
+├── QLeverStatus                   Engine lifecycle status enum
+├── QLeverFfiException             Structured native error handling
+└── QLeverMediaType                RDF format negotiation (TURTLE, JSON, XML)
 
 org.yawlfoundation.yawl.graaljs   (yawl-graaljs module)          [new v6.0]
 ├── JavaScriptExecutionEngine       Main API; thread-safe JS evaluation
@@ -95,16 +108,22 @@ loop. Every arrow is a same-JVM method call — no serialization, no network.
 │   ┌───────────────────┐         ┌───────────────────────────────┐   │
 │   │   YNetRunner      │         │      WorkflowEventStore       │   │
 │   │  (case execution) │─events─▶│  (append-only event log)     │   │
-│   └─────────┬─────────┘         └───────────────┬───────────────┘   │
-│             │                                   │                   │
-│             │ ObserverGateway callbacks          │ direct read       │
-│             │ (synchronous, no serialization)    │ (same JVM)        │
-└─────────────┼───────────────────────────────────┼───────────────────┘
-              │                                   │
-              ▼                                   ▼
-┌─────────────────────────┐   ┌───────────────────────────────────────┐
-│ PredictiveProcessObserver│   │  ProcessMiningTrainingDataExtractor   │
-│  (adaptive package)      │   │       (predictive package)            │
+│   └─────────┬─────────┘         └───────────┬───────────┬───────┘   │
+│             │                                │           │           │
+│             │ ObserverGateway callbacks       │           │ RDF      │
+│             │ (synchronous, no serialization) │           │ export   │
+└─────────────┼────────────────────────────────┼───────────┼──────────┘
+              │                                │           │
+              ▼                                ▼           ▼
+┌─────────────────────────┐   ┌────────────────────┐  ┌──────────────────┐
+│ PredictiveProcessObserver│   │  ProcessMining     │  │ QLeverEmbedded   │
+│  (adaptive package)      │   │  TrainingData      │  │ SparqlEngine     │
+│                          │   │  Extractor         │  │ (yawl-qlever)    │
+│                          │   │  (predictive pkg)  │  │                  │
+│                          │   │                    │  │ SPARQL over      │
+│                          │   │                    │  │ process RDF      │
+│                          │   │                    │  │ (<5ms queries)   │
+│                          │   └────────────────────┘  └──────────────────┘
 │                          │   └───────────────────────────────────────┘
 │  announceCaseStarted()   │                     │
 │  announceFiredWorkItem() │                     │ TrainingDataset

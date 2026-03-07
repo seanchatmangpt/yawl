@@ -284,4 +284,114 @@ logic?
 
 ---
 
+## 6.6 QLever Knowledge Graph Integration (Q2 2026)
+
+### Current State
+
+The prescriptive connection (Connection 2) uses Jena RDF for constraint checking —
+task reachability and resource assignability queries. These queries are effective but
+limited: Jena ARQ's in-memory query engine scales poorly beyond 50K triples and
+provides no full-text search integration.
+
+The `yawl-qlever` module already provides a thread-safe embedded SPARQL engine
+wrapper (`QLeverEmbeddedSparqlEngine`) with Panama FFM bindings. What remains is
+connecting it to the PI module as Connection 7.
+
+### The Process Knowledge Graph
+
+```
+WorkflowEventStore events
+    ↓
+ProcessKnowledgeGraphBuilder
+    ├── Maps YAWL events → RDF triples (yawl: ontology)
+    ├── Incremental: new events → append triples
+    └── Registers ObserverGateway callback for live updates
+    ↓
+QLeverEmbeddedSparqlEngine
+    ├── loadRdfData(triples, "TURTLE")
+    ├── Compressed permutation index (<100ms build for 100K triples)
+    └── Memory-mapped I/O (no JVM heap pressure)
+    ↓
+QLeverProcessQueryEngine
+    ├── queryBottleneckPredecessors(taskId) → List<TaskMetrics>
+    ├── queryResourceAllocationPatterns(specId) → AllocationReport
+    ├── queryProcessVariants(specId, threshold) → List<Variant>
+    ├── querySlaCorrelations(specId, slaThreshold) → CorrelationReport
+    └── Custom SPARQL via querySparql(sparqlString) → QLeverResult
+```
+
+### Research Questions
+
+**Query latency under co-location**: QLever benchmarks report <5ms for complex
+SPARQL queries on 100K+ triple graphs. Can this be maintained when the engine
+shares the JVM with the workflow engine under production load (1000+ active cases)?
+
+**Incremental index updates**: QLever's compressed permutation index is optimised
+for bulk loading. Can incremental triple insertion (on every ObserverGateway callback)
+maintain query performance without periodic full re-indexing?
+
+**Knowledge graph schema evolution**: As YAWL specifications evolve, the process
+ontology changes. How should schema migrations be handled for the QLever index
+without dropping query availability?
+
+### Implementation Sketch
+
+```java
+// New: ProcessKnowledgeGraphBuilder in knowledgegraph package
+public final class ProcessKnowledgeGraphBuilder implements ObserverGateway {
+
+    private final QLeverEmbeddedSparqlEngine engine;
+    private final ProcessOntology ontology;
+
+    @Override
+    public void announceCaseStarted(YAWLServiceReference ys,
+                                     YIdentifier caseID,
+                                     YSpecification spec) {
+        String triples = ontology.caseStartedTriples(caseID, spec);
+        engine.loadRdfData(triples, "TURTLE");
+    }
+
+    @Override
+    public void announceWorkItemStatusChange(YAWLServiceReference ys,
+                                              YWorkItem workItem,
+                                              YWorkItemStatus old,
+                                              YWorkItemStatus newStatus) {
+        String triples = ontology.workItemTriples(workItem, old, newStatus);
+        engine.loadRdfData(triples, "TURTLE");
+    }
+}
+
+// New: QLeverProcessQueryEngine in knowledgegraph package
+public final class QLeverProcessQueryEngine {
+
+    private final QLeverEmbeddedSparqlEngine engine;
+
+    public List<TaskMetrics> queryBottleneckPredecessors(String taskId) {
+        String sparql = """
+            PREFIX yawl: <http://yawlfoundation.org/ontology#>
+            SELECT ?task ?medianDuration ?slaBreachRate
+            WHERE {
+              ?task yawl:precedes+ <%s> .
+              ?task yawl:medianDuration ?medianDuration .
+              ?task yawl:slaBreachRate ?slaBreachRate .
+              FILTER(?slaBreachRate > 0.1)
+            }
+            ORDER BY DESC(?slaBreachRate)
+            """.formatted(taskId);
+        return parseTaskMetrics(engine.executeSparqlQuery(sparql));
+    }
+}
+```
+
+### Expected Impact
+
+| Metric | Without QLever (Jena ARQ) | With QLever |
+|---|---|---|
+| SPARQL query latency (100K triples) | 200–500ms | <5ms |
+| Max graph size in JVM | ~500K triples | >10M triples (memory-mapped) |
+| Full-text + SPARQL | Not supported | Native integration |
+| JVM heap pressure | Proportional to graph size | Minimal (off-heap) |
+
+---
+
 *← [Chapter 5](05-enterprise-use-cases.md) · → [Chapter 7 — Vision 2030](07-vision-2030.md)*
