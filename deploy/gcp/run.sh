@@ -10,6 +10,9 @@
 #
 # Pass a PROMPT.md path instead of inline task:
 #   RALPH_MODE=true ./run.sh <project> <region> /workspace/repo/PROMPT.md master
+#
+# Note: CLAUDE_TASK is passed via a ^ -delimited env-var string so that task
+# text containing commas does not confuse --update-env-vars parsing.
 set -euo pipefail
 
 : "${1:?Usage: $0 <project-id> <region> <task-or-prompt-path> [branch]}"
@@ -26,8 +29,8 @@ RALPH_MODE="${RALPH_MODE:-false}"
 MAX_ITERATIONS="${MAX_ITERATIONS:-20}"
 COMPLETION_PROMISE="${COMPLETION_PROMISE:-COMPLETE}"
 
-log_info() { printf '\033[0;34m[INFO]\033[0m %s\n' "$*"; }
-log_ok()   { printf '\033[0;32m[ OK ]\033[0m %s\n' "$*"; }
+log_info()  { printf '\033[0;34m[INFO]\033[0m %s\n' "$*"; }
+log_ok()    { printf '\033[0;32m[ OK ]\033[0m %s\n' "$*"; }
 log_error() { printf '\033[0;31m[ERROR]\033[0m %s\n' "$*"; }
 
 log_info "Triggering Cloud Run Job: ${JOB_NAME}"
@@ -35,25 +38,24 @@ log_info "Project: ${PROJECT_ID} | Region: ${REGION} | Branch: ${BRANCH}"
 log_info "Ralph: ${RALPH_MODE} | Max iterations: ${MAX_ITERATIONS}"
 log_info "Task: ${TASK}"
 
-ENV_VARS="CLAUDE_TASK=${TASK}"
-ENV_VARS+=",GIT_BRANCH=${BRANCH}"
-ENV_VARS+=",RALPH_MODE=${RALPH_MODE}"
-ENV_VARS+=",MAX_ITERATIONS=${MAX_ITERATIONS}"
-ENV_VARS+=",COMPLETION_PROMISE=${COMPLETION_PROMISE}"
+# Use ^ as the key=value delimiter so that CLAUDE_TASK values containing
+# commas (e.g. "fix tests, update docs") are passed intact.
+ENV_VARS="^|^CLAUDE_TASK=${TASK}"
+ENV_VARS+="|GIT_BRANCH=${BRANCH}"
+ENV_VARS+="|RALPH_MODE=${RALPH_MODE}"
+ENV_VARS+="|MAX_ITERATIONS=${MAX_ITERATIONS}"
+ENV_VARS+="|COMPLETION_PROMISE=${COMPLETION_PROMISE}"
 
 EXECUTION=$(gcloud run jobs execute "${JOB_NAME}" \
     --region="${REGION}" \
     --project="${PROJECT_ID}" \
     --update-env-vars="${ENV_VARS}" \
     --format="value(metadata.name)" \
-    --wait)
-
-EXIT_CODE=$?
-
-if [[ $EXIT_CODE -ne 0 ]]; then
-    log_error "Job execution failed (exit ${EXIT_CODE})"
-    exit "${EXIT_CODE}"
-fi
+    --wait) || {
+        EXIT_CODE=$?
+        log_error "Job execution failed (exit ${EXIT_CODE})"
+        exit "${EXIT_CODE}"
+    }
 
 log_ok "Execution completed: ${EXECUTION}"
 echo ""

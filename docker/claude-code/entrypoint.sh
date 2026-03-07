@@ -24,6 +24,7 @@ set -euo pipefail
 #   MAX_ITERATIONS         (default: 20)   — ralph loop safety limit
 #   COMPLETION_PROMISE     (default: COMPLETE) — exact string signalling done
 #   ANTHROPIC_MODEL        (default: claude-sonnet-4-6)
+#   USE_WORKLOAD_IDENTITY  (default: false) — use gcloud credential helper (CSR)
 # ---------------------------------------------------------------------------
 
 : "${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required}"
@@ -37,6 +38,13 @@ RALPH_MODE="${RALPH_MODE:-false}"
 MAX_ITERATIONS="${MAX_ITERATIONS:-20}"
 COMPLETION_PROMISE="${COMPLETION_PROMISE:-COMPLETE}"
 ALLOWED_TOOLS="${ALLOWED_TOOLS:-Read,Edit,Write,Bash,Glob,Grep,Agent}"
+ANTHROPIC_MODEL="${ANTHROPIC_MODEL:-claude-sonnet-4-6}"
+
+# Validate MAX_ITERATIONS is a positive integer
+if ! [[ "${MAX_ITERATIONS}" =~ ^[1-9][0-9]*$ ]]; then
+    printf '[ERROR] MAX_ITERATIONS must be a positive integer, got: %s\n' "${MAX_ITERATIONS}" >&2
+    exit 2
+fi
 
 log_info()  { printf '[INFO]  %s\n' "$*" >&2; }
 log_ok()    { printf '[ OK ]  %s\n' "$*" >&2; }
@@ -56,14 +64,17 @@ git config --global user.email "${GIT_USER_EMAIL}"
 USE_WORKLOAD_IDENTITY="${USE_WORKLOAD_IDENTITY:-false}"
 
 if [[ "${USE_WORKLOAD_IDENTITY}" == "true" ]]; then
-    # Cloud Source Repositories: auth via the attached service account
+    # Cloud Source Repositories: auth via the attached service account.
+    # gcloud.sh is the credential helper installed by google-cloud-cli.
     git config --global credential.helper gcloud.sh
     log_info "Git auth: Workload Identity (gcloud credential helper)"
     CLONE_URL="${GIT_REPO_URL}"
 elif [[ -n "${GIT_TOKEN:-}" ]]; then
-    # GitHub (or any HTTPS): inject personal access token
+    # GitHub (or any HTTPS): inject personal access token into the URL.
+    # Strip any existing scheme+host prefix and rebuild cleanly.
+    REPO_HOST_PATH="${GIT_REPO_URL#https://}"
+    CLONE_URL="https://${GIT_TOKEN}@${REPO_HOST_PATH}"
     git config --global credential.helper store
-    CLONE_URL="${GIT_REPO_URL/https:\/\//https://${GIT_TOKEN}@}"
     log_info "Git auth: token (HTTPS)"
 else
     git config --global credential.helper store
@@ -74,6 +85,7 @@ fi
 log_info "Cloning ${GIT_REPO_URL} branch=${BRANCH}"
 git clone --depth=50 --branch "${BRANCH}" "${CLONE_URL}" /workspace/repo
 cd /workspace/repo
+# Keep the push URL consistent with the authenticated clone URL
 git remote set-url origin "${CLONE_URL}"
 
 # ---------------------------------------------------------------------------
@@ -93,7 +105,9 @@ commit_changes() {
     local iteration="$1"
     local label="$2"
 
-    if git diff --quiet && git diff --staged --quiet; then
+    # git status --porcelain covers tracked modifications, deletions, AND
+    # untracked new files — unlike `git diff` which misses untracked files.
+    if [[ -z "$(git status --porcelain)" ]]; then
         log_warn "Iteration ${iteration}: no changes — skipping commit"
         return 0
     fi
@@ -102,7 +116,7 @@ commit_changes() {
     msg="claude(ralph/${iteration}): ${label:0:60}
 
 Iteration ${iteration}/${MAX_ITERATIONS} via Ralph Wiggum loop.
-ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+ANTHROPIC_MODEL: ${ANTHROPIC_MODEL}
 GCP_JOB: ${CLOUD_RUN_JOB:-local}
 GCP_EXECUTION: ${CLOUD_RUN_EXECUTION:-local}"
 
@@ -120,6 +134,7 @@ run_single() {
     local output
     output=$(claude \
         --print \
+        --model "${ANTHROPIC_MODEL}" \
         --allowedTools "${ALLOWED_TOOLS}" \
         "${PROMPT}" 2>&1) || {
             log_error "claude exited non-zero"
@@ -163,6 +178,7 @@ HEADER
         local output
         output=$(claude \
             --print \
+            --model "${ANTHROPIC_MODEL}" \
             --allowedTools "${ALLOWED_TOOLS}" \
             "${full_prompt}" 2>&1) || {
                 log_error "Iteration ${iteration}: claude exited non-zero — aborting loop"
