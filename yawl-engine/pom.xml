@@ -402,6 +402,15 @@
                         <exclude>**/test/java/**</exclude>
                         <!-- TenantBillingReportController uses Spring Web, compiled in yawl-integration -->
                         <exclude>**/org/yawlfoundation/yawl/engine/TenantBillingReportController.java</exclude>
+                        <!-- BuriedEngine + BuriedEngineMcpAdapter: engine.state package missing; MCP SDK API mismatch.
+                             BuriedEngine references BuriedEngineMcpAdapter as a field, so excluding just the
+                             adapter is insufficient — javac discovers it transitively from BuriedEngine.
+                             Must exclude both to break the transitive compile chain that pulls in
+                             YawlServerCapabilities, YawlCompletionSpecifications, and YawlResourceProvider. -->
+                        <exclude>**/org/yawlfoundation/yawl/engine/BuriedEngine.java</exclude>
+                        <exclude>**/org/yawlfoundation/yawl/engine/BuriedEngineMcpAdapter.java</exclude>
+                        <!-- YawlResourceProvider: McpSchema/McpServerFeatures API mismatch with MCP SDK version -->
+                        <exclude>**/org/yawlfoundation/yawl/integration/mcp/resource/YawlResourceProvider.java</exclude>
                     </excludes>
                     <testIncludes>
                         <testInclude>**/org/yawlfoundation/yawl/engine/**</testInclude>

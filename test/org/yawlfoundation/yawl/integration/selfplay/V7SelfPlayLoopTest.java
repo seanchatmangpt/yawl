@@ -1,8 +1,11 @@
 package org.yawlfoundation.yawl.integration.selfplay;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.yawlfoundation.yawl.engine.YEngine;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.QLeverSparqlEngine;
+import org.yawlfoundation.yawl.integration.autonomous.marketplace.SparqlEngineException;
 import org.yawlfoundation.yawl.integration.coordination.events.AgentDecisionEvent;
 import org.yawlfoundation.yawl.integration.selfplay.model.FitnessScore;
 import org.yawlfoundation.yawl.integration.selfplay.model.V7DesignState;
@@ -16,6 +19,8 @@ import org.yawlfoundation.yawl.safe.v7.PortfolioGovernanceV7Proposals;
 import org.yawlfoundation.yawl.safe.v7.V7GapProposalService;
 import org.yawlfoundation.yawl.safe.v7.ValueStreamCoordinationV7Proposals;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -287,7 +292,112 @@ class V7SelfPlayLoopTest {
         assertTrue(mentionsAGap, "Summary must mention at least one V7Gap by name");
     }
 
+    // ==================== Composition-Count Self-Play Tests ====================
+
+    /**
+     * Verifies one full self-play loop iteration strictly increases the CapabilityPipeline count.
+     *
+     * <p>The one invariant: {@code composition_count(N+1) > composition_count(N)}.
+     * Loads pm-bridge.ttl into QLever, runs valid-compositions.sparql to record the baseline,
+     * closes one gap by inserting a new NativeFunction triple, and asserts the count grew.
+     *
+     * <p>Skipped automatically when QLever is not running at localhost:7001.
+     */
+    @Test
+    void testSingleIteration() throws Exception {
+        QLeverSparqlEngine sparql = new QLeverSparqlEngine();
+        Assumptions.assumeTrue(sparql.isAvailable(),
+            "Skipping: QLever not running at localhost:7001 (required for composition count test)");
+
+        Path pmBridge = Path.of("ontology/process-mining/pm-bridge.ttl").toAbsolutePath();
+        sparql.sparqlUpdate("LOAD <file://" + pmBridge + ">");
+
+        String compositionsQuery = Files.readString(Path.of("queries/valid-compositions.sparql"));
+        long before = countOptimalPipelineTriples(sparql.constructToTurtle(compositionsQuery));
+
+        // Close top gap: insert one new NativeFunction that returns MemorySegment.
+        // valid-compositions.sparql matches pairs where cap2's descriptor contains "ADDRESS",
+        // so this new capability composes with every existing ADDRESS-descriptor capability.
+        sparql.sparqlUpdate("""
+            PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+            INSERT DATA {
+              <http://yawlfoundation.org/yawl/bridge/cap/gap_close_iter1>
+                  a yawl-bridge:BridgeCapability ;
+                  yawl-bridge:capabilityName "gap_close_iteration_1" ;
+                  yawl-bridge:nativeTarget "rust4pm_gap_close_1" .
+              <http://yawlfoundation.org/yawl/bridge/fn/gap_close_iter1>
+                  a yawl-bridge:NativeFunction ;
+                  yawl-bridge:forCapability <http://yawlfoundation.org/yawl/bridge/cap/gap_close_iter1> ;
+                  yawl-bridge:fnReturnType "MemorySegment" ;
+                  yawl-bridge:fnDescriptor "FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS)" .
+            }
+            """);
+
+        long after = countOptimalPipelineTriples(sparql.constructToTurtle(compositionsQuery));
+
+        assertTrue(after > before,
+            "Composition count must increase after one iteration: " + before + " → " + after
+                + ". New capability must compose with existing ADDRESS-descriptor capabilities.");
+    }
+
+    /**
+     * Verifies the inner loop closes a single gap and strictly increases the composition count.
+     *
+     * <p>This is the atomic unit of self-play: one gap in → one composition delta out.
+     * The new producer capability returns MemorySegment, which makes it chain-composable with
+     * all existing capabilities whose descriptors accept ADDRESS/MemorySegment arguments.
+     *
+     * <p>Skipped automatically when QLever is not running at localhost:7001.
+     */
+    @Test
+    void testInnerLoopSingleGap() throws Exception {
+        QLeverSparqlEngine sparql = new QLeverSparqlEngine();
+        Assumptions.assumeTrue(sparql.isAvailable(),
+            "Skipping: QLever not running at localhost:7001 (required for inner loop test)");
+
+        Path pmBridge = Path.of("ontology/process-mining/pm-bridge.ttl").toAbsolutePath();
+        sparql.sparqlUpdate("LOAD <file://" + pmBridge + ">");
+
+        String compositionsQuery = Files.readString(Path.of("queries/valid-compositions.sparql"));
+        long before = countOptimalPipelineTriples(sparql.constructToTurtle(compositionsQuery));
+
+        // Inner loop gap closure: add one new producer for the top-priority demanded type
+        // (MemorySegment — highest WSJF score per GapAnalysisEngine demand mapping).
+        sparql.sparqlUpdate("""
+            PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
+            INSERT DATA {
+              <http://yawlfoundation.org/yawl/bridge/cap/inner_loop_gap1>
+                  a yawl-bridge:BridgeCapability ;
+                  yawl-bridge:capabilityName "inner_loop_new_producer" ;
+                  yawl-bridge:nativeTarget "rust4pm_inner_producer" .
+              <http://yawlfoundation.org/yawl/bridge/fn/inner_loop_gap1>
+                  a yawl-bridge:NativeFunction ;
+                  yawl-bridge:forCapability <http://yawlfoundation.org/yawl/bridge/cap/inner_loop_gap1> ;
+                  yawl-bridge:fnReturnType "MemorySegment" ;
+                  yawl-bridge:fnDescriptor "FunctionDescriptor.of(ValueLayout.ADDRESS)" .
+            }
+            """);
+
+        long after = countOptimalPipelineTriples(sparql.constructToTurtle(compositionsQuery));
+
+        assertTrue(after > before,
+            "Inner loop must increase composition count after closing one gap: "
+                + before + " → " + after);
+    }
+
     // ==================== Helpers ====================
+
+    /**
+     * Counts sim:OptimalPipeline occurrences in Turtle output — one line per pipeline.
+     */
+    private static long countOptimalPipelineTriples(String turtle) {
+        if (turtle == null || turtle.isBlank()) {
+            return 0;
+        }
+        return turtle.lines()
+                .filter(line -> line.contains("OptimalPipeline"))
+                .count();
+    }
 
     private static Set<V7Gap> computeMissing(Set<V7Gap> addressed) {
         Set<V7Gap> all = java.util.EnumSet.allOf(V7Gap.class);

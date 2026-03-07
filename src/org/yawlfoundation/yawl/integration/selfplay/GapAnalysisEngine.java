@@ -44,6 +44,8 @@ public final class GapAnalysisEngine {
     private final Map<V7Gap, Double> knownGapsDemand;
     private Instant lastAnalysisTime;
     private int analysisCount;
+    private String discoveryQueryTemplate;
+    private String rankingQueryTemplate;
 
     /**
      * Represents a discovered capability gap with demand and complexity metrics.
@@ -147,13 +149,8 @@ public final class GapAnalysisEngine {
      * @throws QLeverFfiException if query loading fails
      */
     private void loadSparqlQueries() throws QLeverFfiException {
-        // Load capability gap discovery query
-        String discoveryQuery = loadQueryFile("queries/capability-gap-discovery.sparql");
-        // Load WSJF ranking query
-        String rankingQuery = loadQueryFile("queries/wsjf-ranking.sparql");
-
-        // For now, we'll store these for later use
-        // In a real implementation, these would be pre-compiled and cached
+        discoveryQueryTemplate = loadQueryFile("queries/capability-gap-discovery.sparql");
+        rankingQueryTemplate   = loadQueryFile("queries/wsjf-ranking.sparql");
     }
 
     /**
@@ -210,48 +207,33 @@ public final class GapAnalysisEngine {
      * @return SPARQL query string
      */
     private String buildDiscoveryQuery() {
+        if (discoveryQueryTemplate != null && !discoveryQueryTemplate.isBlank()) {
+            return discoveryQueryTemplate;
+        }
+        // Fallback SELECT when query file was not loaded (engine not yet initialized)
         return """
             PREFIX yawl-bridge: <http://yawlfoundation.org/yawl/bridge#>
-            PREFIX sim:         <http://yawlfoundation.org/yawl/simulation#>
-            PREFIX rdf:         <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-            PREFIX rdfs:        <http://www.w3.org/2000/01/rdf-schema#>
 
-            CONSTRUCT {
-              ?gap a sim:CapabilityGap ;
-                rdfs:label ?gapLabel ;
-                sim:requiresCapability ?requiredType ;
-                sim:demandScore ?demand ;
-                sim:complexity ?complexity ;
-                rdfs:comment ?description .
-            }
-            WHERE {
-              # Find all capabilities that REQUIRE a specific input type
+            SELECT DISTINCT ?requiredType (COUNT(?consumerCap) AS ?demand) WHERE {
               ?consumerCap a yawl-bridge:BridgeCapability ;
-                         yawl-bridge:capabilityName ?consumerName ;
-                         yawl-bridge:nativeTarget ?consumerTarget .
-
-              ?consumerFn a yawl-bridge:NativeFunction ;
-                         yawl-bridge:forCapability ?consumerCap ;
-                         yawl-bridge:fnDescriptor ?consumerDesc .
-
-              # Extract required types
-              FILTER(CONTAINS(?consumerDesc, "ADDRESS") || CONTAINS(?consumerDesc, "JAVA_LONG"))
-
-              SELECT DISTINCT ?requiredType (COUNT(?consumerCap) AS ?demand)
-              WHERE {
-                ?c a yawl-bridge:BridgeCapability ;
-                   yawl-bridge:nativeTarget ?t .
-                ?f a yawl-bridge:NativeFunction ;
-                   yawl-bridge:forCapability ?c ;
-                   yawl-bridge:fnDescriptor ?d .
-                BIND(
-                  IF(CONTAINS(?d, "ADDRESS"), "MemorySegment",
-                  IF(CONTAINS(?d, "JAVA_LONG"), "long",
-                  "unknown")) AS ?requiredType
-                )
+                           yawl-bridge:nativeTarget ?consumerTarget .
+              ?consumerFn  a yawl-bridge:NativeFunction ;
+                           yawl-bridge:forCapability ?consumerCap ;
+                           yawl-bridge:fnDescriptor ?consumerDesc .
+              BIND(
+                IF(CONTAINS(?consumerDesc, "ADDRESS"),   "MemorySegment",
+                IF(CONTAINS(?consumerDesc, "JAVA_LONG"), "long",
+                "unknown")) AS ?requiredType
+              )
+              FILTER(?requiredType != "unknown")
+              FILTER NOT EXISTS {
+                ?producerFn a yawl-bridge:NativeFunction ;
+                            yawl-bridge:fnReturnType ?returnType .
+                FILTER(CONTAINS(?returnType, ?requiredType))
               }
-              GROUP BY ?requiredType
             }
+            GROUP BY ?requiredType
+            ORDER BY DESC(?demand)
             """;
     }
 
@@ -262,39 +244,47 @@ public final class GapAnalysisEngine {
      * @return List of capability gaps
      */
     private List<CapabilityGap> parseDiscoveryResults(QLeverResult result) {
-        // In a real implementation, this would parse the RDF/XML results
-        // For now, we'll create mock gaps based on known patterns
+        if (!result.isSuccess() || result.data() == null || result.data().isBlank()) {
+            return List.of();
+        }
+        // Parse SPARQL SELECT JSON: {"results":{"bindings":[{"requiredType":{"value":"..."},...}]}}
+        List<CapabilityGap> gaps = new ArrayList<>();
+        java.util.regex.Matcher typeMatcher = java.util.regex.Pattern
+            .compile("\"requiredType\"\\s*:\\s*\\{[^}]*\"value\"\\s*:\\s*\"([^\"]+)\"")
+            .matcher(result.data());
+        while (typeMatcher.find()) {
+            String requiredType = typeMatcher.group(1);
+            double demand = extractDoubleJsonValue(result.data(), "demand", 1.0);
+            double complexity = estimateComplexity(requiredType);
+            gaps.add(new CapabilityGap(
+                "gap_" + requiredType.toLowerCase().replace(" ", "_").replace(":", "_"),
+                requiredType,
+                demand,
+                complexity,
+                "Missing capability to produce " + requiredType + " type for native bridge operations"
+            ));
+        }
+        return gaps;
+    }
 
-        return List.of(
-            new CapabilityGap(
-                "gap_memory_segment",
-                "MemorySegment",
-                5.0,
-                3.0,
-                "Missing capability to produce MemorySegment for native access"
-            ),
-            new CapabilityGap(
-                "gap_long_wrapper",
-                "long",
-                3.0,
-                1.0,
-                "Missing capability to produce long type for numeric operations"
-            ),
-            new CapabilityGap(
-                "gap_ocel_bridge",
-                "OCEL",
-                8.0,
-                4.0,
-                "Missing capability to produce OCEL event model instances"
-            ),
-            new CapabilityGap(
-                "gap_dfg_processor",
-                "DFG",
-                4.0,
-                5.0,
-                "Missing capability to produce Directly Follows Graph data"
-            )
-        );
+    private static double extractDoubleJsonValue(String json, String field, double defaultVal) {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+            .compile("\"" + field + "\"\\s*:\\s*\\{[^}]*\"value\"\\s*:\\s*\"([0-9.E+\\-]+)\"")
+            .matcher(json);
+        if (m.find()) {
+            try { return Double.parseDouble(m.group(1)); } catch (NumberFormatException ignored) {}
+        }
+        return defaultVal;
+    }
+
+    private static double estimateComplexity(String type) {
+        return switch (type.toLowerCase()) {
+            case "memorysegment" -> 3.0;
+            case "long"          -> 1.0;
+            case "ocel"          -> 4.0;
+            case "dfg"           -> 5.0;
+            default              -> 2.0;
+        };
     }
 
     /**
@@ -706,9 +696,17 @@ public final class GapAnalysisEngine {
             """;
 
         QLeverResult result = qleverEngine.executeQuery(selectQuery);
-        // Parse result - for now, return empty list if parsing not implemented
-        // In production, this would parse the JSON results
-        return List.of();
+        if (!result.isSuccess() || result.data() == null || result.data().isBlank()) {
+            return List.of();
+        }
+        List<String> gapIds = new ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern
+            .compile("\"gapId\"\\s*:\\s*\\{[^}]*\"value\"\\s*:\\s*\"([^\"]+)\"")
+            .matcher(result.data());
+        while (m.find()) {
+            gapIds.add(m.group(1));
+        }
+        return Collections.unmodifiableList(gapIds);
     }
 
     /**
@@ -726,7 +724,15 @@ public final class GapAnalysisEngine {
             """;
 
         QLeverResult result = qleverEngine.executeQuery(countQuery);
-        // Parse count from result - return 0 if parsing not implemented
+        if (!result.isSuccess() || result.data() == null || result.data().isBlank()) {
+            return 0;
+        }
+        java.util.regex.Matcher m = java.util.regex.Pattern
+            .compile("\"count\"\\s*:\\s*\\{[^}]*\"value\"\\s*:\\s*\"([0-9]+)\"")
+            .matcher(result.data());
+        if (m.find()) {
+            try { return Integer.parseInt(m.group(1)); } catch (NumberFormatException ignored) {}
+        }
         return 0;
     }
 

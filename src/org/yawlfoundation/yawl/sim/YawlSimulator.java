@@ -315,11 +315,14 @@ final class YawlSimulatorImpl implements YawlSimulator {
         if (item == null) {
             throw new SimException("Work item cannot be null");
         }
-        // Integration with YEngine would go here
-        // For now, we just validate the item exists
         if (item.get_caseID() == null) {
             throw new SimException("Work item must have a case ID");
         }
+        throw new UnsupportedOperationException(
+            "createWorkItem requires an active YEngine case. " +
+            "Launch a specification via YEngine.launchCase() first, then submit " +
+            "work items through the engine's task lifecycle using the returned caseID."
+        );
     }
 
     @Override
