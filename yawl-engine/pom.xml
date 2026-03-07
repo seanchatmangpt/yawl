@@ -286,6 +286,13 @@
             <version>${jmh.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- jqwik: Property-Based Testing for PhD Publication Quality -->
+        <dependency>
+            <groupId>net.jqwik</groupId>
+            <artifactId>jqwik</artifactId>
+            <version>1.9.0</version>
+            <scope>test</scope>
+        </dependency>
         <!-- HdrHistogram: high-dynamic-range histogram for latency percentiles -->
         <dependency>
             <groupId>org.hdrhistogram</groupId>

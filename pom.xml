@@ -254,6 +254,8 @@
         <testng.version>7.8.2</testng.version>
         <assertj.version>3.26.0</assertj.version>
         <jmh.version>1.37</jmh.version>
+        <jqwik.version>1.9.0</jqwik.version>
+        <pitest.version>1.17.0</pitest.version>
 
         <!-- Maven plugins                                                      -->
         <maven-enforcer.version>3.5.0</maven-enforcer.version>
@@ -422,6 +424,13 @@
                 <groupId>org.openjdk.jmh</groupId>
                 <artifactId>jmh-generator-annprocess</artifactId>
                 <version>${jmh.version}</version>
+            </dependency>
+
+            <!-- jqwik (Property-Based Testing) for PhD Publication Testing -->
+            <dependency>
+                <groupId>net.jqwik</groupId>
+                <artifactId>jqwik</artifactId>
+                <version>${jqwik.version}</version>
             </dependency>
 
             <!-- JSpecify null-safety annotations -->
@@ -923,6 +932,43 @@
                     </configuration>
                 </plugin>
 
+                <!-- PITest Plugin: Mutation Testing for PhD Publication Quality -->
+                <plugin>
+                    <groupId>org.pitest</groupId>
+                    <artifactId>pitest-maven</artifactId>
+                    <version>${pitest.version}</version>
+                    <configuration>
+                        <targetClasses>
+                            <param>org.yawlfoundation.yawl.engine.*</param>
+                            <param>org.yawlfoundation.yawl.verification.*</param>
+                        </targetClasses>
+                        <targetTests>
+                            <param>org.yawlfoundation.yawl.engine.*Test</param>
+                            <param>org.yawlfoundation.yawl.verification.*Test</param>
+                        </targetTests>
+                        <mutators>
+                            <mutator>DEFAULTS</mutator>
+                        </mutators>
+                        <mutationThreshold>85</mutationThreshold>
+                        <coverageThreshold>80</coverageThreshold>
+                        <timeoutFactor>1.5</timeoutFactor>
+                        <timeoutConstant>10000</timeoutConstant>
+                        <threads>4</threads>
+                        <reportFormats>
+                            <format>HTML</format>
+                            <format>XML</format>
+                        </reportFormats>
+                        <outputFormats>
+                            <format>HTML</format>
+                            <format>XML</format>
+                        </outputFormats>
+                        <jvmArgs>
+                            <jvmArg>--enable-preview</jvmArg>
+                            <jvmArg>-XX:+UseCompactObjectHeaders</jvmArg>
+                        </jvmArgs>
+                    </configuration>
+                </plugin>
+
                 <!-- Maven GPG Plugin: Sign artifacts -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -968,6 +1014,28 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Mutation Testing Profile: PITest for PhD Publication Quality -->
+        <profile>
+            <id>mutation</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <executions>
+                            <execution>
+                                <id>pitest</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>mutationCoverage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
