@@ -41,6 +41,7 @@ A corpus of 158 automated integration tests spanning all six connections demonst
 5. [Co-Located AutoML: The TPOT2–ONNX Pipeline](#5-co-located-automl-the-tpot2onnx-pipeline)
 6. [OCEL2 Integration: From YAWL Events to Object-Centric Logs](#6-ocel2-integration-from-yawl-events-to-object-centric-logs)
 7. [Prescriptive Adaptation: Rules, Constraints, and Optimisation](#7-prescriptive-adaptation-rules-constraints-and-optimisation)
+   - 7.6 [QLever: Embedded SPARQL Engine for Semantic Constraint Queries](#76-qlever-embedded-sparql-engine-for-semantic-constraint-queries)
 8. [MCP/A2A Integration: Autonomous Agents in the Workflow Loop](#8-mcpa2a-integration-autonomous-agents-in-the-workflow-loop)
 9. [The CHATMAN Equation: A Formal Model of AI-Assisted Engineering](#9-the-chatman-equation-a-formal-model-of-ai-assisted-engineering)
 10. [Evaluation](#10-evaluation)
@@ -647,6 +648,91 @@ AssignmentSolution solution = facade.optimiseAssignment(problem);
 
 Non-square matrices are handled by padding with a sentinel cost, ensuring the Hungarian algorithm always receives a square matrix without altering the optimal assignment for the original problem.
 
+### 7.6 QLever: Embedded SPARQL Engine for Semantic Constraint Queries
+
+The `ProcessConstraintModel` uses Jena's in-memory OWL model for structural constraint triples—an effective approach for the two supported constraint types. For more expressive constraint queries over larger process knowledge graphs, YAWL integrates **QLever**, a high-performance embedded SPARQL 1.1 engine developed at the University of Freiburg (Bast et al., 2017).
+
+**Module**: `yawl-qlever`
+
+QLever is bound to the JVM through the Java 25 Panama Foreign Function & Memory (FFM) API, enabling native SPARQL execution without inter-process serialisation:
+
+```java
+QLeverEmbeddedSparqlEngine engine = new QLeverEmbeddedSparqlEngine();
+engine.initialize();
+
+// Load process knowledge graph as Turtle RDF
+engine.loadRdfData(processOntologyTurtle, "TURTLE");
+
+// Query reachable tasks with role constraints — more expressive than Jena triples
+QLeverResult reachable = engine.executeQuery("""
+    PREFIX wf:   <http://yawl.edu/workflow#>
+    PREFIX role: <http://yawl.edu/role#>
+
+    SELECT ?task ?requiredRole WHERE {
+        ?current wf:canSucceedBy  ?task .
+        ?task    wf:requiresRole  ?requiredRole .
+        ?task    wf:status        "ENABLED" .
+        FILTER NOT EXISTS { ?task wf:hasConstraint wf:BLOCKED }
+    }
+    ORDER BY DESC(?requiredRole)
+    """);
+```
+
+**Architectural Role**: QLever complements Jena rather than replacing it. Jena handles the two simple structural constraints (task reachability, resource assignability) via direct triple assertions. QLever handles complex multi-hop SPARQL queries—for example, checking that a proposed rerouting path satisfies all intermediate role requirements before reaching the target task.
+
+```
+ProcessConstraintModel (dual-engine design)
+├── Jena OWL Model  — O(1) triple lookup for simple constraints
+│   model.add(taskA, CAN_SUCCEED_BY, taskB)
+│   model.add(resource, ASSIGNABLE_TO, role)
+│
+└── QLever SPARQL Engine  — O(log n) indexed lookup for complex queries
+    SELECT ?task ?role WHERE {
+        ?task wf:canSucceedBy+ ?target .   (* transitive reachability *)
+        ?task wf:requiresRole ?role .
+        ?resource role:qualifies ?role .
+    }
+```
+
+**QLever Capabilities Used in PI**:
+
+| Use Case | Query Pattern | Advantage over Jena |
+|----------|--------------|---------------------|
+| Transitive reachability | `wf:canSucceedBy+` (property paths) | Jena requires manual graph walk |
+| Multi-role validation | JOIN across role, task, resource | Single SPARQL vs. multiple Jena calls |
+| Temporal constraints | FILTER on `wf:validFrom / wf:validTo` | Jena requires custom rule engine |
+| Aggregate cost checks | SUM/COUNT over assignment costs | Not supported in Jena OWL |
+
+**Virtual Thread Integration**: QLever's async interface uses virtual threads, meaning constraint validation never blocks the observer callback thread:
+
+```java
+// Non-blocking constraint check during observer callback
+CompletableFuture<QLeverResult> constraintFuture =
+    engine.executeQueryAsync(reachabilityQuery);
+
+// Virtual thread parks; carrier thread available for other cases
+QLeverResult result = constraintFuture.get(500, MILLISECONDS);
+```
+
+**Error Recovery**: If the QLever engine encounters a failure, `recoverFromFailure()` reinitialises the native library and restores the workflow context automatically, ensuring the PI facade degrades to Jena-only constraint checking rather than failing entirely:
+
+```java
+try {
+    return engine.executeQuery(complexQuery);
+} catch (QLeverFfiException e) {
+    engine.recoverFromFailure();
+    return fallbackJenaConstraintCheck(actions);  // Jena as fallback
+}
+```
+
+**Evidence 7.6**: QLever Integration in Process Intelligence
+| Component | File | Evidence |
+|-----------|------|----------|
+| QLeverEmbeddedSparqlEngine | `yawl-qlever/src/main/java/.../qlever/QLeverEmbeddedSparqlEngine.java` | `@ThreadSafe`, lifecycle + async execution |
+| QLeverFfiBindings | `yawl-qlever/src/main/java/.../qlever/QLeverFfiBindings.java` | Panama FFM downcall handles |
+| QLeverEngine (bridge) | `yawl-native-bridge/yawl-qlever-bridge/.../QLeverEngine.java` | High-level abstraction |
+| qlever_ffi.h | `yawl-native-bridge/yawl-qlever-bridge/src/main/native/qlever_ffi.h` | C symbols: `qlever_execute_query`, etc. |
+
 ---
 
 ## 8. MCP/A2A Integration: Autonomous Agents in the Workflow Loop
@@ -864,7 +950,7 @@ TPOT2 consistently outperforms a logistic regression baseline, with AUC improvem
 
 3. **Federated model registry**: share trained ONNX models across multiple YAWL engine instances via a lightweight model store (e.g., MLflow).
 
-4. **Formal constraint verification**: replace the open-world Jena OWL model with a closed-world description logic reasoner, enabling completeness guarantees for constraint checking.
+4. **Formal constraint verification**: the current dual-engine design (Jena + QLever) handles transitive reachability and multi-role constraints via SPARQL property paths. A natural extension is a closed-world description logic reasoner layered above QLever, enabling completeness guarantees for constraint checking while retaining SPARQL expressiveness.
 
 5. **CHATMAN Equation formalisation**: extend the loss-localisation theorem to cover multi-agent scenarios (τ Teams) where actions are produced collaboratively.
 
@@ -885,6 +971,8 @@ Together, these contributions demonstrate that the architectural boundary betwee
 ---
 
 ## 13. References
+
+Bast, H., Buchhold, B., & Haußmann, E. (2017). QLever: A Query Engine for Efficient SPARQL+Text Search. *Proceedings of the 26th ACM International Conference on Information and Knowledge Management (CIKM 2017)*, 647–656.
 
 Berti, A., Park, G., Rafiei, M., & van der Aalst, W. M. P. (2023). A Novel Token-Based Workflow Model on Top of an Event Knowledge Graph. *Proceedings of the International Conference on Process Mining (ICPM 2023)*.
 

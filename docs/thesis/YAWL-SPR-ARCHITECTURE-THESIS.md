@@ -29,6 +29,7 @@ The architecture embodies the principle **A = μ(O)** where the system's actions
    - 5.6 [Erlang/OTP Integration](#56-erlangotp-integration)
 6. [Quality Assurance & Validation](#6-quality-assurance--validation)
    - 6.4 [Security & Zero-Trust Architecture](#64-security--zero-trust-architecture)
+   - 6.5 [QLever: Embedded SPARQL Engine](#65-qlever-embedded-sparql-engine)
 7. [Observability & Monitoring](#7-observability--monitoring)
    - 7.3 [Advanced Monitoring](#73-advanced-monitoring)
    - 7.4 [Resourcing & Work Allocation](#74-resourcing--work-allocation)
@@ -860,7 +861,58 @@ WHERE {
 }
 ```
 
-### 6.1.4 Enforcement Protocol
+### 6.1.4 QLever: The SPARQL Execution Engine
+
+The SPARQL queries for H-Guard detection execute against **QLever**, a high-performance embedded SPARQL engine integrated into YAWL via the Java 25 Panama Foreign Function & Memory (FFM) API. QLever—developed at the University of Freiburg—provides sub-millisecond query execution over RDF knowledge graphs derived from Java AST parsing.
+
+**Module**: `yawl-qlever`
+
+```java
+// Initialize QLever, load AST facts, execute guard detection
+QLeverEmbeddedSparqlEngine engine = new QLeverEmbeddedSparqlEngine();
+engine.initialize();
+engine.loadRdfData(astRdfFacts, "TURTLE");
+
+QLeverResult result = engine.executeQuery("""
+    PREFIX code: <http://ggen.io/code#>
+    SELECT ?violation ?line ?pattern WHERE {
+        ?method a code:Method ;
+                code:hasComment ?comment ;
+                code:lineNumber ?line .
+        ?comment code:text ?text .
+        FILTER(REGEX(?text, "//\\s*(TODO|FIXME|XXX|HACK)"))
+        BIND("H_TODO" AS ?pattern)
+    }
+    """);
+```
+
+**Execution Stack**:
+
+```
+Java Source → tree-sitter AST → RDF Facts (Turtle)
+                                        ↓
+                         QLeverEmbeddedSparqlEngine
+                            (Thread-safe wrapper)
+                                        ↓
+                         QLeverFfiBindings
+                          (Panama FFM API)
+                                        ↓
+                         libqleverjni.so  (native)
+                                        ↓
+                         QLever C++ SPARQL Engine
+                                        ↓
+                         GuardViolation[]  →  GuardReceipt.json
+```
+
+Async execution leverages virtual threads so guard validation never blocks the calling thread:
+
+```java
+// Non-blocking guard check using virtual threads
+CompletableFuture<QLeverResult> future = engine.executeQueryAsync(sparqlQuery);
+// Virtual thread parks; carrier thread is returned to pool
+```
+
+### 6.1.5 Enforcement Protocol
 
 ```java
 // ❌ FORBIDDEN
@@ -947,6 +999,157 @@ YAWL implements a comprehensive security architecture based on **zero-trust prin
 | AttackPatternDetector | `src/org/yawlfoundation/yawl/security/AttackPatternDetector.java` | L1 | Attack pattern recognition |
 | SecretRotationService | `src/org/yawlfoundation/yawl/security/SecretRotationService.java` | L1 | Automatic credential rotation |
 | JwtManager | `src/org/yawlfoundation/yawl/authentication/JwtManager.java` | L1 | JWT token lifecycle management |
+
+## 6.5 QLever: Embedded SPARQL Engine
+
+**Module**: `yawl-qlever` | **Bridge**: `yawl-native-bridge/yawl-qlever-bridge`
+
+QLever is a high-performance, memory-efficient SPARQL 1.1 engine developed at the University of Freiburg, integrated into YAWL as an embedded analytics engine for semantic queries over workflow knowledge graphs and AST-derived RDF facts. It is the execution substrate for H-Guard SPARQL queries, Observatory fact extraction, and Workflow DNA analysis.
+
+### 6.5.1 Architecture
+
+QLever is bound to the JVM through the **Java 25 Panama Foreign Function & Memory (FFM) API**, replacing JNI with a zero-overhead native call path. The two-layer design separates the high-level YAWL-aware engine from the raw FFI bindings:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    QLEVER INTEGRATION STACK                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  QLeverEmbeddedSparqlEngine  (@ThreadSafe)              │    │
+│  │  • Lifecycle: initialize() / shutdown()                 │    │
+│  │  • Sync: executeQuery(query)                            │    │
+│  │  • Async: executeQueryAsync(query) → virtual thread     │    │
+│  │  • Context: setWorkflowContext(caseId)                  │    │
+│  │  • Recovery: recoverFromFailure()                       │    │
+│  └──────────────────────────┬──────────────────────────────┘    │
+│                             │                                    │
+│  ┌──────────────────────────▼──────────────────────────────┐    │
+│  │  QLeverFfiBindings  (Panama FFM API)                    │    │
+│  │  • loadNativeLibrary()  → SymbolLookup                  │    │
+│  │  • Linker.downcallHandle(symbol, descriptor)            │    │
+│  │  • Arena.ofConfined()  per call (zero-leak)             │    │
+│  │  • arena.allocateFrom(query)  → MemorySegment           │    │
+│  └──────────────────────────┬──────────────────────────────┘    │
+│                             │                                    │
+│  ┌──────────────────────────▼──────────────────────────────┐    │
+│  │  libqleverjni.so / libqleverjni.dylib  (native)         │    │
+│  │  • qlever_initialize()                                  │    │
+│  │  • qlever_load_rdf(data, format, result)                │    │
+│  │  • qlever_execute_query(query, result)                  │    │
+│  │  • qlever_execute_update(update, result)                │    │
+│  │  • qlever_get_statistics(result)                        │    │
+│  │  • qlever_shutdown()                                    │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 6.5.2 Panama FFM Integration
+
+The FFM API eliminates JNI boilerplate and enables safe, garbage-collected native memory management via `Arena`:
+
+```java
+// Function resolution — one-time on library load
+initializeEngineHandle = LINKER.downcallHandle(
+    lookup.find("qlever_initialize").orElseThrow(),
+    FunctionDescriptor.of(ValueLayout.JAVA_INT)
+);
+
+executeQueryHandle = LINKER.downcallHandle(
+    lookup.find("qlever_execute_query").orElseThrow(),
+    FunctionDescriptor.of(
+        ValueLayout.JAVA_LONG,
+        ValueLayout.ADDRESS,   // query string
+        ValueLayout.ADDRESS    // result pointer
+    )
+);
+
+// Per-call zero-copy string passing
+public QLeverResult executeSparqlQueryWithTimeout(String query, long timeoutMs)
+        throws QLeverFfiException {
+
+    try (Arena arena = Arena.ofConfined()) {      // auto-freed on close
+        MemorySegment queryPtr  = arena.allocateFrom(query);
+        MemorySegment resultPtr = arena.allocate(ValueLayout.JAVA_LONG);
+
+        long code = (long) executeQueryHandle.invokeExact(queryPtr, resultPtr);
+        return code == 0
+            ? QLeverResult.success(readNativeString(resultPtr.get(ADDRESS, 0)))
+            : throw new QLeverFfiException("Query failed: " + code);
+    }
+}
+```
+
+**Library Discovery Order**:
+1. `QLEVER_NATIVE_LIB` environment variable (explicit path)
+2. System library path (`SymbolLookup.libraryLookup("qleverjni", arena)`)
+3. `java.library.path` entries
+
+### 6.5.3 Thread Safety & Async Execution
+
+`QLeverEmbeddedSparqlEngine` is annotated `@ThreadSafe` and uses `synchronized` on all lifecycle methods. Async queries spawn **virtual threads**, allowing thousands of concurrent SPARQL queries without saturating carrier threads:
+
+```java
+public CompletableFuture<QLeverResult> executeQueryAsync(String query) {
+    CompletableFuture<QLeverResult> future = new CompletableFuture<>();
+    Thread.ofVirtual()
+        .name("qlever-query-" + Thread.currentThread().threadId())
+        .start(() -> {
+            try {
+                future.complete(executeQuery(query));
+            } catch (QLeverFfiException e) {
+                future.completeExceptionally(e);
+            }
+        });
+    return future;
+}
+```
+
+### 6.5.4 Use Cases in YAWL
+
+| Use Case | RDF Source | Query Type | Module |
+|----------|-----------|-----------|--------|
+| **H-Guard detection** | Java AST → RDF (tree-sitter) | SELECT violations | `yawl-qlever` |
+| **Observatory queries** | Codebase facts JSON → RDF | SELECT module facts | `yawl-integration` |
+| **Workflow DNA analysis** | Event logs → RDF | SELECT failure patterns | `yawl-integration` |
+| **MCP tool generation** | Workflow ontology (YAWL.owl) | CONSTRUCT tool schemas | `yawl-integration` |
+| **A2A skill discovery** | Specification RDF | SELECT enabled tasks | `yawl-integration` |
+
+### 6.5.5 Supported Data Formats
+
+| Format | Constant | Description |
+|--------|---------|-------------|
+| Turtle | `"TURTLE"` | Compact RDF triples (preferred for AST facts) |
+| JSON-LD | `"JSON"` | JSON-based linked data |
+| RDF/XML | `"XML"` | W3C RDF/XML serialization |
+| CSV | `"CSV"` | Tabular data with header row |
+
+### 6.5.6 Error Recovery
+
+QLever supports automatic reinitialize-on-failure, preserving workflow context across recovery:
+
+```java
+public synchronized boolean recoverFromFailure() throws QLeverFfiException {
+    shutdown();
+    initialize();
+    if (workflowContext != null) {
+        setWorkflowContext(workflowContext);  // restore case context
+    }
+    return true;
+}
+```
+
+**Evidence 6.5**: QLever Integration
+| Component | File | Line | Evidence |
+|-----------|------|------|----------|
+| QLeverEmbeddedSparqlEngine | `yawl-qlever/src/main/java/.../qlever/QLeverEmbeddedSparqlEngine.java` | L23 | `@ThreadSafe public final class QLeverEmbeddedSparqlEngine` |
+| QLeverFfiBindings | `yawl-qlever/src/main/java/.../qlever/QLeverFfiBindings.java` | L42 | Panama FFM native bindings with `Linker.downcallHandle` |
+| QLeverEngine (bridge) | `yawl-native-bridge/yawl-qlever-bridge/.../QLeverEngine.java` | L1 | High-level engine abstraction over FFI |
+| qlever_ffi.h | `yawl-native-bridge/yawl-qlever-bridge/src/main/native/qlever_ffi.h` | L1 | C FFI header: `qlever_initialize`, `qlever_execute_query`, etc. |
+| jextract-qlever.toml | `yawl-native-bridge/yawl-qlever-bridge/jextract-qlever.toml` | L1 | JExtract configuration for Panama binding generation |
+| QLeverResult | `yawl-qlever/src/main/java/.../qlever/QLeverResult.java` | L1 | Query result model with JSON data payload |
+| QLeverMediaType | `yawl-qlever/src/main/java/.../qlever/QLeverMediaType.java` | L1 | SPARQL result format constants |
 
 ---
 
@@ -1142,6 +1345,7 @@ YAWL provides comprehensive resource management for workflow task allocation:
 | Q-Invariants | ✅ Production | Real impl enforcement |
 | Chicago TDD | ✅ Production | 80%+ coverage |
 | Ralph Loop | ✅ Production | Self-correcting validation |
+| QLever SPARQL Engine | ✅ Production | Embedded native SPARQL for AST guard queries |
 
 ## 8.5 Benchmarking & Performance
 
