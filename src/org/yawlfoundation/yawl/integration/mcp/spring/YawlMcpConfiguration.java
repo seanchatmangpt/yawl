@@ -55,6 +55,7 @@ import io.modelcontextprotocol.server.transport.StdioServerTransportProvider;
  * @see EnableYawlMcp
  * @see YawlMcpProperties
  */
+@SuppressWarnings("removal")
 public class YawlMcpConfiguration {
 
     private static final Logger LOGGER = Logger.getLogger(YawlMcpConfiguration.class.getName());

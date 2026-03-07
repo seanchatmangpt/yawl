@@ -65,6 +65,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @MapsToCapability(value = Capability.LOAD_BINARY_MODULE, layer = "L2")
 @MapsToCapability(value = Capability.ROLLBACK_MODULE, layer = "L2")
 @MapsToCapability(value = Capability.AS_RPC_CALLABLE, layer = "L2")
+@SuppressWarnings("restricted")
 public class ErlangNode implements AutoCloseable {
 
     private final String localName;

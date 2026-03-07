@@ -116,8 +116,6 @@ public class SignatureVerifier {
             throw new PkiException("Certificate has expired", e);
         } catch (java.security.cert.CertificateNotYetValidException e) {
             throw new PkiException("Certificate is not yet valid", e);
-        } catch (java.security.cert.CertificateException e) {
-            throw new PkiException("Certificate validation failed: " + e.getMessage(), e);
         }
     }
 
@@ -169,9 +167,6 @@ public class SignatureVerifier {
         } catch (java.security.cert.CertificateNotYetValidException e) {
             result.setCertificateValid(false);
             result.setValidationError("Certificate is not yet valid: " + cert.getNotBefore());
-        } catch (java.security.cert.CertificateException e) {
-            result.setCertificateValid(false);
-            result.setValidationError("Certificate validation error: " + e.getMessage());
         }
 
         return result;

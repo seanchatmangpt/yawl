@@ -172,7 +172,7 @@ public final class ProcessMining implements AutoCloseable {
         ensureOpen();
         try {
             ErlTerm result = node.rpc("yawl_process_mining", "ocel_event_count",
-                List.of(ErlTerm.from(handle)));
+                List.of(new ErlBinary(handle.getBytes(StandardCharsets.UTF_8))));
             return extractInt(result);
         } catch (ErlangRpcException e) {
             throw new ProcessMiningException("Failed to get event count", e);
@@ -188,7 +188,7 @@ public final class ProcessMining implements AutoCloseable {
         ensureOpen();
         try {
             ErlTerm result = node.rpc("yawl_process_mining", "ocel_object_count",
-                List.of(ErlTerm.from(handle)));
+                List.of(new ErlBinary(handle.getBytes(StandardCharsets.UTF_8))));
             return extractInt(result);
         } catch (ErlangRpcException e) {
             throw new ProcessMiningException("Failed to get object count", e);
@@ -242,7 +242,7 @@ public final class ProcessMining implements AutoCloseable {
         ensureOpen();
         try {
             ErlTerm result = node.rpc("yawl_process_mining", "ocel_discover_dfg",
-                List.of(ErlTerm.from(handle)));
+                List.of(new ErlBinary(handle.getBytes(StandardCharsets.UTF_8))));
             return DFG.fromMap(extractMap(result));
         } catch (ErlangRpcException e) {
             throw new ProcessMiningException("Failed to discover DFG from OCEL", e);
@@ -290,7 +290,7 @@ public final class ProcessMining implements AutoCloseable {
         ensureOpen();
         try {
             ErlTerm result = node.rpc("yawl_process_mining", "ocel_check_conformance",
-                List.of(ErlTerm.from(handle),
+                List.of(new ErlBinary(handle.getBytes(StandardCharsets.UTF_8)),
                         new ErlBinary(pnml.getBytes(StandardCharsets.UTF_8))));
             return ConformanceMetrics.fromMap(extractMap(result));
         } catch (ErlangRpcException e) {
@@ -331,8 +331,14 @@ public final class ProcessMining implements AutoCloseable {
             ErlTerm ok = elements.get(0);
             ErlTerm handle = elements.get(1);
             if (ok instanceof ErlAtom(var name) && "ok".equals(name)) {
-                if (handle instanceof ErlRef(var ref)) {
-                    return ref;
+                if (handle instanceof ErlRef(String node, int[] ids, int creation)) {
+                    // Convert ErlRef to a unique string representation
+                    StringBuilder sb = new StringBuilder(node);
+                    for (int id : ids) {
+                        sb.append(":").append(id);
+                    }
+                    sb.append(":").append(creation);
+                    return sb.toString();
                 }
             }
         }

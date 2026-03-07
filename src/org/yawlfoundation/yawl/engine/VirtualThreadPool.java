@@ -91,6 +91,7 @@ import io.opentelemetry.context.Context;
  * @version 6.0
  * @since 6.0
  */
+@SuppressWarnings({"preview", "rawtypes"})
 public class VirtualThreadPool {
 
     // ScopedValue bindings for context propagation in virtual threads

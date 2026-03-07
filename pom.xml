@@ -64,9 +64,7 @@
         <module>yawl-exceptions</module>
         <module>yawl-security</module>
         <module>yawl-erlang</module>
-        <!-- Disabled - GraalVM SDK not available (2026-03-04)
         <module>yawl-graalpy</module>
-        -->
         <!-- Disabled - legacy polyglot execution (2026-03-03)
         <module>yawl-graaljs</module>
         <module>yawl-rust4pm</module>

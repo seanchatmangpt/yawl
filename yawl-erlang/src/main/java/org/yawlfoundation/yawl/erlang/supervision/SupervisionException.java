@@ -29,6 +29,8 @@ package org.yawlfoundation.yawl.erlang.supervision;
  */
 public final class SupervisionException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     public SupervisionException(String message) {
         super(message);
     }

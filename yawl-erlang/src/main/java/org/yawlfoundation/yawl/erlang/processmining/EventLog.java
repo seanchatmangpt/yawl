@@ -103,8 +103,9 @@ public final class EventLog {
      *
      * @param traces list of traces, each trace is a list of activity names
      * @return the event log
+     * @throws ProcessMiningException if connection to Erlang node fails
      */
-    public static EventLog fromTraces(List<List<String>> traces) {
+    public static EventLog fromTraces(List<List<String>> traces) throws ProcessMiningException {
         Objects.requireNonNull(traces);
         List<Trace> traceList = new ArrayList<>();
         for (List<String> activities : traces) {

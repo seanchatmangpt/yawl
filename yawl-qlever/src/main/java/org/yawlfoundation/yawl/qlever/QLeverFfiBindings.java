@@ -38,6 +38,7 @@ import java.util.Optional;
  * @version 6.0.0
  * @since 6.0.0
  */
+@SuppressWarnings("removal")
 public final class QLeverFfiBindings {
 
     private static final Linker LINKER = Linker.nativeLinker();

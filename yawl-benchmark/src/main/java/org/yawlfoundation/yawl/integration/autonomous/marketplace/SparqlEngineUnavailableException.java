@@ -5,6 +5,8 @@ package org.yawlfoundation.yawl.integration.autonomous.marketplace;
  */
 public class SparqlEngineUnavailableException extends SparqlEngineException {
 
+    private static final long serialVersionUID = 1L;
+
     private final String engineType;
     private final String endpoint;
 

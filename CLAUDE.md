@@ -27,8 +27,22 @@ dx.sh all auto-refreshes facts when pom.xml changes (Ψ phase); DX_SKIP_OBSERVE=
 dx.sh compile (fast) → dx.sh -pl <module> (one module) → dx.sh all (pre-commit gate, mandatory).
 dx.sh all pipeline: observe(Ψ) → compile(Λ) → test(Λ) → guards(H) → invariants(Q) → report(Ω). No gate skipping.
 Phase mapping: Ψ=observe, Λ=compile+test, H=guards, Q=invariants, Ω=report/git.
-mvn clean verify -P analysis for SpotBugs/PMD static analysis. No commit until dx.sh all green.
+mvnd clean verify -P analysis -T1C for SpotBugs/PMD static analysis. No commit until dx.sh all green.
 Compile ≺ Test ≺ Validate ≺ Deploy. Maven proxy auto-activates when CLAUDE_CODE_REMOTE=true.
+
+### mvnd (Maven Daemon) — REQUIRED
+
+mvnd is MANDATORY for all builds. Raw `mvn` is disabled. Always specify a goal:
+
+| Command | Purpose |
+|---------|---------|
+| `dx.sh compile` | Fast compile (changed modules) |
+| `dx.sh -pl yawl-engine` | Build one module + deps |
+| `dx.sh all` | Full build + validation |
+| `mvnd compile -T1C -q` | Manual: compile all, parallel, quiet |
+| `mvnd test -pl yawl-engine -am -T1C` | Manual: test module + deps |
+
+Key flags: `-T1C` (1 thread/CPU), `-pl <mod>` (module), `-am` (also deps), `-q` (quiet).
 yawl-engine source root = ../src (not src/main/java) | test root = ../test — read pom.xml <sourceDirectory> before placing any file.
 .mvn/jvm.config has no comment support — Maven passes every line literally to JVM; # lines crash with "cannot find main class #".
 VirtualThread idle loop must use queue.take() (parks carrier) not poll()+onSpinWait() (saturates carrier) — wrong pattern causes starvation at >100 agents.

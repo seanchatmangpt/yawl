@@ -75,6 +75,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Michael Adams (refactoring for v2.0-2.1)
  */
 
+@SuppressWarnings({"deprecation", "rawtypes", "try"})
 public class YEngine implements InterfaceADesign,
                                 InterfaceAManagement,
                                 InterfaceBClient,

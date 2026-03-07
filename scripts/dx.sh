@@ -184,7 +184,12 @@ if ! command -v mvnd &>/dev/null; then
     printf "\n" >&2
     printf "        After installation, start the daemon:\n" >&2
     printf "        $ mvnd --version       (verify installation)\n" >&2
-    printf "        $ mvnd clean compile   (start daemon)\n" >&2
+    printf "        $ mvnd compile -T1C    (start daemon, compile all)\n" >&2
+    printf "\n" >&2
+    printf "        Common mvnd commands:\n" >&2
+    printf "        $ dx.sh compile         (via dx.sh - recommended)\n" >&2
+    printf "        $ mvnd compile -T1C -q  (manual: compile all, parallel, quiet)\n" >&2
+    printf "        $ mvnd test -pl yawl-engine -am -T1C  (test module + deps)\n" >&2
     printf "\n" >&2
     exit 2
 fi
@@ -476,6 +481,10 @@ if [[ "${MVN_VERSION%%.*}" -ge 4 ]]; then
     fi
 fi
 [[ -n "$BUILDER_FLAG" ]] && MVN_ARGS+=("$BUILDER_FLAG")
+
+# Enable 1 thread per CPU core for maximum parallelism
+# mvnd handles this efficiently with daemon persistence
+MVN_ARGS+=("-T1C")
 
 # Offline
 [[ -n "$OFFLINE_FLAG" ]] && MVN_ARGS+=("$OFFLINE_FLAG")

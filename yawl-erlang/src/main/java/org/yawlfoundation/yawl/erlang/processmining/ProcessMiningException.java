@@ -13,6 +13,8 @@ package org.yawlfoundation.yawl.erlang.processmining;
  */
 public final class ProcessMiningException extends Exception {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Creates a new ProcessMiningException with a message.
      *

@@ -60,7 +60,7 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-engine</artifactId>
-            <version>6.0.0-GA</version>
+            <version>7.0.0</version>
         </dependency>
 
         <!-- Bouncy Castle for Blake3 hashing -->

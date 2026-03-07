@@ -68,6 +68,7 @@ import org.yawlfoundation.yawl.util.HibernateEngine;
  *
  */
 
+@SuppressWarnings({"deprecation", "rawtypes"})
 public class YEventLogger {
 
     // constants for the case and net-level events logged

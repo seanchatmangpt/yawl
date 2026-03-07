@@ -31,6 +31,8 @@ package org.yawlfoundation.yawl.erlang.error;
  */
 public class OtpNodeUnavailableException extends ErlangException {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Creates an exception with an actionable message.
      *

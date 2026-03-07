@@ -26,6 +26,8 @@ package org.yawlfoundation.yawl.erlang.error;
  */
 public class ErlangConnectionException extends ErlangException {
 
+    private static final long serialVersionUID = 1L;
+
     /** The target node name that could not be connected, e.g. {@code "foo@localhost"}. */
     private final String targetNode;
 

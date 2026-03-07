@@ -3,6 +3,14 @@ set -euo pipefail
 
 # Build script for yawl_ml_bridge native library
 
+# Add cargo to PATH if available
+if [[ -d "$HOME/.cargo/bin" ]]; then
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
+
+# Suppress PyO3 Python version compatibility check
+export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 

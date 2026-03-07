@@ -45,6 +45,7 @@ import org.yawlfoundation.yawl.util.StringUtil;
  * Last Date: 16/02/2026
  */
 
+@SuppressWarnings({"deprecation"})
 public class WorkItemRecord implements Cloneable {
 
     // workitem execution statuses

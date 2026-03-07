@@ -79,6 +79,7 @@ import io.opentelemetry.context.Scope;
  *  @updated 2026-02-19 Added Resilience4j retry, dead letter queue, metrics, and tracing
  */
 
+@SuppressWarnings({"deprecation", "rawtypes", "try"})
 public class InterfaceX_EngineSideClient extends Interface_Client implements ExceptionGateway {
 
     private static final Logger LOGGER = LogManager.getLogger(InterfaceX_EngineSideClient.class);

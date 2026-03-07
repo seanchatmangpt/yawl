@@ -26,6 +26,8 @@ package org.yawlfoundation.yawl.erlang.error;
  */
 public class ErlangRpcException extends ErlangException {
 
+    private static final long serialVersionUID = 1L;
+
     private final String module;
     private final String function;
 

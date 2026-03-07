@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
-        <version>6.0.0-GA</version>
+        <version>7.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -29,7 +29,7 @@
         <dependency>
             <groupId>org.yawlfoundation</groupId>
             <artifactId>yawl-graalpy</artifactId>
-            <version>6.0.0-GA</version>
+            <version>7.0.0</version>
         </dependency>
 
         <!-- GraalVM Polyglot API -->

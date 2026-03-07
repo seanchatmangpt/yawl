@@ -27,6 +27,8 @@ package org.yawlfoundation.yawl.erlang.error;
  */
 public class ErlangReceiveException extends ErlangException {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * @param message actionable failure description
      */

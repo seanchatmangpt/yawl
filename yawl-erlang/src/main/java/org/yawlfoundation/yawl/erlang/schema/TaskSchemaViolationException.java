@@ -28,6 +28,8 @@ package org.yawlfoundation.yawl.erlang.schema;
  */
 public final class TaskSchemaViolationException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     private final String taskId;
     private final String expectedSchemaSummary;
     private final String actualJson;

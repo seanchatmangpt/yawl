@@ -35,9 +35,11 @@ import java.util.Set;
  */
 public final class CapabilityRegistryException extends IllegalStateException {
 
-    private final List<Capability> missingL2;
-    private final List<Capability> missingL3;
-    private final List<Capability> missingTests;
+    private static final long serialVersionUID = 1L;
+
+    private final transient List<Capability> missingL2;
+    private final transient List<Capability> missingL3;
+    private final transient List<Capability> missingTests;
 
     /**
      * Constructs a registry exception with the specified missing capabilities.

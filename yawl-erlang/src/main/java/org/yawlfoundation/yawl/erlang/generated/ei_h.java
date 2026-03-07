@@ -51,6 +51,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
  *
  * @see <a href="https://www.erlang.org/doc/man/ei.html">ei.h documentation (OTP 28)</a>
  */
+@SuppressWarnings("restricted")
 public final class ei_h {
 
     private ei_h() {}

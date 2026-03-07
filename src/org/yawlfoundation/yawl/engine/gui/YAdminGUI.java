@@ -63,8 +63,9 @@ import org.yawlfoundation.yawl.util.YVerificationMessage;
  * @author Lachlan Aldred
  * Date: 16/06/2003
  * Time: 12:29:13
- * 
+ *
  */
+@SuppressWarnings({"deprecation", "rawtypes"})
 public class YAdminGUI extends JPanel implements InterfaceBClientObserver,
         ActionListener,
         ItemListener {

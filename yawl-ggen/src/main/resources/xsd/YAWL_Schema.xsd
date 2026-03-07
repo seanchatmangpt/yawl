@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  YAWL Specification XSD Schema
+  Version: 4.0 (YAWL 2.0+)
+
+  This schema defines the structure of YAWL workflow specifications,
+  including support for OR-joins, cancellation regions, and multi-instance tasks.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:yawl="http://yawlfoundation.org/yawlschema"
+           targetNamespace="http://yawlfoundation.org/yawlschema"
+           elementFormDefault="qualified">
+
+  <!-- Root specification element -->
+  <xs:element name="specification" type="yawl:SpecificationType"/>
+
+  <xs:complexType name="SpecificationType">
+    <xs:sequence>
+      <xs:element name="metaData" type="yawl:MetaDataType" minOccurs="0"/>
+      <xs:element name="xs:schema" type="xs:string" minOccurs="0"/>
+      <xs:element name="decomposition" type="yawl:DecompositionType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="uri" type="xs:anyURI" use="required"/>
+    <xs:attribute name="version" type="xs:string" default="0.1"/>
+  </xs:complexType>
+
+  <xs:complexType name="MetaDataType">
+    <xs:sequence>
+      <xs:element name="creator" type="xs:string" minOccurs="0"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+      <xs:element name="title" type="xs:string" minOccurs="0"/>
+      <xs:element name="created" type="xs:dateTime" minOccurs="0"/>
+      <xs:element name="modified" type="xs:dateTime" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Decomposition (root net or sub-net) -->
+  <xs:complexType name="DecompositionType">
+    <xs:sequence>
+      <xs:element name="inputParam" type="yawl:ParameterType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="outputParam" type="yawl:ParameterType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="localVariable" type="yawl:VariableType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="processControlElements" type="yawl:ProcessControlElementsType"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+    <xs:attribute name="isRootNet" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="ParameterType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="type" type="xs:QName"/>
+      <xs:element name="namespace" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="index" type="xs:positiveInteger"/>
+  </xs:complexType>
+
+  <xs:complexType name="VariableType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="type" type="xs:QName"/>
+      <xs:element name="initialValue" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="index" type="xs:positiveInteger"/>
+  </xs:complexType>
+
+  <!-- Process Control Elements (Net) -->
+  <xs:complexType name="ProcessControlElementsType">
+    <xs:sequence>
+      <xs:element name="inputCondition" type="yawl:ConditionType"/>
+      <xs:element name="task" type="yawl:TaskType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="condition" type="yawl:ConditionType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="outputCondition" type="yawl:ConditionType"/>
+      <xs:element name="flow" type="yawl:FlowType" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+  </xs:complexType>
+
+  <!-- Condition (Input/Output/Gateway) -->
+  <xs:complexType name="ConditionType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string" minOccurs="0"/>
+      <xs:element name="predicate" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+  </xs:complexType>
+
+  <!-- Task -->
+  <xs:complexType name="TaskType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string" minOccurs="0"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+      <xs:element name="decomposesTo" type="xs:IDREF" minOccurs="0"/>
+      <xs:element name="join" type="yawl:JoinType" minOccurs="0"/>
+      <xs:element name="split" type="yawl:SplitType" minOccurs="0"/>
+      <xs:element name="startingMappings" type="yawl:MappingsType" minOccurs="0"/>
+      <xs:element name="completedMappings" type="yawl:MappingsType" minOccurs="0"/>
+      <xs:element name="resourcing" type="yawl:ResourcingType" minOccurs="0"/>
+      <xs:element name="cancelledBy" type="yawl:CancelledByType" minOccurs="0"/>
+      <xs:element name="multiInstance" type="yawl:MultiInstanceType" minOccurs="0"/>
+      <xs:element name="codelet" type="xs:string" minOccurs="0"/>
+      <xs:element name="timer" type="yawl:TimerType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+  </xs:complexType>
+
+  <!-- Join Types (XOR, AND, OR) -->
+  <xs:complexType name="JoinType">
+    <xs:attribute name="code" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="xor"/>
+          <xs:enumeration value="and"/>
+          <xs:enumeration value="or"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Split Types (XOR, AND, OR) -->
+  <xs:complexType name="SplitType">
+    <xs:sequence>
+      <xs:element name="first" type="xs:IDREF" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="code" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="xor"/>
+          <xs:enumeration value="and"/>
+          <xs:enumeration value="or"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Flow -->
+  <xs:complexType name="FlowType">
+    <xs:sequence>
+      <xs:element name="predicate" type="xs:string" minOccurs="0"/>
+      <xs:element name="ordering" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="source" type="xs:IDREF" use="required"/>
+    <xs:attribute name="target" type="xs:IDREF" use="required"/>
+    <xs:attribute name="isDefault" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <!-- Mappings -->
+  <xs:complexType name="MappingsType">
+    <xs:sequence>
+      <xs:element name="mapping" type="yawl:MappingType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="MappingType">
+    <xs:sequence>
+      <xs:element name="expression" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="mapsTo" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <!-- Resourcing -->
+  <xs:complexType name="ResourcingType">
+    <xs:sequence>
+      <xs:element name="offer" type="yawl:AllocationType" minOccurs="0"/>
+      <xs:element name="allocate" type="yawl:AllocationType" minOccurs="0"/>
+      <xs:element name="start" type="yawl:AllocationType" minOccurs="0"/>
+      <xs:element name="delegation" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="initiator" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="AllocationType">
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="role" type="xs:string"/>
+        <xs:element name="participant" type="xs:string"/>
+        <xs:element name="system" type="xs:string"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Cancellation Regions -->
+  <xs:complexType name="CancelledByType">
+    <xs:sequence>
+      <xs:element name="decomposition" type="xs:IDREF" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Multi-Instance Task -->
+  <xs:complexType name="MultiInstanceType">
+    <xs:sequence>
+      <xs:element name="miDataInput" type="xs:string" minOccurs="0"/>
+      <xs:element name="miDataOutput" type="xs:string" minOccurs="0"/>
+      <xs:element name="miFormalInputParam" type="xs:string" minOccurs="0"/>
+      <xs:element name="miFormalOutputParam" type="xs:string" minOccurs="0"/>
+      <xs:element name="minInstances" type="xs:positiveInteger"/>
+      <xs:element name="maxInstances" type="xs:positiveInteger"/>
+      <xs:element name="threshold" type="xs:positiveInteger" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Timer -->
+  <xs:complexType name="TimerType">
+    <xs:sequence>
+      <xs:element name="delay" type="xs:duration"/>
+      <xs:element name="expiry" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="trigger" type="xs:string"/>
+  </xs:complexType>
+
+</xs:schema>

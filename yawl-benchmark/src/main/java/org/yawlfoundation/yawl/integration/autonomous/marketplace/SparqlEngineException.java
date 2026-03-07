@@ -5,6 +5,8 @@ package org.yawlfoundation.yawl.integration.autonomous.marketplace;
  */
 public class SparqlEngineException extends Exception {
 
+    private static final long serialVersionUID = 1L;
+
     public SparqlEngineException(String message) {
         super(message);
     }

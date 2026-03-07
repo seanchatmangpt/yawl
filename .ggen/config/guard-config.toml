@@ -12,6 +12,13 @@ exclusions = [
     # Test fixtures - these contain intentional violations for testing
     "test/fixtures/**",
     "tests/fixtures/**",
+    "test/fixtures/h-guards/**",
+
+    # Generator test fixtures - intentional H-guard violations for testing
+    "ggen/src/test/resources/fixtures/**",
+    "yawl-ggen/src/test/resources/fixtures/**",
+    "**/fixtures/**",
+    "**/fixtures/violation-h-*.java",
 
     # Test code - may use mocks for testing purposes
     "**/src/test/**",

@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  * features like lifecycle management, YAWL context integration, and error recovery.
  */
 @ThreadSafe
+@SuppressWarnings("removal")
 public final class QLeverEmbeddedSparqlEngine {
 
     private final QLeverFfiBindings ffiBindings;

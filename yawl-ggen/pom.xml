@@ -9,7 +9,7 @@
         <groupId>org.yawlfoundation</groupId>
         <artifactId>yawl-parent</artifactId>
 
-        <version>6.0.0-GA</version>
+        <version>7.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -96,6 +96,28 @@
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
             <version>3.25.10</version>
+        </dependency>
+
+        <!-- YAWL DSPy Fluent API for LLM-based generation -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-dspy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- YAWL Erlang Process Mining for rust4pm validation -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-erlang</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- YAWL Engine for virtual execution (test scope) -->
+        <dependency>
+            <groupId>org.yawlfoundation</groupId>
+            <artifactId>yawl-engine</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- Testing — versions inherited from parent BOM (${junit.jupiter.version} = 5.12.0) -->

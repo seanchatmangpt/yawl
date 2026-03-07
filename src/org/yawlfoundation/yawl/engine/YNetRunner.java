@@ -110,6 +110,7 @@ import io.opentelemetry.api.common.Attributes;
  * @see YWorkItemRepository
  * @see YIdentifier
  */
+@SuppressWarnings({"deprecation", "rawtypes", "try"})
 public class YNetRunner {
 
 

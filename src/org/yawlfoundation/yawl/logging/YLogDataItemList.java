@@ -29,6 +29,8 @@ import org.yawlfoundation.yawl.util.JDOMUtil;
  */
 public class YLogDataItemList extends ArrayList<YLogDataItem> {
 
+    private static final long serialVersionUID = 1L;
+
     public YLogDataItemList() {
         super();
     }

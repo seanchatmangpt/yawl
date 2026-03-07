@@ -86,6 +86,7 @@ import net.sf.saxon.s9api.SaxonApiException;
  * @see YNetRunner
  * @see YTask
  */
+@SuppressWarnings({"deprecation"})
 public class YWorkItem {
 
     private static final DateTimeFormatter _df =
